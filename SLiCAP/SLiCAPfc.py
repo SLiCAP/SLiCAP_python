@@ -5,6 +5,7 @@ This is to be used to find the frequency constant matrix (which is the inverse o
 """
 import sympy as sp
 from SLiCAP.SLiCAPini import ini
+from SLiCAP.SLiCAPmatrices import makeMatrices,makeSrcVector
 
 def laplace2coeffs(M, var=ini.Laplace):
     """
@@ -36,28 +37,31 @@ def laplace2coeffs(M, var=ini.Laplace):
     [0, 0],
     [9, 0]])]
     """
-    dim = M.shape[0]
-    res=[sp.zeros(dim,dim)]
-    for i in range(dim):
-        for j in range(dim):
+    row,col = M.shape
+    res=[sp.zeros(row,col)]
+    for i in range(row):
+        for j in range(col):
             dum = M[i,j]
             #makes a polynomial list with the 0th order coefficent at the end of the list
             dumpoly = sp.Poly(dum, var).all_coeffs()
             if len(dumpoly) > len(res):
                 for k in range(len(res),len(dumpoly)):
-                    res.append(sp.zeros(dim,dim))
+                    res.append(sp.zeros(row,col))
             for k in range(len(dumpoly)):
                 res[k][i,j] = dumpoly[-1-k]
     return res
 
-def nth2firstOrder(CM):
+def nth2firstOrder(CM,q=sp.zeros(1,1)):
     """
     Returns the first order decomposition of an nth order system of differential equations
-
-    :param M: list of coefficient matricies
+    q=A0x+sA1x+s^2A2x+...
+    :param M: list of coefficient matrices
     :type M: list
 
-    :return res: list of 2 coefficient matrices
+    :param q: Vector of sources
+    :type q: sympy matrix
+
+    :return res: list of 2 coefficient matrices and the updated source vector
     :rtype:  list
 
     :Example:
@@ -68,24 +72,69 @@ def nth2firstOrder(CM):
     >>> res = laplace2coeffs(test, var=x)
     >>> nth2firstOrder(res)
     """
-    dim = CM[0].shape[0]
-    order = len(CM) - 1
-    if order == 0:
-        G = CM[0]
-        C = sp.zeros(dim)
-    elif order == 1:
-        G, C = CM
-    else:
-        #The number of new variables is: (order-1)*dim:
-        newVars = (order - 1) * dim
-        G = sp.Matrix([[CM[0], sp.zeros(dim, newVars)], [sp.zeros(newVars, dim), sp.eye(newVars)]])
-        firstOrder = CM[1:]
-        C = sp.Matrix([[sp.BlockMatrix(firstOrder)], [-1 * sp.eye(newVars), sp.zeros(newVars, dim)]])
-    return [G, C]
+    order=len(CM)-1
+    if order==1:
+        newCM=CM.copy()
+        newCM.append(q)
+        return newCM
+    dim=CM[0].shape[0]
+    #The number of new variables is: (order-1)*dim:
+    newVars=(order-1)*dim
+    newq=sp.Matrix([q,sp.zeros(newVars,1)])
+    G = sp.Matrix(sp.BlockMatrix([[CM[0], sp.zeros(dim,newVars)], [sp.zeros(newVars,dim), sp.eye(newVars)]]))
+    firstOrder = sp.Matrix(sp.BlockMatrix(CM[1:]))
+    newVarsblock = sp.Matrix(sp.BlockMatrix([-1*sp.eye(newVars), sp.zeros(newVars,dim)]))
+    C = sp.Matrix(sp.BlockMatrix([[firstOrder],[newVarsblock]]))
+    return (G,C,newq)
+
+def Matrix_num_den(M):
+    """
+    Returns the matrices Mnum, Mden for the matrix M
+
+    :param M: Matrix to perform the num_den decomposition on
+    :type M: sympy matrix
+
+    :return Mnum: Numerator of each elements in M
+    :rtype:  sympy matrix
+
+    :return Mden: Denominator of each elements in M
+    :rtype:  sympy matrix
+    """
+    row,col = M.shape
+    Mnum = sp.zeros(row,col)
+    Mden = sp.zeros(row,col)
+    for i in range(row):
+        for j in range(col):
+            Mnum[i,j],Mden[i,j] = sp.fraction(sp.cancel(M[i,j]))
+    return (Mnum,Mden)
+
+def addfractions(A, B):
+    """
+    Returns the numerator and denominator after adding the fractions A,B
+
+    :param A: numerator and denominator of the fraction A
+    :type A: tuple of sympy expressions
+
+    :param B: numerator and denominator of the fraction B
+    :type B: tuple of sympy expressions
+
+    :return Cnum: Numerator of A + B
+    :rtype:  sympy expression
+
+    :return Cden: Denominator of A + B
+    :rtype:  sympy expression
+    """
+    Anum,Aden=A
+    Bnum,Bden=B
+    Cnum = Anum*Bden+Aden*Bnum
+    Cden = Aden*Bden
+    return sp.fraction(sp.cancel(Cnum/Cden))
+
+
 
 def PAQeqLU(A):
     """
-    Returns the matricies P,Q,L,U for the equation PAQ=LU
+    Returns the matrices P,Q,L,U for the equation PAQ=LU
 
     :param A: Matrix to perform the LU decomposition on
     :type A: sympy matrix
@@ -109,11 +158,7 @@ def PAQeqLU(A):
     rank = 0;
     ro=[*range(0,dim)] # row permutation vector
     co=[*range(0,dim)] # column permutation vector
-    tmp_num=sp.zeros(dim)
-    tmp_den=sp.zeros(dim)
-    for i in range(dim):
-        for j in range(dim):
-            tmp_num[i,j],tmp_den[i,j] = sp.fraction(sp.cancel(A[i,j]))
+    tmp_num,tmp_den = Matrix_num_den(A)
     for k in range(dim):
         #### 1st Pivot row and column if diagonal is zero:
         if tmp_num[k,k] == 0:
@@ -197,7 +242,9 @@ def UVsolve(A, B):
     """
     Returns the U, V, and X for UAV = XUBV
     equivalently: finds the UV for F = UAVx + sUBVx
-
+    This is the starting equation:
+    Uq=UGVy+sUCVy
+    x=Vy
     :param A: Matrix to perform the UV decomposition on
     :type A: sympy matrix
 
@@ -237,10 +284,13 @@ def UVsolve(A, B):
         if not((rankB[-2]>rankB[-1]) and (rankB[-1]>0)):
             break
     tmpB=U*B*V
-    zeroB=tmpB[0:rankB[-1],0:rankB[-1]]
+    rank = rankB[-1]
+    zeroB=tmpB[0:rank,0:rank]
     tmpA=U*A*V
-    zeroA=tmpA[0:rankB[-1],0:rankB[-1]]
-    fc=sp.cancel(zeroB.inv()*zeroA)
+    zeroA=tmpA[0:rank,0:rank]
+    tmpU = sp.Matrix.diag(zeroB.inv(),sp.eye(dim-rank))
+    fc= sp.cancel(tmpU[0:rank,0:rank]*zeroA)
+    U=tmpU*U
     return [U,V,fc]
 
 def computeFC(M, var=ini.Laplace):
@@ -264,61 +314,3 @@ def computeFC(M, var=ini.Laplace):
     U,V,fc = UVsolve(res[0],res[1])
     return fc
 
-if __name__ == "__main__":
-    import time
-
-    x=sp.Symbol("x")
-    y=sp.Symbol("y")
-    test=sp.Matrix([[6+x,2*x],[x**2*9,45*y]])
-    res=laplace2coeffs(test,x)
-    print("\nlaplace2coeffs: ", res)
-    res1=nth2firstOrder(res)
-    print("\nnth2firstOrder: ", res1)
-    dim=2
-    Atest=sp.Matrix(sp.MatrixSymbol('A',dim,dim))
-    start = time.time()
-    P,Q,L,U,rank = PAQeqLU(Atest)
-    stop = time.time()
-    print("LU: ",sp.simplify(L*U-Atest), "time: ",stop-start)
-    start = time.time()
-    L, U ,_ = Atest.LUdecomposition()
-    stop = time.time()
-    print("\nsympy LU: ",sp.simplify(L*U-Atest), "time: ",stop-start)
-    Nothertest=sp.Matrix([[-794,0,778],[-336,0,0],[-1,0,0]])
-    P,Q,L,U,rank = PAQeqLU(Nothertest)
-    print("LU: ",sp.simplify(L*U-P*Nothertest*Q))
-    dim=7
-    Atest=sp.Matrix(sp.MatrixSymbol('A',dim,dim))
-    print("\nNothertest: ", Atest)
-    Atest=ODtranspose(Atest)
-    print("\nODtranspose(Nothertest): ", Atest)
-    ## Test Everything:
-    g_m1,g_m2,c_i1,c_i2,r_o1,r_o2,s,R,R_L=sp.symbols("g_m1,g_m2,c_i1,c_i2,r_o1,r_o2,s,R,R_L")
-    test=sp.Matrix([[0,	0,	0,	0,	0,	1,	0],
-        [0,	-2,	0,	0,	g_m1,	g_m1,	0],
-        [0,	0,	-2,	g_m2,	-g_m2,	0,	0],
-        [0,	1,	0,	(c_i2*r_o1*s+1)/(2*r_o1),	-(c_i2*r_o1*s-1)/(2*r_o1),	0,	0],
-        [0,	1,	-1,	-(c_i2*r_o1*s-1)/(2*r_o1),	((R*c_i2+R*c_i1)*r_o1*r_o2*s+(2*r_o1+R)*r_o2+R*r_o1)/(2*R*r_o1*r_o2),	(c_i1*s)/2,	-1/(2*r_o2)],
-        [1,	0,	0,	0,	(c_i1*s)/2,	(c_i1*s)/2,	0],
-        [0,	0,	1,	0,	-1/(2*r_o2),	0,	(2*r_o2+R_L)/(2*R_L*r_o2)]
-    ]);
-    res=laplace2coeffs(test,s)
-    print("\nMatrix 2 Coeffs:",res)
-    res=nth2firstOrder(res)
-    print("\nMatrix 2 Coeffs:",res)
-    U,V,fc=UVsolve(res[0],res[1])
-    print("\nUAV: ", sp.simplify(U*res[0]*V) )
-    print("\nUBV: ", sp.simplify(U*res[1]*V) )
-    print("\nfc: ", fc)
-    fctest,_=(sp.eye(fc.shape[0])*s+fc).det().as_numer_denom()
-    testdet,_=test.det().as_numer_denom()
-    print("\ndet fc: ", sp.simplify(fctest))
-    print("\ndet sympy: ", sp.simplify(testdet))
-    print("\ndet diff: ", sp.simplify(testdet+fctest))
-
-    # test n-th order"
-    CM = []
-    for i in range(10):
-        CM.append(sp.eye(2))
-        print("Order:", i)
-        G, C = nth2firstOrder(CM)
