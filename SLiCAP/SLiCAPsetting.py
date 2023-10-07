@@ -16,8 +16,8 @@ Default parameters:
 """
 VERSION     = '2.0.1'
 SYSINSTALL  = r' '
-USERPATH    = r'/home/anton/SLiCAP'
-LIBCOREPATH = r'/home/anton/SLiCAP/lib'
-DOCPATH     = r'/home/anton/SLiCAP/docs'
-LTSPICE     = r'/home/anton/.wine/drive_c/Program Files/LTC/LTspiceXVII/XVIIx64.exe' # Command for netlist generation with LTspice
+USERPATH    = r'/home/charles/SLiCAP'
+LIBCOREPATH = r'/home/charles/SLiCAP/lib'
+DOCPATH     = r'/home/charles/SLiCAP/docs'
+LTSPICE     = r'/home/charles/.wine/drive_c/Program Files/LTC/LTspiceXVII/XVIIx64.exe' # Command for netlist generation with LTspice
 NETLIST     = 'lepton-netlist -g spice-noqsi' # Command for netlist generation with gschem or lepton-eda

@@ -6,7 +6,7 @@ This is to be used to find the frequency constant matrix (which is the inverse o
 import sympy as sp
 from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPmatrices import makeMatrices,makeSrcVector
-from SLiCAPfc import addfractions, laplace2coeffs, nth2firstOrder, UVsolve, Matrix_num_den
+from SLiCAP.SLiCAPfc import addfractions, laplace2coeffs, nth2firstOrder, UVsolve, Matrix_num_den
 def backsubstitute(U,b):
     """
     Returns the vector 'x' to the system of equations: Ux=b 

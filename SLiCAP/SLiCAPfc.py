@@ -5,7 +5,6 @@ This is to be used to find the frequency constant matrix (which is the inverse o
 """
 import sympy as sp
 from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPmatrices import makeMatrices,makeSrcVector
 
 def laplace2coeffs(M, var=ini.Laplace):
     """

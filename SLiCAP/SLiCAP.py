@@ -11,6 +11,7 @@ from datetime import datetime
 import getpass
 import platform
 import os
+import subprocess
 from shutil import copy2
 from SLiCAP.SLiCAPyacc import makeLibraries
 # User stuff
