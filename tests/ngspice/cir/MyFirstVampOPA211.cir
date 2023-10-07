@@ -1,0 +1,27 @@
+MyFirstVampOPA211
+
+* ngspice circuit file
+* command section will be added by python script
+* .end command will be added after command section
+
+.include /mnt/DATA/SLiCAP/SLiCAP_github/SLiCAP_python/tests/ngspice/lib/OPA211.mod
+
+.param CL = 0
+
+V2 VP2V5 0 2.5
+V3 1 VP2V5 PULSE(-10m 10m 0 10n 10n 4.99u 10u) AC 1 0
+V1 2 0 5
+
+R1 3 VP2V5 220
+R2 5 3 20k
+R3 8 1 600
+C1 5 0 {CL}
+XU1 8 3 2 0 5 OPA211
+
+R4 4 VP2V5 220
+R5 6 4 20k
+R6 9 1 600
+R7 6 7 15
+C2 7 0 {CL}
+C3 6 4 2.2p
+XU2 9 4 2 0 6 OPA211

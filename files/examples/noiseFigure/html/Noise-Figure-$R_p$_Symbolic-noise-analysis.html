@@ -1,0 +1,49 @@
+<a id=""></a><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Symbolic noise analysis"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Symbolic noise analysis</h1></div>
+<h2>Symbolic noise analysis results</h2>
+<h3>Detector-referred noise spectrum</h3>
+$$S_{out}=\frac{4 R_{p}^{2} R_{s} T k}{\left(R_{p} + R_{s}\right)^{2}} + \frac{4 R_{p} R_{s}^{2} T k \left(f + f_{\ell}\right)}{f \left(R_{p} + R_{s}\right)^{2}}\, \mathrm{\left[\frac{V^2}{Hz}\right]}$$
+<h3>Source-referred noise spectrum</h3>
+$$S_{in}=4 R_{s} T k + \frac{4 R_{s}^{2} T k \left(f + f_{\ell}\right)}{R_{p} f}\, \mathrm{\left[\frac{V^2}{Hz}\right]}$$
+<h3>Contributions of individual noise sources</h3><table>
+<th colspan = "3" class="center">Noise source: I_noise_R2</th><tr><td class="title">Spectral density:</td><td>$\frac{4 T k \left(1 + \frac{f_{\ell}}{f}\right)}{R_{p}}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$\frac{4 R_{p} R_{s}^{2} T k \left(f + f_{\ell}\right)}{f \left(R_{p} + R_{s}\right)^{2}}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$\frac{4 R_{s}^{2} T k \left(f + f_{\ell}\right)}{R_{p} f}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<th colspan = "3" class="center">Noise source: V1</th><tr><td class="title">Spectral density:</td><td>$4 R_{s} T k$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$\frac{4 R_{p}^{2} R_{s} T k}{\left(R_{p} + R_{s}\right)^{2}}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$4 R_{s} T k$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+</table>
+<h2>Noise figure</h2>
+<p>The noise figure of a circuit is defined as the ratio of the signal-to-noise at the output of the circuit and the signal-to-noise ratio of its input signal.</p>
+<p>Alternatively, the noise figure can be defined as the as the ratio of the total source referred noise power and the noise power of the signal source, or the ratio of the total detector-referred noise power and the contribution of the noise of the signal source to the detector-referred noise power.</p>
+<p>The variance $P_{onoise}\,\left[ V^2 \right]$ of the total detector referred noise is:</p>
+\begin{equation}
+P_{onoise}=\frac{k \left(4 R_{p} R_{s}^{2} T f_{\ell} \log{\left(f_{max} \right)} + T f_{max} \left(4 R_{p}^{2} R_{s} + 4 R_{p} R_{s}^{2}\right)\right)}{R_{p}^{2} + 2 R_{p} R_{s} + R_{s}^{2}} - \frac{k \left(4 R_{p} R_{s}^{2} T f_{\ell} \log{\left(f_{min} \right)} + T f_{min} \left(4 R_{p}^{2} R_{s} + 4 R_{p} R_{s}^{2}\right)\right)}{R_{p}^{2} + 2 R_{p} R_{s} + R_{s}^{2}}\,\left[ \mathrm{\frac{V^{2}}{Hz}}\right]
+\end{equation}
+<p>The contribution $P_{onoise,source}\,\left[ V^2 \right]$ of the source to $P_{onoise}\,\left[ V^2 \right]$ is:</p>
+\begin{equation}
+P_{onoise}=\frac{4 R_{p}^{2} R_{s} T k \left(f_{max} - f_{min}\right)}{\left(R_{p} + R_{s}\right)^{2}}\,\left[ \mathrm{\frac{V^{2}}{Hz}}\right]
+\end{equation}
+<p>Hence, the noise figure is obtained as</p>
+\begin{equation}
+F=4.343 \log{\left(\frac{R_{p} f_{max} - R_{p} f_{min} + R_{s} f_{\ell} \log{\left(f_{max} \right)} - R_{s} f_{\ell} \log{\left(f_{min} \right)} + R_{s} f_{max} - R_{s} f_{min}}{R_{p} \left(f_{max} - f_{min}\right)} \right)}
+\end{equation}
+<h2>Detector referred noise spectrum</h2>
+<p>The spectral density of the total output noise can be written as</p>
+\begin{equation}
+S_{out}=\frac{4 R_{p} R_{s} T k \left(R_{p} f + R_{s} \left(f + f_{\ell}\right)\right)}{f \left(R_{p} + R_{s}\right)^{2}}
+\end{equation}
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="Noise-Figure-$R_p$_index.html">Noise-Figure-$R_p$_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 1.5.0 &copy 2009-2023 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2023-06-12 11:49:08</p>
+</div></body></html>

@@ -1,0 +1,47 @@
+<a id="desEq"></a><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Design equations for $R$ and $C$"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Design equations for $R$ and $C$</h1></div>
+<h2>The unit step response</h2>
+<a id="mu_t"></a>
+\begin{equation}
+\mu_{t}=1 - e^{- \frac{t}{C R}}
+\end{equation}
+<h2>The settling error versus time</h2>
+<a id="epsilon_t"></a>
+\begin{equation}
+\epsilon_{t}=e^{- \frac{t}{C R}}
+\end{equation}
+<h2>The n-bit settling time</h2>
+<a id="tau_s"></a>
+\begin{equation}
+\tau_{s}=C R n \log{\left(2 \right)}
+\end{equation}
+<h2>The design equation for $R$</h2>
+<a id="RR1"></a>
+\begin{equation}
+R=\frac{\tau_{s}}{C n \log{\left(2 \right)}}
+\end{equation}
+<h2>The design equation for $C$</h2>
+<a id="CC1"></a>
+\begin{equation}
+C=\frac{\tau_{s}}{R n \log{\left(2 \right)}}
+\end{equation}
+<h2>Numeric example.</h2>
+<p>We will determine R for the case in which we need 10 bit settling within 100ns with a capacitance C=10pF. We obtain:</p>
+<a id="Rvalue"></a>
+\begin{equation}
+R=1443.0
+\end{equation}
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="My-First-RC-network_index.html">My-First-RC-network_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 1.3.0 &copy 2009-2022 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2022-07-06 18:01:47</p>
+</div></body></html>

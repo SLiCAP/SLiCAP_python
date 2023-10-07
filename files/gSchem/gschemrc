@@ -1,0 +1,1 @@
+(load (build-path geda-rc-path "gschem-colormap-lightbg")) ; light background

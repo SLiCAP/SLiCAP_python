@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>SLiCAPdesignData.py &mdash; SLiCAP 2.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/myStyle.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SLiCAPexecute.py" href="SLiCAPexecute.html" />
+    <link rel="prev" title="SLiCAPconfig.py" href="SLiCAPconfig.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SLiCAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPreference.html">SLiCAP reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html">SLiCAP.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPconfig.html">SLiCAPconfig.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPdesignData.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html">SLiCAPexecute.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="SLiCAPreference.html">SLiCAP reference</a> &raquo;</li>
+        
+      <li>SLiCAPdesignData.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/SLiCAPdesignData.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-SLiCAP.SLiCAPdesignData">
+<span id="slicapdesigndata-py"></span><h1>SLiCAPdesignData.py<a class="headerlink" href="#module-SLiCAP.SLiCAPdesignData" title="Permalink to this heading">¶</a></h1>
+<p>Created on Fri Nov 18 13:24:17 2022</p>
+<p>&#64;author: anton</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.csv2specs">
+<span class="sig-name descname"><span class="pre">csv2specs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">csvFile</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.csv2specs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the CSV file with specifications and converts it into a list with
+specitems.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>csvFile</strong> (<em>str</em>) – name of the CSV file in the directory ‘ini.csvPath’</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Lit with specification items</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specItem">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">specItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for specification items. These are parameter definitions with
+descriptions that can be assigned to the circuit.
+Specification items must have:</p>
+<ul class="simple">
+<li><p>A unique symbol (their parameter name)</p></li>
+<li><p>A spectype defintion, such as ‘functional’, ‘environment’, ‘design’, etc.</p></li>
+<li><p>A value</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specItem.csvLine">
+<span class="sig-name descname"><span class="pre">csvLine</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specItem.csvLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a comma separated output line for this spec item. Commas in the
+description are replaced with their html code ‘&amp;#44;’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>csv code of this specitem</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specItem.htmlLine">
+<span class="sig-name descname"><span class="pre">htmlLine</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specItem.htmlLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an html output line for this spec item.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>html code of this specitem</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specItem.specLine">
+<span class="sig-name descname"><span class="pre">specLine</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specItem.specLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an output line for this spec item (used with latex and rst reports)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list with: symbol, description, value, units</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specItem.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specItem.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the syntax and updates the attributes of this specitem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>NoneType</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specList2dict">
+<span class="sig-name descname"><span class="pre">specList2dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specList</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specList2dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a dict with spec items. the parameter name is used as key. Also
+checks for unique parameter names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>specList</strong> (<em>List</em>) – List with spec items</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary with specification items</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specs2circuit">
+<span class="sig-name descname"><span class="pre">specs2circuit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specs2circuit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds prameter definitions from the specList to instr.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>specList</strong> (<em>list</em>) – List with spec items</p></li>
+<li><p><strong>instr</strong> (<a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction" title="SLiCAP.SLiCAPinstruction.instruction"><em>SLiCAPinstruction.instruction</em></a>) – instruction to which the parameters definitions will be added</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>NoneType</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specs2csv">
+<span class="sig-name descname"><span class="pre">specs2csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specs2csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the list with spec items as a CSV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>specList</strong> (<em>list</em>) – List with spec items</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>NoneType</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPdesignData.specs2html">
+<span class="sig-name descname"><span class="pre">specs2html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">types</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPdesignData.specs2html" title="Permalink to this definition">¶</a></dt>
+<dd><p>Places the contents of a dictionary with specifications on the active html
+page. If a list of specification types is provided, it creates tables
+for specified types only. By default, tables for all types will be created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>specs</strong> (<em>list</em>) – List with spec items.</p></li>
+<li><p><strong>types</strong> (<em>str</em>) – List with specification types to be placed on the html page,
+defaults to [].</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>html code</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="SLiCAPexecute.html" class="btn btn-neutral float-right" title="SLiCAPexecute.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="SLiCAPconfig.html" class="btn btn-neutral float-left" title="SLiCAPconfig.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2023, SLiCAP development team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

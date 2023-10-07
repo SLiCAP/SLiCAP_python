@@ -1,0 +1,10 @@
+"Amplifier noise figure"
+* Z:\mnt\DATA\SLiCAP\SLiCAP_github\SLiCAP_python\files\examples\noiseFigure\cir\ExNoiseFigureAmp.asc
+V1 N001 0 V value=0 dc=0 dcvar=0 noise={4*k*T*R_s}
+R1 N002 N001 R value={R_s} noisetemp=0 noiseflow=0 dcvar=0
+I1 out 0 I value=0 dc=0 dcvar=0 noise={S_i}
+V2 out N002 V value=0 dc=0 dcvar=0 noise={S_v}
+.param S_i=9e-24 S_v=4e-18 R_s=600
+* The noise of R1 is modeled in V1.
+.backanno
+.end

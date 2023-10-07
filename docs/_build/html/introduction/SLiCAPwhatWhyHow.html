@@ -1,0 +1,394 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>What is SLiCAP &mdash; SLiCAP 2.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/myStyle.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to contribute to SLiCAP" href="SLiCAPcontribute.html" />
+    <link rel="prev" title="SLiCAP introduction" href="SLiCAPintroduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SLiCAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPintroduction.html">SLiCAP introduction</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">What is SLiCAP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-should-you-use-slicap">Why should you use SLiCAP</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#features">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#capabilities">Capabilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#technology">Technology</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-use-slicap">How to use SLiCAP</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#way-of-working">Way of working</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPcontribute.html">How to contribute to SLiCAP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPandSED.html">SLiCAP and Structured Electronics Design</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/SLiCAPreference.html">SLiCAP reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="SLiCAPintroduction.html">SLiCAP introduction</a> &raquo;</li>
+        
+      <li>What is SLiCAP</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/introduction/SLiCAPwhatWhyHow.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="what-is-slicap">
+<h1>What is SLiCAP<a class="headerlink" href="#what-is-slicap" title="Permalink to this heading">¶</a></h1>
+<ul class="simple">
+<li><p>SLiCAP is an acronym for: <strong>S</strong> ymbolic <strong>Li</strong> near <strong>C</strong> ircuit <strong>A</strong> nalysis <strong>P</strong> rogram</p></li>
+<li><p>SliCAP is a tool for <strong>algorithm-based analog design automation</strong></p></li>
+<li><p>SLiCAP is intended for setting up and solving <strong>design equations</strong> of electronic circuits</p></li>
+<li><p>SLiCAP is a an <strong>open source</strong> application written in Python and maxima CAS</p></li>
+<li><p>SLiCAP is part of the tool set for teaching ‘Structured Electronic Design’ at the Delft University of Technology</p></li>
+</ul>
+</div>
+<div class="section" id="why-should-you-use-slicap">
+<h1>Why should you use SLiCAP<a class="headerlink" href="#why-should-you-use-slicap" title="Permalink to this heading">¶</a></h1>
+<ul class="simple">
+<li><p>SLiCAP facilitates analog design automation</p></li>
+<li><p>SLiCAP speeds up the circuit engineering process</p></li>
+<li><p>SLiCAP makes complex symbolic math doable</p></li>
+<li><p>SLiCAP integrates documentation and design</p></li>
+<li><p>SLiCAP facilitates design education and knowledge building</p></li>
+</ul>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Accepts SPICE-like netlists as input</p></li>
+<li><p>Concurrent design and documentation</p></li>
+<li><p>Supports and facilitates structured analog design</p></li>
+</ul>
+</div>
+<div class="section" id="capabilities">
+<h2>Capabilities<a class="headerlink" href="#capabilities" title="Permalink to this heading">¶</a></h2>
+<ul>
+<li><p>Conversion of hierarchically structured SPICE netlist into mixed symbolic/numeric matrix equation</p></li>
+<li><p>Symbolic and numeric noise analysis</p></li>
+<li><p>Symbolic and numeric noise integration over frequency</p></li>
+<li><p>Symbolic and numeric determination of transfer functions and polynomial coefficients of transfer functions</p></li>
+<li><p>Symbolic and numeric determination of the Routh array</p></li>
+<li><p>Symbolic and numeric inverse Laplace Transform</p></li>
+<li><p>Symbolic and numeric determination of network solutions</p></li>
+<li><p>Accurate numeric pole-zero analysis</p></li>
+<li><p>Root-locus analysis with a arbitrarily selected circuit parameters as root locus variable(s)</p></li>
+<li><p>Symbolic and numeric DC and DC variance analysis for determination of budgets for resistor tolerances and offset and bias quantities</p></li>
+<li><p>Symbolic and numeric derivation and solution of design equations for bandwidh, frequency response, noise performance, dc variance and temperature stability</p></li>
+<li><p>Decomposition of balanced networks into four sub networks:</p>
+<ol class="arabic simple">
+<li><p>A network that models the differential-mode behavior</p></li>
+<li><p>A network that models the differential-mode to common-mode conversion</p></li>
+<li><p>A network that models the common-mode to differential-mode conversion</p></li>
+<li><p>A network that models the common-mode behavior</p></li>
+</ol>
+</li>
+<li><p>Use built-in small signal models for semiconductor devices of which the small-signal parameters are functions of the device geometry and the operating point:</p>
+<ol class="arabic simple">
+<li><p>Gummel-Poon model for BJTs</p></li>
+<li><p>EKV model for MOS devices</p></li>
+<li><p>Any user-defined model with user-defined geometry parameters</p></li>
+</ol>
+<p>This makes it possible to design the signal performance of an amplifier before designing the biasing of the amplifier. The impact of errors introduces by bias sources on the signal transfer can be investigated and specified by simply adding these imperfections to the signal path design.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="technology">
+<h2>Technology<a class="headerlink" href="#technology" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Python, Maxima CAS, HTML, CSS, LaTeX, MathJax, Python, Jupyther Notebook</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="how-to-use-slicap">
+<h1>How to use SLiCAP<a class="headerlink" href="#how-to-use-slicap" title="Permalink to this heading">¶</a></h1>
+<div class="section" id="way-of-working">
+<h2>Way of working<a class="headerlink" href="#way-of-working" title="Permalink to this heading">¶</a></h2>
+<p>Working with SLiCAP usually requires the following steps:</p>
+<ol class="arabic">
+<li><p>Initialize a SLiCAP project; this will</p>
+<ol class="arabic simple">
+<li><p>Create the directory structure for your project</p></li>
+<li><p>Create a configuration file for your project</p></li>
+<li><p>Create the main html index page for this project</p></li>
+</ol>
+</li>
+<li><p>Create a circuit netlist and check the circuit</p>
+<p>SLiCAP supports netlist generation with gSchem and LTspice</p>
+</li>
+<li><p>Modify, add or delete circuit parameter definitions</p></li>
+<li><p>Define an instruction</p>
+<p>You can change all the aspects of the instruction. If the instruction data is complete and consistent (this will be checked by SLiCAP), it can be executed. Definition of an instruction usually involves the following steps:</p>
+<ol class="arabic">
+<li><p>Define the symbolic or numerical calculation mode: SLiCAP uses symbolic calculation methods, even if the data is numeric. If the simulation type is set to <em>numeric</em>, parameter values will recursively be substituted into the expressions for the circuit element values.</p></li>
+<li><p>Define the gain type and the data type: SLiCAP can provide symbolic and numeric expressions for:</p>
+<ul class="simple">
+<li><p>The Laplace Transform, the Inverse Laplace Transform, and the DC value of</p>
+<ul>
+<li><p>Nodal voltages or currents through voltage sources (or other elements that have been defined in current-controlled notation, such as inductors)</p></li>
+<li><p>Transfer functions of the asymptotic-gain model:</p>
+<ul>
+<li><p>the gain (source to detector transfer)</p></li>
+<li><p>the asymptotic-gain</p></li>
+<li><p>the loop gain</p></li>
+<li><p>the direct transfer</p></li>
+<li><p>the servo function</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Poles and zeros of these transfer functions (symbolic only for limited order)</p></li>
+<li><p>Spectral densities of noise sources and their contributions to source-referred noise and/ore detector referred noise</p></li>
+<li><p>Variance of DC voltage and currents resulting from resistor tolerances, and variances of voltage and current sources</p></li>
+</ul>
+</li>
+<li><p>Define the signal source, the detector and the loop gain reference variable according to the asymptotic-gain feedback model.</p></li>
+<li><p>Define the matrix base converstion type:</p>
+<p>SLiCAP can automatically convert the complete network equation (MNA equation) of balanced circuits into smaller matrix equations that model the:</p>
+<ul class="simple">
+<li><p>differential-mode  behavior</p></li>
+<li><p>differential-mode to common-mode conversion</p></li>
+<li><p>common-mode to differential-mode conversion</p></li>
+<li><p>common-mode behavior</p></li>
+</ul>
+</li>
+<li><p>Define the data type:</p>
+<p>SLiCAP can provide many types of data for both symbolic and numeric circuit analysis:</p>
+<ul class="simple">
+<li><p>Matrix equations for the circuit, with the matrices adapted to the gaintype</p></li>
+<li><p>Laplace transform of voltages, currents or transfer functions</p></li>
+<li><p>Numerator or denominator of the above Laplace transform</p></li>
+<li><p>Time functions, unit impulse and unit step functions; calculated from the inverse Laplace transform</p></li>
+<li><p>Contributions to spectral densities of source-referred or detector-referred noise or integrated noise</p></li>
+<li><p>Poles, zeros and DC gain of a transfer function, with and without cancellation of coinciding poles and zeros</p></li>
+<li><p>DC voltage and current and their variance due to offset errors, bias errors, and resistor tolerances</p></li>
+</ul>
+</li>
+<li><p>Use parameter stepping for the instruction and define the step parameters and concurrently step multiple parameters.</p></li>
+</ol>
+</li>
+<li><p>Execute the instruction</p></li>
+<li><p>Work with the results</p>
+<ul>
+<li><p>SLiCAP has predefined functions for plotting, displaying tables and generation of web pages with beautifully typeset expressions, tables, figures and files.</p></li>
+<li><p>SLiCAP has a lot of postprocessing functions available for finding budgets (show-stopper values or design limits) for all kinds of performance parameters of electronic circuits:</p>
+<ul>
+<li><p>Budgeting of noise sources:</p>
+<p>Given the integrated RMS noise of limits for source or detector referred noise, you can find show-stopper values for contributions of noise sources.</p>
+</li>
+<li><p>Budgeting of offset errors, bias errors and resistor tolerances:</p>
+<p>Given the total source or detector referred dc error (variance), you can find show-stopper values for contributions of tolerances of resistors, offset voltages and currents and bias voltages and currents.</p>
+</li>
+<li><p>Budgeting of GB product of operational amplifiers or loop gain-poles product of transistor feedback amplifiers:</p>
+<p>Given the required bandwidth of an amplifier in an application, SLiCAP helps you to find design limits or show-stopper values for different contributers to bandwidth limitation.</p>
+</li>
+</ul>
+</li>
+<li><p>There are many examples available for the design of the dynamic behavior and the noise behavior of amplifiers:</p>
+<ul class="simple">
+<li><p>It will be clear that once you have the (symbolic) matrix equation of a circuit, you have sufficient knowledge of Structured Analog Design, SLiCAP can help you with setting up and solving design equations for almost any design problem and, ultimately, with the automation of design engineering.</p></li>
+<li><p>While doing your design work with SLiCAP, you concurrently generate a collection of linked html pages that document your work and help you to discuss your work with colleagues and present it to others on any platform with a web browser.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="SLiCAPcontribute.html" class="btn btn-neutral float-right" title="How to contribute to SLiCAP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="SLiCAPintroduction.html" class="btn btn-neutral float-left" title="SLiCAP introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2023, SLiCAP development team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

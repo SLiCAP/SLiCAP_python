@@ -1,0 +1,42 @@
+<a id=""></a><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Symbolic noise analysis"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Symbolic noise analysis</h1></div>
+<h2>Symbolic noise analysis results</h2>
+<h3>Detector-referred noise spectrum</h3>
+$$S_{out}=R_{s}^{2} S_{i} + 4 R_{s} T k + S_{v}\, \mathrm{\left[\frac{V^2}{Hz}\right]}$$
+<h3>Source-referred noise spectrum</h3>
+$$S_{in}=R_{s}^{2} S_{i} + 4 R_{s} T k + S_{v}\, \mathrm{\left[\frac{V^2}{Hz}\right]}$$
+<h3>Contributions of individual noise sources</h3><table>
+<th colspan = "3" class="center">Noise source: I1</th><tr><td class="title">Spectral density:</td><td>$S_{i}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$R_{s}^{2} S_{i}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$R_{s}^{2} S_{i}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<th colspan = "3" class="center">Noise source: V1</th><tr><td class="title">Spectral density:</td><td>$4 R_{s} T k$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$4 R_{s} T k$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$4 R_{s} T k$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<th colspan = "3" class="center">Noise source: V2</th><tr><td class="title">Spectral density:</td><td>$S_{v}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$S_{v}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$S_{v}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+</table>
+<h2>Detector referred noise spectrum</h2>
+<p>The spectral density of the total output noise can be written as:</p>
+\begin{equation}
+S_{out}=R_{s}^{2} S_{i} + 4 R_{s} T k + S_{v}\,\left[ \mathrm{\frac{V^{2}}{Hz}}\right]
+\end{equation}
+<h2>Noise figure</h2>
+<p>The noise figure is obtained as:</p>
+\begin{equation}
+F=4.343 \log{\left(\frac{0.25 R_{s} S_{i}}{T k} + 1 + \frac{0.25 S_{v}}{R_{s} T k} \right)}\,\left[ \mathrm{dB}\right]
+\end{equation}
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="Amplifier-noise-figure_index.html">Amplifier-noise-figure_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 1.5.0 &copy 2009-2023 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2023-06-12 11:49:08</p>
+</div></body></html>
