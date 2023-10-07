@@ -1,0 +1,12 @@
+subCKTtest
+V1 1 0 0
+V2 2 0 0
+x1 c b e 0 myNPN IC=1m VCE=5
+* Parameters that are not defined with the sub circuit definition, will not be passed to it!
+.subckt myNPN C B E S 
++ IC={I_C} VCE={V_CE} ; parameters that can be parsed and their default values
+q1 C B E S NPN
+.param VAF=50
+.model NPN QV gpi={IC/U_T} go={IC/(VCE+VAF)}
+.ends
+.end

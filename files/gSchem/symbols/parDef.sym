@@ -1,0 +1,10 @@
+v 20200319 2
+T 100 600 9 10 0 0 0 0 1
+device=directive
+T 100 400 9 8 1 1 0 0 1
+refdes=A?
+T 400 400 9 8 1 0 0 0 1
+Parameter definitions
+T 100 100 8 8 1 1 0 0 1
+value=.param < param=value ... >
+L 100 300 1800 300 3 10 0 0 -1 -1

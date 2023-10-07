@@ -1,0 +1,8 @@
+"Small Matrix"
+* Z:\home\anton\Desktop\SmallMatrix\cir\smallMatrix.asc
+I1 0 1 I value={2*pi*f/(s^2+(2*pi*f)^2)} dc=0 dcvar=0 noise=0
+R1 1 0 {R}
+C1 1 0 {C}
+.param R=1k C=1.6u f=1k
+.backanno
+.end

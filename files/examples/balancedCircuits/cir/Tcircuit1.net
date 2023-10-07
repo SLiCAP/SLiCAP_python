@@ -1,0 +1,8 @@
+* Z:\home\anton\SLiCAP\examples\balancedCircuits\cir\Tcircuit1.asc
+R1P inP C R value={R_a} noisetemp={T} noiseflow=0 dcvar=0
+R1N C inN R value={R_a} noisetemp={T} noiseflow=0 dcvar=0
+I1N 0 inN I value={I_B} dc=0 dcvar=0 noise={S_B}
+I1P 0 inP I value={I_A} dc=0 dcvar=0 noise={S_A}
+R2 0 C R value={R_c} noisetemp=0 noiseflow=0 dcvar=0
+.backanno
+.end

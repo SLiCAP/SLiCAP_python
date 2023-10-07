@@ -1,0 +1,9 @@
+"Noise Figure $R_p$"
+* Z:\mnt\DATA\SLiCAP\SLiCAP_github\SLiCAP_python\files\examples\noiseFigure\cir\ExNoiseFigureRp.asc
+V1 N001 0 V value=0 dc=0 dcvar=0 noise={4*k*T*R_s}
+R1 out N001 R value={R_s} noisetemp=0 noiseflow=0 dcvar=0
+R2 out 0 R value={R_p} noisetemp={T} noiseflow={f_ell} dcvar=0
+.param R_s=600 R_p=1k f_ell=10
+* The noise of R1 is modeled in V1
+.backanno
+.end

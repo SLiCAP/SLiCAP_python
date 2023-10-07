@@ -1,0 +1,73 @@
+<a id=""></a><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="Language" content="English"/>
+<title>"Report"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Report</h1></div>
+<h2>Prototype function</h2>
+\begin{equation}
+P_{s}=\frac{1}{\left(\frac{6.25 \cdot 10^{-8} s^{2}}{\pi^{2}} + \frac{\sqrt{2} s}{4000 \pi} + 1\right)^{2}}
+\end{equation}
+<h2>Circuit implementation</h2>
+<figure><img src="img/LowPassLR.svg" alt="" style="width:400px">
+</figure>
+<h2>Transfer of the network</h2>
+\begin{equation}
+T_{s}=\frac{1}{C_{a} C_{b} L_{a} L_{b} s^{4} + C_{a} L_{a} L_{b} s^{3} + s^{2} \left(C_{a} L_{a} + C_{b} L_{a} + C_{b} L_{b}\right) + s \left(L_{a} + L_{b}\right) + 1}
+\end{equation}
+<h2>Parameter values</h2>
+\begin{equation}
+L_{a}=0.0001501
+\end{equation}
+\begin{equation}
+C_{b}=2.813 \cdot 10^{-5}
+\end{equation}
+\begin{equation}
+L_{b}=7.503 \cdot 10^{-5}
+\end{equation}
+\begin{equation}
+C_{a}=0.0001266
+\end{equation}
+<table><caption>Table: Element data of expanded netlist 'LowPassLR'</caption>
+<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">C1</td><td class = "left">1 0 </td><td class = "left"></td><td class = "left">C</td>
+<td class="left">value</td><td class="left">$\frac{C_{a}}{R}$</td><td class="left">$2.11 \cdot 10^{-5}$</td></tr>
+<tr><td class="left">C2</td><td class = "left">out 0 </td><td class = "left"></td><td class = "left">C</td>
+<td class="left">value</td><td class="left">$\frac{C_{b}}{R}$</td><td class="left">$4.689 \cdot 10^{-6}$</td></tr>
+<tr><td class="left">L1</td><td class = "left">2 1 </td><td class = "left"></td><td class = "left">L</td>
+<td class="left">value</td><td class="left">$L_{a} R$</td><td class="left">$0.0009003$</td></tr>
+<tr><td class="left">L2</td><td class = "left">1 out </td><td class = "left"></td><td class = "left">L</td>
+<td class="left">value</td><td class="left">$L_{b} R$</td><td class="left">$0.0004502$</td></tr>
+<tr><td class="left">R1</td><td class = "left">out 0 </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R$</td><td class="left">$6.0$</td></tr>
+<tr><td class="left">V1</td><td class = "left">2 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$1$</td><td class="left">$1$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+</table>
+<table><caption>Table: Parameter definitions in 'LowPassLR'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$C_{a}$</td><td class="left">$0.0001266$</td><td class="left">$0.0001266$</td></tr>
+<tr><td class="left">$C_{b}$</td><td class="left">$2.813 \cdot 10^{-5}$</td><td class="left">$2.813 \cdot 10^{-5}$</td></tr>
+<tr><td class="left">$L_{a}$</td><td class="left">$0.0001501$</td><td class="left">$0.0001501$</td></tr>
+<tr><td class="left">$L_{b}$</td><td class="left">$7.503 \cdot 10^{-5}$</td><td class="left">$7.503 \cdot 10^{-5}$</td></tr>
+<tr><td class="left">$R$</td><td class="left">$6$</td><td class="left">$6.0$</td></tr>
+</table>
+<h2>Plots</h2>
+<figure><img src="img/LR4dBmag.svg" alt="dB magnitude of the LR4 filter transfer." style="width:600px">
+<figcaption>Figure: LR4dBmag.svg<br>dB magnitude of the LR4 filter transfer.</figcaption>
+</figure>
+<figure><img src="img/LR4phase.svg" alt="phase plot of the LR4 filter transfer." style="width:600px">
+<figcaption>Figure: LR4phase.svg<br>phase plot of the LR4 filter transfer.</figcaption>
+</figure>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="LowPassLR_index.html">LowPassLR_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 1.0 &copy 2009-2020 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="http://www.analog-electronics.eu">analog-electronics.eu</a></p>
+<p>Last project update: 2021-01-03 14:55:08</p>
+</div></body></html>

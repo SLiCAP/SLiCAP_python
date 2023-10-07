@@ -1,0 +1,153 @@
+body
+{
+font-family:Lucida Sans,Arial,Helvetica,sans-serif;
+font-size: 0.9em;
+background:url(Grid.png);
+color: #3d4043;
+min-width:250px;
+padding-left: 10px;
+}
+
+#top
+{
+background-color: #00458a;
+font-family:Lucida Sans,Arial,Helvetica,sans-serif;
+text-align:center;
+color: #f2f2f3;
+}
+
+#Mscript {
+font-family: "Lucida Console", monospace;
+background-color: whitesmoke;
+padding: 20px;
+border: 2px;
+border-style: solid;
+border-color: lightgray;
+line-height: 0.5;
+}
+
+#footnote
+{
+font-family:Lucida Sans,Arial,Helvetica,sans-serif;
+text-align:center;
+padding:15px;
+font-size: 0.85em;
+}
+
+h1
+{
+font-size: 2em;
+font-weight: normal;
+}
+
+h2
+{
+color: #00458a;
+font-size: 1.75em;
+text-align: left;
+font-weight: normal;
+}
+
+h3
+{
+color: #00458a;
+font-size: 1.5em;
+text-align: left;
+font-weight: normal;
+}
+
+table
+{
+margin-left: 20px;
+margin-right: auto;
+border-collapse: collaps;
+padding: 0px;
+}
+
+th {
+color: #00458a;
+text-align: right;
+padding: 5px;
+font-weight: normal;
+font-size: 1.2em;
+}
+
+td {
+font-family: "Lucida Console", monospace;
+text-align: right;
+padding-left: 10px;
+padding-right: 10px;
+padding-top: 0px;
+padding-bottom: 0px;
+}
+
+th.center, td.center {
+text-align: center;
+}
+
+th.left, td.left {
+text-align: left;
+}
+
+th.right, td.right {
+text-align: right;
+}
+
+td.units {
+text-align: left;
+padding-left:1em;
+}
+
+td.title {
+font-family:Lucida Sans,Arial,Helvetica,sans-serif;
+text-align: left;
+}
+
+td.equal {
+text-align:center;
+width: 1em;
+}
+
+figcaption {
+  font-style: italic;
+  color: #00458a;
+  padding: 10px;
+  text-align: center;
+}
+
+caption {
+  display: table-caption;
+  color: #00458a;
+  font-style: italic;
+  padding: 10px;
+  text-align: center;
+  caption-side: top;
+}
+
+img{
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+a:link {
+  color: #00458a;
+  text-decoration: none;
+}
+
+a:visited {
+  color: #0066cc;
+}
+
+a:hover {
+  color: red;
+}
+
+pre {
+  font-family: "Lucida Console", monospace;
+  margin-left: 20px;
+  padding-left: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background-color: whitesmoke;
+}

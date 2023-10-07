@@ -1,0 +1,6 @@
+mosEKVplots
+* SLiCAP netlist file
+.include SLiCAP.lib
+X1 d g s 0 CMOS18N_V W={W} L={L} VD={V_D} VG={V_G} VS={V_S}
+.param V_D=1.8 V_G=0.5 V_S=0 W=220n L=180n
+.end

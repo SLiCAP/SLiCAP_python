@@ -1,0 +1,42 @@
+<a id=""></a><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"DM Noise analysis"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>DM Noise analysis</h1></div>
+<h3>Matrix equation:</h3>
+\begin{equation}
+\left[\begin{matrix}- 0.5 I1N + 0.5 I1P - 0.5 I_{noise R1N} - 0.5 I_{noise R1P}\end{matrix}\right]=\left[\begin{matrix}\frac{0.5}{R_{a}}\end{matrix}\right]\cdot\left[\begin{matrix}V_{in D}\end{matrix}\right]
+\end{equation}
+<h2>Symbolic noise analysis results</h2>
+<h3>Detector-referred noise spectrum</h3>
+$$S_{out}=R_{a}^{2} S_{A} + R_{a}^{2} S_{B} + 8 R_{a} T k\, \mathrm{\left[\frac{V^2}{Hz}\right]}$$
+<h3>Source-referred noise spectrum</h3>
+$$S_{in}=0.25 S_{A} + 0.25 S_{B} + \frac{2 T k}{R_{a}}\, \mathrm{\left[\frac{A^2}{Hz}\right]}$$
+<h3>Contributions of individual noise sources</h3><table>
+<th colspan = "3" class="center">Noise source: I1N</th><tr><td class="title">Spectral density:</td><td>$S_{B}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$R_{a}^{2} S_{B}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$0.25 S_{B}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<th colspan = "3" class="center">Noise source: I1P</th><tr><td class="title">Spectral density:</td><td>$S_{A}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$R_{a}^{2} S_{A}$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$0.25 S_{A}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<th colspan = "3" class="center">Noise source: I_noise_R1N</th><tr><td class="title">Spectral density:</td><td>$\frac{4 T k}{R_{a}}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$4 R_{a} T k$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$\frac{T k}{R_{a}}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<th colspan = "3" class="center">Noise source: I_noise_R1P</th><tr><td class="title">Spectral density:</td><td>$\frac{4 T k}{R_{a}}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$4 R_{a} T k$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$\frac{T k}{R_{a}}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<th colspan = "3" class="center">Noise source: I_noise_R2</th><tr><td class="title">Spectral density:</td><td>$\frac{4 T k}{R_{c}}$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Detector-referred:</td><td>$0$</td><td class="units">$\,\mathrm{\left[\frac{V^2}{Hz}\right]}$</td></tr>
+<tr><td class="title">Source-referred:</td><td>$0$</td><td class="units">$\,\mathrm{\left[\frac{A^2}{Hz}\right]}$</td></tr>
+</table>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="Tcircuit1_index.html">Tcircuit1_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 1.5.0 &copy 2009-2023 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2023-06-30 11:33:21</p>
+</div></body></html>
