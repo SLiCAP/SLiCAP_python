@@ -1,0 +1,22 @@
+name: Trigger SLiCAP Build and Host Site
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Trigger SLiCAP Build
+        run: |
+          curl -X POST https://api.github.com/repos/SLiCAP/SLiCAP.github.io/dispatches \
+          -H 'Accept: application/vnd.github.everest-preview+json' \
+          -u ${{ secrets.WEBSITE_KEY }} \
+          --data '{"event_type": "Trigger_Workflow", "client_payload": { "repository": "'"$GITHUB_REPOSITORY"'" }}'
+      - uses: actions/checkout@v3
