@@ -18,5 +18,5 @@ jobs:
           curl -X POST https://api.github.com/repos/SLiCAP/SLiCAP.github.io/dispatches \
           -H 'Accept: application/vnd.github.everest-preview+json' \
           -u ${{ secrets.WEBSITE_KEY }} \
-          --data '{"event_type": "Trigger_Workflow", "client_payload": { "repository": "'"$GITHUB_REPOSITORY"'" }}'
+          --data '{"event_type": "Trigger_Workflow"}'
       - uses: actions/checkout@v3
