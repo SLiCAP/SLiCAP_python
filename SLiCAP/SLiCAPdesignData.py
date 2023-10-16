@@ -7,8 +7,9 @@ Created on Fri Nov 18 13:24:17 2022
 """
 
 import sympy as sp
-from SLiCAP.SLiCAPmath import checkExpression, roundN
+from SLiCAP.SLiCAPmath import checkExpression
 from SLiCAP.SLiCAPini import ini
+from SLiCAP.SLiCAPmath import roundN
 from SLiCAP.SLiCAPhtml import insertHTML
 
 

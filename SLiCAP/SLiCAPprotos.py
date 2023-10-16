@@ -689,14 +689,14 @@ def initAll():
     newModel.name           = 'R'
     newModel.stamp          = True
     newModel.depVars        = []
-    newModel.params         = {'value': False, 'dcvar': False, 'noisetemp': False, 'noiseflow' :False}
+    newModel.params         = {'value': False, 'dcvar': False, 'noisetemp': False, 'noiseflow' :False, 'dcvarlot': False}
     MODELS[newModel.name]   = newModel
     # Resistor (resistance can be zero)
     newModel                = model()
     newModel.name           = 'r'
     newModel.stamp          = True
     newModel.depVars        = ['I']
-    newModel.params         = {'value': False, 'dcvar': False, 'noisetemp': False, 'noiseflow' :False}
+    newModel.params         = {'value': False, 'dcvar': False, 'noisetemp': False, 'noiseflow' :False, 'dcvarlot': False}
     MODELS[newModel.name]   = newModel
     # Ideal transformer
     newModel                = model()

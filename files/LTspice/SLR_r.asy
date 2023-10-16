@@ -13,12 +13,12 @@ WINDOW 123 16 40 Left 2
 WINDOW 39 16 55 Left 2
 WINDOW 40 16 71 Left 2
 SYMATTR Value value=?
+SYMATTR Value2 noisetemp=0
+SYMATTR SpiceLine noiseflow=0
+SYMATTR SpiceLine2 dcvar=0 dcvarlot=0
 SYMATTR Prefix R
 SYMATTR Description Resistor
 SYMATTR SpiceModel r
-SYMATTR Value2 noisetemp=0
-SYMATTR SpiceLine noiseflow=0
-SYMATTR SpiceLine2 dcvar=0
 PIN 0 0 NONE 0
 PINATTR PinName A
 PINATTR SpiceOrder 1

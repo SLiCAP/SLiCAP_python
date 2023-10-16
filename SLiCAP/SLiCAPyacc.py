@@ -264,7 +264,7 @@ def parseElement(line, circuitDict = CIRCUITS):
             nFields += 1
         if len(line) < nFields:
             printError("Error: incomplete element specification.", line[-1])
-            errrors += 1
+            errors += 1
         else:
             for i in range(nNodes):
                 pos = 1 + i
@@ -818,6 +818,7 @@ def updateElementParams(newElement, parentParams, prototypeParams, parentRefDes)
     'noise'
     'dc'
     'dcvar'
+    'dcvarlot'
     'noisetemp'
     'noiseflow'
 

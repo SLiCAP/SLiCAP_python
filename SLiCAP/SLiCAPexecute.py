@@ -475,15 +475,13 @@ def doDCvar(instr, result):
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
     """
-    delDCvarSources(instr)
     if instr.step:
         print("Warning: parameter stepping not (yet) tested for 'dcvar' analysis!")
         if ini.stepFunction:
-            instr.dataType = 'dcsolve'
-            result.dataType = 'dcsolve'
             result = makeAllMatrices(instr, result)
             result = doDCsolve(instr, result)
             addDCvarSources(instr, result.dcSolve[0])
+            result = makeAllMatrices(instr, result)
             varResult = doPyDCvar(instr, result)
             result.ovar = stepFunctions(instr.stepDict, varResult.ovar[0])
             result.ivar = stepFunctions(instr.stepDict, varResult.ivar[0])
@@ -498,20 +496,18 @@ def doDCvar(instr, result):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]]=instr.stepDict[stepVars[j]][i]
                 delDCvarSources(instr)
-                instr.dataType = 'dcsolve'
-                result.dataType = 'dcsolve'
-                result = makeAllMatrices(instr, result)
                 result = doDCsolve(instr, result)
                 addDCvarSources(instr, result.dcSolve[-1])
                 result = doPyDCvar(instr, result)
                 delDCvarSources(instr)
     else:
-        instr.dataType = 'dcsolve'
-        result.dataType = 'dcsolve'
+        result = makeAllMatrices(instr, result)
         result = makeAllMatrices(instr, result)
         result = doDCsolve(instr, result)
         addDCvarSources(instr, result.dcSolve)
+
         result = doPyDCvar(instr, result)
+
         result.ovar = result.ovar[0]
         result.ivar = result.ivar[0]
         for key in list(result.ovarTerms.keys()):
@@ -525,6 +521,7 @@ def doDCvar(instr, result):
                     del(result.ivarTerms[key])
         delDCvarSources(instr)
     result = correctDMcurrentResult(instr, result)
+    delDCvarSources(instr)
     return result
 
 def correctDMcurrentResult(instr, result):
@@ -595,39 +592,74 @@ def addDCvarSources(instr, dcSolution):
     :return: updated instruction object
     :rtype: :class`SLiCAPinstruction.instruction`
     """
-    for el in list(instr.circuit.elements.keys()):
-        if 'dcvar' in list(instr.circuit.elements[el].params.keys()):
-            DCcurrent = 0
+    newElements = {}
+    for el in instr.circuit.elements.keys():
+        if instr.circuit.elements[el].model.upper() == 'R' and instr.circuit.elements[el].params['value'] != 0:
+            lotparnames = []
             refDes = instr.circuit.elements[el].refDes
-            if instr.circuit.elements[el].model == 'r':
-                pos = instr.depVars().index('I_' + refDes)
-                DCcurrent = dcSolution[pos]
-            elif instr.circuit.elements[el].model == 'R':
-                nodeP, nodeN = instr.circuit.elements[el].nodes
-                if nodeP != '0':
-                    posP = instr.depVars().index('V_' + nodeP)
-                    Vpos = dcSolution[posP]
-                else:
-                    Vpos = 0
-                if nodeN != '0':
-                    posN = instr.depVars().index('V_' + nodeN)
-                    Vneg = dcSolution[posN]
-                else:
-                    Vneg = 0
-                DCcurrent = (Vpos - Vneg)/instr.circuit.elements[el].params['value']                
-            if DCcurrent != 0:
-                errorCurrentVariance = instr.circuit.elements[refDes].params['dcvar']/instr.circuit.elements[refDes].params['value']**2 * DCcurrent**2
-                newCurrentSource = element()
-                newCurrentSource.refDes          = 'I_dcvar_' + refDes
-                newCurrentSource.params['dcvar'] = errorCurrentVariance
-                newCurrentSource.params['noise'] = 0
-                newCurrentSource.params['dc']    = 0
-                newCurrentSource.params['value'] = 0
-                newCurrentSource.model           = 'I'
-                newCurrentSource.type            = 'I'
-                newCurrentSource.nodes           = instr.circuit.elements[refDes].nodes
-                instr.circuit.elements[newCurrentSource.refDes] = newCurrentSource
-                instr.circuit.indepVars.append(newCurrentSource.refDes)
+            if 'dcvar' in instr.circuit.elements[el].params.keys():
+                DCcurrent = 0
+                if instr.circuit.elements[el].model == 'r':
+                    pos = instr.depVars().index('I_' + refDes)
+                    DCcurrent = dcSolution[pos]
+                elif instr.circuit.elements[el].model == 'R':
+                    nodeP, nodeN = instr.circuit.elements[el].nodes
+                    if nodeP != '0':
+                        posP = instr.depVars().index('V_' + nodeP)
+                        Vpos = dcSolution[posP]
+                    else:
+                        Vpos = 0
+                    if nodeN != '0':
+                        posN = instr.depVars().index('V_' + nodeN)
+                        Vneg = dcSolution[posN]
+                    else:
+                        Vneg = 0
+                    DCcurrent = sp.simplify((Vpos - Vneg)/instr.circuit.elements[el].params['value'])
+                if DCcurrent != 0:
+                    errorCurrentVariance = instr.circuit.elements[el].params['dcvar']/instr.circuit.elements[el].params['value']**2 * DCcurrent**2
+                    newCurrentSource = element()
+                    newCurrentSource.refDes          = 'I_dcvar_' + refDes
+                    newCurrentSource.params['dcvar'] = errorCurrentVariance
+                    newCurrentSource.params['noise'] = 0
+                    newCurrentSource.params['dc']    = 0
+                    newCurrentSource.params['value'] = 0
+                    newCurrentSource.model           = 'I'
+                    newCurrentSource.type            = 'I'
+                    newCurrentSource.nodes           = instr.circuit.elements[refDes].nodes
+                    newElements[newCurrentSource.refDes] = newCurrentSource
+                    instr.circuit.indepVars.append(newCurrentSource.refDes)
+                    if 'dcvarlot' in list(instr.circuit.elements[el].params.keys()):
+                        lotparname = instr.circuit.elements[el].params['dcvarlot']
+                        if lotparname:
+                            if lotparname in instr.circuit.parDefs.keys():
+                                if lotparname not in lotparnames:
+                                    lotparnames.append(lotparname)
+                                    newVoltageSource = element()
+                                    newVoltageSource.refDes          = 'V_dcvar_' + str(lotparname)
+                                    newVoltageSource.params['dcvar'] = instr.circuit.parDefs[lotparname]
+                                    newVoltageSource.params['noise'] = 0
+                                    newVoltageSource.params['dc']    = 0
+                                    newVoltageSource.params['value'] = 0
+                                    newVoltageSource.model           = 'V'
+                                    newVoltageSource.type            = 'V'
+                                    newVoltageSource.nodes           = [str(lotparname), '0']
+                                    newElements[newVoltageSource.refDes] = newVoltageSource
+                                    instr.circuit.indepVars.append(newVoltageSource.refDes)
+                                newVCCS = element()
+                                newVCCS.model = 'g'
+                                newVCCS.type  = 'G'
+                                newVCCS.refDes = 'G_dcvar_' + refDes
+                                newVCCS.nodes = instr.circuit.elements[el].nodes + newVoltageSource.nodes
+                                newVCCS.params['value'] = DCcurrent
+                                newElements[newVCCS.refDes] = newVCCS
+                            else:
+                                print("Error: unknown lot parameter:", str(lotparname))
+    for el in newElements.keys():
+        if el not in instr.circuit.elements.keys():
+            instr.circuit.elements[el] = newElements[el]
+        else:
+            print("Error: name already used:", el)
+    instr.circuit = updateCirData(instr.circuit)
     return instr
 
 def delDCvarSources(instr):
@@ -642,15 +674,15 @@ def delDCvarSources(instr):
     :rtype: :class`SLiCAPinstruction.instruction`
     """
     names = []
-    for i in range(len(instr.circuit.indepVars)):
-        refDes = instr.circuit.indepVars[i]
+    prefixes = ['I_dcvar_', 'G_dcvar_', 'V_dcvar_']
+    for refDes in instr.circuit.elements.keys():
         if len(refDes) > 8:
             prefix = refDes[0:8]
-            if prefix == 'I_dcvar_':
-                del instr.circuit.elements[refDes]
+            if prefix in prefixes:
                 names.append(refDes)
     for name in names:
-        instr.circuit.indepVars.remove(name)
+        del instr.circuit.elements[name]
+    instr.circuit = updateCirData(instr.circuit)
     return instr
 
 def addResNoiseSources(instr):
@@ -1525,8 +1557,8 @@ def doPyLoopGainServo(instr, result):
     if instr.gainType == 'loopgain':
         result.laplace.append(LG)
     elif instr.gainType == 'servo':
-        den = sp.expand(num - den)
         num = - num
+        den = sp.expand(den - num)
         SV = num/den
         result.laplace.append(SV)
     #num, den = result.laplace[-1].as_numer_denom()

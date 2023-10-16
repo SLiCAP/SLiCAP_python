@@ -20,7 +20,7 @@ description=Resistor
 T 525 800 8 8 1 1 0 0 1
 refdes=R?
 T 150 1350 8 8 0 0 0 0 1
-spice-prototype=? %pinseq R value=value@ noisetemp=noisetemp@ noiseflow=noiseflow@ dcvar=dcvar@
+spice-prototype=? %pinseq R value=value@ noisetemp=noisetemp@ noiseflow=noiseflow@ dcvar=dcvar@ dcvarlot=dcvarlot@
 B 225 300 150 400 3 10 0 0 -1 -1 0 -1 -1 -1 -1 -1
 L 300 800 300 700 3 10 0 0 -1 -1
 L 300 300 300 200 3 10 0 0 -1 -1
@@ -30,7 +30,9 @@ T 525 675 8 8 1 0 0 0 1
 value=?
 T 525 525 8 8 1 0 0 0 1
 dcvar=0
-T 525 375 8 8 1 0 0 0 1
-noisetemp=0
 T 525 225 8 8 1 0 0 0 1
+noisetemp=0
+T 525 75 8 8 1 0 0 0 1
 noiseflow=0
+T 525 375 8 8 1 0 0 0 1
+dcvarlot=0
