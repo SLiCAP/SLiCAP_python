@@ -8,7 +8,7 @@ from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPmatrices import makeMatrices,makeSrcVector
 
 from SLiCAP.SLiCAPfc import UVsolve,nth2firstOrder,laplace2coeffs
-from SLiCAP.SLiCAPStateSpace import backsubstitute, Block2StateSpace, backsubstituteND, findA4
+from SLiCAP.SLiCAPstatespace import backsubstitute, Block2StateSpace, backsubstituteND, findA4
 
 dim = 5
 U = sp.Matrix(sp.MatrixSymbol('a', dim, dim)).upper_triangular()
