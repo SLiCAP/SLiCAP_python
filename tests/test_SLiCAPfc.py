@@ -7,7 +7,7 @@ import sympy as sp
 from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPmatrices import makeMatrices,makeSrcVector
 
-from SLiCAPfclink import backsubstitute,UVsolve,nth2firstOrder,findA4,laplace2coeffs
+from SLiCAP.SLiCAPfc import backsubstitute,UVsolve,nth2firstOrder,findA4,laplace2coeffs
 
 
 

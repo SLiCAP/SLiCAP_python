@@ -34,8 +34,6 @@ def backsubstitute(U,b):
         print("in backsubstitute(U,b), U is not upper triangluar. But will continue computation.")
     row = U.shape[0]
     x=sp.Matrix(b.copy())
-    if x.shape[0] is not row:
-        print("has ",x.shape[0], " rows and U has ", row," rows")
     for i in range(row-1,0,-1):
         x[i]= sp.cancel(x[i]/U[i,i])
         # the type was removed when I used matrix splicing here:
