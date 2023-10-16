@@ -30,3 +30,4 @@ SLiCAP comprises the following (sub) modules:
    SLiCAPrst
    SLiCAPsetting
    SLiCAPyacc
+   SLiCAPfc

@@ -639,6 +639,24 @@ defaults to CIRCUITS.</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPyacc.sortDepVars">
+<span class="sig-name descname"><span class="pre">sortDepVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mainCircuit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPyacc.sortDepVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort the dependent variables. This controls the construction of the matrix
+such that the number of zero entries per column decreases from left to right.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mainCircuit</strong> (<em>SLiCAP.protos.circuit</em>) – Main (fully expanded) circuit object.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>mainCircuit: Main circuit with updated attributes <em>depVars</em> and <em>varIndex</em>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit" title="SLiCAP.SLiCAPprotos.circuit">SLiCAPprotos.circuit</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPyacc.updateCirData">
 <span class="sig-name descname"><span class="pre">updateCirData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuitObject</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPyacc.updateCirData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates data of the main expanded circuit required for instructions.</p>
@@ -675,6 +693,7 @@ in it</p></li>
 ‘noise’
 ‘dc’
 ‘dcvar’
+‘dcvarlot’
 ‘noisetemp’
 ‘noiseflow’</p>
 <p>The values of these parameters are symbolic expressions. The atoms of these
