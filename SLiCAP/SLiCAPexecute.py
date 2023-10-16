@@ -479,7 +479,11 @@ def doDCvar(instr, result):
         print("Warning: parameter stepping not (yet) tested for 'dcvar' analysis!")
         if ini.stepFunction:
             result = makeAllMatrices(instr, result)
+            instr.dataType = 'dcsolve'
+            result.dataType = 'dcsolve'
             result = doDCsolve(instr, result)
+            instr.dataType = 'dcvar'
+            result.dataType = 'dcvar'
             addDCvarSources(instr, result.dcSolve[0])
             result = makeAllMatrices(instr, result)
             varResult = doPyDCvar(instr, result)
@@ -496,18 +500,24 @@ def doDCvar(instr, result):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]]=instr.stepDict[stepVars[j]][i]
                 delDCvarSources(instr)
+                instr.dataType = 'dcsolve'
+                result.dataType = 'dcsolve'
                 result = doDCsolve(instr, result)
                 addDCvarSources(instr, result.dcSolve[-1])
+                instr.dataType = 'dcvar'
+                result.dataType = 'dcvar'
                 result = doPyDCvar(instr, result)
                 delDCvarSources(instr)
     else:
         result = makeAllMatrices(instr, result)
         result = makeAllMatrices(instr, result)
+        instr.dataType = 'dcsolve'
+        result.dataType = 'dcsolve'
         result = doDCsolve(instr, result)
         addDCvarSources(instr, result.dcSolve)
-
+        instr.dataType = 'dcvar'
+        result.dataType = 'dcvar'
         result = doPyDCvar(instr, result)
-
         result.ovar = result.ovar[0]
         result.ivar = result.ivar[0]
         for key in list(result.ovarTerms.keys()):
