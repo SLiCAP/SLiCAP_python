@@ -74,5 +74,3 @@ These tests include:
 
 ### Bugs
 In case bugs are found, please report them to the 'Issues' page where we can resolve the issues and keep track of any possible bugs.
-
-[![Build Status](https://travis-ci.org/Lenty/SLiCAP_python.svg?branch=master)](https://travis-ci.org/Lenty/SLiCAP_python)
