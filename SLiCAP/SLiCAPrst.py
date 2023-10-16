@@ -10,9 +10,6 @@ from SLiCAP.SLiCAPini import ini
 import sympy as sp
 from shutil import copyfile
 
-""" test
-"""
-
 # Public functions for generating snippets that can be stored as RST files
 # to be included by other RST files.
 
