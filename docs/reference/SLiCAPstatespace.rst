@@ -1,5 +1,5 @@
 ===========
-SLiCAPfc.py
+SLiCAPstatespace.py
 ===========
 
 .. automodule:: SLiCAP.SLiCAPstatespace
