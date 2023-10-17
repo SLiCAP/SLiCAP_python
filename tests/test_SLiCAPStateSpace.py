@@ -5,9 +5,9 @@ This is to be used to find the frequency constant matrix (which is the inverse o
 """
 import sympy as sp
 from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPmatrices import makeMatrices,makeSrcVector
+from SLiCAP.SLiCAPmatrices import makeMatrices, makeSrcVector
 
-from SLiCAP.SLiCAPfc import UVsolve,nth2firstOrder,laplace2coeffs
+from SLiCAP.SLiCAPfc import UVsolve, nth2firstOrder, laplace2coeffs
 from SLiCAP.SLiCAPstatespace import backsubstitute, Block2StateSpace, backsubstituteND, findA4
 
 dim = 5
@@ -59,4 +59,4 @@ ysolxsols=V*sp.Matrix(sp.BlockMatrix([[ysol],[xsols]]))
 print("V*y-(C*ysol+D*Iv): ",sp.cancel(xsol-ysolxsols))
 testres=Iv-(G*xsol+sL*C*xsol)
 print("result: ",sp.cancel(testres))
-    
+

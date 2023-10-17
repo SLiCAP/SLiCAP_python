@@ -1,7 +1,7 @@
 * Z:\mnt\DATA\SLiCAP\SLiCAP_github\SLiCAP_python\tests\Ktest\cir\k.asc
 V1 1 0 V value=0 dc=0 dcvar=0 noise=0
-L1 1 0 {L_a}
-L2 2 0 {L_b}
+L1 1 0 L value={L_a} iinit=0
+L2 2 0 L value={L_b} iinit=0
 K1 L1 L2 {k}
 .backanno
 .end

@@ -32,4 +32,4 @@ IMGPATH     = 'img/'    # path for image files
 PROJECT    = 'kTest'
 AUTHOR     = 'anton'
 CREATED    = '2021-05-09 20:14:06.387177'
-LASTUPDATE = '2021-05-09 20:14:06.387177'
+LASTUPDATE = '2023-10-17 21:47:26.793556'

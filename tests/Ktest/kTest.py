@@ -22,3 +22,8 @@ i1.setGainType('vi')
 i1.setDataType('matrix')
 result = i1.execute()
 matrices2html(result)
+
+if result.M == sp.sympify("Matrix([[0, 0, 0, 1, 0], [0, -L_a*s, -k*s*sqrt(L_a*L_b), 1, 0], [0, -k*s*sqrt(L_a*L_b), -L_b*s, 0, 1], [1, 1, 0, 0, 0], [0, 0, 1, 0, 0]])"):
+    print("\nMatrix stamp K ok!")
+else:
+    print("\nError in matrix stamp K!")

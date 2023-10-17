@@ -9,6 +9,8 @@ Test file for networks with a 1x1 matrix
 """
 
 from SLiCAP import *
+from SLiCAP.SLiCAPmath import det
+
 fileName = 'smallMatrix'
 prj = initProject(fileName)
 makeNetlist(fileName + '.asc', 'Small Matrix')
@@ -26,25 +28,42 @@ i1.setSimType('symbolic')
 i1.setGainType('vi')
 i1.setDetector('V_1')
 i1.setDataType('matrix')
-matrices2html(i1.execute())
+result = i1.execute()
+matrices2html(result)
+M = result.M
+if M == sp.sympify("Matrix([[C*s + 1/R]])"):
+    print("\nMatrix equation is correct!")
+else:
+    print("\nError in matrix equation")
 
-head2html("Time-domain response using Cramer's rule")
-i1.setSimType('numeric')
+if det(M) == sp.sympify("C*s + 1/R"):
+    print("\nDeterminant 1x1 matrix is correct!")
+else:
+    print("\nError in determinant 1x1 matrix!")
+
+head2html("Time-domain response")
+i1.setSimType('symbolic')
 i1.setDataType('time')
 i1.setSource('I1')
 result = i1.execute()
 V = result.time
-eqn2html('V_1(t)', V)
-figTime = plotSweep('V_time', 'Output voltage', result, 0, 10, 500, sweepScale = 'm', show = True)
-fig2html(figTime, 600)
-head2html('Gain using cofactors')
+if V == sp.sympify("2*pi*f*exp(-t/(C*R))/(C*(-2*pi*sqrt(-f**2) - 1/(C*R))*(2*pi*sqrt(-f**2) - 1/(C*R))) + f*exp(2*pi*t*sqrt(-f**2))/(2*C*sqrt(-f**2)*(2*pi*sqrt(-f**2) + 1/(C*R))) - f*exp(-2*pi*t*sqrt(-f**2))/(2*C*sqrt(-f**2)*(-2*pi*sqrt(-f**2) + 1/(C*R)))"):
+    print("\nTime domain response is correct!")
+else:
+    print("\nError in time-domain response!")
+
+head2html("Gain laplace")
 i1.setGainType('gain')
 i1.setDataType('laplace')
 result = i1.execute()
 G = result.laplace
-eqn2html('V_1/I_I1', G)
-print(G)
-i1.setDataType('pz')
+if G == sp.sympify("R/(C*R*s + 1)"):
+    print("\nGain is correct!")
+else:
+    print("\nError in gain!")
+
+head2html("Gain poles")
+
+i1.setDataType('poles')
 result = i1.execute()
 pz2html(result)
-listPZ(result)
