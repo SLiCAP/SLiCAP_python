@@ -12,4 +12,7 @@ SLiCAP is licensed under a `Creative Commons Attribution-NonCommercial-NoDerivat
 
 .. admonition:: Notes
 
-   This page presents some thoughts for future developments.
+   #. Automated Tests:
+      
+      #. For individual functions
+      #. For full tests

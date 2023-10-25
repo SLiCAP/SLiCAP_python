@@ -13,7 +13,7 @@ from SLiCAP.SLiCAPmath import det
 
 fileName = 'smallMatrix'
 prj = initProject(fileName)
-makeNetlist(fileName + '.asc', 'Small Matrix')
+#makeNetlist(fileName + '.asc', 'Small Matrix')
 i1 = instruction()
 i1.setCircuit(fileName + '.cir')
 htmlPage('Circuit data')

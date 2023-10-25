@@ -32,4 +32,4 @@ IMGPATH     = 'img/'    # path for image files
 PROJECT    = 'smallMatrix'
 AUTHOR     = 'anton'
 CREATED    = '2021-05-11 09:00:02.706468'
-LASTUPDATE = '2023-10-17 21:47:10.149088'
+LASTUPDATE = '2023-10-22 22:49:29.654666'

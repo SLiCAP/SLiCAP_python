@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-This is to be used to find the frequency constant matrix (which is the inverse of the time constant matrix)
+This is to be used to test the frequency constant matrix (which is the inverse of the time constant matrix)
 """
 import sympy as sp
 from SLiCAP.SLiCAPini import ini
