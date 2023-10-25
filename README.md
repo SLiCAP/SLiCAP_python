@@ -48,7 +48,7 @@ The dependencies are listed in the 'requirements.txt' file.
 1. Download or clone the SLiCAP archive from github
 2. Extract it in some directory
 3. Open a terminal or an Anaconda terminal if you run python from Anaconda in the directory with setup.py
-4. Enter: 'python setup.py install --user
+4. Enter: 'python setup.py install --user'
 
 ## Project file locations
 **Do not place project files in the directory where SLiCAP installs the libraries, the examples, and the documentation.**

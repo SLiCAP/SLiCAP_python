@@ -1,7 +1,7 @@
 "Small Matrix"
-* Z:\mnt\DATA\SLiCAP\SLiCAP_github\SLiCAP_python\tests\SmallMatrix\cir\smallMatrix.asc
+* Z:\home\charles\Programming\SLICAP\SLiCAPv2\SLiCAP_python_simple\tests\SmallMatrix\cir\smallMatrix.asc
 I1 0 1 I value={2*pi*f/(s^2+(2*pi*f)^2)} dc=0 dcvar=0 noise=0
-R1 1 0 R value={R} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R1 1 0 R value={R} noisetemp=0 noiseflow=0 dcvar=0
 C1 1 0 C value={C} vinit=0
 .param R=1k C=1.6u f=1k
 .backanno

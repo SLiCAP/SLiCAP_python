@@ -1,0 +1,11 @@
+*
+!.gitignore
+!*.py
+SLiCAPconfig.py
+!cir
+!cir/*.sch
+!img
+!img/*.pdf
+!txt
+!txt/*.html
+!html
