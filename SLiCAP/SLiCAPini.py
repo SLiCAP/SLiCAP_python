@@ -61,7 +61,7 @@ def _check_version():
     """
     latest = _get_latest_version()
     if VERSION!=latest:
-        print("A new version of SLiCAP is available, please get it from 'https://github.com/Lenty/SLiCAP_python'.")
+        print("A new version of SLiCAP is available, please get it from 'https://github.com/SLiCAP/SLiCAP_python.git'.")
     else:
         print("SLiCAP Version matches with the latest release of SLiCAP on github.")
 
@@ -75,7 +75,7 @@ def _get_latest_version():
     String Version.
     """
     try:
-        response = requests.get("https://api.github.com/repos/Lenty/SLiCAP_python/releases/latest")
+        response = requests.get("https://api.github.com/repos/SLiCAP/SLiCAP_python/releases/latest")
         return response.json()["tag_name"]
     except BaseException:
         exc_type, value, exc_traceback = sys.exc_info()

@@ -29,7 +29,7 @@ from SLiCAP.SLiCAPplots import trace, axis, figure, plotSweep, plotPZ, plot, tra
 from SLiCAP.SLiCAPlatex import *
 from SLiCAP.SLiCAPrst import *
 from SLiCAP.SLiCAPfc import computeFC
-from SLiCAP.SliCAPstatespace import getStateSpace
+from SLiCAP.SLiCAPstatespace import getStateSpace
 
 try:
     __IPYTHON__
