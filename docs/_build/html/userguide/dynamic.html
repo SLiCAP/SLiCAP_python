@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Design of dynamic behavior &mdash; SLiCAP 2.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/myStyle.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Noise" href="noise.html" />
+    <link rel="prev" title="Work with the results" href="postproc.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SLiCAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPuserguide.html">SLiCAP user guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="install.html">Download, install and configure SLiCAP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project.html">Initialize a SLiCAP project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="schematics.html">Schematic capture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="circuit.html">Define a circuit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="instruction.html">Define an instruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html">Work with parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameterStepping.html">Parameter stepping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="execute.html">Execute an instruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="postproc.html">Work with the results</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Design of dynamic behavior</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#obtain-the-coefficients-of-a-laplace-rational">Obtain the coefficients of a Laplace rational</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#determine-circuit-parameters-from-a-prototype-transfer">Determine circuit parameters from a prototype transfer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#estimate-the-bandwith-and-system-order-of-a-negative-feedback-circuit">Estimate the bandwith and system order of a negative-feedback circuit</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dcvar.html">DC variance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pz.html">Pole-zero analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plots.html">Create plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="balanced.html">Balanced circuits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="htmlreports.html">Generate HTML reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sphinxreports.html">Generate HTML with sphinx</a></li>
+<li class="toctree-l2"><a class="reference internal" href="latexreports.html">Generate LaTeX reports</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/SLiCAPreference.html">SLiCAP reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="SLiCAPuserguide.html">SLiCAP user guide</a> &raquo;</li>
+        
+      <li>Design of dynamic behavior</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/userguide/dynamic.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="design-of-dynamic-behavior">
+<h1>Design of dynamic behavior<a class="headerlink" href="#design-of-dynamic-behavior" title="Permalink to this heading">¶</a></h1>
+<p>SLiCAP has a number of built-in scripts to support circuit designers with the analysis and design of the dynamic behavior of electronic circuits. Brief descriptions of the implemented functions have been listed below.</p>
+<div class="section" id="obtain-the-coefficients-of-a-laplace-rational">
+<h2>Obtain the coefficients of a Laplace rational<a class="headerlink" href="#obtain-the-coefficients-of-a-laplace-rational" title="Permalink to this heading">¶</a></h2>
+<p>The function <a class="reference external" href="../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.SLiCAPmath.coeffsTransfer">coefsTransfer()</a> returns a tuple with:</p>
+<ul class="simple">
+<li><p>The gain</p></li>
+<li><p>A list of coefficients of the Laplace variable of the numerator in ascending order</p></li>
+<li><p>A list of coefficients of the Laplace variable of the denominator in ascending order</p></li>
+</ul>
+<p>All coefficients have been normalized to obtain unity for the coefficient of the lowest order of the denominator. The gain is then defined as the ratio of the coefficients of the lowest order of the numerator and the denominator. Both lists carry the coefficients in ascending order.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">SLiCAP</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rational_expr</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="s1">&#39;(b_0 + b_2*s^2)/(a_0 + a_1*s + a_2*s^2 + a_4*s^4)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">gain</span><span class="p">,</span> <span class="n">coeffs_numer</span><span class="p">,</span> <span class="n">coeffs_denom</span><span class="p">)</span> <span class="o">=</span> <span class="n">coeffsTransfer</span><span class="p">(</span><span class="n">rational_expr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">gain</span><span class="p">)</span>
+<span class="go">b_0/a_0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">coeffs_numer</span><span class="p">)</span>
+<span class="go">[1, 0, b_2/b_0]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">coeffs_denom</span><span class="p">)</span>
+<span class="go">[1, a_1/a_0, a_2/a_0, 0, a_4/a_0]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="determine-circuit-parameters-from-a-prototype-transfer">
+<h2>Determine circuit parameters from a prototype transfer<a class="headerlink" href="#determine-circuit-parameters-from-a-prototype-transfer" title="Permalink to this heading">¶</a></h2>
+<p>The function <a class="reference external" href="../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.SLiCAPmath.equateCoeffs">equateCoeffs()</a> can be used to find values of circuit elements such that the dynamic transfer of that circuit equals that of a prototype. This function is is particularly useful for the design of passive and active filters.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">SLiCAP</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">proto_transfer</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="s1">&#39;0.3*(1/(1+s*0.6))&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># This could be a Laplace expression generated by SLiCAP:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">circuit_transfer</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="s1">&#39;R_1/(R_1 + R_2)/(1 + s*R_1*R_2/(R_1 + R_2)*10e-6)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">circuit_component_values</span> <span class="o">=</span> <span class="n">equateCoeffs</span><span class="p">(</span><span class="n">proto_transfer</span><span class="p">,</span> <span class="n">circuit_transfer</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">circuit_component_values</span><span class="p">)</span>
+<span class="go">{R_2: 200000.000000000, R_1: 85714.2857142857}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">proto_transfer</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="s1">&#39;A/(1+s*tau)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">circuit_component_values</span> <span class="o">=</span> <span class="n">equateCoeffs</span><span class="p">(</span><span class="n">proto_transfer</span><span class="p">,</span> <span class="n">circuit_transfer</span><span class="p">,</span> <span class="n">noSolve</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="s1">&#39;tau&#39;</span><span class="p">],</span> <span class="n">numeric</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">circuit_component_values</span>
+<span class="go">{R_2: 100000.0*tau/A, R_1: -100000.0*tau/(A - 1.0)}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="estimate-the-bandwith-and-system-order-of-a-negative-feedback-circuit">
+<h2>Estimate the bandwith and system order of a negative-feedback circuit<a class="headerlink" href="#estimate-the-bandwith-and-system-order-of-a-negative-feedback-circuit" title="Permalink to this heading">¶</a></h2>
+<p>The function <a class="reference external" href="../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.SLiCAPmath.findServoBandwidth">findServoBandwidth()</a> facilitates the design of the small-signal bandwidth of negative feedback amplifiers.</p>
+<p>With the loop gain reference variable properly selected, the dynamic behavior of a negative feedback amplifier is the product its ideal gain and the servo function. The servo function is determined by the loop gain. If the loop gain reaches infinity, the servo fuction approaches unity. The bandwidth of the servo functions is a measure for the frequency range over which the gain of a negative feedback system approaches its ideal gain.</p>
+<p>The function <a class="reference external" href="../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.SLiCAPmath.findServoBandwidth">findServoBandwidth()</a> determines the unity gain frequencies of the asymptotes of the magnitude characteristic of the loop gain. It assumes a single passband, low-pass, band-pass or high-pass behavior of the servo function. This means that there are maximally two unity gain frequencies of the loop gain. The function returns:</p>
+<ul class="simple">
+<li><p>The frequencies of intersection of the asymptoties of the magnitude characteristic of the loop gain and unity</p></li>
+<li><p>The order (slope) at these frequencies</p></li>
+<li><p>The maximum asymptotic value of the magnitude of the loop gain and its first frequency of occurence.</p></li>
+</ul>
+<p>The function argument can be obtained from the execution of an instruction with the data type set to <em>laplace</em> and its gain type set to <em>loopgain</em>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">SLiCAP</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loopgain_numer</span>   <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="s1">&#39;-s*(1 + s/20)*(1 + s/40)/2&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loopgain_denom</span>   <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="s1">&#39;(s + 1)^2*(1 + s/4e3)*(1 + s/50e3)*(1 + s/1e6)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loopgain</span>         <span class="o">=</span> <span class="n">loopgain_numer</span><span class="o">/</span><span class="n">loopgain_denom</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">servo_info</span>       <span class="o">=</span> <span class="n">findServoBandwidth</span><span class="p">(</span><span class="n">loopgain</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">servo_info</span><span class="p">)</span>
+<span class="go">{&#39;mbf&#39;: 636.61977236758094, &#39;lpo&#39;: -1.0, &#39;hpo&#39;: 1.0, &#39;lpf&#39;: 19894.367886486925, &#39;mbv&#39;: 2.5000000000000009, &#39;hpf&#39;: 254.64790894703231}</span>
+</pre></div>
+</div>
+<p>Hence, the servo function has a first-order low-frequency cut-off at about 1.6krad/s (254.65 Hz) and a first-order high-frequency cut-off at about 125krad/s (19.8944 kHz). The mid-band of the loop gain equals -2.5 at 4000rad/s (636.62Hz]. The result for this situation has been shown <a class="reference internal" href="#below">below</a>.</p>
+<blockquote id="below">
+<div><div class="figure align-default" id="id2">
+<a class="reference internal image-reference" href="../_images/BWexample.svg"><img alt="Estimation of the bandwidth of the servo function from the asymptotes of the magnitude characteristic of the loop gain" src="../_images/BWexample.svg" width="800" /></a>
+<p class="caption"><span class="caption-text">Estimation of the bandwidth of the servo function from the asymptotes of the magnitude characteristic of the loop gain</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
+</div>
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="noise.html" class="btn btn-neutral float-right" title="Noise" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="postproc.html" class="btn btn-neutral float-left" title="Work with the results" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2023, SLiCAP development team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

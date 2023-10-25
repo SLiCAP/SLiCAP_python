@@ -1,0 +1,1640 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>SLiCAPinstruction.py &mdash; SLiCAP 2.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/myStyle.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SLiCAPlatex.py" href="SLiCAPlatex.html" />
+    <link rel="prev" title="SLiCAPini.py" href="SLiCAPini.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SLiCAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPreference.html">SLiCAP reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html">SLiCAP.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPconfig.html">SLiCAPconfig.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html">SLiCAPexecute.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPinstruction.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction"><code class="docutils literal notranslate"><span class="pre">instruction</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.check"><code class="docutils literal notranslate"><span class="pre">instruction.check()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkCircuit"><code class="docutils literal notranslate"><span class="pre">instruction.checkCircuit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkConvType"><code class="docutils literal notranslate"><span class="pre">instruction.checkConvType()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkDataType"><code class="docutils literal notranslate"><span class="pre">instruction.checkDataType()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkDetector"><code class="docutils literal notranslate"><span class="pre">instruction.checkDetector()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkGainType"><code class="docutils literal notranslate"><span class="pre">instruction.checkGainType()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkLGref"><code class="docutils literal notranslate"><span class="pre">instruction.checkLGref()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkNumeric"><code class="docutils literal notranslate"><span class="pre">instruction.checkNumeric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkPairExt"><code class="docutils literal notranslate"><span class="pre">instruction.checkPairExt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkPairedCircuits"><code class="docutils literal notranslate"><span class="pre">instruction.checkPairedCircuits()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkSimType"><code class="docutils literal notranslate"><span class="pre">instruction.checkSimType()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkSource"><code class="docutils literal notranslate"><span class="pre">instruction.checkSource()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStep"><code class="docutils literal notranslate"><span class="pre">instruction.checkStep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepArray"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepArray()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepList"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepList()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepMethod"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepMethod()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepNum"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepNum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepStart"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepStart()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepStop"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepStop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepVar"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepVar()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepVars"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepVars()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.circuit"><code class="docutils literal notranslate"><span class="pre">instruction.circuit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.controlled"><code class="docutils literal notranslate"><span class="pre">instruction.controlled()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.convType"><code class="docutils literal notranslate"><span class="pre">instruction.convType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.dataType"><code class="docutils literal notranslate"><span class="pre">instruction.dataType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.defPar"><code class="docutils literal notranslate"><span class="pre">instruction.defPar()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.defPars"><code class="docutils literal notranslate"><span class="pre">instruction.defPars()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.delPar"><code class="docutils literal notranslate"><span class="pre">instruction.delPar()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.depVars"><code class="docutils literal notranslate"><span class="pre">instruction.depVars()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.detLabel"><code class="docutils literal notranslate"><span class="pre">instruction.detLabel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.detUnits"><code class="docutils literal notranslate"><span class="pre">instruction.detUnits</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.detector"><code class="docutils literal notranslate"><span class="pre">instruction.detector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.errors"><code class="docutils literal notranslate"><span class="pre">instruction.errors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.execute"><code class="docutils literal notranslate"><span class="pre">instruction.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.gainType"><code class="docutils literal notranslate"><span class="pre">instruction.gainType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.getElementValue"><code class="docutils literal notranslate"><span class="pre">instruction.getElementValue()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.getParValue"><code class="docutils literal notranslate"><span class="pre">instruction.getParValue()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.indepVars"><code class="docutils literal notranslate"><span class="pre">instruction.indepVars()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.label"><code class="docutils literal notranslate"><span class="pre">instruction.label</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.lgRef"><code class="docutils literal notranslate"><span class="pre">instruction.lgRef</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.lgValue"><code class="docutils literal notranslate"><span class="pre">instruction.lgValue</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.numeric"><code class="docutils literal notranslate"><span class="pre">instruction.numeric</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.pairExt"><code class="docutils literal notranslate"><span class="pre">instruction.pairExt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.parDefs"><code class="docutils literal notranslate"><span class="pre">instruction.parDefs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.removePairSubName"><code class="docutils literal notranslate"><span class="pre">instruction.removePairSubName</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setCircuit"><code class="docutils literal notranslate"><span class="pre">instruction.setCircuit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setConvType"><code class="docutils literal notranslate"><span class="pre">instruction.setConvType()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setDataType"><code class="docutils literal notranslate"><span class="pre">instruction.setDataType()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setDetector"><code class="docutils literal notranslate"><span class="pre">instruction.setDetector()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setGainType"><code class="docutils literal notranslate"><span class="pre">instruction.setGainType()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setLGref"><code class="docutils literal notranslate"><span class="pre">instruction.setLGref()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setPairExt"><code class="docutils literal notranslate"><span class="pre">instruction.setPairExt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setPairedCircuits"><code class="docutils literal notranslate"><span class="pre">instruction.setPairedCircuits()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setSimType"><code class="docutils literal notranslate"><span class="pre">instruction.setSimType()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setSource"><code class="docutils literal notranslate"><span class="pre">instruction.setSource()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setStepArray"><code class="docutils literal notranslate"><span class="pre">instruction.setStepArray()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setStepList"><code class="docutils literal notranslate"><span class="pre">instruction.setStepList()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setStepMethod"><code class="docutils literal notranslate"><span class="pre">instruction.setStepMethod()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setStepNum"><code class="docutils literal notranslate"><span class="pre">instruction.setStepNum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setStepStart"><code class="docutils literal notranslate"><span class="pre">instruction.setStepStart()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setStepStop"><code class="docutils literal notranslate"><span class="pre">instruction.setStepStop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setStepVar"><code class="docutils literal notranslate"><span class="pre">instruction.setStepVar()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.setStepVars"><code class="docutils literal notranslate"><span class="pre">instruction.setStepVars()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.simType"><code class="docutils literal notranslate"><span class="pre">instruction.simType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.source"><code class="docutils literal notranslate"><span class="pre">instruction.source</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.srcUnits"><code class="docutils literal notranslate"><span class="pre">instruction.srcUnits</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.step"><code class="docutils literal notranslate"><span class="pre">instruction.step</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepArray"><code class="docutils literal notranslate"><span class="pre">instruction.stepArray</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepDict"><code class="docutils literal notranslate"><span class="pre">instruction.stepDict</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepList"><code class="docutils literal notranslate"><span class="pre">instruction.stepList</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepMethod"><code class="docutils literal notranslate"><span class="pre">instruction.stepMethod</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepNum"><code class="docutils literal notranslate"><span class="pre">instruction.stepNum</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepOff"><code class="docutils literal notranslate"><span class="pre">instruction.stepOff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepOn"><code class="docutils literal notranslate"><span class="pre">instruction.stepOn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepStart"><code class="docutils literal notranslate"><span class="pre">instruction.stepStart</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepStop"><code class="docutils literal notranslate"><span class="pre">instruction.stepStop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepVar"><code class="docutils literal notranslate"><span class="pre">instruction.stepVar</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.stepVars"><code class="docutils literal notranslate"><span class="pre">instruction.stepVars</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.instruction.useMatrixConversion"><code class="docutils literal notranslate"><span class="pre">instruction.useMatrixConversion()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPinstruction.listPZ"><code class="docutils literal notranslate"><span class="pre">listPZ()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="SLiCAPreference.html">SLiCAP reference</a> &raquo;</li>
+        
+      <li>SLiCAPinstruction.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/SLiCAPinstruction.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-SLiCAP.SLiCAPinstruction">
+<span id="slicapinstruction-py"></span><h1>SLiCAPinstruction.py<a class="headerlink" href="#module-SLiCAP.SLiCAPinstruction" title="Permalink to this heading">¶</a></h1>
+<p>SLiCAP instruction class definition.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">instruction</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prototype Instruction object.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.check">
+<span class="sig-name descname"><span class="pre">check</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the completeness and consistancy of the instruction data.
+Will be called by <strong>instruction.execute()</strong>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkCircuit">
+<span class="sig-name descname"><span class="pre">checkCircuit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkCircuit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the circuit for this instruction is a <code class="xref py py-class docutils literal notranslate"><span class="pre">SLiCAPprotos.circuit()</span></code> object.</p>
+<p>Called by <strong>instruction.execute()</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkConvType">
+<span class="sig-name descname"><span class="pre">checkConvType</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkConvType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the circuit conversion type is defined correctly.”</p>
+<p>Called by <strong>instruction.check()</strong> and by <strong>setConvType(&lt;convType&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkDataType">
+<span class="sig-name descname"><span class="pre">checkDataType</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkDataType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the data type is defined correctly.”</p>
+<p>Called by <strong>instruction.check()</strong> and by <strong>setDataType(&lt;dataType&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkDetector">
+<span class="sig-name descname"><span class="pre">checkDetector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkDetector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the detector has been defined and if it exists in the circuit.</p>
+<p>Called by <strong>instruction.check()</strong> and by <strong>instruction.setDetector(&lt;detector&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkGainType">
+<span class="sig-name descname"><span class="pre">checkGainType</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkGainType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the gain type is defined correctly.”</p>
+<p>Called by <strong>instruction.check()</strong> and by <strong>setGainType(&lt;gainType&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkLGref">
+<span class="sig-name descname"><span class="pre">checkLGref</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkLGref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the loop gain reference has been defined and if it exists in
+the circuit.</p>
+<p>Called by <strong>instruction.check()</strong> and by <strong>instruction.setLGref(&lt;lgRef&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkNumeric">
+<span class="sig-name descname"><span class="pre">checkNumeric</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkNumeric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the simulation type is set to ‘numeric’. This is required for
+pole-zero analysis.</p>
+<p>Called by <strong>instruction.check()</strong> in cases in which a numeric
+simulation is required.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkPairExt">
+<span class="sig-name descname"><span class="pre">checkPairExt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pairExt</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkPairExt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check the list with extensions of paired nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>varPairs</strong> (<em>list</em>) – list with extensions of paired nodes.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>number of errors</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkPairedCircuits">
+<span class="sig-name descname"><span class="pre">checkPairedCircuits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuitPairs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkPairedCircuits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check the list with names of with paired subcircuits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cirPairs</strong> – list with refDes of two subcircuits</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>number of errors</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkSimType">
+<span class="sig-name descname"><span class="pre">checkSimType</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkSimType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the simulation type is defined correctly.”</p>
+<p>Called by <strong>instruction.check()</strong> and by <strong>setSimType(&lt;simType&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkSource">
+<span class="sig-name descname"><span class="pre">checkSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">need</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkSource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the source has been defined and if it exists in the circuit.</p>
+<p>Called by <strong>instruction.check()</strong> and by <strong>instruction.setSource(&lt;source&gt;)</strong>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>need</strong> (<em>bool</em>) – If True, a source is required and an error message will be
+given if it missing. If False, only the presence of the
+indicated independent source in the circuit will be
+verified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStep">
+<span class="sig-name descname"><span class="pre">checkStep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStep" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method will check the completeness and the consistency of the
+instruction data for parameter stepping, before executing the
+instruction.</p>
+<p>Called by <strong>instruction.check()</strong> in cases in which
+instruction.step == True</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStepArray">
+<span class="sig-name descname"><span class="pre">checkStepArray</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the array with step values is defined properly.</p>
+<p>Called by <strong>instruction.checkStep()</strong> and by <strong>instruction.setStepArray(&lt;stepArray&gt;)</strong>.</p>
+<p>The step array is a list of lists. The number of lists must equal the
+number of step variables. The numbers in the lists are subsequent
+values of the associated step variable. All lists should have equal
+lengths.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStepList">
+<span class="sig-name descname"><span class="pre">checkStepList</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the list with step values is defined properly.</p>
+<p>Called by <strong>instruction.checkStep()</strong> and by <strong>instruction.setStepList(&lt;stepList&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStepMethod">
+<span class="sig-name descname"><span class="pre">checkStepMethod</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the step method is defined correctly.</p>
+<p>Called by <strong>instruction.checkStep</strong> and by <strong>instruction.setStepVMethod(&lt;stepMethod&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStepNum">
+<span class="sig-name descname"><span class="pre">checkStepNum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepNum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the number of steps is defined properly.</p>
+<p>Called by :<strong>instruction.checkStep()</strong> and by <strong>instruction.setStepNum(&lt;stepNum&gt;)</strong>.</p>
+<p>Also called by and by <strong>instruction.setStepNum(&lt;stepNum&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStepStart">
+<span class="sig-name descname"><span class="pre">checkStepStart</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepStart" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the start value for parameter stepping is defined correctly.</p>
+<p>Called by <strong>instruction.checkStep()</strong> and by <strong>instruction.stepStart(&lt;stepStart&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStepStop">
+<span class="sig-name descname"><span class="pre">checkStepStop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepStop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the end value for parameter steping is defined correctly.</p>
+<p>Called by <strong>instruction.checkStep()</strong> and by <strong>instruction.stepStop(&lt;stepStop&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStepVar">
+<span class="sig-name descname"><span class="pre">checkStepVar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the step variable is defined correctly.</p>
+<p>Called by <strong>instruction.checkStep()</strong> and by <strong>setStepVar(&lt;stepVar&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.checkStepVars">
+<span class="sig-name descname"><span class="pre">checkStepVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.checkStepVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the step variables for array stepping are defined correctly.</p>
+<p>Called by <strong>instruction.checkStep</strong> and by <strong>instruction.setStepVars(&lt;stepVars&gt;)</strong>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.circuit">
+<span class="sig-name descname"><span class="pre">circuit</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.circuit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Circuit (<em>SLiCAPprotos.circuit</em>) used for this instruction. Can be
+assigned by setting this attribute, or will be defined by running:
+instruction.setCircuit(&lt;fileName&gt;).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of a circuit object by checking a netlist:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_circuit</span> <span class="o">=</span> <span class="n">checkCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance of an instruction object:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instruction</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Use</span> <span class="n">the</span> <span class="n">circuit</span> <span class="s1">&#39;my_circuit&#39;</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">instruction</span> <span class="s1">&#39;my_instruction&#39;</span><span class="o">.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instruction</span><span class="o">.</span><span class="n">circuit</span> <span class="o">=</span> <span class="n">my_circuit</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.controlled">
+<span class="sig-name descname"><span class="pre">controlled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.controlled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list with names of controlled sources in <strong>instruction.circuit</strong>
+that can be used as loop gain reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list with names of controlled sources in <strong>instruction.circuit</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Obtain a list with names of controlled sources:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">controlled</span><span class="p">()</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.convType">
+<span class="sig-name descname"><span class="pre">convType</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.convType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the conversion type (None, ‘dd’, ‘dc’, ‘cd’, ‘cc’)</p>
+<p>See <strong>instruction.setConvType(&lt;convType&gt;)</strong> for specification of <em>instruction.convType</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.dataType">
+<span class="sig-name descname"><span class="pre">dataType</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.dataType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the simulation data type.</p>
+<p>See <strong>instruction.setDataType(&lt;dataType&gt;)</strong> for specification of <em>instruction.dataType</em>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.defPar">
+<span class="sig-name descname"><span class="pre">defPar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parValue</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.defPar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds or modifies a parameter definition and updates the list
+<strong>instruction.circuit.params</strong> with names (<em>sympy.Symbol</em>) of undefined
+parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parName</strong> (<em>str</em><em>, </em><em>sympy.Symbol</em><em>, </em><em>sympy.Expr</em>) – Name of the parameter.</p></li>
+<li><p><strong>parValue</strong> – Value or expression.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define the value of &#39;R&#39; as 2000</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;2k&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Or:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="mf">2e3</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.defPars">
+<span class="sig-name descname"><span class="pre">defPars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parDict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.defPars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds or modifies multiple parameter definitions and updates the list
+<strong>instruction.circuit.params</strong> with names (<em>sympy.Symbol</em>) of undefined
+parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Params parDict</dt>
+<dd class="field-odd"><p>Dictionary with key-value pairs:
+key: parName (<em>str, sympy.Symbol</em>): name of the parameter.
+value: parValue (<em>str, float, int, sp.Symbol</em>) : value
+or expression of the parameter.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define the value of &#39;R&#39; as 2000 and &#39;C&#39; as 5e-12:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">defPars</span><span class="p">({</span><span class="s1">&#39;R&#39;</span><span class="p">:</span> <span class="s1">&#39;2k&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">:</span> <span class="s1">&#39;5p&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.delPar">
+<span class="sig-name descname"><span class="pre">delPar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.delPar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes a parameter definition</p>
+<p>After deletion of the parameter from the instruction.circuit.parDefs
+dictionary the list <strong>instruction.circuit.params</strong> with
+names (<em>sympy.Symbol</em>) of undefined parameters is updated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>parName</strong> (<em>str</em><em>, </em><em>sympy.Symbol</em>) – Name of the parameter.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Delete the definition for the parameter &#39;R&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">delPar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Or:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">delPar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.depVars">
+<span class="sig-name descname"><span class="pre">depVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.depVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list with names of nodal voltages and branch currents that can
+be used as detector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list with names of nodal voltages and branch currents</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Obtain a list with names of dependent variables:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">depVars</span><span class="p">()</span>
+<span class="go">[&#39;I_V1&#39;, &#39;V_N001&#39;, &#39;V_out&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.detLabel">
+<span class="sig-name descname"><span class="pre">detLabel</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.detLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name for the detector quantity to be used in expressions or plots
+(automatically determined in <strong>instruction.checkDetector()</strong>).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.detUnits">
+<span class="sig-name descname"><span class="pre">detUnits</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.detUnits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detector units ‘V’ or ‘A’ (automatically detected in <strong>instruction.checkDetector()</strong>).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.detector">
+<span class="sig-name descname"><span class="pre">detector</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.detector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of the positive and negative detector.</p>
+<p>See <strong>instruction.setDetector(&lt;detector&gt;)</strong> for specification of the detector.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.errors">
+<span class="sig-name descname"><span class="pre">errors</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.errors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of errors found in the definition of this instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Note</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>The instruction.errors attribute should not be modified
+directly by the user. It is determined automatically when executing
+the instruction.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the instruction and executes it if no errors are found.</p>
+<p>if no errors are found it returns a <code class="xref py py-class docutils literal notranslate"><span class="pre">allResults</span></code> object with the
+results of the instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>allResults object with results of the execution</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults" title="SLiCAP.SLiCAPprotos.allResults">SLiCAPprotos.allResults</a></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Assign &#39;V1&#39; signal source:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="s1">&#39;V1&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Assign &#39;V_out&#39; detector:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="s1">&#39;V_out&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set the simulation type to &#39;symbolic&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">simType</span> <span class="o">=</span> <span class="s1">&#39;symbolic&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set the gain type to &#39;gain&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">gainType</span> <span class="o">=</span> <span class="s1">&#39;gain&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set the data type to &#39;laplace&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">dataType</span> <span class="o">=</span> <span class="s1">&#39;laplace&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">my_instr</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">result</span><span class="o">.</span><span class="n">laplace</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.gainType">
+<span class="sig-name descname"><span class="pre">gainType</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.gainType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the simulation gain type.</p>
+<p>See <strong>instruction.setGainType(&lt;gainType&gt;)</strong> for specification of <em>instruction.gainType</em>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.getElementValue">
+<span class="sig-name descname"><span class="pre">getElementValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elementID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'value'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.getElementValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value or expression of one or more circuit elements.</p>
+<p>If instruction.numeric == True it will perform a full recursive
+substitution of all circuit parameter definitions.</p>
+<p>This method calls instruction.circuit.getElementValue() with
+numeric = True if instruction.simType is set to ‘numeric’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elementID</strong> (<em>str</em><em>, </em><em>list</em>) – name(s) of the element(s)</p></li>
+<li><p><strong>param</strong> (<em>str</em>) – <p>name of the parameter (equal for all elements):</p>
+<ul>
+<li><p>’value’: Laplace value</p></li>
+<li><p>’dc’: DC value (independent sources only)</p></li>
+<li><p>’noise’: Noise spectral density (independent sources only)</p></li>
+<li><p>’dcvar’: DC variance (independent sources only)</p></li>
+</ul>
+<p>Defaults to ‘value’.</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>if type(param) == list:</p>
+<p>return value = dict with key-value pairs: key (<em>sympy.Symbol</em>):
+name of the parameter, value (<em>int, float, sympy expression</em>):
+value of the parameter</p>
+<p>else:
+value or expression</p>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict, float, int, sympy.Expr</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Obtain the numeric value of &#39;R1&#39; and &#39;C1&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">symType</span> <span class="o">=</span> <span class="s1">&#39;numeric&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">my_instr</span><span class="o">.</span><span class="n">getElementValue</span><span class="p">([</span><span class="s1">&#39;R1&#39;</span><span class="p">,</span> <span class="s1">&#39;C1&#39;</span><span class="p">])</span>
+<span class="go">{&#39;C1&#39;: 5.0e-7/pi, &#39;R1&#39;: 1000.00000000000}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.getParValue">
+<span class="sig-name descname"><span class="pre">getParValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.getParValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value or expression of one or more parameters.</p>
+<p>If instruction.numeric == True it will perform a full recursive
+substitution of all circuit parameter definitions.</p>
+<p>This method calls instruction.circuit.getParValue() with keyword arg
+numeric = True if instruction.simType is set to ‘numeric’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>parName</strong> (<em>str</em><em>, </em><em>sympy.Symbol</em><em>, </em><em>list</em>) – name(s) of the parameter(s)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>if type(parNames) == list:</p>
+<p>return value = dict with key-value pairs: key (<em>sympy.Symbol</em>):
+name of the parameter, value (<em>int, float, sympy expression</em>):
+value of the parameter</p>
+<p>else:
+value or expression</p>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict, float, int, sympy.Expr</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Obtain the numeric parameter definitions of of &#39;R&#39; and &#39;C&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">symType</span> <span class="o">=</span> <span class="s1">&#39;numeric&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">getParValue</span><span class="p">([</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.indepVars">
+<span class="sig-name descname"><span class="pre">indepVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.indepVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list with names of independent sources in <strong>instruction.circuit</strong></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list with names of independent sources in <strong>instruction.circuit</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Obtain a list with names of independent sources:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">indepVars</span><span class="p">()</span>
+<span class="go">[&#39;V1&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.label">
+<span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Label to be used in plots.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.lgRef">
+<span class="sig-name descname"><span class="pre">lgRef</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.lgRef" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refdes of the controlled source(s) that is (are) assigned as loop gain
+reference. A second controlled source is required for decomposition
+of circuits in common-mode and differential-mode equivalents.</p>
+<p>See <strong>instruction.setLGref(&lt;detector&gt;)</strong> for specification of the loop
+gain reference.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.lgValue">
+<span class="sig-name descname"><span class="pre">lgValue</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.lgValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value of the loopgain reference will be stored during execution of the
+instruction.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.numeric">
+<span class="sig-name descname"><span class="pre">numeric</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.numeric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Variable used during analysis an presentation of analysis results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Note</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>The instruction.numeric attribute should not be modified
+directly by the user. Use the method <strong>instruction.setSimType(&lt;simTipe&gt;)</strong>
+to alter the simulation method!</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.pairExt">
+<span class="sig-name descname"><span class="pre">pairExt</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.pairExt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extensions used to indicate paired nodes or elements.
+Default is: [None, None].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.parDefs">
+<span class="sig-name descname"><span class="pre">parDefs</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.parDefs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameter definitions for the instruction. Will be updated by executing
+the instruction.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.removePairSubName">
+<span class="sig-name descname"><span class="pre">removePairSubName</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.removePairSubName" title="Permalink to this definition">¶</a></dt>
+<dd><p>If True, the subcircuit ID extension will be removed from parameters in
+expressions of paired elements in sub circuits. Defaults to True.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Note</dt>
+<dd class="field-odd"><p>Warning: this may result in undesired behavior if global parameters
+carry the name of parameters in paired sub circuits.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setCircuit">
+<span class="sig-name descname"><span class="pre">setCircuit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setCircuit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the circuit for this instruction.</p>
+<ul class="simple">
+<li><p>Checks the netlist file ‘fileName’</p></li>
+<li><p>Creates a circuit object from it</p></li>
+<li><p>Makes it the ciruit object for this instruction.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fileName</strong> (<em>str</em>) – Name of the netlist file.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setConvType">
+<span class="sig-name descname"><span class="pre">setConvType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">convType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setConvType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the circuit conversion type for the instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>convType</strong> – gain type for the instruction: None, ‘dd’,
+‘dc’, ‘cd’, ‘cc’, or ‘all’.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setDataType">
+<span class="sig-name descname"><span class="pre">setDataType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setDataType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the data type for the instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataType</strong> (<em>str</em>) – data type for the instruction: ‘dc’, ‘dcsolve’, ‘dcvar’,
+‘denom’, ‘impulse’, ‘laplace’, ‘matrix’, ‘noise’, ‘numer’,
+‘params’, ‘poles’, ‘pz’, ‘solve’, ‘step’, ‘time’ or ‘zeros’.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set data type to &#39;laplace&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setDataType</span><span class="p">(</span><span class="s1">&#39;laplace&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setDetector">
+<span class="sig-name descname"><span class="pre">setDetector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detector</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setDetector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the signal detector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>detector</strong> (<em>list</em><em>, </em><em>str</em>) – Name(s) of one or two nodal voltages or of one or two
+dependent currents.</p>
+</dd>
+</dl>
+<p>detector can defined as:</p>
+<ul class="simple">
+<li><p>None: no detector has been defined</p></li>
+<li><p>str:  a single detector, name of a nodal voltage or a branch current</p></li>
+<li><p>list: with names of either two nodal voltages or two branch currents.</p></li>
+</ul>
+<p>instruction.checkDetector converts the detector definition into a list
+with a positive and a negative detector [&lt;detP&gt;, &lt;detN&gt;], where detP
+and detN are the names (str) of either two nodal voltages or two branch
+currents. One of those can be ‘None’.</p>
+<p>A list with names of dependent variables that can be used as signal
+detector is returned by the method: <strong>instruction.depVars()</strong>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance if a SLiCAP instruction</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create my_instr.circuit from the netlist &#39;myFirstRCnetwork.cir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Display a list with names of nodal voltages and branch currents</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># that can be assigned to the detector.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">depVars</span><span class="p">()</span>
+<span class="go">[&#39;I_V1&#39;, &#39;V_0&#39;, &#39;V_N001&#39;, &#39;V_out&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Voltage at node &#39;out&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setDetector</span><span class="p">(</span><span class="s1">&#39;V_out&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Differential voltage between node &#39;N001&#39; and &#39;out&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setDetector</span><span class="p">([</span><span class="s1">&#39;V_N001&#39;</span><span class="p">,</span> <span class="s1">&#39;V_out&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Current through `V1&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setDetector</span><span class="p">(</span><span class="s1">&#39;I_V1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Note</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>The voltage ‘V_0’ at the reference node ‘0’ equals zero.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setGainType">
+<span class="sig-name descname"><span class="pre">setGainType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gainType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setGainType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the gain type for the instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gainType</strong> (<em>str</em>) – gain type for the instruction: ‘gain’, ‘asymptotic’,
+‘loopgain’, ‘servo’, ‘direct’, or ‘vi’.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set gain type to &#39;gain&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setGainType</span><span class="p">(</span><span class="s1">&#39;gain&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setLGref">
+<span class="sig-name descname"><span class="pre">setLGref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lgRef</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setLGref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the loop gain reference (name of a controlled source).</p>
+<p>A list with names of dependent (controlled) sources is returned by the
+method <strong>instruction.controlled()</strong>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lgRef</strong> (<em>str</em><em>, </em><em>sympy.Symbol</em>) – Name of the loop gain reference.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Display a list with controlled sources of the circuit:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">controlled</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setPairExt">
+<span class="sig-name descname"><span class="pre">setPairExt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pairExt</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setPairExt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the extension to element or node IDs for DM and CM pairs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pairExt</strong> (<em>list</em>) – list with extensions for paired nodes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setPairedCircuits">
+<span class="sig-name descname"><span class="pre">setPairedCircuits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cirPairs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setPairedCircuits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the paired subcircuits for matrix conversion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>varPairs</strong> (<em>tuple</em>) – list with tuples of names (str) of subcircuits
+that must be considered pairs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setSimType">
+<span class="sig-name descname"><span class="pre">setSimType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setSimType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the simulation type for the instruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>simType</strong> (<em>str</em>) – Simulation type: ‘symbolic’ or ‘numeric’</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set the simulation type to numeric:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setSimType</span><span class="p">(</span><span class="s1">&#39;numeric&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Set the simulation type to symbolic:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setSimType</span><span class="p">(</span><span class="s1">&#39;symbolic&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Note</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>SLiCAP always uses symbolic calculation methods. Only in a limited
+number of cases SLiCAP calulates with floats (pole-zero analysis,
+determination of the phase margin, etc.).</p>
+<p>With the simulation type set to ‘numeric’ SLiCAP recursively
+substitutes all circuit parameter definitions into expressions used for
+element values. Hence, component values can be expressions with
+symbolic parameters.</p>
+<p>The default number of recursive substitutions is 10. It is defined by
+ini.recSubst and can be changed by the user. For using the built-in MOS
+EKV models a value of eight is the minumum for full substitution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ini</span><span class="o">.</span><span class="n">recSubst</span> <span class="o">=</span> <span class="mi">12</span> <span class="c1"># For deeply nested expressions!</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setSource">
+<span class="sig-name descname"><span class="pre">setSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setSource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the signal source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>source</strong> (<em>str</em>) – Name of an independent voltage or current source that
+exists in the circuit.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define the voltage source &#39;V1&#39; as signal source:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setSource</span><span class="p">(</span><span class="s1">&#39;V1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Note</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>A list with names of independent voltage and current sources that can be
+assigned as signal source can be obtained from the method:
+<strong>instruction.idepVars()</strong>:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Obtaine a list with names of independent sources:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">idepVars</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setStepArray">
+<span class="sig-name descname"><span class="pre">setStepArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stepArray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setStepArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the array with values for step method array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stepArray</strong> (<em>list</em>) – Nested list: list[i] carries the step values for the
+step variable in instruction.stepVars[i].
+The lists should have equal lengths.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define &#39;array&#39; type stepping:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepMethod</span><span class="p">(</span><span class="s1">&#39;array&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define circuit parameters &#39;R_a&#39; and &#39;C_a&#39; as step variables:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepVars</span><span class="p">([</span><span class="s1">&#39;R_a&#39;</span><span class="p">,</span> <span class="s1">&#39;C_a&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Define</span> <span class="n">the</span> <span class="n">step</span> <span class="n">values</span> <span class="k">for</span> <span class="s1">&#39;R_a and &#39;</span><span class="n">C_a</span><span class="s1">&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepArray</span><span class="p">([[</span><span class="s1">&#39;1k&#39;</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,</span> <span class="mf">1.2e3</span><span class="p">],[</span><span class="s1">&#39;1u&#39;</span><span class="p">,</span> <span class="mf">10e-6</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setStepList">
+<span class="sig-name descname"><span class="pre">setStepList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stepList</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setStepList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the list with step values for step method ‘list’. This list will
+be overwritten if the instruction is executed with the step method set
+to ‘lin’ or ‘log’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stepList</strong> (<em>list</em>) – List with step values for the step parameter.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define &#39;list&#39; type stepping:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepMethod</span><span class="p">(</span><span class="s1">&#39;list&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define the circuit parameter &#39;alpha&#39; as step parameter:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepVar</span><span class="p">(</span><span class="s1">&#39;alpha&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define a list of step values for this parameter.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepList</span><span class="p">([</span><span class="s1">&#39;10m&#39;</span><span class="p">,</span> <span class="s1">&#39;20m&#39;</span><span class="p">,</span> <span class="s1">&#39;50m&#39;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setStepMethod">
+<span class="sig-name descname"><span class="pre">setStepMethod</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stepMethod</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setStepMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the parameter stepping method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stepMethod</strong> (<em>str</em>) – ‘lin’, ‘log’, ‘list’ or ‘array’.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define &#39;linear&#39; type stepping:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepMethod</span><span class="p">(</span><span class="s1">&#39;lin&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setStepNum">
+<span class="sig-name descname"><span class="pre">setStepNum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stepNum</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setStepNum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the number of steps for ‘lin’ and ‘log’ parameter stepping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stepNumber</strong> – Number of steps for stepping methods ‘lin’ and ‘log’.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define linear stepping:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepMethod</span> <span class="o">=</span> <span class="s1">&#39;lin&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define the start value</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepStop</span><span class="p">(</span><span class="s1">&#39;1M&#39;</span><span class="p">)</span>  <span class="c1"># 1E6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepStop</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span>   <span class="c1"># 1E6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setStepStart">
+<span class="sig-name descname"><span class="pre">setStepStart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stepStart</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setStepStart" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start value for parameter stepping methods ‘lin’ and ‘log’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stepStart</strong> (<em>str</em><em>, </em><em>int</em><em>, </em><em>float</em>) – Start value for parameter stepping methods ‘lin’ and ‘log’.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define linear stepping:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepMethod</span> <span class="o">=</span> <span class="s1">&#39;lin&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define the start value</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepStart</span><span class="p">(</span><span class="s1">&#39;1k&#39;</span><span class="p">)</span>  <span class="c1"># 1E3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepStart</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>  <span class="c1"># 1E3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepStart</span><span class="p">(</span><span class="mf">1e3</span><span class="p">)</span>   <span class="c1"># 1E3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setStepStop">
+<span class="sig-name descname"><span class="pre">setStepStop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stepStop</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setStepStop" title="Permalink to this definition">¶</a></dt>
+<dd><p>End value for parameter stepping methods ‘lin’ and ‘log’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stepStop</strong> (<em>str</em><em>, </em><em>int</em><em>, </em><em>float</em>) – End value for parameter stepping methods ‘lin’ and ‘log’.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define linear stepping:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepMethod</span> <span class="o">=</span> <span class="s1">&#39;lin&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define the start value</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepStop</span><span class="p">(</span><span class="s1">&#39;1M&#39;</span><span class="p">)</span>  <span class="c1"># 1E6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepStop</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span>   <span class="c1"># 1E6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setStepVar">
+<span class="sig-name descname"><span class="pre">setStepVar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stepVar</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setStepVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the step variable for parameter step types ‘lin’, ‘log’ and ‘list’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stepVar</strong> (<em>str</em><em>, </em><em>sympy.Symbol</em>) – step variable</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define the circuit parameter &#39;alpha&#39; as step variable:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepVar</span><span class="p">(</span><span class="s1">&#39;alpha&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Note</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>A list with names (<em>sympy.Symbol</em>) that can be used as stepping
+parameter is obtained as follows:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># print the list with names of all parameters that can be stepped:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">instr</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">params</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">parDefs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.setStepVars">
+<span class="sig-name descname"><span class="pre">setStepVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stepVars</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.setStepVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the step variables for ‘array’ type stepping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stepVars</strong> (<em>list</em>) – List with names (<em>str, sympy.Symbol</em>) of step
+variables for array type stepping.</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define &#39;array&#39; type stepping:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">stepMethod</span> <span class="o">=</span> <span class="s1">&#39;array&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Define circuit parameters &#39;R_a&#39; and &#39;C_a&#39; as step variables:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepVars</span><span class="p">([</span><span class="s1">&#39;R_a&#39;</span><span class="p">,</span> <span class="s1">&#39;C_a&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Define</span> <span class="n">the</span> <span class="n">step</span> <span class="n">values</span> <span class="k">for</span> <span class="s1">&#39;R_a and &#39;</span><span class="n">C_a</span><span class="s1">&#39;:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setStepArray</span> <span class="p">([[</span><span class="s1">&#39;1k&#39;</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,</span> <span class="mf">1.2e3</span><span class="p">],[</span><span class="s1">&#39;1u&#39;</span><span class="p">,</span> <span class="mf">10e-6</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instruction</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Note</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>A list with names (<em>sympy.Symbol</em>) that can be used as stepping
+parameter is obtained as follows:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># check a netlist file and use the circuit from this file for this</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># instruction:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span><span class="o">.</span><span class="n">setCircuit</span><span class="p">(</span><span class="s1">&#39;my_circuit.cir&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># print the list with names of all parameters that can be stepped:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">instr</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">params</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">parDefs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.simType">
+<span class="sig-name descname"><span class="pre">simType</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.simType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the simulation gain type.</p>
+<p>See <strong>instruction.setSimType(&lt;simType&gt;)</strong> for specification of <em>instruction.simType</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.source">
+<span class="sig-name descname"><span class="pre">source</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refdes of the signal source (independent v or i source).</p>
+<p>See <strong>instruction.setSource(&lt;source&gt;)</strong> for specification of the source.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.srcUnits">
+<span class="sig-name descname"><span class="pre">srcUnits</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.srcUnits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Source units ‘V’ or ‘A’ (automatically detected in <strong>instruction.checkSource()</strong>).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.step">
+<span class="sig-name descname"><span class="pre">step</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setting for parameter stepping.</p>
+<p>See <strong>instruction.setStepOn()</strong> and <strong>instruction.setStepOff()</strong> for specification of <em>instruction.step</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepArray">
+<span class="sig-name descname"><span class="pre">stepArray</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array (<em>list of lists</em>) with values for step method array.</p>
+<p>See <strong>instruction.setStepArray(&lt;stepArray&gt;)</strong> for specification of <em>instruction.stepArray</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepDict">
+<span class="sig-name descname"><span class="pre">stepDict</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary with key-value pairs:</p>
+<p>key:   name of a step parameter (<em>sympy.Symbol</em>)
+value: list with values for this parameter</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepList">
+<span class="sig-name descname"><span class="pre">stepList</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepList" title="Permalink to this definition">¶</a></dt>
+<dd><p>List with values for step method ‘list’.</p>
+<p>See <strong>instruction.setStepList(&lt;stepList&gt;)</strong> for specification of <em>instruction.stepList</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepMethod">
+<span class="sig-name descname"><span class="pre">stepMethod</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Step method for parameter stepping.</p>
+<p>See <strong>instruction.setStepMethod(&lt;stepMethod&gt;)</strong> for specification of <em>instruction.stepMethod</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepNum">
+<span class="sig-name descname"><span class="pre">stepNum</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepNum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of steps for step methods ‘lin’ and ‘log’.</p>
+<p>See <strong>instruction.setStepNum(&lt;stepNum&gt;)</strong> for specification of <em>instruction.stepNum</em>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepOff">
+<span class="sig-name descname"><span class="pre">stepOff</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepOff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables parameter stepping.</p>
+<p>Does not change other settings for parameter stepping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Disable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instruction</span><span class="o">.</span><span class="n">stepOff</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepOn">
+<span class="sig-name descname"><span class="pre">stepOn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepOn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables parameter stepping.</p>
+<p>Does not change other settings for parameter stepping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an instance of the instruction object</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instr</span> <span class="o">=</span> <span class="n">instruction</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Enable parameter stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_instruction</span><span class="o">.</span><span class="n">stepOn</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepStart">
+<span class="sig-name descname"><span class="pre">stepStart</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepStart" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start value for stepping methods ‘lin’ and ‘log’.</p>
+<p>See <strong>instruction.setStepStart(&lt;stepStart&gt;)</strong> for specification of <em>instruction.stepStart</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepStop">
+<span class="sig-name descname"><span class="pre">stepStop</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepStop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop value for stepping methods ‘lin’ and ‘log’.</p>
+<p>See <strong>instruction.setStepStop(&lt;stepStop&gt;)</strong> for specification of <em>instruction.stepStop</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepVar">
+<span class="sig-name descname"><span class="pre">stepVar</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the step variable (<em>str</em>) for step types ‘lin’, ‘log’ and ‘list’.</p>
+<p>See <strong>instruction.setStepVar(&lt;stepVar&gt;)</strong> for specification of <em>instruction.stepVar</em>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.stepVars">
+<span class="sig-name descname"><span class="pre">stepVars</span></span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.stepVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the step variables for ‘array’ type parameter stepping.</p>
+<p>See <strong>instruction.setStepVars(&lt;stepVars&gt;)</strong> for specification of <em>instruction.stepVars</em>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.instruction.useMatrixConversion">
+<span class="sig-name descname"><span class="pre">useMatrixConversion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.instruction.useMatrixConversion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the basis of the MNA matrices. Execution of the instruction
+will be performed with this matrix conversion.</p>
+<p>Built-in conversion conversion methods are:</p>
+<ul class="simple">
+<li><p>None  : No conversion, MNA matrix equation (default)</p></li>
+<li><p>DM    : Differential-mode transfer</p></li>
+<li><p>CM    : Common-mode transfer</p></li>
+<li><p>DMCM  : Differential-mode to common-mode transfer</p></li>
+<li><p>CMDM  : Common-mode to differential-mode transfer</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>method</strong> (<em>str</em>) – Conversion method can be one of the above.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">RType</dt>
+<dd class="field-odd"><p>NoneType</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPinstruction.listPZ">
+<span class="sig-name descname"><span class="pre">listPZ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pzResult</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPinstruction.listPZ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints lists with poles and zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pzResult</strong> (<a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults" title="SLiCAP.SLiCAPprotos.allResults"><em>SLiCAPprotos.allResults</em></a>) – SLiCAP execution results of pole-zero analysis.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>NoneType</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="SLiCAPlatex.html" class="btn btn-neutral float-right" title="SLiCAPlatex.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="SLiCAPini.html" class="btn btn-neutral float-left" title="SLiCAPini.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2023, SLiCAP development team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

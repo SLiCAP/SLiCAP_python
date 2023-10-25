@@ -1,0 +1,465 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>SLiCAPfc.py &mdash; SLiCAP 2.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/myStyle.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SLiCAPstatespace.py" href="SLiCAPstatespace.html" />
+    <link rel="prev" title="SLiCAPyacc.py" href="SLiCAPyacc.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SLiCAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPreference.html">SLiCAP reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html">SLiCAP.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPconfig.html">SLiCAPconfig.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html">SLiCAPexecute.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPfc.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.Matrix_num_den"><code class="docutils literal notranslate"><span class="pre">Matrix_num_den()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.ODtranspose"><code class="docutils literal notranslate"><span class="pre">ODtranspose()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.PAQeqLU"><code class="docutils literal notranslate"><span class="pre">PAQeqLU()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.UVsolve"><code class="docutils literal notranslate"><span class="pre">UVsolve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.addfractions"><code class="docutils literal notranslate"><span class="pre">addfractions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.computeFC"><code class="docutils literal notranslate"><span class="pre">computeFC()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.laplace2coeffs"><code class="docutils literal notranslate"><span class="pre">laplace2coeffs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.nth2firstOrder"><code class="docutils literal notranslate"><span class="pre">nth2firstOrder()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="SLiCAPreference.html">SLiCAP reference</a> &raquo;</li>
+        
+      <li>SLiCAPfc.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/SLiCAPfc.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-SLiCAP.SLiCAPfc">
+<span id="slicapfc-py"></span><h1>SLiCAPfc.py<a class="headerlink" href="#module-SLiCAP.SLiCAPfc" title="Permalink to this heading">¶</a></h1>
+<p>This is to be used to find the frequency constant matrix (which is the inverse of the time constant matrix)</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.Matrix_num_den">
+<span class="sig-name descname"><span class="pre">Matrix_num_den</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.Matrix_num_den" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the matrices Mnum, Mden for the matrix M</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>M</strong> (<em>sympy matrix</em>) – Matrix to perform the num_den decomposition on</p>
+</dd>
+<dt class="field-even">Return Mnum</dt>
+<dd class="field-even"><p>Numerator of each elements in M</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sympy matrix</p>
+</dd>
+<dt class="field-even">Return Mden</dt>
+<dd class="field-even"><p>Denominator of each elements in M</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sympy matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.ODtranspose">
+<span class="sig-name descname"><span class="pre">ODtranspose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.ODtranspose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the off diagonal transpose:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>A</strong> (<em>sympy matrix</em>) – Matrix to perform the off diagonal transpose on</p>
+</dd>
+<dt class="field-even">Return res</dt>
+<dd class="field-even"><p>off diagonal transpose</p>
+</dd>
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.PAQeqLU">
+<span class="sig-name descname"><span class="pre">PAQeqLU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.PAQeqLU" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the matrices P,Q,L,U for the equation PAQ=LU</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>A</strong> (<em>sympy matrix</em>) – Matrix to perform the LU decomposition on</p>
+</dd>
+<dt class="field-even">Return res</dt>
+<dd class="field-even"><p>list of 4 matrices and the rank of the matrix P, Q, L, U, rank</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dim</span><span class="o">=</span><span class="mi">4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Atest</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">MatrixSymbol</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">P</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">rank</span> <span class="o">=</span> <span class="n">LUdecomp</span><span class="p">(</span><span class="n">Atest</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">L</span><span class="o">*</span><span class="n">U</span><span class="o">-</span><span class="n">Atest</span><span class="p">)</span>
+<span class="go">Matrix([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Nothertest</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([[</span><span class="o">-</span><span class="mi">794</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">778</span><span class="p">],[</span><span class="o">-</span><span class="mi">336</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">P</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">rank</span> <span class="o">=</span> <span class="n">LUdecomp</span><span class="p">(</span><span class="n">Nothertest</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sp</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">L</span><span class="o">*</span><span class="n">U</span><span class="o">-</span><span class="n">P</span><span class="o">*</span><span class="n">Nothertest</span><span class="o">*</span><span class="n">Q</span><span class="p">)</span>
+<span class="go">Matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.UVsolve">
+<span class="sig-name descname"><span class="pre">UVsolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.UVsolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the U, V, and X for UAV = XUBV
+equivalently: finds the UV for F = UAVx + sUBVx
+This is the starting equation:
+Uq=UGVy+sUCVy
+x=Vy
+:param A: Matrix to perform the UV decomposition on
+:type A: sympy matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>B</strong> (<em>sympy matrix</em>) – Matrix to perform the UV decomposition on</p>
+</dd>
+<dt class="field-even">Return res</dt>
+<dd class="field-even"><p>list of three matrices: U,V,fc where fc is the frequency
+constant matrix</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.addfractions">
+<span class="sig-name descname"><span class="pre">addfractions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.addfractions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the numerator and denominator after adding the fractions A,B</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>A</strong> (<em>tuple</em><em> of </em><em>sympy expressions</em>) – numerator and denominator of the fraction A</p></li>
+<li><p><strong>B</strong> (<em>tuple</em><em> of </em><em>sympy expressions</em>) – numerator and denominator of the fraction B</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return Cnum</dt>
+<dd class="field-even"><p>Numerator of A + B</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sympy expression</p>
+</dd>
+<dt class="field-even">Return Cden</dt>
+<dd class="field-even"><p>Denominator of A + B</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sympy expression</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.computeFC">
+<span class="sig-name descname"><span class="pre">computeFC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.computeFC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the frequency constant matrix fc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>A</strong> (<em>sympy matrix</em>) – SLiCAP matrix, where the Laplace variable ‘var’ is in the matrix</p></li>
+<li><p><strong>s</strong> (<em>sympy symbol</em>) – laplace variable</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>fc: where fc is the frequency constant matrix</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sympy matrix</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.laplace2coeffs">
+<span class="sig-name descname"><span class="pre">laplace2coeffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.laplace2coeffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of coefficient matrices where the list order
+corresponds to the order of the laplace variable for the
+coefficient matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>M</strong> (<em>sympy.Matrix</em>) – Sympy matrix</p></li>
+<li><p><strong>s</strong> (<em>sympy.Matrix</em>) – Sympy Symbol</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>res: List of sympy matrices</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sympy</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">SLiCAP.SLiCAPfc</span> <span class="kn">import</span> <span class="n">laplace2coeffs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([[</span><span class="mi">1</span><span class="o">+</span><span class="n">x</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">],[</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="mi">9</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">laplace2coeffs</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+<span class="go">[Matrix([</span>
+<span class="go">[1, 0],</span>
+<span class="go">[0, 1]]), Matrix([</span>
+<span class="go">[1, 2],</span>
+<span class="go">[0, 0]]), Matrix([</span>
+<span class="go">[0, 0],</span>
+<span class="go">[9, 0]])]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.nth2firstOrder">
+<span class="sig-name descname"><span class="pre">nth2firstOrder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">CM</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Matrix([[0]])</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.nth2firstOrder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the first order decomposition of an nth order system of differential equations
+q=A0x+sA1x+s^2A2x+…
+:param M: list of coefficient matrices
+:type M: list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>q</strong> (<em>sympy matrix</em>) – Vector of sources</p>
+</dd>
+<dt class="field-even">Return res</dt>
+<dd class="field-even"><p>list of 2 coefficient matrices and the updated source vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sympy</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">SLiCAP.SLiCAPfc</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Matrix</span><span class="p">([[</span><span class="mi">1</span><span class="o">+</span><span class="n">x</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">],[</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="mi">9</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">laplace2coeffs</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nth2firstOrder</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="SLiCAPstatespace.html" class="btn btn-neutral float-right" title="SLiCAPstatespace.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="SLiCAPyacc.html" class="btn btn-neutral float-left" title="SLiCAPyacc.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2023, SLiCAP development team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

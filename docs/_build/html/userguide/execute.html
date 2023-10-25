@@ -1,0 +1,556 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Execute an instruction &mdash; SLiCAP 2.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/myStyle.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Work with the results" href="postproc.html" />
+    <link rel="prev" title="Parameter stepping" href="parameterStepping.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SLiCAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPuserguide.html">SLiCAP user guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="install.html">Download, install and configure SLiCAP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project.html">Initialize a SLiCAP project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="schematics.html">Schematic capture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="circuit.html">Define a circuit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="instruction.html">Define an instruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html">Work with parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameterStepping.html">Parameter stepping</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Execute an instruction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#execution-results">Execution results</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-dc">Data type <em>dc</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-dcsolve">Data type <em>dcsolve</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-dcvar">Data type <em>dcvar</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-denom">Data type <em>denom</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-impulse">Data type <em>impulse</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-laplace">Data type <em>laplace</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-matrix">Data type <em>matrix</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-noise">Data type <em>noise</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-numer">Data type <em>numer</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-params">Data type <em>params</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-poles">Data type <em>poles</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-pz">Data type <em>pz</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-solve">Data type <em>solve</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-step">Data type <em>step</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-time">Data type <em>time</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-zeros">Data type <em>zeros</em></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="postproc.html">Work with the results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamic.html">Design of dynamic behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dcvar.html">DC variance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pz.html">Pole-zero analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plots.html">Create plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="balanced.html">Balanced circuits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="htmlreports.html">Generate HTML reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sphinxreports.html">Generate HTML with sphinx</a></li>
+<li class="toctree-l2"><a class="reference internal" href="latexreports.html">Generate LaTeX reports</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/SLiCAPreference.html">SLiCAP reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="SLiCAPuserguide.html">SLiCAP user guide</a> &raquo;</li>
+        
+      <li>Execute an instruction</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/userguide/execute.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="execute-an-instruction">
+<span id="execute"></span><h1>Execute an instruction<a class="headerlink" href="#execute-an-instruction" title="Permalink to this heading">¶</a></h1>
+<p>The method <strong>SLiCAPinstruction.instruction.execute()</strong> executes the instruction and returns a <strong>SLiCAPprotos.allResults()</strong> object with attributes comprising instruction data and instruction results. See <a class="reference external" href="../reference/SLiCAPprotos.html">SLiCAPprotos.allResults()</a>.</p>
+<div class="section" id="execution-results">
+<h2>Execution results<a class="headerlink" href="#execution-results" title="Permalink to this heading">¶</a></h2>
+<p>At the start of the execution, attributes from the instance of the <strong>SLiCAPinstruction.instruction()</strong> object are copied to corresponding attributes of the <strong>SLiCAPprotos.allResults()</strong> object. All copies, except that of the <strong>SLiCAPinstruction.instruction.circuit</strong> attribute are <em>deep</em> copies.</p>
+<p>In the following sections we will describe the attributes that carry the execution results. We will do this for all data types.</p>
+<div class="section" id="data-type-dc">
+<h3>Data type <em>dc</em><a class="headerlink" href="#data-type-dc" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the DC value of the detector quantity; only for gain type ‘vi’.</p>
+<ul class="simple">
+<li><p>If parameter stepping is enabled:</p>
+<ul>
+<li><p>A list with dc values (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.dc</strong></p></li>
+</ul>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<ul>
+<li><p>The dc value (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.dc</strong></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-dcsolve">
+<h3>Data type <em>dcsolve</em><a class="headerlink" href="#data-type-dcsolve" title="Permalink to this heading">¶</a></h3>
+<p>Calculates DC solution of the network; only for gain type ‘vi’.</p>
+<ul class="simple">
+<li><p>If parameter stepping is enabled:</p>
+<ul>
+<li><p>A list with dc solutions (<em>symPy.Matrix</em>) is assigned to <strong>SLiCAPprotos.allResults.dcSolve</strong></p></li>
+</ul>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<ul>
+<li><p>The dc solution (<em>symPy.Matrix</em>) is assigned to <strong>SLiCAPprotos.allResults.dcSolve</strong></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-dcvar">
+<h3>Data type <em>dcvar</em><a class="headerlink" href="#data-type-dcvar" title="Permalink to this heading">¶</a></h3>
+<p>Calculates contribution of all dc variances (sources and resistors) to the detector-referred variance. Only for gain type ‘vi’. If a signal source has been defined it also calculates the contibutions to the source-referred variance.</p>
+<ul class="simple">
+<li><p>If parameter stepping is enabled:</p>
+<ul>
+<li><p>A list with values of the total detector-referred variance (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.ovar</strong></p></li>
+<li><p>A dict with key-value pairs is assigned to <strong>SLiCAPprotos.allResults.ovarTerms</strong></p>
+<ul>
+<li><p>key: Name of the source (<em>str</em>)</p></li>
+<li><p>value: List with contributions of <em>source</em> to the detector-referred variance (<em>float, sympy.Symbol, symPy.Expr</em>)</p></li>
+</ul>
+</li>
+<li><p>If a signal source has been defined:</p>
+<ul>
+<li><p>A list with values of the total source-referred variance (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.ivar</strong></p></li>
+<li><p>A dict with key-value pairs is assigned to <strong>SLiCAPprotos.allResults.ivarTerms</strong></p>
+<ul>
+<li><p>key: Name of the source (<em>str</em>)</p></li>
+<li><p>value: List with contributions of this source to the source-referred variance (<em>float, sympy.Symbol, symPy.Expr</em>)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<ul>
+<li><p>The total detector-referred variance (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.ovar</strong></p></li>
+<li><p>A dict with key-value pairs is assigned to <strong>SLiCAPprotos.allResults.ovarTerms</strong></p>
+<ul>
+<li><p>key: Name of the source (<em>str</em>)</p></li>
+<li><p>value: Contributions of this source to the detector-referred variance (<em>float, sympy.Symbol, symPy.Expr</em>)</p></li>
+</ul>
+</li>
+<li><p>If a signal source has been defined:</p>
+<ul>
+<li><p>The total source-referred variance (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.ivar</strong></p></li>
+<li><p>A dict with key-value pairs is assigned to <strong>SLiCAPprotos.allResults.ivarTerms</strong></p>
+<ul>
+<li><p>key: Name of the source (<em>str</em>)</p></li>
+<li><p>value: Contributions this source to the source-referred variance (<em>float, sympy.Symbol, symPy.Expr</em>)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-denom">
+<h3>Data type <em>denom</em><a class="headerlink" href="#data-type-denom" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the denominator of the Laplace Transform of the unit-impulse response or of a voltage or a current.</p>
+<ul>
+<li><p>If parameter stepping is enabled:</p>
+<p>A list with results (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.denom</strong></p>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<p>The result (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.denom</strong></p>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-impulse">
+<h3>Data type <em>impulse</em><a class="headerlink" href="#data-type-impulse" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the unit-impulse response (inverse Laplace Transform); may not work with symbolic values. Not for gain type ‘vi’.</p>
+<ul>
+<li><p>If parameter stepping is enabled:</p>
+<p>A list with results (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.impulse</strong></p>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<p>The result (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.impulse</strong></p>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-laplace">
+<h3>Data type <em>laplace</em><a class="headerlink" href="#data-type-laplace" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the Laplace transfer function (Laplace transform of the unit-impulse response) or the Lapalce tarsnform of a voltage or a current.</p>
+<ul>
+<li><p>If parameter stepping is enabled:</p>
+<p>A list with results (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.laplace</strong></p>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<p>The result (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.laplace</strong></p>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-matrix">
+<h3>Data type <em>matrix</em><a class="headerlink" href="#data-type-matrix" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the matrix equation of the circuit and applies the specified conversion.</p>
+<ul class="simple">
+<li><p>If parameter stepping is disabled:</p>
+<ul>
+<li><p>The vector with independent variables (<em>sympy.Matrix</em>) is assigned to <strong>SLiCAPprotos.allResults.Iv</strong></p></li>
+<li><p>The vector with dependent variables (<em>sympy.Matrix</em>) is assigned to <strong>SLiCAPprotos.allResults.Dv</strong></p></li>
+<li><p>The MNA matrix (<em>sympy.Matrix</em>) is assigned to <strong>SLiCAPprotos.allResults.M</strong></p></li>
+</ul>
+</li>
+<li><p>Parameter stepping with data type ‘matrix’ is not supported.</p></li>
+</ul>
+</div>
+<div class="section" id="data-type-noise">
+<h3>Data type <em>noise</em><a class="headerlink" href="#data-type-noise" title="Permalink to this heading">¶</a></h3>
+<p>Calculates contributions to the detector-referred noise of all noise sources. Only for gain type ‘vi’. If a signal source has been defined it also calculates the contibutions to the source-referred noise.</p>
+<ul class="simple">
+<li><p>If parameter stepping is enabled:</p>
+<ul>
+<li><p>A list with values of the total detector-referred noise spectral density in <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{V^2}{Hz}}\right]\)</span> or <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{A^2}{Hz}}\right]\)</span> (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.onoise</strong></p></li>
+<li><p>A dict with key-value pairs is assigned to <strong>SLiCAPprotos.allResults.onoiseTerms</strong></p>
+<ul>
+<li><p>key: Name of the source (<em>str</em>)</p></li>
+<li><p>value: List with contributions of this source to the detector-referred noise spectral density in <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{V^2}{Hz}}\right]\)</span> or <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{A^2}{Hz}}\right]\)</span> (<em>float, sympy.Symbol, symPy.Expr</em>)</p></li>
+</ul>
+</li>
+<li><p>If a signal source has been defined:</p>
+<ul>
+<li><p>A list with values of the total source-referred noise spectral density in <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{V^2}{Hz}}\right]\)</span> or <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{A^2}{Hz}}\right]\)</span> (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.inoise</strong></p></li>
+<li><p>A dict with key-value pairs is assigned to <strong>SLiCAPprotos.allResults.inoiseTerms</strong></p>
+<ul>
+<li><p>key: Name of the source (<em>str</em>)</p></li>
+<li><p>value: List with contributions of this source to the source-referred noise spectral density in <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{V^2}{Hz}}\right]\)</span> or <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{A^2}{Hz}}\right]\)</span> (<em>float, sympy.Symbol, symPy.Expr</em>)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<ul>
+<li><p>The total detector-referred noise spectral density in <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{V^2}{Hz}}\right]\)</span> or <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{A^2}{Hz}}\right]\)</span> (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.onoise</strong></p></li>
+<li><p>A dict with key-value pairs is assigned to <strong>SLiCAPprotos.allResults.onoiseTerms</strong></p>
+<ul>
+<li><p>key: Name of the source (<em>str</em>)</p></li>
+<li><p>value: Contributions of this source to the detector-referred noise spectral density in <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{V^2}{Hz}}\right]\)</span> or <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{A^2}{Hz}}\right]\)</span> (<em>float, sympy.Symbol, symPy.Expr</em>)</p></li>
+</ul>
+</li>
+<li><p>If a signal source has been defined:</p>
+<ul>
+<li><p>The total source-referred noise spectral density in <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{V^2}{Hz}}\right]\)</span> or <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{A^2}{Hz}}\right]\)</span> (<em>float, sympy.Symbol, symPy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.noise</strong></p></li>
+<li><p>A dict with key-value pairs is assigned to <strong>SLiCAPprotos.allResults.inoiseTerms</strong></p>
+<ul>
+<li><p>key: Name of the source (<em>str</em>)</p></li>
+<li><p>value: Contributions of this source to the source-referred noise spectral density in <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{V^2}{Hz}}\right]\)</span> or <span class="math notranslate nohighlight">\(\left[\mathrm{\frac{A^2}{Hz}}\right]\)</span> (<em>float, sympy.Symbol, symPy.Expr</em>)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-numer">
+<h3>Data type <em>numer</em><a class="headerlink" href="#data-type-numer" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the numerator of the Laplace Transform of the unit-impulse response or of a voltage or a current.</p>
+<ul>
+<li><p>If parameter stepping is enabled:</p>
+<p>A list with results (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.numer</strong></p>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<p>The result (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.numer</strong></p>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-params">
+<h3>Data type <em>params</em><a class="headerlink" href="#data-type-params" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the values of parameters, while sweeping or stepping other parameters. This data type should be used when plotting parameters against each other. Only the copied instruction data is returned.</p>
+</div>
+<div class="section" id="data-type-poles">
+<h3>Data type <em>poles</em><a class="headerlink" href="#data-type-poles" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the complex solutions of the denominator of the Laplace transfer function. It may not work with symbolic parameters and it not implemented for dataType <em>vi</em>.</p>
+<ul>
+<li><p>If parameter stepping is enabled:</p>
+<p>A list of lists with solutions (<em>complex</em>) is assigned to <strong>SLiCAPprotos.allResults.poles</strong></p>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<p>A list with solutions (<em>complex</em>) is assigned to <strong>SLiCAPprotos.allResults.poles</strong></p>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-pz">
+<h3>Data type <em>pz</em><a class="headerlink" href="#data-type-pz" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the complex solutions of the numerator and of the denominator of the Laplace Transform of the unit-impulse response and the zero-frequency value of the transfer. Poles and zeros with the same frequency cancel each other out. It may not work with symbolic parameters and it not implemented for dataType <em>vi</em>.</p>
+<div class="admonition-note admonition">
+<p class="admonition-title">note</p>
+<p>pole-zero pairs with equal complex frequencies (tolerance = <span class="math notranslate nohighlight">\(10^{\mathrm{-ini.disp}}\)</span>) are removed from the results.</p>
+</div>
+<ul class="simple">
+<li><p>If parameter stepping is enabled:</p>
+<ul>
+<li><p>A list of lists with solutions (<em>complex</em>) of the denominator is assigned to <strong>SLiCAPprotos.allResults.poles</strong></p></li>
+<li><p>A list of lists with solutions (<em>complex</em>) of the numerator is assigned to <strong>SLiCAPprotos.allResults.zeros</strong></p></li>
+<li><p>A list with zero-frequency values (<em>float</em>) of the transfer is assigned to <strong>SLiCAPprotos.allResults.DCvalue</strong></p></li>
+</ul>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<ul>
+<li><p>A list with solutions (<em>complex</em>) of the denominator is assigned to <strong>SLiCAPprotos.allResults.poles</strong></p></li>
+<li><p>A list with solutions (<em>complex</em>) of the numerator is assigned to <strong>SLiCAPprotos.allResults.zeros</strong></p></li>
+<li><p>The zero-frequency values (<em>float</em>) of the transfer is assigned to <strong>SLiCAPprotos.allResults.DCvalue</strong></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-solve">
+<h3>Data type <em>solve</em><a class="headerlink" href="#data-type-solve" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the network solution; only for gain type ‘vi’.</p>
+<ul class="simple">
+<li><p>If parameter stepping is enabled:</p>
+<ul>
+<li><p>A list with solutions (<em>symPy.Matrix</em>) is assigned to <strong>SLiCAPprotos.allResults.solve</strong></p></li>
+</ul>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<ul>
+<li><p>The solution (<em>symPy.Matrix</em>) is assigned to <strong>SLiCAPprotos.allResults.solve</strong></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-step">
+<h3>Data type <em>step</em><a class="headerlink" href="#data-type-step" title="Permalink to this heading">¶</a></h3>
+<p>Calculates inverse Laplace transform of (1/s) times the transfer function. It may not work with symbolic values.</p>
+<ul>
+<li><p>If parameter stepping is enabled:</p>
+<p>A list with results (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.stepResp</strong></p>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<p>The result (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.stepResp</strong></p>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-time">
+<h3>Data type <em>time</em><a class="headerlink" href="#data-type-time" title="Permalink to this heading">¶</a></h3>
+<p>Calculates inverse Laplace transform of a detector voltage or current. Only for gain type ‘vi’. It may not work with symbolic values.</p>
+<ul>
+<li><p>If parameter stepping is enabled:</p>
+<p>A list with results (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.time</strong></p>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<p>The result (<em>float, sympy.Expr</em>) is assigned to <strong>SLiCAPprotos.allResults.time</strong></p>
+</li>
+</ul>
+</div>
+<div class="section" id="data-type-zeros">
+<h3>Data type <em>zeros</em><a class="headerlink" href="#data-type-zeros" title="Permalink to this heading">¶</a></h3>
+<p>Calculates the complex solutions of the numerator of the Laplace transfer function. It may not work with symbolic parameters and it not implemented for dataType <em>vi</em>.</p>
+<ul>
+<li><p>If parameter stepping is enabled:</p>
+<p>A list of lists with solutions (<em>complex</em>) is assigned to <strong>SLiCAPprotos.allResults.poles</strong></p>
+</li>
+<li><p>If parameter stepping is disabled:</p>
+<p>A list with solutions (<em>complex</em>) is assigned to <strong>SLiCAPprotos.allResults.poles</strong></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="postproc.html" class="btn btn-neutral float-right" title="Work with the results" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="parameterStepping.html" class="btn btn-neutral float-left" title="Parameter stepping" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2023, SLiCAP development team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

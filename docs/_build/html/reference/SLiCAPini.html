@@ -1,0 +1,774 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>SLiCAPini.py &mdash; SLiCAP 2.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/myStyle.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SLiCAPinstruction.py" href="SLiCAPinstruction.html" />
+    <link rel="prev" title="SLiCAPhtml.py" href="SLiCAPhtml.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SLiCAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPreference.html">SLiCAP reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html">SLiCAP.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPconfig.html">SLiCAPconfig.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html">SLiCAPexecute.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPini.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPini.Help"><code class="docutils literal notranslate"><span class="pre">Help()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings"><code class="docutils literal notranslate"><span class="pre">settings</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.Hz"><code class="docutils literal notranslate"><span class="pre">settings.Hz</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.Laplace"><code class="docutils literal notranslate"><span class="pre">settings.Laplace</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.circuitPath"><code class="docutils literal notranslate"><span class="pre">settings.circuitPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.csvPath"><code class="docutils literal notranslate"><span class="pre">settings.csvPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.defaultColors"><code class="docutils literal notranslate"><span class="pre">settings.defaultColors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.defaultLib"><code class="docutils literal notranslate"><span class="pre">settings.defaultLib</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.defaultMarkers"><code class="docutils literal notranslate"><span class="pre">settings.defaultMarkers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.denom"><code class="docutils literal notranslate"><span class="pre">settings.denom</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.disp"><code class="docutils literal notranslate"><span class="pre">settings.disp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.docPath"><code class="docutils literal notranslate"><span class="pre">settings.docPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.dump"><code class="docutils literal notranslate"><span class="pre">settings.dump()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.factor"><code class="docutils literal notranslate"><span class="pre">settings.factor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.figureAxisHeight"><code class="docutils literal notranslate"><span class="pre">settings.figureAxisHeight</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.figureAxisWidth"><code class="docutils literal notranslate"><span class="pre">settings.figureAxisWidth</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.figureFileType"><code class="docutils literal notranslate"><span class="pre">settings.figureFileType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.frequency"><code class="docutils literal notranslate"><span class="pre">settings.frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.gainColors"><code class="docutils literal notranslate"><span class="pre">settings.gainColors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.htmlIndex"><code class="docutils literal notranslate"><span class="pre">settings.htmlIndex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.htmlLabels"><code class="docutils literal notranslate"><span class="pre">settings.htmlLabels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.htmlPage"><code class="docutils literal notranslate"><span class="pre">settings.htmlPage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.htmlPages"><code class="docutils literal notranslate"><span class="pre">settings.htmlPages</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.htmlPath"><code class="docutils literal notranslate"><span class="pre">settings.htmlPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.htmlPrefix"><code class="docutils literal notranslate"><span class="pre">settings.htmlPrefix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.imgPath"><code class="docutils literal notranslate"><span class="pre">settings.imgPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.installPath"><code class="docutils literal notranslate"><span class="pre">settings.installPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.lambdifyTool"><code class="docutils literal notranslate"><span class="pre">settings.lambdifyTool</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.lastUpdate"><code class="docutils literal notranslate"><span class="pre">settings.lastUpdate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.latexPath"><code class="docutils literal notranslate"><span class="pre">settings.latexPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.legendLoc"><code class="docutils literal notranslate"><span class="pre">settings.legendLoc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.libraryPath"><code class="docutils literal notranslate"><span class="pre">settings.libraryPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.ltspice"><code class="docutils literal notranslate"><span class="pre">settings.ltspice</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.mathmlPath"><code class="docutils literal notranslate"><span class="pre">settings.mathmlPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.maxRecSubst"><code class="docutils literal notranslate"><span class="pre">settings.maxRecSubst</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.netlist"><code class="docutils literal notranslate"><span class="pre">settings.netlist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.notebook"><code class="docutils literal notranslate"><span class="pre">settings.notebook</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.numer"><code class="docutils literal notranslate"><span class="pre">settings.numer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.plotFontSize"><code class="docutils literal notranslate"><span class="pre">settings.plotFontSize</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.projectPath"><code class="docutils literal notranslate"><span class="pre">settings.projectPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.sphinxPath"><code class="docutils literal notranslate"><span class="pre">settings.sphinxPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.stepFunction"><code class="docutils literal notranslate"><span class="pre">settings.stepFunction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.tableFileType"><code class="docutils literal notranslate"><span class="pre">settings.tableFileType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.txtPath"><code class="docutils literal notranslate"><span class="pre">settings.txtPath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.updatePaths"><code class="docutils literal notranslate"><span class="pre">settings.updatePaths()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPini.settings.userPath"><code class="docutils literal notranslate"><span class="pre">settings.userPath</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="SLiCAPreference.html">SLiCAP reference</a> &raquo;</li>
+        
+      <li>SLiCAPini.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/SLiCAPini.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-SLiCAP.SLiCAPini">
+<span id="slicapini-py"></span><h1>SLiCAPini.py<a class="headerlink" href="#module-SLiCAP.SLiCAPini" title="Permalink to this heading">¶</a></h1>
+<p>SLiCAP initialization module, imports external modules and defines settings.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.Help">
+<span class="sig-name descname"><span class="pre">Help</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPini.Help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the HTML documentation in the default browser.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class for global variables.</p>
+<p>The following globals are defined:</p>
+<ol class="arabic">
+<li><p>path settings</p>
+<ul class="simple">
+<li><p>installPath       : Directory with SLiCAP modules files</p></li>
+<li><p>userPath          : Directory with SLiCAP libraries and examples</p></li>
+<li><p>projectPath       : Directory with SLiCAP project files</p></li>
+<li><p>htmlPath          : Directory with SLiCAP HTML output</p></li>
+<li><p>circuitPath       : Directory with SLiCAP project circuit files</p></li>
+<li><p>libraryPath       : Directory with SLiCAP user libraries</p></li>
+<li><p>txtPath           : Directory with text files for HTML output</p></li>
+<li><p>csvPath           : Directory with csv files for HTML tables</p></li>
+<li><p>sphinxPath        : Directory for sphinx output</p></li>
+<li><p>mathmlPath        : Directory for mathML output</p></li>
+<li><p>imgPath           : Directory with images for HTML output</p></li>
+<li><p>defaultLib        : Directory with SLiCAP basic library files</p></li>
+<li><p>docPath           : Directory with html documentation</p></li>
+</ul>
+</li>
+<li><p>active HTML pages and active HTMLfile prefix</p>
+<ul class="simple">
+<li><p>htmlIndex         : Active HTML index page</p></li>
+<li><p>htmlPage          : Active HTML page</p></li>
+<li><p>htmlPrefix        : Active HTML prefix</p></li>
+</ul>
+</li>
+<li><p>HTML labels and page names</p>
+<ul class="simple">
+<li><p>htmlLabels        : Dict with HTML labels:</p>
+<ul>
+<li><p>key   = labelName  : name of the label</p></li>
+<li><p>value = pageName   : page of the label</p></li>
+</ul>
+</li>
+<li><p>htmlEqLabels      : Dict with HTML equation labels:</p>
+<ul>
+<li><p>key   = labelName  : name of the label</p></li>
+<li><p>value = pageName   : page of the label</p></li>
+</ul>
+</li>
+<li><p>htmlPages         : List with names of HTML pages</p></li>
+</ul>
+</li>
+<li><p>Math settings</p>
+<blockquote>
+<div><p>numer:</p>
+<blockquote>
+<div><p>“ME”      : Method = SLiCAP Minor expansion (always accurate) Default
+“BS”      : Method = SLiCAP Bareis fraction-free algorithm
+“LU”      : Method = Sympy LU decomposition
+“bareis”  : Method = Sympy Bareis fraction-free algorithm</p>
+</div></blockquote>
+<p>denom:</p>
+<blockquote>
+<div><p>“ME”      : Method = SLiCAP Minor expansion (always accurate) Default
+“BS”      : Method = SLiCAP Bareis fraction-free algorithm
+“LU”      : Method = Sympy LU decomposition
+“bareis”  : Method = Sympy Bareis fraction-free algorithm</p>
+</div></blockquote>
+<p>factor:</p>
+<blockquote>
+<div><p>True : Factor terms of onoise, inoise, ovar and ivar (default)
+False: Do not factor the above terms (faster)</p>
+</div></blockquote>
+</div></blockquote>
+<ul class="simple">
+<li><p>stepFunction:</p>
+<ul>
+<li><p>True: use Sympy.lambify for parameter stepping</p></li>
+<li><p>False : substitute step parameters in matrix</p></li>
+</ul>
+</li>
+<li><p>Hz:</p>
+<ul>
+<li><p>True: frequency in Hz and phase in degrees</p></li>
+<li><p>False : frequency in radians/s and phase in radians</p></li>
+</ul>
+</li>
+<li><p>Laplace           : Parameter used for Laplace variable</p></li>
+<li><p>frequency         : Parameter used for frequency variable</p></li>
+<li><p>maxRecSubst       : Maximum number of recursive substitutions</p></li>
+<li><p>lambdifyTool      : “numpy” or “mpmath”; latter one in case of overflow</p></li>
+</ul>
+</li>
+<li><p>Display settings</p>
+<ul class="simple">
+<li><p>disp              : Number of digits for displaying floats on html pages</p></li>
+<li><p>mathml:</p></li>
+</ul>
+</li>
+<li><p>Plot settings</p>
+<ul class="simple">
+<li><p>figureAxisHeight  : Height of the axis in inches (72dpi), pole-zero
+and polar plots are square and have their height set to their width.</p></li>
+<li><p>figureAxisWidth   : Width of an axis in inches (72dpi)</p></li>
+<li><p>defaultColors     : List with matplotlib color names for param. stepping</p></li>
+<li><p>gainColors        : dict with color names for gain types:</p>
+<ul>
+<li><p>key   = gainType</p></li>
+<li><p>value = matplotlib color name</p></li>
+</ul>
+</li>
+<li><p>defaultMarkers    : list with matplotlib markers</p></li>
+<li><p>tableFileType     : file type for saving traces as tables</p></li>
+<li><p>figureFileType    : graphic file type for saving plots</p></li>
+<li><p>legendLoc         : default plot legend location</p></li>
+<li><p>plotFontSize      : default plot font size</p></li>
+</ul>
+</li>
+<li><p>Jupyter notebook settings</p>
+<ul class="simple">
+<li><p>notebook: True adapts HTML math return variables to markdown format
+required by Jupyter notebook</p></li>
+</ul>
+</li>
+<li><p>Netlister settings:</p>
+<ul class="simple">
+<li><p>ltspice : os command for batch netlist creation with LTspice</p></li>
+<li><p>netlist : os command for batch netlist creation with gschem or lepton-eda</p></li>
+</ul>
+</li>
+</ol>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.Hz">
+<span class="sig-name descname"><span class="pre">Hz</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.Hz" title="Permalink to this definition">¶</a></dt>
+<dd><p>(<em>Bool</em>)</p>
+<ul class="simple">
+<li><p>True: frequency in Hz and phase in degrees</p></li>
+<li><p>False : frequency in radians/s and phase in radians</p></li>
+</ul>
+<p>Defaults to True</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.Laplace">
+<span class="sig-name descname"><span class="pre">Laplace</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.Laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Symbol (<em>sympy.core.symbol.Symbol</em>) used for the Laplace variable.
+Defaults to sp.Symbol(‘s’).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.circuitPath">
+<span class="sig-name descname"><span class="pre">circuitPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.circuitPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path (<em>str</em>) to circuit files, will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.csvPath">
+<span class="sig-name descname"><span class="pre">csvPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.csvPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path (<em>str</em>) to .csv files, will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.defaultColors">
+<span class="sig-name descname"><span class="pre">defaultColors</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.defaultColors" title="Permalink to this definition">¶</a></dt>
+<dd><p>(<em>tuple</em>) with matplotlib color names (<em>str</em>) for traces in plots.
+Defaults to (‘r’,’b’,’g’,’c’,’m’,’y’,’k’)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.defaultLib">
+<span class="sig-name descname"><span class="pre">defaultLib</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.defaultLib" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default library path of SLiCAP (<em>str</em>), defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.defaultMarkers">
+<span class="sig-name descname"><span class="pre">defaultMarkers</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.defaultMarkers" title="Permalink to this definition">¶</a></dt>
+<dd><p>(<em>list</em>) with matplotlib names of markers used for traces in plots.
+Defaults to: [‘’].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.denom">
+<span class="sig-name descname"><span class="pre">denom</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.denom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose ‘ME” for minor expansion, ‘BS” or “bareis” for Bareis fraction
+free algorithm, and “LU” for LU decomposition. Defaults to ME.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.disp">
+<span class="sig-name descname"><span class="pre">disp</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.disp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of digits ()*int* for displaying floats on html pages.
+Defaults to 4.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.docPath">
+<span class="sig-name descname"><span class="pre">docPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.docPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path with HTML documentation (<em>str</em>), defaults to None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.dump">
+<span class="sig-name descname"><span class="pre">dump</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints the global variables and their values.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.factor">
+<span class="sig-name descname"><span class="pre">factor</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Factor inoise, onoise, ivar and ovar terms.
+Defaults to: True</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.figureAxisHeight">
+<span class="sig-name descname"><span class="pre">figureAxisHeight</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.figureAxisHeight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Height in inches (<em>int, float</em>) of an axis system in a figure.
+Defaults to 5.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.figureAxisWidth">
+<span class="sig-name descname"><span class="pre">figureAxisWidth</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.figureAxisWidth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Width in inches (<em>int, float</em>) of an axis system in a figure.
+Defaults to 7.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.figureFileType">
+<span class="sig-name descname"><span class="pre">figureFileType</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.figureFileType" title="Permalink to this definition">¶</a></dt>
+<dd><p>File type (<em>str</em>) for saving plots. Defaults to ‘svg’.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.frequency">
+<span class="sig-name descname"><span class="pre">frequency</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.frequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Symbol (<em>sympy.core.symbol.Symbol</em>) used for frequency.
+Defaults to sp.Symbol(‘f’).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.gainColors">
+<span class="sig-name descname"><span class="pre">gainColors</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.gainColors" title="Permalink to this definition">¶</a></dt>
+<dd><p>(<em>dict</em>) with key-value pairs for the color of traces for different
+gain types:</p>
+<ul class="simple">
+<li><p>key: gain type: (<em>str</em>)</p></li>
+<li><p>value: matplotlib color name (<em>str</em>) for traces in plots.</p></li>
+</ul>
+<p>Defaults to: {‘gain’: ‘b’, ‘asymptotic’: ‘r’, ‘loopgain’: ‘k’,
+‘direct’: ‘g’, ‘servo’: ‘m’, ‘vi’: ‘c’}</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlIndex">
+<span class="sig-name descname"><span class="pre">htmlIndex</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name (<em>str</em>) of the active html index file.
+Wiil be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlLabels">
+<span class="sig-name descname"><span class="pre">htmlLabels</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlLabels" title="Permalink to this definition">¶</a></dt>
+<dd><p>(<em>dict</em>) with key-value pairs:</p>
+<ul class="simple">
+<li><p>key: label name (<em>str</em>)</p></li>
+<li><p>value” label object (<em>SLiCAPhtml.label</em>)</p></li>
+</ul>
+<p>Defaults to: None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlPage">
+<span class="sig-name descname"><span class="pre">htmlPage</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlPage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name (<em>str</em>) of the active html file.
+Wiil be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlPages">
+<span class="sig-name descname"><span class="pre">htmlPages</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlPages" title="Permalink to this definition">¶</a></dt>
+<dd><p>(<em>list</em>) with names of html pages generated in the project.
+Defaults to: None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlPath">
+<span class="sig-name descname"><span class="pre">htmlPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>HTML path (<em>str</em>), will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlPrefix">
+<span class="sig-name descname"><span class="pre">htmlPrefix</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlPrefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name (<em>str</em>) of athe ctive html prefix (first part of the file name).
+Wiil be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.imgPath">
+<span class="sig-name descname"><span class="pre">imgPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.imgPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path (<em>str</em>), to image files will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.installPath">
+<span class="sig-name descname"><span class="pre">installPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.installPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Installation path of SLiCAP (<em>str</em>), defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.lambdifyTool">
+<span class="sig-name descname"><span class="pre">lambdifyTool</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.lambdifyTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tool to be used for sympy.lamddify, can be “numpy” for fast calculation
+in case of overflow warning choose “mpmath”</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.lastUpdate">
+<span class="sig-name descname"><span class="pre">lastUpdate</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.lastUpdate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value (<em>datetime.datetime</em>) of the date and time of the last project
+update. This is set by <strong>SLiCAP.initProject()</strong>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.latexPath">
+<span class="sig-name descname"><span class="pre">latexPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.latexPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path (<em>str</em>) for saving latex files, will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.legendLoc">
+<span class="sig-name descname"><span class="pre">legendLoc</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.legendLoc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default legend position (<em>str</em>) in plots. Cab be: ‘upper left’,
+‘upper right’, ‘lower left’, ‘lower right’, ‘upper center’, ‘lower center’,
+‘center left’, ‘center right’, ‘center’ or ‘best’.</p>
+<p>Defaults to ‘best’.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.libraryPath">
+<span class="sig-name descname"><span class="pre">libraryPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.libraryPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path (<em>str</em>) to library files, will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.ltspice">
+<span class="sig-name descname"><span class="pre">ltspice</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.ltspice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operating system command prefix for batch generation of a netlist from an
+LTspice circuit.</p>
+<p>Defaults to <em>SLiCAPconfig.LTSPICE</em></p>
+<ul class="simple">
+<li><p>Windows: ‘C:/Program Files/LTC/LTspiceXVII/XVIIx64.exe -netlist ‘</p></li>
+<li><p>Linux (Wine): ‘wine ~/.wine/drive_c/ProgramFiles/LTC/LTspiceXVII/XVIIx64.exe -netlist ‘</p></li>
+</ul>
+<p>This variable is set during installation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.mathmlPath">
+<span class="sig-name descname"><span class="pre">mathmlPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.mathmlPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path (<em>str</em>) for saving mathml files, will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.maxRecSubst">
+<span class="sig-name descname"><span class="pre">maxRecSubst</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.maxRecSubst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number (<em>int</em>) of recursive substitutions in equations.
+Defaults to 12.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.netlist">
+<span class="sig-name descname"><span class="pre">netlist</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.netlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>gschem or lepton-schematic command for generating a netlist.</p>
+<p>Defaults to <em>SLiCAPconfig.NETLIST</em></p>
+<p>For lepton-schematic use ‘lepton-netlist -g spice-noqsi’.</p>
+<p>For gschem (deprecated) use: ‘gnetlist -q -g spice-noqsi’.</p>
+<p>The netlister: <em>gnet-spice-noqsi.scm</em> must be stored in the gschem or
+lepton-geda directory with the other netlisters. Commonly used
+locations are:</p>
+<ul class="simple">
+<li><p>Linux systems:</p>
+<ul>
+<li><p><em>lepton-eda:</em> /usr/share/lepton-eda/scheme/backend/</p></li>
+<li><p><em>gschem:</em> /usr/share/gEDA/scheme/</p></li>
+</ul>
+</li>
+<li><p>MS Windows systems:</p>
+<ul>
+<li><p><em>gschem</em>:  ‘C:Program Files (x86)gEDAgEDAsharegEDAscheme’</p></li>
+</ul>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.notebook">
+<span class="sig-name descname"><span class="pre">notebook</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.notebook" title="Permalink to this definition">¶</a></dt>
+<dd><p>(<em>Bool</em>)</p>
+<ul class="simple">
+<li><p>True: Places html math output between double dollar signs for correct
+rendering of latex in Jupyter notebooks.</p></li>
+</ul>
+<p>Defaults to False.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.numer">
+<span class="sig-name descname"><span class="pre">numer</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.numer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose ‘ME” for minor expansion, ‘BS” or “bareis” for Bareis fraction
+free algorithm, and “LU” for LU decomposition. Defaults to ME.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.plotFontSize">
+<span class="sig-name descname"><span class="pre">plotFontSize</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.plotFontSize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value (<em>int</em>) for the font size in plots in points. Defaults to 12.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.projectPath">
+<span class="sig-name descname"><span class="pre">projectPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.projectPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Project path (<em>str</em>), will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.sphinxPath">
+<span class="sig-name descname"><span class="pre">sphinxPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.sphinxPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path (<em>str</em>) for saving sphinx files, will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.stepFunction">
+<span class="sig-name descname"><span class="pre">stepFunction</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.stepFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>(<em>Bool</em>)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>True: Transfer functions are calculated with symbolic step variables
+The step variable are substituted into these expressions.</p></li>
+<li><p>False: Step variables are substituted directly into the matrix.
+This method faster for large circuits, or for stepped instructions
+with multiple step variables.</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.tableFileType">
+<span class="sig-name descname"><span class="pre">tableFileType</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.tableFileType" title="Permalink to this definition">¶</a></dt>
+<dd><p>File type (<em>str</em>) for csv files. Defaults to ‘csv’.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.txtPath">
+<span class="sig-name descname"><span class="pre">txtPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.txtPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path (<em>str</em>) to text files, will be set by <strong>SLiCAP.initProject()</strong>;  defaults to None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.updatePaths">
+<span class="sig-name descname"><span class="pre">updatePaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">projectPath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.updatePaths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the file locations according to the project path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>projectPath</strong> (<em>str</em>) – Path to the active SLiCAP project.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.userPath">
+<span class="sig-name descname"><span class="pre">userPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.userPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>User path of SLiCAP (<em>str</em>), defaults to None.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="SLiCAPinstruction.html" class="btn btn-neutral float-right" title="SLiCAPinstruction.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="SLiCAPhtml.html" class="btn btn-neutral float-left" title="SLiCAPhtml.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2023, SLiCAP development team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

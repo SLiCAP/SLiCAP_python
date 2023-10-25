@@ -1,6 +1,3 @@
 build
 SLiCAP_python.egg-info
 SLiCAP/SLiCAPsetting.py
-docs/_build
-!docs/_build/html
-docs/_build/html/*
