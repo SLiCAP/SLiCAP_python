@@ -18,7 +18,7 @@ SLiCAP is licensed under a `Creative Commons Attribution-NonCommercial-NoDerivat
 Requirements
 ------------
 
-Before installing SLiCAP you need to install `maxima CAS <http://maxima.sourceforge.net/download.html>`_ and Python 3 packages listed in `https://github.com/Lenty/SLiCAP_python/requirements.txt <https://github.com/Lenty/SLiCAP_python/blob/master/requirements.txt>`_.
+SLiCAP requires the Python 3 packages listed in `https://github.com/SLiCAP/SLiCAP_python/requirements.txt <https://github.com/SLiCAP/SLiCAP_python/blob/master/requirements.txt>`_.
 
 MSWindows installation of maxima
 ````````````````````````````````
@@ -36,15 +36,15 @@ MacOS installation of maxima
 Download SLiCAP
 ---------------
 
-- Open a command window or terminal in a folder where you want to store the downloaded files and clone `https://github.com/Lenty/SLiCAP_python <https://github.com/Lenty/SLiCAP_python>`_ into that folder:
+- Open a command window or terminal in a folder where you want to store the downloaded files and clone `https://github.com/SLiCAP/SLiCAP_python <https://github.com/SLiCAP/SLiCAP_python>`_ into that folder:
 
 .. code-block:: bash
 
-   git clone https://github.com/Lenty/SLiCAP_python
+   git clone https://github.com/SLiCAP/SLiCAP_python
 
 or 
 
-- Download the zip file from: `https://github.com/Lenty/SLiCAP_python <https://github.com/Lenty/SLiCAP_python>`_ and extract it in some folder.
+- Download the zip file from: `https://github.com/SLiCAP/SLiCAP_python <https://github.com/SLiCAP/SLiCAP_python>`_ and extract it in some folder.
 
 Install SLiCAP
 --------------
