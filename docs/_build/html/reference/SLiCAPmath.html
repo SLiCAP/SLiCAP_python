@@ -35,6 +35,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -106,7 +107,49 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPmath.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPmath.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.PdBm2V"><code class="docutils literal notranslate"><span class="pre">PdBm2V()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.Roots"><code class="docutils literal notranslate"><span class="pre">Roots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.assumePosParams"><code class="docutils literal notranslate"><span class="pre">assumePosParams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.assumeRealParams"><code class="docutils literal notranslate"><span class="pre">assumeRealParams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.besselPoly"><code class="docutils literal notranslate"><span class="pre">besselPoly()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.butterworthPoly"><code class="docutils literal notranslate"><span class="pre">butterworthPoly()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.cancelPZ"><code class="docutils literal notranslate"><span class="pre">cancelPZ()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.checkExpression"><code class="docutils literal notranslate"><span class="pre">checkExpression()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.checkNumber"><code class="docutils literal notranslate"><span class="pre">checkNumber()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.clearAssumptions"><code class="docutils literal notranslate"><span class="pre">clearAssumptions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.coeffsTransfer"><code class="docutils literal notranslate"><span class="pre">coeffsTransfer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.dBmagFunc_f"><code class="docutils literal notranslate"><span class="pre">dBmagFunc_f()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.delayFunc_f"><code class="docutils literal notranslate"><span class="pre">delayFunc_f()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.det"><code class="docutils literal notranslate"><span class="pre">det()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.detBS"><code class="docutils literal notranslate"><span class="pre">detBS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.detFC"><code class="docutils literal notranslate"><span class="pre">detFC()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.detME"><code class="docutils literal notranslate"><span class="pre">detME()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.doCDS"><code class="docutils literal notranslate"><span class="pre">doCDS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.doCDSint"><code class="docutils literal notranslate"><span class="pre">doCDSint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.equateCoeffs"><code class="docutils literal notranslate"><span class="pre">equateCoeffs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.findServoBandwidth"><code class="docutils literal notranslate"><span class="pre">findServoBandwidth()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.float2rational"><code class="docutils literal notranslate"><span class="pre">float2rational()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.fullSubs"><code class="docutils literal notranslate"><span class="pre">fullSubs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.ilt"><code class="docutils literal notranslate"><span class="pre">ilt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.magFunc_f"><code class="docutils literal notranslate"><span class="pre">magFunc_f()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.mag_f"><code class="docutils literal notranslate"><span class="pre">mag_f()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.makeNumData"><code class="docutils literal notranslate"><span class="pre">makeNumData()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.normalizeRational"><code class="docutils literal notranslate"><span class="pre">normalizeRational()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.numRoots"><code class="docutils literal notranslate"><span class="pre">numRoots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.optimizeMatrix"><code class="docutils literal notranslate"><span class="pre">optimizeMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.phaseFunc_f"><code class="docutils literal notranslate"><span class="pre">phaseFunc_f()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.phaseMargin"><code class="docutils literal notranslate"><span class="pre">phaseMargin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.phase_f"><code class="docutils literal notranslate"><span class="pre">phase_f()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.rational2float"><code class="docutils literal notranslate"><span class="pre">rational2float()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.rmsNoise"><code class="docutils literal notranslate"><span class="pre">rmsNoise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.roundN"><code class="docutils literal notranslate"><span class="pre">roundN()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.routh"><code class="docutils literal notranslate"><span class="pre">routh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.step2PeriodicPulse"><code class="docutils literal notranslate"><span class="pre">step2PeriodicPulse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.symRoots"><code class="docutils literal notranslate"><span class="pre">symRoots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.zeroValue"><code class="docutils literal notranslate"><span class="pre">zeroValue()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
@@ -114,6 +157,8 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>

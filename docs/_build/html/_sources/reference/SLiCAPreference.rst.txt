@@ -31,3 +31,4 @@ SLiCAP comprises the following (sub) modules:
    SLiCAPsetting
    SLiCAPyacc
    SLiCAPfc
+   SLiCAPstatespace

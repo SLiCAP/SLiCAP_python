@@ -35,6 +35,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -114,6 +115,7 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
@@ -191,24 +193,606 @@
 <p>SLiCAP comprises the following (sub) modules:</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAP.html">SLiCAP.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAP.html">SLiCAP.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html#SLiCAP.SLiCAP.SLiCAPproject"><code class="docutils literal notranslate"><span class="pre">SLiCAPproject</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAP.html#SLiCAP.SLiCAP.SLiCAPproject.author"><code class="docutils literal notranslate"><span class="pre">SLiCAPproject.author</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAP.html#SLiCAP.SLiCAP.SLiCAPproject.lastUpdate"><code class="docutils literal notranslate"><span class="pre">SLiCAPproject.lastUpdate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAP.html#SLiCAP.SLiCAP.SLiCAPproject.name"><code class="docutils literal notranslate"><span class="pre">SLiCAPproject.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html#SLiCAP.SLiCAP.copyNotOverwrite"><code class="docutils literal notranslate"><span class="pre">copyNotOverwrite()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html#SLiCAP.SLiCAP.initProject"><code class="docutils literal notranslate"><span class="pre">initProject()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html#SLiCAP.SLiCAP.makeDir"><code class="docutils literal notranslate"><span class="pre">makeDir()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html#SLiCAP.SLiCAP.makeNetlist"><code class="docutils literal notranslate"><span class="pre">makeNetlist()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="SLiCAPconfig.html">SLiCAPconfig.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPexecute.html">SLiCAPexecute.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.csv2specs"><code class="docutils literal notranslate"><span class="pre">csv2specs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specItem"><code class="docutils literal notranslate"><span class="pre">specItem</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specItem.csvLine"><code class="docutils literal notranslate"><span class="pre">specItem.csvLine()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specItem.htmlLine"><code class="docutils literal notranslate"><span class="pre">specItem.htmlLine()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specItem.specLine"><code class="docutils literal notranslate"><span class="pre">specItem.specLine()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specItem.update"><code class="docutils literal notranslate"><span class="pre">specItem.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specList2dict"><code class="docutils literal notranslate"><span class="pre">specList2dict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2circuit"><code class="docutils literal notranslate"><span class="pre">specs2circuit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2csv"><code class="docutils literal notranslate"><span class="pre">specs2csv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2html"><code class="docutils literal notranslate"><span class="pre">specs2html()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPexecute.html">SLiCAPexecute.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.addDCvarSources"><code class="docutils literal notranslate"><span class="pre">addDCvarSources()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.addResNoiseSources"><code class="docutils literal notranslate"><span class="pre">addResNoiseSources()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.convertMatrices"><code class="docutils literal notranslate"><span class="pre">convertMatrices()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.correctDMcurrentResult"><code class="docutils literal notranslate"><span class="pre">correctDMcurrentResult()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.createConversionMatrices"><code class="docutils literal notranslate"><span class="pre">createConversionMatrices()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.createResultObject"><code class="docutils literal notranslate"><span class="pre">createResultObject()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.delDCvarSources"><code class="docutils literal notranslate"><span class="pre">delDCvarSources()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.delResNoiseSources"><code class="docutils literal notranslate"><span class="pre">delResNoiseSources()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doCramer"><code class="docutils literal notranslate"><span class="pre">doCramer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doDC"><code class="docutils literal notranslate"><span class="pre">doDC()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doDCsolve"><code class="docutils literal notranslate"><span class="pre">doDCsolve()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doDCvar"><code class="docutils literal notranslate"><span class="pre">doDCvar()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doDenom"><code class="docutils literal notranslate"><span class="pre">doDenom()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doImpulse"><code class="docutils literal notranslate"><span class="pre">doImpulse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doInstruction"><code class="docutils literal notranslate"><span class="pre">doInstruction()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doLaplace"><code class="docutils literal notranslate"><span class="pre">doLaplace()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doMatrix"><code class="docutils literal notranslate"><span class="pre">doMatrix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doNoise"><code class="docutils literal notranslate"><span class="pre">doNoise()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doNumer"><code class="docutils literal notranslate"><span class="pre">doNumer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPZ"><code class="docutils literal notranslate"><span class="pre">doPZ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPoles"><code class="docutils literal notranslate"><span class="pre">doPoles()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPyDCvar"><code class="docutils literal notranslate"><span class="pre">doPyDCvar()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPyDenom"><code class="docutils literal notranslate"><span class="pre">doPyDenom()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPyLaplace"><code class="docutils literal notranslate"><span class="pre">doPyLaplace()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPyLoopGainServo"><code class="docutils literal notranslate"><span class="pre">doPyLoopGainServo()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPyNoise"><code class="docutils literal notranslate"><span class="pre">doPyNoise()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPyNumer"><code class="docutils literal notranslate"><span class="pre">doPyNumer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doPySolve"><code class="docutils literal notranslate"><span class="pre">doPySolve()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doSolve"><code class="docutils literal notranslate"><span class="pre">doSolve()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doStep"><code class="docutils literal notranslate"><span class="pre">doStep()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doTime"><code class="docutils literal notranslate"><span class="pre">doTime()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doTimeSolve"><code class="docutils literal notranslate"><span class="pre">doTimeSolve()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.doZeros"><code class="docutils literal notranslate"><span class="pre">doZeros()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.findBaseNames"><code class="docutils literal notranslate"><span class="pre">findBaseNames()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.getSubMatrices"><code class="docutils literal notranslate"><span class="pre">getSubMatrices()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.makeAllMatrices"><code class="docutils literal notranslate"><span class="pre">makeAllMatrices()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.makeDetPos"><code class="docutils literal notranslate"><span class="pre">makeDetPos()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.makeMaxDetPos"><code class="docutils literal notranslate"><span class="pre">makeMaxDetPos()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.makeSubsDict"><code class="docutils literal notranslate"><span class="pre">makeSubsDict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.pairParDefs"><code class="docutils literal notranslate"><span class="pre">pairParDefs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.pairVariables"><code class="docutils literal notranslate"><span class="pre">pairVariables()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html#SLiCAP.SLiCAPexecute.stepFunctions"><code class="docutils literal notranslate"><span class="pre">stepFunctions()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.HTMLfoot"><code class="docutils literal notranslate"><span class="pre">HTMLfoot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.HTMLhead"><code class="docutils literal notranslate"><span class="pre">HTMLhead()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.Label"><code class="docutils literal notranslate"><span class="pre">Label</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.Label.name"><code class="docutils literal notranslate"><span class="pre">Label.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.Label.page"><code class="docutils literal notranslate"><span class="pre">Label.page</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.Label.text"><code class="docutils literal notranslate"><span class="pre">Label.text</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.Label.type"><code class="docutils literal notranslate"><span class="pre">Label.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.coeffsTransfer2html"><code class="docutils literal notranslate"><span class="pre">coeffsTransfer2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.csv2html"><code class="docutils literal notranslate"><span class="pre">csv2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.dcVar2html"><code class="docutils literal notranslate"><span class="pre">dcVar2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.elementData2html"><code class="docutils literal notranslate"><span class="pre">elementData2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.eqn2html"><code class="docutils literal notranslate"><span class="pre">eqn2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.expr2html"><code class="docutils literal notranslate"><span class="pre">expr2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.fig2html"><code class="docutils literal notranslate"><span class="pre">fig2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.file2html"><code class="docutils literal notranslate"><span class="pre">file2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.head2html"><code class="docutils literal notranslate"><span class="pre">head2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.head3html"><code class="docutils literal notranslate"><span class="pre">head3html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.href"><code class="docutils literal notranslate"><span class="pre">href()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.htmlElValue"><code class="docutils literal notranslate"><span class="pre">htmlElValue()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.htmlLink"><code class="docutils literal notranslate"><span class="pre">htmlLink()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.htmlPage"><code class="docutils literal notranslate"><span class="pre">htmlPage()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.htmlParValue"><code class="docutils literal notranslate"><span class="pre">htmlParValue()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.img2html"><code class="docutils literal notranslate"><span class="pre">img2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.insertHTML"><code class="docutils literal notranslate"><span class="pre">insertHTML()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.lib2html"><code class="docutils literal notranslate"><span class="pre">lib2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.links2html"><code class="docutils literal notranslate"><span class="pre">links2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.matrices2html"><code class="docutils literal notranslate"><span class="pre">matrices2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.netlist2html"><code class="docutils literal notranslate"><span class="pre">netlist2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.noise2html"><code class="docutils literal notranslate"><span class="pre">noise2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.params2html"><code class="docutils literal notranslate"><span class="pre">params2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.pz2html"><code class="docutils literal notranslate"><span class="pre">pz2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.readFile"><code class="docutils literal notranslate"><span class="pre">readFile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.startHTML"><code class="docutils literal notranslate"><span class="pre">startHTML()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.stepArray2html"><code class="docutils literal notranslate"><span class="pre">stepArray2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.text2html"><code class="docutils literal notranslate"><span class="pre">text2html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html#SLiCAP.SLiCAPhtml.writeFile"><code class="docutils literal notranslate"><span class="pre">writeFile()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.Help"><code class="docutils literal notranslate"><span class="pre">Help()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings"><code class="docutils literal notranslate"><span class="pre">settings</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.Hz"><code class="docutils literal notranslate"><span class="pre">settings.Hz</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.Laplace"><code class="docutils literal notranslate"><span class="pre">settings.Laplace</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.circuitPath"><code class="docutils literal notranslate"><span class="pre">settings.circuitPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.csvPath"><code class="docutils literal notranslate"><span class="pre">settings.csvPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.defaultColors"><code class="docutils literal notranslate"><span class="pre">settings.defaultColors</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.defaultLib"><code class="docutils literal notranslate"><span class="pre">settings.defaultLib</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.defaultMarkers"><code class="docutils literal notranslate"><span class="pre">settings.defaultMarkers</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.denom"><code class="docutils literal notranslate"><span class="pre">settings.denom</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.disp"><code class="docutils literal notranslate"><span class="pre">settings.disp</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.docPath"><code class="docutils literal notranslate"><span class="pre">settings.docPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.dump"><code class="docutils literal notranslate"><span class="pre">settings.dump()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.factor"><code class="docutils literal notranslate"><span class="pre">settings.factor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.figureAxisHeight"><code class="docutils literal notranslate"><span class="pre">settings.figureAxisHeight</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.figureAxisWidth"><code class="docutils literal notranslate"><span class="pre">settings.figureAxisWidth</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.figureFileType"><code class="docutils literal notranslate"><span class="pre">settings.figureFileType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.frequency"><code class="docutils literal notranslate"><span class="pre">settings.frequency</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.gainColors"><code class="docutils literal notranslate"><span class="pre">settings.gainColors</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.htmlIndex"><code class="docutils literal notranslate"><span class="pre">settings.htmlIndex</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.htmlLabels"><code class="docutils literal notranslate"><span class="pre">settings.htmlLabels</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.htmlPage"><code class="docutils literal notranslate"><span class="pre">settings.htmlPage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.htmlPages"><code class="docutils literal notranslate"><span class="pre">settings.htmlPages</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.htmlPath"><code class="docutils literal notranslate"><span class="pre">settings.htmlPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.htmlPrefix"><code class="docutils literal notranslate"><span class="pre">settings.htmlPrefix</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.imgPath"><code class="docutils literal notranslate"><span class="pre">settings.imgPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.installPath"><code class="docutils literal notranslate"><span class="pre">settings.installPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.lambdifyTool"><code class="docutils literal notranslate"><span class="pre">settings.lambdifyTool</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.lastUpdate"><code class="docutils literal notranslate"><span class="pre">settings.lastUpdate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.latexPath"><code class="docutils literal notranslate"><span class="pre">settings.latexPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.legendLoc"><code class="docutils literal notranslate"><span class="pre">settings.legendLoc</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.libraryPath"><code class="docutils literal notranslate"><span class="pre">settings.libraryPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.ltspice"><code class="docutils literal notranslate"><span class="pre">settings.ltspice</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.mathmlPath"><code class="docutils literal notranslate"><span class="pre">settings.mathmlPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.maxRecSubst"><code class="docutils literal notranslate"><span class="pre">settings.maxRecSubst</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.netlist"><code class="docutils literal notranslate"><span class="pre">settings.netlist</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.notebook"><code class="docutils literal notranslate"><span class="pre">settings.notebook</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.numer"><code class="docutils literal notranslate"><span class="pre">settings.numer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.plotFontSize"><code class="docutils literal notranslate"><span class="pre">settings.plotFontSize</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.projectPath"><code class="docutils literal notranslate"><span class="pre">settings.projectPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.sphinxPath"><code class="docutils literal notranslate"><span class="pre">settings.sphinxPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.stepFunction"><code class="docutils literal notranslate"><span class="pre">settings.stepFunction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.tableFileType"><code class="docutils literal notranslate"><span class="pre">settings.tableFileType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.txtPath"><code class="docutils literal notranslate"><span class="pre">settings.txtPath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.updatePaths"><code class="docutils literal notranslate"><span class="pre">settings.updatePaths()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPini.html#SLiCAP.SLiCAPini.settings.userPath"><code class="docutils literal notranslate"><span class="pre">settings.userPath</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction"><code class="docutils literal notranslate"><span class="pre">instruction</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.check"><code class="docutils literal notranslate"><span class="pre">instruction.check()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkCircuit"><code class="docutils literal notranslate"><span class="pre">instruction.checkCircuit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkConvType"><code class="docutils literal notranslate"><span class="pre">instruction.checkConvType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkDataType"><code class="docutils literal notranslate"><span class="pre">instruction.checkDataType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkDetector"><code class="docutils literal notranslate"><span class="pre">instruction.checkDetector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkGainType"><code class="docutils literal notranslate"><span class="pre">instruction.checkGainType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkLGref"><code class="docutils literal notranslate"><span class="pre">instruction.checkLGref()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkNumeric"><code class="docutils literal notranslate"><span class="pre">instruction.checkNumeric()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkPairExt"><code class="docutils literal notranslate"><span class="pre">instruction.checkPairExt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkPairedCircuits"><code class="docutils literal notranslate"><span class="pre">instruction.checkPairedCircuits()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkSimType"><code class="docutils literal notranslate"><span class="pre">instruction.checkSimType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkSource"><code class="docutils literal notranslate"><span class="pre">instruction.checkSource()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStep"><code class="docutils literal notranslate"><span class="pre">instruction.checkStep()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStepArray"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepArray()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStepList"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepList()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStepMethod"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepMethod()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStepNum"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepNum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStepStart"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepStart()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStepStop"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepStop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStepVar"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepVar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.checkStepVars"><code class="docutils literal notranslate"><span class="pre">instruction.checkStepVars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.circuit"><code class="docutils literal notranslate"><span class="pre">instruction.circuit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.controlled"><code class="docutils literal notranslate"><span class="pre">instruction.controlled()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.convType"><code class="docutils literal notranslate"><span class="pre">instruction.convType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.dataType"><code class="docutils literal notranslate"><span class="pre">instruction.dataType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.defPar"><code class="docutils literal notranslate"><span class="pre">instruction.defPar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.defPars"><code class="docutils literal notranslate"><span class="pre">instruction.defPars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.delPar"><code class="docutils literal notranslate"><span class="pre">instruction.delPar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.depVars"><code class="docutils literal notranslate"><span class="pre">instruction.depVars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.detLabel"><code class="docutils literal notranslate"><span class="pre">instruction.detLabel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.detUnits"><code class="docutils literal notranslate"><span class="pre">instruction.detUnits</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.detector"><code class="docutils literal notranslate"><span class="pre">instruction.detector</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.errors"><code class="docutils literal notranslate"><span class="pre">instruction.errors</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.execute"><code class="docutils literal notranslate"><span class="pre">instruction.execute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.gainType"><code class="docutils literal notranslate"><span class="pre">instruction.gainType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.getElementValue"><code class="docutils literal notranslate"><span class="pre">instruction.getElementValue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.getParValue"><code class="docutils literal notranslate"><span class="pre">instruction.getParValue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.indepVars"><code class="docutils literal notranslate"><span class="pre">instruction.indepVars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.label"><code class="docutils literal notranslate"><span class="pre">instruction.label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.lgRef"><code class="docutils literal notranslate"><span class="pre">instruction.lgRef</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.lgValue"><code class="docutils literal notranslate"><span class="pre">instruction.lgValue</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.numeric"><code class="docutils literal notranslate"><span class="pre">instruction.numeric</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.pairExt"><code class="docutils literal notranslate"><span class="pre">instruction.pairExt</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.parDefs"><code class="docutils literal notranslate"><span class="pre">instruction.parDefs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.removePairSubName"><code class="docutils literal notranslate"><span class="pre">instruction.removePairSubName</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setCircuit"><code class="docutils literal notranslate"><span class="pre">instruction.setCircuit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setConvType"><code class="docutils literal notranslate"><span class="pre">instruction.setConvType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setDataType"><code class="docutils literal notranslate"><span class="pre">instruction.setDataType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setDetector"><code class="docutils literal notranslate"><span class="pre">instruction.setDetector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setGainType"><code class="docutils literal notranslate"><span class="pre">instruction.setGainType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setLGref"><code class="docutils literal notranslate"><span class="pre">instruction.setLGref()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setPairExt"><code class="docutils literal notranslate"><span class="pre">instruction.setPairExt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setPairedCircuits"><code class="docutils literal notranslate"><span class="pre">instruction.setPairedCircuits()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setSimType"><code class="docutils literal notranslate"><span class="pre">instruction.setSimType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setSource"><code class="docutils literal notranslate"><span class="pre">instruction.setSource()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setStepArray"><code class="docutils literal notranslate"><span class="pre">instruction.setStepArray()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setStepList"><code class="docutils literal notranslate"><span class="pre">instruction.setStepList()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setStepMethod"><code class="docutils literal notranslate"><span class="pre">instruction.setStepMethod()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setStepNum"><code class="docutils literal notranslate"><span class="pre">instruction.setStepNum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setStepStart"><code class="docutils literal notranslate"><span class="pre">instruction.setStepStart()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setStepStop"><code class="docutils literal notranslate"><span class="pre">instruction.setStepStop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setStepVar"><code class="docutils literal notranslate"><span class="pre">instruction.setStepVar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.setStepVars"><code class="docutils literal notranslate"><span class="pre">instruction.setStepVars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.simType"><code class="docutils literal notranslate"><span class="pre">instruction.simType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.source"><code class="docutils literal notranslate"><span class="pre">instruction.source</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.srcUnits"><code class="docutils literal notranslate"><span class="pre">instruction.srcUnits</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.step"><code class="docutils literal notranslate"><span class="pre">instruction.step</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepArray"><code class="docutils literal notranslate"><span class="pre">instruction.stepArray</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepDict"><code class="docutils literal notranslate"><span class="pre">instruction.stepDict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepList"><code class="docutils literal notranslate"><span class="pre">instruction.stepList</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepMethod"><code class="docutils literal notranslate"><span class="pre">instruction.stepMethod</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepNum"><code class="docutils literal notranslate"><span class="pre">instruction.stepNum</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepOff"><code class="docutils literal notranslate"><span class="pre">instruction.stepOff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepOn"><code class="docutils literal notranslate"><span class="pre">instruction.stepOn()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepStart"><code class="docutils literal notranslate"><span class="pre">instruction.stepStart</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepStop"><code class="docutils literal notranslate"><span class="pre">instruction.stepStop</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepVar"><code class="docutils literal notranslate"><span class="pre">instruction.stepVar</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.stepVars"><code class="docutils literal notranslate"><span class="pre">instruction.stepVars</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction.useMatrixConversion"><code class="docutils literal notranslate"><span class="pre">instruction.useMatrixConversion()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.listPZ"><code class="docutils literal notranslate"><span class="pre">listPZ()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.TEXcreateCSVtable"><code class="docutils literal notranslate"><span class="pre">TEXcreateCSVtable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.coeffsTransfer2TEX"><code class="docutils literal notranslate"><span class="pre">coeffsTransfer2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.dcvarContribs2TEX"><code class="docutils literal notranslate"><span class="pre">dcvarContribs2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.elementData2TEX"><code class="docutils literal notranslate"><span class="pre">elementData2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.eqn2TEX"><code class="docutils literal notranslate"><span class="pre">eqn2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.eqn2TEXinline"><code class="docutils literal notranslate"><span class="pre">eqn2TEXinline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.expr2TEX"><code class="docutils literal notranslate"><span class="pre">expr2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.matrices2TEX"><code class="docutils literal notranslate"><span class="pre">matrices2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.netlist2TEX"><code class="docutils literal notranslate"><span class="pre">netlist2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.noiseContribs2TEX"><code class="docutils literal notranslate"><span class="pre">noiseContribs2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.numRoots2TEX"><code class="docutils literal notranslate"><span class="pre">numRoots2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.parDefs2TEX"><code class="docutils literal notranslate"><span class="pre">parDefs2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.params2TEX"><code class="docutils literal notranslate"><span class="pre">params2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.pz2TEX"><code class="docutils literal notranslate"><span class="pre">pz2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.save2TEXinline"><code class="docutils literal notranslate"><span class="pre">save2TEXinline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.saveTEX"><code class="docutils literal notranslate"><span class="pre">saveTEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.slicap2TEX"><code class="docutils literal notranslate"><span class="pre">slicap2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.specs2TEX"><code class="docutils literal notranslate"><span class="pre">specs2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.stepArray2TEX"><code class="docutils literal notranslate"><span class="pre">stepArray2TEX()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html#SLiCAP.SLiCAPlatex.symRoots2TEX"><code class="docutils literal notranslate"><span class="pre">symRoots2TEX()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.find_column"><code class="docutils literal notranslate"><span class="pre">find_column()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.get_input_line"><code class="docutils literal notranslate"><span class="pre">get_input_line()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.printError"><code class="docutils literal notranslate"><span class="pre">printError()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.replaceScaleFactors"><code class="docutils literal notranslate"><span class="pre">replaceScaleFactors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_CMD"><code class="docutils literal notranslate"><span class="pre">t_CMD()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_COMMENT"><code class="docutils literal notranslate"><span class="pre">t_COMMENT()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_EXPR"><code class="docutils literal notranslate"><span class="pre">t_EXPR()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_FLT"><code class="docutils literal notranslate"><span class="pre">t_FLT()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_FNAME"><code class="docutils literal notranslate"><span class="pre">t_FNAME()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_ID"><code class="docutils literal notranslate"><span class="pre">t_ID()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_INT"><code class="docutils literal notranslate"><span class="pre">t_INT()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_LEFTBR"><code class="docutils literal notranslate"><span class="pre">t_LEFTBR()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_NEWLINE"><code class="docutils literal notranslate"><span class="pre">t_NEWLINE()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_PARAMS"><code class="docutils literal notranslate"><span class="pre">t_PARAMS()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_PARDEF"><code class="docutils literal notranslate"><span class="pre">t_PARDEF()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_PLUS"><code class="docutils literal notranslate"><span class="pre">t_PLUS()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_QSTRING"><code class="docutils literal notranslate"><span class="pre">t_QSTRING()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_RETURN"><code class="docutils literal notranslate"><span class="pre">t_RETURN()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_SCALE"><code class="docutils literal notranslate"><span class="pre">t_SCALE()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_SCI"><code class="docutils literal notranslate"><span class="pre">t_SCI()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_error"><code class="docutils literal notranslate"><span class="pre">t_error()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.t_t_RIGHTBR"><code class="docutils literal notranslate"><span class="pre">t_t_RIGHTBR()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html#SLiCAP.SLiCAPlex.tokenize"><code class="docutils literal notranslate"><span class="pre">tokenize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.PdBm2V"><code class="docutils literal notranslate"><span class="pre">PdBm2V()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.Roots"><code class="docutils literal notranslate"><span class="pre">Roots()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.assumePosParams"><code class="docutils literal notranslate"><span class="pre">assumePosParams()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.assumeRealParams"><code class="docutils literal notranslate"><span class="pre">assumeRealParams()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.besselPoly"><code class="docutils literal notranslate"><span class="pre">besselPoly()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.butterworthPoly"><code class="docutils literal notranslate"><span class="pre">butterworthPoly()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.cancelPZ"><code class="docutils literal notranslate"><span class="pre">cancelPZ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.checkExpression"><code class="docutils literal notranslate"><span class="pre">checkExpression()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.checkNumber"><code class="docutils literal notranslate"><span class="pre">checkNumber()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.clearAssumptions"><code class="docutils literal notranslate"><span class="pre">clearAssumptions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.coeffsTransfer"><code class="docutils literal notranslate"><span class="pre">coeffsTransfer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.dBmagFunc_f"><code class="docutils literal notranslate"><span class="pre">dBmagFunc_f()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.delayFunc_f"><code class="docutils literal notranslate"><span class="pre">delayFunc_f()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.det"><code class="docutils literal notranslate"><span class="pre">det()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.detBS"><code class="docutils literal notranslate"><span class="pre">detBS()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.detFC"><code class="docutils literal notranslate"><span class="pre">detFC()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.detME"><code class="docutils literal notranslate"><span class="pre">detME()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.doCDS"><code class="docutils literal notranslate"><span class="pre">doCDS()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.doCDSint"><code class="docutils literal notranslate"><span class="pre">doCDSint()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.equateCoeffs"><code class="docutils literal notranslate"><span class="pre">equateCoeffs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.findServoBandwidth"><code class="docutils literal notranslate"><span class="pre">findServoBandwidth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.float2rational"><code class="docutils literal notranslate"><span class="pre">float2rational()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs"><code class="docutils literal notranslate"><span class="pre">fullSubs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.ilt"><code class="docutils literal notranslate"><span class="pre">ilt()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.magFunc_f"><code class="docutils literal notranslate"><span class="pre">magFunc_f()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.mag_f"><code class="docutils literal notranslate"><span class="pre">mag_f()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.makeNumData"><code class="docutils literal notranslate"><span class="pre">makeNumData()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.normalizeRational"><code class="docutils literal notranslate"><span class="pre">normalizeRational()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.numRoots"><code class="docutils literal notranslate"><span class="pre">numRoots()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.optimizeMatrix"><code class="docutils literal notranslate"><span class="pre">optimizeMatrix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.phaseFunc_f"><code class="docutils literal notranslate"><span class="pre">phaseFunc_f()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.phaseMargin"><code class="docutils literal notranslate"><span class="pre">phaseMargin()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.phase_f"><code class="docutils literal notranslate"><span class="pre">phase_f()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.rational2float"><code class="docutils literal notranslate"><span class="pre">rational2float()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.rmsNoise"><code class="docutils literal notranslate"><span class="pre">rmsNoise()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.roundN"><code class="docutils literal notranslate"><span class="pre">roundN()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.routh"><code class="docutils literal notranslate"><span class="pre">routh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.step2PeriodicPulse"><code class="docutils literal notranslate"><span class="pre">step2PeriodicPulse()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.symRoots"><code class="docutils literal notranslate"><span class="pre">symRoots()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html#SLiCAP.SLiCAPmath.zeroValue"><code class="docutils literal notranslate"><span class="pre">zeroValue()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html#SLiCAP.SLiCAPmatrices.getValue"><code class="docutils literal notranslate"><span class="pre">getValue()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html#SLiCAP.SLiCAPmatrices.getValues"><code class="docutils literal notranslate"><span class="pre">getValues()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html#SLiCAP.SLiCAPmatrices.makeMatrices"><code class="docutils literal notranslate"><span class="pre">makeMatrices()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html#SLiCAP.SLiCAPmatrices.makeSrcVector"><code class="docutils literal notranslate"><span class="pre">makeSrcVector()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.Cadence2traces"><code class="docutils literal notranslate"><span class="pre">Cadence2traces()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.LTspiceAC2SLiCAPtraces"><code class="docutils literal notranslate"><span class="pre">LTspiceAC2SLiCAPtraces()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.LTspiceData2Traces"><code class="docutils literal notranslate"><span class="pre">LTspiceData2Traces()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.addTraces"><code class="docutils literal notranslate"><span class="pre">addTraces()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis"><code class="docutils literal notranslate"><span class="pre">axis</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.makeTraceDict"><code class="docutils literal notranslate"><span class="pre">axis.makeTraceDict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.polar"><code class="docutils literal notranslate"><span class="pre">axis.polar</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.text"><code class="docutils literal notranslate"><span class="pre">axis.text</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.title"><code class="docutils literal notranslate"><span class="pre">axis.title</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.traces"><code class="docutils literal notranslate"><span class="pre">axis.traces</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.xLabel"><code class="docutils literal notranslate"><span class="pre">axis.xLabel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.xLim"><code class="docutils literal notranslate"><span class="pre">axis.xLim</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.xScale"><code class="docutils literal notranslate"><span class="pre">axis.xScale</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.xScaleFactor"><code class="docutils literal notranslate"><span class="pre">axis.xScaleFactor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.yLabel"><code class="docutils literal notranslate"><span class="pre">axis.yLabel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.yLim"><code class="docutils literal notranslate"><span class="pre">axis.yLim</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.yScale"><code class="docutils literal notranslate"><span class="pre">axis.yScale</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.axis.yScaleFactor"><code class="docutils literal notranslate"><span class="pre">axis.yScaleFactor</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.csv2traces"><code class="docutils literal notranslate"><span class="pre">csv2traces()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.defaultsPlot"><code class="docutils literal notranslate"><span class="pre">defaultsPlot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.figure"><code class="docutils literal notranslate"><span class="pre">figure</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.figure.axes"><code class="docutils literal notranslate"><span class="pre">figure.axes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.figure.axisHeight"><code class="docutils literal notranslate"><span class="pre">figure.axisHeight</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.figure.axisWidth"><code class="docutils literal notranslate"><span class="pre">figure.axisWidth</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.figure.fileName"><code class="docutils literal notranslate"><span class="pre">figure.fileName</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.figure.fileType"><code class="docutils literal notranslate"><span class="pre">figure.fileType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.figure.plot"><code class="docutils literal notranslate"><span class="pre">figure.plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.figure.show"><code class="docutils literal notranslate"><span class="pre">figure.show</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.plot"><code class="docutils literal notranslate"><span class="pre">plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.plotPZ"><code class="docutils literal notranslate"><span class="pre">plotPZ()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.plotSweep"><code class="docutils literal notranslate"><span class="pre">plotSweep()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.stepParams"><code class="docutils literal notranslate"><span class="pre">stepParams()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace"><code class="docutils literal notranslate"><span class="pre">trace</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.color"><code class="docutils literal notranslate"><span class="pre">trace.color</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.label"><code class="docutils literal notranslate"><span class="pre">trace.label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.lineType"><code class="docutils literal notranslate"><span class="pre">trace.lineType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.lineWidth"><code class="docutils literal notranslate"><span class="pre">trace.lineWidth</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.makeTable"><code class="docutils literal notranslate"><span class="pre">trace.makeTable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.marker"><code class="docutils literal notranslate"><span class="pre">trace.marker</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.markerColor"><code class="docutils literal notranslate"><span class="pre">trace.markerColor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.markerFaceColor"><code class="docutils literal notranslate"><span class="pre">trace.markerFaceColor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.markerSize"><code class="docutils literal notranslate"><span class="pre">trace.markerSize</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.xData"><code class="docutils literal notranslate"><span class="pre">trace.xData</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.xName"><code class="docutils literal notranslate"><span class="pre">trace.xName</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.yData"><code class="docutils literal notranslate"><span class="pre">trace.yData</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.trace.yName"><code class="docutils literal notranslate"><span class="pre">trace.yName</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html#SLiCAP.SLiCAPplots.traces2fig"><code class="docutils literal notranslate"><span class="pre">traces2fig()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults"><code class="docutils literal notranslate"><span class="pre">allResults</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.A"><code class="docutils literal notranslate"><span class="pre">allResults.A</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.DCvalue"><code class="docutils literal notranslate"><span class="pre">allResults.DCvalue</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.Dv"><code class="docutils literal notranslate"><span class="pre">allResults.Dv</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.Iv"><code class="docutils literal notranslate"><span class="pre">allResults.Iv</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.M"><code class="docutils literal notranslate"><span class="pre">allResults.M</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.circuit"><code class="docutils literal notranslate"><span class="pre">allResults.circuit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.convType"><code class="docutils literal notranslate"><span class="pre">allResults.convType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.dataType"><code class="docutils literal notranslate"><span class="pre">allResults.dataType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.dc"><code class="docutils literal notranslate"><span class="pre">allResults.dc</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.dcSolve"><code class="docutils literal notranslate"><span class="pre">allResults.dcSolve</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.denom"><code class="docutils literal notranslate"><span class="pre">allResults.denom</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.depVars"><code class="docutils literal notranslate"><span class="pre">allResults.depVars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.detLabel"><code class="docutils literal notranslate"><span class="pre">allResults.detLabel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.detUnits"><code class="docutils literal notranslate"><span class="pre">allResults.detUnits</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.detector"><code class="docutils literal notranslate"><span class="pre">allResults.detector</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.errors"><code class="docutils literal notranslate"><span class="pre">allResults.errors</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.gainType"><code class="docutils literal notranslate"><span class="pre">allResults.gainType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.impulse"><code class="docutils literal notranslate"><span class="pre">allResults.impulse</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.inoise"><code class="docutils literal notranslate"><span class="pre">allResults.inoise</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.inoiseTerms"><code class="docutils literal notranslate"><span class="pre">allResults.inoiseTerms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.ivar"><code class="docutils literal notranslate"><span class="pre">allResults.ivar</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.ivarTerms"><code class="docutils literal notranslate"><span class="pre">allResults.ivarTerms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.label"><code class="docutils literal notranslate"><span class="pre">allResults.label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.laplace"><code class="docutils literal notranslate"><span class="pre">allResults.laplace</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.lgRef"><code class="docutils literal notranslate"><span class="pre">allResults.lgRef</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.numer"><code class="docutils literal notranslate"><span class="pre">allResults.numer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.numeric"><code class="docutils literal notranslate"><span class="pre">allResults.numeric</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.onoise"><code class="docutils literal notranslate"><span class="pre">allResults.onoise</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.onoiseTerms"><code class="docutils literal notranslate"><span class="pre">allResults.onoiseTerms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.ovar"><code class="docutils literal notranslate"><span class="pre">allResults.ovar</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.ovarTerms"><code class="docutils literal notranslate"><span class="pre">allResults.ovarTerms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.pairedCircuits"><code class="docutils literal notranslate"><span class="pre">allResults.pairedCircuits</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.pairedVars"><code class="docutils literal notranslate"><span class="pre">allResults.pairedVars</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.parDefs"><code class="docutils literal notranslate"><span class="pre">allResults.parDefs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.params"><code class="docutils literal notranslate"><span class="pre">allResults.params</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.poles"><code class="docutils literal notranslate"><span class="pre">allResults.poles</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.removePairSubName"><code class="docutils literal notranslate"><span class="pre">allResults.removePairSubName</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.simType"><code class="docutils literal notranslate"><span class="pre">allResults.simType</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.snoiseTerms"><code class="docutils literal notranslate"><span class="pre">allResults.snoiseTerms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.solve"><code class="docutils literal notranslate"><span class="pre">allResults.solve</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.source"><code class="docutils literal notranslate"><span class="pre">allResults.source</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.srcUnits"><code class="docutils literal notranslate"><span class="pre">allResults.srcUnits</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.step"><code class="docutils literal notranslate"><span class="pre">allResults.step</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepArray"><code class="docutils literal notranslate"><span class="pre">allResults.stepArray</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepList"><code class="docutils literal notranslate"><span class="pre">allResults.stepList</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepMethod"><code class="docutils literal notranslate"><span class="pre">allResults.stepMethod</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepNum"><code class="docutils literal notranslate"><span class="pre">allResults.stepNum</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepResp"><code class="docutils literal notranslate"><span class="pre">allResults.stepResp</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepStart"><code class="docutils literal notranslate"><span class="pre">allResults.stepStart</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepStop"><code class="docutils literal notranslate"><span class="pre">allResults.stepStop</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepVar"><code class="docutils literal notranslate"><span class="pre">allResults.stepVar</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.stepVars"><code class="docutils literal notranslate"><span class="pre">allResults.stepVars</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.svarTerms"><code class="docutils literal notranslate"><span class="pre">allResults.svarTerms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.time"><code class="docutils literal notranslate"><span class="pre">allResults.time</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.timeSolve"><code class="docutils literal notranslate"><span class="pre">allResults.timeSolve</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults.zeros"><code class="docutils literal notranslate"><span class="pre">allResults.zeros</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit"><code class="docutils literal notranslate"><span class="pre">circuit</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.circuits"><code class="docutils literal notranslate"><span class="pre">circuit.circuits</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.controlled"><code class="docutils literal notranslate"><span class="pre">circuit.controlled</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.defPar"><code class="docutils literal notranslate"><span class="pre">circuit.defPar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.defPars"><code class="docutils literal notranslate"><span class="pre">circuit.defPars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.delPar"><code class="docutils literal notranslate"><span class="pre">circuit.delPar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.depVars"><code class="docutils literal notranslate"><span class="pre">circuit.depVars</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.elements"><code class="docutils literal notranslate"><span class="pre">circuit.elements</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.errors"><code class="docutils literal notranslate"><span class="pre">circuit.errors</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.file"><code class="docutils literal notranslate"><span class="pre">circuit.file</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getElementValue"><code class="docutils literal notranslate"><span class="pre">circuit.getElementValue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValue"><code class="docutils literal notranslate"><span class="pre">circuit.getParValue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.indepVars"><code class="docutils literal notranslate"><span class="pre">circuit.indepVars</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.libs"><code class="docutils literal notranslate"><span class="pre">circuit.libs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.modelDefs"><code class="docutils literal notranslate"><span class="pre">circuit.modelDefs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.nodes"><code class="docutils literal notranslate"><span class="pre">circuit.nodes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.parDefs"><code class="docutils literal notranslate"><span class="pre">circuit.parDefs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.parUnits"><code class="docutils literal notranslate"><span class="pre">circuit.parUnits</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.params"><code class="docutils literal notranslate"><span class="pre">circuit.params</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.subCKT"><code class="docutils literal notranslate"><span class="pre">circuit.subCKT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.title"><code class="docutils literal notranslate"><span class="pre">circuit.title</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.updateParams"><code class="docutils literal notranslate"><span class="pre">circuit.updateParams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.varIndex"><code class="docutils literal notranslate"><span class="pre">circuit.varIndex</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.device"><code class="docutils literal notranslate"><span class="pre">device</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.device.ID"><code class="docutils literal notranslate"><span class="pre">device.ID</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.device.models"><code class="docutils literal notranslate"><span class="pre">device.models</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.device.nNodes"><code class="docutils literal notranslate"><span class="pre">device.nNodes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.device.nRefs"><code class="docutils literal notranslate"><span class="pre">device.nRefs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.device.value"><code class="docutils literal notranslate"><span class="pre">device.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.element"><code class="docutils literal notranslate"><span class="pre">element</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.element.model"><code class="docutils literal notranslate"><span class="pre">element.model</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.element.nodes"><code class="docutils literal notranslate"><span class="pre">element.nodes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.element.params"><code class="docutils literal notranslate"><span class="pre">element.params</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.element.refDes"><code class="docutils literal notranslate"><span class="pre">element.refDes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.element.refs"><code class="docutils literal notranslate"><span class="pre">element.refs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.element.type"><code class="docutils literal notranslate"><span class="pre">element.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.initAll"><code class="docutils literal notranslate"><span class="pre">initAll()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.model"><code class="docutils literal notranslate"><span class="pre">model</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.model.depVars"><code class="docutils literal notranslate"><span class="pre">model.depVars</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.model.name"><code class="docutils literal notranslate"><span class="pre">model.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.model.params"><code class="docutils literal notranslate"><span class="pre">model.params</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.model.stamp"><code class="docutils literal notranslate"><span class="pre">model.stamp</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.modelDef"><code class="docutils literal notranslate"><span class="pre">modelDef</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.modelDef.name"><code class="docutils literal notranslate"><span class="pre">modelDef.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.modelDef.params"><code class="docutils literal notranslate"><span class="pre">modelDef.params</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.modelDef.type"><code class="docutils literal notranslate"><span class="pre">modelDef.type</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.RSTcreateCSVtable"><code class="docutils literal notranslate"><span class="pre">RSTcreateCSVtable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.coeffsTransfer2RST"><code class="docutils literal notranslate"><span class="pre">coeffsTransfer2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.dcvarContribs2RST"><code class="docutils literal notranslate"><span class="pre">dcvarContribs2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.elementData2RST"><code class="docutils literal notranslate"><span class="pre">elementData2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.eqn2RST"><code class="docutils literal notranslate"><span class="pre">eqn2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.eqn2RSTinline"><code class="docutils literal notranslate"><span class="pre">eqn2RSTinline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.expr2RST"><code class="docutils literal notranslate"><span class="pre">expr2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.makeSpaces"><code class="docutils literal notranslate"><span class="pre">makeSpaces()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.matrices2RST"><code class="docutils literal notranslate"><span class="pre">matrices2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.netlist2RST"><code class="docutils literal notranslate"><span class="pre">netlist2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.noiseContribs2RST"><code class="docutils literal notranslate"><span class="pre">noiseContribs2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.numRoots2RST"><code class="docutils literal notranslate"><span class="pre">numRoots2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.parDefs2RST"><code class="docutils literal notranslate"><span class="pre">parDefs2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.params2RST"><code class="docutils literal notranslate"><span class="pre">params2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.pz2RST"><code class="docutils literal notranslate"><span class="pre">pz2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.save2RSTinline"><code class="docutils literal notranslate"><span class="pre">save2RSTinline()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.saveRST"><code class="docutils literal notranslate"><span class="pre">saveRST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.slicap2RST"><code class="docutils literal notranslate"><span class="pre">slicap2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.specs2RST"><code class="docutils literal notranslate"><span class="pre">specs2RST()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.stepArray2rst"><code class="docutils literal notranslate"><span class="pre">stepArray2rst()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html#SLiCAP.SLiCAPrst.symRoots2RST"><code class="docutils literal notranslate"><span class="pre">symRoots2RST()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.addParDefsParam"><code class="docutils literal notranslate"><span class="pre">addParDefsParam()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.checkCircuit"><code class="docutils literal notranslate"><span class="pre">checkCircuit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.checkElementModel"><code class="docutils literal notranslate"><span class="pre">checkElementModel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.checkElementModelParams"><code class="docutils literal notranslate"><span class="pre">checkElementModelParams()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.checkElementReferences"><code class="docutils literal notranslate"><span class="pre">checkElementReferences()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.checkModelDefs"><code class="docutils literal notranslate"><span class="pre">checkModelDefs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.checkReferences"><code class="docutils literal notranslate"><span class="pre">checkReferences()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.checkSubCircuitElementModelParams"><code class="docutils literal notranslate"><span class="pre">checkSubCircuitElementModelParams()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.compileSLiCAPLibraries"><code class="docutils literal notranslate"><span class="pre">compileSLiCAPLibraries()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.compileUSERLibrary"><code class="docutils literal notranslate"><span class="pre">compileUSERLibrary()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.createDepVarIndex"><code class="docutils literal notranslate"><span class="pre">createDepVarIndex()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.expandCircuit"><code class="docutils literal notranslate"><span class="pre">expandCircuit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.makeLibraries"><code class="docutils literal notranslate"><span class="pre">makeLibraries()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.parseCommand"><code class="docutils literal notranslate"><span class="pre">parseCommand()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.parseElement"><code class="docutils literal notranslate"><span class="pre">parseElement()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.parseLibrary"><code class="docutils literal notranslate"><span class="pre">parseLibrary()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.parseNetlist"><code class="docutils literal notranslate"><span class="pre">parseNetlist()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.parseSubcircuitElement"><code class="docutils literal notranslate"><span class="pre">parseSubcircuitElement()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.sortDepVars"><code class="docutils literal notranslate"><span class="pre">sortDepVars()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.updateCirData"><code class="docutils literal notranslate"><span class="pre">updateCirData()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.updateElementParams"><code class="docutils literal notranslate"><span class="pre">updateElementParams()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.updateNodes"><code class="docutils literal notranslate"><span class="pre">updateNodes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html#SLiCAP.SLiCAPyacc.updateParDefs"><code class="docutils literal notranslate"><span class="pre">updateParDefs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html#SLiCAP.SLiCAPfc.Matrix_num_den"><code class="docutils literal notranslate"><span class="pre">Matrix_num_den()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html#SLiCAP.SLiCAPfc.ODtranspose"><code class="docutils literal notranslate"><span class="pre">ODtranspose()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html#SLiCAP.SLiCAPfc.PAQeqLU"><code class="docutils literal notranslate"><span class="pre">PAQeqLU()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html#SLiCAP.SLiCAPfc.UVsolve"><code class="docutils literal notranslate"><span class="pre">UVsolve()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html#SLiCAP.SLiCAPfc.addfractions"><code class="docutils literal notranslate"><span class="pre">addfractions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html#SLiCAP.SLiCAPfc.computeFC"><code class="docutils literal notranslate"><span class="pre">computeFC()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html#SLiCAP.SLiCAPfc.laplace2coeffs"><code class="docutils literal notranslate"><span class="pre">laplace2coeffs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html#SLiCAP.SLiCAPfc.nth2firstOrder"><code class="docutils literal notranslate"><span class="pre">nth2firstOrder()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.Block2Bstatematrix"><code class="docutils literal notranslate"><span class="pre">Block2Bstatematrix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.Block2CDstatematrix"><code class="docutils literal notranslate"><span class="pre">Block2CDstatematrix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.Block2StateSpace"><code class="docutils literal notranslate"><span class="pre">Block2StateSpace()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.MNA2StateSpace"><code class="docutils literal notranslate"><span class="pre">MNA2StateSpace()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.Vector2srcCoeffMatrices"><code class="docutils literal notranslate"><span class="pre">Vector2srcCoeffMatrices()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.backsubstitute"><code class="docutils literal notranslate"><span class="pre">backsubstitute()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.backsubstituteND"><code class="docutils literal notranslate"><span class="pre">backsubstituteND()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.findA4"><code class="docutils literal notranslate"><span class="pre">findA4()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html#SLiCAP.SLiCAPstatespace.getStateSpace"><code class="docutils literal notranslate"><span class="pre">getStateSpace()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>

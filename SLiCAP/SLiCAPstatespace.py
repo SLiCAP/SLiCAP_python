@@ -107,17 +107,22 @@ def findA4(x,b):
 
 def Block2Bstatematrix(rank,q,A,B,var=ini.Laplace):
     """
-    For The system of equations where y is unknown:
-    q = A*y+s*B*y
-    which has the form:
-    q = |X Y|*y + s*|Q W|*y
-        |0 U|       |0 S|
+    Finds the Matrix B for The system of equations where y is unknown:
+
+    .. math::
+
+        q = Ay+B\\frac{dy}{dt}
+
+    this equation has the form:
+
+    .. math::
+
+        q=\\begin{bmatrix}X & Y \\\\ 0 & U \\end{bmatrix}y+\\begin{bmatrix} Q & W \\\\ 0 & S \\end{bmatrix}\\frac{dy}{dt}
+
     where:
     U: is an upper triangular Matrix
     S: is a strictly upper triangular Matrix
     Q: is an invertible Matrix
-    Then this Function will return B from the state space equation
-        sy=Ay+B(s)u
 
     :param rank: This is the rank of the matrix B
     :type rank: int
@@ -133,6 +138,7 @@ def Block2Bstatematrix(rank,q,A,B,var=ini.Laplace):
 
     :return: res: [Bres, known_ys] Bres is a sympy matrix and known_ys is the known y values.
     :rtype:  list
+
     """
     known_ys = backsubstitute( A[rank:,rank:]+var*B[rank:,rank:] , q[rank:] )
     dumq=sp.Matrix(q[0:rank])
@@ -143,18 +149,29 @@ def Block2Bstatematrix(rank,q,A,B,var=ini.Laplace):
 
 def Block2CDstatematrix(rank,known_ys,V,xlen):
     """
-    For The system of equations where y is unknown:
-    q = A*y+s*B*y
+    Then this Function will return C and D from the Laplace transformed state space equation
+
+    .. math::
+
+        sy=Ay+B(s)u
+        x =Cy+D(s)u
+
+    This is for The system of equations where y is unknown:
+
+    .. math::
+
+        q = Ay+B\\frac{dy}{dt}
+
     which has the form:
-    q = |X Y|*y + s*|Q W|*y
-        |0 U|       |0 S|
+
+    .. math::
+
+        q=\\begin{bmatrix}X & Y \\\\ 0 & U \\end{bmatrix}y+\\begin{bmatrix} Q & W \\\\ 0 & S \\end{bmatrix}\\frac{dy}{dt}
+
     where:
     U: is an upper triangular Matrix
     S: is a strictly upper triangular Matrix
     Q: is an invertible Matrix
-    Then this Function will return C and D from the state space equation
-        sy=Ay+B(s)u
-        x =Cy+D(s)u
 
     :param rank: This is the rank of the matrix B
     :type rank: int
@@ -223,19 +240,36 @@ def Vector2srcCoeffMatrices(src,V,var=ini.Laplace):
 
 def Block2StateSpace(rank,vlen,q,G,C,V,u,var=ini.Laplace):
     """
+    This Function will return time dependent state space matricies A, C, Bi's and Di's from the laplace transformed state space equation
+
+    .. math::
+
+        sy=Ay+B_0u+sB_1u+s^2B_2u+...
+
+    .. math::
+
+        v =Cy+D_0u+sD_1u+s^2D_2u+...
+
     For The system of equations where y is unknown:
-    q = G*y+s*C*y
-    x = Vy
+
+    .. math::
+
+        q = Gy+sCy
+
+    .. math::
+
+        x = Vy
+
     which has the form:
-    q = |X Y|*y + s*|Q W|*y
-        |0 U|       |0 S|
+
+    .. math::
+
+        q=\\begin{bmatrix}X & Y \\\\ 0 & U \\end{bmatrix}y+\\begin{bmatrix} Q & W \\\\ 0 & S \\end{bmatrix}\\frac{dy}{dt}
+
     where:
     U: is an upper triangular Matrix
     S: is a strictly upper triangular Matrix
     Q: is an invertible Matrix
-    Then this Function will return A, C and Bi's and Di's from the state space equation
-        sy=Ay+B0u+sB1u+s^2B2u+...
-        v =Cy+D0u+sD1u+s^2D2u+...
     """
     dim = G.shape[0]
     #If Q isn't an identity I need to invert:
@@ -253,12 +287,18 @@ def Block2StateSpace(rank,vlen,q,G,C,V,u,var=ini.Laplace):
 
 def MNA2StateSpace(M, q, src, var=ini.Laplace):
     """
-    Returns the the state space representation of the MNA matrix:
-        for q=(G+sC)v this function returns A,Bi,C,Di 
-        where i is the i'th derivative of the sources
-        from the equation:
-        sy=Ay+B0u+sB1u+s^2B2u+...
-        v =Cy+D0u+sD1u+s^2D2u+...
+    This function returns A,Bi,C,Di which is the laplace
+    transformed state space representation of the MNA matrix
+    for q=(G+sC)v. Where i is the i'th derivative of the sources
+    from the equation:
+
+    .. math::
+
+        sy=Ay+B_0u+sB_1u+s^2B_2u+...
+
+    .. math::
+
+        v =Cy+D_0u+sD_1u+s^2D_2u+...
 
     :param M: MNA matrix ie my_circuit.allResults.M
     :type M: sympy matrix

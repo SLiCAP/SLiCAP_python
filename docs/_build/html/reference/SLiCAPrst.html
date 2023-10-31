@@ -35,6 +35,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -110,9 +111,34 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPrst.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPrst.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.RSTcreateCSVtable"><code class="docutils literal notranslate"><span class="pre">RSTcreateCSVtable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.coeffsTransfer2RST"><code class="docutils literal notranslate"><span class="pre">coeffsTransfer2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.dcvarContribs2RST"><code class="docutils literal notranslate"><span class="pre">dcvarContribs2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.elementData2RST"><code class="docutils literal notranslate"><span class="pre">elementData2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.eqn2RST"><code class="docutils literal notranslate"><span class="pre">eqn2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.eqn2RSTinline"><code class="docutils literal notranslate"><span class="pre">eqn2RSTinline()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.expr2RST"><code class="docutils literal notranslate"><span class="pre">expr2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.makeSpaces"><code class="docutils literal notranslate"><span class="pre">makeSpaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.matrices2RST"><code class="docutils literal notranslate"><span class="pre">matrices2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.netlist2RST"><code class="docutils literal notranslate"><span class="pre">netlist2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.noiseContribs2RST"><code class="docutils literal notranslate"><span class="pre">noiseContribs2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.numRoots2RST"><code class="docutils literal notranslate"><span class="pre">numRoots2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.parDefs2RST"><code class="docutils literal notranslate"><span class="pre">parDefs2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.params2RST"><code class="docutils literal notranslate"><span class="pre">params2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.pz2RST"><code class="docutils literal notranslate"><span class="pre">pz2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.save2RSTinline"><code class="docutils literal notranslate"><span class="pre">save2RSTinline()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.saveRST"><code class="docutils literal notranslate"><span class="pre">saveRST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.slicap2RST"><code class="docutils literal notranslate"><span class="pre">slicap2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.specs2RST"><code class="docutils literal notranslate"><span class="pre">specs2RST()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.stepArray2rst"><code class="docutils literal notranslate"><span class="pre">stepArray2rst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPrst.symRoots2RST"><code class="docutils literal notranslate"><span class="pre">symRoots2RST()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>

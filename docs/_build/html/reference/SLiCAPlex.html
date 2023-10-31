@@ -35,6 +35,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -104,7 +105,32 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPlex.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPlex.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.find_column"><code class="docutils literal notranslate"><span class="pre">find_column()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.get_input_line"><code class="docutils literal notranslate"><span class="pre">get_input_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.printError"><code class="docutils literal notranslate"><span class="pre">printError()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.replaceScaleFactors"><code class="docutils literal notranslate"><span class="pre">replaceScaleFactors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_CMD"><code class="docutils literal notranslate"><span class="pre">t_CMD()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_COMMENT"><code class="docutils literal notranslate"><span class="pre">t_COMMENT()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_EXPR"><code class="docutils literal notranslate"><span class="pre">t_EXPR()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_FLT"><code class="docutils literal notranslate"><span class="pre">t_FLT()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_FNAME"><code class="docutils literal notranslate"><span class="pre">t_FNAME()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_ID"><code class="docutils literal notranslate"><span class="pre">t_ID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_INT"><code class="docutils literal notranslate"><span class="pre">t_INT()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_LEFTBR"><code class="docutils literal notranslate"><span class="pre">t_LEFTBR()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_NEWLINE"><code class="docutils literal notranslate"><span class="pre">t_NEWLINE()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_PARAMS"><code class="docutils literal notranslate"><span class="pre">t_PARAMS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_PARDEF"><code class="docutils literal notranslate"><span class="pre">t_PARDEF()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_PLUS"><code class="docutils literal notranslate"><span class="pre">t_PLUS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_QSTRING"><code class="docutils literal notranslate"><span class="pre">t_QSTRING()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_RETURN"><code class="docutils literal notranslate"><span class="pre">t_RETURN()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_SCALE"><code class="docutils literal notranslate"><span class="pre">t_SCALE()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_SCI"><code class="docutils literal notranslate"><span class="pre">t_SCI()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_error"><code class="docutils literal notranslate"><span class="pre">t_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.t_t_RIGHTBR"><code class="docutils literal notranslate"><span class="pre">t_t_RIGHTBR()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPlex.tokenize"><code class="docutils literal notranslate"><span class="pre">tokenize()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
@@ -113,6 +139,8 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
