@@ -200,22 +200,29 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="slicapstatespace-py">
-<h1>SLiCAPstatespace.py<a class="headerlink" href="#slicapstatespace-py" title="Permalink to this heading">¶</a></h1>
-<span class="target" id="module-SLiCAP.SLiCAPstatespace"></span><p>This is to be used to find the frequency constant matrix (which is the inverse of the time constant matrix)</p>
+  <div class="section" id="module-SLiCAP.SLiCAPstatespace">
+<span id="slicapstatespace-py"></span><h1>SLiCAPstatespace.py<a class="headerlink" href="#module-SLiCAP.SLiCAPstatespace" title="Permalink to this heading">¶</a></h1>
+<p>This is to be used to find the frequency constant matrix (which is the inverse of the time constant matrix)</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPstatespace.Block2Bstatematrix">
 <span class="sig-name descname"><span class="pre">Block2Bstatematrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rank</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPstatespace.Block2Bstatematrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the Matrix B for The system of equations where y is unknown:</p>
+<dd><p>This Function will return Bres from the Laplace transformed state space equation</p>
+<div class="math notranslate nohighlight">
+\[sy=Ay+B(s)u\]</div>
+<div class="math notranslate nohighlight">
+\[v =Cy+D(s)y\]</div>
+<p>for The system of equations where y is unknown</p>
 <div class="math notranslate nohighlight">
 \[q = Ay+B\frac{dy}{dt}\]</div>
 <p>this equation has the form:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}q=\begin{bmatrix}X &amp; Y \\ 0 &amp; U \end{bmatrix}y+\begin{bmatrix} Q &amp; W \\ 0 &amp; S \end{bmatrix}\frac{dy}{dt}\end{split}\]</div>
-<p>where:
-U: is an upper triangular Matrix
-S: is a strictly upper triangular Matrix
-Q: is an invertible Matrix</p>
+<p>where the block matricies are</p>
+<ul class="simple">
+<li><p>U: is an upper triangular Matrix</p></li>
+<li><p>S: is a strictly upper triangular Matrix</p></li>
+<li><p>Q: is an invertible Matrix</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -237,10 +244,11 @@ Q: is an invertible Matrix</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPstatespace.Block2CDstatematrix">
 <span class="sig-name descname"><span class="pre">Block2CDstatematrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rank</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">known_ys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlen</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPstatespace.Block2CDstatematrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Then this Function will return C and D from the Laplace transformed state space equation</p>
+<dd><p>This Function will return C and D from the Laplace transformed state space equation</p>
 <div class="math notranslate nohighlight">
-\[sy=Ay+B(s)u
-x =Cy+D(s)u\]</div>
+\[sy=Ay+B(s)u\]</div>
+<div class="math notranslate nohighlight">
+\[x =Cy+D(s)u\]</div>
 <p>This is for The system of equations where y is unknown:</p>
 <div class="math notranslate nohighlight">
 \[q = Ay+B\frac{dy}{dt}\]</div>
@@ -318,8 +326,6 @@ and B and D are lists of sympy matrices</p>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>list</p>
 </dd>
-<dt class="field-even">Example</dt>
-<dd class="field-even"><p></p></dd>
 </dl>
 </dd></dl>
 
