@@ -1258,7 +1258,7 @@ def pairParDefs(instr):
     # perform substitutions
     for param in list(newParDefs.keys()):
         # In parameter names
-        newParDefs[param].subs(substDict)
+        newParDefs[param] = newParDefs[param].subs(substDict)
     instr.parDefs = newParDefs
     return instr
 
@@ -1337,8 +1337,6 @@ def createConversionMatrices(instr):
     # Create conversion matrix: express nodal voltages and branch currents in
     # corresponding differential-mode and common-mode quantities.
     for i in range(n):
-        row0 = i    # differential-mode variable
-        row1 = i+n  # common-mode variable
         col0 = depVars.index(pairs[i][0]) # nodal voltage or branch current
         col1 = depVars.index(pairs[i][1]) # nodal voltage or branch current
         if pairs[i][0][0] == 'V':
