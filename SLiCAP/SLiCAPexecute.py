@@ -1362,7 +1362,7 @@ def createConversionMatrices(instr):
 
 def pairVariables(instr):
     """
-    Combines nodal voltages and branche currents in pairs of variables that
+    Combines nodal voltages and branch currents in pairs of variables that
     can be resolved in common-mode, and differential-mode variables.
 
     Pairing is defined by the instr.pairedVars and instr.pairedCircuits.

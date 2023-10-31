@@ -1214,21 +1214,21 @@ class allResults(object):
         Extension of paired nodes and branches for base transformation of the circuit.
 
         Will be copied from **SLiCAPinstruction.instruction** at the start of
-        the execution of the instruction. This instance will be e deep copy.
+        the execution of the instruction. This instance will be a deep copy.
         """
         self.pairedCircuits = None
         """
         Identifiers of paired subcircuits for base transformation of the circuit.
 
         Will be copied from **SLiCAPinstruction.instruction** at the start of
-        the execution of the instruction. This instance will be e deep copy.
+        the execution of the instruction. This instance will be a deep copy.
         """
         self.removePairSubName = False
         """
         Setting for changing the parameter names of paired subcircuits.
 
         Will be copied from **SLiCAPinstruction.instruction** at the start of
-        the execution of the instruction. This instance will be e deep copy.
+        the execution of the instruction. This instance will be a deep copy.
         """
 
     def depVars(self):
