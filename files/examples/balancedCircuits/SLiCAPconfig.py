@@ -33,4 +33,4 @@ SPHINXPATH  = 'sphinx/' # path for Sphinx output
 PROJECT    = 'balancedAmp'
 AUTHOR     = 'anton'
 CREATED    = '2023-02-22 17:16:50.902750'
-LASTUPDATE = '2023-06-30 11:33:21.498800'
+LASTUPDATE = '2023-10-31 12:47:44.885116'

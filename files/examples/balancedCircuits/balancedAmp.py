@@ -6,7 +6,6 @@ Created on Wed Feb 22 17:14:45 2023
 @author: anton
 """
 from SLiCAP import *
-prj=initProject('driver')
 fileName = "balancedAmp"
 
 #makeNetlist(fileName + ".asc", "Balanced Line Driver")
@@ -32,6 +31,7 @@ text2html("The circuit has two poles with a positive real part. Hence it is inst
 
 i1.setSource(["V1P", "V1N"])
 i1.setDetector(["V_outP", "V_outN"])
+i1.setLGref(["E_O1P","E_O1N"])
 i1.setDataType("zeros")
 zerosResult = i1.execute()
 listPZ(zerosResult)
@@ -89,3 +89,11 @@ i1.setDetector('V_out_D')
 result = i1.execute()
 listPZ(result)
 pz2html(result)
+
+head2html("Loop Gain of the DM transfer")
+i1.setDataType('laplace')
+i1.setGainType('loopgain')
+i1.setSimType("symbolic")
+result = i1.execute()
+eqn2html("L_G",result.laplace)
+

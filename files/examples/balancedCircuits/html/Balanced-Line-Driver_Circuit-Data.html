@@ -59,10 +59,10 @@ R1N inN scN R value={R_s} noisetemp=0 noiseflow=0 dcvar=0
 <td class="left">value</td><td class="left">$8.0 \cdot 10^{-12}$</td><td class="left">$8.0 \cdot 10^{-12}$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">E_O1N</td><td class = "left">outN 0 inN fbN </td><td class = "left"></td><td class = "left">EZ</td>
-<td class="left">value</td><td class="left">$\frac{A_{0} \left(1 - 2.0 \cdot 10^{-9} s\right)}{\left(2.0 \cdot 10^{-9} s + 1\right) \left(\frac{0.03125 s}{\pi} + 1\right)}$</td><td class="left">$\frac{1.0 \cdot 10^{6} \left(1 - 2.0 \cdot 10^{-9} s\right)}{\left(2.0 \cdot 10^{-9} s + 1\right) \left(0.009947 s + 1\right)}$</td></tr>
+<td class="left">value</td><td class="left">$\frac{A_{0} \cdot \left(1 - 2.0 \cdot 10^{-9} s\right)}{\left(2.0 \cdot 10^{-9} s + 1\right) \left(\frac{0.03125 s}{\pi} + 1\right)}$</td><td class="left">$\frac{1.0 \cdot 10^{6} \cdot \left(1 - 2.0 \cdot 10^{-9} s\right)}{\left(2.0 \cdot 10^{-9} s + 1\right) \left(0.009947 s + 1\right)}$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">zo</td><td class="left">$55$</td><td class="left">$55$</td></tr>
 <tr><td class="left">E_O1P</td><td class = "left">outP 0 inP fbP </td><td class = "left"></td><td class = "left">EZ</td>
-<td class="left">value</td><td class="left">$\frac{A_{0} \left(1 - 2.0 \cdot 10^{-9} s\right)}{\left(2.0 \cdot 10^{-9} s + 1\right) \left(\frac{0.03125 s}{\pi} + 1\right)}$</td><td class="left">$\frac{1.0 \cdot 10^{6} \left(1 - 2.0 \cdot 10^{-9} s\right)}{\left(2.0 \cdot 10^{-9} s + 1\right) \left(0.009947 s + 1\right)}$</td></tr>
+<td class="left">value</td><td class="left">$\frac{A_{0} \cdot \left(1 - 2.0 \cdot 10^{-9} s\right)}{\left(2.0 \cdot 10^{-9} s + 1\right) \left(\frac{0.03125 s}{\pi} + 1\right)}$</td><td class="left">$\frac{1.0 \cdot 10^{6} \cdot \left(1 - 2.0 \cdot 10^{-9} s\right)}{\left(2.0 \cdot 10^{-9} s + 1\right) \left(0.009947 s + 1\right)}$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">zo</td><td class="left">$55$</td><td class="left">$55$</td></tr>
 <tr><td class="left">Gc1_O1N</td><td class = "left">inN 0 inN 0 </td><td class = "left"></td><td class = "left">g</td>
 <td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
@@ -81,26 +81,31 @@ R1N inN scN R value={R_s} noisetemp=0 noiseflow=0 dcvar=0
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R1P</td><td class = "left">inP scP </td><td class = "left"></td><td class = "left">R</td>
 <td class="left">value</td><td class="left">$R_{s}$</td><td class="left">$50$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R2</td><td class = "left">fbP fbN </td><td class = "left"></td><td class = "left">R</td>
 <td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$15$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R3N</td><td class = "left">fbN outN </td><td class = "left"></td><td class = "left">R</td>
 <td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$2740$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R3P</td><td class = "left">outP fbP </td><td class = "left"></td><td class = "left">R</td>
 <td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$2740$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">V1N</td><td class = "left">scN 0 </td><td class = "left"></td><td class = "left">V</td>
 <td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
@@ -129,7 +134,7 @@ R1N inN scN R value={R_s} noisetemp=0 noiseflow=0 dcvar=0
 <!-- INSERT -->
 <div id="footnote">
 <p>Go to <a href="Balanced-Line-Driver_index.html">Balanced-Line-Driver_index</a></p>
-<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 1.5.0 &copy 2009-2023 SLiCAP development team</p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 2.0.1 &copy 2009-2023 SLiCAP development team</p>
 <p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
-<p>Last project update: 2023-06-30 11:33:21</p>
+<p>Last project update: 2023-10-31 12:47:44</p>
 </div></body></html>
