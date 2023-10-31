@@ -53,7 +53,9 @@ def laplace2coeffs(M, var=ini.Laplace):
 def nth2firstOrder(CM,q=sp.zeros(1,1)):
     """
     Returns the first order decomposition of an nth order system of differential equations
-    q=A0x+sA1x+s^2A2x+...
+
+    .. math:: q=A_0x+sA_1x+s^2A_2x+...
+
     :param M: list of coefficient matrices
     :type M: list
 
@@ -239,11 +241,16 @@ def ODtranspose(A):
 
 def UVsolve(A, B):
     """
-    Returns the U, V, and X for UAV = XUBV
-    equivalently: finds the UV for F = UAVx + sUBVx
-    This is the starting equation:
-    Uq=UGVy+sUCVy
-    x=Vy
+    Returns the U, V matrices that place a system of equations into block diagaonal form where the starting system of equations are:
+
+    .. math:: I=Gy+sCy
+
+    and the resulting block diagonal system of equations become:
+
+    .. math:: UI = UAVx + sUBVx
+
+    .. math:: x=Vy
+
     :param A: Matrix to perform the UV decomposition on
     :type A: sympy matrix
 
