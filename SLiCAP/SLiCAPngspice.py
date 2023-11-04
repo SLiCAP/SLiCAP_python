@@ -225,7 +225,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
         elif stepMethod == 'log':
             stepList = geomspace(stepStart, stepStop, stepNum)
         for i in range(len(stepList)):
-            f = open(filePath + cirFile + '.cir', 'r')
+            f = open(cirFile + '.cir', 'r')
             netlist = f.read()
             f.close()
             traceNames = []
@@ -251,7 +251,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
             f.close()
             system(NGSPICECOMMAND + ' -b simFile.sp -o simFile.log')
     else:
-        f = open(filePath + cirFile + '.cir', 'r')
+        f = open(cirFile + '.cir', 'r')
         netlist = f.read()
         f.close()
         netlist += '\n.control\nset wr_vecnames\nset wr_singlescale\n'

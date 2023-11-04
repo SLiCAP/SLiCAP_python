@@ -13,8 +13,7 @@ prj = initProject("myFirstVampNGspice")
 # Example opamp circuit
 
 # Define the circuit and the simulations
-filePath = 'cir/'
-cirFile = 'MyFirstVampOPA211'
+cirFile = 'cir/MyFirstVampOPA211'
 TRAN     = 'tran 100n 10u'
 AC       = 'AC dec 100 1k 10meg'
 DC       = 'DC V1 0 1 10m'
