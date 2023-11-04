@@ -1,6 +1,6 @@
-===========
+===================
 SLiCAPstatespace.py
-===========
+===================
 
 .. automodule:: SLiCAP.SLiCAPstatespace
     :members:

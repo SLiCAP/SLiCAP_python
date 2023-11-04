@@ -1,0 +1,17 @@
+"Balanced MOSFET Line Driver"
+* Z:\mnt\DATA\SLiCAP\SLiCAP_github\SLiCAP_python\files\examples\balancedAmp\cir\balancedMOSAmp.asc
+R2 fbP fbN R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R3P outP fbP R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R3N fbN outN R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+C1 outP outN C value={C_d} vinit=0
+C2P outP 0 C value={C_c/2} vinit=0
+C2N outN 0 C value={C_c/2} vinit=0
+V1P scP 0 V value={V_s} dc=0 dcvar=0 noise=0
+V1N scN 0 V value=0 dc=0 dcvar=0 noise=0
+R1P inP scP R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R1N inN scN R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+XU1N outN 0 fbN inN CMOS18ND W={W} L={L} ID={ID}
+XU1P 0 outP inP fbP CMOS18ND W={W} L={L} ID={ID}
+.param R_s=50 R_a=15 R_b=2740 C_d=1n C_c=2n A0=1M
+.backanno
+.end

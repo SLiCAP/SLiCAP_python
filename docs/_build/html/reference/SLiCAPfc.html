@@ -36,6 +36,7 @@
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -273,16 +274,20 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.UVsolve">
 <span class="sig-name descname"><span class="pre">UVsolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.UVsolve" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the U, V, and X for UAV = XUBV
-equivalently: finds the UV for F = UAVx + sUBVx
-This is the starting equation:
-Uq=UGVy+sUCVy
-x=Vy
-:param A: Matrix to perform the UV decomposition on
-:type A: sympy matrix</p>
+<dd><p>Returns the U, V matrices that place a system of equations into block diagaonal form where the starting system of equations are:</p>
+<div class="math notranslate nohighlight">
+\[I=Gy+sCy\]</div>
+<p>and the resulting block diagonal system of equations become:</p>
+<div class="math notranslate nohighlight">
+\[UI = UAVx + sUBVx\]</div>
+<div class="math notranslate nohighlight">
+\[x=Vy\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>B</strong> (<em>sympy matrix</em>) – Matrix to perform the UV decomposition on</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>A</strong> (<em>sympy matrix</em>) – Matrix to perform the UV decomposition on</p></li>
+<li><p><strong>B</strong> (<em>sympy matrix</em>) – Matrix to perform the UV decomposition on</p></li>
+</ul>
 </dd>
 <dt class="field-even">Return res</dt>
 <dd class="field-even"><p>list of three matrices: U,V,fc where fc is the frequency
@@ -385,13 +390,15 @@ coefficient matrix.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPfc.nth2firstOrder">
 <span class="sig-name descname"><span class="pre">nth2firstOrder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">CM</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Matrix([[0]])</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPfc.nth2firstOrder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the first order decomposition of an nth order system of differential equations
-q=A0x+sA1x+s^2A2x+…
-:param M: list of coefficient matrices
-:type M: list</p>
+<dd><p>Returns the first order decomposition of an nth order system of differential equations</p>
+<div class="math notranslate nohighlight">
+\[q=A_0x+sA_1x+s^2A_2x+...\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>q</strong> (<em>sympy matrix</em>) – Vector of sources</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>M</strong> (<em>list</em>) – list of coefficient matrices</p></li>
+<li><p><strong>q</strong> (<em>sympy matrix</em>) – Vector of sources</p></li>
+</ul>
 </dd>
 <dt class="field-even">Return res</dt>
 <dd class="field-even"><p>list of 2 coefficient matrices and the updated source vector</p>
