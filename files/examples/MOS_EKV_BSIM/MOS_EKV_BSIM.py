@@ -6,6 +6,7 @@ Created on Sat Nov  4 11:41:04 2023
 @author: anton
 """
 
+from SLiCAP import *
 
 # Example NMOS operating point info
 

@@ -7,7 +7,7 @@ Created on Tue Jun 15 15:05:13 2021
 
 """
 from os     import system, remove
-from sympy  import Symbol, N
+from sympy  import Symbol
 from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPplots import plot, trace
 from numpy  import array, sqrt, arctan, pi, unwrap, log10, linspace, geomspace
@@ -109,14 +109,14 @@ class NMOS(object):
                 self.params[key] = array(self.params[key])
     def makeParDefs(self):
         self.parDefs = {}
-        self.parDefs[sp.Symbol('gm_' + self.refDes)] = self.params['ggd']
-        self.parDefs[sp.Symbol('gb_' + self.refDes)] = self.params['gbd']
-        self.parDefs[sp.Symbol('go_' + self.refDes)] = self.params['gdd']
-        self.parDefs[sp.Symbol('cgs_' + self.refDes)] = (self.params['cgs'] + self.params['csg'])/2
-        self.parDefs[sp.Symbol('cgb_' + self.refDes)] = (self.params['cgb'] + self.params['cbg'])/2
-        self.parDefs[sp.Symbol('cdg_' + self.refDes)] = (self.params['cdg'] + self.params['cgd'])/2
-        self.parDefs[sp.Symbol('cdb_' + self.refDes)] = (self.params['cdb'] + self.params['cbd'])/2
-        self.parDefs[sp.Symbol('csb_' + self.refDes)] = (self.params['csb'] + self.params['cbs'])/2
+        self.parDefs[Symbol('gm_' + self.refDes)] = self.params['ggd']
+        self.parDefs[Symbol('gb_' + self.refDes)] = self.params['gbd']
+        self.parDefs[Symbol('go_' + self.refDes)] = self.params['gdd']
+        self.parDefs[Symbol('cgs_' + self.refDes)] = (self.params['cgs'] + self.params['csg'])/2
+        self.parDefs[Symbol('cgb_' + self.refDes)] = (self.params['cgb'] + self.params['cbg'])/2
+        self.parDefs[Symbol('cdg_' + self.refDes)] = (self.params['cdg'] + self.params['cgd'])/2
+        self.parDefs[Symbol('cdb_' + self.refDes)] = (self.params['cdb'] + self.params['cbd'])/2
+        self.parDefs[Symbol('csb_' + self.refDes)] = (self.params['csb'] + self.params['cbs'])/2
     def makeModelDef(self):
         text = '.model %s M'%(self.refDes)
         text += '\n+ gm=%s'%(self.params['ggd'])

@@ -9,11 +9,11 @@ Created on Sat Nov  4 11:36:32 2023
 from SLiCAP import *
 
 prj = initProject("NGspice")
-"""
+
 # Example opamp circuit
 
 # Define the circuit and the simulations
-filePath = '/mnt/DATA/SLiCAP/SLiCAP_github/SLiCAP_PythonMaxima/SLiCAP/SLiCAPngspice/cir/'
+filePath = 'cir/'
 cirFile = 'MyFirstVampOPA211'
 TRAN     = 'tran 100n 10u'
 AC       = 'AC dec 100 1k 10meg'
@@ -33,4 +33,3 @@ plot(cirFile + DC.replace(' ', '_'), cirFile + ' ' + DC, 'lin', traceDict, xName
 magTraces, phaseTraces, xVar = ngspice2traces(cirFile, AC, names, stepCmd=stepCL, traceType='dBmagPhase')
 plot(cirFile + AC.replace(' ', '_'), cirFile + ' ' + AC, 'semilogx', magTraces, xName=xVar, xScale='k', xUnits = 'Hz', yUnits='dB', show=True)
 plot(cirFile + AC.replace(' ', '_'), cirFile + ' ' + TRAN, 'semilogx', phaseTraces, xName=xVar, xScale='k', xUnits = 'Hz', yUnits='deg', show=True)
-"""
