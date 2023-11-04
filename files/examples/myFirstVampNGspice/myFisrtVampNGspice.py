@@ -8,7 +8,7 @@ Created on Sat Nov  4 11:36:32 2023
 
 from SLiCAP import *
 
-prj = initProject("NGspice")
+prj = initProject("myFirstVampNGspice")
 
 # Example opamp circuit
 

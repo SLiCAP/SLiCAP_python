@@ -7,6 +7,7 @@ Created on Sat Nov  4 11:41:04 2023
 """
 
 from SLiCAP import *
+prj = initProject("MOS_EKV_BSIM")
 
 # Example NMOS operating point info
 
@@ -56,7 +57,7 @@ if step == None:
 
 else:
     derivedParams = {}
-    derivedParams['fT'] = mn.params['ggd']/(2*pi*mn.params['cgg'])
+    derivedParams['fT'] = mn.params['ggd']/(2*np.pi*mn.params['cgg'])
     derivedParams['gm/Id\t'] = mn.params['ggd']/mn.params['i(ids)']
 
     # Get SLiCAP EKV model data
