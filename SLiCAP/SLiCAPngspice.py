@@ -65,8 +65,8 @@ class NMOS(object):
         f.write(txt)
         f.close()
         system(NGSPICECOMMAND + ' -b MOS_OP.cir -o MOS_OP.log')
-        #remove('MOS_OP.cir')
-        #remove('MOS_OP.log')
+        remove('MOS_OP.cir')
+        remove('MOS_OP.log')
         self.getParams()
         self.makeParDefs()
         self.makeModelDef()
@@ -75,7 +75,7 @@ class NMOS(object):
         f = open('MOS_OP.out', 'r')
         lines = f.readlines()
         f.close()
-        #remove('MOS_OP.out')
+        remove('MOS_OP.out')
         names  = False
         values = False
         parnames = []

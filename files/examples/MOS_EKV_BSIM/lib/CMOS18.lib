@@ -8,12 +8,12 @@
 .param
 + TOX_N18     = 4.2n  ; oxide thickness [m]
 + Vth_N18     = 0.43  ; threshold voltage [V]
-+ N_s_N18     = 1.23   ; substrate factor [-]
-+ Theta_N18   = 0.54   ; vertical field mobility reduction coefficient [1/V]
-+ E_CRIT_N18  = 7M    ; lateral field strength for velocity saturation [V/m]
-+ u_0_N18     = 60m   ; zero field carrier mobility [m^2/V/s]
++ N_s_N18     = 1.30  ; substrate factor [-]
++ Theta_N18   = 0.54  ; vertical field mobility reduction coefficient [1/V]
++ E_CRIT_N18  = 7.1M  ; lateral field strength for velocity saturation [V/m]
++ u_0_N18     = 63m   ; zero field carrier mobility [m^2/V/s]
 + CGBO_N18    = 1p    ; gate-bulk overlap capacitance [F/m]
-+ CGSO_N18    = 300p  ; gate-source and gate-drain overlap capacitance [F/m]
++ CGSO_N18    = 350p  ; gate-source and gate-drain overlap capacitance [F/m]
 + CJB0_N18    = 1m    ; source/bulk drain/bulk capacitance [F/m^2]
 + LDS_N18     = 180n  ; length of drain and source [m]
 + VAL_N18     = 80M   ; Early voltage per unit of length [V/m]
@@ -65,11 +65,11 @@ M1 drain gate source bulk CMOS18N
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 + IC_CRIT = {1/(4*(N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
 + g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {ID/VAL_N18/L}
-+ g_b     = {(N_s_N18-1)*g_m*sqrt(1+IC/4/IC_CRIT)}
-+ c_gs    = {2/3*W*L*C_OX_N18 + CGSO_N18*W} 
++ g_o     = {g_m*N_s_N18*U_T*(sqrt(IC+0.25)+6)/(VAL_N18*L)}
++ g_b     = {(N_s_N18-1)*g_m}
++ c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W} 
 + c_dg    = {CGSO_N18*W}
-+ c_gb    = {CGBO_N18*2*L+(N_s_N18-1)/N_s_N18*C_OX_N18*W*L/3}
++ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
 + c_db    = {CJB0_N18*W*LDS_N18}
 + c_sb    = {CJB0_N18*W*LDS_N18}
 + IC_i    = {ID*L/W/I_0_N18} ; Initial estimate of inversion coefficient
@@ -77,6 +77,7 @@ M1 drain gate source bulk CMOS18N
 + V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC))-1) + Vth_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
++ x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
 .subckt CMOS18N_V drain gate source bulk W={W} L={L} VD={VD} VG={VG} VS={VS}

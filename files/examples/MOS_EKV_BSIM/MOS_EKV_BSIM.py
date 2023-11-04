@@ -14,11 +14,11 @@ prj = initProject("MOS_EKV_BSIM")
 # Define library, device, geometry and operating point
 LIB    = 'lib/log018.l TT'
 DEV    = 'nch'
-W      = 22e-6
-L      = 18e-6
+W      = .22e-6
+L      = .18e-6
 M      = 1
 ID     = 1e-6
-VD     = 1.8
+VD     = 0.9
 VS     = 0
 VB     = 0
 VG     = 0.5
@@ -107,6 +107,3 @@ else:
     goTraceBSIM.label = 'BSIM'
     plotDict_go       = {'EKV': goTraceEKV, 'BSIM': goTraceBSIM}
     fig_go = plot('fig_go', '$g_o$ versus $I_{ds}$', 'lin', plotDict_go, xScale='u', yScale='u', xName='$I_{ds}$', yName='$g_o$', xUnits='A', yUnits='S', show=True)
-
-
-
