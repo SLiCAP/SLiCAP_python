@@ -1,0 +1,5 @@
+EKV model
+.lib CMOS18.lib
+X1 D G S 0 CMOS18N W={W} L={L} ID={I_D} 
+.param I_D=0 W=2.2e-05 L=1.8e-05
+.end
