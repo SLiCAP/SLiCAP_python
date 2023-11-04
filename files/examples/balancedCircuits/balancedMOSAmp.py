@@ -7,6 +7,7 @@ Created on Wed Feb 22 17:14:45 2023
 """
 from SLiCAP import *
 fileName = "balancedMOSAmp"
+prj = initProject(fileName)
 
 #makeNetlist(fileName + ".asc", "Balanced Line Driver")
 
@@ -31,15 +32,15 @@ matrices2html(i1.execute())
 head2html("DM-CM matrix equation")
 i1.setPairExt(['P', 'N'])
 i1.setLGref(["Gm_M1_XU1P","Gm_M1_XU1N"])
-i1.setConvType('all') 
+i1.setConvType('all')
 matrices2html(i1.execute())
 
 head2html("DM matrix equation")
-i1.setConvType('dd') 
+i1.setConvType('dd')
 matrices2html(i1.execute())
 
 head2html("CM matrix equation")
-i1.setConvType('cc') 
+i1.setConvType('cc')
 matrices2html(i1.execute())
 i1.setSimType("numeric")
 
@@ -47,7 +48,7 @@ i1.setSimType("numeric")
 
 htmlPage("Loop Gain")
 head2html("Loop Gain of the DM transfer")
-i1.setConvType('dd') 
+i1.setConvType('dd')
 i1.setDataType('laplace')
 i1.setGainType('loopgain')
 i1.setSimType("numeric")
