@@ -322,6 +322,7 @@ def makeDCTRNStraces(lines):
 def makeACtraces(lines, traceType):
     reMagDict = {}
     imPhsDict = {}
+    traceDict = {}
     for i in range(len(lines)):
         fields = lines[i].split()
         if i == 0:
