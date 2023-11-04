@@ -1190,39 +1190,6 @@ def stepFunctions(stepDict, function):
 # Functions for converting the MNA matrix and the vecors with independent and
 # dependent variables into equivalent common-mode and differential-mode variables.
 
-def findBaseNames(instr):
-    """
-    Returns a list with base names of paired elements. The base name is the
-    element identifier without the pairing extension.
-
-    :param instr: instruction with circuit and pairing extensions
-    :type instr: SLiCAPinstruction.instruction()
-
-    :return: base IDs
-    :rtype: list
-    """
-    lenExt = len(instr.pairExt[0])
-    pairedElements = {}
-    baseIDs = []
-    for refDes in list(instr.circuit.elements.keys()):
-        if len(refDes) > lenExt:
-            if refDes[-lenExt:] == instr.pairExt[0]:
-                if refDes[:-lenExt] not in list(pairedElements.keys()):
-                    pairedElements[refDes[:-lenExt]] = [instr.pairExt[0]]
-                elif pairedElements[refDes[:-lenExt]][0] == instr.pairExt[1]:
-                    pairedElements[refDes[:-lenExt]].append(instr.pairExt[0])
-            if refDes[-lenExt:] == instr.pairExt[1]:
-                if refDes[:-lenExt] not in list(pairedElements.keys()):
-                    pairedElements[refDes[:-lenExt]] = [instr.pairExt[1]]
-                elif pairedElements[refDes[:-lenExt]][0] == instr.pairExt[0]:
-                    pairedElements[refDes[:-lenExt]].append(instr.pairExt[1])
-    for key in list(pairedElements.keys()):
-        if len(pairedElements[key]) == 2:
-            baseID = key.split('_')[-1]
-            if baseID not in baseIDs:
-                baseIDs.append(baseID)
-    return baseIDs
-
 def pairParDefs(instr):
     """
     Removes the pair extension from paired parameters in both keys and values in
@@ -1234,25 +1201,22 @@ def pairParDefs(instr):
     :return: instr
     :rtupe: SLiCAPinstruction.instruction()
     """
-    baseIDs = findBaseNames(instr)
     lenExt  = len(instr.pairExt[0])
     substDict = {}
     newParDefs = {}
     # remove subcircuit extension of paired circuits from parameter names
     for key in list(instr.parDefs.keys()):
         parName = str(key)
-        nameParts = parName.split('_')
-        if len(nameParts[-1]) > lenExt and nameParts[-1][-lenExt:] in instr.pairExt and nameParts[-1][:-lenExt] in baseIDs:
+        if len(parName) > lenExt and parName[-lenExt:] in instr.pairExt:
             value = instr.parDefs[key]
             newParDefs[sp.Symbol(parName[:-lenExt])] = value
             params = list(value.atoms(sp.Symbol))
             # remove subcircuit extension of paired circuits from parameters in expressions
             for param in params:
-                parName = str(param)
-                nameParts = parName.split('_')
-                if len(nameParts[-1]) > lenExt:
-                    if nameParts[-1][-lenExt:] in instr.pairExt and nameParts[-1][:-lenExt] in baseIDs:
-                        substDict[param] = sp.Symbol(parName[:-lenExt])
+                newName = str(param)
+                if len(newName) > lenExt:
+                    if newName[-lenExt:] in instr.pairExt:
+                        newParDefs[param] = sp.Symbol(newName[:-lenExt])
         else:
             newParDefs[key] = instr.parDefs[key]
     # perform substitutions
@@ -1287,17 +1251,15 @@ def convertMatrices(instr, result):
     """
     pairs, unPaired, dmVars, cmVars, A = createConversionMatrices(instr)
     if instr.removePairSubName:
-        baseIDs = findBaseNames(instr)
         lenExt  = len(instr.pairExt[0])
         params = list(set(list(result.M.atoms(sp.Symbol)) + list(result.Iv.atoms(sp.Symbol))))
         substDict = {}
         for param in params:
             parName = str(param)
-            nameParts = parName.split('_')
-            if len(nameParts[-1]) > lenExt:
-                if nameParts[-1][-lenExt:] in instr.pairExt and nameParts[-1][:-lenExt] in baseIDs:
-                    newParam = sp.Symbol(parName[:-lenExt])
-                    substDict[param] = newParam
+            #nameParts = parName.split('_')
+            if len(parName) > lenExt:
+                if parName[-lenExt:] in instr.pairExt:# and nameParts[-1][:-lenExt] in baseIDs:
+                    substDict[param] = sp.Symbol(parName[:-lenExt])
         result.M = result.M.subs(substDict)
         # Sources are uncorrelated in the case of noise and dcvar:
         if instr.dataType != 'noise' and instr.dataType != 'dcvar':
@@ -1360,7 +1322,7 @@ def createConversionMatrices(instr):
 
 def pairVariables(instr):
     """
-    Combines nodal voltages and branch currents in pairs of variables that
+    Combines nodal voltages and branche currents in pairs of variables that
     can be resolved in common-mode, and differential-mode variables.
 
     Pairing is defined by the instr.pairedVars and instr.pairedCircuits.
@@ -1544,15 +1506,25 @@ def doPyLoopGainServo(instr, result):
         else:
             lg1 = instr.lgValue[0]
     else:
-        lg1 = 0
+        lg1 = sp.N(0)
     if instr.lgValue[1] != None:
         if instr.numeric:
             lg2 = fullSubs(instr.lgValue[1], instr.parDefs)
         else:
             lg2 = instr.lgValue[1]
     else:
-        lg2 = 0
-
+        lg2 = sp.N(0)
+    if instr.convType !=None and instr.removePairSubName:
+        lenExt  = len(instr.pairExt[0])
+        params = list(set(list(lg1.atoms(sp.Symbol)) + list(lg2.atoms(sp.Symbol))))
+        substDict = {}
+        for param in params:
+            parName = str(param)
+            if len(parName) > lenExt:
+                if parName[-lenExt:] in instr.pairExt:
+                    substDict[param] = sp.Symbol(parName[:-lenExt])
+        lg1 = lg1.subs(substDict)
+        lg2 = lg2.subs(substDict)
     _LGREF_1, _LGREF_2 = sp.symbols('_LGREF_1, _LGREF_2')
     MD = result.M
     M0 = result.M.subs({_LGREF_1: 0, _LGREF_2: 0})

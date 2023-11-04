@@ -30,6 +30,7 @@ from SLiCAP.SLiCAPlatex import *
 from SLiCAP.SLiCAPrst import *
 from SLiCAP.SLiCAPfc import computeFC
 from SLiCAP.SLiCAPstatespace import getStateSpace
+from SLiCAP.SLiCAPngspice import NMOS, ngspice2traces
 
 try:
     __IPYTHON__
