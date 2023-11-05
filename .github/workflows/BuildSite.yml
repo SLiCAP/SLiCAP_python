@@ -44,7 +44,7 @@ jobs:
       - name: run example projects
         run: |
           cd files/examples
-          sh RunExamples.sh
+          . ./RunExamples.sh
       - name: make html files
         run: |
           cd docs
