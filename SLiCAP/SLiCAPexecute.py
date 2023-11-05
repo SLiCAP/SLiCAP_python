@@ -1274,7 +1274,7 @@ def convertMatrices(instr, result):
 
 def createConversionMatrices(instr):
     """
-    Creates the matrax for a base transformation from nodal voltages and branche
+    Creates the matrax for a base transformation from nodal voltages and branches
     currents to common-mode and differential-mode equivalents.
 
     :param instr: **instruction()** object that holds instruction data.
@@ -1322,7 +1322,7 @@ def createConversionMatrices(instr):
 
 def pairVariables(instr):
     """
-    Combines nodal voltages and branche currents in pairs of variables that
+    Combines nodal voltages and branch currents in pairs of variables that
     can be resolved in common-mode, and differential-mode variables.
 
     Pairing is defined by the instr.pairedVars and instr.pairedCircuits.
