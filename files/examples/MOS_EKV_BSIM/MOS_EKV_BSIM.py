@@ -7,30 +7,41 @@ Created on Sat Nov  4 11:41:04 2023
 """
 
 from SLiCAP import *
+
 prj = initProject("MOS_EKV_BSIM")
 
 # Example NMOS operating point info
 
 # Define library, device, geometry and operating point
 LIB    = 'lib/log018.l TT'
-DEV    = 'nch'
-W      = .22e-6
-L      = .18e-6
+DEV    = 'pch'
+W      = 2.2e-6
+L      = 1.8e-6
 M      = 1
-ID     = 1e-6
-VD     = 0.9
-VS     = 0
-VB     = 0
-VG     = 0.5
 f      = 1E6
 refDes = 'M1'
+Npts   = 90
+Vdiff  = 0.01
 
 # Create the device
-mn = NMOS(refDes, LIB, DEV)
+mn = MOS(refDes, LIB, DEV)
 
-# Calculate operating point parameters with ngspice
-step=[0, 90, 0.01]
-#step=None
+if DEV == "nch":
+    VD   = 0.9
+    VS   = 0
+    VB   = 0
+    VG   = 0
+    step = [VS, Npts, Vdiff]
+
+elif DEV == "pch":
+    VD   = 0.9
+    VS   = 1.8
+    VB   = 1.8
+    VG   = 1.8
+    step = [VS, Npts, -Vdiff]
+
+#step=None # Uncomment if you want single-point info
+
 mn.getOPvg(W, L, M, VG, VD, VS, VB, f, step)
 
 if step == None:
@@ -50,7 +61,7 @@ if step == None:
         print(key, mn.errors[key])
 
     print('\nDerived parameters:\n')
-    print('fT\t', mn.params['ggd']/(2*pi*mn.params['cgg']))
+    print('fT\t', mn.params['ggd']/(2*np.pi*mn.params['cgg']))
     print('mu\t', mn.params['ggd']/mn.params['gdd'])
     print('gm/Id\t', mn.params['ggd']/mn.params['i(ids)'])
 
@@ -62,12 +73,17 @@ else:
 
     # Get SLiCAP EKV model data
 
-    cirText = "EKV model\n.lib CMOS18.lib\nX1 D G S 0 CMOS18N W={W} L={L} ID={I_D} \n.param I_D=0 W=%s L=%s\n.end\n"%(W, L)
-    f=open(ini.circuitPath + 'NMOS.cir', 'w')
+    if DEV == "nch":
+        cirText = "EKV model\n.lib CMOS18.lib\nX1 D G S 0 CMOS18N W={W} L={L} ID={I_D} \n.param I_D=0 W=%s L=%s\n.end\n"%(W, L)
+    elif DEV == "pch":
+        cirText = "EKV model\n.lib CMOS18.lib\nX1 D G S 0 CMOS18P W={W} L={L} ID={-I_D} \n.param I_D=0 W=%s L=%s\n.end\n"%(W, L)
+
+    f = open(ini.circuitPath + 'MOS.cir', 'w')
     f.write(cirText)
     f.close()
+
     i1 = instruction()
-    i1.setCircuit('NMOS.cir')
+    i1.setCircuit('MOS.cir')
     i1.defPar('W', W * M)
     i1.defPar('L', L)
     i1.delPar('I_D')

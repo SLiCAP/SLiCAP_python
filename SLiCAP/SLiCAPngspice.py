@@ -20,7 +20,7 @@ location of 'ngspice.exe' must be in the searcg path.
 
 NGSPICECOMMAND = 'ngspice'
 
-class NMOS(object):
+class MOS(object):
     def __init__(self, refDes, lib, dev):
         self.refDes = refDes
         self.lib = lib

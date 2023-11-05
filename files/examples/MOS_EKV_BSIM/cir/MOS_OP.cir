@@ -2,22 +2,22 @@
     V1  g 0 dc {VG} ac 1 0
     V2  s 0 dc {VS}
     V3  d 0 dc {VD}
-    V4  b 0 0
+    V4  b 0 dc {VB}
 .ELSEIF (select = 1)
     V1  g 0 dc {VG}
     V2  s 0 dc {VS} ac 1 0
     V3  d 0 dc {VD}
-    V4  b 0 0
+    V4  b 0 dc {VB}
 .ELSEIF (select = 2)
     V1  g 0 dc {VG}
     V2  s 0 dc {VS}
     V3  d 0 dc {VD} ac 1 0
-    V4  b 0 0
+    V4  b 0 dc {VB}
 .ELSEIF (select = 3)
     V1  g 0 dc {VG}
     V2  s 0 dc {VS}
     V3  d 0 dc {VD} 
-    V4  b 0 dc 0 ac 1 0
+    V4  b 0 dc {VB} ac 1 0
 .ENDIF
 
 .ac lin 1 {freq} {freq}
@@ -118,7 +118,7 @@ repeat $&num
   let gdd[idx]  = -real(V3#branch)
   let bias[idx] = VG
   let VG = VG + Vdelta
-  let idx = idx + 1
+  let idx = idx + 1B
 end
 
 alterparam select = 3
