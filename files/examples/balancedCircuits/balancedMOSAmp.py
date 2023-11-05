@@ -7,7 +7,6 @@ Created on Wed Feb 22 17:14:45 2023
 """
 from SLiCAP import *
 fileName = "balancedMOSAmp"
-prj = initProject(fileName)
 
 #makeNetlist(fileName + ".asc", "Balanced Line Driver")
 

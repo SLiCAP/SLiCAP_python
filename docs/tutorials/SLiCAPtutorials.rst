@@ -16,3 +16,4 @@ SLiCAP is licensed under a `Creative Commons Attribution-NonCommercial-NoDerivat
    noise
    MOS-EKV
    balanced
+   ExampleCirs
