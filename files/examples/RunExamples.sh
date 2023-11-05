@@ -1,3 +1,4 @@
+#! /bin/bash
 declare -A test_cirs
 # test_cirs is a dictionary with the directory as a key and the value as the run file
 test_cirs["balancedCircuits"]="balancedCircuitsProject.py"
