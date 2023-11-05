@@ -308,7 +308,7 @@ I2 ext comm I value=0 noise={2*q*IG}           ; gate shot noise
 + c_iss   = {c_gs+c_dg+c_gb}
 + IC_i    = {ID*L/W/I_0_N18} ; Correction for initial estimate of inversion coefficient
 + IC      = {IC_i*sqrt(1+IC_i/4/IC_CRIT)} ; Inversion coefficient corrected for short-channel effects
-+ f_ell   = {KF_N18*R_N*(1+2*N_s_N18*U_T*sqrt(IC)/V_KF_N18)^2/(4*k*T)}
++ f_ell   = {KF_N18*R_N*(1+2*N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT))/V_KF_N18)^2/(4*k*T)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
@@ -333,7 +333,7 @@ I2 ext comm I value=0 noise={-2*q*IG}          ; gate shot noise
 + c_iss   = {c_gs+c_dg+c_gb}
 + IC_i    = {-ID*L/W/I_0_P18} ; Initial estimate of inversion coefficient
 + IC      = {IC_i*sqrt(1+IC_i/4/IC_CRIT)} ; Inversion coefficient corrected for short-channel effects
-+ f_ell   = {KF_P18*R_N*(1+2*N_s_P18*U_T*sqrt(IC)/V_KF_P18)^2/(4*k*T)}
++ f_ell   = {KF_P18*R_N*(1+2*N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT))/V_KF_P18)^2/(4*k*T)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
