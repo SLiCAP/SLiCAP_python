@@ -1343,7 +1343,6 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
                     else:
                         # Try sympy integration
                         func = assumePosParams(data)
-                        func = sp.collect(sp.expand(data), ini.frequency)
                         result = sp.integrate(func, (assumePosParams(ini.frequency), fmin, fmax))
                         var_i += clearAssumptions(result)
             if noiseResult.simType == 'numeric':
