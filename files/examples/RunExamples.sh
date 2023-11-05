@@ -15,7 +15,7 @@ for key in "${!test_cirs[@]}"; do
     mkdir ../allhtml/$key
     mv  -v html/* ../allhtml/$key
     cd ..
-    echo "   - \`${key}</${key}>\`_" >> ExampleCirs.rst
+    echo "   - \`${key}<../../examples/${key}>\`_" >> ExampleCirs.rst
 done
 
 mv  ExampleCirs.rst ../../docs/tutorials/ExampleCirs.rst
