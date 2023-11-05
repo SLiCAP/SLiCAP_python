@@ -4,9 +4,9 @@ declare -A test_cirs
 test_cirs["balancedCircuits"]="balancedCircuitsProject.py"
 #test_cirs["CSstage"]="CSresnoise.py"
 #test_cirs["FilterDesign"]="LR4project.py"
-test_cirs["myFirstRCnetwork"]="myFirstRCnetwork.py"
-test_cirs["noiseFigure"]="noiseFigures.py"
-
+#test_cirs["myFirstRCnetwork"]="myFirstRCnetwork.py"
+#test_cirs["noiseFigure"]="noiseFigures.py"
+#This will make sure no plots are shown:
 mkdir allhtml
 cp Template.rst ExampleCirs.rst
 
