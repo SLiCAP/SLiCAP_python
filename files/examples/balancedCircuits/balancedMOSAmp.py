@@ -50,7 +50,12 @@ head2html("Loop Gain of the DM transfer")
 i1.setConvType('dd')
 i1.setDataType('laplace')
 i1.setGainType('loopgain')
+i1.defPars({"ID":"1u","L":"0.18u","W":"0.22u"})
 i1.setSimType("numeric")
+print(i1.getParValue("L"))
+"""
 result = i1.execute()
 eqn2html("L_G",result.laplace)
+eqn2html("L_Gnum",fullSubs(result.laplace,i1.parDefs))
+"""
 
