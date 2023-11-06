@@ -194,8 +194,7 @@ M1 drain gate source bulk CMOS18P
 + c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
 + c_db    = {CJB0_P18*W*LDS_P18}
 + c_sb    = {CJB0_P18*W*LDS_P18}
-+ IC    = {-ID*L/W/I_0_P18} ; Correction for initial estimate of inversion coefficient
-*+ IC      = {IC_i*sqrt(1+IC_i/4/IC_CRIT)} ; Inversion coefficient corrected for short-channel effects
++ IC      = {-ID*L/W/I_0_P18} ; Correction for initial estimate of inversion coefficient
 + V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC))-1)+Vth_P18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
@@ -277,13 +276,12 @@ M1 drain gate source bulk CMOS18PD
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 + IC_CRIT = {1/(4*(N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
 + g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {-ID/VAL_P18/L} 
++ g_o     = {g_m*N_s_P18*U_T/(VAL_P18*L)}
 + c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W} 
 + c_dg    = {CGSO_P18*W}
 + c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
 + c_db    = {CJB0_P18*W*LDS_P18}
-+ IC_i    = {-ID*L/W/I_0_P18} ; Correction for initial estimate of inversion coefficient
-+ IC      = {IC_i*sqrt(1+IC_i/4/IC_CRIT)} ; Inversion coefficient corrected for short-channel effects
++ IC      = {-ID*L/W/I_0_P18} ; Correction for initial estimate of inversion coefficient
 + V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC))-1)+Vth_P18}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
@@ -302,7 +300,7 @@ I2 ext comm I value=0 noise={2*q*IG}           ; gate shot noise
 + g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
 + c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W}
 + c_dg    = {CGSO_N18*W}
-+ c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
++ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
 + c_db    = {CJB0_N18*W*LDS_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
@@ -327,12 +325,11 @@ I2 ext comm I value=0 noise={-2*q*IG}          ; gate shot noise
 + g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
 + c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W}
 + c_dg    = {CGSO_P18*W}
-+ c_gb    = {CGBO_P18*2*L+(N_s_P18-1)/N_s_P18*C_OX_P18*W*L/3}
++ c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
 + c_db    = {CJB0_P18*W*LDS_P18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
-+ IC_i    = {-ID*L/W/I_0_P18} ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*sqrt(1+IC_i/4/IC_CRIT)} ; Inversion coefficient corrected for short-channel effects
++ IC      = {-ID*L/W/I_0_P18} ; Initial estimate of inversion coefficient
 + f_ell   = {KF_P18*R_N*(1+2*N_s_P18*U_T*sqrt(IC)/V_KF_P18)^2/(4*k*T)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
@@ -362,18 +359,19 @@ M1 drain gate source bulk CMOS18PN
 + g_m_P     = {-ID_P/(N_s_P18*U_T*sqrt(IC_P*(1+IC_P/IC_CRIT_P)+0.5*sqrt(IC_P*(1+IC_P/IC_CRIT_P))+1))}
 + g_m       = {g_m_N + g_m_P}
 + g_b       = {g_m_N*(N_s_N18-1) + g_m_P*(N_s_P18-1)}
-+ g_o       = {ID_N/VAL_N18/L_N - ID_P/VAL_P18/L_P}
-+ c_gs      = {2/3*W_N*L_N*C_OX_N18 + CGSO_N18*W_N + 2/3*W_P*L_P*C_OX_P18 + CGSO_N18*W_P}  
++ g_o       = {g_m_N*N_s_N18*U_T/(VAL_N18*L)+g_m_P*N_s_P18*U_T/(VAL_P18*L)}
++ c_gs      = {(2-x_N)/3*W_N*L_N*C_OX_N18 + CGSO_N18*N_P + (2-x_P)/3*W_P*L_P*C_OX_P18 + CGSO_P18*W_P} 
 + c_dg      = {CGSO_N18*W_N+CGSO_P18*W_P}
-+ c_gb      = {CGBO_N18*2*L_N + (N_s_N18-1)/N_s_N18*C_OX_N18*W_N*L_N/3 + CGBO_P18*2*L_P + (N_s_P18-1)/N_s_P18*C_OX_P18*W_P*L_P/3}
++ c_gb      = {W_N*L_N*C_OX_N18*(1+x_N)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L_N + W_P*L_P*C_OX_P18*(1+x_P)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L_P}
 + c_db      = {CJB0_N18*W_N*LDS_N18 + CJB0_P18*W_P*LDS_P18}
 + c_sb      = {CJB0_N18*W_N*LDS_N18 + CJB0_P18*W_P*LDS_P18}
 + IC_iN     = {ID_N*L_N/W_N/I_0_N18} ; Initial estimate of inversion coefficient
 + IC_N      = {IC_iN*sqrt(1+IC_iN/4/IC_CRIT_N)} ; Inversion coefficient corrected for short-channel effects
-+ IC_iP     = {-ID_P*L_P/W_P/I_0_P18} ; Initial estimate of inversion coefficient
-+ IC_P      = {IC_iP*sqrt(1+IC_iP/4/IC_CRIT_P)} ; Inversion coefficient corrected for short-channel effects
++ IC_P      = {-ID_P*L_P/W_P/I_0_P18} ; Initial estimate of inversion coefficient
 + c_iss     = {c_gs+c_dg+c_gb}
 + f_T_PN    = {g_m/2/pi/c_iss}
++ x_N       = {(sqrt(IC_N + 0.25) + 1.5)/(sqrt(IC_N + 0.25) + 0.5)^2}
++ x_P       = {(sqrt(IC_P + 0.25) + 1.5)/(sqrt(IC_P + 0.25) + 0.5)^2}
 .ends
 
 .end
