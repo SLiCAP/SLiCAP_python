@@ -1209,14 +1209,17 @@ def pairParDefs(instr):
         parName = str(key)
         if len(parName) > lenExt and parName[-lenExt:] in instr.pairExt:
             value = instr.parDefs[key]
-            newParDefs[sp.Symbol(parName[:-lenExt])] = value
             params = list(value.atoms(sp.Symbol))
             # remove subcircuit extension of paired circuits from parameters in expressions
+            valueSubs = {}
             for param in params:
                 newName = str(param)
                 if len(newName) > lenExt:
                     if newName[-lenExt:] in instr.pairExt:
-                        newParDefs[param] = sp.Symbol(newName[:-lenExt])
+                        valueSubs[param] = sp.Symbol(newName[:-lenExt])
+            value = value.subs(valueSubs)
+            newParDefs[sp.Symbol(parName[:-lenExt])] = value
+
         else:
             newParDefs[key] = instr.parDefs[key]
     # perform substitutions
@@ -1501,17 +1504,11 @@ def doPySolve(instr, result):
 def doPyLoopGainServo(instr, result):
     result = makeAllMatrices(instr, result)
     if instr.lgValue[0] != None:
-        if instr.numeric:
-            lg1 = fullSubs(instr.lgValue[0], instr.parDefs)
-        else:
-            lg1 = instr.lgValue[0]
+        lg1 = instr.lgValue[0]
     else:
         lg1 = sp.N(0)
     if instr.lgValue[1] != None:
-        if instr.numeric:
-            lg2 = fullSubs(instr.lgValue[1], instr.parDefs)
-        else:
-            lg2 = instr.lgValue[1]
+        lg2 = instr.lgValue[1]
     else:
         lg2 = sp.N(0)
     if instr.convType !=None and instr.removePairSubName:
@@ -1525,12 +1522,17 @@ def doPyLoopGainServo(instr, result):
                     substDict[param] = sp.Symbol(parName[:-lenExt])
         lg1 = lg1.subs(substDict)
         lg2 = lg2.subs(substDict)
+    if instr.numeric:
+        lg1 = fullSubs(lg1, instr.parDefs)
+        lg2 = fullSubs(lg2, instr.parDefs)
     _LGREF_1, _LGREF_2 = sp.symbols('_LGREF_1, _LGREF_2')
     MD = result.M
     M0 = result.M.subs({_LGREF_1: 0, _LGREF_2: 0})
     DM = det(MD, method=ini.denom)
     D0 = det(M0, method=ini.denom)
     LG = (D0-DM)/D0
+    if instr.numeric:
+        LG = fullSubs(LG, instr.parDefs)
     num, den = LG.as_numer_denom()
     LG = normalizeRational(num/den, ini.Laplace).subs({_LGREF_1: lg1, _LGREF_2: lg2})
     num, den = LG.as_numer_denom()
