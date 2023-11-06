@@ -9,6 +9,6 @@ from SLiCAP import *
 
 prj = initProject("Balanced circuits")
 
-from Tcircuit1 import *
-from balancedAmp import *
+#from Tcircuit1 import *
+#from balancedAmp import *
 from balancedMOSAmp import *
