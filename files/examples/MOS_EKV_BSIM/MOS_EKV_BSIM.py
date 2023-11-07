@@ -14,29 +14,29 @@ prj = initProject("MOS_EKV_BSIM")
 
 # Define library, device, geometry and operating point
 LIB    = 'lib/log018.l TT'
-DEV    = 'nch'
+DEV    = 'pch'
 W      = .22e-6
 L      = .18e-6
 M      = 1
-f      = 1E6
+f      = 10E6
 refDes = 'M1'
 
 # Define number of points and the absolute value of the gate step voltage
-Npts   = 90
-Vdiff  = 0.02
+Npts   = 120
+Vdiff  = 0.01
 
 # Create the device
 mn = MOS(refDes, LIB, DEV)
 
 if DEV == "nch":
-    VD   = 1.8
+    VD   = 1.2
     VS   = 0
     VB   = 0
     VG   = 0
     step = [VS, Npts, Vdiff]
 
 elif DEV == "pch":
-    VD   = 0.9
+    VD   = 0.6
     VS   = 1.8
     VB   = 1.8
     VG   = 1.8
