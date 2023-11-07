@@ -146,6 +146,18 @@ else:
     ID = sp.Symbol('I_D')
     IDS = mn.params['i(ids)']
 
+    if DEV == "nch":
+        VGS               = sp.lambdify(ID, i1.getParValue('V_GS_X1'))
+        vgsTraceBSIM      = trace([mn.params['v(bias)'], IDS])
+    elif DEV == "pch":
+        VGS               = sp.lambdify(ID, -i1.getParValue('V_GS_X1'))
+        vgsTraceBSIM      = trace([VG - mn.params['v(bias)'], IDS])
+    vgsTraceEKV        = trace([VGS(IDS), IDS])
+    vgsTraceEKV.label  = 'EKV'
+    vgsTraceBSIM.label = 'BSIM'
+    plotDict_vgs       = {'EKV': vgsTraceEKV, 'BSIM': vgsTraceBSIM}
+    fig_vgs = plot('fig_vgs', '$I_{ds}$ versus $V_{gs}$', 'lin', plotDict_vgs, yScale='u', xName='$V_{gs}$', yName='$I_{ds}$', xUnits='V', yUnits='A', show=True)
+
     GM                = sp.lambdify(ID, i1.getParValue('g_m_X1'))
     gmTraceEKV        = trace([IDS, GM(IDS)])
     gmTraceEKV.label  = 'EKV'

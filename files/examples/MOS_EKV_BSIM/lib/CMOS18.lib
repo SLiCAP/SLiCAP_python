@@ -16,7 +16,7 @@
 + CGSO_N18    = 350p  ; gate-source and gate-drain overlap capacitance [F/m]
 + CJB0_N18    = 1m    ; source/bulk drain/bulk capacitance [F/m^2]
 + LDS_N18     = 180n  ; length of drain and source [m]
-+ VAL_N18     = 5M    ; Early voltage per unit of length [V/m]
++ VAL_N18     = 7.2M  ; Early voltage per unit of length [V/m]
 + KF_N18      = 2e-27 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
 + AF_N18      = 1     ; flicker noise exponent [-]
 + C_OX_N18    = {epsilon_0 * epsilon_SiO2 / TOX_N18}; oxide capacitance per unit of area [F/m^2]
@@ -65,7 +65,7 @@ M1 drain gate source bulk CMOS18N
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 + IC_CRIT = {1/(4*(N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
 + g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {g_m*N_s_N18*U_T/(VAL_N18*L)}
++ g_o     = {g_m*N_s_N18*U_T/(VAL_N18*L)*sqrt(1+IC/2/IC_CRIT)}
 + g_b     = {(N_s_N18-1)*g_m}
 + c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W} 
 + c_dg    = {CGSO_N18*W}
