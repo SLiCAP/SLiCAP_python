@@ -1259,12 +1259,10 @@ def convertMatrices(instr, result):
         substDict = {}
         for param in params:
             parName = str(param)
-            #nameParts = parName.split('_')
             if len(parName) > lenExt:
                 if parName[-lenExt:] in instr.pairExt:# and nameParts[-1][:-lenExt] in baseIDs:
                     substDict[param] = sp.Symbol(parName[:-lenExt])
         result.M = result.M.subs(substDict)
-        # Sources are uncorrelated in the case of noise and dcvar:
         if instr.dataType != 'noise' and instr.dataType != 'dcvar':
             result.Iv = result.Iv.subs(substDict)
     result.Dv = sp.Matrix(dmVars + cmVars)

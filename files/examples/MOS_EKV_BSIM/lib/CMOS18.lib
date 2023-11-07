@@ -9,8 +9,8 @@
 + TOX_N18     = 4.2n  ; oxide thickness [m]
 + Vth_N18     = 0.43  ; threshold voltage [V]
 + N_s_N18     = 1.30  ; substrate factor [-]
-+ Theta_N18   = 0.54  ; vertical field mobility reduction coefficient [1/V]
-+ E_CRIT_N18  = 7.1M  ; lateral field strength for velocity saturation [V/m]
++ Theta_N18   = 0.53  ; vertical field mobility reduction coefficient [1/V]
++ E_CRIT_N18  = 7.6M  ; lateral field strength for velocity saturation [V/m]
 + u_0_N18     = 63m   ; zero field carrier mobility [m^2/V/s]
 + CGBO_N18    = 1p    ; gate-bulk overlap capacitance [F/m]
 + CGSO_N18    = 350p  ; gate-source and gate-drain overlap capacitance [F/m]
@@ -25,16 +25,16 @@
 
 .param
 + TOX_P18     = 4.2n  ; oxide thickness [m]
-+ Vth_P18     = -0.36 ; threshold voltage [V]
++ Vth_P18     = -0.48 ; threshold voltage [V]
 + N_s_P18     = 1.3   ; substrate factor [-]
-+ Theta_P18   = 0.6   ; vertical field mobility reduction factor [1/V]
++ Theta_P18   = 0.53   ; vertical field mobility reduction factor [1/V]
 + E_CRIT_P18  = 1G    ; lateral field strength for velocity saturation [V/m]
 + u_0_P18     = 10.5m ; zero field carrier mobility [m^2/V/s]
 + CGBO_P18    = 1p    ; gate-bulk overlap capacitance [F/m]
 + CGSO_P18    = 350p  ; gate-source and gate-drain overlap capacitance [F/m]
 + CJB0_P18    = 1m    ; source/bulk drain/bulk capacitance [F/m^2]
 + LDS_P18     = 180n  ; length of drain and source [m]
-+ VAL_P18     = 6.8M  ; Early voltage per unit of length [V/m]
++ VAL_P18     = 4.5M  ; Early voltage per unit of length [V/m]
 + KF_P18      = 1e-27 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
 + AF_P18      = 1     ; flicker noise exponent [-]
 + C_OX_P18    = {epsilon_0 * epsilon_SiO2 / TOX_P18}; oxide capacitance per unit of area [F/m^2]
@@ -74,7 +74,7 @@ M1 drain gate source bulk CMOS18N
 + c_sb    = {CJB0_N18*W*LDS_N18}
 + IC_i    = {ID*L/W/I_0_N18} ; Initial estimate of inversion coefficient
 + IC      = {IC_i*sqrt(1+(IC_i/4/IC_CRIT))} ; Inversion coefficient corrected for short-channel effects
-+ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC))-1) + Vth_N18}
++ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/2/IC_CRIT)))-1) + Vth_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
@@ -195,7 +195,7 @@ M1 drain gate source bulk CMOS18P
 + c_db    = {CJB0_P18*W*LDS_P18}
 + c_sb    = {CJB0_P18*W*LDS_P18}
 + IC      = {-ID*L/W/I_0_P18} ; Correction for initial estimate of inversion coefficient
-+ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC))-1)+Vth_P18}
++ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+IC/4/IC_CRIT)))-1)+Vth_P18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
