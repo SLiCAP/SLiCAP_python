@@ -1,0 +1,191 @@
+.IF (select = 0)
+    V1  2 0 dc 0 ac 1 0
+    V2  s2 0 dc {VS}
+    V3  d2 0 dc {VD}
+    V4  b2 0 dc {VB}
+.ELSEIF (select = 1)
+    V1  2 0 dc 0
+    V2  s2 0 dc {VS} ac 1 0
+    V3  d2 0 dc {VD}
+    V4  b2 0 dc {VB}
+.ELSEIF (select = 2)
+    V1  2 0 dc 0
+    V2  s2 0 dc {VS}
+    V3  d2 0 dc {VD} ac 1 0
+    V4  b2 0 dc {VB}
+.ELSEIF (select = 3)
+    V1  2 0 dc 0
+    V2  s2 0 dc {VS}
+    V3  d2 0 dc {VD} 
+    V4  b2 0 dc {VB} ac 1 0
+.ENDIF
+
+.ac lin 1 {freq} {freq}
+
+.options filetype=ascii
+
+.csparam freq   = {freq}
+.csparam start  = {start}
+.csparam delta  = {delta}
+.csparam num    = {num}
+
+.control
+
+let ID     = start
+let Cgg    = vector(num) ; total capacitance at the gate
+let Cgs    = vector(num) ; gate-source capacitance
+let Cgd    = vector(num) ; gate-drain capacitance
+let Cgb    = vector(num) ; gate-bulk capacitance
+let ggd    = vector(num) ; gate-drain transconductance
+let Css    = vector(num) ; total capacitance at the source
+let Csg    = vector(num) ; source-gate capacitance
+let Csb    = vector(num) ; source-bulk capacitance
+let Csd    = vector(num) ; source-drain capacitance
+let Cdd    = vector(num) ; total capacitance at the drain
+let Cdg    = vector(num) ; drain-gate capacitance
+let Cdb    = vector(num) ; drain-bulk capacitance
+let Cds    = vector(num) ; drain-source capacitance
+let gdd    = vector(num) ; totalk conductance at the drain
+let gss    = vector(num) ; total conductance at the source
+let Cbb    = vector(num) ; total capacitance at the bulk
+let Cbs    = vector(num) ; bulk-source capacitance
+let Cbd    = vector(num) ; bulk-drain capacitance
+let Cbg    = vector(num) ; bulk-gate capacitance
+let gbd    = vector(num) ; bulk-drain transconductance
+let vgs    = vector(num) ; gate-source operating voltage
+let ids    = vector(num) ; drain-source operating current
+let idx    = 0
+
+alterparam select = 0
+reset
+
+repeat $&num
+  alter I1 $&ID
+  run
+  let Cgg[idx]  = -imag(V1#branch)/(2*PI*freq)
+  let Cgs[idx]  = imag(V2#branch)/(2*PI*freq)
+  let Cgd[idx]  = imag(V3#branch)/(2*PI*freq)
+  let Cgb[idx]  = imag(V4#branch)/(2*PI*freq)
+  let ggd[idx]  = -real(V3#branch)
+  let vgs[idx]  = @M1[vgs]
+  let ID = ID + delta
+  let idx = idx + 1
+end
+
+let ID     = start
+let idx    = 0
+
+repeat $&num
+  alter I1 $&ID
+  op
+  let ids[idx] = @M1[id]
+  let ID = ID + delta
+  let idx = idx + 1
+end
+
+alterparam select = 1
+reset
+
+let ID     = start
+let idx    = 0
+
+repeat $&num
+  alter I1 $&ID
+  run
+  let Css[idx]  = -imag(V2#branch)/(2*PI*freq)
+  let Csg[idx]  = imag(V1#branch)/(2*PI*freq)
+  let Csb[idx]  = imag(V4#branch)/(2*PI*freq)
+  let Csd[idx]  = imag(V3#branch)/(2*PI*freq)
+  let gss[idx]  = -real(V2#branch)
+  let vgs[idx]  = @M1[vgs]
+  let ID = ID + delta
+  let idx = idx + 1
+end
+
+alterparam select = 2
+reset
+
+let ID     = start
+let idx    = 0
+
+repeat $&num
+  alter I1 $&ID
+  run
+  let Cdd[idx]  = -imag(V3#branch)/(2*PI*freq)
+  let Cdg[idx]  = imag(V1#branch)/(2*PI*freq)
+  let Cdb[idx]  = imag(V4#branch)/(2*PI*freq)
+  let Cds[idx]  = imag(V2#branch)/(2*PI*freq)
+  let gdd[idx]  = -real(V3#branch)
+  let vgs[idx]  = @M1[vgs]
+  let ID = ID + delta
+  let idx = idx + 1
+end
+
+alterparam select = 3
+reset
+
+let ID     = start
+let idx    = 0
+
+repeat $&num
+  alter I1 $&ID
+  run
+  let Cbb[idx]  = -imag(V4#branch)/(2*PI*freq)
+  let Cbs[idx]  = imag(V2#branch)/(2*PI*freq)
+  let Cbd[idx]  = imag(V3#branch)/(2*PI*freq)
+  let Cbg[idx]  = imag(V1#branch)/(2*PI*freq)
+  let gbd[idx]  = -real(V3#branch)
+  let vgs[idx]  = @M1[vgs]
+  let ID = ID + delta
+  let idx = idx + 1
+end
+
+settype current ids
+settype voltage vgs
+settype admittance ggd
+settype capacitance Cgg
+settype capacitance Cgs
+settype capacitance Cgd
+settype capacitance Cgb
+settype admittance gss
+settype capacitance Css
+settype capacitance Csg
+settype capacitance Csb
+settype capacitance Csd
+settype admittance gdd
+settype capacitance Cdd
+settype capacitance Cdg
+settype capacitance Cdb
+settype capacitance Cds
+settype admittance gbd
+settype capacitance Cbb
+settype capacitance Cbs
+settype capacitance Cbd
+settype capacitance Cbg
+
+write MOS_OP.out vgs Cgg Cgs Cgd Cgb ggd Css Csg Csb Csd gss Cdd Cdg Cdb Cds gdd Cbb Cbs Cbd Cbg gbd ids
+
+*plot ids  vs vgs  ylabel Ids
+*plot ggd  vs ids  ylabel ggd
+*plot Cgg  vs ids  ylabel Cgg
+*plot Cgs  vs ids  ylabel Cgs
+*plot Cgd  vs ids  ylabel Cgd
+*plot Cgb  vs ids  ylabel Cgb
+*plot gss  vs ids  ylabel gss
+*plot Css  vs ids  ylabel Css
+*plot Csg  vs ids  ylabel Csg
+*plot Csb  vs ids  ylabel Csb
+*plot Csd  vs ids  ylabel Csd
+*plot gdd  vs ids  ylabel gdd
+*plot Cdd  vs ids  ylabel Cdd
+*plot Cdg  vs ids  ylabel Cdg
+*plot Cdb  vs ids  ylabel Cdb
+*plot Cds  vs ids  ylabel Cds
+*plot gbd  vs ids  ylabel gbd
+*plot Cbb  vs ids  ylabel Cbb
+*plot Cbs  vs ids  ylabel Cbs
+*plot Cbd  vs ids  ylabel Cbd
+*plot Cbg  vs ids  ylabel Cbg
+
+.endc
+.end

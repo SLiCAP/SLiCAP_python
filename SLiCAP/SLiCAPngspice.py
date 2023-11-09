@@ -31,8 +31,51 @@ class MOS(object):
         self.params = {}
         self.errors = {}
         self.step   = False
-    def getOPid(self, W, L, M, ID, VD, VS, VB, f):
-        pass
+    def getOPid(self, W, L, M, ID, VD, VS, VB, f, step=None):
+        if type(step) != list or len(step) != 3:
+            stepStart = '{ID}'
+            stepNum   = '1'
+            stepStep  = '0'
+        else:
+            stepStart = str(float(step[0]))
+            stepNum   = str(int(step[1]))
+            stepStep  = str(float(step[2]))
+            self.step = True
+        txt =  'MOS_OP_I\n'
+        txt += '.param ID     = %s\n'%(ID)
+        txt += '.param VD     = %s\n'%(VD)
+        txt += '.param VS     = %s\n'%(VS)
+        txt += '.param VB     = %s\n'%(VB)
+        txt += '.param L      = %s\n'%(L)
+        txt += '.param W      = %s\n'%(W)
+        txt += '.param M      = %s\n'%(M)
+        txt += '.param freq   = %s\n'%(f)
+        txt += '.param num    = %s\n'%(stepNum)
+        txt += '.param start  = %s\n'%(stepStart)
+        txt += '.param delta  = %s\n'%(stepStep)
+        txt += '.param select = 0\n\n'
+        txt += '.lib %s\n\n'%(self.lib)
+        # MOS with voltage feedback loop for creating the gate-source voltage
+        txt += '%s d1 g1 s1 b1 %s W={W} L={L} M={M}\n'%(self.refDes + '_OP', self.dev)
+        # LOOP and DC voltages
+        txt += 'V5 s1 0 {VS}\nV6 b1 0 {VB}\nV7 d1 1 {VD}\nE1 g1 d1 1 0 1k\nI1 0 1 {ID}\n'
+        # MOS for parameter measurement
+        txt += '%s d2 g2 s2 b2 %s W={W} L={L} M={M}\n'%(self.refDes, self.dev)
+        # VGS copy
+        txt += 'E2 g2 2 g1 0 1\n'
+        f = open('cir/MOS_OP_I.cir', 'r')
+        txt += f.read()
+        f.close()
+        f = open('MOS_OP.cir', 'w')
+        f.write(txt)
+        f.close()
+        system(NGSPICECOMMAND + ' -b MOS_OP.cir -o MOS_OP.log')
+        remove('MOS_OP.cir')
+        remove('MOS_OP.log')
+        self.getParams()
+        self.makeParDefs()
+        self.makeModelDef()
+        self.determineAccuracy()
     def getOPvg(self, W, L, M, VG, VD, VS, VB, f, step=None):
         if type(step) != list or len(step) != 3:
             stepStart = '{VG}'
@@ -53,12 +96,12 @@ class MOS(object):
         txt += '.param M      = %s\n'%(M)
         txt += '.param freq   = %s\n'%(f)
         txt += '.param num    = %s\n'%(stepNum)
-        txt += '.param Vstart = %s\n'%(stepStart)
-        txt += '.param Vdelta = %s\n'%(stepStep)
+        txt += '.param start  = %s\n'%(stepStart)
+        txt += '.param delta  = %s\n'%(stepStep)
         txt += '.param select = 0\n\n'
         txt += '.lib %s\n\n'%(self.lib)
         txt += '%s d g s b %s W={W} L={L} M={M}\n\n'%(self.refDes, self.dev)
-        f = open('cir/MOS_OP.cir', 'r')
+        f = open('cir/MOS_OP_V.cir', 'r')
         txt += f.read()
         f.close()
         f = open('MOS_OP.cir', 'w')
@@ -134,14 +177,14 @@ class MOS(object):
         CSS = self.params['csd'] + self.params['csg'] + self.params['csb']
         CBB = self.params['cbd'] + self.params['cbg'] + self.params['cbs']
         CGG_error = (CGG-self.params['cgg'])/self.params['cgg']
-        self.errors['Cgg'] = (CDD-self.params['cdd'])/self.params['cdd']
-        self.errors['Css'] = (CSS-self.params['css'])/self.params['css']
-        self.errors['Cbb'] = (CBB-self.params['cbb'])/self.params['cbb']
-        self.errors['Cgs'] = ((self.params['cgs']-self.params['csg'])/(self.params['cgs']+self.params['csg']))
-        self.errors['Cgd'] = ((self.params['cgd']-self.params['cdg'])/(self.params['cgd']+self.params['cdg']))
-        self.errors['Cgb'] = ((self.params['cgb']-self.params['cbg'])/(self.params['cgb']+self.params['cbg']))
-        self.errors['Cbs'] = ((self.params['cbs']-self.params['csb'])/(self.params['cbs']+self.params['csb']))
-        self.errors['Cbd'] = ((self.params['cbd']-self.params['cdb'])/(self.params['cbd']+self.params['cdb']))
+        self.errors['cgg'] = (CDD-self.params['cdd'])/self.params['cdd']
+        self.errors['css'] = (CSS-self.params['css'])/self.params['css']
+        self.errors['cbb'] = (CBB-self.params['cbb'])/self.params['cbb']
+        self.errors['cgs'] = ((self.params['cgs']-self.params['csg'])/(self.params['cgs']+self.params['csg']))
+        self.errors['cgd'] = ((self.params['cgd']-self.params['cdg'])/(self.params['cgd']+self.params['cdg']))
+        self.errors['cgb'] = ((self.params['cgb']-self.params['cbg'])/(self.params['cgb']+self.params['cbg']))
+        self.errors['cbs'] = ((self.params['cbs']-self.params['csb'])/(self.params['cbs']+self.params['csb']))
+        self.errors['cbd'] = ((self.params['cbd']-self.params['cdb'])/(self.params['cbd']+self.params['cdb']))
 
 def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase'):
     """

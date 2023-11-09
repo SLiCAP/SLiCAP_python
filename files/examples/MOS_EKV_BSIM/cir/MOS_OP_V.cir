@@ -25,13 +25,13 @@
 .options filetype=ascii
 
 .csparam freq   = {freq}
-.csparam Vstart = {Vstart}
-.csparam Vdelta = {Vdelta}
+.csparam start = {start}
+.csparam delta = {delta}
 .csparam num    = {num}
 
 .control
 
-let VG     = Vstart
+let VG     = start
 let Cgg    = vector(num) ; total capacitance at the gate
 let Cgs    = vector(num) ; gate-source capacitance
 let Cgd    = vector(num) ; gate-drain capacitance
@@ -52,7 +52,7 @@ let Cbs    = vector(num) ; bulk-source capacitance
 let Cbd    = vector(num) ; bulk-drain capacitance
 let Cbg    = vector(num) ; bulk-gate capacitance
 let gbd    = vector(num) ; bulk-drain transconductance
-let bias   = vector(num) ; gate-source operating voltage
+let vgs    = vector(num) ; gate-source operating voltage
 let ids    = vector(num) ; drain-source operating current
 let idx    = 0
 
@@ -67,26 +67,26 @@ repeat $&num
   let Cgd[idx]  = imag(V3#branch)/(2*PI*freq)
   let Cgb[idx]  = imag(V4#branch)/(2*PI*freq)
   let ggd[idx]  = -real(V3#branch)
-  let bias[idx] = VG
-  let VG = VG + Vdelta
+  let vgs[idx]  = VG
+  let VG = VG + delta
   let idx = idx + 1
 end
 
-let VG     = Vstart
+let VG     = start
 let idx    = 0
 
 repeat $&num
   alter V1 $&VG
   op
   let ids[idx] = @M1[id]
-  let VG = VG + Vdelta
+  let VG = VG + delta
   let idx = idx + 1
 end
 
 alterparam select = 1
 reset
 
-let VG     = Vstart
+let VG     = start
 let idx    = 0
 
 repeat $&num
@@ -97,15 +97,15 @@ repeat $&num
   let Csb[idx]  = imag(V4#branch)/(2*PI*freq)
   let Csd[idx]  = imag(V3#branch)/(2*PI*freq)
   let gss[idx]  = -real(V2#branch)
-  let bias[idx] = VG
-  let VG = VG + Vdelta
+  let vgs[idx]  = VG
+  let VG = VG + delta
   let idx = idx + 1
 end
 
 alterparam select = 2
 reset
 
-let VG     = Vstart
+let VG     = start
 let idx    = 0
 
 repeat $&num
@@ -116,15 +116,15 @@ repeat $&num
   let Cdb[idx]  = imag(V4#branch)/(2*PI*freq)
   let Cds[idx]  = imag(V2#branch)/(2*PI*freq)
   let gdd[idx]  = -real(V3#branch)
-  let bias[idx] = VG
-  let VG = VG + Vdelta
-  let idx = idx + 1B
+  let vgs[idx]  = VG
+  let VG = VG + delta
+  let idx = idx + 1
 end
 
 alterparam select = 3
 reset
 
-let VG     = Vstart
+let VG     = start
 let idx    = 0
 
 repeat $&num
@@ -135,13 +135,13 @@ repeat $&num
   let Cbd[idx]  = imag(V3#branch)/(2*PI*freq)
   let Cbg[idx]  = imag(V1#branch)/(2*PI*freq)
   let gbd[idx]  = -real(V3#branch)
-  let bias[idx] = VG
-  let VG = VG + Vdelta
+  let vgs[idx]  = VG
+  let VG = VG + delta
   let idx = idx + 1
 end
 
 settype current ids
-settype voltage bias
+settype voltage vgs
 settype admittance ggd
 settype capacitance Cgg
 settype capacitance Cgs
@@ -163,9 +163,9 @@ settype capacitance Cbs
 settype capacitance Cbd
 settype capacitance Cbg
 
-write MOS_OP.out bias Cgg Cgs Cgd Cgb ggd Css Csg Csb Csd gss Cdd Cdg Cdb Cds gdd Cbb Cbs Cbd Cbg gbd ids
+write MOS_OP.out vgs Cgg Cgs Cgd Cgb ggd Css Csg Csb Csd gss Cdd Cdg Cdb Cds gdd Cbb Cbs Cbd Cbg gbd ids
 
-*plot ids  vs bias ylabel Ids
+*plot ids  vs vgs  ylabel Ids
 *plot ggd  vs ids  ylabel ggd
 *plot Cgg  vs ids  ylabel Cgg
 *plot Cgs  vs ids  ylabel Cgs

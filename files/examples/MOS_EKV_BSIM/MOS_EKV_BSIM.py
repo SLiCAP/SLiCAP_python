@@ -13,17 +13,20 @@ prj = initProject("MOS_EKV_BSIM")
 # Example NMOS operating point info
 
 # Define library, device, geometry and operating point
-LIB    = 'lib/log018.l TT'
-DEV    = 'pch'
-W      = .22e-6
-L      = .18e-6
-M      = 1
-f      = 10E6
-refDes = 'M1'
+LIB      = 'lib/log018.l TT'   # CMOS BSIM library
+DEV      = 'nch'               # MOS device name
+W        = .22e-6              # Channel width
+L        = .18e-6              # Channel length
+M        = 1                   # Number of devices in parallel
+f        = 10E6                # Test frequency for small-signal parameters
+refDes   = 'M1'                # Reference designator of MOS device
 
-# Define number of points and the absolute value of the gate step voltage
-Npts   = 120
-Vdiff  = 0.01
+# Define number of points and the absolute value of the gate step voltage or
+# of the drain step current
+biasPar = "ID"                 # Choose biasing with "VG" or with "ID"
+Npts     = 100                 # Number of points
+Vdiff    = 0.01                # Gate voltage step size
+Idiff    = 1e-7                # Drain current step size
 
 # Create the device
 mn = MOS(refDes, LIB, DEV)
@@ -32,20 +35,33 @@ if DEV == "nch":
     VD   = 1.2
     VS   = 0
     VB   = 0
-    VG   = 0
-    step = [VS, Npts, Vdiff]
+    VG   = 0.5
+    ID   = 20e-6
+    if biasPar == "VG":
+        step = [VS, Npts, Vdiff]
+    elif biasPar == "ID":
+        step = [1e-11, Npts, Idiff]
 
 elif DEV == "pch":
     VD   = 0.6
     VS   = 1.8
     VB   = 1.8
     VG   = 1.8
-    step = [VS, Npts, -Vdiff]
+    ID   = -5e-6
+    if biasPar == "VG":
+        step = [VS, Npts, -Vdiff]
+    elif biasPar == "ID":
+        step = [-1e-11, Npts, -Idiff]
 
 # Uncomment the following line to obtain single operating point information
-#step=None
+step=None
 
-mn.getOPvg(W, L, M, VG, VD, VS, VB, f, step)
+###############################################################################
+
+if biasPar == "VG":
+    mn.getOPvg(W, L, M, VG, VD, VS, VB, f, step)
+elif biasPar == "ID":
+    mn.getOPid(W, L, M, ID, VD, VS, VB, f, step)
 
 if step == None:
     print('\nParameters found by simulation:\n')
@@ -64,10 +80,9 @@ if step == None:
         print(key, mn.errors[key])
 
     print('\nDerived parameters:\n')
-    print('fT\t', mn.params['ggd']/(2*np.pi*mn.params['cgg']))
-    print('mu\t', mn.params['ggd']/mn.params['gdd'])
-    print('gm/Id\t', mn.params['ggd']/mn.params['i(ids)'])
-
+    print('fT\t', sp.N(mn.params['ggd']/(2*np.pi*mn.params['cgg']),4))
+    print('mu\t', sp.N(mn.params['ggd']/mn.params['gdd'], 4))
+    print('gm/Id\t', sp.N(mn.params['ggd']/mn.params['i(ids)'], 4))
 
 else:
     derivedParams = {}
@@ -148,10 +163,13 @@ else:
 
     if DEV == "nch":
         VGS               = sp.lambdify(ID, i1.getParValue('V_GS_X1'))
-        vgsTraceBSIM      = trace([mn.params['v(bias)'], IDS])
+        vgsTraceBSIM      = trace([mn.params['v(vgs)'], IDS])
     elif DEV == "pch":
         VGS               = sp.lambdify(ID, -i1.getParValue('V_GS_X1'))
-        vgsTraceBSIM      = trace([VG - mn.params['v(bias)'], IDS])
+        if biasPar == "ID":
+            vgsTraceBSIM      = trace([mn.params['v(vgs)'], IDS])
+        elif biasPar == "VG":
+            vgsTraceBSIM      = trace([VG - mn.params['v(vgs)'], IDS])
     vgsTraceEKV        = trace([VGS(IDS), IDS])
     vgsTraceEKV.label  = 'EKV'
     vgsTraceBSIM.label = 'BSIM'
