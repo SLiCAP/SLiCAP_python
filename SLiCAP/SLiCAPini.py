@@ -104,6 +104,9 @@ class settings(object):
        - imgPath           : Directory with images for HTML output
        - defaultLib        : Directory with SLiCAP basic library files
        - docPath           : Directory with html documentation
+       - ngspiceCMD        : NGspice command
+                               MS windows: '~\\Spice64\\bin\\ngspice.exe'
+                               Linux     : 'ngspice'
 
     #. active HTML pages and active HTMLfile prefix
 
@@ -267,6 +270,11 @@ class settings(object):
         self.imgPath            = None
         """
         Path (*str*), to image files will be set by **SLiCAP.initProject()**;  defaults to None.
+        """
+
+        self.ngspiceCMD         = 'ngspice'
+        """
+        Command (*str*), to start ngspice.
         """
 
         self.htmlIndex          = None

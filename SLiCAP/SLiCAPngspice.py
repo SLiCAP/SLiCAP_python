@@ -14,11 +14,9 @@ from numpy  import array, sqrt, arctan, pi, unwrap, log10, linspace, geomspace
 from re     import findall
 
 """
-NGspice is executed by invoking the 'NGSPICECOMMAND'. Under MSWindows the
+NGspice is executed by invoking the 'ini.ngspiceCMD'. Under MSWindows the
 location of 'ngspice.exe' must be in the searcg path.
 """
-
-NGSPICECOMMAND = 'ngspice'
 
 class MOS(object):
     def __init__(self, refDes, lib, dev):
@@ -69,7 +67,7 @@ class MOS(object):
         f = open('MOS_OP.cir', 'w')
         f.write(txt)
         f.close()
-        system(NGSPICECOMMAND + ' -b MOS_OP.cir -o MOS_OP.log')
+        system(ini.ngspiceCMD + ' -b MOS_OP.cir -o MOS_OP.log')
         remove('MOS_OP.cir')
         remove('MOS_OP.log')
         self.getParams()
@@ -107,7 +105,7 @@ class MOS(object):
         f = open('MOS_OP.cir', 'w')
         f.write(txt)
         f.close()
-        system(NGSPICECOMMAND + ' -b MOS_OP.cir -o MOS_OP.log')
+        system(ini.ngspiceCMD + ' -b MOS_OP.cir -o MOS_OP.log')
         remove('MOS_OP.cir')
         remove('MOS_OP.log')
         self.getParams()
@@ -292,7 +290,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
             f = open('simFile.sp', 'w')
             f.write(netlist)
             f.close()
-            system(NGSPICECOMMAND + ' -b simFile.sp -o simFile.log')
+            system(ini.ngspiceCMD + ' -b simFile.sp -o simFile.log')
     else:
         f = open(cirFile + '.cir', 'r')
         netlist = f.read()
