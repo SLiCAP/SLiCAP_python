@@ -35,7 +35,6 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -115,17 +114,7 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPfc.py</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.Matrix_num_den"><code class="docutils literal notranslate"><span class="pre">Matrix_num_den()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.ODtranspose"><code class="docutils literal notranslate"><span class="pre">ODtranspose()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.PAQeqLU"><code class="docutils literal notranslate"><span class="pre">PAQeqLU()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.UVsolve"><code class="docutils literal notranslate"><span class="pre">UVsolve()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.addfractions"><code class="docutils literal notranslate"><span class="pre">addfractions()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.computeFC"><code class="docutils literal notranslate"><span class="pre">computeFC()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.laplace2coeffs"><code class="docutils literal notranslate"><span class="pre">laplace2coeffs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPfc.nth2firstOrder"><code class="docutils literal notranslate"><span class="pre">nth2firstOrder()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPfc.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
 </ul>
 </li>
@@ -308,8 +297,8 @@ constant matrix</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>A</strong> (<em>tuple</em><em> of </em><em>sympy expressions</em>) – numerator and denominator of the fraction A</p></li>
-<li><p><strong>B</strong> (<em>tuple</em><em> of </em><em>sympy expressions</em>) – numerator and denominator of the fraction B</p></li>
+<li><p><strong>A</strong> (<em>tuple of sympy expressions</em>) – numerator and denominator of the fraction A</p></li>
+<li><p><strong>B</strong> (<em>tuple of sympy expressions</em>) – numerator and denominator of the fraction B</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return Cnum</dt>

@@ -35,7 +35,6 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -100,51 +99,7 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAP.html">SLiCAP.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPconfig.html">SLiCAPconfig.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPexecute.py</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.addDCvarSources"><code class="docutils literal notranslate"><span class="pre">addDCvarSources()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.addResNoiseSources"><code class="docutils literal notranslate"><span class="pre">addResNoiseSources()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.convertMatrices"><code class="docutils literal notranslate"><span class="pre">convertMatrices()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.correctDMcurrentResult"><code class="docutils literal notranslate"><span class="pre">correctDMcurrentResult()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.createConversionMatrices"><code class="docutils literal notranslate"><span class="pre">createConversionMatrices()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.createResultObject"><code class="docutils literal notranslate"><span class="pre">createResultObject()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.delDCvarSources"><code class="docutils literal notranslate"><span class="pre">delDCvarSources()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.delResNoiseSources"><code class="docutils literal notranslate"><span class="pre">delResNoiseSources()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doCramer"><code class="docutils literal notranslate"><span class="pre">doCramer()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doDC"><code class="docutils literal notranslate"><span class="pre">doDC()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doDCsolve"><code class="docutils literal notranslate"><span class="pre">doDCsolve()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doDCvar"><code class="docutils literal notranslate"><span class="pre">doDCvar()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doDenom"><code class="docutils literal notranslate"><span class="pre">doDenom()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doImpulse"><code class="docutils literal notranslate"><span class="pre">doImpulse()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doInstruction"><code class="docutils literal notranslate"><span class="pre">doInstruction()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doLaplace"><code class="docutils literal notranslate"><span class="pre">doLaplace()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doMatrix"><code class="docutils literal notranslate"><span class="pre">doMatrix()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doNoise"><code class="docutils literal notranslate"><span class="pre">doNoise()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doNumer"><code class="docutils literal notranslate"><span class="pre">doNumer()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPZ"><code class="docutils literal notranslate"><span class="pre">doPZ()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPoles"><code class="docutils literal notranslate"><span class="pre">doPoles()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPyDCvar"><code class="docutils literal notranslate"><span class="pre">doPyDCvar()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPyDenom"><code class="docutils literal notranslate"><span class="pre">doPyDenom()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPyLaplace"><code class="docutils literal notranslate"><span class="pre">doPyLaplace()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPyLoopGainServo"><code class="docutils literal notranslate"><span class="pre">doPyLoopGainServo()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPyNoise"><code class="docutils literal notranslate"><span class="pre">doPyNoise()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPyNumer"><code class="docutils literal notranslate"><span class="pre">doPyNumer()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doPySolve"><code class="docutils literal notranslate"><span class="pre">doPySolve()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doSolve"><code class="docutils literal notranslate"><span class="pre">doSolve()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doStep"><code class="docutils literal notranslate"><span class="pre">doStep()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doTime"><code class="docutils literal notranslate"><span class="pre">doTime()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doTimeSolve"><code class="docutils literal notranslate"><span class="pre">doTimeSolve()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.doZeros"><code class="docutils literal notranslate"><span class="pre">doZeros()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.findBaseNames"><code class="docutils literal notranslate"><span class="pre">findBaseNames()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.getSubMatrices"><code class="docutils literal notranslate"><span class="pre">getSubMatrices()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.makeAllMatrices"><code class="docutils literal notranslate"><span class="pre">makeAllMatrices()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.makeDetPos"><code class="docutils literal notranslate"><span class="pre">makeDetPos()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.makeMaxDetPos"><code class="docutils literal notranslate"><span class="pre">makeMaxDetPos()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.makeSubsDict"><code class="docutils literal notranslate"><span class="pre">makeSubsDict()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.pairParDefs"><code class="docutils literal notranslate"><span class="pre">pairParDefs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.pairVariables"><code class="docutils literal notranslate"><span class="pre">pairVariables()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPexecute.stepFunctions"><code class="docutils literal notranslate"><span class="pre">stepFunctions()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPexecute.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
@@ -321,7 +276,7 @@ two I_diff = (I_P - I_N)/2</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPexecute.createConversionMatrices">
 <span class="sig-name descname"><span class="pre">createConversionMatrices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPexecute.createConversionMatrices" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates the matrax for a base transformation from nodal voltages and branche
+<dd><p>Creates the matrax for a base transformation from nodal voltages and branches
 currents to common-mode and differential-mode equivalents.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -792,24 +747,6 @@ result object.</p>
 <li><p><strong>instr</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">instruction()</span></code>) – <strong>instruction()</strong> object that holds instruction data.</p></li>
 <li><p><strong>result</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">allResult()</span></code>) – <strong>allResults()</strong> object that holds instruction results</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAPexecute.findBaseNames">
-<span class="sig-name descname"><span class="pre">findBaseNames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPexecute.findBaseNames" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list with base names of paired elements. The base name is the
-element identifier without the pairing extension.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>instr</strong> (<a class="reference internal" href="SLiCAPinstruction.html#SLiCAP.SLiCAPinstruction.instruction" title="SLiCAP.SLiCAPinstruction.instruction"><em>SLiCAPinstruction.instruction</em></a><em>(</em><em>)</em>) – instruction with circuit and pairing extensions</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>base IDs</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list</p>
 </dd>
 </dl>
 </dd></dl>

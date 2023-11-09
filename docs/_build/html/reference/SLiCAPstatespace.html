@@ -35,7 +35,6 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
@@ -116,18 +115,7 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPstatespace.py</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.Block2Bstatematrix"><code class="docutils literal notranslate"><span class="pre">Block2Bstatematrix()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.Block2CDstatematrix"><code class="docutils literal notranslate"><span class="pre">Block2CDstatematrix()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.Block2StateSpace"><code class="docutils literal notranslate"><span class="pre">Block2StateSpace()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.MNA2StateSpace"><code class="docutils literal notranslate"><span class="pre">MNA2StateSpace()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.Vector2srcCoeffMatrices"><code class="docutils literal notranslate"><span class="pre">Vector2srcCoeffMatrices()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.backsubstitute"><code class="docutils literal notranslate"><span class="pre">backsubstitute()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.backsubstituteND"><code class="docutils literal notranslate"><span class="pre">backsubstituteND()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.findA4"><code class="docutils literal notranslate"><span class="pre">findA4()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPstatespace.getStateSpace"><code class="docutils literal notranslate"><span class="pre">getStateSpace()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPstatespace.py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
@@ -315,7 +303,7 @@ from the equation:</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>M</strong> (<em>sympy matrix</em>) – MNA matrix ie my_circuit.allResults.M</p></li>
 <li><p><strong>q</strong> (<em>sympy matrix</em>) – source vector</p></li>
-<li><p><strong>src</strong> (<em>list</em><em> of </em><em>sympy symbols</em>) – SLiCAP source names; ie my_circuit.indepVars() or my_circuit.allResults.Iv</p></li>
+<li><p><strong>src</strong> (<em>list of sympy symbols</em>) – SLiCAP source names; ie my_circuit.indepVars() or my_circuit.allResults.Iv</p></li>
 <li><p><strong>var</strong> (<em>sympy symbol</em>) – laplace variable</p></li>
 </ul>
 </dd>

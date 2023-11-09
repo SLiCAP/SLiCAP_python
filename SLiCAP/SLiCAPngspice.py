@@ -19,17 +19,70 @@ location of 'ngspice.exe' must be in the searcg path.
 """
 
 class MOS(object):
+    """
+    MOS Transistor.
+
+    :param refDes: Reference designator used in SLiCAP circuit file
+    :type refDes: str
+
+    :param lib: path to library file, absolute or relative to python script.
+    :type lib: str
+
+    :param dev: Device name (as in library)
+    :type dev: str
+
+
+    MOS attributes:
+
+    - *self*.refDes = refDes
+    - *self*.lib = lib
+    - *self*.dev = dev
+    - *self*.modelDef = Text string with SLiCAP model definition for this device
+    - *self*.parDefs = Dictionary with SLiCAP parameter definitions for this device
+    - *self*.params = Dictionary with names and values of parameters provided by ngspice
+    - *self*.errors = Relative difference between forward and reverse parameter measurement
+    - *self*.step   = Step data for VG or ID, defaults to False
+
+    """
     def __init__(self, refDes, lib, dev):
         self.refDes = refDes
         self.lib = lib
         self.dev = dev
-        self.opInfo = None
         self.modelDef = None
         self.parDefs = None
         self.params = {}
         self.errors = {}
         self.step   = False
+
     def getOPid(self, W, L, M, ID, VD, VS, VB, f, step=None):
+        """
+        Returns operating point information of the device with the drain
+        current as (swept) independent variable.
+
+        :param W: Width of the device in [m]
+        :type W: float
+
+        :param L: Length of the device in [m]
+        :type L: float
+
+        :param M: Number of devices in parallel
+        :type M: int
+
+        :param ID: Drain current [A]
+        :type ID: float
+
+        :param VD: Drain voltage with respect to ground in [V]
+        :type VD: float
+
+        :param VS: Source voltage with respect to ground in [V]
+        :type VS: float
+
+        :param VB: Bulk voltage with respect to ground in [V]
+        :type VB: float
+
+        :param step: Step data for ID; list with start value, number of values
+                     and stop value. Defaults to None
+        """
         if type(step) != list or len(step) != 3:
             stepStart = '{ID}'
             stepNum   = '1'
@@ -70,11 +123,40 @@ class MOS(object):
         system(ini.ngspiceCMD + ' -b MOS_OP.cir -o MOS_OP.log')
         remove('MOS_OP.cir')
         remove('MOS_OP.log')
-        self.getParams()
-        self.makeParDefs()
-        self.makeModelDef()
-        self.determineAccuracy()
+        self._getParams()
+        self._makeParDefs()
+        self._makeModelDef()
+        self._determineAccuracy()
+
     def getOPvg(self, W, L, M, VG, VD, VS, VB, f, step=None):
+        """
+        Returns operating point information of the device with the gate
+        voltage as (swept) independent variable.
+
+        :param W: Width of the device in [m]
+        :type W: float
+
+        :param L: Length of the device in [m]
+        :type L: float
+
+        :param M: Number of devices in parallel
+        :type M: int
+
+        :param VG: Gate voltage with respect to ground in [V]
+        :type VG: float
+
+        :param VD: Drain voltage with respect to ground in [V]
+        :type VD: float
+
+        :param VS: Source voltage with respect to ground in [V]
+        :type VS: float
+
+        :param VB: Bulk voltage with respect to ground in [V]
+        :type VB: float
+
+        :param step: Step data for VG; list with start value, number of values
+                     and stop value. Defaults to None
+        """
         if type(step) != list or len(step) != 3:
             stepStart = '{VG}'
             stepNum   = '1'
@@ -112,7 +194,8 @@ class MOS(object):
         self.makeParDefs()
         self.makeModelDef()
         self.determineAccuracy()
-    def getParams(self):
+
+    def _getParams(self):
         f = open('MOS_OP.out', 'r')
         lines = f.readlines()
         f.close()
@@ -148,7 +231,8 @@ class MOS(object):
         if self.step:
             for key in self.params.keys():
                 self.params[key] = array(self.params[key])
-    def makeParDefs(self):
+
+    def _makeParDefs(self):
         self.parDefs = {}
         self.parDefs[Symbol('gm_' + self.refDes)] = self.params['ggd']
         self.parDefs[Symbol('gb_' + self.refDes)] = self.params['gbd']
@@ -158,7 +242,8 @@ class MOS(object):
         self.parDefs[Symbol('cdg_' + self.refDes)] = (self.params['cdg'] + self.params['cgd'])/2
         self.parDefs[Symbol('cdb_' + self.refDes)] = (self.params['cdb'] + self.params['cbd'])/2
         self.parDefs[Symbol('csb_' + self.refDes)] = (self.params['csb'] + self.params['cbs'])/2
-    def makeModelDef(self):
+
+    def _makeModelDef(self):
         text = '.model %s M'%(self.refDes)
         text += '\n+ gm=%s'%(self.params['ggd'])
         text += '\n+ gb=%s'%(self.params['gbd'])
@@ -169,7 +254,8 @@ class MOS(object):
         text += '\n+ cdb=%s'%((self.params['cdb'] + self.params['cbd'])/2)
         text += '\n+ csb=%s'%((self.params['csb'] + self.params['cbs'])/2)
         self.modelDef = text
-    def determineAccuracy(self):
+
+    def _determineAccuracy(self):
         CGG = self.params['cgs'] + self.params['cgd'] + self.params['cgb']
         CDD = self.params['cds'] + self.params['cdg'] + self.params['cdb']
         CSS = self.params['csd'] + self.params['csg'] + self.params['csb']
@@ -186,7 +272,7 @@ class MOS(object):
 
 def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase'):
     """
-    Creates a csv file from an ngspice run.
+    Creates a dictionary with traces from an ngspice run.
 
     :param cirFile: Name of the circuit file withouit '.cir' extension, located
                      in the cir folder.
@@ -224,7 +310,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
                       value: nodal voltage or brach current in ngspice notation
     :type namesDict: dict
 
-    :param traceType: Type of traces, can be:
+    :param traceType: Type of traces for AC analysis, can be:
 
                       - realImag
                       - magPhase
@@ -325,22 +411,22 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
     f.close()
     remove('simFile.sp')
     remove('simFile.log')
-    traceDict = processNGspiceResult(cirFile, analysisType, traceType)
+    traceDict = _processNGspiceResult(cirFile, analysisType, traceType)
     return traceDict
 
-def processNGspiceResult(cirFile, analysisType, traceType):
+def _processNGspiceResult(cirFile, analysisType, traceType):
     # Read the CSV file
     f = open(cirFile + '.csv', 'r')
     lines = f.readlines()
     f.close()
     analysisType = analysisType.upper()
     if analysisType == 'DC' or analysisType == 'TRAN' or analysisType == 'NOISE':
-        traceDict = makeDCTRNStraces(lines)
+        traceDict = _makeDCTRNStraces(lines)
     elif analysisType.upper() == 'AC':
-        traceDict = makeACtraces(lines, traceType)
+        traceDict = _makeACtraces(lines, traceType)
     return traceDict
 
-def makeDCTRNStraces(lines):
+def _makeDCTRNStraces(lines):
     traceDict = {}
     for i in range(len(lines)):
         fields = lines[i].split()
@@ -360,7 +446,7 @@ def makeDCTRNStraces(lines):
         traceDict[key].label = key
     return traceDict, xVar
 
-def makeACtraces(lines, traceType):
+def _makeACtraces(lines, traceType):
     reMagDict = {}
     imPhsDict = {}
     traceDict = {}
