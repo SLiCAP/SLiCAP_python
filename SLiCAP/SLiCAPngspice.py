@@ -284,13 +284,10 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
 
     :param simCmd: ngspice instruction capable of generating plot data, such as,
 
-                 ac dec 20 1 10meg
-
-                 tran 1n 10u
-
-                 dc Source Vstart Vstop Vincr [ Source2 Vstart2 Vstop2 Vincr2 ]
-
-                 etc.
+                   - ac dec 20 1 10meg
+                   - tran 1n 10u
+                   - dc Source Vstart Vstop Vincr [ Source2 Vstart2 Vstop2 Vincr2 ]
+                   - noise V(out) Vs dec 10 1 10meg 1
 
     :type simCmd: str
 
@@ -310,17 +307,20 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
                       value: nodal voltage or brach current in ngspice notation
     :type namesDict: dict
 
-    :param traceType: Type of traces for AC analysis, can be:
+    :param traceType: Type of traces for AC analysis or noise analysis:
 
                       - realImag
                       - magPhase
                       - dBmagPhase
+                      - onoise
+                      - inoise
     """
     try:
         remove(cirFile + '.csv')
     except:
         pass
     labels = {}
+    simType = simCmd.split()[0].lower()
     if stepCmd != None:
         stepFields = stepCmd.split()
         stepPar = stepFields[0]
@@ -360,7 +360,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
             netlist += '\n.control\n'
             netlist += simCmd + '\n'
             netlist += '\nset appendwrite\nset wr_vecnames\nset wr_singlescale\n'
-
+            if simType == 'noise':
+                netlist += '\nsetplot noise1\n'
             for key in list(namesDict.keys()):
                 traceName = key + '_' + str(i)
                 labels[traceName] = key + ':' + stepPar + '=' + '{0: 8.2e}'.format(stepList[i])
@@ -372,7 +373,6 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
             for name in traceNames:
                 netlist += ' ' + name
             netlist += '\n.endc\n'
-
             f = open('simFile.sp', 'w')
             f.write(netlist)
             f.close()
@@ -383,7 +383,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
         f.close()
         netlist += '\n.control\nset wr_vecnames\nset wr_singlescale\n'
         netlist += simCmd + '\n'
-
+        if simType == 'noise':
+            netlist += '\nsetplot noise1\n'
         for key in list(namesDict.keys()):
             netlist += 'let ' + key + ' = ' + namesDict[key] + '\n'
         netlist += 'wrdata ' + cirFile + '.csv'
@@ -409,8 +410,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
     f = open(cirFile + '.csv', 'w')
     f.write(txt)
     f.close()
-    remove('simFile.sp')
-    remove('simFile.log')
+    #remove('simFile.sp')
+    #remove('simFile.log')
     traceDict = _processNGspiceResult(cirFile, analysisType, traceType)
     return traceDict
 
