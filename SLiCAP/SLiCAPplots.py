@@ -737,7 +737,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                             yData = sp.N(result.inoise)
                         y = makeNumData(yData, ini.frequency, x)
                         newTrace = trace([x, y])
-                        newTrace.label = funcType
+                        newTrace.label = funcType + result.detLabel
                         ax.traces.append(newTrace)
                     elif noiseSources == 'all':
                         for srcName in keys:
@@ -749,7 +749,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                             noiseTrace = trace([x, y])
                             noiseTrace.color = ini.defaultColors[colNum % numColors]
                             colNum += 1
-                            noiseTrace.label = funcType + ': ' + srcName
+                            noiseTrace.label = funcType + ': ' + srcName + result.detLabel
                             ax.traces.append(noiseTrace)
                     elif noiseSources in keys:
                         if funcType == 'onoise':
@@ -760,7 +760,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                         noiseTrace = trace([x, y])
                         noiseTrace.color = ini.defaultColors[colNum % numColors]
                         colNum += 1
-                        noiseTrace.label = funcType + ': ' + noiseSources
+                        noiseTrace.label = funcType + ': ' + noiseSources + result.detLabel
                         ax.traces.append(noiseTrace)
                     elif type(noiseSources) == list:
                         for srcName in noiseSources:
@@ -773,7 +773,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                                 noiseTrace = trace([x, y])
                                 noiseTrace.color = ini.defaultColors[colNum % numColors]
                                 colNum += 1
-                                noiseTrace.label = funcType + ': ' + srcName
+                                noiseTrace.label = funcType + ': ' + srcName + result.detLabel
                                 ax.traces.append(noiseTrace)
                     else:
                         print("Error: cannot understand 'sources={0}'.".format(str(sources)))

@@ -15,43 +15,46 @@ prj = initProject("MOS_EKV_BSIM")
 # Define library, device, geometry and operating point
 LIB      = 'lib/log018.l TT'   # CMOS BSIM library
 DEV      = 'nch'               # MOS device name
-W        = .22e-6              # Channel width
-L        = .18e-6              # Channel length
+W        = 5e-6              # Channel width
+L        = 0.5e-6              # Channel length
 M        = 1                   # Number of devices in parallel
 f        = 10E6                # Test frequency for small-signal parameters
 refDes   = 'M1'                # Reference designator of MOS device
+fmin     = 10
+fmax     = 100e9
+numDec   = 20
 
 # Define number of points and the absolute value of the gate step voltage or
 # of the drain step current
 biasPar = "ID"                 # Choose biasing with "VG" or with "ID"
 Npts     = 100                 # Number of points
 Vdiff    = 0.01                # Gate voltage step size
-Idiff    = 1e-7                # Drain current step size
+Idiff    = 1e-6                # Drain current step size
 
 # Create the device
-mn = MOS(refDes, LIB, DEV)
+mn = MOS(refDes, LIB, DEV, W, L, M)
 
 if DEV == "nch":
     VD   = 1.2
     VS   = 0
     VB   = 0
     VG   = 0.5
-    ID   = 20e-6
+    ID   = 100e-6
     if biasPar == "VG":
         step = [VS, Npts, Vdiff]
     elif biasPar == "ID":
-        step = [1e-11, Npts, Idiff]
+        step = [1e-9, Npts, Idiff]
 
 elif DEV == "pch":
     VD   = 0.6
     VS   = 1.8
     VB   = 1.8
     VG   = 1.8
-    ID   = -5e-6
+    ID   = -1e-6
     if biasPar == "VG":
         step = [VS, Npts, -Vdiff]
     elif biasPar == "ID":
-        step = [-1e-11, Npts, -Idiff]
+        step = [-1e-9, Npts, -Idiff]
 
 # Uncomment the following line to obtain single operating point information
 step=None
@@ -59,9 +62,9 @@ step=None
 ###############################################################################
 
 if biasPar == "VG":
-    mn.getOPvg(W, L, M, VG, VD, VS, VB, f, step)
+    mn.getOPvg(VG, VD, VS, VB, f, step)
 elif biasPar == "ID":
-    mn.getOPid(W, L, M, ID, VD, VS, VB, f, step)
+    mn.getOPid(ID, VD, VS, VB, f, step)
 
 if step == None:
     print('\nParameters found by simulation:\n')
@@ -158,14 +161,14 @@ else:
         i1.defPar('LDS_P18', LDS)             # length of drain and source [m]
         i1.defPar('VAL_P18', VAL)             # Early voltage per unit of length [V/m]
 
-    ID = sp.Symbol('I_D')
+    I_D = sp.Symbol('I_D')
     IDS = mn.params['i(ids)']
 
     if DEV == "nch":
-        VGS               = sp.lambdify(ID, i1.getParValue('V_GS_X1'))
+        VGS               = sp.lambdify(I_D, i1.getParValue('V_GS_X1'))
         vgsTraceBSIM      = trace([mn.params['v(vgs)'], IDS])
     elif DEV == "pch":
-        VGS               = sp.lambdify(ID, -i1.getParValue('V_GS_X1'))
+        VGS               = sp.lambdify(I_D, -i1.getParValue('V_GS_X1'))
         if biasPar == "ID":
             vgsTraceBSIM      = trace([mn.params['v(vgs)'], IDS])
         elif biasPar == "VG":
@@ -176,7 +179,7 @@ else:
     plotDict_vgs       = {'EKV': vgsTraceEKV, 'BSIM': vgsTraceBSIM}
     fig_vgs = plot('fig_vgs', '$I_{ds}$ versus $V_{gs}$', 'lin', plotDict_vgs, yScale='u', xName='$V_{gs}$', yName='$I_{ds}$', xUnits='V', yUnits='A', show=True)
 
-    GM                = sp.lambdify(ID, i1.getParValue('g_m_X1'))
+    GM                = sp.lambdify(I_D, i1.getParValue('g_m_X1'))
     gmTraceEKV        = trace([IDS, GM(IDS)])
     gmTraceEKV.label  = 'EKV'
     gmTraceBSIM       = trace([IDS, mn.params['ggd']])
@@ -184,7 +187,7 @@ else:
     plotDict_gm       = {'EKV': gmTraceEKV, 'BSIM': gmTraceBSIM}
     fig_gm = plot('fig_gm', '$g_m$ versus $I_{ds}$', 'lin', plotDict_gm, xScale='u', yScale='u', xName='$I_{ds}$', yName='$g_m$', xUnits='A', yUnits='S', show=True)
 
-    FT                = sp.lambdify(ID, i1.getParValue('f_T_X1'))
+    FT                = sp.lambdify(I_D, i1.getParValue('f_T_X1'))
     fTTraceEKV        = trace([IDS, FT(IDS)])
     fTTraceEKV.label  = 'EKV'
     fTTraceBSIM       = trace([IDS, derivedParams['fT']])
@@ -192,7 +195,7 @@ else:
     plotDict_fT       = {'EKV': fTTraceEKV, 'BSIM': fTTraceBSIM}
     fig_fT = plot('fig_fT', '$f_T$ versus $I_{ds}$', 'lin', plotDict_fT, xScale='u', yScale='G', xName='$I_{ds}$', yName='$f_T$', xUnits='A', yUnits='Hz', show=True)
 
-    GB                = sp.lambdify(ID, i1.getParValue('g_b_X1'))
+    GB                = sp.lambdify(I_D, i1.getParValue('g_b_X1'))
     gbTraceEKV        = trace([IDS, GB(IDS)])
     gbTraceEKV.label  = 'EKV'
     gbTraceBSIM       = trace([IDS, mn.params['gbd']])
@@ -200,10 +203,70 @@ else:
     plotDict_gb       = {'EKV': gbTraceEKV, 'BSIM': gbTraceBSIM}
     fig_gb = plot('fig_gb', '$g_b$ versus $I_{ds}$', 'lin', plotDict_gb, xScale='u', yScale='u', xName='$I_{ds}$', yName='$g_b$', xUnits='A', yUnits='S', show=True)
 
-    GO                = sp.lambdify(ID, i1.getParValue('g_o_X1'))
+    GO                = sp.lambdify(I_D, i1.getParValue('g_o_X1'))
     goTraceEKV        = trace([IDS, GO(IDS)])
     goTraceEKV.label  = 'EKV'
     goTraceBSIM       = trace([IDS, mn.params['gdd']])
     goTraceBSIM.label = 'BSIM'
     plotDict_go       = {'EKV': goTraceEKV, 'BSIM': goTraceBSIM}
     fig_go = plot('fig_go', '$g_o$ versus $I_{ds}$', 'lin', plotDict_go, xScale='u', yScale='u', xName='$I_{ds}$', yName='$g_o$', xUnits='A', yUnits='S', show=True)
+
+inoiseTraceDict, xVar, xUnits = mn.getSv_inoise(ID, VD, VS, VB, fmin, fmax, numDec)
+for key in inoiseTraceDict.keys():
+    inoiseTraceDict[key].label += "-BSIM"
+
+if DEV == "nch":
+    cirText   = "CMOS_noise\n"
+    cirText += ".lib CMOS18.lib\n"
+    cirText += "X1 in 0 out  NM18_noise W={W} L={L} ID={I_D}\n"
+    cirText += "V1 in 0 1\n"
+    cirText += ".end\n"
+    f = open("cir/EKVmosNoise.cir", "w")
+    f.write(cirText)
+    f.close()
+    i1 = instruction()
+    i1.setCircuit("EKVmosNoise.cir")
+    i1.defPar('W', W * M)
+    i1.defPar('L', L)
+    i1.defPar('I_D', ID)
+
+    KF_N18   = i1.getParValue('KF_N18')   # flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
+    AF_N18   = i1.getParValue('AF_N18')   # flicker noise exponent [-]
+    V_KF_N18 = i1.getParValue('V_KF_N18') # flicker noise voltage dependency factor [V]
+    i1.defPar('KF_N18', 1E-26)
+    i1.defPar('V_KF_N18', 0.25)
+
+elif DEV == "pch":
+    cirText   = "CMOS_noise\n"
+    cirText += ".lib CMOS18.lib\n"
+    cirText += "X1 in 0 out  PM18_noise W={W} L={L} ID={-I_D}\n"
+    cirText += "V1 in 0 1\n"
+    cirText += ".end\n"
+    f = open("cir/EKVmosNoise.cir", "w")
+    f.write(cirText)
+    f.close()
+    i1 = instruction()
+    i1.setCircuit("EKVmosNoise.cir")
+    i1.defPar('W', W * M)
+    i1.defPar('L', L)
+    i1.defPar('I_D', -ID)
+
+    KF_P18   = i1.getParValue('KF_P18')   # flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
+    AF_P18   = i1.getParValue('AF_P18')   # flicker noise exponent [-]
+    V_KF_P18 = i1.getParValue('V_KF_P18') # flicker noise voltage dependency factor [V]
+    i1.defPar('KF_P18', 1E-27)
+    i1.defPar('V_KF_P18', 0.15)
+
+i1.setSimType("numeric")
+i1.setGainType('vi')
+i1.setDataType('noise')
+i1.setDetector('V_out')
+i1.setSource('V1')
+result = i1.execute()
+
+result.detLabel = "-EKV"
+
+figNoise = plotSweep('EKVnoise', 'Input referred voltage noise', result, fmin, fmax, 200, funcType='inoise', show=False)
+figNoise.show = True
+traces2fig(inoiseTraceDict, figNoise)
+figNoise.plot()

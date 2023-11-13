@@ -44,17 +44,20 @@ class MOS(object):
     - *self*.step   = Step data for VG or ID, defaults to False
 
     """
-    def __init__(self, refDes, lib, dev):
-        self.refDes = refDes
-        self.lib = lib
-        self.dev = dev
+    def __init__(self,refDes, lib, dev, W, L, M):
+        self.refDes   = refDes
+        self.lib      = lib
+        self.dev      = dev
+        self.W        = W
+        self.L        = L
+        self.M        = M
         self.modelDef = None
-        self.parDefs = None
-        self.params = {}
-        self.errors = {}
-        self.step   = False
+        self.parDefs  = None
+        self.params   = {}
+        self.errors   = {}
+        self.step     = False
 
-    def getOPid(self, W, L, M, ID, VD, VS, VB, f, step=None):
+    def getOPid(self, ID, VD, VS, VB, f, step=None):
         """
         Returns operating point information of the device with the drain
         current as (swept) independent variable.
@@ -97,9 +100,9 @@ class MOS(object):
         txt += '.param VD     = %s\n'%(VD)
         txt += '.param VS     = %s\n'%(VS)
         txt += '.param VB     = %s\n'%(VB)
-        txt += '.param L      = %s\n'%(L)
-        txt += '.param W      = %s\n'%(W)
-        txt += '.param M      = %s\n'%(M)
+        txt += '.param L      = %s\n'%(self.L)
+        txt += '.param W      = %s\n'%(self.W)
+        txt += '.param M      = %s\n'%(self.M)
         txt += '.param freq   = %s\n'%(f)
         txt += '.param num    = %s\n'%(stepNum)
         txt += '.param start  = %s\n'%(stepStart)
@@ -128,7 +131,7 @@ class MOS(object):
         self._makeModelDef()
         self._determineAccuracy()
 
-    def getOPvg(self, W, L, M, VG, VD, VS, VB, f, step=None):
+    def getOPvg(self, VG, VD, VS, VB, f, step=None):
         """
         Returns operating point information of the device with the gate
         voltage as (swept) independent variable.
@@ -171,9 +174,9 @@ class MOS(object):
         txt += '.param VD     = %s\n'%(VD)
         txt += '.param VS     = %s\n'%(VS)
         txt += '.param VB     = %s\n'%(VB)
-        txt += '.param L      = %s\n'%(L)
-        txt += '.param W      = %s\n'%(W)
-        txt += '.param M      = %s\n'%(M)
+        txt += '.param L      = %s\n'%(self.L)
+        txt += '.param W      = %s\n'%(self.W)
+        txt += '.param M      = %s\n'%(self.M)
         txt += '.param freq   = %s\n'%(f)
         txt += '.param num    = %s\n'%(stepNum)
         txt += '.param start  = %s\n'%(stepStart)
@@ -244,16 +247,16 @@ class MOS(object):
         self.parDefs[Symbol('csb_' + self.refDes)] = (self.params['csb'] + self.params['cbs'])/2
 
     def _makeModelDef(self):
-        text = '.model %s M'%(self.refDes)
-        text += '\n+ gm=%s'%(self.params['ggd'])
-        text += '\n+ gb=%s'%(self.params['gbd'])
-        text += '\n+ go=%s'%(self.params['gdd'])
-        text += '\n+ cgs=%s'%((self.params['cgs'] + self.params['csg'])/2)
-        text += '\n+ cgb=%s'%((self.params['cgb'] + self.params['cbg'])/2)
-        text += '\n+ cdg=%s'%((self.params['cdg'] + self.params['cgd'])/2)
-        text += '\n+ cdb=%s'%((self.params['cdb'] + self.params['cbd'])/2)
-        text += '\n+ csb=%s'%((self.params['csb'] + self.params['cbs'])/2)
-        self.modelDef = text
+        txt = '.model %s M'%(self.refDes)
+        txt += '\n+ gm=%s'%(self.params['ggd'])
+        txt += '\n+ gb=%s'%(self.params['gbd'])
+        txt += '\n+ go=%s'%(self.params['gdd'])
+        txt += '\n+ cgs=%s'%((self.params['cgs'] + self.params['csg'])/2)
+        txt += '\n+ cgb=%s'%((self.params['cgb'] + self.params['cbg'])/2)
+        txt += '\n+ cdg=%s'%((self.params['cdg'] + self.params['cgd'])/2)
+        txt += '\n+ cdb=%s'%((self.params['cdb'] + self.params['cbd'])/2)
+        txt += '\n+ csb=%s'%((self.params['csb'] + self.params['cbs'])/2)
+        self.modelDef = txt
 
     def _determineAccuracy(self):
         CGG = self.params['cgs'] + self.params['cgd'] + self.params['cgb']
@@ -269,6 +272,43 @@ class MOS(object):
         self.errors['cgb'] = ((self.params['cgb']-self.params['cbg'])/(self.params['cgb']+self.params['cbg']))
         self.errors['cbs'] = ((self.params['cbs']-self.params['csb'])/(self.params['cbs']+self.params['csb']))
         self.errors['cbd'] = ((self.params['cbd']-self.params['cdb'])/(self.params['cbd']+self.params['cdb']))
+
+    def getSv_inoise(self, ID, VD, VS, VB, fmin, fmax, numDec):
+        self.params = {}
+        self.step   = None
+        self.getOPid(ID, VD, VS, VB, sqrt(fmin*fmax))
+        VGS = self.params['v(vgs)']
+        if self.dev[0].lower() == 'p':
+            VGS = -VGS
+        IDS = self.params['i(ids)']
+        print("Ids target  :", ID)
+        print("Ids realized:", IDS, "\n")
+        print("Vgs realized:", VGS, "\n")
+        txt = "MOS_noise\n"
+        txt += '.lib %s\n\n'%(self.lib)
+        txt += '.param L      = %s\n'%(self.L)
+        txt += '.param W      = %s\n'%(self.W)
+        txt += '.param M      = %s\n'%(self.M)
+        txt += '.param VG     = %s\n'%(VGS + VS)
+        txt += '.param VD     = %s\n'%(VD)
+        txt += '.param VS     = %s\n'%(VS)
+        txt += '.param VB     = %s\n'%(VB)
+        txt += '%s d g s b %s W={W} L={L} M={M}\n\n'%(self.refDes, self.dev)
+        txt += 'V1 dd 0  dc {VD}\n'
+        txt += 'V2 g  0  dc {VG} ac 1\n'
+        txt += 'V3 s  0  dc {VS}\n'
+        txt += 'V4 b  0  dc {VB}\n'
+        txt += 'L1 d  dd 1G\n'
+        txt += '.end'
+        f = open('MOS_noise.cir', 'w')
+        f.write(txt)
+        f.close()
+        simCmd = 'noise V(d) V2 dec %s %s %s'%( str(numDec), str(fmin), str(fmax))
+        namesDict = {'inoise': 'inoise_spectrum'}
+        output = ngspice2traces('MOS_noise', simCmd, namesDict, stepCmd=None, traceType='onoise')
+        remove('MOS_noise.cir')
+        remove('MOS_noise.csv')
+        return output
 
 def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase'):
     """
@@ -358,8 +398,10 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
             traceNames = []
             netlist += '\n.param ' + stepPar + ' = ' + str(stepList[i]) + '\n'
             netlist += '\n.control\n'
+            if simType == 'noise':
+                netlist += '\nset sqrnoise\n'
             netlist += simCmd + '\n'
-            netlist += '\nset appendwrite\nset wr_vecnames\nset wr_singlescale\n'
+            netlist += '\nset wr_vecnames\nset wr_singlescale\n'
             if simType == 'noise':
                 netlist += '\nsetplot noise1\n'
             for key in list(namesDict.keys()):
@@ -382,6 +424,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
         netlist = f.read()
         f.close()
         netlist += '\n.control\nset wr_vecnames\nset wr_singlescale\n'
+        if simType == 'noise':
+            netlist += '\nset sqrnoise\n'
         netlist += simCmd + '\n'
         if simType == 'noise':
             netlist += '\nsetplot noise1\n'
@@ -410,8 +454,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
     f = open(cirFile + '.csv', 'w')
     f.write(txt)
     f.close()
-    #remove('simFile.sp')
-    #remove('simFile.log')
+    remove('simFile.sp')
+    remove('simFile.log')
     traceDict = _processNGspiceResult(cirFile, analysisType, traceType)
     return traceDict
 
@@ -445,7 +489,13 @@ def _makeDCTRNStraces(lines):
     for key in list(traceDict.keys()):
         traceDict[key] = trace((traceDict[key][0], traceDict[key][1]))
         traceDict[key].label = key
-    return traceDict, xVar
+    if xVar == "frequency":
+        xUnits = "Hz"
+    elif xVar == "time":
+        xUnits = "s"
+    else:
+        xUnits = ""
+    return traceDict, xVar, xUnits
 
 def _makeACtraces(lines, traceType):
     reMagDict = {}
@@ -485,4 +535,8 @@ def _makeACtraces(lines, traceType):
             reMagDict[key].label = key
             imPhsDict[key] = trace((freq, unwrap(arctan(imag/real)*180/pi, 90)))
             imPhsDict[key].label = key
-    return reMagDict, imPhsDict, xVar
+    if xVar == "frequency":
+        xUnits = "Hz"
+    else:
+        xUnits = ""
+    return reMagDict, imPhsDict, xVar, xUnits
