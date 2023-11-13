@@ -132,6 +132,7 @@ M1 drain gate source bulk CMOS18N_V
 + c_sb    = {(N_s_N18-1)*c_gsi+C_sb0}
 + c_iss   = {c_gs+c_dg+c_gb}
 + f_T     = {g_m/2/pi/c_iss}
++ V_GS    = {VG-VS}
 .ends
 
 .subckt CMOS18ND drain1 drain2 gate1 gate2 W={W} L={L} ID={ID}

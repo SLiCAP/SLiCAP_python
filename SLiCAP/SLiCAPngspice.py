@@ -193,10 +193,10 @@ class MOS(object):
         system(ini.ngspiceCMD + ' -b MOS_OP.cir -o MOS_OP.log')
         remove('MOS_OP.cir')
         remove('MOS_OP.log')
-        self.getParams()
-        self.makeParDefs()
-        self.makeModelDef()
-        self.determineAccuracy()
+        self._getParams()
+        self._makeParDefs()
+        self._makeModelDef()
+        self._determineAccuracy()
 
     def _getParams(self):
         f = open('MOS_OP.out', 'r')

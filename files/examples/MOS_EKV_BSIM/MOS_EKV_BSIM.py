@@ -15,7 +15,7 @@ prj = initProject("MOS_EKV_BSIM")
 # Define library, device, geometry and operating point
 LIB      = 'lib/log018.l TT'   # CMOS BSIM library
 DEV      = 'nch'               # MOS device name
-W        = 5e-6              # Channel width
+W        = 50e-6              # Channel width
 L        = 0.5e-6              # Channel length
 M        = 1                   # Number of devices in parallel
 f        = 10E6                # Test frequency for small-signal parameters
@@ -50,14 +50,14 @@ elif DEV == "pch":
     VS   = 1.8
     VB   = 1.8
     VG   = 1.8
-    ID   = -1e-6
+    ID   = -100e-6
     if biasPar == "VG":
         step = [VS, Npts, -Vdiff]
     elif biasPar == "ID":
         step = [-1e-9, Npts, -Idiff]
 
 # Uncomment the following line to obtain single operating point information
-step=None
+#step=None
 
 ###############################################################################
 
@@ -254,8 +254,9 @@ elif DEV == "pch":
     KF_P18   = i1.getParValue('KF_P18')   # flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
     AF_P18   = i1.getParValue('AF_P18')   # flicker noise exponent [-]
     V_KF_P18 = i1.getParValue('V_KF_P18') # flicker noise voltage dependency factor [V]
-    i1.defPar('KF_P18', 1E-27)
+    i1.defPar('KF_P18', 0.6E-27)
     i1.defPar('V_KF_P18', 0.15)
+    i1.defPar('AF_P18', 1.25)
 
 i1.setSimType("numeric")
 i1.setGainType('vi')
