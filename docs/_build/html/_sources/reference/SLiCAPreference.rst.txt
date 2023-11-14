@@ -14,7 +14,6 @@ SLiCAP comprises the following (sub) modules:
 .. toctree::
    
    SLiCAP
-   SLiCAPconfig
    SLiCAPdesignData
    SLiCAPexecute
    SLiCAPhtml
@@ -24,6 +23,7 @@ SLiCAP comprises the following (sub) modules:
    SLiCAPlex
    SLiCAPmath
    SLiCAPmatrices
+   SLiCAPngspice
    SLiCAPnotebook
    SLiCAPplots
    SLiCAPprotos

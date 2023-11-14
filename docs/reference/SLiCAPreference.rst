@@ -23,6 +23,7 @@ SLiCAP comprises the following (sub) modules:
    SLiCAPlex
    SLiCAPmath
    SLiCAPmatrices
+   SLiCAPngspice
    SLiCAPnotebook
    SLiCAPplots
    SLiCAPprotos
