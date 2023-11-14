@@ -17,40 +17,6 @@ from SLiCAP.SLiCAPconfig import *
 np.set_printoptions(edgeitems=30, linewidth=1000,
     formatter=dict(float=lambda x: "%11.4e" % x))
 
-def _selftest_maxima():
-    """
-    Checks the maxima install on startup, returns print statements in case Maxima does not function
-
-    Returns
-    -------
-    None.
-    """
-    maxInput = '1+1;'
-    result=0
-    if platform.system() == 'Windows':
-        try:
-            result = subprocess.run([MAXIMA, '--very-quiet', '-batch-string', maxInput], capture_output=True, timeout=3, text=True).stdout.split('\n')
-        except:
-            print("Not able to succesfully execute the maxima command, please re-run the SLiCAP setup.py script and set the path again.")
-    else:
-        try:
-            result = subprocess.run(['maxima', '--very-quiet', '-batch-string', maxInput], capture_output=True, timeout=3, text=True).stdout.split('\n')
-
-
-        except BaseException:
-            exc_type, value, exc_traceback = sys.exc_info()
-            print('\n', value)
-            print("Not able to run the maxima command, verify maxima is installed by typing 'maxima' in the command line.")
-            print("In case maxima is not installed, use your package manager to install it (f.e. 'sudo apt install maxima').")
-
-    result = [i for i in result if i] # Added due to variability of trailing '\n'
-    result = result[-1]
-    if int(result) == 2:
-        print("Succesfully self-tested the Maxima command.")
-    else:
-        print("Something went wrong when testing Maxima, please re-run the installer and try to start maxima first by itself.")
-
-
 def _check_version():
     """
     Checks the version with the latest version from Git
