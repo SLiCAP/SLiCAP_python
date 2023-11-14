@@ -1537,9 +1537,9 @@ def doPyLoopGainServo(instr, result):
     if instr.gainType == 'loopgain':
         result.laplace.append(LG)
     elif instr.gainType == 'servo':
-        num = - num
-        den = sp.expand(den - num)
-        SV = num/den
+        SVnum = - num
+        SVden = sp.expand(den - num)
+        SV = SVnum/SVden
         result.laplace.append(SV)
     #num, den = result.laplace[-1].as_numer_denom()
     result.numer.append(num)
