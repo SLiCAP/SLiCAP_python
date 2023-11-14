@@ -124,16 +124,42 @@ def initProject(name, port=""):
     prj = SLiCAPproject(name)
     ini.lastUpdate = prj.lastUpdate
     if not os.path.exists(ini.projectPath + 'SLiCAPconfig.py'):
-        f = open(ini.installPath + 'SLiCAP/SLiCAPconfig.py', 'r')
-        txt = f.read()
-        f.close()
-        txt += '\n\n# Project information'
-        txt += '\nPROJECT    = ' + '\'' + prj.name + '\''
-        txt += '\nAUTHOR     = ' + '\'' + prj.author + '\''
-        txt += '\nCREATED    = ' + '\'' + str(prj.lastUpdate) + '\''
-        txt += '\nLASTUPDATE = ' + '\'' + str(prj.lastUpdate) + '\''
+        lines = ['#!/usr/bin/env python3\n',
+                 '# -*- coding: utf-8 -*-\n',
+                 '"""\n',
+                 'SLiCAP module with user-defined path settings.\n',
+                 'Default values:\n',
+                 '>>> PROJECTPATH = None      # Leave it for automatic detection\n',
+                 '>>> # PATHS: relative to the project path\n',
+                 '>>> HTMLPATH    = "html/"   # path for html output\n',
+                 '>>> CIRCUITPATH = "cir/"    # path for .asc, .net, .cir, .sch files\n',
+                 '>>> LIBRARYPATH = "lib/"    # path for include and library files\n',
+                 '>>> TXTPATH     = "txt/"    # path for text files\n',
+                 '>>> CSVPATH     = "csv/"    # path for CSV files\n',
+                 '>>> LATEXPATH   = "tex/"    # path for LaTeX output\n',
+                 '>>> MATHMLPATH  = "mathml/" # path for mathML output\n',
+                 '>>> IMGPATH     = "img/"    # path for image files\n',
+                 '>>> SPHINXPATH  = "sphinx/" # path for Sphinx output\n',
+                 '"""\n',
+                 'PROJECTPATH = None      # Leave it for automatic detection\n',
+                 '# PATHS: relative to the project path\n',
+                 'HTMLPATH    = "html/"   # path for html output\n',
+                 'CIRCUITPATH = "cir/"    # path for .asc, .net, .cir, .sch files\n',
+                 'LIBRARYPATH = "lib/"    # path for include and library files\n',
+                 'TXTPATH     = "txt/"    # path for text files\n',
+                 'CSVPATH     = "csv/"    # path for CSV files\n',
+                 'LATEXPATH   = "tex/"    # path for LaTeX output\n',
+                 'MATHMLPATH  = "mathml/" # path for mathML output\n',
+                 'IMGPATH     = "img/"    # path for image files\n',
+                 'SPHINXPATH  = "sphinx/" # path for Sphinx output\n',
+                 '# Project information\n',
+                 'PROJECT    = ' + '\'' + prj.name + '\'\n',
+                 'AUTHOR     = ' + '\'' + prj.author + '\'\n',
+                 'CREATED    = ' + '\'' + str(prj.lastUpdate) + '\'\n',
+                 'LASTUPDATE = ' + '\'' + str(prj.lastUpdate) + '\'\n',
+                ]
         f = open(ini.projectPath + 'SLiCAPconfig.py', 'w')
-        f.write(txt)
+        f.writelines(lines)
         f.close()
     else:
         f = open(ini.projectPath + 'SLiCAPconfig.py', 'r')
