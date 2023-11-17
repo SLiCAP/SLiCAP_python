@@ -39,6 +39,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          sudo apt-get install -y pdf2svg lepton-eda python3-matplotlib
       - name: install SLiCAP
         run: python setup.py install --user
       - name: run example projects
