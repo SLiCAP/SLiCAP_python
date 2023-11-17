@@ -42,8 +42,8 @@ i1.gainType = 'gain'
 i1.dataType = 'laplace'
 result      = i1.execute()
  
-figdBmag    = plotSweep('LR4dBmag', 'dB magnitude characteristic', result, 0.02, 20, 100, sweepScale='k', show=True)
-figPgase    = plotSweep('LR4phase', 'phase characteristic', result, 0.02, 20, 100, funcType = 'phase', sweepScale='k', show=True)
+figdBmag    = plotSweep('LR4dBmag', 'dB magnitude characteristic', result, 0.02, 20, 100, sweepScale='k', show=False)
+figPgase    = plotSweep('LR4phase', 'phase characteristic', result, 0.02, 20, 100, funcType = 'phase', sweepScale='k', show=False)
 
 htmlPage('Report')
 

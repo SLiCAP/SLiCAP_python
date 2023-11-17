@@ -88,14 +88,14 @@ numGain = i1.execute()
 # We will create a new HTML page for the plots
 htmlPage('Plots')
 head2html('Frequency domain plots')
-figMag = plotSweep('RCmag', 'Magnitude characteristic', numGain, 10, '100k', 100, yUnits = '-', show = True)
+figMag = plotSweep('RCmag', 'Magnitude characteristic', numGain, 10, '100k', 100, yUnits = '-', show = False)
 # This will put the figure on the HTML page with a width of 800 pixels, a caption and a label:
 fig2html(figMag, 600, caption = 'Magnitude characteristic of the RC network.', label = 'figMag')
-figPol = plotSweep('RCpolar', 'Polar plot', numGain, 10, '100k', 100, axisType = 'polar', show = True)
+figPol = plotSweep('RCpolar', 'Polar plot', numGain, 10, '100k', 100, axisType = 'polar', show = False)
 fig2html(figPol, 600, caption = 'Polar plot of the transfer of the RC network.', label = 'figPolar')
-figdBmag = plotSweep('RCdBmag', 'dB magnitude characteristic', numGain, 10, '100k', 100, funcType = 'dBmag', show = True)
+figdBmag = plotSweep('RCdBmag', 'dB magnitude characteristic', numGain, 10, '100k', 100, funcType = 'dBmag', show = False)
 fig2html(figdBmag, 600, caption = 'dB Magnitude characteristic of the RC network.', label = 'figdBmag')
-figPhase = plotSweep('RCphase', 'Phase characteristic', numGain, 10, '100k', 100, funcType = 'phase', show = True)
+figPhase = plotSweep('RCphase', 'Phase characteristic', numGain, 10, '100k', 100, funcType = 'phase', show = False)
 fig2html(figPhase, 600, caption = 'Phase characteristic of the RC network.', label = 'figPhase')
 # We will display the delay in 'us'
 figDelay = plotSweep('RCdelay', 'Group delay characteristic', numGain, 10, '100k', 100, yScale = 'u', funcType = 'delay')
@@ -129,7 +129,7 @@ fig2html(figPZ, 600, caption = 'Poles and zeros of the RC network.', label = 'fi
 # the transfer function (impulse response) or the transfer function multiplied with 1/ini.Laplace.
 i1.setDataType('step')
 numStep = i1.execute()
-figStep = plotSweep('step', 'Unit step response', numStep, 0, 1, 50, sweepScale='m', show = True)
+figStep = plotSweep('step', 'Unit step response', numStep, 0, 1, 50, sweepScale='m', show = False)
 # Let us put this plot on the page with the plots. You can get a list with page names by typing: 'ini.htmlPages'
 ini.htmlPage = 'myFirstRCnetwork_Plots.html'
 head2html('Time domain plots')
