@@ -33,7 +33,7 @@ i1.setGainType('vi')
 i1.setDataType('noise')
 i1.setSimType('numeric')
 noise_result = i1.execute()
-plotSweep('Inoise', 'Source-referred noise spectrum', noise_result, 1e8, 1e11, 100, funcType = 'inoise', show=True)
+plotSweep('Inoise', 'Source-referred noise spectrum', noise_result, 1e8, 1e11, 100, funcType = 'inoise', show=False)
 
 # Calculate the noise figure at critical inversion and the given width
 tot_inoise      = rmsNoise(noise_result, 'inoise', 1e9, 5e9)
@@ -85,6 +85,6 @@ i1.setStepNum(5)
 i1.stepOn()
 result = i1.execute()
 # Plot the function
-fig_NF_W = plotSweep('NF_W', 'Noise Figure versus width, $f_{min}$ = 200MHz', result, 10, 200, 50, sweepVar = 'W', sweepScale = 'u', funcType = 'param', xUnits = 'm', yVar = 'NF', yUnits = 'dB', show = True)
+fig_NF_W = plotSweep('NF_W', 'Noise Figure versus width, $f_{min}$ = 200MHz', result, 10, 200, 50, sweepVar = 'W', sweepScale = 'u', funcType = 'param', xUnits = 'm', yVar = 'NF', yUnits = 'dB', show = False)
 t2 = time()
 print(t2-t1, 's')
