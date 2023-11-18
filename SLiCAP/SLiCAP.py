@@ -120,16 +120,15 @@ def initProject(name, port=""):
     anton
 
     """
-    ini.updatePaths(os.path.abspath('.') + '/')
     prj = SLiCAPproject(name)
     ini.lastUpdate = prj.lastUpdate
+    ini.projectPath = os.path.abspath('.') + '/'
     if not os.path.exists(ini.projectPath + 'SLiCAPconfig.py'):
         lines = ['#!/usr/bin/env python3\n',
                  '# -*- coding: utf-8 -*-\n',
                  '"""\n',
                  'SLiCAP module with user-defined path settings.\n',
                  'Default values:\n',
-                 '>>> PROJECTPATH = None      # Leave it for automatic detection\n',
                  '>>> # PATHS: relative to the project path\n',
                  '>>> HTMLPATH    = "html/"   # path for html output\n',
                  '>>> CIRCUITPATH = "cir/"    # path for .asc, .net, .cir, .sch files\n',
@@ -141,7 +140,6 @@ def initProject(name, port=""):
                  '>>> IMGPATH     = "img/"    # path for image files\n',
                  '>>> SPHINXPATH  = "sphinx/" # path for Sphinx output\n',
                  '"""\n',
-                 'PROJECTPATH = None      # Leave it for automatic detection\n',
                  '# PATHS: relative to the project path\n',
                  'HTMLPATH    = "html/"   # path for html output\n',
                  'CIRCUITPATH = "cir/"    # path for .asc, .net, .cir, .sch files\n',
@@ -169,7 +167,17 @@ def initProject(name, port=""):
         f = open(ini.projectPath + 'SLiCAPconfig.py', 'w')
         f.writelines(lines)
         f.close()
-    #if firstRun:
+    # Define the paths:
+    from SLiCAPconfig import HTMLPATH, CIRCUITPATH, LIBRARYPATH, TXTPATH, CSVPATH, LATEXPATH, MATHMLPATH, IMGPATH, SPHINXPATH
+    ini.htmlPath         = ini.projectPath + HTMLPATH
+    ini.mathmlPath       = ini.projectPath + MATHMLPATH
+    ini.circuitPath      = ini.projectPath + CIRCUITPATH
+    ini.libraryPath      = ini.projectPath + LIBRARYPATH
+    ini.txtPath          = ini.projectPath + TXTPATH
+    ini.csvPath          = ini.projectPath + CSVPATH
+    ini.latexPath        = ini.projectPath + LATEXPATH
+    ini.sphinxPath       = ini.projectPath + SPHINXPATH
+    ini.imgPath          = ini.projectPath + IMGPATH
     makeDir(ini.circuitPath)
     makeDir(ini.imgPath)
     makeDir(ini.libraryPath)

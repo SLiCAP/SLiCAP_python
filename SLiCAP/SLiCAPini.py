@@ -11,7 +11,6 @@ import webbrowser
 import numpy as np
 import sympy as sp
 from SLiCAP.SLiCAPsetting import *
-from SLiCAP.SLiCAPconfig import *
 
 # Increase width for display of numpy arrays:
 np.set_printoptions(edgeitems=30, linewidth=1000,
@@ -492,44 +491,21 @@ class settings(object):
                             else:
                                 print(dots,':', dct[key])
 
-    def updatePaths(self, projectPath):
+    def updatePaths(self):
         """
-        Updates the file locations according to the project path.
-
-        :param projectPath: Path to the active SLiCAP project.
-        :type projectPath: str
+        Updates the file locations found during installation.
         """
         self.defaultLib       = LIBCOREPATH
         self.userPath         = USERPATH
-        self.projectPath      = projectPath
-        self.htmlPath         = projectPath + HTMLPATH
-        self.mathmlPath       = projectPath + MATHMLPATH
-        self.circuitPath      = projectPath + CIRCUITPATH
-        self.libraryPath      = projectPath + LIBRARYPATH
-        self.txtPath          = projectPath + TXTPATH
-        self.csvPath          = projectPath + CSVPATH
-        self.latexPath        = projectPath + LATEXPATH
-        self.sphinxPath       = projectPath + SPHINXPATH
-        self.imgPath          = projectPath + IMGPATH
         self.ltspice          = LTSPICE
         self.netlist          = NETLIST
         self.docPath          = DOCPATH
 
 ini = settings()
-
-# Create an instance of globals
-# Automatic detection of install and project paths
-# Get the installation path
-# ini.installPath  = '/'.join(os.path.realpath(__file__).split('/')[0:-1]) + '/'
+ini.updatePaths()
+# Automatic detection of install path
 ini.installPath = inspect.getfile(settings).replace('\\', '/').split('/')
 ini.installPath = '/'.join(ini.installPath[0:-2]) + '/'
-# Copy path settings from user configuration.
-if PROJECTPATH == None:
-    # Get the project path (the path of the script that imported SLiCAP.ini)
-    PROJECTPATH  = os.path.abspath('.') + '/'
-
-ini.updatePaths(PROJECTPATH)
-
 #Run the defined self checks/tests
 _check_version()
 

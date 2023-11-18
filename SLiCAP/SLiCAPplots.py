@@ -369,18 +369,14 @@ def defaultsPlot():
     """
     figures = [manager.canvas.figure for manager in plotHelp.Gcf.get_all_fig_managers()]
     for fig in figures:
-        #plt.tight_layout()
         for i in range(len(fig.axes)):
             fig.axes[i].title.set_fontsize(ini.plotFontSize)
             fig.axes[i].grid(visible=True, which='major', color='0.5',linestyle='-')
             fig.axes[i].grid(visible=True, which='minor', color='0.5',linestyle=':')
-            t = fig.axes[i].xaxis.get_offset_text()
-            t.set_fontsize(ini.plotFontSize)
-            t = fig.axes[i].yaxis.get_offset_text()
+            t = fig.axes[i].Axis.get_offset_text()
             t.set_fontsize(ini.plotFontSize)
             try:
-                fig.axes[i].xaxis.label.set_fontsize(ini.plotFontSize)
-                fig.axes[i].yaxis.label.set_fontsize(ini.plotFontSize)
+                fig.axes[i].Axis.label.set_fontsize(ini.plotFontSize)
             except:
                 pass
             try:
@@ -395,9 +391,7 @@ def defaultsPlot():
                     t.set_fontsize(ini.plotFontSize)
             except:
                 pass
-            for tick in fig.axes[i].xaxis.get_major_ticks():
-                tick.label.set_fontsize(ini.plotFontSize)
-            for tick in fig.axes[i].yaxis.get_major_ticks():
+            for tick in fig.axes[i].Axis.get_major_ticks():
                 tick.label.set_fontsize(ini.plotFontSize)
     return
 
