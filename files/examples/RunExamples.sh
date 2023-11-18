@@ -9,7 +9,7 @@ test_cirs["noiseFigure"]="noiseFigures.py"
 #This will make sure no plots are shown:
 mkdir allhtml
 cp Template.rst ExampleCirs.rst
-
+export MPLBACKEND=svg #For plotting with Matplotlib on the 'agg' backend
 for key in "${!test_cirs[@]}"; do
     cd $key
     python ${test_cirs[$key]}
