@@ -205,6 +205,7 @@ class MOS(object):
         remove('MOS_OP.out')
         names  = False
         values = False
+        self.params = {}
         parnames = []
         i = 0
         for line in lines:
