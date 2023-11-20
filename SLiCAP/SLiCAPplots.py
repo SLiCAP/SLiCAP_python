@@ -374,6 +374,7 @@ def defaultsPlot():
             fig.axes[i].title.set_fontsize(ini.plotFontSize)
             fig.axes[i].grid(visible=True, which='major', color='0.5',linestyle='-')
             fig.axes[i].grid(visible=True, which='minor', color='0.5',linestyle=':')
+            fig.axes[i].tick_params(axis="both", labelsize=ini.plotFontSize)
             t = fig.axes[i].xaxis.get_offset_text()
             t.set_fontsize(ini.plotFontSize)
             t = fig.axes[i].yaxis.get_offset_text()
@@ -395,10 +396,6 @@ def defaultsPlot():
                     t.set_fontsize(ini.plotFontSize)
             except:
                 pass
-            for tick in fig.axes[i].xaxis.get_major_ticks():
-                tick.label.set_fontsize(ini.plotFontSize)
-            for tick in fig.axes[i].yaxis.get_major_ticks():
-                tick.label.set_fontsize(ini.plotFontSize)
     return
 
 def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVar = 'auto', sweepScale = '', xVar = 'auto', xScale = '', xUnits = '', xLim = [], yLim = [], axisType = 'auto', funcType = 'auto', yVar = 'auto', yScale = '', yUnits = '', noiseSources = None, show = False):

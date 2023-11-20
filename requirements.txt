@@ -3,7 +3,7 @@ numpy>=1.17.4
 sympy>=1.7.1
 scipy>=1.4.1
 ply>=3.11
-matplotlib==3.7.3
+matplotlib>=3.7.3
 sphinx-rtd-theme<1.0.0
 
 #This should be all additional packages required for python, other imports should be included in the default distribution of python
