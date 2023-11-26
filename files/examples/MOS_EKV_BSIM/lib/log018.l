@@ -350,7 +350,7 @@
 *
 .MODEL nch.1            NMOS   (                    LMIN     = '1.2E-06-dxl'
 +LMAX    = 2.1E-05        WMIN     = '1.01E-05-dxw' WMAX     = 0.000101
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -411,7 +411,7 @@
 
 .MODEL nch.2            NMOS   (                    LMIN     = '5E-07-dxl'
 +LMAX    = '1.2E-06-dxl'  WMIN     = '1.01E-05-dxw' WMAX     = 0.000101
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -475,7 +475,7 @@
 
 .MODEL nch.3            NMOS   (                    LMIN     = 1.8E-07
 +LMAX    = '5E-07-dxl'    WMIN     = '1.01E-05-dxw' WMAX     = 0.000101
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -541,7 +541,7 @@
 
 .MODEL nch.4            NMOS   (                    LMIN     = '1.2E-06-dxl'
 +LMAX    = 2.1E-05        WMIN     = '1.3E-06-dxw'  WMAX     = '1.01E-05-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -604,7 +604,7 @@
 
 .MODEL nch.5            NMOS   (                    LMIN     = '5E-07-dxl'
 +LMAX    = '1.2E-06-dxl'  WMIN     = '1.3E-06-dxw'  WMAX     = '1.01E-05-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -669,7 +669,7 @@
 
 .MODEL nch.6            NMOS   (                    LMIN     = 1.8E-07
 +LMAX    = '5E-07-dxl'    WMIN     = '1.3E-06-dxw'  WMAX     = '1.01E-05-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -735,7 +735,7 @@
 
 .MODEL nch.7            NMOS   (                    LMIN     = '1.2E-06-dxl'
 +LMAX    = 2.1E-05        WMIN     = '6E-07-dxw'    WMAX     = '1.3E-06-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -798,7 +798,7 @@
 
 .MODEL nch.8            NMOS   (                    LMIN     = '5E-07-dxl'
 +LMAX    = '1.2E-06-dxl'  WMIN     = '6E-07-dxw'    WMAX     = '1.3E-06-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -861,7 +861,7 @@
 
 .MODEL nch.9            NMOS   (                    LMIN     = 1.8E-07
 +LMAX    = '5E-07-dxl'    WMIN     = '6E-07-dxw'    WMAX     = '1.3E-06-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -928,7 +928,7 @@
 
 .MODEL nch.10           NMOS   (                    LMIN     = '1.2E-06-dxl'
 +LMAX    = 2.1E-05        WMIN     = 2.2E-07        WMAX     = '6E-07-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -991,7 +991,7 @@
 
 .MODEL nch.11           NMOS   (                    LMIN     = '5E-07-dxl'
 +LMAX    = '1.2E-06-dxl'  WMIN     = 2.2E-07        WMAX     = '6E-07-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1055,7 +1055,7 @@
 
 .MODEL nch.12           NMOS   (                    LMIN     = 1.8E-07
 +LMAX    = '5E-07-dxl'    WMIN     = 2.2E-07        WMAX     = '6E-07-dxw'
-+NOIMOD  = 1              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
++NOIMOD  = 3              EF       = 0.825          AF       = 0.8256         KF       = 4.000E-29
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn           XJ       = 1.6E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1120,7 +1120,7 @@
 
 .MODEL pch.1            PMOS   (                    LMIN     = '1.2E-06-dxl'
 +LMAX    = 2.1E-05        WMIN     = '1.01E-05-dxw' WMAX     = 0.000101
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1178,7 +1178,7 @@
 
 .MODEL pch.2            PMOS   (                    LMIN     = '5E-07-dxl'
 +LMAX    = '1.2E-06-dxl'  WMIN     = '1.01E-05-dxw' WMAX     = 0.000101
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1238,7 +1238,7 @@
 
 .MODEL pch.3            PMOS   (                    LMIN     = 1.8E-07
 +LMAX    = '5E-07-dxl'    WMIN     = '1.01E-05-dxw' WMAX     = 0.000101
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1299,7 +1299,7 @@
 
 .MODEL pch.4            PMOS   (                    LMIN     = '1.2E-06-dxl'
 +LMAX    = 2.1E-05        WMIN     = '1.3E-06-dxw'  WMAX     = '1.01E-05-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1360,7 +1360,7 @@
 
 .MODEL pch.5            PMOS   (                    LMIN     = '5E-07-dxl'
 +LMAX    = '1.2E-06-dxl'  WMIN     = '1.3E-06-dxw'  WMAX     = '1.01E-05-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1422,7 +1422,7 @@
 
 .MODEL pch.6            PMOS   (                    LMIN     = 1.8E-07
 +LMAX    = '5E-07-dxl'    WMIN     = '1.3E-06-dxw'  WMAX     = '1.01E-05-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1486,7 +1486,7 @@
 
 .MODEL pch.7            PMOS   (                    LMIN     = '1.2E-06-dxl'
 +LMAX    = 2.1E-05        WMIN     = '6E-07-dxw'    WMAX     = '1.3E-06-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1547,7 +1547,7 @@
 
 .MODEL pch.8            PMOS   (                    LMIN     = '5E-07-dxl'
 +LMAX    = '1.2E-06-dxl'  WMIN     = '6E-07-dxw'    WMAX     = '1.3E-06-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1609,7 +1609,7 @@
 
 .MODEL pch.9            PMOS   (                    LMIN     = 1.8E-07
 +LMAX    = '5E-07-dxl'    WMIN     = '6E-07-dxw'    WMAX     = '1.3E-06-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1674,7 +1674,7 @@
 
 .MODEL pch.10           PMOS   (                    LMIN     = '1.2E-06-dxl'
 +LMAX    = 2.1E-05        WMIN     = 2.2E-07        WMAX     = '6E-07-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1735,7 +1735,7 @@
 
 .MODEL pch.11           PMOS   (                    LMIN     = '5E-07-dxl'
 +LMAX    = '1.2E-06-dxl'  WMIN     = 2.2E-07        WMAX     = '6E-07-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1797,7 +1797,7 @@
 
 .MODEL pch.12           PMOS   (                    LMIN     = 1.8E-07
 +LMAX    = '5E-07-dxl'    WMIN     = 2.2E-07        WMAX     = '6E-07-dxw'
-+NOIMOD  = 1              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
++NOIMOD  = 3              EF       = 1.25           AF       = 1.052          KF      = 6.100E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp           XJ       = 1.7E-07        NCH      = 3.9E+17
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -1866,7 +1866,7 @@
 .LIB MOS_3V
 
 .MODEL nch3.1            NMOS   (                   LMIN     = '1.2E-06-dxl3'
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = 2.1E-05        WMIN     = '1.008E-05-dxw3'  WMAX     = 0.000101
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -1930,7 +1930,7 @@
 
 
 .MODEL nch3.2            NMOS   (                   LMIN     = '5E-07-dxl3'
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = '1.2E-06-dxl3' WMIN     = '1.008E-05-dxw3'  WMAX     = 0.000101
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -1995,7 +1995,7 @@
 
 
 .MODEL nch3.3            NMOS   (                    LMIN     = 3.5E-07
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = '5E-07-dxl3'   WMIN     = '1.008E-05-dxw3' WMAX     = 0.000101
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2060,7 +2060,7 @@
 
 
 .MODEL nch3.4            NMOS   (                   LMIN     = '1.2E-06-dxl3'
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = 2.1E-05        WMIN     = '1.28E-06-dxw3'  WMAX   = '1.008E-05-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2124,7 +2124,7 @@
 
 
 .MODEL nch3.5            NMOS   (                   LMIN     = '5E-07-dxl3'
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = '1.2E-06-dxl3' WMIN     = '1.28E-06-dxw3'  WMAX   = '1.008E-05-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2188,7 +2188,7 @@
 
 
 .MODEL nch3.6            NMOS   (                    LMIN     = 3.5E-07
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = '5E-07-dxl3'   WMIN     = '1.28E-06-dxw3' WMAX    = '1.008E-05-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2253,7 +2253,7 @@
 
 
 .MODEL nch3.7            NMOS   (                   LMIN     = '1.2E-06-dxl3'
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = 2.1E-05        WMIN     = '6E-07-dxw3'   WMAX     = '1.28E-06-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2315,7 +2315,7 @@
 
 
 .MODEL nch3.8            NMOS   (                   LMIN     = '5E-07-dxl3'
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = '1.2E-06-dxl3' WMIN     = '6E-07-dxw3'   WMAX     = '1.28E-06-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2379,7 +2379,7 @@
 
 
 .MODEL nch3.9            NMOS   (                    LMIN     = 3.5E-07
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = '5E-07-dxl3'   WMIN     = '6E-07-dxw3'   WMAX     = '1.28E-06-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2445,7 +2445,7 @@
 
 
 .MODEL nch3.10           NMOS   (                   LMIN     = '1.2E-06-dxl3'
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = 2.1E-05        WMIN     = 2.2E-07        WMAX     = '6E-07-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2506,7 +2506,7 @@
 
 
 .MODEL nch3.11           NMOS   (                   LMIN     = '5E-07-dxl3'
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = '1.2E-06-dxl3' WMIN     = 2.2E-07        WMAX     = '6E-07-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2569,7 +2569,7 @@
 
 
 .MODEL nch3.12           NMOS   (                   LMIN     = 3.5E-07
-+NOIMOD  = 1              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
++NOIMOD  = 3              EF       = 0.907          AF       = 0.9065         KF       = 8.704E-29
 +LMAX    = '5E-07-dxl3'   WMIN     = 2.2E-07        WMAX     = '6E-07-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxn3          XJ       = 1.7E-07        NCH      = 5.26E+17
@@ -2635,7 +2635,7 @@
 
 
 .MODEL pch3.1            PMOS   (                   LMIN     = '1.2E-06-dxl3'
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = 2.1E-05        WMIN     = '1.004E-05-dxw3'  WMAX     = 0.000101
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -2693,7 +2693,7 @@
 
 
 .MODEL pch3.2            PMOS   (                   LMIN     = '5E-07-dxl3'
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = '1.2E-06-dxl3' WMIN     = '1.004E-05-dxw3'  WMAX     = 0.000101
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -2756,7 +2756,7 @@
 
 
 .MODEL pch3.3            PMOS   (                    LMIN     = 3E-07
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = '5E-07-dxl3'   WMIN     = '1.004E-05-dxw3'   WMAX     = 0.000101
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -2823,7 +2823,7 @@
 
 
 .MODEL pch3.4            PMOS   (                   LMIN     = '1.2E-06-dxl3'
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = 2.1E-05        WMIN     = '1.25E-06-dxw3'  WMAX   = '1.004E-05-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -2885,7 +2885,7 @@
 
 
 .MODEL pch3.5            PMOS   (                   LMIN     = '5E-07-dxl3'
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = '1.2E-06-dxl3'  WMIN    = '1.25E-06-dxw3' WMAX     = '1.004E-05-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -2948,7 +2948,7 @@
 
 
 .MODEL pch3.6            PMOS   (                   LMIN     = 3E-07
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = '5E-07-dxl3'   WMIN     = '1.25E-06-dxw3'  WMAX   = '1.004E-05-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -3015,7 +3015,7 @@
 
 
 .MODEL pch3.7            PMOS   (                   LMIN     = '1.2E-06-dxl3'
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = 2.1E-05        WMIN     = '5.6E-07-dxw3' WMAX     = '1.25E-06-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -3076,7 +3076,7 @@
 
 
 .MODEL pch3.8            PMOS   (                   LMIN     = '5E-07-dxl3'
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = '1.2E-06-dxl3' WMIN     = '5.6E-07-dxw3'  WMAX     = '1.25E-06-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -3139,7 +3139,7 @@
 
 
 .MODEL pch3.9            PMOS   (                    LMIN     = 3E-07
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = '5E-07-dxl3'   WMIN     = '5.6E-07-dxw3'  WMAX     = '1.25E-06-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -3202,7 +3202,7 @@
 
 
 .MODEL pch3.10           PMOS   (                   LMIN     = '1.2E-06-dxl3'
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = 2.1E-05        WMIN     = 2.2E-07        WMAX     = '5.6E-07-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -3264,7 +3264,7 @@
 
 
 .MODEL pch3.11           PMOS   (                   LMIN     = '5E-07-dxl3'
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = '1.2E-06-dxl3'  WMIN     = 2.2E-07       WMAX     = '5.6E-07-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -3328,7 +3328,7 @@
 
 
 .MODEL pch3.12           PMOS   (                    LMIN     = 3E-07
-+NOIMOD  = 1              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
++NOIMOD  = 3              EF       = 1.152          AF       = 1.052          KF       = 8.262E-28
 +LMAX    = '5E-07-dxl3'   WMIN     = 2.2E-07        WMAX     = '5.6E-07-dxw3'
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxp3          XJ       = 1.7E-07        NCH      = 4.95E+17
@@ -3400,7 +3400,7 @@
 .LIB MOSNA
 
 .MODEL nanch.1          NMOS   (                    LMIN     = '8.2E-07-dxlna'
-+NOIMOD  = 1              EF       = 0.95           AF       = 0.95           KF       = 2.92E-28
++NOIMOD  = 3              EF       = 0.95           AF       = 0.95           KF       = 2.92E-28
 +LMAX    = 2.1E-05        WMIN     = 2.2E-07        WMAX     = 0.000101
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxna          XJ       = 2E-07          NCH      = 1.052E+15
@@ -3464,7 +3464,7 @@
 
 
 .MODEL nanch.2          NMOS   (                    LMIN     = 5E-07
-+NOIMOD  = 1              EF       = 0.95           AF       = 0.95           KF       = 2.92E-28
++NOIMOD  = 3              EF       = 0.95           AF       = 0.95           KF       = 2.92E-28
 +LMAX    = '8.2E-07-dxlna'  WMIN     = 2.2E-07        WMAX     = 0.000101
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxna          XJ       = 2E-07          NCH      = 1.052E+15
@@ -3538,7 +3538,7 @@
 
 .MODEL nanch3.1         NMOS   (                    LMIN     = '1.52E-06-dxlna3'
 +LMAX    = 2.1E-05        WMIN     = 2.2E-07        WMAX     = 1.01E-04
-+NOIMOD  = 1              EF       = 1.01           AF       = 1.01           KF       = 3.24E-28
++NOIMOD  = 3              EF       = 1.01           AF       = 1.01           KF       = 3.24E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxna3         XJ       = 1.7E-07        NCH      = 5.8E+15
 +LLN     = -1             LWN      = 1              WLN      = 1
@@ -3600,7 +3600,7 @@
 
 .MODEL nanch3.2          NMOS   (                    LMIN     = 1.2E-06
 +LMAX    = '1.52E-06-dxlna3' WMIN     = 2.2E-07     WMAX     = 1.01E-04
-+NOIMOD  = 1              EF       = 1.01           AF       = 1.01           KF       = 3.24E-28
++NOIMOD  = 3              EF       = 1.01           AF       = 1.01           KF       = 3.24E-28
 +LEVEL   = 49             TNOM     = 25             VERSION  = 3.2
 +TOX     = toxna3         XJ       = 1.7E-07        NCH      = 5.8E+15
 +LLN     = -1             LWN      = 1              WLN      = 1

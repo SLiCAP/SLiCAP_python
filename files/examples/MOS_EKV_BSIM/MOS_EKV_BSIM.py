@@ -15,29 +15,30 @@ prj = initProject("MOS_EKV_BSIM")
 # Example NMOS operating point info
 
 # Define library and device
-refDes   = 'M1'                # Reference designator of MOS device
-DEV      = 'nch'               # MOS device name
-LIB      = 'lib/log018.l TT'   # CMOS BSIM library
-W        = .22e-6              # Channel width
-L        = .18e-6              # Channel length
-M        = 1                   # Number of devices in parallel
+refDes   = 'M1'                     # Reference designator of MOS device
+DEV      = 'nch'                    # MOS device name
+LIB      = '.lib lib/log018.l TT'   # use this CMOS BSIM library with EKV CMOS-1.lib
+#LIB      = '.inc lib/CMOS18TT.lib' # use this CMOS BSIM library with EKV CMOS-2.lib
+W        = 0.22e-6                  # Channel width
+L        = 0.18e-6                  # Channel length
+M        = 1                        # Number of devices in parallel
 
 # Define test frequency for determination of small-signal operating point parameters
 f        = 10E6
 
 # Define frequency range for noise analysis
 fmin     = 10                  # Start frequency
-fmax     = 100e9               # Stop frequency
+fmax     = 10e9                # Stop frequency
 numDec   = 20                  # Number of points per decade
 
 # Define the N_Channel operating point
 VD       = 1.2                 # Drain voltage w.r.t. GND
 VG       = 0.5                 # Gate voltage w.r.t. GND
 VP       = 1.8                 # Supply voltage w.r.t. GND
-ID       = 10e-6               # Drain current
+ID       = 100E-6              # Drain current
 
 # Define the biasing step variable 'VGS' or "IDS". IDS > 1E-9 (convergence)
-biasPar  = "IDS"                 # Choose biasing with "VGS" or with "IDS"
+biasPar  = "IDS"               # Choose biasing with "VGS" or with "IDS"
 
 # Define the number of steps (only linear step method implemented)
 Npts     = 100                 # Number of points
@@ -59,15 +60,14 @@ if DEV == "pch":
 else:
     VS = 0
     VB = 0
-
 # print operating point information
 printOPinfo(device, biasPar, ID, VG, VD, VS, VB, f)
 
-# cetermine the step values
+# determine the step values
 stepVals = createStep(device, biasPar, VS, ID, Npts, Vdiff, Idiff)
 
 # plot the operating point information
-plotOpinfo(device, biasPar, ID, VG, VD, VS, VB, f, stepVals, EKVlib = 'CMOS18.lib')
+plotOpinfo(device, biasPar, ID, VG, VD, VS, VB, f, stepVals, EKVlib = 'CMOS18-1.lib')
 
 # plot the voltage noise
-plotSvinoise(device, ID, VD, VS, VB, fmin, fmax, numDec, EKVlib = 'CMOS18.lib')
+plotSvinoise(device, ID, VD, VS, VB, fmin, fmax, numDec, EKVlib = 'CMOS18-1.lib')

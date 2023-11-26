@@ -72,6 +72,7 @@ class settings(object):
        - ngspiceCMD        : NGspice command
                                MS windows: '~\\Spice64\\bin\\ngspice.exe'
                                Linux     : 'ngspice'
+                               Mac       : 'ngspice'
 
     #. active HTML pages and active HTMLfile prefix
 
@@ -305,7 +306,7 @@ class settings(object):
            with multiple step variables.
          """
 
-        self.maxRecSubst        = 12
+        self.maxRecSubst        = 15
         """
         Maximum number (*int*) of recursive substitutions in equations.
         Defaults to 12.

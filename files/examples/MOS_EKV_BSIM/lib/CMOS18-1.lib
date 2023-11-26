@@ -21,7 +21,7 @@
 + AF_N18      = 0.82  ; flicker noise exponent [-]
 + C_OX_N18    = {epsilon_0 * epsilon_SiO2 / TOX_N18}; oxide capacitance per unit of area [F/m^2]
 + I_0_N18     = {2*N_s_N18*u_0_N18*C_OX_N18*U_T^2}  ; technology current [A]
-+ V_KF_N18    = 0.25  ; flicker noise voltage dependency factor [V]
++ V_KF_N18    = 25   ; flicker noise voltage dependency factor [V]
 
 .param
 + TOX_P18     = 4n    ; oxide thickness [m]
@@ -290,48 +290,51 @@ M1 drain gate source bulk CMOS18PD
 .subckt NM18_noise ext comm int ID={ID} IG={IG} W={W} L={L}
 * intrinsic noise sources, gate resistance should be added externally
 * CMOS18 N device: copy and modify this model for other devices
-I1 0 1 I value=0 noise={4*k*T/R_N*(1+f_ell/f^AF_N18)} ; channel noise current
-H1 ext int 1 10 {1/g_m/(1-s*c_dg/g_m)}                        ; equivalent-input voltage noise
-F1 ext comm 10 0 {s/2/pi/f_T/(1-s*c_dg/g_m)}                  ; gate-induced noise
-I2 ext comm I value=0 noise={2*q*IG}           ; gate shot noise
+I1 0 1 I value=0 noise={4*k*T*N_s_N18*Gamma*g_m}  ; channel noise current
+H1 ext 2 1 10 {1/g_m/(1-s*c_dg/g_m)}              ; equivalent-input voltage noise
+V1 2   int V value=0 noise={k_f/f^AF_N18}         ; input referred flicker noise
+F1 ext comm 10 0 {s/2/pi/f_T/(1-s*c_dg/g_m)}      ; gate-induced noise
+I2 ext comm I value=0 noise={2*q*IG}              ; gate shot noise
 .param
 * device equations MKV model saturated region
-+ R_N     = {(1+IC)/(1/2 + 2/3*IC)/N_s_N18/g_m}
++ Gamma   = {(1/2 + 2/3*IC)/(1+IC)}
 + IC_CRIT = {1/((4*N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
 + g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
 + c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W}
 + c_dg    = {CGSO_N18*W}
-+ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
++ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18 + CGBO_N18*2*L}
 + c_db    = {CJB0_N18*W*LDS_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
-+ IC_i    = {ID*L/W/I_0_N18} ; Correction for initial estimate of inversion coefficient
++ IC_i    = {ID*L/W/I_0_N18}            ; Initial estimate of inversion coefficient
 + IC      = {IC_i*sqrt(1+IC_i/IC_CRIT)} ; Inversion coefficient corrected for short-channel effects
-+ f_ell   = {KF_N18*g_m^2*R_N*(1+2*N_s_N18*U_T*sqrt(IC)/V_KF_N18)/(4*k*T*W*L*C_OX_N18^2)}
++ k_f     = {KF_N18*(1+2*N_s_N18*U_T*sqrt(IC)/V_KF_N18)^2/(W*L*C_OX_N18^2)}
++ f_ell   = {(f_T*2*pi*KF_N18*((2-x)/3+(1+x)/3*(N_s_N18-1)/N_s_N18 )/(N_s_N18*Gamma*4*k*T*C_OX_N18))**(1/AF_N18)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
 .subckt PM18_noise ext comm int ID={ID} IG={IG} W={W} L={L}
 * intrinsic noise sources, gate resistance should be added externally
-* CMOS18 P device: copy and modify this model for other devices
-* IG and ID should be negative
-I1 0 1 I value=0 noise={4*k*T/R_N*(1+f_ell/f^AF_P18)} ; channel noise current
-H1 ext int 1 10 {1/g_m/(1-s*c_dg/g_m)}                        ; equivalent-input voltage noise
-F1 ext comm 10 0 {s/2/pi/f_T/(1-s*c_dg/g_m)}                  ; gate-induced input current noise
-I2 ext comm I value=0 noise={-2*q*IG}          ; gate shot noise
+* CMOS18 N device: copy and modify this model for other devices
+I1 0 1 I value=0 noise={4*k*T*N_s_N18*Gamma*g_m}  ; channel noise current
+H1 ext 2 1 10 {1/g_m/(1-s*c_dg/g_m)}              ; equivalent-input voltage noise
+V1 2   int V value=0 noise={k_f/f^AF_N18}         ; input referred flicker noise
+F1 ext comm 10 0 {s/2/pi/f_T/(1-s*c_dg/g_m)}      ; gate-induced noise
+I2 ext comm I value=0 noise={2*q*IG}              ; gate shot noise
 .param
 * device equations MKV model saturated region
-+ R_N     = {(1+IC)/(1/2 + 2/3*IC)/N_s_P18/g_m}
-+ IC_CRIT = {1/((4*N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
-+ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W}
-+ c_dg    = {CGSO_P18*W}
-+ c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
-+ c_db    = {CJB0_P18*W*LDS_P18}
++ Gamma   = {(1/2 + 2/3*IC)/(1+IC)}
++ IC_CRIT = {1/((4*N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
++ g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
++ c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W}
++ c_dg    = {CGSO_N18*W}
++ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18 + CGBO_N18*2*L}
++ c_db    = {CJB0_N18*W*LDS_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
-+ IC      = {-ID*L/W/I_0_P18} ; Inversion coefficient
-+ f_ell   = {KF_P18*g_m^2*R_N*(1+2*N_s_P18*U_T*sqrt(IC)/V_KF_P18)/(4*k*T*W*L*C_OX_P18^2)}
++ IC      = {ID*L/W/I_0_N18}            ; Initial estimate of inversion coefficient
++ k_f     = {KF_N18*(1+2*N_s_N18*U_T*sqrt(IC)/V_KF_N18)^2/(W*L*C_OX_N18^2)}
++ f_ell   = {(f_T*2*pi*KF_N18*((2-x)/3+(1+x)/3*(N_s_N18-1)/N_s_N18 )/(N_s_N18*Gamma*4*k*T*C_OX_N18))**(1/AF_N18)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 

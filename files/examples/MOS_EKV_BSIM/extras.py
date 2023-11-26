@@ -155,3 +155,8 @@ def plotSvinoise(device, ID, VD, VS, VB, fmin, fmax, numDec, EKVlib='SLiCAP.lib'
     figNoise.show = True
     traces2fig(inoiseTraceDict, figNoise)
     figNoise.plot()
+    FT = i1.getParValue("f_T_X1")
+    FL = i1.getParValue("f_ell_X1")
+    print("f_T=", sp.N(FT,3))
+    print("f_L=", sp.N(FL,3))
+    print("f_T/f_L=", sp.N(FT/FL,3))
