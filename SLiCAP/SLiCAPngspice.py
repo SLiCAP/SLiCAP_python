@@ -441,7 +441,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
     f.write(netlist)
     f.close()
     analysisType = simCmd.split()[0]
-    system('ngspice -b simFile.sp -o simFile.log')
+    system(ini.ngspiceCMD + ' -b simFile.sp -o simFile.log')
     f = open(cirFile + '.csv', 'r')
     txt = f.read()
     f.close()
