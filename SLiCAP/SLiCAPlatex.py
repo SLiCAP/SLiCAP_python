@@ -5,9 +5,7 @@ Created on Sat Jun 10 17:24:17 2023
 
 @author: anton
 """
-from SLiCAP.SLiCAPmath import fullSubs, roundN
-from SLiCAP.SLiCAPini import ini
-import sympy as sp
+from SLiCAP.SLiCAPdesignData import *
 
 # Public functions for generating snippets that can be stored as LaTeX files
 # to be included by other LaTeX files.
@@ -393,7 +391,7 @@ def specs2TEX(specs, specType, label='', caption=''):
         TEX =  "\\textbf{Found no specifications of type: " + specType + ".}\n\n"
     return TEX
 
-def eqn2TEX(LHS, RHS, units='', label=''):
+def eqn2TEX(LHS, RHS, units='', label='', multiline=0):
     """
     Returns a LaTeX snippet of a displayed equation with dimension and reference
     label.
@@ -410,6 +408,9 @@ def eqn2TEX(LHS, RHS, units='', label=''):
     :param label: Reference label
     :type label: str
 
+    :param multiline: Number of sub-expressions per line, defaults to 0 (single-line equation)
+    :type label: int
+
     :return: LaTeX snippet to be included in a LaTeX document
     :rtype: str
     """
@@ -421,14 +422,25 @@ def eqn2TEX(LHS, RHS, units='', label=''):
         LHS = sp.sympify(LHS)
     if type(RHS) == str:
         RHS = sp.sympify(RHS)
-    TEX = '\\begin{equation}'
-    TEX += '\n' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
-    if units != '':
-        TEX += '\\,\\left[\\mathrm{' + units + '}\\right]'
-    TEX += '\n'
-    if label != '':
-        TEX += '\\label{'+ label + '}\n'
-    TEX += '\\end{equation}\n\n'
+    if multiline:
+        TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), terms_per_line=multiline)
+        TEX = TEX.replace('\\\\\n', '\\nonumber \\\\\n')
+        TEX = TEX.replace('{align*}', '{align}')
+        if units != '':
+            units = '\\,\\left[\\mathrm{' + units + '}\\right]'
+            TEX = TEX.replace('\\end{align}', '%s\n\\end{align}'%(units))
+        if label != '':
+            TEX = TEX.replace('\\end{align}', '\\label{%s}\n\\end{align}'%(label))
+        TEX += '\n'
+    else:
+        TEX = '\\begin{equation}'
+        TEX += '\n' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
+        if units != '':
+            TEX += '\\,\\left[\\mathrm{' + units + '}\\right]'
+        TEX += '\n'
+        if label != '':
+            TEX += '\\label{'+ label + '}\n'
+        TEX += '\\end{equation}\n\n'
     return TEX
 
 def matrices2TEX(Iv, M, Dv, label=''):
