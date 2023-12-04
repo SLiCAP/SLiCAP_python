@@ -729,7 +729,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                     keys = list(result.onoiseTerms.keys())
                     if noiseSources == None:
                         if funcType == 'onoise':
-                            yData = sp.simplify(result.onoise)
+                            yData = sp.simplify(sp.N(result.onoise))
                         elif funcType == 'inoise':
                             yData = sp.N(result.inoise)
                         y = makeNumData(yData, ini.frequency, x)
@@ -739,9 +739,9 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                     elif noiseSources == 'all':
                         for srcName in keys:
                             if funcType == 'onoise':
-                                yData = sp.simplify(result.onoiseTerms[srcName])
+                                yData = sp.simplify(sp.N(result.onoiseTerms[srcName]))
                             elif funcType == 'inoise':
-                                yData = sp.simplify(result.inoiseTerms[srcName])
+                                yData = sp.simplify(sp.N(result.inoiseTerms[srcName]))
                             y = makeNumData(yData, ini.frequency, x)
                             noiseTrace = trace([x, y])
                             noiseTrace.color = ini.defaultColors[colNum % numColors]
@@ -750,9 +750,9 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                             ax.traces.append(noiseTrace)
                     elif noiseSources in keys:
                         if funcType == 'onoise':
-                            yData = sp.simplify(result.onoiseTerms[noiseSources])
+                            yData = sp.simplify(sp.N(result.onoiseTerms[noiseSources]))
                         elif funcType == 'inoise':
-                            yData = sp.simplify(result.inoiseTerms[noiseSources])
+                            yData = sp.simplify(sp.N(result.inoiseTerms[noiseSources]))
                         y = makeNumData(yData, ini.frequency, x)
                         noiseTrace = trace([x, y])
                         noiseTrace.color = ini.defaultColors[colNum % numColors]
@@ -763,9 +763,9 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                         for srcName in noiseSources:
                             if srcName in keys:
                                 if funcType == 'onoise':
-                                    yData = sp.simplify(result.onoiseTerms[srcName])
+                                    yData = sp.simplify(sp.N(result.onoiseTerms[srcName]))
                                 elif funcType == 'inoise':
-                                    yData = sp.simplify(result.inoiseTerms[srcName])
+                                    yData = sp.simplify(sp.N(result.inoiseTerms[srcName]))
                                 y = makeNumData(yData, ini.frequency, x)
                                 noiseTrace = trace([x, y])
                                 noiseTrace.color = ini.defaultColors[colNum % numColors]
