@@ -1,5 +1,5 @@
 EKV model
-.lib CMOS18.lib
+.lib CMOS18-1.lib
 X1 D G S 0 CMOS18N W={W} L={L} ID={I_D} 
 .param I_D=0 W=2.2e-07 L=1.8e-07
 .end

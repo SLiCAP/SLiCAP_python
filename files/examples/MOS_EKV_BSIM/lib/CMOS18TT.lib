@@ -1,0 +1,498 @@
+* ===============================================================
+* Model cards for circuit simulation in a 0.18um CMOS technology 
+* for TEACHING; based on data available on the internet.
+* ===============================================================
+* Peter Kinget 
+* September 13 2004
+*
+* NMOS Modified by Ali Niknejad (1/2006) (increased SCBE)
+* Added Kf to NMOS and PMOS (2/2006)
+*
+* 
+* IMPORTANT: If you decide to copy these files, do not remove this
+* header information !!
+*
+* Remarks on how these models were generated: 
+* 
+* 1/ the intended use of this is for EDUCATIONAL PURPOSES. The selection
+* methods used below are fairly arbritrary so there are no guarantees
+* whatsoever that these models are useful for anything else. USE AT YOUR
+* OWN RISK.
+* 
+* 2/ All the data in this file is retrieved from publicly accessible
+* websites. Downloaded measurement and model information from the MOSIS
+* website at http://www.mosis.org/Technical/Testdata/tsmc-018-prm.html
+* 
+* 3/ Worked through the data using grep/sort
+* e.g.,  grep 'uA/V' * | grep thk | sort -n -k 4
+* 
+* 4/ came up with some conclusions and selected a nominal model card for
+* nMOS and pMOS
+* 
+* 5/ did some estimations on the variations and picked a value for the
+* variation to be used for worst case based on the guidelines available
+* in Y. Tsividis, "Mixed Analog-Digital VLSI Devices and Technology (An
+* Introduction)", section 5.7.
+* 
+* 
+* 6/ process variations are modeled by varying:
+* - CJ and CJSW		changes junction caps
+* - TOX			changes cox
+* - U0			changes on currents
+* - VT0			changes on currents
+* 
+* 
+* ======
+* DATES
+* ======
+* 
+* t16x_mm_non_epi_thk-params.txt:* DATE: Sep  7/01
+* t18h_mm_non_epi_thk-params.txt:* DATE: Oct 15/01
+* t1ax_mm_non_epi_thk-params.txt:* DATE: Dec 10/01
+* t1ch_mm_non_epi_thk-params.txt:* DATE: Feb 15/02
+* t22t_mm_non_epi_thk-params.txt:* DATE: Apr  3/02
+* t24i_mm_non_epi_thk-params.txt:* DATE: Jun 11/02
+* t26x_mm_non_epi_thk-params.txt:* DATE: Aug  9/02
+* t28m_mm_non_epi_thk-params.txt:* DATE: Oct  7/02
+* t29b_mm_non_epi_thk-params.txt:* DATE: Dec  9/02
+* t2cu_mm_non_epi_thk-params.txt:* DATE: Mar  4/03
+* t32l_mm_non_epi_thk-params.txt:* DATE: Apr  3/03
+* t34b_mm_non_epi_thk-params.txt:* DATE: Jun 13/03
+* t36q_mm_non_epi_thk-params.txt:* DATE: Aug 18/03
+* t38n_mm_non_epi_thk-params.txt:* DATE: Oct 23/03
+* t3az_mm_non_epi_thk-params.txt:* DATE: Dec 19/03
+* t3cv_mm_non_epi_thk-params.txt:* DATE: Feb 19/04
+* t42p_mm_non_epi_thk-params.txt:* DATE: Apr 29/04
+* t44e_mm_non_epi_thk-params.txt:* DATE: Jun 16/04
+* 
+* ===============================
+* CHARACTERIZATION MEASUREMENTS
+* ===============================
+* 
+* nMOS current factor 163.7 -> 176.5  avg 170.1 +/- 6.4 (3%)
+* 
+* t1ax_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         163.7     -36.0   uA/V^2
+* t16x_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         165.8     -36.3   uA/V^2
+* t18h_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         167.7     -35.7   uA/V^2
+* t28m_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         168.2     -34.9   uA/V^2
+* t3az_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         168.3     -36.2   uA/V^2
+* t44e_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         168.5     -35.8   uA/V^2
+* t29b_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         169.0     -35.2   uA/V^2
+* t3cv_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         169.7     -36.4   uA/V^2
+* t26x_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         170.7     -34.6   uA/V^2
+* t42p_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         171.0     -36.2   uA/V^2
+* t36q_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         171.5     -36.0   uA/V^2
+* t38n_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         171.9     -35.8   uA/V^2
+* t34b_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         172.1     -35.9   uA/V^2
+* t24i_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         173.7     -35.3   uA/V^2
+* t32l_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         174.2     -36.4   uA/V^2
+* t1ch_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         175.1     -35.2   uA/V^2
+* t2cu_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         175.1     -36.4   uA/V^2
+* t22t_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         176.5     -36.0   uA/V^2
+* 
+* pMOS current factor -36.4 -> -34.6  avg -35.5 +/- 0.9 (2.5%)
+* 
+* t2cu_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         175.1     -36.4   uA/V^2
+* t32l_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         174.2     -36.4   uA/V^2
+* t3cv_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         169.7     -36.4   uA/V^2
+* t16x_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         165.8     -36.3   uA/V^2
+* t3az_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         168.3     -36.2   uA/V^2
+* t42p_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         171.0     -36.2   uA/V^2
+* t1ax_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         163.7     -36.0   uA/V^2
+* t22t_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         176.5     -36.0   uA/V^2
+* t36q_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         171.5     -36.0   uA/V^2
+* t34b_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         172.1     -35.9   uA/V^2
+* t38n_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         171.9     -35.8   uA/V^2
+* t44e_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         168.5     -35.8   uA/V^2
+* t18h_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         167.7     -35.7   uA/V^2
+* t24i_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         173.7     -35.3   uA/V^2
+* t1ch_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         175.1     -35.2   uA/V^2
+* t29b_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         169.0     -35.2   uA/V^2
+* t28m_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         168.2     -34.9   uA/V^2
+* t26x_mm_non_epi_thk-params.txt: K' (Uo*Cox/2)                         170.7     -34.6   uA/V^2
+* 
+* nMOS threshold voltage LARGE device 50/50 0.42 -> 0.43
+* 
+* t1ch_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.42  volts
+* t22t_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.42  volts
+* t24i_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.43  volts
+* t2cu_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.41  volts
+* t32l_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.41  volts
+* t34b_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.41  volts
+* t3cv_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.41  volts
+* t16x_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.43  volts
+* t18h_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.43  volts
+* t1ax_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.43  volts
+* t26x_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.42  volts
+* t28m_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.42  volts
+* t29b_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.43  volts
+* t36q_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.41  volts
+* t38n_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.42  volts
+* t3az_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.41  volts
+* t42p_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.41  volts
+* t44e_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.42  volts
+* 
+* pMOS threshold voltage LARGE device 50/50 -0.41 -> -0.43
+* 
+* t16x_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.43  volts
+* t18h_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.43  volts
+* t1ax_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.43  volts
+* t24i_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.43  volts
+* t29b_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.43  volts
+* t1ch_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.42  volts
+* t22t_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.42  volts
+* t26x_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.42  volts
+* t28m_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.42  volts
+* t38n_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.42  volts
+* t44e_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.42  volts
+* t2cu_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.41  volts
+* t32l_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.41  volts
+* t34b_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.41  volts
+* t36q_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.41  volts
+* t3az_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.41  volts
+* t3cv_mm_non_epi_thk-params.txt-  Vth                                    0.42     -0.41  volts
+* t42p_mm_non_epi_thk-params.txt-  Vth                                    0.43     -0.41  volts
+* 
+* nMOS threshold voltage MINIMUM device 0.27/0.18
+* 
+* t22t_mm_non_epi_thk-params.txt-  Vth                                    0.50     -0.52  volts
+* t32l_mm_non_epi_thk-params.txt-  Vth                                    0.50     -0.51  volts
+* t24i_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.54  volts
+* t26x_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.53  volts
+* t28m_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.52  volts
+* t29b_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.52  volts
+* t2cu_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.51  volts
+* t34b_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.52  volts
+* t38n_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.50  volts
+* t3az_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.53  volts
+* t3cv_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.51  volts
+* t42p_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.54  volts
+* t44e_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.53  volts
+* t16x_mm_non_epi_thk-params.txt-  Vth                                    0.52     -0.56  volts
+* t1ax_mm_non_epi_thk-params.txt-  Vth                                    0.52     -0.54  volts
+* t1ch_mm_non_epi_thk-params.txt-  Vth                                    0.52     -0.53  volts
+* t18h_mm_non_epi_thk-params.txt-  Vth                                    0.53     -0.54  volts
+* t36q_mm_non_epi_thk-params.txt-  Vth                                    0.53     -0.52  volts
+* 
+* pMOS threshold voltage MINIMUM device 0.27/0.18
+* 
+* t16x_mm_non_epi_thk-params.txt-  Vth                                    0.52     -0.56  volts
+* t18h_mm_non_epi_thk-params.txt-  Vth                                    0.53     -0.54  volts
+* t1ax_mm_non_epi_thk-params.txt-  Vth                                    0.52     -0.54  volts
+* t24i_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.54  volts
+* t42p_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.54  volts
+* t1ch_mm_non_epi_thk-params.txt-  Vth                                    0.52     -0.53  volts
+* t26x_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.53  volts
+* t3az_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.53  volts
+* t44e_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.53  volts
+* t22t_mm_non_epi_thk-params.txt-  Vth                                    0.50     -0.52  volts
+* t28m_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.52  volts
+* t29b_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.52  volts
+* t34b_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.52  volts
+* t36q_mm_non_epi_thk-params.txt-  Vth                                    0.53     -0.52  volts
+* t2cu_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.51  volts
+* t32l_mm_non_epi_thk-params.txt-  Vth                                    0.50     -0.51  volts
+* t3cv_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.51  volts
+* t38n_mm_non_epi_thk-params.txt-  Vth                                    0.51     -0.50  volts
+* 
+* Capacitance substrate to n+ (first col) 
+* 
+* t38n_mm_non_epi_thk-params.txt: Area (substrate)      949 1119  102  39 19 13   8   8   3          70  aF/um^2
+* t3cv_mm_non_epi_thk-params.txt: Area (substrate)      953 1151  102  39 19 13  8  8  3        125      125 aF/um^2
+* t42p_mm_non_epi_thk-params.txt: Area (substrate)      955 1144  103  40 19 13  8              124       123 aF/um^2
+* t1ch_mm_non_epi_thk-params.txt: Area (substrate)      956    1180     101  37 18 13  8  8  3        69   aF/um^2
+* t36q_mm_non_epi_thk-params.txt: Area (substrate)      957 1181  111  38 18  13   8   8   3         71  aF/um^2
+* t2cu_mm_non_epi_thk-params.txt: Area (substrate)      960    1185     105  39 18 13  8  -  3       70   aF/um^2
+* t44e_mm_non_epi_thk-params.txt: Area (substrate)      962 1166  107  40 19 13  8  8  3        132      132 aF/um^2
+* t3az_mm_non_epi_thk-params.txt: Area (substrate)      969 1146  103  38 18 13   8   -   3          75  aF/um^2
+* t32l_mm_non_epi_thk-params.txt: Area (substrate)      970    1160     107  38 19 13  9  8  3       73   aF/um^2
+* t26x_mm_non_epi_thk-params.txt: Area (substrate)      979    1167      95  36 18 13  8  8  3        71   aF/um^2
+* t34b_mm_non_epi_thk-params.txt: Area (substrate)      979 1166  105  39 18 13  8  8  3        127      125 aF/um^2
+* t28m_mm_non_epi_thk-params.txt: Area (substrate)      984    1175     104  38 18 13  8  8  3        73   aF/um^2
+* t22t_mm_non_epi_thk-params.txt: Area (substrate)      993    1173     100  37 17 12  8  7  3        69   aF/um^2
+* t29b_mm_non_epi_thk-params.txt: Area (substrate)      993    1163     102  38 18 13  8  8  3        68   aF/um^2
+* t16x_mm_non_epi_thk-params.txt: Area (substrate)      994    1174      98  37 18 12  8  8  3       67   aF/um^2
+* t18h_mm_non_epi_thk-params.txt: Area (substrate)      997    1172      97  37 18 12  8  8  3        70   aF/um^2
+* t1ax_mm_non_epi_thk-params.txt: Area (substrate)      998    1113      94  37 18 13  8  8  3        73   aF/um^2
+* t24i_mm_non_epi_thk-params.txt: Area (substrate)      1011    1168     103  38 18 13  8  8  3        68   aF/um^2
+* 
+* Capacitance substrate to p+ (second col) 
+* 
+* t1ax_mm_non_epi_thk-params.txt: Area (substrate)      998    1113      94  37 18 13  8  8  3        73   aF/um^2
+* t38n_mm_non_epi_thk-params.txt: Area (substrate)      949 1119  102  39 19 13   8   8   3          70  aF/um^2
+* t42p_mm_non_epi_thk-params.txt: Area (substrate)      955 1144  103  40 19 13  8              124       123 aF/um^2
+* t3az_mm_non_epi_thk-params.txt: Area (substrate)      969 1146  103  38 18 13   8   -   3          75  aF/um^2
+* t3cv_mm_non_epi_thk-params.txt: Area (substrate)      953 1151  102  39 19 13  8  8  3        125      125 aF/um^2
+* t32l_mm_non_epi_thk-params.txt: Area (substrate)      970    1160     107  38 19 13  9  8  3       73   aF/um^2
+* t29b_mm_non_epi_thk-params.txt: Area (substrate)      993    1163     102  38 18 13  8  8  3        68   aF/um^2
+* t34b_mm_non_epi_thk-params.txt: Area (substrate)      979 1166  105  39 18 13  8  8  3        127      125 aF/um^2
+* t44e_mm_non_epi_thk-params.txt: Area (substrate)      962 1166  107  40 19 13  8  8  3        132      132 aF/um^2
+* t26x_mm_non_epi_thk-params.txt: Area (substrate)      979    1167      95  36 18 13  8  8  3        71   aF/um^2
+* t24i_mm_non_epi_thk-params.txt: Area (substrate)      1011    1168     103  38 18 13  8  8  3        68   aF/um^2
+* t18h_mm_non_epi_thk-params.txt: Area (substrate)      997    1172      97  37 18 12  8  8  3        70   aF/um^2
+* t22t_mm_non_epi_thk-params.txt: Area (substrate)      993    1173     100  37 17 12  8  7  3        69   aF/um^2
+* t16x_mm_non_epi_thk-params.txt: Area (substrate)      994    1174      98  37 18 12  8  8  3       67   aF/um^2
+* t28m_mm_non_epi_thk-params.txt: Area (substrate)      984    1175     104  38 18 13  8  8  3        73   aF/um^2
+* t1ch_mm_non_epi_thk-params.txt: Area (substrate)      956    1180     101  37 18 13  8  8  3        69   aF/um^2
+* t36q_mm_non_epi_thk-params.txt: Area (substrate)      957 1181  111  38 18  13   8   8   3         71  aF/um^2
+* t2cu_mm_non_epi_thk-params.txt: Area (substrate)      960    1185     105  39 18 13  8  -  3       70   aF/um^2
+* 
+* Ring Oscillator frequency 347.39 -> 417.63 avg 382.15 +/- 35.12/2 (+/- 9.1%/2)
+* 
+* t29b_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               347.39  MHz        
+* t3cv_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               374.64  MHz        
+* t16x_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               381.66  MHz        
+* t22t_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               381.88  MHz        
+* t44e_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               386.52  MHz        
+* t42p_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               389.14  MHz        
+* t34b_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               389.70  MHz        
+* t26x_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               396.71  MHz        
+* t28m_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               398.64  MHz        
+* t1ax_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               399.97  MHz        
+* t38n_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               400.88  MHz        
+* t3az_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               402.90  MHz        
+* t24i_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               403.28  MHz        
+* t2cu_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               406.16  MHz        
+* t18h_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               406.63  MHz        
+* t1ch_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               406.80  MHz        
+* t36q_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               411.69  MHz        
+* t32l_mm_non_epi_thk-params.txt:  DIV1024 (31-stg,1.8V)               417.63  MHz        
+* 
+* Conclusions:
+* ------------
+* parameter variations are relatively small.....
+* 
+* ============
+* MODEL CARDS
+* ============
+* nMOS u0
+* 
+* t1ch_mm_non_epi_thk-params.txt-+U0      = 243.3667449    UA      = -1.520268E-9   UB      = 2.216088E-18
+* t24i_mm_non_epi_thk-params.txt-+U0      = 255.5388057    UA      = -1.395254E-9   UB      = 2.145563E-18
+* t26x_mm_non_epi_thk-params.txt-+U0      = 257.7873988    UA      = -1.41422E-9    UB      = 2.252248E-18
+* t29b_mm_non_epi_thk-params.txt-+U0      = 258.8701455    UA      = -1.452979E-9   UB      = 2.368782E-18
+* t22t_mm_non_epi_thk-params.txt-+U0      = 260.3005546    UA      = -1.314002E-9   UB      = 2.099332E-18
+* t2cu_mm_non_epi_thk-params.txt-+U0      = 261.9131818    UA      = -1.415607E-9   UB      = 2.340919E-18
+* t28m_mm_non_epi_thk-params.txt-+U0      = 262.117234     UA      = -1.386325E-9   UB      = 2.284255E-18
+* t38n_mm_non_epi_thk-params.txt-+U0      = 263.2041827    UA      = -1.465051E-9   UB      = 2.391257E-18
+* t36q_mm_non_epi_thk-params.txt-+U0      = 267.3427914    UA      = -1.411625E-9   UB      = 2.372533E-18
+* t32l_mm_non_epi_thk-params.txt-+U0      = 268.0583972    UA      = -1.350336E-9   UB      = 2.259754E-18
+* t34b_mm_non_epi_thk-params.txt-+U0      = 268.8334171    UA      = -1.400084E-9   UB      = 2.418315E-18
+* t3cv_mm_non_epi_thk-params.txt-+U0      = 269.6317621    UA      = -1.432404E-9   UB      = 2.452385E-18
+* t3az_mm_non_epi_thk-params.txt-+U0      = 269.687695     UA      = -1.421498E-9   UB      = 2.436978E-18
+* t42p_mm_non_epi_thk-params.txt-+U0      = 270.6674099    UA      = -1.411271E-9   UB      = 2.405516E-18
+* t18h_mm_non_epi_thk-params.txt-+U0      = 277.1810008    UA      = -9.88618E-10   UB      = 1.622411E-18
+* t1ax_mm_non_epi_thk-params.txt-+U0      = 278.2985212    UA      = -1.02999E-9    UB      = 1.789384E-18
+* t44e_mm_non_epi_thk-params.txt-+U0      = 282.8878274    UA      = -1.273908E-9   UB      = 2.339211E-18
+* t16x_mm_non_epi_thk-params.txt-+U0      = 288.0282273    UA      = -8.17815E-10   UB      = 1.450475E-18
+* 
+* 
+* nMOS CJ
+* 
+* t18h_mm_non_epi_thk-params.txt-+CJ      = 1.008671E-3    PB      = 0.7394343      MJ      = 0.3578798
+* t38n_mm_non_epi_thk-params.txt-+CJ      = 9.447103E-4    PB      = 0.8            MJ      = 0.3758219
+* t36q_mm_non_epi_thk-params.txt-+CJ      = 9.511565E-4    PB      = 0.8            MJ      = 0.3780279
+* t42p_mm_non_epi_thk-params.txt-+CJ      = 9.51641E-4     PB      = 0.8            MJ      = 0.3851311
+* t2cu_mm_non_epi_thk-params.txt-+CJ      = 9.520012E-4    PB      = 0.7257311      MJ      = 0.3560721
+* t3cv_mm_non_epi_thk-params.txt-+CJ      = 9.52372E-4     PB      = 0.8            MJ      = 0.3773036
+* t44e_mm_non_epi_thk-params.txt-+CJ      = 9.578961E-4    PB      = 0.8            MJ      = 0.3750441
+* t34b_mm_non_epi_thk-params.txt-+CJ      = 9.594842E-4    PB      = 0.8            MJ      = 0.3805803
+* t1ch_mm_non_epi_thk-params.txt-+CJ      = 9.600236E-4    PB      = 0.7312077      MJ      = 0.3597572
+* t3az_mm_non_epi_thk-params.txt-+CJ      = 9.738066E-4    PB      = 0.8            MJ      = 0.3799824
+* t32l_mm_non_epi_thk-params.txt-+CJ      = 9.742713E-4    PB      = 0.7113672      MJ      = 0.3611175
+* t24i_mm_non_epi_thk-params.txt-+CJ      = 9.819369E-4    PB      = 0.7238387      MJ      = 0.3620141
+* t28m_mm_non_epi_thk-params.txt-+CJ      = 9.840057E-4    PB      = 0.7342005      MJ      = 0.3623465
+* t16x_mm_non_epi_thk-params.txt-+CJ      = 9.84856E-4     PB      = 0.7346381      MJ      = 0.3585837
+* t26x_mm_non_epi_thk-params.txt-+CJ      = 9.901051E-4    PB      = 0.7345146      MJ      = 0.362278
+* t22t_mm_non_epi_thk-params.txt-+CJ      = 9.908001E-4    PB      = 0.7382604      MJ      = 0.3578423
+* t29b_mm_non_epi_thk-params.txt-+CJ      = 9.947722E-4    PB      = 0.7365133      MJ      = 0.3610495
+* t1ax_mm_non_epi_thk-params.txt-+CJ      = 9.962573E-4    PB      = 0.7357171      MJ      = 0.360788
+* 
+* nMOS VTH0
+* 
+* t22t_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3469417
+* t24i_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3563809
+* t32l_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3583048
+* t2cu_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3590384
+* t1ch_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3591699
+* t16x_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3605538
+* t34b_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3613949
+* t28m_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.362587
+* t18h_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3628041
+* t1ax_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3631475
+* t26x_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.364442
+* t29b_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3651439
+* t38n_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3661001
+* t36q_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3670218
+* t3cv_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3715978
+* t42p_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3761569
+* t44e_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3761998
+* t3az_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 2.3549E17      VTH0    = 0.3762071
+* 
+* nMOS TOX
+* 
+* t22t_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4E-9
+* t2cu_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4E-9
+* t32l_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4E-9
+* t16x_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t18h_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t1ch_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t24i_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t26x_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t28m_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t29b_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t34b_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t36q_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t38n_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t3az_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t3cv_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t42p_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t44e_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t1ax_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.2E-9
+* 
+* ------------------------------------------------------------------------------------------------------------
+* 
+* pMOS u0 3.9/114.3 +/- 3.4%
+* 
+* t28m_mm_non_epi_thk-params.txt-+U0      = 110.3815082    UA      = 1.362405E-9    UB      = 1E-21
+* t44e_mm_non_epi_thk-params.txt-+U0      = 110.7725713    UA      = 1.383056E-9    UB      = 2.208861E-21
+* t29b_mm_non_epi_thk-params.txt-+U0      = 111.476622     UA      = 1.404322E-9    UB      = 1.225172E-21
+* t42p_mm_non_epi_thk-params.txt-+U0      = 111.6619212    UA      = 1.41993E-9     UB      = 2.373598E-21
+* t3cv_mm_non_epi_thk-params.txt-+U0      = 112.178872     UA      = 1.43714E-9     UB      = 2.43219E-21
+* t36q_mm_non_epi_thk-params.txt-+U0      = 112.2388316    UA      = 1.432093E-9    UB      = 2.251455E-21
+* t34b_mm_non_epi_thk-params.txt-+U0      = 112.3016833    UA      = 1.440153E-9    UB      = 2.268519E-21
+* t3az_mm_non_epi_thk-params.txt-+U0      = 112.5877333    UA      = 1.455866E-9    UB      = 2.501635E-21
+* t38n_mm_non_epi_thk-params.txt-+U0      = 113.4028485    UA      = 1.490639E-9    UB      = 2.609732E-21
+* t26x_mm_non_epi_thk-params.txt-+U0      = 115.3436175    UA      = 1.552529E-9    UB      = 1E-21
+* t22t_mm_non_epi_thk-params.txt-+U0      = 116.6763438    UA      = 1.594326E-9    UB      = 1.12542E-21
+* t1ch_mm_non_epi_thk-params.txt-+U0      = 117.3059261    UA      = 1.597049E-9    UB      = 1.116167E-21
+* t24i_mm_non_epi_thk-params.txt-+U0      = 117.3135568    UA      = 1.630317E-9    UB      = 1.11693E-21
+* t2cu_mm_non_epi_thk-params.txt-+U0      = 117.5012794    UA      = 1.637602E-9    UB      = 2.106402E-21
+* t16x_mm_non_epi_thk-params.txt-+U0      = 117.9302546    UA      = 1.570536E-9    UB      = 1E-21
+* t32l_mm_non_epi_thk-params.txt-+U0      = 117.9307693    UA      = 1.660853E-9    UB      = 2.258653E-21
+* t1ax_mm_non_epi_thk-params.txt-+U0      = 118.1135349    UA      = 1.613326E-9    UB      = 1.115677E-21
+* t18h_mm_non_epi_thk-params.txt-+U0      = 118.1497925    UA      = 1.59307E-9     UB      = 1.064349E-21
+* 
+* pMOS CJ 0.046/1.155 +/- 5%
+* 
+* t1ax_mm_non_epi_thk-params.txt-+CJ      = 1.108887E-3    PB      = 0.8531928      MJ      = 0.4217014
+* t38n_mm_non_epi_thk-params.txt-+CJ      = 1.134069E-3    PB      = 0.8636273      MJ      = 0.4136001
+* t42p_mm_non_epi_thk-params.txt-+CJ      = 1.146329E-3    PB      = 0.8499011      MJ      = 0.411078
+* t3az_mm_non_epi_thk-params.txt-+CJ      = 1.158801E-3    PB      = 0.8684312      MJ      = 0.409982
+* t3cv_mm_non_epi_thk-params.txt-+CJ      = 1.161922E-3    PB      = 0.8552752      MJ      = 0.409999
+* t24i_mm_non_epi_thk-params.txt-+CJ      = 1.164686E-3    PB      = 0.8588457      MJ      = 0.4136608
+* t34b_mm_non_epi_thk-params.txt-+CJ      = 1.165397E-3    PB      = 0.8690064      MJ      = 0.4212414
+* t44e_mm_non_epi_thk-params.txt-+CJ      = 1.166499E-3    PB      = 0.8426653      MJ      = 0.4041965
+* t36q_mm_non_epi_thk-params.txt-+CJ      = 1.167789E-3    PB      = 0.8724557      MJ      = 0.4189239
+* t32l_mm_non_epi_thk-params.txt-+CJ      = 1.175838E-3    PB      = 0.8564663      MJ      = 0.414385
+* t18h_mm_non_epi_thk-params.txt-+CJ      = 1.17874E-3     PB      = 0.8592497      MJ      = 0.4108327
+* t26x_mm_non_epi_thk-params.txt-+CJ      = 1.180723E-3    PB      = 0.8621109      MJ      = 0.413829
+* t29b_mm_non_epi_thk-params.txt-+CJ      = 1.181097E-3    PB      = 0.8629496      MJ      = 0.4179117
+* t22t_mm_non_epi_thk-params.txt-+CJ      = 1.182025E-3    PB      = 0.8683927      MJ      = 0.41613
+* t1ch_mm_non_epi_thk-params.txt-+CJ      = 1.186074E-3    PB      = 0.8680128      MJ      = 0.4166149
+* t28m_mm_non_epi_thk-params.txt-+CJ      = 1.194868E-3    PB      = 0.8623442      MJ      = 0.4147098
+* t2cu_mm_non_epi_thk-params.txt-+CJ      = 1.195381E-3    PB      = 0.8809046      MJ      = 0.4228433
+* t16x_mm_non_epi_thk-params.txt-+CJ      = 1.20096E-3     PB      = 0.8591867      MJ      = 0.4126569
+* 
+* pMOS VTHO (29/2)/400 +/- 3.62%
+* 
+* t1ax_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.4150132
+* t16x_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.4135147
+* t24i_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.4131751
+* t18h_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.4096789
+* t26x_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.4067601
+* t29b_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.4027225
+* t22t_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.4018217
+* t1ch_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.4014183
+* t28m_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3995712
+* t44e_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3936248
+* t38n_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3924941
+* t2cu_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3919794
+* t42p_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3902323
+* t32l_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3891299
+* t34b_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3881948
+* t36q_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3871665
+* t3cv_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3866308
+* t3az_mm_non_epi_thk-params.txt-+XJ      = 1E-7           NCH     = 4.1589E17      VTH0    = -0.3862593
+* 
+* pMOS TOX pct variation 0.1/4.1 = +/- 2.4%
+* 
+* t22t_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4E-9
+* t2cu_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4E-9
+* t32l_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4E-9
+* t16x_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t18h_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t1ch_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t24i_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t26x_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t28m_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t29b_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t34b_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t36q_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t38n_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t3az_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t3cv_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t42p_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t44e_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.1E-9
+* t1ax_mm_non_epi_thk-params.txt-+VERSION = 3.1            TNOM    = 27             TOX     = 4.2E-9
+* 
+* Conclusions
+* -------------
+* 
+* On the basis of the model cards t28 is selected as the nominal nMOS and
+* t34 is selected as the nominal pMOS
+* 
+* Taking the worst case variation for pMOS and applying it to all
+* parameters for nMOS and pMOS, +/- 5% seems to be a reasonable number to
+* model the worst case process variations for this batch. 
+* 
+* However, this number is in contrast to what is typically assumed for
+* the process variations. Therefore we will base process variations
+* on the guidelines available in Y. Tsividis, "Mixed Analog-Digital VLSI
+* Devices and Technology (An Introduction)", section 5.7:
+* oxide thickness +/- 5%
+* threshold voltage +/- 0.1V
+* K' (related to U0) +/- 10%
+* capacitances +/- 5%
+*
+
+.model nch nmos (      
++level=49
++noimod=2  version=3.1  tnom=27  tox=4.1E-9  xj=1E-7  nch=2.3549E17  vth0=0.362587
++k1=0.5865832  k2=4.152205E-3  k3=1E-3  k3b=2.1824687  w0=1E-7  nlx=1.795622E-7
++dvt0w=0  dvt1w=0  dvt2w=0  dvt0=1.746117  dvt1=0.4409233  dvt2=-3.663487E-4
++u0=262.117234  ua=-1.386325E-9  ub=2.284255E-18  uc=5.506514E-11  vsat=1.04174E5  a0=1.9287698
++ags=0.416466   b0=-1.536637E-9  b1=-1E-7  keta=-7.111387E-3   a1=6.573435E-4   a2=0.8808358
++rdsw=112.5093924   prwg=0.494777  prwb=-0.2  wr=1   wint=7.098292E-9   lint=1.120392E-8
++xl=-2E-8  xw=-1E-8   dwg=-3.812756E-9  dwb=8.690068E-9   voff=-0.0878502  nfactor=2.2975194
++cit=0  cdsc=2.4E-4  cdscd=0  cdscb=0  eta0=3.116078E-3  etab=1
++dsub=0.0226021   pclm=0.7222753  pdiblc1=0.2160258  pdiblc2=2.237807E-3  pdiblcb=0.1  drout=0.8036712
++pscbe1=5.434136E8   pscbe2=1e-3 pvag=1e-12  delta=0.01  rsh=6.8  mobmod=1  prt=0  ute=-1.5  
++kt1=-0.11  kt1l=0  kt2=0.022  ua1=4.31E-9  ub1=-7.61E-18  uc1=-5.6E-11  at=3.3E4  wl=0  wln=1  ww=0
++wwn=1  wwl=0  ll=0  lln=1  lw=0  lwn=1  lwl=0  capmod=2  xpart=0.5
++cgdo=6.99E-10  cgso=6.99E-10  cgbo=1E-12  cj=9.840057E-4  pb=0.7342005  mj=0.3623465
++cjsw=2.405513E-10   pbsw=0.4681508   mjsw=0.1  cjswg=3.3E-10  pbswg=0.4681508   mjswg=0.1
++cf=0  pvth0=-7.11401E-4   prdsw=-0.6661763  pk2=5.920718E-4   wketa=2.148339E-4  lketa=-0.0151118
++pu0=3.3563216  pua=-1.30682E-11  pub=0  pvsat=1.25639E3  peta0=1E-4  pketa=6.507934E-4 
++kf=4.5E-29 ) 
+
+.model pch pmos ( 
++level=49
++noimod=2  version=3.1  tnom=27  tox=4.1E-9  xj=1E-7  nch=4.1589E17  vth0=-0.3881948 
++k1=0.5529201  k2=0.034792  k3=0  k3b=11.9386904   w0=1E-6  nlx=1.24097E-7
++dvt0w=0  dvt1w=0  dvt2w=0  dvt0=0.5572682   dvt1=0.2450222   dvt2=0.1
++u0=112.30168  ua=1.440153E-9   ub=2.268519E-21  uc=-1E-10  vsat=1.95798E5   a0=1.7320136
++ags=0.3814653   b0=5.893668E-7   b1=1.43035E-6  keta=0.0221987   a1=0.4621616   a2=0.3
++rdsw=313.202685   prwg=0.5   prwb=0.0162628  wr=1   wint=0  lint=1.983623E-8
++xl=-2E-8  xw=-1E-8   dwg=-3.460406E-8   dwb=1.222813E-9  voff=-0.0972053  nfactor=2
++cit=0  cdsc=2.4E-4   cdscd=0  cdscb=0   eta0=1.131875E-3   etab=-4.818071E-4
++dsub=1.592865E-3   pclm=1.493593   pdiblc1=8.000079E-4  pdiblc2=-1E-5   pdiblcb=0.1   drout=1.55056E-3
++pscbe1=4.918023E9  pscbe2=1.660043E-9   pvag=3.456061  delta=0.01   rsh=7.7   mobmod=1  prt=0  ute=-1.5 
++kt1=-0.11   kt1l=0   kt2=0.022  ua1=4.31E-9   ub1=-7.61E-18  uc1=-5.6E-11  at=3.3E4  wl=0  wln=1  ww=0
++wwn=1  wwl=0  ll=0  lln=1  lw=0  lwn=1  lwl=0  capmod=2  xpart=0.5   cgdo=6.81E-10   cgso=6.81E-10 
++cgbo=1E-12  cj=1.165397E-3   pb=0.8690064   mj=0.4212414   cjsw=2.042242E-10   pbsw=0.8   mjsw=0.3585597
++cjswg=4.22E-10   pbswg=0.8   mjswg=0.3585597   cf=0   pvth0=3.558724E-3    prdsw=10.1907428
++pk2=3.322217E-3   wketa=0.0350625   lketa=-2.074105E-3   pu0=-2.1784074    pua=-7.70492E-11   pub=1E-21
++pvsat=50   peta0=7.280672E-5   pketa=-6.434606E-3
++kf=1.3E-29)
+

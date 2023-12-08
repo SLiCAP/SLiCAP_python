@@ -108,7 +108,7 @@ class MOS(object):
         txt += '.param start  = %s\n'%(stepStart)
         txt += '.param delta  = %s\n'%(stepStep)
         txt += '.param select = 0\n\n'
-        txt += '.lib %s\n\n'%(self.lib)
+        txt += '%s\n\n'%(self.lib)
         # MOS with voltage feedback loop for creating the gate-source voltage
         txt += '%s d1 g1 s1 b1 %s W={W} L={L} M={M}\n'%(self.refDes + '_OP', self.dev)
         # LOOP and DC voltages
@@ -124,8 +124,8 @@ class MOS(object):
         f.write(txt)
         f.close()
         system(ini.ngspiceCMD + ' -b MOS_OP.cir -o MOS_OP.log')
-        remove('MOS_OP.cir')
-        remove('MOS_OP.log')
+        #remove('MOS_OP.cir')
+        #remove('MOS_OP.log')
         self._getParams()
         self._makeParDefs()
         self._makeModelDef()
@@ -182,7 +182,7 @@ class MOS(object):
         txt += '.param start  = %s\n'%(stepStart)
         txt += '.param delta  = %s\n'%(stepStep)
         txt += '.param select = 0\n\n'
-        txt += '.lib %s\n\n'%(self.lib)
+        txt += '%s\n\n'%(self.lib)
         txt += '%s d g s b %s W={W} L={L} M={M}\n\n'%(self.refDes, self.dev)
         f = open('cir/MOS_OP_V.cir', 'r')
         txt += f.read()
@@ -286,7 +286,7 @@ class MOS(object):
         print("Ids realized:", IDS, "\n")
         print("Vgs realized:", VGS, "\n")
         txt = "MOS_noise\n"
-        txt += '.lib %s\n\n'%(self.lib)
+        txt += '%s\n\n'%(self.lib)
         txt += '.param L      = %s\n'%(self.L)
         txt += '.param W      = %s\n'%(self.W)
         txt += '.param M      = %s\n'%(self.M)
@@ -441,7 +441,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
     f.write(netlist)
     f.close()
     analysisType = simCmd.split()[0]
-    system('ngspice -b simFile.sp -o simFile.log')
+    system(ini.ngspiceCMD + ' -b simFile.sp -o simFile.log')
     f = open(cirFile + '.csv', 'r')
     txt = f.read()
     f.close()

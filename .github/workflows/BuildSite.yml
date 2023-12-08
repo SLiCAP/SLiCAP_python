@@ -35,8 +35,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: SLiCAP/SLiCAP_python
-      - name: install software dependencies
+      - name: update apt-get then install software dependencies
         run: |
+          sudo apt update
           sudo apt-get install -y pdf2svg lepton-eda
       - name: install python packages, SLiCAP dependencies
         run: |
