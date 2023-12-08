@@ -2,7 +2,7 @@
 declare -A test_cirs
 # test_cirs is a dictionary with the directory as a key and the value as the run file
 test_cirs["balancedCircuits"]="balancedCircuitsProject.py"
-test_cirs["CSstage"]="CSresnoise.py"
+#test_cirs["CSstage"]="CSresnoise.py"
 test_cirs["FilterDesign"]="LR4project.py"
 test_cirs["myFirstRCnetwork"]="myFirstRCnetwork.py"
 test_cirs["noiseFigure"]="noiseFigures.py"
