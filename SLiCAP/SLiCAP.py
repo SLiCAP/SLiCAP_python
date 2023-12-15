@@ -23,7 +23,7 @@ from scipy.integrate import quad
 from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPdesignData import specItem, specs2csv, specs2circuit, csv2specs, specs2html
 from SLiCAP.SLiCAPinstruction import instruction, listPZ
-from SLiCAP.SLiCAPmath import coeffsTransfer, normalizeRational, findServoBandwidth, fullSubs, assumeRealParams, assumePosParams, clearAssumptions, phaseMargin, doCDS, doCDSint, routh, equateCoeffs, step2PeriodicPulse, butterworthPoly, besselPoly, rmsNoise, PdBm2V, float2rational, rational2float, roundN
+from SLiCAP.SLiCAPmath import coeffsTransfer, normalizeRational, findServoBandwidth, fullSubs, assumeRealParams, assumePosParams, clearAssumptions, phaseMargin, doCDS, doCDSint, routh, equateCoeffs, step2PeriodicPulse, butterworthPoly, besselPoly, rmsNoise, PdBm2V, float2rational, rational2float, roundN, nonPolyCoeffs
 from SLiCAP.SLiCAPhtml import startHTML, htmlPage, text2html, eqn2html, expr2html, head2html, head3html, netlist2html, lib2html, elementData2html, params2html, img2html, csv2html, matrices2html, pz2html, noise2html, dcVar2html, coeffsTransfer2html, stepArray2html, fig2html, file2html, href, htmlLink, links2html
 from SLiCAP.SLiCAPplots import trace, axis, figure, plotSweep, plotPZ, plot, traces2fig, LTspiceData2Traces, LTspiceAC2SLiCAPtraces, csv2traces, Cadence2traces, addTraces
 from SLiCAP.SLiCAPlatex import *
@@ -243,7 +243,7 @@ def makeNetlist(fileName, cirTitle):
                 file = file.replace('\\','\\\\')
                 subprocess.run([ini.ltspice, '-netlist', file])
             else:
-                subprocess.run(['wine', ini.ltspice, '-wine', '-netlist', file])
+                subprocess.run(['wine', ini.ltspice, '-wine', '-netlist', file]], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
             try:
                 f = open(baseFileName + '.net', 'r')
                 netlistLines = ['"' + cirTitle + '"\n'] + f.readlines()
@@ -279,3 +279,27 @@ def makeNetlist(fileName, cirTitle):
             except:
                 print("Error: could not open: '{0}'.".format(baseFileName + '.net'))
     return
+
+def runLTspice(fileName):
+    """
+    Runs LTspice netlist (.cir) file.
+
+    :param fileName: Name of the circuit (.cir) file, relative to the
+                     project directory (cir/<myCircuit>.cir)
+    :type fileName: str
+
+    :return: None
+    :rtype: Nonetype
+    """
+    if not os.path.isfile(fileName):
+        print("Error: could not open: '%s'."%(fileName))
+        return
+    else:
+        fileNameParts = fileName.split('.')
+        fileType = fileNameParts[-1].lower()
+        if fileType == 'cir':
+            if platform.system() == 'Windows':
+                fileName = fileName.replace('\\','\\\\')
+                subprocess.run([ini.ltspice, '-b', fileName])
+            else:
+                subprocess.run(['wine', ini.ltspice, '-b', '-wine', fileName], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)

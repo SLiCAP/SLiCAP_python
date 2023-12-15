@@ -160,3 +160,4 @@ def plotSvinoise(device, ID, VD, VS, VB, fmin, fmax, numDec, EKVlib='SLiCAP.lib'
     print("f_T=", sp.N(FT,3))
     print("f_L=", sp.N(FL,3))
     print("f_T/f_L=", sp.N(FT/FL,3))
+    return figNoise, FT, FL

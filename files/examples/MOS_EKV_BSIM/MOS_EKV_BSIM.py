@@ -19,8 +19,8 @@ refDes   = 'M1'                     # Reference designator of MOS device
 DEV      = 'nch'                    # MOS device name
 LIB      = '.lib lib/log018.l TT'   # use this CMOS BSIM library with EKV CMOS-1.lib
 #LIB      = '.inc lib/CMOS18TT.lib' # use this CMOS BSIM library with EKV CMOS-2.lib
-W        = 0.22e-6                  # Channel width
-L        = 0.18e-6                  # Channel length
+W        = .22e-6                   # Channel width
+L        = .18e-6                   # Channel length
 M        = 1                        # Number of devices in parallel
 
 # Define test frequency for determination of small-signal operating point parameters
@@ -35,7 +35,7 @@ numDec   = 20                  # Number of points per decade
 VD       = 1.2                 # Drain voltage w.r.t. GND
 VG       = 0.5                 # Gate voltage w.r.t. GND
 VP       = 1.8                 # Supply voltage w.r.t. GND
-ID       = 100E-6              # Drain current
+ID       = 100E-6               # Drain current
 
 # Define the biasing step variable 'VGS' or "IDS". IDS > 1E-9 (convergence)
 biasPar  = "IDS"               # Choose biasing with "VGS" or with "IDS"
@@ -57,6 +57,7 @@ if DEV == "pch":
     VS = VP
     VB = VP
     VG = VP - VG
+    VD = VP - VD
 else:
     VS = 0
     VB = 0
