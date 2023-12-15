@@ -243,7 +243,7 @@ def makeNetlist(fileName, cirTitle):
                 file = file.replace('\\','\\\\')
                 subprocess.run([ini.ltspice, '-netlist', file])
             else:
-                subprocess.run(['wine', ini.ltspice, '-wine', '-netlist', file]], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+                subprocess.run(['wine', ini.ltspice, '-wine', '-netlist', file], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
             try:
                 f = open(baseFileName + '.net', 'r')
                 netlistLines = ['"' + cirTitle + '"\n'] + f.readlines()
