@@ -101,7 +101,7 @@ def detME(M):
                 newM = M.copy()
                 newM.row_del(row)
                 newM.col_del(0)
-                D += M[row, 0] * (-1)**(row%2) * detME(newM)
+                D += M[row, 0] * (-1)**(row%2) * sp.expand(detME(newM))
     return sp.expand(D)
 
 def detBS(M):

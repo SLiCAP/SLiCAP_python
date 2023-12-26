@@ -6,7 +6,7 @@ SLiCAP module for building the MNA matrix and the associated vectors.
 
 import sympy as sp
 from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPmath import fullSubs, float2rational
+from SLiCAP.SLiCAPmath import fullSubs, float2rational, normalizeRational
 
 def getValues(elmt, param, numeric, parDefs):
     """
@@ -35,22 +35,10 @@ def getValues(elmt, param, numeric, parDefs):
     """
     value = getValue(elmt, param, numeric, parDefs)
     if ini.Laplace in value.atoms(sp.Symbol):
-        numer, denom = value.as_numer_denom()
-        numer = sp.Poly(numer, ini.Laplace)
-        denom = sp.Poly(denom, ini.Laplace)
-        denCoeffs = denom.all_coeffs()
-        ECoeff = sp.Poly.EC(denom)
-        denCoeffs = [coeff/ECoeff for coeff in denCoeffs]
-        numCoeffs = numer.all_coeffs()
-        numCoeffs = [coeff/ECoeff for coeff in numCoeffs]
-        numer = sp.Poly(numCoeffs, ini.Laplace).as_expr()
-        denom = sp.Poly(denCoeffs, ini.Laplace).as_expr()
+        numer, denom = normalizeRational(value).as_numer_denom()
     else:
         numer = value
         denom = sp.Rational(1)
-    if numeric == True:
-        numer = fullSubs(numer, parDefs)
-        denom = fullSubs(denom, parDefs)
     return (numer, denom)
 
 def getValue(elmt, param, numeric, parDefs):
@@ -86,7 +74,7 @@ def getValue(elmt, param, numeric, parDefs):
     if param in list(elmt.params.keys()):
         value = elmt.params[param]
         if numeric == True:
-            value = fullSubs(value, parDefs)
+            value = float2rational(sp.N(fullSubs(value, parDefs)))
     return value
 
 def makeMatrices(instr):
@@ -143,7 +131,7 @@ def makeMatrices(instr):
         elif elmt.model == 'R':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            value = 1/getValue(elmt, 'value', numeric, parDefs)
+            value = float2rational(1/getValue(elmt, 'value', numeric, parDefs))
             M[pos0, pos0] += value
             M[pos0, pos1] -= value
             M[pos1, pos0] -= value
@@ -327,8 +315,6 @@ def makeMatrices(instr):
     M.col_del(gndPos)
     Dv = sp.Matrix(Dv)
     Dv.row_del(gndPos)
-    if instr.numeric:
-        M = sp.sympify(str(sp.N(M)), rational=True)
     return (M, Dv)
 
 def makeSrcVector(cir, parDefs, elid, value = 'id', numeric = True):
