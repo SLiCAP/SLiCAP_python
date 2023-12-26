@@ -101,14 +101,14 @@ class settings(object):
             "ME"      : Method = SLiCAP Minor expansion (always accurate) Default
             "BS"      : Method = SLiCAP Bareis fraction-free algorithm
             "LU"      : Method = Sympy LU decomposition
-            "bareis"  : Method = Sympy Bareis fraction-free algorithm
+            "bareiss" : Method = Sympy Bareiss fraction-free algorithm
 
         denom:
 
             "ME"      : Method = SLiCAP Minor expansion (always accurate) Default
             "BS"      : Method = SLiCAP Bareis fraction-free algorithm
             "LU"      : Method = Sympy LU decomposition
-            "bareis"  : Method = Sympy Bareis fraction-free algorithm
+            "bareiss" : Method = Sympy Bareiss fraction-free algorithm
 
         factor:
 
@@ -279,13 +279,13 @@ class settings(object):
 
         self.denom        = "ME"
         """
-        Choose 'ME" for minor expansion, 'BS" or "bareis" for Bareis fraction
+        Choose 'ME" for minor expansion, 'BS" or "bareiss" for Bareiss fraction
         free algorithm, and "LU" for LU decomposition. Defaults to ME.
         """
 
         self.numer        = "ME"
         """
-        Choose 'ME" for minor expansion, 'BS" or "bareis" for Bareis fraction
+        Choose 'ME" for minor expansion, 'BS" or "bareiss" for Bareiss fraction
         free algorithm, and "LU" for LU decomposition. Defaults to ME.
         """
 

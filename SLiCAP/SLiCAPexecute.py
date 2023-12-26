@@ -411,7 +411,7 @@ def doPZ(instr, result):
                 result.poles[i], result.zeros[i] = cancelPZ(result.poles[i], result.zeros[i])
             except:
                 pass
-            result.DCvalue.append(zeroValue(result.numer[i], result.denom[i]), ini.Laplace)
+            result.DCvalue.append(zeroValue(result.numer[i], result.denom[i], ini.Laplace))
     else:
         result.zeros = Roots(result.numer, ini.Laplace)
         result.poles = Roots(result.denom, ini.Laplace)

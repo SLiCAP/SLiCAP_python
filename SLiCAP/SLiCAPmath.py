@@ -78,8 +78,8 @@ def det(M, method="ME"):
             D = sign*detBS(M)
         elif method == "LU":
             D = sign*M.det(method="LU")
-        elif method == "bareis":
-            D = sign*M.det(method="bareis")
+        elif method == "bareiss":
+            D = sign*M.det(method="bareiss")
         elif method == "FC":
             D = sign*detFC(M)
         else:
@@ -175,12 +175,6 @@ def numRoots(expr, var):
     :type var: sympy.Symbol
     """
     rts = []
-    """
-    if isinstance(expr, sp.Basic) and isinstance(var, sp.Basic):
-        params = list(expr.atoms(sp.Symbol))
-        if var in params:
-            if len(params) == 1:
-    """
     try:
         pol = sp.Poly(expr, var)
         coeffs = pol.all_coeffs()
@@ -1202,7 +1196,7 @@ def butterworthPoly(n):
             k = i + 1
             B_s *= (s**2-2*s*sp.cos((2*k+n-1)*sp.pi/2/n)+1)
     B_s = sp.simplify(B_s)
-    return(B_s)
+    return B_s
 
 def besselPoly(n):
     """
@@ -1220,7 +1214,14 @@ def besselPoly(n):
     for k in range(n+1):
         B_s += (sp.factorial(2*n-k)/((2**(n-k))*sp.factorial(k)*sp.factorial(n-k)))*s**k
     B_s = sp.simplify(B_s/B_s.subs(s,0))
-    return(B_s)
+
+    # Find normalized 3 dB frequency
+    w = sp.Symbol('w', real=True)
+    B_w = sp.Abs(B_s.subs(s, sp.I*w))**2
+    func = sp.lambdify(w, B_w - 2)
+    w3dB = float2rational(fsolve(func, 1)[0])
+    B_s = B_s.subs(s, s*w3dB)
+    return B_s
 
 def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
     """
@@ -1382,7 +1383,7 @@ def float2rational(expr):
     :rtype:  sympy.Expression
     """
     try:
-        expr = expr.xreplace({n: sp.Rational(n) for n in expr.atoms(sp.Float)})
+        expr = expr.xreplace({n: sp.Rational(str(n)) for n in expr.atoms(sp.Float)})
     except AttributeError:
         pass
     return expr
@@ -1534,9 +1535,9 @@ def nonPolyCoeffs(expr, var):
 
         :param var: Variable of which the coefficients will be returned
         :type var: sympy.Symbol
-        
+
         :return: Dict with key-value pairs:
-            
+
                  - key: order of the variable
                  - value: coefficient of that order
         """

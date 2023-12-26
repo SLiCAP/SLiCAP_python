@@ -292,7 +292,7 @@ def parseElement(line, circuitDict = CIRCUITS):
                             if not MODELS[newElement.model].params['value'] and ini.Laplace in list(newElement.params['value'].atoms(sp.Symbol)):
                                 printError("Error: Laplace variable not allowed in this expression.", line[pos])
                     else:
-                        newElement.params['value'] = sp.Rational(line[pos].value)
+                        newElement.params['value'] = sp.Rational(str(line[pos].value))
                 elif line[pos].type == "PARDEF":
                     printError("Error: missing model definition", line[pos])
                     errrors += 1
