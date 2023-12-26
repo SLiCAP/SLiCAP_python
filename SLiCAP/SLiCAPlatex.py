@@ -4,11 +4,14 @@
 Created on Sat Jun 10 17:24:17 2023
 
 @author: anton
-"""
-from SLiCAP.SLiCAPdesignData import *
 
-# Public functions for generating snippets that can be stored as LaTeX files
-# to be included by other LaTeX files.
+Public functions for generating snippets that can be stored as LaTeX files
+and included in other LaTeX files.
+
+"""
+import sympy as sp
+from SLiCAP.SLiCAPini import *
+from SLiCAP.SLiCAPmath import fullSubs, roundN
 
 def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
     """
