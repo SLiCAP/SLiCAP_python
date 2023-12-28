@@ -369,37 +369,20 @@ def findServoBandwidth(loopgainRational):
              - mbf: lowest freqency of mbv
     :rtype: dict
     """
-    numer, denom    = loopgainRational.as_numer_denom()
-    numer           = sp.expand(sp.collect(numer.evalf(), ini.Laplace))
-    denom           = sp.expand(sp.collect(denom.evalf(), ini.Laplace))
-    poles           = numRoots(denom, ini.Laplace)
-    zeros           = numRoots(numer, ini.Laplace)
-    poles, zeros = cancelPZ(poles, zeros)
-    numPoles        = len(poles)
-    numZeros        = len(zeros)
-    numCornerFreqs  = numPoles + numZeros
-    gain, coeffsN,coeffsD = coeffsTransfer(loopgainRational)
-    coeffsN         = np.array(coeffsN)
-    coeffsD         = np.array(coeffsD)
-    firstNonZeroN   = np.argmax(coeffsN != 0)
-    firstNonZeroD   = np.argmax(coeffsD != 0)
-    startOrder      = firstNonZeroN - firstNonZeroD
-    startValue      = np.abs(gain)
-    """ array columns
-        1. Corner frequency in rad/s
-        2. Order change at that corner +n: n zeros, -n: n poles
-        3. Cumulative order from corner frequency
-        4. Cumulative LP product
-        5. Asymptotic servo cut-off frequency in rad/s (can be low-pass or high-pass)
-    """
-    freqsOrders     = np.zeros((numCornerFreqs, 6))
+    numer, denom          = loopgainRational.as_numer_denom()
+    poles                 = numRoots(denom, ini.Laplace)
+    zeros                 = numRoots(numer, ini.Laplace)
+    poles, zeros          = cancelPZ(poles, zeros)
+    numPoles              = len(poles)
+    numZeros              = len(zeros)
+    numCornerFreqs        = numPoles + numZeros
+    gain, coeffsN,coeffsD = coeffsTransfer(sp.expand(loopgainRational))
+    coeffsN               = np.array(coeffsN)
+    coeffsD               = np.array(coeffsD)
+    firstNonZeroN         = np.argmax(coeffsN != 0)
+    firstNonZeroD         = np.argmax(coeffsD != 0)
+    freqsOrders           = np.zeros((numCornerFreqs, 2))
     result = {}
-    result['mbv'] = startValue # Needs improvement
-    result['mbf'] = 0          # Needs improvement
-    result['lpf'] = 0
-    result['lpo'] = 0
-    result['hpf'] = None
-    result['hpo'] = 0
     for i in range(numZeros):
         freqsOrders[i, 0] = np.abs(zeros[i])
         freqsOrders[i, 1] = 1
@@ -410,49 +393,52 @@ def findServoBandwidth(loopgainRational):
     freqsOrders = freqsOrders[freqsOrders[:,0].argsort()]
     for i in range(numCornerFreqs):
         if i == 0:
-            freqsOrders[i, 2] = startOrder
-            if freqsOrders[i, 0] == 0:
-                freqsOrders[i, 3] = startValue
-                freqsOrders[i, 4] = startValue
-                freqsOrders[i, 5] = 0
-            else:
-                freqsOrders[i, 2] = freqsOrders[i, 1] + freqsOrders[i-1, 2]
-                freqsOrders[i, 3] = startValue*freqsOrders[i, 0]** -freqsOrders[i, 1]
-                freqsOrders[i, 4] = startValue
+            order         = firstNonZeroN - firstNonZeroD
+            value         = np.abs(gain)
+            result['mbv'] = value
+            result['mbf'] = None
+            result['lpf'] = None
+            result['lpo'] = None
+            result['hpf'] = None
+            result['hpo'] = None
         else:
-            freqsOrders[i, 2] = freqsOrders[i, 1] + freqsOrders[i-1, 2]
-            freqsOrders[i, 3] = freqsOrders[i-1, 3]*freqsOrders[i, 0]**-freqsOrders[i, 1]
-            if freqsOrders[i-1, 0] == 0:
-                freqsOrders[i, 4] = freqsOrders[i-1, 4] * freqsOrders[i, 0]**freqsOrders[i, 2]
+            if freqsOrders[i-1, 0] == 0: # previous pole or zero in origin
+                value *= freqsOrders[i, 0] ** order
             else:
-                freqsOrders[i, 4] = freqsOrders[i-1, 4] * (freqsOrders[i, 0]/freqsOrders[i-1, 0])** freqsOrders[i-1, 2]
-        if freqsOrders[i, 2] != 0:
-            freqsOrders[i, 5] = freqsOrders[i, 3]**(-1/freqsOrders[i, 2])
-            if freqsOrders[i, 5] > freqsOrders[i, 0]:
-                if freqsOrders[i, 2] > 0:
-                    result['hpf'] = freqsOrders[i, 5]
-                    result['hpo'] = freqsOrders[i, 2]
-                else:
-                    result['lpf'] = freqsOrders[i, 5]
-                    result['lpo'] = freqsOrders[i, 2]
-        if freqsOrders[i, 4] > result['mbv'] and freqsOrders[i, 0] != 0:
-            result['mbv'] = freqsOrders[i, 4]
-            result['mbf'] = freqsOrders[i, 0]
-    if result['mbf'] == 0:
-        result['mbv'] = np.abs(loopgainRational.subs(ini.Laplace, 0))
+                value *= (freqsOrders[i, 0] / freqsOrders[i-1, 0]) ** order
+            if value > result['mbv']:
+                result['mbv'] = value
+                result['mbf'] = freqsOrders[i, 0]
+            order += freqsOrders[i, 1]
+        if order > 0 and result['mbv'] < 1:
+            if freqsOrders[i, 0] == 0:
+                fug = value**(-order)
+            else:
+                fug = (value/freqsOrders[i, 0])**(-order)
+            if result['hpf'] == None:
+                result['hpf'] = fug
+                result['hpo'] = order
+            elif fug > result['hpf']:
+                result['hpf'] = fug
+                result['hpo'] = order
+        elif order < 0 and result['mbv'] > 1:
+            if freqsOrders[i, 0] == 0:
+                fug = value**(-order)
+            else:
+                fug = (value*freqsOrders[i, 0])**(-order)
+            if result['lpf'] == None:
+                result['lpf'] = fug
+                result['lpo'] = order
+            elif fug < result['lpf']:
+                result['lpf'] = fug
+                result['lpo'] = order
     if ini.Hz:
-        try:
+        if result['hpf'] != None:
             result['hpf'] = result['hpf']/np.pi/2
-        except BaseException:
-            pass
-        try:
+        if result['lpf'] != None:
             result['lpf'] = result['lpf']/np.pi/2
-        except BaseException:
-            pass
-        try:
+        if result['mbf'] != None:
             result['mbf'] = result['mbf']/np.pi/2
-        except BaseException:
-            pass
     return result
 
 def checkNumber(var):
