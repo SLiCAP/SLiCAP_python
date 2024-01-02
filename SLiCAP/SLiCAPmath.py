@@ -395,7 +395,7 @@ def findServoBandwidth(loopgainRational):
         if i == 0:
             order         = firstNonZeroN - firstNonZeroD
             value         = np.abs(gain)
-            result['mbv'] = value
+            result['mbv'] = None
             result['mbf'] = None
             result['lpf'] = None
             result['lpo'] = None
@@ -403,35 +403,25 @@ def findServoBandwidth(loopgainRational):
             result['hpo'] = None
         else:
             if freqsOrders[i-1, 0] == 0: # previous pole or zero in origin
-                value *= freqsOrders[i, 0] ** order
+                new_value = value * freqsOrders[i, 0] ** order
             else:
-                value *= (freqsOrders[i, 0] / freqsOrders[i-1, 0]) ** order
-            if value > result['mbv']:
-                result['mbv'] = value
-                result['mbf'] = freqsOrders[i, 0]
-            order += freqsOrders[i, 1]
-        if order > 0 and result['mbv'] < 1:
-            if freqsOrders[i, 0] == 0:
-                fug = value**(-order)
-            else:
-                fug = (value/freqsOrders[i, 0])**(-order)
-            if result['hpf'] == None:
-                result['hpf'] = fug
+                new_value = value * (freqsOrders[i, 0] / freqsOrders[i-1, 0]) ** order
+            new_order = order + freqsOrders[i, 1]
+            if value < 1 and order > 0:
+                result['hpf'] = (freqsOrders[i, 0] / new_value)**(1/order)
                 result['hpo'] = order
-            elif fug > result['hpf']:
-                result['hpf'] = fug
-                result['hpo'] = order
-        elif order < 0 and result['mbv'] > 1:
-            if freqsOrders[i, 0] == 0:
-                fug = value**(-order)
-            else:
-                fug = (value*freqsOrders[i, 0])**(-order)
-            if result['lpf'] == None:
-                result['lpf'] = fug
-                result['lpo'] = order
-            elif fug < result['lpf']:
-                result['lpf'] = fug
-                result['lpo'] = order
+                if result['mbv'] == None:
+                    result['mbv'] = new_value
+                    result['mbf'] = freqsOrders[i, 0]
+            elif new_value > 1 and new_order < 0:
+                result['lpf'] = (freqsOrders[i, 0] * new_value)*(-1/new_order)
+                result['lpo'] = new_order
+            if result['mbv'] != None:
+                if new_value > result['mbv']:
+                    result['mbv'] = new_value
+                    result['mbf'] = freqsOrders[i, 0]
+            order = new_order
+            value = new_value
     if ini.Hz:
         if result['hpf'] != None:
             result['hpf'] = result['hpf']/np.pi/2
