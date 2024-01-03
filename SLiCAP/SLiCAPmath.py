@@ -230,8 +230,8 @@ def coeffsTransfer(rational, var=ini.Laplace, method='lowest'):
     if rational != 0:
         num, den = rational.as_numer_denom()
         try:
-            numPoly = sp.Poly(sp.expand(num), var)
-            denPoly = sp.Poly(sp.expand(den), var)
+            numPoly = sp.Poly(num, var)
+            denPoly = sp.Poly(den, var)
             if method == 'lowest':
                 gainNum = sp.Poly.EC(numPoly)
                 gainDen = sp.Poly.EC(denPoly)
@@ -286,8 +286,6 @@ def normalizeRational(rational, var=ini.Laplace, method='lowest'):
         num = sp.Poly(numCoeffs, var).as_expr()
         den = sp.Poly(denCoeffs, var).as_expr()
         rational = gain*num/den
-    else:
-        rational = gain
     return rational
 
 def cancelPZ(poles, zeros):
@@ -376,30 +374,38 @@ def findServoBandwidth(loopgainRational):
     numPoles              = len(poles)
     numZeros              = len(zeros)
     numCornerFreqs        = numPoles + numZeros
-    gain, coeffsN,coeffsD = coeffsTransfer(sp.expand(loopgainRational))
+    gain, coeffsN,coeffsD = coeffsTransfer(loopgainRational)
     coeffsN               = np.array(coeffsN)
     coeffsD               = np.array(coeffsD)
     firstNonZeroN         = np.argmax(coeffsN != 0)
     firstNonZeroD         = np.argmax(coeffsD != 0)
-    freqsOrders           = np.zeros((numCornerFreqs, 2))
-    order                 = firstNonZeroN - firstNonZeroD
-    value                 = np.abs(gain)
+    freqsOrders           = np.zeros((numCornerFreqs, 2), dtype='float64')
+    order                 = int(firstNonZeroN - firstNonZeroD)
+    value                 = np.abs(float(gain))
     fcorner               = 0
     result = {}
     if order == 0:
         if value > 1:
             result['mbv'] = value
             result['mbf'] = 0
+            result['lpf'] = None
+            result['lpo'] = None
+            result['hpf'] = None
+            result['hpo'] = None
     elif order < 0:
         result['mbv'] = sp.oo
         result['mbf'] = 0
+        result['lpf'] = value**(-1/order)
+        result['lpo'] = order
+        result['hpf'] = None
+        result['hpo'] = None
     elif order > 0:
-        result['mbv'] = 0
-        result['mbf'] = 0
-    result['lpf'] = None
-    result['lpo'] = None
-    result['hpf'] = None
-    result['hpo'] = None
+        result['mbv'] = None
+        result['mbf'] = None
+        result['lpf'] = None
+        result['lpo'] = None
+        result['hpf'] = None
+        result['hpo'] = None
     for i in range(numZeros):
         freqsOrders[i, 0] = np.abs(zeros[i])
         freqsOrders[i, 1] = 1
@@ -410,8 +416,8 @@ def findServoBandwidth(loopgainRational):
     freqsOrders = freqsOrders[freqsOrders[:,0].argsort()]
     for i in range(numCornerFreqs):
         if freqsOrders[i, 0] != 0:
-            new_fcorner  = freqsOrders[i, 0]
-            new_order    = order + freqsOrders[i, 1]
+            new_fcorner  = float(freqsOrders[i, 0])
+            new_order    = int(order + freqsOrders[i, 1])
             # Determine new value at corner frequency
             if order == 0:
                 new_value = value
@@ -429,10 +435,10 @@ def findServoBandwidth(loopgainRational):
                 # high-pass intersection
                 result['hpf'] = fcorner * value **(-1/order)
                 result['hpo'] = order
-            if new_value > 1:
-                if new_value > result['mbv']:
-                    result['mbv'] = new_value
-                    result['mbf'] = new_fcorner
+            if new_value > 1 and (result['mbv'] == None or new_value > result['mbv']):
+                # A new or larger midband value
+                result['mbv'] = new_value
+                result['mbf'] = new_fcorner
             value    = new_value
             order    = new_order
             fcorner  = new_fcorner
@@ -1548,10 +1554,10 @@ def nonPolyCoeffs(expr, var):
 
 if __name__ == "__main__":
     from time import time
-
+    ini.Hz=True
+    """
     t = sp.Symbol('t')
     s = sp.Symbol('s')
-    """
     k = sp.Symbol('k')
     eps = sp.Symbol('epsilon')
     loopgain_numer   = sp.sympify('-s*(1 + s/20)*(1 + s/40)/2')
@@ -1574,7 +1580,7 @@ if __name__ == "__main__":
 
     gain     = gainValue(numer, denom)
     print(gain)
-    """
+
     M = sp.sympify('Matrix([[0, 0, 0, 0, 0, 1, 0], [0, -2, 0, 0, g_m1, g_m1, 0], [0, 0, -2, g_m2, -g_m2, 0, 0], [0, 1, 0, 1/2*c_i2*s + 1/2/r_o1, -1/2*c_i2*s + 1/2/r_o1, 0, 0], [0, 1, -1, -1/2*c_i2*s + 1/2/r_o1, 1/2*c_i1*s + 1/2*c_i2*s + 1/2/r_o2 + 1/2/r_o1 + 1/2/R, 1/2*c_i1*s, -1/2/r_o2], [1, 0, 0, 0, 1/2*c_i1*s, 1/2*c_i1*s, 0], [0, 0, 1, 0, -1/2/r_o2, 0, 1/2/r_o2 + 1/R_L]])')
     t1=time()
     DME = det(M, method="ME")
@@ -1583,17 +1589,7 @@ if __name__ == "__main__":
     DBS = det(M, method="BS")
     t3= time()
     print("Bareis          :", t3-t2, 's')
-    t4 = time()
-    M = optimizeMatrix(M)
-    DME = det(M, method="ME")
-    t5 = time()
-    print("Minor expansion :", t5-t4, 's')
-    DBS = det(M, method="BS")
-    t6= time()
-    print("Bareis          :", t6-t5, 's')
 
-
-    """
     M = sp.sympify('Matrix([[0, 1, -1, 0, 0], [1, 1/R_GND + 1/R_1, 0, 0, -1/R_1], [-1, 0, 1/R_1, -1/R_1, 0], [0, 0, -1/R_1, 1/R_2 + 1/R_1, -1/R_2], [0, -1/R_1, 0, -1/R_2, 1/R_2 + 1/R_1]])')
     D = det(M)
     t3=time()
@@ -1612,9 +1608,7 @@ if __name__ == "__main__":
     #gt = ilt(expr, s, t)
     expr = "1/(s*(s*R*C+1))"
     ht = ilt(expr, s, t)
-    """
     Mnew = M.echelon_form()
-
     LG = sp.sympify("-0.00647263929159112*(1.42481097731728e-5*s**2 + s)/(6.46865378347277e-16*s**3 + 2.0274790076825e-8*s**2 + 0.0014352663537982*s + 1.0)")
     print(findServoBandwidth(LG))
 
@@ -1631,3 +1625,7 @@ if __name__ == "__main__":
 
     loopgain         = sp.sympify('100*(1+s)*(1+s/10)/(s^2*(1+s^2/100^2)*(1+s/1000))')
     print(findServoBandwidth(loopgain))
+    """
+    loopgain         = sp.sympify('-8000000000000000000*pi**3/(s*(s**2 + 4000000*pi*s + 8000000000000*pi**2))')
+    print(findServoBandwidth(sp.N(loopgain)))
+
