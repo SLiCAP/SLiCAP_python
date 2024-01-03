@@ -382,7 +382,21 @@ def findServoBandwidth(loopgainRational):
     firstNonZeroN         = np.argmax(coeffsN != 0)
     firstNonZeroD         = np.argmax(coeffsD != 0)
     freqsOrders           = np.zeros((numCornerFreqs, 2))
+    order                 = firstNonZeroN - firstNonZeroD
+    value                 = np.abs(gain)
+    fcorner               = 0
     result = {}
+    if value > 1:
+        result['mbv'] = value
+        if order <= 0:
+            result['mbf'] = 0
+    else:
+        result['mbv'] = None
+        result['mbf'] = None
+    result['lpf'] = None
+    result['lpo'] = None
+    result['hpf'] = None
+    result['hpo'] = None
     for i in range(numZeros):
         freqsOrders[i, 0] = np.abs(zeros[i])
         freqsOrders[i, 1] = 1
@@ -392,36 +406,36 @@ def findServoBandwidth(loopgainRational):
     # sort the rows with increasing corner frequencies
     freqsOrders = freqsOrders[freqsOrders[:,0].argsort()]
     for i in range(numCornerFreqs):
-        if i == 0:
-            order         = firstNonZeroN - firstNonZeroD
-            value         = np.abs(gain)
-            result['mbv'] = None
-            result['mbf'] = None
-            result['lpf'] = None
-            result['lpo'] = None
-            result['hpf'] = None
-            result['hpo'] = None
-        else:
-            if freqsOrders[i-1, 0] == 0: # previous pole or zero in origin
-                new_value = value * freqsOrders[i, 0] ** order
+        if freqsOrders[i, 0] != 0:
+            new_fcorner  = freqsOrders[i, 0]
+            new_order    = order + freqsOrders[i, 1]
+            # Determine new value at corner frequency
+            if order == 0:
+                new_value = value
             else:
-                new_value = value * (freqsOrders[i, 0] / freqsOrders[i-1, 0]) ** order
-            new_order = order + freqsOrders[i, 1]
-            if value < 1 and order > 0:
-                result['hpf'] = (freqsOrders[i, 0] / new_value)**(1/order)
+                if fcorner == 0: # first pole or zero in origin
+                    new_value = value * new_fcorner ** order
+                else:
+                    new_value = value * (new_fcorner / fcorner) ** order
+            # Determine unity-gain frequencies
+            if new_value > 1 and new_order < 0:
+                # low-pass intersection
+                result['lpf'] = new_fcorner * new_value ** (-1/new_order)
+                result['lpo'] = new_order
+            elif value < 1 and order > 0:
+                # high-pass intersection
+                result['hpf'] = fcorner * value **(-1/order)
                 result['hpo'] = order
+            if new_value > 1:
                 if result['mbv'] == None:
                     result['mbv'] = new_value
-                    result['mbf'] = freqsOrders[i, 0]
-            elif new_value > 1 and new_order < 0:
-                result['lpf'] = (freqsOrders[i, 0] * new_value)*(-1/new_order)
-                result['lpo'] = new_order
-            if result['mbv'] != None:
-                if new_value > result['mbv']:
+                    result['mbf'] = new_fcorner
+                elif new_value > result['mbv']:
                     result['mbv'] = new_value
-                    result['mbf'] = freqsOrders[i, 0]
-            order = new_order
-            value = new_value
+                    result['mbf'] = new_fcorner
+            value    = new_value
+            order    = new_order
+            fcorner  = new_fcorner
     if ini.Hz:
         if result['hpf'] != None:
             result['hpf'] = result['hpf']/np.pi/2
