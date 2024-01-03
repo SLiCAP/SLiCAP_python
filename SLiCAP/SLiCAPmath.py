@@ -386,13 +386,16 @@ def findServoBandwidth(loopgainRational):
     value                 = np.abs(gain)
     fcorner               = 0
     result = {}
-    if value > 1:
-        result['mbv'] = value
-        if order <= 0:
+    if order == 0:
+        if value > 1:
+            result['mbv'] = value
             result['mbf'] = 0
-    else:
-        result['mbv'] = None
-        result['mbf'] = None
+    elif order < 0:
+        result['mbv'] = sp.oo
+        result['mbf'] = 0
+    elif order > 0:
+        result['mbv'] = 0
+        result['mbf'] = 0
     result['lpf'] = None
     result['lpo'] = None
     result['hpf'] = None
@@ -427,10 +430,7 @@ def findServoBandwidth(loopgainRational):
                 result['hpf'] = fcorner * value **(-1/order)
                 result['hpo'] = order
             if new_value > 1:
-                if result['mbv'] == None:
-                    result['mbv'] = new_value
-                    result['mbf'] = new_fcorner
-                elif new_value > result['mbv']:
+                if new_value > result['mbv']:
                     result['mbv'] = new_value
                     result['mbf'] = new_fcorner
             value    = new_value
@@ -1614,3 +1614,20 @@ if __name__ == "__main__":
     ht = ilt(expr, s, t)
     """
     Mnew = M.echelon_form()
+
+    LG = sp.sympify("-0.00647263929159112*(1.42481097731728e-5*s**2 + s)/(6.46865378347277e-16*s**3 + 2.0274790076825e-8*s**2 + 0.0014352663537982*s + 1.0)")
+    print(findServoBandwidth(LG))
+
+    loopgain_numer   = sp.sympify('-s*(1 + s/20)*(1 + s/40)/2')
+    loopgain_denom   = sp.sympify('(s + 1)^2*(1 + s/4e3)*(1 + s/50e3)*(1 + s/1e6)')
+    loopgain         = loopgain_numer/loopgain_denom
+    print(findServoBandwidth(loopgain))
+
+    loopgain         = sp.sympify('100/((1+s/10)*(1+s/20))')
+    print(findServoBandwidth(loopgain))
+
+    loopgain         = sp.sympify('0.01*s^2*(1+s^2/20^2)/((1+s)*(1+s/5)*(1+s/200)*(1+s/800)*(1+s/2000))')
+    print(findServoBandwidth(loopgain))
+
+    loopgain         = sp.sympify('100*(1+s)*(1+s/10)/(s^2*(1+s^2/100^2)*(1+s/1000))')
+    print(findServoBandwidth(loopgain))
