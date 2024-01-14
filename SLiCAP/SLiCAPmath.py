@@ -589,6 +589,8 @@ def assumePosParams(expr, params = 'all'):
 
     if type(params) == list:
         for i in range(len(params)):
+            if params[i] == 't':
+                expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
             expr = expr.xreplace({sp.Symbol(params[i]): sp.Symbol(params[i], positive = True)})
     elif type(params) == str:
         if params == 'all':
@@ -598,8 +600,13 @@ def assumePosParams(expr, params = 'all'):
             except BaseException:
                 pass
             for i in range(len(params)):
+                params[i] = sp.Symbol(str(params[i]))
+                if params[i] == sp.Symbol('t'):
+                    expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
                 expr = expr.xreplace({sp.Symbol(str(params[i])): sp.Symbol(str(params[i]), positive = True)})
         else:
+            if params == 't':
+                expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
             expr = expr.xreplace({sp.Symbol(params): sp.Symbol(params, positive = True)})
     else:
         print("Error: expected type 'str' or 'lst', got '{0}'.".format(type(params)))
@@ -1448,8 +1455,7 @@ def roundN(expr, numeric=False):
 
 def ilt(expr, s, t, integrate=False):
     """
-    Returns the Inverse Laplace Transform f(t) of a rational expression F(s)
-    with real coefficients.
+    Returns the Inverse Laplace Transform f(t) of an expression F(s) for t > 0.
 
     :param expr: Rational function of the Laplace variable F(s).
     :type expr: Sympy expression, integer, float, or str.
@@ -1475,18 +1481,16 @@ def ilt(expr, s, t, integrate=False):
         variables = list(expr.atoms(sp.Symbol))
         if len(variables) == 0 or s not in variables:
             inv_laplace = sp.DiracDelta(t)*expr
-        else:
-            if len(variables) == 1 or (len(variables)==2 and sp.pi in variables):
-                expr = sp.N(expr)
+        elif len(variables) == 1 or (len(variables)==2 and sp.pi in variables):
+            expr = sp.N(expr)
             num, den = expr.as_numer_denom()
-            polyDen = sp.Poly(den, s)
-            gainD = sp.Poly.LC(polyDen)
-            denCoeffs = polyDen.all_coeffs()
-            denCoeffs = [coeff/gainD for coeff in denCoeffs]
-            if integrate:
-                denCoeffs.append(0)
-            if len(variables) == 1 or (len(variables)==2 and sp.pi in variables):
-                denCoeffs = [sp.N(coeff) for coeff in denCoeffs]
+            if num.is_polynomial() and den.is_polynomial():
+                polyDen = sp.Poly(den, s)
+                gainD = sp.Poly.LC(polyDen)
+                denCoeffs = polyDen.all_coeffs()
+                denCoeffs = [coeff/gainD for coeff in denCoeffs]
+                if integrate:
+                    denCoeffs.append(0)
                 p = Polynomial(np.array(denCoeffs[::-1], dtype=float))
                 rts = p.roots()
                 rootDict = {}
@@ -1495,33 +1499,44 @@ def ilt(expr, s, t, integrate=False):
                         rootDict[rt] = 1
                     else:
                         rootDict[rt] += 1
-            else:
-                rootDict = sp.roots(sp.Poly(denCoeffs, s), s)
-            polyNum = sp.Poly(num, s)
-            numCoeffs = polyNum.all_coeffs()
-            numCoeffs = [numCoeff/gainD for numCoeff in numCoeffs]
-            num = sp.Poly(numCoeffs, s)
-            rts = rootDict.keys()
-            inv_laplace = 0
-            for root in rts:
-                # get root multiplicity
-                n = rootDict[root]
-                # build the function
-                fs = num.as_expr()*sp.exp(s*t)
-                for rt in rts:
-                    if rt != root:
-                        fs /= (s-rt)**rootDict[rt]
-                # calculate residue
-                if n == 1:
-                    inv_laplace += fs.subs(s, root)
-                else:
-                    inv_laplace += (1/sp.factorial(n-1))*sp.diff(fs, (s, n-1)).subs(s, root)
-            if len(variables) == 1:
+                polyNum = sp.Poly(num, s)
+                numCoeffs = polyNum.all_coeffs()
+                numCoeffs = [numCoeff/gainD for numCoeff in numCoeffs]
+                num = sp.Poly(numCoeffs, s)
+                rts = rootDict.keys()
+                inv_laplace = 0
+                for root in rts:
+                    # get root multiplicity
+                    n = rootDict[root]
+                    # build the function
+                    fs = num.as_expr()*sp.exp(s*t)
+                    for rt in rts:
+                        if rt != root:
+                            fs /= (s-rt)**rootDict[rt]
+                    # calculate residue
+                    if n == 1:
+                        inv_laplace += fs.subs(s, root)
+                    else:
+                        inv_laplace += (1/sp.factorial(n-1))*sp.diff(fs, (s, n-1)).subs(s, root)
                 inv_laplace = sp.N(assumeRealParams(inv_laplace))
                 result = inv_laplace.as_real_imag()[0]
                 if sp.I in result.atoms():
-                    result = inv_laplace.rewrite(sp.cos).simplify().trigsimp()
-                inv_laplace = result
+                    inv_laplace = inv_laplace.rewrite(sp.cos).simplify().trigsimp()
+                inv_laplace = clearAssumptions(inv_laplace)
+            else:
+                # If one or more polynomial coefficients are symbolic:
+                # use the sympy inverse_laplace_transform() method
+                if integrate:
+                    expr = expr/s
+                inv_laplace = sp.integrals.transforms.inverse_laplace_transform(expr, s, t)
+        else:
+            # If the numerator or denominator cannot be written as a polynomial in 's':
+            # use the sympy inverse_laplace_transform() method
+            if integrate:
+                expr = expr/s
+            inv_laplace = sp.integrals.transforms.inverse_laplace_transform(expr, s, t)
+        # Remove heaviside function, positive time only
+        inv_laplace = inv_laplace.replace(sp.Heaviside(t), 1)
     return clearAssumptions(inv_laplace)
 
 def nonPolyCoeffs(expr, var):

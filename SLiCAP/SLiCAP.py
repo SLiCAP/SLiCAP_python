@@ -23,7 +23,7 @@ from scipy.integrate import quad
 from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPdesignData import specItem, specs2csv, specs2circuit, csv2specs, specs2html
 from SLiCAP.SLiCAPinstruction import instruction, listPZ
-from SLiCAP.SLiCAPmath import coeffsTransfer, normalizeRational, findServoBandwidth, fullSubs, assumeRealParams, assumePosParams, clearAssumptions, phaseMargin, doCDS, doCDSint, routh, equateCoeffs, step2PeriodicPulse, butterworthPoly, besselPoly, rmsNoise, PdBm2V, float2rational, rational2float, roundN, nonPolyCoeffs
+from SLiCAP.SLiCAPmath import coeffsTransfer, normalizeRational, findServoBandwidth, fullSubs, assumeRealParams, assumePosParams, clearAssumptions, phaseMargin, doCDS, doCDSint, routh, equateCoeffs, step2PeriodicPulse, butterworthPoly, besselPoly, rmsNoise, PdBm2V, float2rational, rational2float, roundN, nonPolyCoeffs, ilt
 from SLiCAP.SLiCAPhtml import startHTML, htmlPage, text2html, eqn2html, expr2html, head2html, head3html, netlist2html, lib2html, elementData2html, params2html, img2html, csv2html, matrices2html, pz2html, noise2html, dcVar2html, coeffsTransfer2html, stepArray2html, fig2html, file2html, href, htmlLink, links2html
 from SLiCAP.SLiCAPplots import trace, axis, figure, plotSweep, plotPZ, plot, traces2fig, LTspiceData2Traces, LTspiceAC2SLiCAPtraces, csv2traces, Cadence2traces, addTraces
 from SLiCAP.SLiCAPlatex import *
