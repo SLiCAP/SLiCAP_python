@@ -1511,11 +1511,7 @@ def ilt(expr, s, t, integrate=False):
                         inv_laplace += fs.subs(s, root)
                     else:
                         inv_laplace += (1/sp.factorial(n-1))*sp.diff(fs, (s, n-1)).subs(s, root)
-                inv_laplace = sp.N(assumeRealParams(inv_laplace))
-                result = inv_laplace.as_real_imag()[0]
-                if sp.I in result.atoms():
-                    inv_laplace = inv_laplace.rewrite(sp.cos).simplify().trigsimp()
-                inv_laplace = clearAssumptions(inv_laplace)
+                inv_laplace = sp.simplify(inv_laplace)
             else:
                 # If the numerator or denominator cannot be written as a polynomial in 's':
                 # use the sympy inverse_laplace_transform() method
@@ -1547,7 +1543,7 @@ def _symilt(expr, s, t, integrate=False):
     """
     if integrate:
         expr = expr/s
-    inv_laplace = sp.integrals.transforms.inverse_laplace_transform(expr, s, t)
+    inv_laplace = sp.inverse_laplace_transform(expr, s, t)
     # Remove the Heaviside function; positive time only
     return inv_laplace.replace(sp.Heaviside(t), 1)
 
