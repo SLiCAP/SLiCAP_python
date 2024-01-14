@@ -713,6 +713,9 @@ def makeNumData(yFunc, xVar, x, normalize=True):
     :param x: List with values of x
     :type x: list
 
+    :param normalize: True if rational function needs to be normalized. Defaults to True.
+    :type normalize: Bool
+
     :return: list with y values: y[i] = yFunc(x[i]).
     :rtype:  list
     """
@@ -721,19 +724,11 @@ def makeNumData(yFunc, xVar, x, normalize=True):
     else:
         yFunc = sp.N(yFunc)
     if xVar in list(yFunc.atoms(sp.Symbol)):
-        # Check for periodic function (not implemented in sp.lambdify)
-        if xVar == sp.Symbol('t'):
-            if len(list(yFunc.atoms(sp.Heaviside))) != 0:
-                y = [sp.N(yFunc.subs(xVar, x[i])).doit() for i in range(len(x))]
-            else:
-                func = sp.lambdify(xVar, yFunc, ini.lambdifyTool)
-                y = func(x)
-        elif xVar == ini.Laplace or xVar == ini.frequency:
-            func = sp.lambdify(xVar, yFunc, ini.lambdifyTool)
-            y = func(x)
-        else:
-            func = sp.lambdify(xVar, yFunc, ini.lambdifyTool)
-            y = func(x)
+        # Check for Heaviside functions (not implemented in sp.lambdify)
+        if len(list(yFunc.atoms(sp.Heaviside))) != 0:
+            y = [sp.N(yFunc.subs(xVar, x[i])).doit() for i in range(len(x))]
+        func = sp.lambdify(xVar, yFunc, ini.lambdifyTool)
+        y = func(x)
     else:
         y = [sp.N(yFunc) for i in range(len(x))]
     return y
@@ -980,7 +975,6 @@ def doCDSint(noiseResult, tau, f_min, f_max):
     _phi = sp.Symbol('_phi')
     noiseResult *= ((2*sp.sin(sp.pi*ini.frequency*tau)))**2
     noiseResult = noiseResult.subs(ini.frequency, _phi/tau/sp.pi)
-    # TOD0: Check for numeric or symbolic integration
     noiseResultCDSint = sp.integrate(noiseResult/sp.pi/tau, (_phi, f_min*tau*sp.pi, f_max*tau*sp.pi))
     return sp.simplify(noiseResultCDSint)
 
@@ -1457,7 +1451,7 @@ def ilt(expr, s, t, integrate=False):
     """
     Returns the Inverse Laplace Transform f(t) of an expression F(s) for t > 0.
 
-    :param expr: Rational function of the Laplace variable F(s).
+    :param expr: Function of the Laplace variable F(s).
     :type expr: Sympy expression, integer, float, or str.
 
     :param s: Laplace variable
@@ -1481,14 +1475,13 @@ def ilt(expr, s, t, integrate=False):
         variables = list(expr.atoms(sp.Symbol))
         if len(variables) == 0 or s not in variables:
             inv_laplace = sp.DiracDelta(t)*expr
-        elif len(variables) == 1 or (len(variables)==2 and sp.pi in variables):
-            expr = sp.N(expr)
+        elif len(variables) == 1 or (len(variables) == 2 and sp.pi in variables):
             num, den = expr.as_numer_denom()
             if num.is_polynomial() and den.is_polynomial():
                 polyDen = sp.Poly(den, s)
                 gainD = sp.Poly.LC(polyDen)
                 denCoeffs = polyDen.all_coeffs()
-                denCoeffs = [coeff/gainD for coeff in denCoeffs]
+                denCoeffs = [sp.N(coeff/gainD) for coeff in denCoeffs]
                 if integrate:
                     denCoeffs.append(0)
                 p = Polynomial(np.array(denCoeffs[::-1], dtype=float))
@@ -1501,7 +1494,7 @@ def ilt(expr, s, t, integrate=False):
                         rootDict[rt] += 1
                 polyNum = sp.Poly(num, s)
                 numCoeffs = polyNum.all_coeffs()
-                numCoeffs = [numCoeff/gainD for numCoeff in numCoeffs]
+                numCoeffs = [sp.N(numCoeff/gainD) for numCoeff in numCoeffs]
                 num = sp.Poly(numCoeffs, s)
                 rts = rootDict.keys()
                 inv_laplace = 0
@@ -1524,20 +1517,39 @@ def ilt(expr, s, t, integrate=False):
                     inv_laplace = inv_laplace.rewrite(sp.cos).simplify().trigsimp()
                 inv_laplace = clearAssumptions(inv_laplace)
             else:
-                # If one or more polynomial coefficients are symbolic:
+                # If the numerator or denominator cannot be written as a polynomial in 's':
                 # use the sympy inverse_laplace_transform() method
-                if integrate:
-                    expr = expr/s
-                inv_laplace = sp.integrals.transforms.inverse_laplace_transform(expr, s, t)
+                inv_laplace = _symilt(expr, s, t, integrate=integrate)
         else:
-            # If the numerator or denominator cannot be written as a polynomial in 's':
+            # If one or more polynomial coefficients are symbolic:
             # use the sympy inverse_laplace_transform() method
-            if integrate:
-                expr = expr/s
-            inv_laplace = sp.integrals.transforms.inverse_laplace_transform(expr, s, t)
-        # Remove heaviside function, positive time only
-        inv_laplace = inv_laplace.replace(sp.Heaviside(t), 1)
+            inv_laplace = _symilt(expr, s, t, integrate=integrate)
     return clearAssumptions(inv_laplace)
+
+def _symilt(expr, s, t, integrate=False):
+    """
+    Returns the Inverse Laplace Transform f(t) of an expression F(s) for t > 0.
+
+    :param expr: Function of the Laplace variable F(s).
+    :type expr: Sympy expression.
+
+    :param s: Laplace variable
+    :type s: sympy.Symbol
+
+    :param t: time variable
+    :type t: sympy.Symbol
+
+    :param integrate: True multiplies expr with 1/s, defaults to False
+    :type integrate: Bool
+
+    return: Inverse Laplace Transform f(t)
+    :rtype: sympy.Expr
+    """
+    if integrate:
+        expr = expr/s
+    inv_laplace = sp.integrals.transforms.inverse_laplace_transform(expr, s, t)
+    # Remove the Heaviside function; positive time only
+    return inv_laplace.replace(sp.Heaviside(t), 1)
 
 def nonPolyCoeffs(expr, var):
         """
