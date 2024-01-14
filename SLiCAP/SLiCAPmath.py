@@ -1524,7 +1524,7 @@ def ilt(expr, s, t, integrate=False):
             # If one or more polynomial coefficients are symbolic:
             # use the sympy inverse_laplace_transform() method
             inv_laplace = _symilt(expr, s, t, integrate=integrate)
-    return clearAssumptions(inv_laplace)
+    return inv_laplace
 
 def _symilt(expr, s, t, integrate=False):
     """
