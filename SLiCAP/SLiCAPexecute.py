@@ -849,9 +849,9 @@ def doImpulse(instr, result):
     if instr.step:
         result.impulse = []
         for laplaceResult in result.laplace:
-            result.impulse.append(ilt(laplaceResult, ini.Laplace, sp.Symbol('t', real=True), trig=True))
+            result.impulse.append(ilt(laplaceResult, ini.Laplace, sp.Symbol('t'), trig=True))
     else:
-        result.impulse = ilt(laplaceResult, ini.Laplace, sp.Symbol('t', real=True), trig=True)
+        result.impulse = ilt(laplaceResult, ini.Laplace, sp.Symbol('t'), trig=True)
     instr.dataType = 'impulse'
     result.dataType = 'impulse'
     return result
@@ -886,9 +886,9 @@ def doStep(instr, result):
     if instr.step:
         result.stepResp = []
         for laplaceResult in result.laplace:
-            result.stepResp.append(ilt(laplaceResult, ini.Laplace, sp.Symbol('t', real=True), integrate=True))
+            result.stepResp.append(ilt(laplaceResult, ini.Laplace, sp.Symbol('t'), integrate=True))
     else:
-        result.stepResp = ilt(result.laplace, ini.Laplace, sp.Symbol('t', real=True), integrate=True)
+        result.stepResp = ilt(result.laplace, ini.Laplace, sp.Symbol('t'), integrate=True)
     instr.dataType = 'step'
     result.dataType = 'step'
     return result
@@ -913,10 +913,10 @@ def doTime(instr, result):
         result.time = []
         for laplaceResult in result.laplace:
             laplaceResult = laplaceResult, ini.Laplace
-            result.time.append(ilt(laplaceResult, ini.Laplace, sp.Symbol('t', real=True)))
+            result.time.append(ilt(laplaceResult, ini.Laplace, sp.Symbol('t')))
     else:
         laplaceResult = result.laplace
-        result.time = ilt(laplaceResult, ini.Laplace, sp.Symbol('t', real=True))
+        result.time = ilt(laplaceResult, ini.Laplace, sp.Symbol('t'))
     instr.dataType = 'time'
     result.dataType = 'time'
     return result
@@ -1018,13 +1018,13 @@ def doTimeSolve(instr, result):
             timeSolution = sp.zeros(len(solution), 1)
             for i in range(len(solution)):
                 laplaceResult = solution[i]
-                timeSolution[i] = ilt(laplaceResult, ini.Laplace, sp.Symbol('t', real=True))
+                timeSolution[i] = ilt(laplaceResult, ini.Laplace, sp.Symbol('t'))
             result.timeSolve.append(timeSolution)
     else:
         timeSolution = sp.zeros(len(result.solve), 1)
         for i in range(len(result.solve)):
             laplaceResult = result.solve[i]
-            timeSolution[i] = ilt(laplaceResult, ini.Laplace, sp.Symbol('t', real=True))
+            timeSolution[i] = ilt(laplaceResult, ini.Laplace, sp.Symbol('t'))
         result.timeSolve = timeSolution
     return result
 
