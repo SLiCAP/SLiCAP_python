@@ -13,33 +13,6 @@ from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPlex import replaceScaleFactors
 from SLiCAP.SLiCAPfc import computeFC
 
-def optimizeMatrix(M):
-    """
-    """
-    rowDict = {}
-    dim = M.shape[0]
-    for rowNr in range(dim):
-        for nonZeroCol in range(dim):
-            if M[rowNr, nonZeroCol]:
-                break
-        if nonZeroCol in rowDict.keys():
-            rowDict[nonZeroCol].append(rowNr)
-        else:
-            rowDict[nonZeroCol] = [rowNr]
-    # Create the permutation matrix
-    # Rows will obtain decreasing number of leading zeros
-    P = sp.zeros(dim)
-    sign = 1
-    newRow = dim - 1
-    for i in range(dim):
-        if i in rowDict.keys():
-            for rowNr in rowDict[i]:
-                P[rowNr, newRow] = 1
-                if rowNr != newRow:
-                    sign = -sign
-                newRow -= 1
-    return P.transpose()*M, sign
-
 def det(M, method="ME"):
     """
     Returns the determinant of a square matrix 'M' calculated using recursive
@@ -133,7 +106,7 @@ def detFC(M):
 
 def Roots(expr, var):
     if isinstance(expr, sp.Basic) and isinstance(var, sp.Symbol):
-        params = list(expr.atoms(sp.Symbol))
+        params = expr.atoms(sp.Symbol)
         if var in params:
             if len(params) == 1:
                 rts = numRoots(expr, var)
@@ -523,9 +496,9 @@ def fullSubs(valExpr, parDefs):
     while valExpr != newvalExpr and i < ini.maxRecSubst and isinstance(valExpr, sp.Basic):
         # create a substitution dictionary with the smallest number of entries (this speeds up the substitution)
         substDict = {}
-        params = list(valExpr.atoms(sp.Symbol))
+        params = valExpr.atoms(sp.Symbol)
         for param in params:
-            if param in list(parDefs.keys()):
+            if param in parDefs.keys():
                 if type(parDefs[param]) == isinstance(valExpr, sp.Basic):
                     substDict[param] = float2rational(parDefs[param])
                 else:
@@ -559,13 +532,13 @@ def assumeRealParams(expr, params = 'all'):
             expr = expr.xreplace({sp.Symbol(params[i]): sp.Symbol(params[i], real = True)})
     elif type(params) == str:
         if params == 'all':
-            params = list(expr.atoms(sp.Symbol))
+            params = expr.atoms(sp.Symbol)
             try:
                 params.remove(ini.Laplace)
             except BaseException:
                 pass
-            for i in range(len(params)):
-                expr = expr.xreplace({sp.Symbol(str(params[i])): sp.Symbol(str(params[i]), real = True)})
+            for param in params:
+                expr = expr.xreplace({sp.Symbol(str(param)): sp.Symbol(str(param), real = True)})
         else:
             expr = expr.xreplace({sp.Symbol(params): sp.Symbol(params, real = True)})
     else:
@@ -594,16 +567,16 @@ def assumePosParams(expr, params = 'all'):
             expr = expr.xreplace({sp.Symbol(params[i]): sp.Symbol(params[i], positive = True)})
     elif type(params) == str:
         if params == 'all':
-            params = list(expr.atoms(sp.Symbol))
+            params = expr.atoms(sp.Symbol)
             try:
                 params.remove(ini.Laplace)
             except BaseException:
                 pass
-            for i in range(len(params)):
-                params[i] = sp.Symbol(str(params[i]))
-                if params[i] == sp.Symbol('t'):
+            for param in params:
+                param = sp.Symbol(str(param))
+                if param == sp.Symbol('t'):
                     expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
-                expr = expr.xreplace({sp.Symbol(str(params[i])): sp.Symbol(str(params[i]), positive = True)})
+                expr = expr.xreplace({sp.Symbol(str(param)): sp.Symbol(str(param), positive = True)})
         else:
             if params == 't':
                 expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
@@ -633,14 +606,14 @@ def clearAssumptions(expr, params = 'all'):
             expr = expr.xreplace({sp.Symbol(params[i], real = True): sp.Symbol(params[i])})
     elif type(params) == str:
         if params == 'all':
-            params = list(expr.atoms(sp.Symbol))
+            params = expr.atoms(sp.Symbol)
             try:
                 params.remove(ini.Laplace)
             except BaseException:
                 pass
-            for i in range(len(params)):
-                expr = expr.xreplace({sp.Symbol(str(params[i]), positive = True): sp.Symbol(str(params[i]))})
-                expr = expr.xreplace({sp.Symbol(str(params[i]), real = True): sp.Symbol(str(params[i]))})
+            for param in params:
+                expr = expr.xreplace({sp.Symbol(str(param), positive = True): sp.Symbol(str(param))})
+                expr = expr.xreplace({sp.Symbol(str(param), real = True): sp.Symbol(str(param))})
         else:
             expr = expr.xreplace({sp.Symbol(params, positive = True): sp.Symbol(params)})
             expr = expr.xreplace({sp.Symbol(params, real = True): sp.Symbol(params)})
@@ -723,12 +696,13 @@ def makeNumData(yFunc, xVar, x, normalize=True):
         yFunc = normalizeRational(sp.N(yFunc), xVar)
     else:
         yFunc = sp.N(yFunc)
-    if xVar in list(yFunc.atoms(sp.Symbol)):
+    if xVar in yFunc.atoms(sp.Symbol):
         # Check for Heaviside functions (not implemented in sp.lambdify)
-        if len(list(yFunc.atoms(sp.Heaviside))) != 0:
+        if len(yFunc.atoms(sp.Heaviside)) != 0:
             y = [sp.N(yFunc.subs(xVar, x[i])).doit() for i in range(len(x))]
-        func = sp.lambdify(xVar, yFunc, ini.lambdifyTool)
-        y = func(x)
+        else:
+            func = sp.lambdify(xVar, yFunc, ini.lambdifyTool)
+            y = func(x)
     else:
         y = [sp.N(yFunc) for i in range(len(x))]
     return y
@@ -829,7 +803,7 @@ def phaseFunc_f(LaplaceExpr, f):
     else:
         data = LaplaceExpr.xreplace({ini.Laplace: sp.I*ini.frequency})
     data = sp.N(normalizeRational(data, ini.frequency))
-    if ini.frequency in list(data.atoms(sp.Symbol)):
+    if ini.frequency in data.atoms(sp.Symbol):
         try:
             func = sp.lambdify(ini.frequency, data, ini.lambdifyTool)
             phase = np.angle(func(f))
@@ -881,7 +855,7 @@ def delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
         data = LaplaceExpr.xreplace({ini.Laplace: 2*sp.pi*sp.I*ini.frequency})
     else:
         data = LaplaceExpr.xreplace({ini.Laplace: sp.I*ini.frequency})
-    if ini.frequency in list(data.atoms(sp.Symbol)):
+    if ini.frequency in data.atoms(sp.Symbol):
         data = sp.N(normalizeRational(data, ini.frequency))
         try:
             func = sp.lambdify(ini.frequency, data, ini.lambdifyTool)
@@ -1158,7 +1132,7 @@ def step2PeriodicPulse(ft, t_pulse, t_period, n_periods):
     ft_out = ft
     n_edges = 2*n_periods - 1
     t_delay = 0
-    if t in list(ft.atoms(sp.Symbol)):
+    if t in ft.atoms(sp.Symbol):
         for i in range(n_edges):
             if i % 2 == 0:
                 t_delay += t_pulse
@@ -1299,7 +1273,7 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
         print("Error: expected dataType noise, got: '{0}'.".format(noiseResult.dataType))
         errors += 1
     if errors == 0:
-        names = list(noiseResult.snoiseTerms.keys())
+        names = noiseResult.snoiseTerms.keys()
         if len(sources) == 1 and sources[0] == None:
             noiseSources = [name for name in names]
         else:
