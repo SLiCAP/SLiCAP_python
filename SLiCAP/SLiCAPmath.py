@@ -1468,58 +1468,59 @@ def ilt(expr, s, t, integrate=False):
     """
     inv_laplace = None
     if type(expr) == float or type(expr) == int:
-        inv_laplace = sp.DiracDelta(t)*sp.N(expr)
+        expr = sp.N(expr)
     elif type(expr) == str:
-        expr = normalizeRational(sp.simplify(sp.sympify(expr)), s)
-    if isinstance(expr, sp.Basic):
-        variables = list(expr.atoms(sp.Symbol))
-        if len(variables) == 0 or s not in variables:
-            inv_laplace = sp.DiracDelta(t)*expr
-        elif len(variables) == 1 or (len(variables) == 2 and sp.pi in variables):
-            num, den = expr.as_numer_denom()
-            if num.is_polynomial() and den.is_polynomial():
-                polyDen = sp.Poly(den, s)
-                gainD = sp.Poly.LC(polyDen)
-                denCoeffs = polyDen.all_coeffs()
-                denCoeffs = [sp.N(coeff/gainD) for coeff in denCoeffs]
-                if integrate:
-                    denCoeffs.append(0)
-                p = Polynomial(np.array(denCoeffs[::-1], dtype=float))
-                rts = p.roots()
-                rootDict = {}
+        expr = sp.sympify(expr)
+    variables = sp.N(expr).atoms(sp.Symbol)
+    if len(variables) == 0 or s not in variables:
+        inv_laplace = sp.DiracDelta(t)*expr
+    elif len(variables) == 1:
+        num, den = expr.as_numer_denom()
+        if num.is_polynomial() and den.is_polynomial():
+            polyDen = sp.Poly(den, s)
+            gainD = sp.Poly.LC(polyDen)
+            denCoeffs = polyDen.all_coeffs()
+            denCoeffs = [sp.N(coeff/gainD) for coeff in denCoeffs]
+            if integrate:
+                denCoeffs.append(0)
+            p = Polynomial(np.array(denCoeffs[::-1], dtype=float))
+            rts = p.roots()
+            rootDict = {}
+            for rt in rts:
+                if rt not in rootDict.keys():
+                    rootDict[rt] = 1
+                else:
+                    rootDict[rt] += 1
+            polyNum = sp.Poly(num, s)
+            numCoeffs = polyNum.all_coeffs()
+            numCoeffs = [sp.N(numCoeff/gainD) for numCoeff in numCoeffs]
+            num = sp.Poly(numCoeffs, s)
+            rts = rootDict.keys()
+            inv_laplace = 0
+            for root in rts:
+                # get root multiplicity
+                n = rootDict[root]
+                # build the function
+                fs = num.as_expr()*sp.exp(s*t)
                 for rt in rts:
-                    if rt not in rootDict.keys():
-                        rootDict[rt] = 1
-                    else:
-                        rootDict[rt] += 1
-                polyNum = sp.Poly(num, s)
-                numCoeffs = polyNum.all_coeffs()
-                numCoeffs = [sp.N(numCoeff/gainD) for numCoeff in numCoeffs]
-                num = sp.Poly(numCoeffs, s)
-                rts = rootDict.keys()
-                inv_laplace = 0
-                for root in rts:
-                    # get root multiplicity
-                    n = rootDict[root]
-                    # build the function
-                    fs = num.as_expr()*sp.exp(s*t)
-                    for rt in rts:
-                        if rt != root:
-                            fs /= (s-rt)**rootDict[rt]
-                    # calculate residue
-                    if n == 1:
-                        inv_laplace += fs.subs(s, root)
-                    else:
-                        inv_laplace += (1/sp.factorial(n-1))*sp.diff(fs, (s, n-1)).subs(s, root)
-                inv_laplace = sp.simplify(inv_laplace)
-            else:
-                # If the numerator or denominator cannot be written as a polynomial in 's':
-                # use the sympy inverse_laplace_transform() method
-                inv_laplace = _symilt(expr, s, t, integrate=integrate)
+                    if rt != root:
+                        fs /= (s-rt)**rootDict[rt]
+                # calculate residue
+                if n == 1:
+                    inv_laplace += fs.subs(s, root)
+                else:
+                    inv_laplace += (1/sp.factorial(n-1))*sp.diff(fs, (s, n-1)).subs(s, root)
+            if sp.I in inv_laplace.atoms():
+                inv_laplace = assumeRealParams(inv_laplace)
+                inv_laplace = sp.simplify(clearAssumptions(inv_laplace.as_real_imag()[0]))
         else:
-            # If one or more polynomial coefficients are symbolic:
+            # If the numerator or denominator cannot be written as a polynomial in 's':
             # use the sympy inverse_laplace_transform() method
             inv_laplace = _symilt(expr, s, t, integrate=integrate)
+    else:
+        # If one or more polynomial coefficients are symbolic:
+        # use the sympy inverse_laplace_transform() method
+        inv_laplace = _symilt(expr, s, t, integrate=integrate)
     return inv_laplace
 
 def _symilt(expr, s, t, integrate=False):
