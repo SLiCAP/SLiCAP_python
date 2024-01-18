@@ -350,35 +350,7 @@ def findServoBandwidth(loopgainRational):
     gain, coeffsN,coeffsD = coeffsTransfer(loopgainRational)
     coeffsN               = np.array(coeffsN)
     coeffsD               = np.array(coeffsD)
-    firstNonZeroN         = np.argmax(coeffsN != 0)
-    firstNonZeroD         = np.argmax(coeffsD != 0)
     freqsOrders           = np.zeros((numCornerFreqs, 2), dtype='float64')
-    order                 = int(firstNonZeroN - firstNonZeroD)
-    value                 = np.abs(float(gain))
-    fcorner               = 0
-    result = {}
-    if order == 0:
-        if value > 1:
-            result['mbv'] = value
-            result['mbf'] = 0
-            result['lpf'] = None
-            result['lpo'] = None
-            result['hpf'] = None
-            result['hpo'] = None
-    elif order < 0:
-        result['mbv'] = sp.oo
-        result['mbf'] = 0
-        result['lpf'] = value**(-1/order)
-        result['lpo'] = order
-        result['hpf'] = None
-        result['hpo'] = None
-    elif order > 0:
-        result['mbv'] = None
-        result['mbf'] = None
-        result['lpf'] = None
-        result['lpo'] = None
-        result['hpf'] = None
-        result['hpo'] = None
     for i in range(numZeros):
         freqsOrders[i, 0] = np.abs(zeros[i])
         freqsOrders[i, 1] = 1
@@ -388,30 +360,40 @@ def findServoBandwidth(loopgainRational):
     # sort the rows with increasing corner frequencies
     freqsOrders = freqsOrders[freqsOrders[:,0].argsort()]
     for i in range(numCornerFreqs):
-        if freqsOrders[i, 0] != 0:
+        if i == 0:
+            # Initialize variables
+            value   = np.abs(float(gain))
+            fcorner = float(freqsOrders[i, 0])
+            order   = int(freqsOrders[i, 1])
+            result  = _initServoResults(fcorner, order, value)
+        elif freqsOrders[i, 0] == 0:
+            # Update corner frequency and order
+            fcorner = float(freqsOrders[i, 0])
+            order   += int(freqsOrders[i, 1])
+        else:
             new_fcorner  = float(freqsOrders[i, 0])
             new_order    = int(order + freqsOrders[i, 1])
             # Determine new value at corner frequency
             if order == 0:
                 new_value = value
+            elif fcorner == 0: # first pole or zero in origin
+                new_value = value * new_fcorner ** order
             else:
-                if fcorner == 0: # first pole or zero in origin
-                    new_value = value * new_fcorner ** order
-                else:
-                    new_value = value * (new_fcorner / fcorner) ** order
+                new_value = value * (new_fcorner / fcorner) ** order
             # Determine unity-gain frequencies
             if new_value > 1 and new_order < 0:
                 # low-pass intersection
                 result['lpf'] = new_fcorner * new_value ** (-1/new_order)
                 result['lpo'] = new_order
-            elif value < 1 and order > 0:
+            elif new_value < 1 and new_order > 0:
                 # high-pass intersection
-                result['hpf'] = fcorner * value **(-1/order)
-                result['hpo'] = order
+                result['hpf'] = new_fcorner * new_value ** (-1/new_order)
+                result['hpo'] = new_order
             if new_value > 1 and (result['mbv'] == None or new_value > result['mbv']):
                 # A new or larger midband value
                 result['mbv'] = new_value
                 result['mbf'] = new_fcorner
+            # Update value, corner frequency, and order
             value    = new_value
             order    = new_order
             fcorner  = new_fcorner
@@ -422,6 +404,33 @@ def findServoBandwidth(loopgainRational):
             result['lpf'] = result['lpf']/np.pi/2
         if result['mbf'] != None:
             result['mbf'] = result['mbf']/np.pi/2
+    return result
+
+def _initServoResults(fcorner, order, value):
+    result = {}
+    result['mbv'] = None
+    result['mbf'] = None
+    result['lpf'] = None
+    result['lpo'] = None
+    result['hpf'] = None
+    result['hpo'] = None
+    if fcorner == 0:
+        if order < 0:
+            result['mbv'] = sp.oo
+            result['mbf'] = 0
+            result['lpf'] = value**(-1/order)
+            result['lpo'] = order
+        elif order > 0:
+            result['hpf'] = value**(-1/order)
+            result['hpo'] = order
+    elif value > 1 and order < 0:
+            result['mbv'] = value
+            result['mbf'] = 0
+            result['lpf'] = fcorner * value**(-1/order)
+            result['lpo'] = order
+    elif value < 1 and order > 0:
+            result['hpf'] = fcorner * value**(-1/order)
+            result['hpo'] = order
     return result
 
 def checkNumber(var):
