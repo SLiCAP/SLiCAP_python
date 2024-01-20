@@ -191,6 +191,8 @@
 <span id="slicaplatex-py"></span><h1>SLiCAPlatex.py<a class="headerlink" href="#module-SLiCAP.SLiCAPlatex" title="Permalink to this heading">¶</a></h1>
 <p>Created on Sat Jun 10 17:24:17 2023</p>
 <p>&#64;author: anton</p>
+<p>Public functions for generating snippets that can be stored as LaTeX files
+and included in other LaTeX files.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPlatex.TEXcreateCSVtable">
 <span class="sig-name descname"><span class="pre">TEXcreateCSVtable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">headerList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linesList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alignstring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unitpos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">caption</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPlatex.TEXcreateCSVtable" title="Permalink to this definition">¶</a></dt>
@@ -304,7 +306,7 @@ Defaults to ‘’</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPlatex.eqn2TEX">
-<span class="sig-name descname"><span class="pre">eqn2TEX</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">LHS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RHS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPlatex.eqn2TEX" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">eqn2TEX</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">LHS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RHS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multiline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPlatex.eqn2TEX" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a LaTeX snippet of a displayed equation with dimension and reference
 label.</p>
 <dl class="field-list simple">
@@ -313,7 +315,8 @@ label.</p>
 <li><p><strong>RHS</strong> (<em>str</em><em>, </em><em>sympy.Expression</em><em>, or </em><em>sympy.Symbol</em>) – Right hand side of the equation.</p></li>
 <li><p><strong>LHS</strong> (<em>str</em><em>, </em><em>sympy.Expression</em><em>, or </em><em>sympy.Symbol</em>) – Left hand side of the equation.</p></li>
 <li><p><strong>units</strong> (<em>str</em>) – Dimension</p></li>
-<li><p><strong>label</strong> (<em>str</em>) – Reference label</p></li>
+<li><p><strong>label</strong> (<em>int</em>) – Reference label</p></li>
+<li><p><strong>multiline</strong> – Number of sub-expressions per line, defaults to 0 (single-line equation)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -691,7 +694,7 @@ with symbolic poles or zeros.</p>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2023, SLiCAP development team.
+        &#169; Copyright 2024, SLiCAP development team.
 
     </p>
   </div>

@@ -219,7 +219,8 @@
 <li><p>docPath           : Directory with html documentation</p></li>
 <li><dl class="simple">
 <dt>ngspiceCMD<span class="classifier">NGspice command</span></dt><dd><p>MS windows: ‘~Spice64binngspice.exe’
-Linux     : ‘ngspice’</p>
+Linux     : ‘ngspice’
+Mac       : ‘ngspice’</p>
 </dd>
 </dl>
 </li>
@@ -256,14 +257,14 @@ Linux     : ‘ngspice’</p>
 <div><p>“ME”      : Method = SLiCAP Minor expansion (always accurate) Default
 “BS”      : Method = SLiCAP Bareis fraction-free algorithm
 “LU”      : Method = Sympy LU decomposition
-“bareis”  : Method = Sympy Bareis fraction-free algorithm</p>
+“bareiss” : Method = Sympy Bareiss fraction-free algorithm</p>
 </div></blockquote>
 <p>denom:</p>
 <blockquote>
 <div><p>“ME”      : Method = SLiCAP Minor expansion (always accurate) Default
 “BS”      : Method = SLiCAP Bareis fraction-free algorithm
 “LU”      : Method = Sympy LU decomposition
-“bareis”  : Method = Sympy Bareis fraction-free algorithm</p>
+“bareiss” : Method = Sympy Bareiss fraction-free algorithm</p>
 </div></blockquote>
 <p>factor:</p>
 <blockquote>
@@ -381,7 +382,7 @@ Defaults to: [‘’].</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.denom">
 <span class="sig-name descname"><span class="pre">denom</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.denom" title="Permalink to this definition">¶</a></dt>
-<dd><p>Choose ‘ME” for minor expansion, ‘BS” or “bareis” for Bareis fraction
+<dd><p>Choose ‘ME” for minor expansion, ‘BS” or “bareiss” for Bareiss fraction
 free algorithm, and “LU” for LU decomposition. Defaults to ME.</p>
 </dd></dl>
 
@@ -614,7 +615,7 @@ rendering of latex in Jupyter notebooks.</p></li>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.numer">
 <span class="sig-name descname"><span class="pre">numer</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.numer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Choose ‘ME” for minor expansion, ‘BS” or “bareis” for Bareis fraction
+<dd><p>Choose ‘ME” for minor expansion, ‘BS” or “bareiss” for Bareiss fraction
 free algorithm, and “LU” for LU decomposition. Defaults to ME.</p>
 </dd></dl>
 
@@ -693,7 +694,7 @@ with multiple step variables.</p></li>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2023, SLiCAP development team.
+        &#169; Copyright 2024, SLiCAP development team.
 
     </p>
   </div>

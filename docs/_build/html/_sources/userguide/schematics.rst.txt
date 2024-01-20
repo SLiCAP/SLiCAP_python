@@ -69,7 +69,7 @@ If you wish to have a light background you can create or modify the file ``.gEDA
 
 **Windows installation**
 
-A windows installer for gschem can be downloaded from: `gEDA-20130122.zip <http://bibo.iqo.uni-hannover.de/dokuwiki/doku.php?id=english:geda_for_ms-windows>`_.
+A windows installer for gschem can be downloaded from: `gEDA-20130122.zip </downloads/gEDA-20130122.zip>`_.
 
 Windows installation of gschem is straightforward: simply extract the ``gEDA-20130122.zip`` file and run the Windows installer. In the drop down menu of the "Select Components" dialog box select "Program only", for the rest accept default settings.
 

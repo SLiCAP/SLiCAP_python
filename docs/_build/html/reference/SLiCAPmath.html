@@ -679,12 +679,11 @@ parameter definitions into ‘valExpr’.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.ilt">
 <span class="sig-name descname"><span class="pre">ilt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">integrate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.ilt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the Inverse Laplace Transform f(t) of a rational expression F(s)
-with real coefficients.</p>
+<dd><p>Returns the Inverse Laplace Transform f(t) of an expression F(s) for t &gt; 0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>expr</strong> (<em>Sympy expression</em><em>, </em><em>integer</em><em>, </em><em>float</em><em>, or </em><em>str.</em>) – Rational function of the Laplace variable F(s).</p></li>
+<li><p><strong>expr</strong> (<em>Sympy expression</em><em>, </em><em>integer</em><em>, </em><em>float</em><em>, or </em><em>str.</em>) – Function of the Laplace variable F(s).</p></li>
 <li><p><strong>s</strong> (<em>sympy.Symbol</em>) – Laplace variable</p></li>
 <li><p><strong>t</strong> (<em>sympy.Symbol</em>) – time variable</p></li>
 <li><p><strong>integrate</strong> (<em>Bool</em>) – True multiplies expr with 1/s, defaults to False</p></li>
@@ -754,6 +753,7 @@ sp.I*ini.frequency.</p>
 <li><p><strong>yFunc</strong> (<em>sympy.Expr</em>) – Function</p></li>
 <li><p><strong>xVar</strong> (<em>sympy.Symbol</em>) – Variable that needs to be substituted in <em>yFunc</em></p></li>
 <li><p><strong>x</strong> (<em>list</em>) – List with values of x</p></li>
+<li><p><strong>normalize</strong> (<em>Bool</em>) – True if rational function needs to be normalized. Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -761,6 +761,26 @@ sp.I*ini.frequency.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.nonPolyCoeffs">
+<span class="sig-name descname"><span class="pre">nonPolyCoeffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.nonPolyCoeffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary with coefficients of negative and positive powers
+of var.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>var</strong> (<em>sympy.Symbol</em>) – Variable of which the coefficients will be returned</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>Dict with key-value pairs:</p>
+<ul class="simple">
+<li><p>key: order of the variable</p></li>
+<li><p>value: coefficient of that order</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -814,11 +834,6 @@ sp.I*ini.frequency.</p>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.optimizeMatrix">
-<span class="sig-name descname"><span class="pre">optimizeMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.optimizeMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.phaseFunc_f">
@@ -1074,7 +1089,7 @@ and numeric time functions.</p>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2023, SLiCAP development team.
+        &#169; Copyright 2024, SLiCAP development team.
 
     </p>
   </div>

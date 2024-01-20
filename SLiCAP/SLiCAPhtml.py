@@ -102,7 +102,7 @@ def HTMLfoot(indexFile):
     idx = ini.htmlIndex.split('.')[0]
     html = '\n<div id="footnote">\n'
     html += '<p>Go to <a href="' + ini.htmlIndex + '">' + idx + '</a></p>\n'
-    html += '<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 2.0.1 &copy 2009-2023 SLiCAP development team</p>\n'
+    html += '<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 2.0.1 &copy 2009-2024 SLiCAP development team</p>\n'
     html += '<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>\n'
     html += '<p>Last project update: %s</p>\n'%(ini.lastUpdate.strftime("%Y-%m-%d %H:%M:%S"))
     html += '</div></body></html>'
