@@ -530,7 +530,6 @@ def doDCvar(instr, result):
                     del(result.ivarTerms[key])
         delDCvarSources(instr)
     result = correctDMcurrentResult(instr, result)
-    delDCvarSources(instr)
     return result
 
 def correctDMcurrentResult(instr, result):
