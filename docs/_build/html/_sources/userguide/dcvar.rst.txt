@@ -19,7 +19,8 @@ Tolerances of resistors and independent DC sources can be defined by setting the
 .. admonition:: Changed from version 1.8
     :class: warning
 
-    Variances are defined relative (the square of the relative standard deviation: :math:`\sigma=1\%` corresponds with dcvar = :math:`10^{-4}`).
+    The **variance of resistor values** are defined relative (the square of the relative standard deviation: :math:`\sigma=1\%` corresponds with dcvar = :math:`10^{-4}`).
+    The variance of voltage and current sources is defined absolute in :math:`[V^2]` or :math:`[A^2]`, respectively.
 
 .. code-block:: text
 

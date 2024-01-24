@@ -209,7 +209,8 @@
 <p>Tolerances of resistors and independent DC sources can be defined by setting their DC variance attribute <em>‘dcvar’</em> to a nonzero value or expression.</p>
 <div class="warning admonition">
 <p class="admonition-title">Changed from version 1.8</p>
-<p>Variances are defined relative (the square of the relative standard deviation: <span class="math notranslate nohighlight">\(\sigma=1\%\)</span> corresponds with dcvar = <span class="math notranslate nohighlight">\(10^{-4}\)</span>).</p>
+<p>The <strong>variance of resistor values</strong> are defined relative (the square of the relative standard deviation: <span class="math notranslate nohighlight">\(\sigma=1\%\)</span> corresponds with dcvar = <span class="math notranslate nohighlight">\(10^{-4}\)</span>).
+The variance of voltage and current sources is defined absolute in <span class="math notranslate nohighlight">\([V^2]\)</span> or <span class="math notranslate nohighlight">\([A^2]\)</span>, respectively.</p>
 </div>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&quot;DCvar demo circuit&quot;
 R1 N1 N2 R value={R} dcvar={(sigma_R)^2}
