@@ -1373,14 +1373,16 @@ def rational2float(expr):
     Converts rational numbers in expr into floats.
 
     :param expr: Sympy expression in which rational numbers need to be
-                 converterd intoc floats.
+                 converterd into floats.
     :type expr: sympy.Expression
 
     :return: expression in which rational numbers have been replaced with floats.
     :rtype:  sympy.Expression
     """
     try:
-        expr = expr.xreplace({n: sp.Float(n, ini.disp) for n in expr.atoms(sp.Rational)})
+        for atom in expr.atoms():
+            if isinstance(atom, sp.core.numbers.Rational) and not isinstance(atom, sp.core.numbers.Integer):
+                expr = expr.xreplace({atom: sp.Float(atom, ini.disp)})
     except AttributeError:
         pass
     return expr
@@ -1616,6 +1618,7 @@ if __name__ == "__main__":
     expr = "1/(s*(s*R*C+1))"
     ht = ilt(expr, s, t)
     Mnew = M.echelon_form()
+    """
     LG = sp.sympify("-0.00647263929159112*(1.42481097731728e-5*s**2 + s)/(6.46865378347277e-16*s**3 + 2.0274790076825e-8*s**2 + 0.0014352663537982*s + 1.0)")
     print(findServoBandwidth(LG))
 
@@ -1632,7 +1635,13 @@ if __name__ == "__main__":
 
     loopgain         = sp.sympify('100*(1+s)*(1+s/10)/(s^2*(1+s^2/100^2)*(1+s/1000))')
     print(findServoBandwidth(loopgain))
-    """
+
     loopgain         = sp.sympify('-8000000000000000000*pi**3/(s*(s**2 + 4000000*pi*s + 8000000000000*pi**2))')
     print(findServoBandwidth(sp.N(loopgain)))
+
+    loopgain         = sp.sympify('100*(1+s)*(1+s/10)/((1+s^3/100^3)*(1+s/1000))')
+    print(findServoBandwidth(loopgain))
+
+    loopgain         = sp.sympify('100/(1+s/1000/2/pi)')
+    print(findServoBandwidth(loopgain))
 
