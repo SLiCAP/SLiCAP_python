@@ -487,7 +487,7 @@ Parameters model I
 		+-------+--------------------------------+---------+---------+
 		| dc    | DC value              [A]      | 0       | TRUE    | 
 		+-------+--------------------------------+---------+---------+
-		| dcvar | Variance of DC value  [A^2]    | 0       | TRUE    | 
+		| dcvar | Variance of DC value  [-]      | 0       | TRUE    | 
 		+-------+--------------------------------+---------+---------+
 		| noise | Noise current density [A^2/Hz] | 0       | TRUE    | 
 		+-------+--------------------------------+---------+---------+
@@ -1119,19 +1119,21 @@ Model R
 Parameters model R
 ~~~~~~~~~~~~~~~~~~
 
-		+-----------+-------------------+---------+---------+
-		| name      | description       | default | Laplace |
-		+===========+===================+=========+=========+
-		| value     | resistance        | 1       | FALSE   | 
-		+-----------+-------------------+---------+---------+
-		| dcvar     | variance          | 0       | FALSE   | 
-		+-----------+-------------------+---------+---------+
-		| noisetemp | noise temperature | 0       | FALSE   | 
-		+-----------+-------------------+---------+---------+
-		| noiseflow | variance          | 0       | FALSE   | 
-		+-----------+-------------------+---------+---------+
-		| dcvar     | variance          | 0       | FALSE   | 
-		+-----------+-------------------+---------+---------+
+		+-----------+-----------------------------+---------+---------+
+		| name      | description                 | default | Laplace |
+		+===========+=============================+=========+=========+
+		| value     | resistance                  | 1       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| dcvar     | variance                    | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| dcvarlot  | variance of lot             | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| noisetemp | noise temperature           | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| noiseflow | corner frequency 1/f noise  | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| dcvar     | variance                    | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
 		
 .. _type r:
 
@@ -1147,19 +1149,21 @@ Model r
 Parameters model r
 ~~~~~~~~~~~~~~~~~~
 
-		+-----------+-------------------+---------+---------+
-		| name      | description       | default | Laplace |
-		+===========+===================+=========+=========+
-		| value     | resistance        | 1       | FALSE   | 
-		+-----------+-------------------+---------+---------+
-		| dcvar     | variance          | 0       | FALSE   | 
-		+-----------+-------------------+---------+---------+
-		| noisetemp | noise temperature | 0       | FALSE   | 
-		+-----------+-------------------+---------+---------+
-		| noiseflow | variance          | 0       | FALSE   | 
-		+-----------+-------------------+---------+---------+
-		| dcvar     | variance          | 0       | FALSE   | 
-		+-----------+-------------------+---------+---------+
+		+-----------+-----------------------------+---------+---------+
+		| name      | description                 | default | Laplace |
+		+===========+=============================+=========+=========+
+		| value     | resistance                  | 1       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| dcvar     | variance                    | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| dcvarlot  | variance of lot             | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| noisetemp | noise temperature           | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| noiseflow | corner frequency 1/f noise  | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
+		| dcvar     | variance                    | 0       | FALSE   | 
+		+-----------+-----------------------------+---------+---------+
 
 Examples
 ~~~~~~~~
@@ -1168,7 +1172,7 @@ The examples below illustrates four different ways for specifying a resistor tha
 
 .. code-block:: text
 
-		R1 nP nN R value = {R} noiseTemp = {T} noiseflow ={f_ell} dcvar = {R * sigma_R^2}
+		R1 nP nN R value = {R} noiseTemp = {T} noiseflow ={f_ell} dcvar = {sigma_R^2}
 
 .. code-block:: text
 
@@ -1176,7 +1180,7 @@ The examples below illustrates four different ways for specifying a resistor tha
 
 .. code-block:: text
 
-		R1 nP nN r value = {R_a} dcvar = {(sigma * R_a)^2}
+		R1 nP nN r value = {R_a} dcvar = {sigma^2}
 
 .. code-block:: text
 
@@ -1262,9 +1266,9 @@ Parameters model V
 		+=======+================================+=========+=========+
 		| value | Voltage (Laplace transform)    | 0       | TRUE    | 
 		+-------+--------------------------------+---------+---------+
-		| dc    | DC value              [V]      | 0       | TRUE    | 
+		| dc    | DC value                       | 0       | TRUE    | 
 		+-------+--------------------------------+---------+---------+
-		| dcvar | Variance of DC value  [V^2]    | 0       | TRUE    | 
+		| dcvar | Variance of DC value  [-]      | 0       | TRUE    | 
 		+-------+--------------------------------+---------+---------+
 		| noise | Noise voltage density [V^2/Hz] | 0       | TRUE    | 
 		+-------+--------------------------------+---------+---------+
@@ -1280,7 +1284,7 @@ Examples
 
 .. code-block:: text
 
-		Vin 0 input V value = {V_s} noise = 1e-16 dc = 0 dcvar = 10e-8
+		Vin 0 input V value = {V_s} noise = 1e-16 dc = 0 dcvar = 1e-4
 		.param V_s = {1/s}; Step of 1V starting at t = 0
 
 W: Gyrator

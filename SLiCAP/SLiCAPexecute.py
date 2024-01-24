@@ -624,7 +624,7 @@ def addDCvarSources(instr, dcSolution):
                         Vneg = 0
                     DCcurrent = sp.simplify((Vpos - Vneg)/instr.circuit.elements[el].params['value'])
                 if DCcurrent != 0:
-                    errorCurrentVariance = instr.circuit.elements[el].params['dcvar']/instr.circuit.elements[el].params['value']**2 * DCcurrent**2
+                    errorCurrentVariance = instr.circuit.elements[el].params['dcvar'] * DCcurrent**2
                     newCurrentSource = element()
                     newCurrentSource.refDes          = 'I_dcvar_' + refDes
                     newCurrentSource.params['dcvar'] = errorCurrentVariance

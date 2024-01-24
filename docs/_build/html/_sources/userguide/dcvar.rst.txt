@@ -16,14 +16,17 @@ All of the above can be performed symbolically or numerically.
 
 Tolerances of resistors and independent DC sources can be defined by setting their DC variance attribute *'dcvar'* to a nonzero value or expression.
 
-These variances must be defined in :math:`\left[ \Omega^2\right]` for resistors, in :math:`\left[ V^2\right]` for independent voltage sources, and in :math:`\left[ A^2\right]` for independent current sources.
+.. admonition:: Changed from version 1.8
+    :class: warning
+
+    Variances are defined relative (the square of the relative standard deviation: :math:`\sigma=1\%` corresponds with dcvar = :math:`10^{-4}`).
 
 .. code-block:: text
 
     "DCvar demo circuit"
-    R1 N1 N2 R value={R} dcvar={(sigma_R*R)^2}
-    I1 N1 N2 I value={I_DC} dcvar = {(sigma_I*I_DC)^2}
-    V1 N1 N2 0 value={V_DC} dcvar = {(sigma_V*V_DC)^2}
+    R1 N1 N2 R value={R} dcvar={(sigma_R)^2}
+    I1 N1 N2 I value={I_DC} dcvar = {(sigma_I)^2}
+    V1 N1 N2 0 value={V_DC} dcvar = {(sigma_V)^2}
     .param R=1k I_DC=1m V_DC=1 sigma_R=0.01 sigma_I=0.05 sigma_V=0.02
 
 It is not (yet) possible to define the variance of the gain of dependent (controlled) sources.

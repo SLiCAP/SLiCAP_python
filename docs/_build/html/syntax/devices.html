@@ -1082,7 +1082,7 @@ concatenation of two strings:</p>
 <td><p>TRUE</p></td>
 </tr>
 <tr class="row-even"><td><p>dcvar</p></td>
-<td><p>Variance of DC value  [A^2]</p></td>
+<td><p>Variance of DC value  [-]</p></td>
 <td><p>0</p></td>
 <td><p>TRUE</p></td>
 </tr>
@@ -2142,10 +2142,10 @@ k12 L1 L2 0.98
 <blockquote>
 <div><table class="docutils align-default">
 <colgroup>
-<col style="width: 23%" />
-<col style="width: 40%" />
 <col style="width: 19%" />
-<col style="width: 19%" />
+<col style="width: 50%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>name</p></th>
@@ -2165,17 +2165,22 @@ k12 L1 L2 0.98
 <td><p>0</p></td>
 <td><p>FALSE</p></td>
 </tr>
-<tr class="row-even"><td><p>noisetemp</p></td>
+<tr class="row-even"><td><p>dcvarlot</p></td>
+<td><p>variance of lot</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>noisetemp</p></td>
 <td><p>noise temperature</p></td>
 <td><p>0</p></td>
 <td><p>FALSE</p></td>
 </tr>
-<tr class="row-odd"><td><p>noiseflow</p></td>
-<td><p>variance</p></td>
+<tr class="row-even"><td><p>noiseflow</p></td>
+<td><p>corner frequency 1/f noise</p></td>
 <td><p>0</p></td>
 <td><p>FALSE</p></td>
 </tr>
-<tr class="row-even"><td><p>dcvar</p></td>
+<tr class="row-odd"><td><p>dcvar</p></td>
 <td><p>variance</p></td>
 <td><p>0</p></td>
 <td><p>FALSE</p></td>
@@ -2198,10 +2203,10 @@ k12 L1 L2 0.98
 <blockquote>
 <div><table class="docutils align-default">
 <colgroup>
-<col style="width: 23%" />
-<col style="width: 40%" />
 <col style="width: 19%" />
-<col style="width: 19%" />
+<col style="width: 50%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>name</p></th>
@@ -2221,17 +2226,22 @@ k12 L1 L2 0.98
 <td><p>0</p></td>
 <td><p>FALSE</p></td>
 </tr>
-<tr class="row-even"><td><p>noisetemp</p></td>
+<tr class="row-even"><td><p>dcvarlot</p></td>
+<td><p>variance of lot</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>noisetemp</p></td>
 <td><p>noise temperature</p></td>
 <td><p>0</p></td>
 <td><p>FALSE</p></td>
 </tr>
-<tr class="row-odd"><td><p>noiseflow</p></td>
-<td><p>variance</p></td>
+<tr class="row-even"><td><p>noiseflow</p></td>
+<td><p>corner frequency 1/f noise</p></td>
 <td><p>0</p></td>
 <td><p>FALSE</p></td>
 </tr>
-<tr class="row-even"><td><p>dcvar</p></td>
+<tr class="row-odd"><td><p>dcvar</p></td>
 <td><p>variance</p></td>
 <td><p>0</p></td>
 <td><p>FALSE</p></td>
@@ -2243,13 +2253,13 @@ k12 L1 L2 0.98
 <div class="section" id="id24">
 <h3>Examples<a class="headerlink" href="#id24" title="Permalink to this heading">¶</a></h3>
 <p>The examples below illustrates four different ways for specifying a resistor that is connected between the nodes nP and nN and has a numerical value of 10kOhm.</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN R value = {R} noiseTemp = {T} noiseflow ={f_ell} dcvar = {R * sigma_R^2}
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN R value = {R} noiseTemp = {T} noiseflow ={f_ell} dcvar = {sigma_R^2}
 </pre></div>
 </div>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN {20 * alpha}
 </pre></div>
 </div>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN r value = {R_a} dcvar = {(sigma * R_a)^2}
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN r value = {R_a} dcvar = {sigma^2}
 </pre></div>
 </div>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN myR
@@ -2399,12 +2409,12 @@ k12 L1 L2 0.98
 <td><p>TRUE</p></td>
 </tr>
 <tr class="row-odd"><td><p>dc</p></td>
-<td><p>DC value              [V]</p></td>
+<td><p>DC value</p></td>
 <td><p>0</p></td>
 <td><p>TRUE</p></td>
 </tr>
 <tr class="row-even"><td><p>dcvar</p></td>
-<td><p>Variance of DC value  [V^2]</p></td>
+<td><p>Variance of DC value  [-]</p></td>
 <td><p>0</p></td>
 <td><p>TRUE</p></td>
 </tr>
@@ -2424,7 +2434,7 @@ V1 n1 n2 20m
 V1 n1 n2 V value = 20m
 </pre></div>
 </div>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Vin 0 input V value = {V_s} noise = 1e-16 dc = 0 dcvar = 10e-8
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Vin 0 input V value = {V_s} noise = 1e-16 dc = 0 dcvar = 1e-4
 .param V_s = {1/s}; Step of 1V starting at t = 0
 </pre></div>
 </div>
