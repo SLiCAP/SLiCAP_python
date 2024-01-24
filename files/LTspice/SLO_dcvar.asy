@@ -13,7 +13,7 @@ TEXT 6 32 Left 2 -
 WINDOW 0 -15 -96 Left 2
 WINDOW 3 -16 -63 Left 2
 WINDOW 38 -15 -80 Left 2
-SYMATTR Value svo={sigma_vo} sib={sigma_ib} sio=(sigma_io} iib={I_b}
+SYMATTR Value svo={sigma_vo} sib={sigma_ib} sio={sigma_io} iib={I_b}
 SYMATTR SpiceModel O_dcvar
 SYMATTR Prefix X
 SYMATTR Description Nullor with input bias and offset sources
