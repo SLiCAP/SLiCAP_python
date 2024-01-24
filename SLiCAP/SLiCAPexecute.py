@@ -499,7 +499,6 @@ def doDCvar(instr, result):
             for i in range(numSteps):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]]=instr.stepDict[stepVars[j]][i]
-                delDCvarSources(instr)
                 instr.dataType = 'dcsolve'
                 result.dataType = 'dcsolve'
                 result = doDCsolve(instr, result)
