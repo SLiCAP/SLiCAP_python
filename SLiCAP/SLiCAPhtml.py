@@ -666,16 +666,18 @@ def pz2html(instObj, label = '', labelText = ''):
             html += '\n<p>DC gain = $' + sp.latex(roundN(DCgain)) + '$</p>\n'
     elif instObj.dataType =='pz':
         html += '<p>DC gain could not be determined.</p>\n'
-    if ini.Hz == True and instObj.numeric == True:
+    if ini.Hz == True:
         unitsM = 'Mag [Hz]'
         unitsR = 'Re [Hz]'
         unitsI = 'Im [Hz]'
+        unitsS = '[Hz]'
     else:
         unitsM = 'Mag [rad/s]'
         unitsR = 'Re [rad/s]'
         unitsI = 'Im [rad/s]'
+        unitsS = '[rad/s]'
     if len(poles) > 0 and instObj.dataType == 'poles' or instObj.dataType == 'pz':
-        if instObj.numeric == True:
+        if _checkNumeric(poles):
             html += '<table><tr><th>pole</th><th>' + unitsR + '</th><th>' + unitsI + '</th><th>' + unitsM + '</th><th>Q</th></tr>\n'
             for i in range(len(poles)):
                 p = poles[i]
@@ -698,14 +700,17 @@ def pz2html(instObj, label = '', labelText = ''):
                 html += '<tr><td>' + name + '</td><td>' + Re + '</td><td>' + Im + '</td><td>' + F + '</td><td>' + Q +'</td></tr>\n'
             html += '</table>\n'
         else:
-            html += '<table><tr><th>pole</th><th>value</th></tr>'
+            html += '<table><tr><th>pole</th><th>value ' + unitsS + '</th></tr>'
             for i in range(len(poles)):
-                html += '\n<tr><td> $p_{' +str(i) + '}$</td><td>$' + sp.latex(roundN(poles[i])) + '$</td></tr>\n'
+                p = poles[i]
+                if ini.Hz == True:
+                    p  = p/2/sp.pi
+                html += '\n<tr><td> $p_{' +str(i) + '}$</td><td>$' + sp.latex(roundN(p)) + '$</td></tr>\n'
             html += '</table>\n'
     elif instObj.dataType == 'poles' or instObj.dataType == 'pz':
         html += '<p>No poles found.</p>\n'
     if len(zeros) > 0 and instObj.dataType == 'zeros' or instObj.dataType == 'pz':
-        if instObj.numeric == True:
+        if _checkNumeric(zeros):
             html += '<table><tr><th>zero</th><th>' + unitsR + '</th><th>' + unitsI + '</th><th>' + unitsM + '</th><th>Q</th></tr>\n'
             for i in range(len(zeros)):
                 z = zeros[i]
@@ -728,14 +733,35 @@ def pz2html(instObj, label = '', labelText = ''):
                 html += '<tr><td>' + name + '</td><td>' + Re + '</td><td>' + Im + '</td><td>' + F + '</td><td>' + Q +'</td></tr>\n'
             html += '</table>\n'
         else:
-            html += '<table><tr><th>zero</th><th>value</th></tr>'
+            html += '<table><tr><th>zero</th><th>value ' + unitsS + '</th></tr>'
             for i in range(len(zeros)):
-                html += '\n<tr><td> $z_{' +str(i) + '}$</td><td>$' + sp.latex(roundN(zeros[i])) + '$</td></tr>\n'
+                z = zeros[i]
+                if ini.Hz == True:
+                    z = sp.simplify(z/2/sp.pi)
+                html += '\n<tr><td> $z_{' +str(i) + '}$</td><td>$' + sp.latex(roundN(z)) + '$</td></tr>\n'
             html += '</table>\n'
     elif instObj.dataType == 'zeros' or instObj.dataType == 'pz':
         html += '<p>No zeros found.</p>\n'
     insertHTML(ini.htmlPath + ini.htmlPage, html)
     return html
+
+def _checkNumeric(exprList):
+    """
+    Returns True is all entries in the list 'exprList' are numeric.
+
+    :param exprList; List with numbers and/or expressions
+    :type exprList: list
+
+    :return: True is all entries in 'exprList' are numeric.
+    :rtype: Bool
+    """
+    numeric = True
+    for item in exprList:
+        params = sp.N(item).atoms(sp.Symbol)
+        if len(params) > 0:
+            numeric = False
+            break
+    return numeric
 
 def noise2html(instObj, label = '', labelText = ''):
     """

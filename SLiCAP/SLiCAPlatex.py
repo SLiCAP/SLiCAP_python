@@ -11,6 +11,7 @@ and included in other LaTeX files.
 """
 import sympy as sp
 from SLiCAP.SLiCAPini import *
+from SLiCAP.SLiCAPhtml import _checkNumeric
 from SLiCAP.SLiCAPmath import fullSubs, roundN
 
 def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
@@ -216,7 +217,15 @@ def pz2TEX(resultObject, label='', append2caption=''):
         TEX = ''
     else:
         TEX = ''
-        if resultObject.simType == 'numeric':
+        if len(resultObject.poles) != 0:
+            numericPoles = _checkNumeric(resultObject.poles)
+        if len(resultObject.zeros) != 0:
+            numericZeros = _checkNumeric(resultObject.zeros)
+        if numericPoles and numericZeros:
+            numeric = True
+        else:
+            numeric = False
+        if numeric:
             alignstring = '[c]{lrrrrr}'
             if ini.Hz == True:
                 headerList = ['\\#', 'Re [Hz]', 'Im [Hz]', 'f [Hz]', 'Q']
@@ -231,14 +240,14 @@ def pz2TEX(resultObject, label='', append2caption=''):
         linesList = []
         if len(resultObject.poles) != 0:
             name = 'Poles of: ' + resultObject.gainType
-            if resultObject.simType == 'numeric':
+            if numeric:
                 linesList += numRoots2TEX(resultObject.poles, ini.Hz, 'p')
             else:
                 linesList = symRoots2TEX(resultObject.poles, ini.Hz, 'p')
         if len(resultObject.zeros) != 0:
             if resultObject.dataType == 'pz':
                 linesList += [' ']
-            if resultObject.simType == 'numeric':
+            if numeric:
                 linesList += numRoots2TEX(resultObject.zeros, ini.Hz, 'z')
             else:
                 linesList = symRoots2TEX(resultObject.zeros, ini.Hz, 'z')
@@ -797,8 +806,8 @@ def symRoots2TEX(roots, Hz, pz):
     for root in roots:
         i += 1
         if Hz == True:
-            line = [sp.Symbol('$' + pz + '_' + str(i)) + '$', '$' + root/2/sp.pi + '$']
+            line = [sp.Symbol('$' + pz + '_' + str(i)) + '$', '$' + roundN(root/2/sp.pi) + '$']
         else:
-            line = [sp.Symbol('$' + pz + '_' + str(i)) + '$', '$' + root + '$']
+            line = [sp.Symbol('$' + pz + '_' + str(i)) + '$', '$' + roundN(root) + '$']
         lineList.append(line)
     return lineList

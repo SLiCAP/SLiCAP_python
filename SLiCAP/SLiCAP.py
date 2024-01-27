@@ -20,7 +20,7 @@ import sympy as sp
 import numpy as np
 from scipy.optimize import newton, fsolve
 from scipy.integrate import quad
-from SLiCAP.SLiCAPini import ini
+from SLiCAP.SLiCAPini import ini, Help
 from SLiCAP.SLiCAPdesignData import specItem, specs2csv, specs2circuit, csv2specs, specs2html
 from SLiCAP.SLiCAPinstruction import instruction, listPZ
 from SLiCAP.SLiCAPmath import coeffsTransfer, normalizeRational, findServoBandwidth, fullSubs, assumeRealParams, assumePosParams, clearAssumptions, phaseMargin, doCDS, doCDSint, routh, equateCoeffs, step2PeriodicPulse, butterworthPoly, besselPoly, rmsNoise, PdBm2V, float2rational, rational2float, roundN, nonPolyCoeffs, ilt

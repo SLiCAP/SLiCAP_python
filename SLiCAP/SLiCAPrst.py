@@ -7,6 +7,7 @@ Created on Sat Jun 10 17:14:37 2023
 """
 from SLiCAP.SLiCAPmath import fullSubs, roundN
 from SLiCAP.SLiCAPini import ini
+from SLiCAP.SLiCAPhtml import _checkNumeric
 import sympy as sp
 from shutil import copyfile
 
@@ -222,11 +223,14 @@ def pz2RST(resultObject, label = '', append2caption='', position=0):
     else:
         if resultObject.dataType == 'poles':
             name = 'Poles of: ' + resultObject.gainType + '. ' + append2caption
+            numeric = _checkNumeric(resultObject.poles)
         elif resultObject.dataType == 'zeros':
             name = 'Zeros of: ' + resultObject.gainType + '. ' + append2caption
+            numeric = _checkNumeric(resultObject.zeros)
         elif resultObject.dataType == 'pz':
             name = 'Poles and zeros of: ' + resultObject.gainType + '. DC gain = :math:`' + sp.latex(roundN(resultObject.DCvalue)) + '`. ' + append2caption
-        if resultObject.simType == 'numeric':
+            numeric = _checkNumeric(resultObject.poles) and _checkNumeric(resultObject.zeros)
+        if numeric:
             if ini.Hz == True:
                 headerList = ['#', 'Re [Hz]', 'Im [Hz]', ':math:`f` [Hz]', 'Q']
             else:
@@ -238,13 +242,13 @@ def pz2RST(resultObject, label = '', append2caption='', position=0):
                 headerList = ['#', ':math:`\omega` [rad/s]']
         linesList = []
         if resultObject.dataType == 'poles' or resultObject.dataType == 'pz':
-            if resultObject.simType == 'numeric':
+            if numeric:
                 linesList += numRoots2RST(resultObject.poles, ini.Hz, 'p')
             else:
                 linesList += symRoots2RST(resultObject.poles, ini.Hz, 'p')
 
         if resultObject.dataType == 'zeros' or resultObject.dataType == 'pz':
-            if resultObject.simType == 'numeric':
+            if numeric:
                 linesList += numRoots2RST(resultObject.zeros, ini.Hz, 'z')
             else:
                 linesList += symRoots2RST(resultObject.zeros, ini.Hz, 'z')
