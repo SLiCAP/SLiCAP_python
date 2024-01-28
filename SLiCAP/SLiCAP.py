@@ -13,8 +13,7 @@ import platform
 import os
 import subprocess
 from shutil import copy2
-from SLiCAP.SLiCAPyacc import makeLibraries
-# User stuff
+from SLiCAP.SLiCAPyacc import makeLibraries, CIRCUITNAMES, CIRCUITS, DEVICES, DEVICETYPES, SLiCAPLIBS, SLiCAPMODELS, SLiCAPPARAMS, SLiCAPCIRCUITS, USERLIBS, USERMODELS, USERCIRCUITS, USERPARAMS
 from time import time
 import sympy as sp
 import numpy as np
@@ -178,6 +177,11 @@ def initProject(name, port=""):
     ini.latexPath        = ini.projectPath + LATEXPATH
     ini.sphinxPath       = ini.projectPath + SPHINXPATH
     ini.imgPath          = ini.projectPath + IMGPATH
+    ini.htmlIndex        = ''
+    ini.htmlPrefix       = ''
+    ini.htmlPage         = ''
+    ini.htmlLabels       = {}
+    ini.htmlPages        = []
     makeDir(ini.circuitPath)
     makeDir(ini.imgPath)
     makeDir(ini.libraryPath)
@@ -212,7 +216,18 @@ def initProject(name, port=""):
     copyNotOverwrite(ini.userPath + '/tex/preambuleSLiCAP.tex', ini.latexPath + 'preambuleSLiCAP.tex')
     # Create the HTML project index file
     startHTML(name)
-    # Create the libraries
+    # Initialize the parser
+    CIRCUITNAMES    = []
+    CIRCUITS        = {}
+    DEVICETYPES     = list(DEVICES.keys())
+    SLiCAPLIBS      = ['SLiCAP.lib', 'SLiCAPmodels.lib']
+    SLiCAPMODELS    = {}
+    SLiCAPPARAMS    = {}
+    SLiCAPCIRCUITS  = {}
+    USERLIBS        = []
+    USERMODELS      = {}
+    USERCIRCUITS    = {}
+    USERPARAMS      = {}
     makeLibraries()
     return prj
 

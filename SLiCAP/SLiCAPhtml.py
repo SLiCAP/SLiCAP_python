@@ -7,15 +7,10 @@ SLiCAP module with HTML functions.
 import sympy as sp
 from shutil import copy2
 from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPmath import roundN, fullSubs
-# Initialize HTML globals
-ini.htmlIndex    = ''
-ini.htmlPrefix   = ''
-ini.htmlPage     = ''
-ini.htmlLabels   = {}
-ini.htmlPages    = []
-HTMLINSERT       = '<!-- INSERT -->' # pattern to be replaced in html files
-LABELTYPES       = ['headings', 'data', 'fig', 'eqn', 'analysis']
+from SLiCAP.SLiCAPmath import roundN, fullSubs, checkNumeric
+
+_HTMLINSERT       = '<!-- INSERT -->' # pattern to be replaced in html files
+_LABELTYPES       = ['headings', 'data', 'fig', 'eqn', 'analysis']
 
 class Label(object):
     """
@@ -62,14 +57,14 @@ def startHTML(projectName):
     """
     ini.htmlIndex = 'index.html'
     toc = '<h2>Table of contents</h2>'
-    html = HTMLhead(projectName) + toc + '<ol>' + HTMLINSERT + '</ol>' + HTMLfoot(ini.htmlIndex)
+    html = _HTMLhead(projectName) + toc + '<ol>' + _HTMLINSERT + '</ol>' + _HTMLfoot(ini.htmlIndex)
     f = open(ini.htmlPath + ini.htmlIndex, 'w')
     f.write(html)
     f.close()
     ini.htmlPages.append(ini.htmlIndex)
     return
 
-def HTMLhead(pageTitle):
+def _HTMLhead(pageTitle):
     """
     Returns the html head for a new html page.
 
@@ -89,7 +84,7 @@ def HTMLhead(pageTitle):
     html += '</head><body><div id="top"><h1>' + pageTitle + '</h1></div>\n'
     return(html)
 
-def HTMLfoot(indexFile):
+def _HTMLfoot(indexFile):
     """
     Returns html page footer with link to 'indexFile'.
 
@@ -111,15 +106,15 @@ def HTMLfoot(indexFile):
 def insertHTML(fileName, htmlInsert):
     """
     Inserts html in the file specified by 'fileName' at the location of the
-    string 'HTMLINSERT'.
+    string '_HTMLINSERT'.
 
     :param fileName: name of the file
     :type fileName: str
-    :param htmlInsert: HTML that must be inserted in this file
-    :type htmlInsert: str
+    :param _HTMLINSERT: HTML that must be inserted in this file
+    :type _HTMLINSERT: str
     """
     html = readFile(fileName)
-    html = html.replace(HTMLINSERT, htmlInsert + HTMLINSERT)
+    html = html.replace(_HTMLINSERT, htmlInsert + _HTMLINSERT)
     writeFile(fileName, html)
     return
 
@@ -183,7 +178,7 @@ def htmlPage(pageTitle, index = False, label = ''):
         insertHTML(ini.htmlPath + ini.htmlIndex, href)
         # Create the new HTML file
         toc = '<h2>Table of contents</h2>'
-        html = HTMLhead(pageTitle) + toc + '<ol>' + HTMLINSERT + '</ol>' + HTMLfoot(ini.htmlIndex)
+        html = _HTMLhead(pageTitle) + toc + '<ol>' + _HTMLINSERT + '</ol>' + _HTMLfoot(ini.htmlIndex)
         writeFile(ini.htmlPath + fileName, html)
         # Make this page the new index page
         ini.htmlIndex = fileName
@@ -200,7 +195,7 @@ def htmlPage(pageTitle, index = False, label = ''):
             #
             #ini.htmlLabels[label] = ini.htmlPage
             label = '<a id="' + label + '"></a>'
-        html = label + HTMLhead(pageTitle) + HTMLINSERT + HTMLfoot(ini.htmlIndex)
+        html = label + _HTMLhead(pageTitle) + _HTMLINSERT + _HTMLfoot(ini.htmlIndex)
         writeFile(ini.htmlPath + fileName, html)
     # Make this page the active HTML page
     ini.htmlPage = fileName
@@ -677,7 +672,7 @@ def pz2html(instObj, label = '', labelText = ''):
         unitsI = 'Im [rad/s]'
         unitsS = '[rad/s]'
     if len(poles) > 0 and instObj.dataType == 'poles' or instObj.dataType == 'pz':
-        if _checkNumeric(poles):
+        if checkNumeric(poles):
             html += '<table><tr><th>pole</th><th>' + unitsR + '</th><th>' + unitsI + '</th><th>' + unitsM + '</th><th>Q</th></tr>\n'
             for i in range(len(poles)):
                 p = poles[i]
@@ -710,7 +705,7 @@ def pz2html(instObj, label = '', labelText = ''):
     elif instObj.dataType == 'poles' or instObj.dataType == 'pz':
         html += '<p>No poles found.</p>\n'
     if len(zeros) > 0 and instObj.dataType == 'zeros' or instObj.dataType == 'pz':
-        if _checkNumeric(zeros):
+        if checkNumeric(zeros):
             html += '<table><tr><th>zero</th><th>' + unitsR + '</th><th>' + unitsI + '</th><th>' + unitsM + '</th><th>Q</th></tr>\n'
             for i in range(len(zeros)):
                 z = zeros[i]
@@ -744,24 +739,6 @@ def pz2html(instObj, label = '', labelText = ''):
         html += '<p>No zeros found.</p>\n'
     insertHTML(ini.htmlPath + ini.htmlPage, html)
     return html
-
-def _checkNumeric(exprList):
-    """
-    Returns True is all entries in the list 'exprList' are numeric.
-
-    :param exprList; List with numbers and/or expressions
-    :type exprList: list
-
-    :return: True is all entries in 'exprList' are numeric.
-    :rtype: Bool
-    """
-    numeric = True
-    for item in exprList:
-        params = sp.N(item).atoms(sp.Symbol)
-        if len(params) > 0:
-            numeric = False
-            break
-    return numeric
 
 def noise2html(instObj, label = '', labelText = ''):
     """
@@ -1031,11 +1008,11 @@ def links2html():
     htmlPage('Links')
     labelDict = {}
     html = ''
-    for labelType in LABELTYPES:
+    for labelType in _LABELTYPES:
         labelDict[labelType] = []
     for labelName in list(ini.htmlLabels.keys()):
         labelDict[ini.htmlLabels[labelName].type].append(labelName)
-    for labelType in LABELTYPES:
+    for labelType in _LABELTYPES:
         if len(labelDict[labelType]) != 0:
             labelDict[labelType].sort()
             if labelType == 'headings':

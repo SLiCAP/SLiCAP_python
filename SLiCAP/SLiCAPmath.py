@@ -5,6 +5,7 @@ SLiCAP module with math functions.
 """
 import sys
 import sympy as sp
+from sympy.combinatorics import Permutation
 import numpy as np
 from numpy.polynomial import Polynomial
 from scipy.integrate import quad
@@ -13,7 +14,28 @@ from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPlex import replaceScaleFactors
 from SLiCAP.SLiCAPfc import computeFC
 
-def det(M, method="ME"):
+def sort_columns_for_laplace(matrix):
+    row, col = matrix.shape
+    c_zeros = []
+    # Number of zeros in each column
+    for c in range(col):
+        acc = sum(1 for r in range(row) if matrix[r, c].is_zero)
+        c_zeros.append((acc, c))
+    # Sort columns based on the number of zeros
+    c_zeros.sort()
+    pre_sort = [i[1] for i in c_zeros]
+    # Compute permutation sign
+    perm = Permutation(pre_sort)
+    sign = perm.signature()
+    # Represent the sorted matrix
+    result = sp.Matrix.zeros(row, col)
+    c = 0
+    for it in pre_sort:
+        result[:, c] = matrix[:, it]
+        c += 1
+    return sign*result
+
+def det(M, method="GJ"):
     """
     Returns the determinant of a square matrix 'M' calculated using recursive
     minor expansion (Laplace expansion).
@@ -25,6 +47,7 @@ def det(M, method="ME"):
 
     :param method: Method used:
 
+                   - GJ: SLiCAP Minor expansion, Genlteman-Johnson method
                    - ME: SLiCAP Minor expansion
                    - BS: SLiCAP Bareis fraction-free expansion
                    - FC: SLiCAP Frequency Constants method
@@ -38,23 +61,23 @@ def det(M, method="ME"):
         if M.shape[0] != M.shape[1]:
             print("ERROR: Cannot determine determinant of non-square matrix.")
             D = None
-        sign = 1
-        #M, sign = optimizeMatrix(M)
         dim = M.shape[0]
         if dim == 1:
-            D = sign*M[0,0]
+            D = M[0,0]
         elif dim == 2:
-            D = sign*sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1])
+            D = sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1])
+        elif method == "GJ":
+            D = detGJ(M)
         elif method == "ME":
-            D = sign*detME(M)
+            D = detME(M)
         elif method == "BS":
-            D = sign*detBS(M)
+            D = detBS(M)
         elif method == "LU":
-            D = sign*M.det(method="LU")
+            D = M.det(method="LU")
         elif method == "bareiss":
-            D = sign*M.det(method="bareiss")
+            D = M.det(method="bareiss")
         elif method == "FC":
-            D = sign*detFC(M)
+            D = detFC(M)
         else:
             print("ERROR: Unknown method for det(M).")
             D = None
@@ -64,6 +87,7 @@ def det(M, method="ME"):
     return sp.collect(D, ini.Laplace)
 
 def detME(M):
+    #M = sort_columns_for_laplace(M)
     dim = M.shape[0]
     if dim == 2:
         D = M[0,0]*M[1,1] - M[1,0]*M[0,1]
@@ -98,6 +122,64 @@ def detBS(M):
                     newM[i,j] = sp.factor(newM[i,j] / newM[k-1, k-1])
     D = sign * newM[dim-1, dim-1]
     return D
+
+def detGJ(matrix):
+    matrix = sort_columns_for_laplace(matrix)
+    n = matrix.cols
+    # Store the minors in maps, keyed by the rows they arise from
+    M, N = {}, {}
+    # Populate M with dummy unit, to be used as a factor in the rightmost column
+    M[tuple()] = 1
+    # Keys to identify minor of M and N (Mkey is a subsequence of Nkey)
+    Mkey, Nkey = [], []
+    det = 0
+    # Proceed from right to left through the matrix
+    for c in range(n - 1, -1, -1):
+        Nkey.clear()
+        Mkey.clear()
+        for i in range(n - c):
+            Nkey.append(i)
+        fc = 0  # Controls logic for minor key generator
+        while True:
+            det = 0
+            for r in range(n - c):
+                # Maybe there is nothing to do?
+                if matrix[Nkey[r], c].is_zero:
+                    continue
+                # Mkey is the same as Nkey, but with element r removed
+                Mkey = Nkey[:r] + Nkey[r + 1:]
+                # Add product of matrix element and minor M to determinant
+                try:
+                    if r % 2:
+                        det -= matrix[Nkey[r], c] * M[tuple(sorted(Mkey))]
+                    else:
+                        det += matrix[Nkey[r], c] * M[tuple(sorted(Mkey))]
+                except KeyError:
+                    pass  # Ignore KeyError, as it indicates the minor was not stored
+            # Prevent nested expressions to save time
+            det = sp.expand(det)
+            # If the next computed minor is zero, don't store it in N
+            if not det.is_zero:
+                N[tuple(sorted(Nkey))] = det
+            # Compute the next minor key
+            fc = n - c
+            while fc > 0:
+                Nkey[fc - 1] += 1
+                if Nkey[fc - 1] < fc + c:
+                    break
+                fc -= 1
+            if 0 < fc < n - c:
+                for j in range(fc, n - c):
+                    Nkey[j] = Nkey[j - 1] + 1
+            if fc == 0:
+                break
+        # If N contains no minors, then they all vanished
+        if not N:
+            return 0
+        # Proceed to the next column: switch roles of M and N, clear N
+        M = N.copy()
+        N.clear()
+    return det
 
 def detFC(M):
     fc = computeFC(M)
@@ -453,6 +535,24 @@ def checkNumber(var):
     except BaseException:
         var = None
     return var
+
+def checkNumeric(exprList):
+    """
+    Returns True is all entries in the list 'exprList' are numeric.
+
+    :param exprList; List with numbers and/or expressions
+    :type exprList: list
+
+    :return: True is all entries in 'exprList' are numeric.
+    :rtype: Bool
+    """
+    numeric = True
+    for item in exprList:
+        params = sp.N(item).atoms(sp.Symbol)
+        if len(params) > 0:
+            numeric = False
+            break
+    return numeric
 
 def checkExpression(expr):
     """
@@ -1495,9 +1595,12 @@ def ilt(expr, s, t, integrate=False):
                     inv_laplace += fs.subs(s, root)
                 else:
                     inv_laplace += (1/sp.factorial(n-1))*sp.diff(fs, (s, n-1)).subs(s, root)
-            if sp.I in inv_laplace.atoms():
-                inv_laplace = assumeRealParams(inv_laplace)
-                inv_laplace = sp.simplify(clearAssumptions(inv_laplace.as_real_imag()[0]))
+
+            inv_laplace = sp.N(assumeRealParams(inv_laplace))
+            result = inv_laplace.as_real_imag()[0]
+            if sp.I in result.atoms():
+                result = inv_laplace.rewrite(sp.cos).simplify().trigsimp()
+            inv_laplace = clearAssumptions(result)
         else:
             # If the numerator or denominator cannot be written as a polynomial in 's':
             # use the sympy inverse_laplace_transform() method
@@ -1619,6 +1722,23 @@ if __name__ == "__main__":
     ht = ilt(expr, s, t)
     Mnew = M.echelon_form()
     """
+
+    M = sp.sympify("Matrix([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, -158314349441152630406568791890000000000000000000*s**2 - 119366273633481121623000000000000000000000000000000000000*s - 50000000000000000000000000000000000000000000000000000000000, 0, 0, 0, 750000000000000000000000000000000000000000000000000000000000000 - 994718394324345000000000000000000000000000000000000000*s, 7915717472057631520328439594500000000000000000*s**2 + 5968313681674056081150000000000000000000000000000000000*s + 2500000000000000000000000000000000000000000000000000000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, -158314349441152630406568791890000000000000000000*s**2 - 119366273633481121623000000000000000000000000000000000000*s - 50000000000000000000000000000000000000000000000000000000000, 0, 750000000000000000000000000000000000000000000000000000000000000 - 994718394324345000000000000000000000000000000000000000*s, 0, 0, 0, 0, -7915717472057631520328439594500000000000000000*s**2 - 5968313681674056081150000000000000000000000000000000000*s - 2500000000000000000000000000000000000000000000000000000000, 0, 0, 7915717472057631520328439594500000000000000000*s**2 + 5968313681674056081150000000000000000000000000000000000*s + 2500000000000000000000000000000000000000000000000000000000, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -158314349441152630406568791890000000000000000000*s**2 - 119366273633481121623000000000000000000000000000000000000*s - 50000000000000000000000000000000000000000000000000000000000, 0, 0, 0, 0, 0, 0, 0, 7915717472057631520328439594500000000000000000*s**2 + 5968313681674056081150000000000000000000000000000000000*s + 2500000000000000000000000000000000000000000000000000000000, 0, 0, 750000000000000000000000000000000000000000000000000000000000000 - 994718394324345000000000000000000000000000000000000000*s, 0, 0, 0], [0, 1/200, 0, 0, 0, 0, 677*s/10000000000000 + 1/51000, 0, 0, 0, 0, -s/250000000000, 0, -1/51000, -47*s/10000000000000, 0, 0, 0, 0, 0], [0, 0, -1/200, 0, 0, 0, 0, 449*s/10000000000000 + 1/51000, 0, 0, 0, 0, 0, 0, 0, -39*s/10000000000000 - 1/51000, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 51*s/125000000000, 0, 0, 0, 0, 0, 0, -s/2500000000, 0, 0, -s/125000000000, 0], [0, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11*s/50000000000 + 1/1000, 0, 0, 0, 0, 0, 0, 0, -1/1000, 0], [0, 0, 0, 0, -1, 0, -s/250000000000, 0, 0, 0, 0, 11*s/125000000000 + 1/25, -1/25, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1/25, 1/25, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, -1/51000, 0, 0, 0, 0, 0, 0, s/100000000000 + 1/51000, 0, 0, -s/100000000000, 0, 0, 0], [0, 0, 0, 0, 1, 0, -47*s/10000000000000, 0, 0, 0, 0, 0, 0, 0, 47*s/10000000000000 + 1/300, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, -39*s/10000000000000 - 1/51000, -191833260932509*sqrt(I_D)/100000000000000 - s/2500000000, 0, 0, 0, 0, 0, 0, 96204380357653263*sqrt(I_D)/50000000000000000 + 4439*s/10000000000000 + 101/51000, 0, 0, -287749891398763*sqrt(I_D)/50000000000000000 - s/25000000000, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -s/100000000000, 0, 0, 639*s/20000000000000 + 10403/806000000, -1/80600, -59*s/20000000000000 - 1/2000000, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1/80600, 1/80600, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 191833260932509*sqrt(I_D)/100000000000000 - s/125000000000, 0, -1/1000, 0, 0, 0, 0, -96204380357653263*sqrt(I_D)/50000000000000000 - s/25000000000, -59*s/20000000000000 - 1/2000000, 0, 287749891398763*sqrt(I_D)/50000000000000000 + 1019*s/20000000000000 + 46003/6000000, -1/150], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1/150, s/1000000000 + 1/150]])")
+    t5 = time()
+    D = det(M, method="GJ")
+    t6 = time()
+    print("Gentleman-Johnson", t6-t5)
+
+    t7 = time()
+    D = det(M, method="ME")
+    t8 = time()
+    print("Minor expansion", t8-t7)
+
+    t9 = time()
+    D = det(M, method="BS")
+    t10 = time()
+    print("Bareiss", t10-t9)
+
     LG = sp.sympify("-0.00647263929159112*(1.42481097731728e-5*s**2 + s)/(6.46865378347277e-16*s**3 + 2.0274790076825e-8*s**2 + 0.0014352663537982*s + 1.0)")
     print(findServoBandwidth(LG))
 

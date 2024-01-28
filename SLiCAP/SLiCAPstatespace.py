@@ -5,11 +5,12 @@ This is to be used to find the frequency constant matrix (which is the inverse o
 """
 import sympy as sp
 from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPmatrices import makeMatrices,makeSrcVector
+from SLiCAP.SLiCAPmatrices import makeMatrices, makeSrcVector
 from SLiCAP.SLiCAPfc import addfractions, laplace2coeffs, nth2firstOrder, UVsolve, Matrix_num_den
+
 def backsubstitute(U,b):
     """
-    Returns the vector 'x' to the system of equations: Ux=b 
+    Returns the vector 'x' to the system of equations: Ux=b
     where U must be Upper triangular.
 
     :param A: Upper Triangluar sympy matrix
@@ -45,7 +46,7 @@ def backsubstitute(U,b):
 def backsubstituteND(U,b):
     """
     This function is the same as backsubstitute except it converts to num den first.
-    Returns the vector 'x' to the system of equations: Ux=b 
+    Returns the vector 'x' to the system of equations: Ux=b
     where U must be Upper triangular.
 
     :param A: Upper Triangluar sympy matrix
@@ -99,7 +100,7 @@ def findA4(x,b):
     rows=b.shape[0]
     cols=x.shape[0]
     A=sp.zeros(rows,cols)
-    
+
     for i in range(rows):
         for j in range(cols):
             A[i,j] = sp.cancel(sp.collect(sp.expand(b[i]),x[j]).coeff(x[j]))
@@ -192,7 +193,7 @@ def Block2CDstatematrix(rank,known_ys,V,xlen):
 def Vector2srcCoeffMatrices(src,V,var=ini.Laplace):
     """
     For Vector 'V' that is a linear function of the 'src' vector
-    and the laplace variable 'var' then this function decomposes V to get 
+    and the laplace variable 'var' then this function decomposes V to get
     the matrix Mres where: Mres*src=V. Then it returns the list of
     coefficent matrices of the laplace variable.
 
@@ -209,10 +210,10 @@ def Vector2srcCoeffMatrices(src,V,var=ini.Laplace):
     :param var: laplace variable
     :type var: sympy symbol
 
-    :return: Mres: Mres is a list of Coefficent Matrices that correspond 
+    :return: Mres: Mres is a list of Coefficent Matrices that correspond
                    to the basis (s^0,...,s^n) where is the laplace variables
     :rtype:  list
-    
+
     :Example:
     >>> Iv = sp.Matrix(sp.MatrixSymbol('Iv', 2, 1))
     >>> A = sp.Matrix(sp.MatrixSymbol('a', 2, 2))
@@ -295,7 +296,7 @@ def MNA2StateSpace(M, q, src, var=ini.Laplace):
     :param var: laplace variable
     :type var: sympy symbol
 
-    :return: res: [Ares,Bres,C,D] where A and C are sympy matrices 
+    :return: res: [Ares,Bres,C,D] where A and C are sympy matrices
                   and B and D are lists of sympy matrices
     :rtype:  list
     """
@@ -312,9 +313,9 @@ def MNA2StateSpace(M, q, src, var=ini.Laplace):
 
 def getStateSpace(instr):
     """
-    Returns the the state space representation of the 
+    Returns the the state space representation of the
     circuit defined in the instruction:
-    
+
     :param instr: Instruction for the circuit
     :type instr: SLiCAP instruction
 
@@ -329,5 +330,5 @@ def getStateSpace(instr):
     Iv = makeSrcVector(cir,{},'all',value='id',numeric=False)
     src = sp.Matrix([sp.Symbol(i) for i in instr.indepVars()])
     A,B,C,D = MNA2StateSpace(M, Iv, src)
-    
+
     return (A,B,C,D,src,Dv)
