@@ -98,16 +98,14 @@ class settings(object):
 
         numer:
 
-            "GJ"      : Method = SLiCAP Minor expansion Gentleman-Johnson Default
-            "ME"      : Method = SLiCAP Minor expansion
+            "ME"      : Method = SLiCAP Minor expansion (default)
             "BS"      : Method = SLiCAP Bareis fraction-free algorithm
             "LU"      : Method = Sympy LU decomposition
             "bareiss" : Method = Sympy Bareiss fraction-free algorithm
 
         denom:
 
-            "GJ"      : Method = SLiCAP Minor expansion Gentleman-Johnson Default
-            "ME"      : Method = SLiCAP Minor expansion
+            "ME"      : Method = SLiCAP Minor expansion (default)
             "BS"      : Method = SLiCAP Bareis fraction-free algorithm
             "LU"      : Method = Sympy LU decomposition
             "bareiss" : Method = Sympy Bareiss fraction-free algorithm
@@ -279,13 +277,13 @@ class settings(object):
         Defaults to: None.
         """
 
-        self.denom        = "GJ"
+        self.denom        = "ME"
         """
         Choose 'ME" for minor expansion, 'BS" or "bareiss" for Bareiss fraction
         free algorithm, and "LU" for LU decomposition. Defaults to ME.
         """
 
-        self.numer        = "GJ"
+        self.numer        = "ME"
         """
         Choose 'ME" for minor expansion, 'BS" or "bareiss" for Bareiss fraction
         free algorithm, and "LU" for LU decomposition. Defaults to ME.
