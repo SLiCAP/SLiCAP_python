@@ -1,0 +1,75 @@
+<a id=""></a><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Circuit diagram</h2>
+<figure><img src="img/dcMatchingTracking.svg" alt="" style="width:600px">
+</figure>
+<h2>Netlist: dcMatchingTracking.cir</h2>
+<pre>dcMatchingTracking
+V1 in 0 V value=0 dc={V_DC_T} dcvar={(sigma_V*V_DC_T)^2} noise=0
+R1 in out R value={R_a} noisetemp=0 noiseflow=0 dcvar={var_m} dcvarlot={lot_1}
+R2 out 0 R value={R_b} noisetemp=0 noiseflow=0 dcvar={var_m} dcvarlot={lot_1}
+.param R_a={(A-1)*R*(1 + TC_R*T_Delta)}
+.param var_m={sigma_m_R^2/2 + (sigma_TC_tr_R*T_Delta)^2/2}
+.param lot_1={sigma_R^2 + (sigma_TC_R*T_Delta)^2}
+.param R_b={R*(1 + TC_R*T_Delta)}
+.param V_DC_T= {V_DC*(1+T_Delta*TC_V)}
+.backanno
+.end
+</pre>
+<table><caption>Table: Element data of expanded netlist 'dcMatchingTracking'</caption>
+<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">R1</td><td class = "left">in out </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td></tr>
+<tr><td class="left">R2</td><td class = "left">out 0 </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td></tr>
+<tr><td class="left">V1</td><td class = "left">in 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$V_{DC T}^{2} \sigma_{V}^{2}$</td><td class="left">$V_{DC}^{2} \sigma_{V}^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+</table>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$\sigma_{V}$</td></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td></tr>
+<tr><td class="left">$TC_{R}$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$TC_{V}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td></tr>
+</table>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="dcMatchingTracking_index.html">dcMatchingTracking_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 2.0.1 &copy 2009-2024 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2024-01-29 14:02:15</p>
+</div></body></html>

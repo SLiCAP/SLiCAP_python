@@ -1,0 +1,307 @@
+<a id=""></a><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"DC matching-tacking demo"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>DC matching-tacking demo</h1></div>
+<h2>Circuit diagram</h2>
+<figure><img src="img/dcMatchingTracking.svg" alt="" style="width:600px">
+</figure>
+<h2>No tolerances and no temperature coefficients</h2>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R$</td></tr>
+<tr><td class="left">$TC_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$TC_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+</table>
+\begin{equation}
+V_{out}=\frac{V_{DC}}{A}
+\end{equation}
+\begin{equation}
+\sigma_{Vout}^{2}=0
+\end{equation}
+\begin{equation}
+I_{V1}=- \frac{V_{DC}}{A R}
+\end{equation}
+\begin{equation}
+\sigma_{IV1}^{2}=0
+\end{equation}
+<h2>Only DC voltage soure with standard deviation</h2>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R$</td></tr>
+<tr><td class="left">$TC_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$TC_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$\sigma_{V}$</td></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+</table>
+\begin{equation}
+V_{out}=\frac{V_{DC}}{A}
+\end{equation}
+\begin{equation}
+\sigma_{Vout}^{2}=\frac{V_{DC}^{2} \sigma_{V}^{2}}{A^{2}}
+\end{equation}
+\begin{equation}
+I_{V1}=- \frac{V_{DC}}{A R}
+\end{equation}
+\begin{equation}
+\sigma_{IV1}^{2}=\frac{V_{DC}^{2} \sigma_{V}^{2}}{A^{2} R^{2}}
+\end{equation}
+<h2>Only DC voltage soure with temperature coefficient</h2>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R$</td></tr>
+<tr><td class="left">$TC_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$TC_{V}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+</table>
+\begin{equation}
+V_{out}=\frac{V_{DC} \left(TC_{V} T_{\Delta} + 1\right)}{A}
+\end{equation}
+\begin{equation}
+\sigma_{Vout}^{2}=0
+\end{equation}
+\begin{equation}
+I_{V1}=\frac{V_{DC} \left(- TC_{V} T_{\Delta} - 1\right)}{A R}
+\end{equation}
+\begin{equation}
+\sigma_{IV1}^{2}=0
+\end{equation}
+<h2>Only DC voltage soure with standard deviation and temperature coefficient</h2>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R$</td></tr>
+<tr><td class="left">$TC_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$\sigma_{V}$</td></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$TC_{V}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+</table>
+\begin{equation}
+V_{out}=\frac{V_{DC} \left(TC_{V} T_{\Delta} + 1\right)}{A}
+\end{equation}
+\begin{equation}
+\sigma_{Vout}^{2}=\frac{V_{DC}^{2} \sigma_{V}^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2}}{A^{2}}
+\end{equation}
+\begin{equation}
+I_{V1}=\frac{V_{DC} \left(- TC_{V} T_{\Delta} - 1\right)}{A R}
+\end{equation}
+\begin{equation}
+\sigma_{IV1}^{2}=\frac{V_{DC}^{2} \sigma_{V}^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2}}{A^{2} R^{2}}
+\end{equation}
+<h2>Only (relative) standard deviation of resistor values with perfect matching</h2>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R$</td></tr>
+<tr><td class="left">$TC_{R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$TC_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$\sigma_{R}^{2}$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td></tr>
+</table>
+\begin{equation}
+V_{out}=\frac{V_{DC}}{A}
+\end{equation}
+\begin{equation}
+\sigma_{Vout}^{2}=0
+\end{equation}
+\begin{equation}
+I_{V1}=- \frac{V_{DC}}{A R}
+\end{equation}
+\begin{equation}
+\sigma_{IV1}^{2}=\frac{V_{DC}^{2} \sigma_{R}^{2}}{A^{2} R^{2}}
+\end{equation}
+<h2>Only (relative) standard deviation of resistor values with perfect matching and temperature tracking</h2>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$TC_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$\sigma_{R}^{2}$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$TC_{R}$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td></tr>
+</table>
+\begin{equation}
+V_{out}=\frac{V_{DC}}{A}
+\end{equation}
+\begin{equation}
+\sigma_{Vout}^{2}=0
+\end{equation}
+\begin{equation}
+I_{V1}=- \frac{V_{DC}}{A R \left(TC_{R} T_{\Delta} + 1\right)}
+\end{equation}
+\begin{equation}
+\sigma_{IV1}^{2}=\frac{V_{DC}^{2} \sigma_{R}^{2}}{A^{2} R^{2} \left(TC_{R} T_{\Delta} + 1\right)^{2}}
+\end{equation}
+<h2>Only (relative) standard deviation of resistor values with imperfect matching and temperature tracking</h2>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$TC_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td></tr>
+<tr><td class="left">$\sigma_{V}$</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td></tr>
+<tr><td class="left">$TC_{R}$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td></tr>
+</table>
+\begin{equation}
+V_{out}=\frac{V_{DC}}{A}
+\end{equation}
+\begin{equation}
+\sigma_{Vout}^{2}=\frac{V_{DC}^{2} \left(A - 1\right)^{2} \left(T_{\Delta}^{2} \sigma_{TC tr R}^{2} + \sigma_{m R}^{2}\right)}{A^{4}}
+\end{equation}
+\begin{equation}
+I_{V1}=- \frac{V_{DC}}{A R \left(TC_{R} T_{\Delta} + 1\right)}
+\end{equation}
+\begin{equation}
+\sigma_{IV1}^{2}=\frac{V_{DC}^{2} \left(T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}\right)}{A^{2} R^{2} \left(TC_{R} T_{\Delta} + 1\right)^{2}} + \frac{0.5 V_{DC}^{2} \left(A - 1\right)^{2} \left(T_{\Delta}^{2} \sigma_{TC tr R}^{2} + \sigma_{m R}^{2}\right)}{A^{4} R^{2} \left(TC_{R} T_{\Delta} + 1\right)^{2}} + \frac{0.5 V_{DC}^{2} \left(T_{\Delta}^{2} \sigma_{TC tr R}^{2} + \sigma_{m R}^{2}\right)}{A^{4} R^{2} \left(TC_{R} T_{\Delta} + 1\right)^{2}}
+\end{equation}
+<h2>DC voltage soure with standard deviation and temperature coefficient and (relative) standard deviation of resistor values with imperfect matching and temperature tracking</h2>
+<table><caption>Table: Parameter definitions in 'dcMatchingTracking'.</caption>
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(A - 1\right) \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td><td class="left">$R \left(TC_{R} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$V_{DC T}$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td><td class="left">$V_{DC} \left(TC_{V} T_{\Delta} + 1\right)$</td></tr>
+<tr><td class="left">$lot_{1}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td><td class="left">$T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}$</td></tr>
+<tr><td class="left">$var_{m}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td><td class="left">$0.5 T_{\Delta}^{2} \sigma_{TC tr R}^{2} + 0.5 \sigma_{m R}^{2}$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'dcMatchingTracking.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$\sigma_{V}$</td></tr>
+<tr><td class="left">$A$</td></tr>
+<tr><td class="left">$\sigma_{TC R}$</td></tr>
+<tr><td class="left">$TC_{R}$</td></tr>
+<tr><td class="left">$\sigma_{TC tr R}$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$T_{\Delta}$</td></tr>
+<tr><td class="left">$TC_{V}$</td></tr>
+<tr><td class="left">$R$</td></tr>
+<tr><td class="left">$\sigma_{m R}$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td></tr>
+</table>
+\begin{equation}
+V_{out}=\frac{V_{DC} \left(TC_{V} T_{\Delta} + 1\right)}{A}
+\end{equation}
+\begin{equation}
+\sigma_{Vout}^{2}=\frac{V_{DC}^{2} \sigma_{V}^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2}}{A^{2}} + \frac{V_{DC}^{2} \left(A - 1\right)^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2} \left(T_{\Delta}^{2} \sigma_{TC tr R}^{2} + \sigma_{m R}^{2}\right)}{A^{4}}
+\end{equation}
+\begin{equation}
+I_{V1}=\frac{V_{DC} \left(- TC_{V} T_{\Delta} - 1\right)}{A R \left(TC_{R} T_{\Delta} + 1\right)}
+\end{equation}
+\begin{equation}
+\sigma_{IV1}^{2}=\frac{V_{DC}^{2} \sigma_{V}^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2}}{A^{2} R^{2} \left(TC_{R} T_{\Delta} + 1\right)^{2}} + \frac{V_{DC}^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2} \left(T_{\Delta}^{2} \sigma_{TC R}^{2} + \sigma_{R}^{2}\right)}{A^{2} R^{2} \left(TC_{R} T_{\Delta} + 1\right)^{2}} + \frac{0.5 V_{DC}^{2} \left(A - 1\right)^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2} \left(T_{\Delta}^{2} \sigma_{TC tr R}^{2} + \sigma_{m R}^{2}\right)}{A^{4} R^{2} \left(TC_{R} T_{\Delta} + 1\right)^{2}} + \frac{0.5 V_{DC}^{2} \left(TC_{V} T_{\Delta} + 1\right)^{2} \left(T_{\Delta}^{2} \sigma_{TC tr R}^{2} + \sigma_{m R}^{2}\right)}{A^{4} R^{2} \left(TC_{R} T_{\Delta} + 1\right)^{2}}
+\end{equation}
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="dcMatchingTracking_index.html">dcMatchingTracking_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 2.0.1 &copy 2009-2024 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2024-01-29 14:02:15</p>
+</div></body></html>

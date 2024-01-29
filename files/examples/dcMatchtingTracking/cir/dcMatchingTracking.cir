@@ -1,0 +1,11 @@
+dcMatchingTracking
+V1 in 0 V value=0 dc={V_DC_T} dcvar={(sigma_V*V_DC_T)^2} noise=0
+R1 in out R value={R_a} noisetemp=0 noiseflow=0 dcvar={var_m} dcvarlot={lot_1}
+R2 out 0 R value={R_b} noisetemp=0 noiseflow=0 dcvar={var_m} dcvarlot={lot_1}
+.param R_a={(A-1)*R*(1 + TC_R*T_Delta)}
+.param var_m={sigma_m_R^2/2 + (sigma_TC_tr_R*T_Delta)^2/2}
+.param lot_1={sigma_R^2 + (sigma_TC_R*T_Delta)^2}
+.param R_b={R*(1 + TC_R*T_Delta)}
+.param V_DC_T= {V_DC*(1+T_Delta*TC_V)}
+.backanno
+.end

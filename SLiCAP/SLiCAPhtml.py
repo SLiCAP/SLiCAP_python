@@ -106,12 +106,12 @@ def _HTMLfoot(indexFile):
 def insertHTML(fileName, htmlInsert):
     """
     Inserts html in the file specified by 'fileName' at the location of the
-    string '_HTMLINSERT'.
+    string 'htmlInsert'.
 
     :param fileName: name of the file
     :type fileName: str
-    :param _HTMLINSERT: HTML that must be inserted in this file
-    :type _HTMLINSERT: str
+    :param htmlInsert: HTML that must be inserted in this file
+    :type htmlInsert: str
     """
     html = readFile(fileName)
     html = html.replace(_HTMLINSERT, htmlInsert + _HTMLINSERT)
