@@ -61,23 +61,17 @@ from SLiCAP import *
 
 def createOutput(instr):
     params2html(i1.circuit)
-    instr.setDataType("dc")
-    instr.setGainType("vi")
     instr.setDetector("V_out")
-    dcResult = instr.execute()
-    eqn2html("V_out", dcResult.dc)
-    instr.setDataType("dcvar")
     dcVarResult = instr.execute()
-    eqn2html("sigma_Vout^2", dcVarResult.ovar)
+    Vout = sp.simplify(dcVarResult.dcSolve[instr.depVars().index('V_out')])
+    eqn2html("V_out", Vout)
+    eqn2html("sigma_Vout^2", sp.simplify(dcVarResult.ovar))
 
-    instr.setDataType("dc")
-    instr.setGainType("vi")
     instr.setDetector("I_V1")
-    dcResult = instr.execute()
-    eqn2html("I_V1", dcResult.dc)
-    instr.setDataType("dcvar")
     dcVarResult = instr.execute()
-    eqn2html("sigma_IV1^2", dcVarResult.ovar)
+    IV1 = sp.simplify(dcVarResult.dcSolve[instr.depVars().index('I_V1')])
+    eqn2html("I_V1", IV1)
+    eqn2html("sigma_IV1^2", sp.simplify(dcVarResult.ovar))
 
 prj = initProject("DCVAR")
 
