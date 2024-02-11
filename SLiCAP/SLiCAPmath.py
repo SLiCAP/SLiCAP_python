@@ -5,6 +5,7 @@ SLiCAP module with math functions.
 """
 import sys
 import sympy as sp
+from sympy.combinatorics import Permutation
 import numpy as np
 from numpy.polynomial import Polynomial
 from scipy.integrate import quad
@@ -44,7 +45,8 @@ def det(M, method="ME"):
         elif dim == 2:
             D = sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1])
         elif method == "ME":
-            D = detME(M)
+            M, sign = sort_rows_for_laplace(M)
+            D = detME(M)*sign
         elif method == "BS":
             D = detBS(M)
         elif method == "LU":
@@ -61,19 +63,42 @@ def det(M, method="ME"):
         D = None
     return sp.collect(D, sp.Symbol("s"))
 
+def sort_rows_for_laplace(matrix):
+    row, col = matrix.shape
+    r_zeros = []
+    # Number of zeros in each row
+    for r in range(row):
+        acc = sum(1 for c in range(col) if matrix[r, c].is_zero)
+        r_zeros.append((acc, r))
+    # Sort columns based on the number of zeros
+    r_zeros.sort()
+    r_zeros.reverse()
+    pre_sort = [i[1] for i in r_zeros]
+    # Compute permutation sign
+    perm = Permutation(pre_sort)
+    sign = perm.signature()
+    # Represent the sorted matrix
+    result = sp.Matrix.zeros(row, col)
+    r = 0
+    for it in pre_sort:
+        result[r,:] = matrix[it, :]
+        r += 1
+    return result, sign
+
 def detME(M):
-    #M = sort_columns_for_laplace(M)
     dim = M.shape[0]
     if dim == 2:
         D = M[0,0]*M[1,1] - M[1,0]*M[0,1]
     else:
         D = 0
         for row in range(dim):
-            if M[row, 0] != 0:
+            if M[row,0] != 0:
                 newM = M.copy()
                 newM.row_del(row)
                 newM.col_del(0)
-                D += M[row, 0] * (-1)**(row%2) * detME(newM)
+                minor = detME(newM)
+                if minor != 0:
+                    D += M[row,0] * (-1)**(row%2) * minor
     return sp.expand(D)
 
 def detBS(M):

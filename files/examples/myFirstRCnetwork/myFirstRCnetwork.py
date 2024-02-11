@@ -12,19 +12,29 @@ t1=time()
 
 prj = initProject('My first RC network') # Sets all the paths and creates the HTML main index page.
 
-baseFileName = 'myFirstRCnetwork'
-fileName = baseFileName + '.cir'
-#schematicFile = baseFileName + '.asc'
+fileName = "myFirstRCnetwork"
+
+# KiCAD
+#parseKiCADnetlist(fileName + ".kicad_sch")
+#KiCADsch2svg(fileName + ".kicad_sch")
+
+# LTspice
+#schematicFile = FileName + '.asc'
 #makeNetlist(schematicFile, 'My first RC network')
-i1 = instruction()                       # Creates an instance of an instruction object
-i1.setCircuit(fileName)                  # Checks and defines the local circuit object and
-                                         # sets the index page to the circuit index page
+
+# gSchem or lepton-eda
+#schematicFile = FileName + '.sch'
+#makeNetlist(schematicFile, 'My first RC network')
+
+i1 = instruction()                  # Creates an instance of an instruction object
+i1.setCircuit(fileName + ".cir")    # Checks and defines the local circuit object and
+                                    # sets the index page to the circuit index page
 # We will generate a HTML report (not from within Jupyter). Let us first create an empty HTML page:
 htmlPage('Circuit data')
 # Put a header on this page and display the circuit diagram on it.
 head2html('Circuit diagram')
-img2html('myFirstRCnetwork.svg', 250, caption = 'Circuit diagram of the RC network.', label = 'figRCnetwork')
-netlist2html(fileName, label = 'netlist') # This displays the netlist
+img2html(fileName + '.svg', 250, caption = 'Circuit diagram of the RC network.', label = 'figRCnetwork')
+netlist2html(fileName + ".cir", label = 'netlist') # This displays the netlist
 elementData2html(i1.circuit, label = 'elementData') # This shows the data of the expanded netlist
 params2html(i1.circuit, label = 'params') # This displays the circuit parameters
 # Let us define an instruction to display the symbolic MNA matrix equation.

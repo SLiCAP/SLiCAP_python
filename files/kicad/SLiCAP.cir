@@ -1,0 +1,38 @@
+"SLiCAP symbols"
+.lib SLiCAP.lib
+.param alpha=1
+C1 1 2 C value={C} vinit=0
+D1 3 4 D
+E1 8 7 6 5 E value=0
+E2 12 11 10 9 EZ value=0 zo=?
+F1 16 15 14 13 F value=0
+G1 20 19 18 17 G value=0
+H1 24 23 22 21 H value=0
+H2 28 27 26 25 HZ value=0 zo=?
+I1 30 29 I value={I} dc=0 dcvar=0 noise=0
+J1 31 32 33 J
+K1 L? L? K value={k}
+L1 34 35 L value={L} iinit=0
+M1 37 38 39 36 M
+N1 43 42 41 40 N
+Q1 45 44 46 47 Q
+R1 48 49 R value={R} dcvar=0 dcvarlot=0 noiseflow=0 noisetemp=0
+R2 50 51 r value={R} dcvar=0 dcvarlot=0 noiseflow=0 noisetemp=0
+T1 55 54 53 52 T value=0
+V1 57 56 V value={V} dc=0 dcvar=0 noise=0
+W1 61 60 59 58 W value=0
+X1 64 63 66 65 62 N_dcvar iib={I_b} sib={sigma_ib} sio={sigma_io} svo={sigma_vo}
+X2 68 67 70 69 O_dcvar iib={I_b} sib={sigma_ib} sio={sigma_io} svo={sigma_vo}
+X3 72 73 74 71 ? ID={ID} L={L} W={W}
+X4 76 75 78 77 N_noise si={S_i} sv={S_v}
+X5 79 80 81 82 ? ID={ID} L={L} W={W}
+X6 84 83 86 85 O_noise si={S_i} sv={S_v}
+X7 88 89 90 87 ? ID_N={ID_N} ID_P={ID_P} L_N={L_N} L_P={L_P} W_N={W_N} W_P={W_P}
+X8 92 91 93 ? IC={IC} VCE={VCE}
+X9 95 94 96 ? ID={ID} IG={IG}
+X10 98 99 100 97 ? L={L} VD={VD} VG={VG} VS={VS} W={W}
+X11 101 102 103 ? ID={ID}
+X12 105 106 107 ? IC={IC} VCE={VCE}
+X13 110 111 108 109 ? IC={IC} VCE={VCE}
+X14 113 112 114 ? ID={ID} IG={IG} L={L} W={W}
+.end

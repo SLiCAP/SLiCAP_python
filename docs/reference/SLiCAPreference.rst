@@ -19,6 +19,7 @@ SLiCAP comprises the following (sub) modules:
    SLiCAPhtml
    SLiCAPini
    SLiCAPinstruction
+   SLiCAPkicad
    SLiCAPlatex
    SLiCAPlex
    SLiCAPmath
