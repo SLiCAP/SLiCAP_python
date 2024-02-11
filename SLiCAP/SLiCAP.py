@@ -30,7 +30,7 @@ from SLiCAP.SLiCAPrst import *
 from SLiCAP.SLiCAPfc import computeFC
 from SLiCAP.SLiCAPstatespace import getStateSpace
 from SLiCAP.SLiCAPngspice import MOS, ngspice2traces
-from SLiCAPkicad import *
+from SLiCAP.SLiCAPkicad import *
 
 try:
     __IPYTHON__
