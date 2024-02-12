@@ -43,7 +43,8 @@ def parseKiCADnetlist(kicad_sch):
         fields = line.split()
         fields = [removeParenthesis(field) for field in fields]
         if fields[0] == "title":
-            title = checkTitle(" ".join(fields[1:]))
+            if len(fields) > 1:
+                title = checkTitle(" ".join(fields[1:]))
         elif fields[0] == "comp":
             newComp = KiCADcomponent()
             newComp.refDes = fields[-1][1:-1]
