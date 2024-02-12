@@ -114,16 +114,7 @@ def parseKiCADnetlist(kicad_sch):
 
 def KiCADsch2svg(fileName):
     imgFile = fileName.split('.')[0] + ".svg"
-    os.system("kicad-cli sch export svg -o %s -e %s"%(ini.circuitPath, ini.circuitPath + fileName))
-    # Remove the paper-size (A4) background rectangle
-    f = open(ini.circuitPath + imgFile, 'r')
-    svg = f.read()
-    f.close()
-    svg = svg.replace('<rect x="0.000000" y="0.000000" width="297.002200" height="210.007200" rx="0.000000" />', '')
-    f = open(ini.imgPath + imgFile, 'w')
-    f.write(svg)
-    f.close()
-    # Resize the graphics to the drawing size
+    os.system("kicad-cli sch export svg -o %s -e -n %s"%(ini.imgPath, ini.circuitPath + fileName))
     cmd = "inkscape -o %s -D %s"%(ini.imgPath + imgFile, ini.imgPath + imgFile)
     os.system(cmd)
 
