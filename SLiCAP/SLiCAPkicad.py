@@ -7,6 +7,7 @@ Created on February 8, 2024
 """
 import os
 from SLiCAP.SLiCAPini import ini
+import subprocess
 
 class KiCADcomponent(object):
     def __init__(self):
@@ -30,7 +31,7 @@ def checkTitle(title):
 
 def parseKiCADnetlist(kicad_sch):
     fileName = '.'.join(kicad_sch.split('.')[0:-1])
-    os.system('kicad-cli sch export netlist -o %s %s'%(ini.circuitPath + fileName + ".net", ini.circuitPath + fileName + ".kicad_sch"))
+    subprocess.run([ini.kicadPath + 'kicad-cli', 'sch', 'export', 'netlist', '-o', ini.circuitPath + fileName + ".net", ini.circuitPath + fileName + ".kicad_sch"])
     components = {}
     nodes      = {}
     nodelist   = []
@@ -112,11 +113,10 @@ def parseKiCADnetlist(kicad_sch):
     f.close()
     return netlist
 
-def KiCADsch2svg(fileName):
+def KiCADsch2svg(fileName,):
     imgFile = fileName.split('.')[0] + ".svg"
-    os.system("kicad-cli sch export svg -o %s -e -n %s"%(ini.imgPath, ini.circuitPath + fileName))
-    cmd = "inkscape -o %s -D %s"%(ini.imgPath + imgFile, ini.imgPath + imgFile)
-    os.system(cmd)
+    subprocess.run([ini.kicadPath + 'kicad-cli', 'sch', 'export', 'svg', '-o', ini.imgPath, '-e', '-n', ini.circuitPath + fileName])
+    subprocess.run([ini.inkscapePath + 'inkscape', '-o', ini.imgPath + imgFile, '-D', ini.imgPath + imgFile])
 
 if __name__=='__main__':
     from SLiCAP import initProject

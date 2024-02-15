@@ -298,7 +298,7 @@
     (property "Reference" "V1" (at 69.85 54.483 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "{V}" (at 69.85 57.023 0) (show_name)
+    (property "Value" "0" (at 69.85 57.023 0) (show_name)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "" (at 66.04 60.96 0)

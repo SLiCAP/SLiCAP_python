@@ -19,11 +19,11 @@ fileName = "myFirstRCnetwork"
 #KiCADsch2svg(fileName + ".kicad_sch")
 
 # LTspice
-#schematicFile = FileName + '.asc'
+#schematicFile = fileName + '.asc'
 #makeNetlist(schematicFile, 'My first RC network')
 
 # gSchem or lepton-eda
-#schematicFile = FileName + '.sch'
+#schematicFile = fileName + '.sch'
 #makeNetlist(schematicFile, 'My first RC network')
 
 i1 = instruction()                  # Creates an instance of an instruction object

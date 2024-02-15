@@ -2270,6 +2270,9 @@
     (property "dcvarlot" "0" (at 15.24 -1.905 0) (show_name)
       (effects (font (size 1.27 1.27)) (justify left))
     )
+    (property "ki_description" "Resistor (cannot have zero resistance)" (at 0 0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
     (symbol "R_0_0"
       (text "+" (at 0 1.27 0)
         (effects (font (size 1.27 1.27)))
@@ -2397,6 +2400,9 @@
     )
     (property "model" "V" (at 3.175 -5.08 0) (show_name)
       (effects (font (size 1.27 1.27)) (justify left) hide)
+    )
+    (property "ki_description" "Independent voltage source" (at 0 0 0)
+      (effects (font (size 1.27 1.27)) hide)
     )
     (symbol "V_0_0"
       (text "+" (at -1.016 3.556 0)
@@ -2744,7 +2750,7 @@
     (property "ID" "{ID}" (at 15.24 4.445 0) (show_name) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "ki_description" "Differential pair MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)" (at 0 0 0)
+    (property "ki_description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)" (at 0 0 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (symbol "XMD_0_1"
@@ -3277,7 +3283,7 @@
     (property "VCE" "{VCE}" (at 13.97 2.54 0) (show_name) (do_not_autoplace)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "ki_description" "Differentiak pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)" (at 0 0 0)
+    (property "ki_description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)" (at 0 0 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (symbol "XQD_0_1"
@@ -3416,6 +3422,9 @@
     )
     (property "dcvarlot" "0" (at 15.875 -2.54 0) (show_name)
       (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "ki_description" "Resistor (can have zero resistance)" (at 0 0 0)
+      (effects (font (size 1.27 1.27)) hide)
     )
     (symbol "r_0_0"
       (text "+" (at 0 1.27 0)
