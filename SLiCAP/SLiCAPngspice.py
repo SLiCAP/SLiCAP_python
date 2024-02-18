@@ -13,11 +13,6 @@ from SLiCAP.SLiCAPplots import plot, trace
 from numpy  import array, sqrt, arctan, pi, unwrap, log10, linspace, geomspace
 from re     import findall
 
-"""
-NGspice is executed by invoking the 'ini.ngspiceCMD'. Under MSWindows the
-location of 'ngspice.exe' must be in the searcg path.
-"""
-
 class MOS(object):
     """
     MOS Transistor.
@@ -123,7 +118,7 @@ class MOS(object):
         f = open('MOS_OP.cir', 'w')
         f.write(txt)
         f.close()
-        system(ini.ngspiceCMD + ' -b MOS_OP.cir -o MOS_OP.log')
+        system(ini.ngspice + ' -b MOS_OP.cir -o MOS_OP.log')
         #remove('MOS_OP.cir')
         #remove('MOS_OP.log')
         self._getParams()
@@ -190,7 +185,7 @@ class MOS(object):
         f = open('MOS_OP.cir', 'w')
         f.write(txt)
         f.close()
-        system(ini.ngspiceCMD + ' -b MOS_OP.cir -o MOS_OP.log')
+        system(ini.ngspice + ' -b MOS_OP.cir -o MOS_OP.log')
         remove('MOS_OP.cir')
         remove('MOS_OP.log')
         self._getParams()
@@ -419,7 +414,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
             f = open('simFile.sp', 'w')
             f.write(netlist)
             f.close()
-            system(ini.ngspiceCMD + ' -b simFile.sp -o simFile.log')
+            system(ini.ngspice + ' -b simFile.sp -o simFile.log')
     else:
         f = open(cirFile + '.cir', 'r')
         netlist = f.read()
@@ -441,7 +436,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, traceType='magPhase
     f.write(netlist)
     f.close()
     analysisType = simCmd.split()[0]
-    system(ini.ngspiceCMD + ' -b simFile.sp -o simFile.log')
+    system(ini.ngspice + ' -b simFile.sp -o simFile.log')
     f = open(cirFile + '.csv', 'r')
     txt = f.read()
     f.close()

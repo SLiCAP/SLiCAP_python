@@ -69,12 +69,14 @@ class settings(object):
        - imgPath           : Directory with images for HTML output
        - defaultLib        : Directory with SLiCAP basic library files
        - docPath           : Directory with html documentation
-       - kicadPath         : KiCad install directory
-       - inkscapePath      : Inkscape install directory
-       - ngspiceCMD        : NGspice command
-                               MS windows: '~\\Spice64\\bin\\ngspice.exe'
-                               Linux     : 'ngspice'
-                               Mac       : 'ngspice'
+
+    # - commands
+
+       - kicad             : KiCad command
+       - inkscape          : Inkscape command
+       - ngspice           : NGspice command
+       - ltspice           : LTspice command
+       - gschem            : gnetlist command
 
     #. active HTML pages and active HTMLfile prefix
 
@@ -159,11 +161,6 @@ class settings(object):
        - notebook: True adapts HTML math return variables to markdown format
          required by Jupyter notebook
 
-    #. Netlister settings:
-
-       - ltspice : os command for batch netlist creation with LTspice
-       - netlist : os command for batch netlist creation with gschem or lepton-eda
-
     """
     def __init__(self):
         """
@@ -240,37 +237,55 @@ class settings(object):
         Path (*str*), to image files will be set by **SLiCAP.initProject()**;  defaults to None.
         """
 
-        self.kicadPath            = ''
+        self.kicad              = ''
         """
         KiCad install directory;  defaults to ''.
         """
 
-        self.inkscapePath            = ''
+        self.inkscap            = ''
         """
         Inkscape install directory;  defaults to ''.
         """
 
-        self.ngspiceCMD         = 'ngspice'
+        self.ngspice            = 'ngspice'
         """
         Command (*str*), to start ngspice.
+        """
+
+        self.ltspice            = None
+        """
+        Operating system command for batch generation of a netlist from an
+        LTspice circuit.
+
+        This variable is set during installation.
+        """
+
+        self.netlist            = None
+        """
+        gschem or lepton-schematic command for generating a netlist.'
+
+        This variable is set during installation.
         """
 
         self.htmlIndex          = None
         """
         Name (*str*) of the active html index file.
-        Wiil be set by **SLiCAP.initProject()**. Defaults to: None.
+
+        Will be set by **SLiCAP.initProject()**. Defaults to: None.
         """
 
         self.htmlPage           = None
         """
         Name (*str*) of the active html file.
-        Wiil be set by **SLiCAP.initProject()**. Defaults to: None.
+
+        Will be set by **SLiCAP.initProject()**. Defaults to: None.
         """
 
         self.htmlPrefix         = None
         """
         Name (*str*) of athe ctive html prefix (first part of the file name).
-        Wiil be set by **SLiCAP.initProject()**. Defaults to: None.
+
+        Will be set by **SLiCAP.initProject()**. Defaults to: None.
         """
 
         self.htmlLabels         = None
@@ -435,42 +450,6 @@ class settings(object):
         in case of overflow warning choose "mpmath"
         """
 
-        self.ltspice = None
-        """
-        Operating system command prefix for batch generation of a netlist from an
-        LTspice circuit.
-
-        Defaults to *SLiCAPconfig.LTSPICE*
-
-        - Windows: 'C:/Program Files/LTC/LTspiceXVII/XVIIx64.exe -netlist '
-        - Linux (Wine): 'wine ~/.wine/drive_c/Program\ Files/LTC/LTspiceXVII/XVIIx64.exe -netlist '
-
-        This variable is set during installation.
-        """
-        self.netlist            = None
-        """
-        gschem or lepton-schematic command for generating a netlist.
-
-        Defaults to *SLiCAPconfig.NETLIST*
-
-        For lepton-schematic use 'lepton-netlist -g spice-noqsi'.
-
-        For gschem (deprecated) use: 'gnetlist -q -g spice-noqsi'.
-
-        The netlister: *gnet-spice-noqsi.scm* must be stored in the gschem or
-        lepton-geda directory with the other netlisters. Commonly used
-        locations are:
-
-        - Linux systems:
-
-          - *lepton-eda:* /usr/share/lepton-eda/scheme/backend/
-          - *gschem:* /usr/share/gEDA/scheme/
-
-        - MS Windows systems:
-
-          - *gschem*:  'C:\Program Files (x86)\gEDA\gEDA\share\gEDA\scheme\'
-        """
-
     def dump(self):
         """
         Prints the global variables and their values.
@@ -513,6 +492,9 @@ class settings(object):
         self.ltspice          = LTSPICE
         self.netlist          = NETLIST
         self.docPath          = DOCPATH
+        self.ngspice          = NGSPICE
+        self.kicad            = KICAD
+        self.inkscape         = INKSCAPE
 
 ini = settings()
 ini.updatePaths()

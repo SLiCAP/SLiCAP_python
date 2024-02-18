@@ -31,7 +31,7 @@ def checkTitle(title):
 
 def parseKiCADnetlist(kicad_sch):
     fileName = '.'.join(kicad_sch.split('.')[0:-1])
-    subprocess.run([ini.kicadPath + 'kicad-cli', 'sch', 'export', 'netlist', '-o', ini.circuitPath + fileName + ".net", ini.circuitPath + fileName + ".kicad_sch"])
+    subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.circuitPath + fileName + ".net", ini.circuitPath + fileName + ".kicad_sch"])
     components = {}
     nodes      = {}
     nodelist   = []
@@ -115,7 +115,7 @@ def parseKiCADnetlist(kicad_sch):
 
 def KiCADsch2svg(fileName,):
     imgFile = fileName.split('.')[0] + ".svg"
-    subprocess.run([ini.kicadPath + 'kicad-cli', 'sch', 'export', 'svg', '-o', ini.imgPath, '-e', '-n', ini.circuitPath + fileName])
+    subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.imgPath, '-e', '-n', ini.circuitPath + fileName])
     subprocess.run([ini.inkscapePath + 'inkscape', '-o', ini.imgPath + imgFile, '-D', ini.imgPath + imgFile])
 
 if __name__=='__main__':
