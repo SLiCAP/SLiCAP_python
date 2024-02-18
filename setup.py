@@ -155,7 +155,7 @@ class InstallWrapper(install):
             for package in package_list:
                 if package in commands.keys():
                     if package == 'LTspice':
-                        self._ltpice_cmd = commands[package]
+                        self._ltspice_cmd = commands[package]
                     elif package == 'Inkscape':
                         self._inkscape_cmd = commands[package]
                     elif package == 'KiCad':
@@ -163,7 +163,7 @@ class InstallWrapper(install):
                     elif package == 'gEDA':
                         self._gnetlist_cmd = commands[package]
                     elif package == 'NGspice':
-                        self._gnetlist_cmd = commands[package]
+                        self._ngspice_cmd = commands[package]
         elif pltfrm == 'Linux':
             self._ltspice_cmd  =  self._find_LTspice_wine()
             self._inkscape_cmd = 'inkscape'

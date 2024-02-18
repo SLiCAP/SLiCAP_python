@@ -242,7 +242,7 @@ class settings(object):
         KiCad install directory;  defaults to ''.
         """
 
-        self.inkscap            = ''
+        self.inkscape           = ''
         """
         Inkscape install directory;  defaults to ''.
         """

@@ -116,7 +116,7 @@ def parseKiCADnetlist(kicad_sch):
 def KiCADsch2svg(fileName,):
     imgFile = fileName.split('.')[0] + ".svg"
     subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.imgPath, '-e', '-n', ini.circuitPath + fileName])
-    subprocess.run([ini.inkscapePath + 'inkscape', '-o', ini.imgPath + imgFile, '-D', ini.imgPath + imgFile])
+    subprocess.run([ini.inkscape, '-o', ini.imgPath + imgFile, '-D', ini.imgPath + imgFile])
 
 if __name__=='__main__':
     from SLiCAP import initProject

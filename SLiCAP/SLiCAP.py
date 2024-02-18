@@ -183,15 +183,6 @@ def initProject(name, port=""):
     ini.htmlPage         = ''
     ini.htmlLabels       = {}
     ini.htmlPages        = []
-    if platform.system() == 'Windows':
-        ini.kicadPath = 'C:\\Program Files\\KiCad\\7.0\\bin\\'
-        ini.inkscapePath = 'C:\\Program Files\\Inkscape\\bin\\'
-    elif platform.system() == 'Linux':
-        ini.kicadPath = ''
-        ini.inkscapePath = ''
-    else:
-        ini.kicadPath = '/Applications/KiCad/KiCad.app/Contents/MacOS/'
-        ini.inkscapePath = ''
     makeDir(ini.circuitPath)
     makeDir(ini.imgPath)
     makeDir(ini.libraryPath)
