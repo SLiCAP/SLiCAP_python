@@ -29,15 +29,15 @@ def checkTitle(title):
     title = '"' + title + '"'
     return title.replace('""', '"')
 
-def parseKiCADnetlist(kicad_sch):
+def parseKiCADnetlist(kicad_sch, kicadPath=''):
     fileName = '.'.join(kicad_sch.split('.')[0:-1])
-    subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.circuitPath + fileName + ".net", ini.circuitPath + fileName + ".kicad_sch"])
+    subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.circuitPath + kicadPath + fileName + ".net", ini.circuitPath + kicadPath + fileName + ".kicad_sch"])
     components = {}
     nodes      = {}
     nodelist   = []
     comps      = False
     title      = False
-    f = open(ini.circuitPath + fileName + ".net", "r")
+    f = open(ini.circuitPath + kicadPath + fileName + ".net", "r")
     kicad_netlist_lines = f.readlines()
     f.close()
     for line in kicad_netlist_lines:
@@ -113,9 +113,9 @@ def parseKiCADnetlist(kicad_sch):
     f.close()
     return netlist
 
-def KiCADsch2svg(fileName,):
+def KiCADsch2svg(fileName, kicadPath = ''):
     imgFile = fileName.split('.')[0] + ".svg"
-    subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.imgPath, '-e', '-n', ini.circuitPath + fileName])
+    subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.imgPath, '-e', '-n', ini.circuitPath + kicadPath + fileName])
     subprocess.run([ini.inkscape, '-o', ini.imgPath + imgFile, '-D', ini.imgPath + imgFile])
 
 if __name__=='__main__':
