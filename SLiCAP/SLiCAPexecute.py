@@ -847,9 +847,9 @@ def doImpulse(instr, result):
     if instr.step:
         result.impulse = []
         for laplaceResult in result.laplace:
-            result.impulse.append(ilt(laplaceResult, ini.Laplace, sp.Symbol('t'), trig=True))
+            result.impulse.append(ilt(laplaceResult, ini.Laplace, sp.Symbol('t')))
     else:
-        result.impulse = ilt(laplaceResult, ini.Laplace, sp.Symbol('t'), trig=True)
+        result.impulse = ilt(result.laplace, ini.Laplace, sp.Symbol('t'))
     instr.dataType = 'impulse'
     result.dataType = 'impulse'
     return result
