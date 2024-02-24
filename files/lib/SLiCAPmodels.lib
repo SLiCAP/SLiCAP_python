@@ -100,7 +100,7 @@ Cdg2 d2 g2 {cdg}
 * Voltage feedback operational amplifier
 .subckt OV inP inN out ref av=1M zo=0 gd=0 gc=0 cd=0 cc=0 ; default values
 E out ref inP inN EZ value={av} zo={zo}
-Gd inP inN inP inP g value={gd}
+Gd inP inN inP inN g value={gd}
 Gc1 inP ref inP ref g value={gc/2}
 Gc2 inN ref inN ref g value={gc/2}
 Cd inP inN {cd}
