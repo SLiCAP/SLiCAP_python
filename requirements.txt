@@ -5,5 +5,8 @@ scipy>=1.4.1
 ply>=3.11
 matplotlib>=3.7.3
 sphinx-rtd-theme<1.0.0
+ply>=3.11
+windows_tools>=2.4
+pywin32>305
 
 #This should be all additional packages required for python, other imports should be included in the default distribution of python
