@@ -57,16 +57,20 @@ def parseKiCADnetlist(kicad_sch, kicadPath=''):
             if fields[-1][1:-1] != '~':
                 newComp.params["value"] = fields[-1][1:-1]
         elif fields[0] == "field" and comps:
-            fieldName = fields[2][1:-1]
-            fieldValue = fields[3][1:-1]
-            if fieldName == "model":
-                newComp.model = fieldValue
-            elif fieldName[0:-1] == "ref":
-                newComp.refs.append(fieldValue)
-            elif fieldName == 'command':
-                newComp.command = ' '.join(fields[3:])[1:-1]
-            else:
-                newComp.params[fieldName] = fieldValue
+            try:
+                fieldName = fields[2][1:-1]
+                fieldValue = fields[3][1:-1]
+                if fieldName == "model":
+                    newComp.model = fieldValue
+                elif fieldName[0:-1] == "ref":
+                    newComp.refs.append(fieldValue)
+                elif fieldName == 'command':
+                    newComp.command = ' '.join(fields[3:])[1:-1]
+                else:
+                    newComp.params[fieldName] = fieldValue
+            except IndexError:
+                # Field has no value!
+                pass
         elif fields[0] == 'net':
             lastNode = fields[-1][1:-1]
             nodes[lastNode] = lastNode
