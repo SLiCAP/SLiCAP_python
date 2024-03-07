@@ -30,7 +30,8 @@ def checkTitle(title):
     return title.replace('""', '"')
 
 def parseKiCADnetlist(kicad_sch, kicadPath=''):
-    fileName = '.'.join(kicad_sch.split('.')[0:-1])
+    fieldNames = ["noise", "noisetemp", "noiseflow", "vinit", "iinit", "dc", "dcvar","dcvarlot"]
+    fileName   = '.'.join(kicad_sch.split('.')[0:-1])
     subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.circuitPath + kicadPath + fileName + ".net", ini.circuitPath + kicadPath + fileName + ".kicad_sch"])
     components = {}
     nodes      = {}
@@ -66,7 +67,7 @@ def parseKiCADnetlist(kicad_sch, kicadPath=''):
                     newComp.refs.append(fieldValue)
                 elif fieldName == 'command':
                     newComp.command = ' '.join(fields[3:])[1:-1]
-                else:
+                elif fieldName in fieldNames:
                     newComp.params[fieldName] = fieldValue
             except IndexError:
                 # Field has no value!
