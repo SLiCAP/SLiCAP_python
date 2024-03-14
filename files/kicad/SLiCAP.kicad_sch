@@ -53,7 +53,7 @@
 				)
 			)
 			(property "Description" "Capacitor"
-				(at 0 0 0)
+				(at 7.112 -6.096 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -229,7 +229,7 @@
 				)
 			)
 			(property "Description" "SLiCAP command (.lib, .param}"
-				(at 0 0 0)
+				(at 15.24 -4.064 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -307,7 +307,7 @@
 				)
 			)
 			(property "Description" "Diode (small-signal model)"
-				(at 0 0 0)
+				(at 15.494 -3.556 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -461,7 +461,7 @@
 				)
 			)
 			(property "Description" "Voltage-controlled voltage source"
-				(at 0 0 0)
+				(at 20.066 -6.096 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -470,7 +470,7 @@
 				)
 			)
 			(property "model" "E"
-				(at 3.175 -3.81 0)
+				(at 3.048 -3.556 0)
 				(show_name)
 				(effects
 					(font
@@ -672,7 +672,7 @@
 				)
 			)
 			(property "Description" "Voltage-controlled voltage source with output impedance"
-				(at 0 0 0)
+				(at 31.75 -7.62 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -924,7 +924,7 @@
 				)
 			)
 			(property "Description" "Current-controlled current source"
-				(at 0 0 0)
+				(at 19.812 -5.842 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -933,7 +933,7 @@
 				)
 			)
 			(property "model" "F"
-				(at 3.175 -3.81 0)
+				(at 3.048 -3.556 0)
 				(show_name)
 				(effects
 					(font
@@ -1161,7 +1161,7 @@
 				)
 			)
 			(property "Description" "Voltage-controlled current source"
-				(at 0 0 0)
+				(at 20.066 -6.096 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1170,7 +1170,7 @@
 				)
 			)
 			(property "model" "G"
-				(at 3.175 -3.81 0)
+				(at 3.048 -3.556 0)
 				(show_name)
 				(effects
 					(font
@@ -1380,7 +1380,7 @@
 				)
 			)
 			(property "Description" "Current-controlled voltage source"
-				(at 0 0 0)
+				(at 20.066 -6.35 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1611,7 +1611,7 @@
 				)
 			)
 			(property "Description" "Current-controlled voltage source with output impedance"
-				(at 0 0 0)
+				(at 31.496 -7.366 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1883,7 +1883,7 @@
 				)
 			)
 			(property "Description" "Independent current source"
-				(at 0 0 0)
+				(at 17.272 -7.366 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -2065,7 +2065,7 @@
 				)
 			)
 			(property "Description" "Junction FET (small-signal model, N or P channel)"
-				(at 0 0 0)
+				(at 26.67 -3.81 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -2250,7 +2250,7 @@
 				)
 			)
 			(property "Description" "Input-referred noise sources of a JFET (N or P channel)"
-				(at 0 0 0)
+				(at 32.512 -3.81 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -2482,7 +2482,7 @@
 				)
 			)
 			(property "Description" "Coupling factor"
-				(at 0 0 0)
+				(at 2.794 9.652 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -2616,7 +2616,7 @@
 				)
 			)
 			(property "Description" "Inductor"
-				(at 0 0 0)
+				(at 6.35 -5.334 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -2625,7 +2625,7 @@
 				)
 			)
 			(property "model" "L"
-				(at 2.54 -3.81 0)
+				(at 2.286 -3.302 0)
 				(show_name)
 				(effects
 					(font
@@ -2800,7 +2800,7 @@
 				)
 			)
 			(property "Description" "MOSFET (small-signal N or P channel)"
-				(at 0 0 0)
+				(at 19.812 -4.318 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -3039,7 +3039,7 @@
 				)
 			)
 			(property "Description" "Input-referred noise sources of a MOSFET (N or P channel)"
-				(at 0 0 0)
+				(at 28.194 11.684 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -3289,7 +3289,7 @@
 				)
 			)
 			(property "Description" "Nullor"
-				(at 0 0 0)
+				(at 5.08 -4.064 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -3527,7 +3527,7 @@
 				)
 			)
 			(property "Description" "Nullor with input-referred DC offset voltage, offset current and bias current"
-				(at 0 0 0)
+				(at 40.64 -6.35 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -4049,7 +4049,7 @@
 				)
 			)
 			(property "Description" "Nullor with input-referred noise sources"
-				(at 0 0 0)
+				(at 21.844 -3.81 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -4381,7 +4381,7 @@
 				)
 			)
 			(property "Description" "OpAmp (nullor) with input-referred DC offset voltage, offset current and bias current"
-				(at 0 0 0)
+				(at 45.72 -13.97 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -4759,7 +4759,7 @@
 				)
 			)
 			(property "Description" "Operational amplifier (nullor) with input-referred noise sources"
-				(at 0 0 0)
+				(at 34.544 -8.89 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -5045,7 +5045,7 @@
 				)
 			)
 			(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model)"
-				(at 0 0 0)
+				(at 40.64 -4.064 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -5238,7 +5238,7 @@
 				)
 			)
 			(property "Description" "Input-referred noise sources of a BJT (with IC and VCE as parameters)"
-				(at 0 0 0)
+				(at 39.624 -3.556 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -5470,7 +5470,7 @@
 				)
 			)
 			(property "Description" "Resistor (cannot have zero resistance)"
-				(at 0 0 0)
+				(at 21.082 -5.842 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -5637,8 +5637,8 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Voltage-controlled voltage source"
-				(at 0 0 0)
+			(property "Description" "Transformer"
+				(at 7.112 -5.08 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -5660,8 +5660,8 @@
 			(symbol "T_0_0"
 				(polyline
 					(pts
-						(xy -5.08 2.54) (xy -5.08 1.905) (xy -3.81 1.27) (xy -5.08 0.635) (xy -3.81 0) (xy -5.08 -0.635)
-						(xy -3.81 -1.27) (xy -5.08 -1.905) (xy -5.08 -2.54)
+						(xy -6.35 2.54) (xy -6.35 1.905) (xy -5.08 1.27) (xy -6.35 0.635) (xy -5.08 0) (xy -6.35 -0.635)
+						(xy -5.08 -1.27) (xy -6.35 -1.905) (xy -6.35 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -5687,7 +5687,7 @@
 			)
 			(symbol "T_1_0"
 				(text "+"
-					(at -3.81 2.54 0)
+					(at -5.08 2.54 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -5703,7 +5703,7 @@
 					)
 				)
 				(text "1:value"
-					(at -4.445 4.445 0)
+					(at -5.334 4.318 0)
 					(effects
 						(font
 							(size 0.75 0.75)
@@ -5750,7 +5750,7 @@
 			)
 			(symbol "T_1_1"
 				(pin bidirectional line
-					(at -5.08 5.08 270)
+					(at -6.35 5.08 270)
 					(length 2.54)
 					(name "inp"
 						(effects
@@ -5768,7 +5768,7 @@
 					)
 				)
 				(pin bidirectional line
-					(at -5.08 -5.08 90)
+					(at -6.35 -5.08 90)
 					(length 2.54)
 					(name "inN"
 						(effects
@@ -5834,7 +5834,7 @@
 				)
 			)
 			(property "Description" "Independent voltage source"
-				(at 0 0 0)
+				(at 16.51 -7.112 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -6011,8 +6011,8 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Voltage-controlled voltage source"
-				(at 0 0 0)
+			(property "Description" "Gyrator"
+				(at 4.318 -5.334 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -6243,7 +6243,7 @@
 				)
 			)
 			(property "Description" "Junction FET (small-signal model, N or P channel with ID)"
-				(at 0 0 0)
+				(at 29.464 -6.096 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -6438,7 +6438,7 @@
 				)
 			)
 			(property "Description" "MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
-				(at 0 0 0)
+				(at 35.052 -7.112 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -6709,7 +6709,7 @@
 				)
 			)
 			(property "Description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
-				(at 0 0 0)
+				(at 26.924 -6.096 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -6718,7 +6718,7 @@
 				)
 			)
 			(property "model" "?"
-				(at 1.905 -1.27 0)
+				(at 1.778 -1.016 0)
 				(show_name)
 				(effects
 					(font
@@ -7088,7 +7088,7 @@
 				)
 			)
 			(property "Description" "MOSFET (push-pull stage, small-signal channel subcircuit with W_N,  L_N,  ID_N, W_P,  L_P,  and ID_P)"
-				(at 0 0 0)
+				(at 52.832 -7.112 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -7392,7 +7392,7 @@
 				)
 			)
 			(property "Description" "MOSFET (small-signal N or P channel subcircuit with W. L, and VG, VD, and VS, relative to bulk voltage)"
-				(at 0 0 0)
+				(at 53.086 -6.858 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -7685,7 +7685,7 @@
 				)
 			)
 			(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-				(at 0 0 0)
+				(at 49.53 -6.858 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -7898,7 +7898,7 @@
 				)
 			)
 			(property "Description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-				(at 0 0 0)
+				(at 42.418 -5.334 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -8171,7 +8171,7 @@
 				)
 			)
 			(property "Description" "Resistor (can have zero resistance)"
-				(at 0 0 0)
+				(at 20.066 -5.842 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -8303,7 +8303,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "0eb7cbc5-bdea-4ecb-8cd4-7faba312f10f")
-		(property "Reference" "M1"
+		(property "Reference" "M?"
 			(at 245.11 27.559 0)
 			(effects
 				(font
@@ -8311,7 +8311,7 @@
 				)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 239.395 29.21 0)
 			(effects
 				(font
@@ -8340,7 +8340,7 @@
 			)
 		)
 		(property "Description" "MOSFET (small-signal N or P channel)"
-			(at 238.76 31.75 0)
+			(at 258.572 36.068 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8372,7 +8372,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "M1")
+					(reference "M?")
 					(unit 1)
 				)
 			)
@@ -8388,7 +8388,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "12b5ea63-8893-4fc6-baf5-93b914394efd")
-		(property "Reference" "X4"
+		(property "Reference" "X?"
 			(at 97.79 45.2091 0)
 			(effects
 				(font
@@ -8397,7 +8397,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 97.155 52.07 0)
 			(effects
 				(font
@@ -8428,7 +8428,7 @@
 			)
 		)
 		(property "Description" "Nullor with input-referred noise sources"
-			(at 95.25 50.8 0)
+			(at 117.094 54.61 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8481,7 +8481,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X4")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -8497,7 +8497,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "147cccba-6e70-406c-9b35-712f0b060f9c")
-		(property "Reference" "X11"
+		(property "Reference" "X?"
 			(at 217.17 68.7724 0)
 			(effects
 				(font
@@ -8506,7 +8506,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 219.71 67.31 0)
 			(effects
 				(font
@@ -8535,7 +8535,7 @@
 			)
 		)
 		(property "Description" "Junction FET (small-signal model, N or P channel with ID)"
-			(at 215.9 69.85 0)
+			(at 245.364 75.946 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8576,7 +8576,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X11")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -8591,7 +8591,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "16faf4a8-3ae7-4087-b8a5-97f460202aa7")
-		(property "Reference" "X9"
+		(property "Reference" "X?"
 			(at 181.61 22.225 0)
 			(effects
 				(font
@@ -8600,7 +8600,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 181.61 24.13 0)
 			(effects
 				(font
@@ -8630,7 +8630,7 @@
 			)
 		)
 		(property "Description" "Input-referred noise sources of a JFET (N or P channel)"
-			(at 176.53 31.75 0)
+			(at 209.042 35.56 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8678,7 +8678,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X9")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -8694,7 +8694,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "17952396-4615-4851-8010-ebd85cd4e950")
-		(property "Reference" "G1"
+		(property "Reference" "G?"
 			(at 106.68 30.4799 0)
 			(effects
 				(font
@@ -8734,7 +8734,7 @@
 			)
 		)
 		(property "Description" "Voltage-controlled current source"
-			(at 102.87 31.75 0)
+			(at 122.936 37.846 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8743,7 +8743,7 @@
 			)
 		)
 		(property "model" "G"
-			(at 106.045 35.56 0)
+			(at 105.918 35.306 0)
 			(show_name yes)
 			(effects
 				(font
@@ -8768,7 +8768,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "G1")
+					(reference "G?")
 					(unit 1)
 				)
 			)
@@ -8784,7 +8784,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "1b83b143-000d-4d30-9651-735e081b8200")
-		(property "Reference" "F1"
+		(property "Reference" "F?"
 			(at 83.82 30.4799 0)
 			(effects
 				(font
@@ -8824,7 +8824,7 @@
 			)
 		)
 		(property "Description" "Current-controlled current source"
-			(at 80.01 31.75 0)
+			(at 99.822 37.592 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8833,7 +8833,7 @@
 			)
 		)
 		(property "model" "F"
-			(at 83.185 35.56 0)
+			(at 83.058 35.306 0)
 			(show_name yes)
 			(effects
 				(font
@@ -8858,7 +8858,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "F1")
+					(reference "F?")
 					(unit 1)
 				)
 			)
@@ -8873,7 +8873,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "284ae384-3beb-4fd3-9f15-47c0486200a2")
-		(property "Reference" "X14"
+		(property "Reference" "X?"
 			(at 255.27 68.58 0)
 			(effects
 				(font
@@ -8882,7 +8882,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 257.81 67.31 0)
 			(effects
 				(font
@@ -8911,7 +8911,7 @@
 			)
 		)
 		(property "Description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-			(at 254 69.85 0)
+			(at 296.418 75.184 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8966,7 +8966,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X14")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -8981,7 +8981,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "340ddca0-eb1b-40a4-8cd1-a47491419f76")
-		(property "Reference" "X6"
+		(property "Reference" "X?"
 			(at 125.095 43.815 0)
 			(effects
 				(font
@@ -8990,7 +8990,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 127 45.72 0)
 			(effects
 				(font
@@ -9021,7 +9021,7 @@
 			)
 		)
 		(property "Description" "Operational amplifier (nullor) with input-referred noise sources"
-			(at 124.46 50.8 0)
+			(at 159.004 59.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9072,7 +9072,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X6")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -9088,7 +9088,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "4c6edf33-c867-464a-8a51-32042f5fd75f")
-		(property "Reference" "V1"
+		(property "Reference" "V?"
 			(at 246.38 45.5929 0)
 			(effects
 				(font
@@ -9128,7 +9128,7 @@
 			)
 		)
 		(property "Description" "Independent voltage source"
-			(at 242.57 50.8 0)
+			(at 259.08 57.912 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9186,7 +9186,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "V1")
+					(reference "V?")
 					(unit 1)
 				)
 			)
@@ -9202,7 +9202,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "50a37822-0f42-4d41-b343-8c2945101aa9")
-		(property "Reference" "W1"
+		(property "Reference" "W?"
 			(at 267.97 48.7016 0)
 			(effects
 				(font
@@ -9241,8 +9241,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Voltage-controlled voltage source"
-			(at 266.7 50.8 0)
+		(property "Description" "Gyrator"
+			(at 271.018 56.134 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9276,7 +9276,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "W1")
+					(reference "W?")
 					(unit 1)
 				)
 			)
@@ -9292,7 +9292,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "5385d441-ea30-4f89-8325-50b694855d48")
-		(property "Reference" "A1"
+		(property "Reference" "A?"
 			(at 27.94 69.85 0)
 			(do_not_autoplace yes)
 			(effects
@@ -9302,7 +9302,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 27.94 71.755 0)
 			(effects
 				(font
@@ -9333,7 +9333,7 @@
 			)
 		)
 		(property "Description" "SLiCAP command (.lib, .param}"
-			(at 27.94 71.12 0)
+			(at 43.18 75.184 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9354,7 +9354,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "A1")
+					(reference "A?")
 					(unit 1)
 				)
 			)
@@ -9369,7 +9369,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "57be1684-2217-4d5a-be46-4260aadb7b50")
-		(property "Reference" "Q1"
+		(property "Reference" "Q?"
 			(at 145.415 48.895 0)
 			(effects
 				(font
@@ -9378,7 +9378,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 148.59 48.26 0)
 			(effects
 				(font
@@ -9407,7 +9407,7 @@
 			)
 		)
 		(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model)"
-			(at 144.78 50.8 0)
+			(at 185.42 54.864 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9440,7 +9440,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "Q1")
+					(reference "Q?")
 					(unit 1)
 				)
 			)
@@ -9456,8 +9456,8 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "59801a1a-60a2-435e-8c11-a4e5dd0ebfb9")
-		(property "Reference" "T1"
-			(at 228.6 48.2757 0)
+		(property "Reference" "T?"
+			(at 228.6 48.3392 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9466,7 +9466,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 228.6 50.8157 0)
+			(at 228.6 50.8792 0)
 			(show_name yes)
 			(effects
 				(font
@@ -9495,8 +9495,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Voltage-controlled voltage source"
-			(at 227.33 50.8 0)
+		(property "Description" "Transformer"
+			(at 234.442 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9530,7 +9530,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "T1")
+					(reference "T?")
 					(unit 1)
 				)
 			)
@@ -9545,7 +9545,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "5bf321b3-502b-4de1-836f-a2584d2eda70")
-		(property "Reference" "X5"
+		(property "Reference" "X?"
 			(at 116.205 68.58 0)
 			(effects
 				(font
@@ -9554,7 +9554,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 114.935 67.31 0)
 			(effects
 				(font
@@ -9583,7 +9583,7 @@
 			)
 		)
 		(property "Description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
-			(at 114.3 69.85 0)
+			(at 141.224 75.946 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9592,7 +9592,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 116.205 71.12 0)
+			(at 116.078 70.866 0)
 			(show_name yes)
 			(effects
 				(font
@@ -9649,7 +9649,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X5")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -9664,7 +9664,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "6181c995-eace-48e0-832d-bd6e7e794946")
-		(property "Reference" "X7"
+		(property "Reference" "X?"
 			(at 149.86 62.865 0)
 			(effects
 				(font
@@ -9673,7 +9673,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 149.225 67.945 0)
 			(effects
 				(font
@@ -9702,7 +9702,7 @@
 			)
 		)
 		(property "Description" "MOSFET (push-pull stage, small-signal channel subcircuit with W_N,  L_N,  ID_N, W_P,  L_P,  and ID_P)"
-			(at 148.59 69.85 0)
+			(at 201.422 76.962 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9801,7 +9801,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X7")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -9817,7 +9817,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "62fe9b1e-219a-4223-9c7a-d4cddd05f858")
-		(property "Reference" "D1"
+		(property "Reference" "D?"
 			(at 45.72 30.4799 0)
 			(effects
 				(font
@@ -9826,7 +9826,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 44.45 33.02 0)
 			(effects
 				(font
@@ -9855,7 +9855,7 @@
 			)
 		)
 		(property "Description" "Diode (small-signal model)"
-			(at 43.18 31.75 0)
+			(at 58.674 35.306 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9882,7 +9882,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "D1")
+					(reference "D?")
 					(unit 1)
 				)
 			)
@@ -9898,7 +9898,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6ae8c25d-2453-485f-af2a-98349e433dcb")
-		(property "Reference" "C1"
+		(property "Reference" "C?"
 			(at 30.48 29.1436 0)
 			(effects
 				(font
@@ -9936,7 +9936,7 @@
 			)
 		)
 		(property "Description" "Capacitor"
-			(at 27.94 31.75 0)
+			(at 35.052 37.846 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9974,7 +9974,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "C1")
+					(reference "C?")
 					(unit 1)
 				)
 			)
@@ -9989,7 +9989,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "77cafa02-5629-4282-9ffc-202a7da7ee2a")
-		(property "Reference" "X12"
+		(property "Reference" "X?"
 			(at 237.49 66.04 0)
 			(effects
 				(font
@@ -9998,7 +9998,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 240.03 67.31 0)
 			(effects
 				(font
@@ -10027,7 +10027,7 @@
 			)
 		)
 		(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-			(at 236.22 69.85 0)
+			(at 285.75 76.708 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10082,7 +10082,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X12")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -10098,7 +10098,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "785cbf76-3e58-4161-bab0-16e4d5aee11f")
-		(property "Reference" "K1"
+		(property "Reference" "K?"
 			(at 200.66 26.9874 0)
 			(effects
 				(font
@@ -10138,7 +10138,7 @@
 			)
 		)
 		(property "Description" "Coupling factor"
-			(at 195.58 33.02 0)
+			(at 198.374 23.368 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10179,7 +10179,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "K1")
+					(reference "K?")
 					(unit 1)
 				)
 			)
@@ -10195,7 +10195,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "7a27e97a-d088-46bd-bcad-ecd1d83b33ce")
-		(property "Reference" "R1"
+		(property "Reference" "R?"
 			(at 182.88 44.4499 0)
 			(effects
 				(font
@@ -10233,7 +10233,7 @@
 			)
 		)
 		(property "Description" "Resistor (cannot have zero resistance)"
-			(at 180.34 50.8 0)
+			(at 201.422 56.642 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10301,7 +10301,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "R1")
+					(reference "R?")
 					(unit 1)
 				)
 			)
@@ -10316,7 +10316,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "977bec4e-e58e-492e-a69d-d08d7e7a9c6b")
-		(property "Reference" "H2"
+		(property "Reference" "H?"
 			(at 135.255 83.82 0)
 			(effects
 				(font
@@ -10356,7 +10356,7 @@
 			)
 		)
 		(property "Description" "Current-controlled voltage source with output impedance"
-			(at 132.08 85.09 0)
+			(at 163.576 92.456 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10400,7 +10400,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "H2")
+					(reference "H?")
 					(unit 1)
 				)
 			)
@@ -10416,7 +10416,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "983216ea-8e90-44e7-870c-9b5d65aca735")
-		(property "Reference" "R2"
+		(property "Reference" "R?"
 			(at 204.47 44.4499 0)
 			(effects
 				(font
@@ -10454,7 +10454,7 @@
 			)
 		)
 		(property "Description" "Resistor (can have zero resistance)"
-			(at 201.93 50.8 0)
+			(at 221.996 56.642 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10522,7 +10522,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "R2")
+					(reference "R?")
 					(unit 1)
 				)
 			)
@@ -10538,7 +10538,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "98c99973-c50e-4f63-ac1e-f40538a07a66")
-		(property "Reference" "N1"
+		(property "Reference" "N?"
 			(at 36.83 48.2598 0)
 			(effects
 				(font
@@ -10547,7 +10547,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 40.64 48.895 0)
 			(effects
 				(font
@@ -10578,7 +10578,7 @@
 			)
 		)
 		(property "Description" "Nullor"
-			(at 34.29 48.26 0)
+			(at 39.37 52.324 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10612,7 +10612,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "N1")
+					(reference "N?")
 					(unit 1)
 				)
 			)
@@ -10628,7 +10628,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "a7d5a871-5ce1-4f34-b8f1-767aaf25e63b")
-		(property "Reference" "X1"
+		(property "Reference" "X?"
 			(at 60.96 46.0374 0)
 			(effects
 				(font
@@ -10637,7 +10637,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 42.545 39.37 0)
 			(effects
 				(font
@@ -10667,7 +10667,7 @@
 			)
 		)
 		(property "Description" "Nullor with input-referred DC offset voltage, offset current and bias current"
-			(at 58.42 53.34 0)
+			(at 99.06 59.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10743,7 +10743,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X1")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -10758,7 +10758,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "a88b0829-e396-4baa-ab9d-1b700059562c")
-		(property "Reference" "X10"
+		(property "Reference" "X?"
 			(at 187.96 64.77 0)
 			(effects
 				(font
@@ -10767,7 +10767,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 187.325 67.31 0)
 			(effects
 				(font
@@ -10796,7 +10796,7 @@
 			)
 		)
 		(property "Description" "MOSFET (small-signal N or P channel subcircuit with W. L, and VG, VD, and VS, relative to bulk voltage)"
-			(at 186.69 69.85 0)
+			(at 239.776 76.708 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10884,7 +10884,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X10")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -10899,7 +10899,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "b2ae5015-db6f-4b82-8e72-4419e2fa8c16")
-		(property "Reference" "X2"
+		(property "Reference" "X?"
 			(at 69.85 70.485 0)
 			(effects
 				(font
@@ -10908,7 +10908,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 71.12 72.39 0)
 			(effects
 				(font
@@ -10939,7 +10939,7 @@
 			)
 		)
 		(property "Description" "OpAmp (nullor) with input-referred DC offset voltage, offset current and bias current"
-			(at 68.58 77.47 0)
+			(at 114.3 91.44 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11016,7 +11016,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X2")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -11032,7 +11032,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "b4780f90-31c9-4394-aee8-d7b9ff9b152f")
-		(property "Reference" "L1"
+		(property "Reference" "L?"
 			(at 218.44 28.3816 0)
 			(effects
 				(font
@@ -11070,7 +11070,7 @@
 			)
 		)
 		(property "Description" "Inductor"
-			(at 214.63 31.75 0)
+			(at 220.98 37.084 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11079,7 +11079,7 @@
 			)
 		)
 		(property "model" "L"
-			(at 217.17 35.56 0)
+			(at 216.916 35.052 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11108,7 +11108,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "L1")
+					(reference "L?")
 					(unit 1)
 				)
 			)
@@ -11124,7 +11124,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "bc52f9cd-f929-415a-b2dc-fb5aac26075a")
-		(property "Reference" "H1"
+		(property "Reference" "H?"
 			(at 128.27 30.4799 0)
 			(effects
 				(font
@@ -11164,7 +11164,7 @@
 			)
 		)
 		(property "Description" "Current-controlled voltage source"
-			(at 124.46 31.75 0)
+			(at 144.526 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11198,7 +11198,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "H1")
+					(reference "H?")
 					(unit 1)
 				)
 			)
@@ -11213,7 +11213,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "c8926495-aef9-43b4-af95-1a61c98e605b")
-		(property "Reference" "X8"
+		(property "Reference" "X?"
 			(at 163.195 41.275 0)
 			(effects
 				(font
@@ -11222,7 +11222,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 163.195 43.18 0)
 			(effects
 				(font
@@ -11253,7 +11253,7 @@
 			)
 		)
 		(property "Description" "Input-referred noise sources of a BJT (with IC and VCE as parameters)"
-			(at 157.48 50.8 0)
+			(at 197.104 54.356 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11303,7 +11303,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X8")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -11319,7 +11319,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "cc931d2f-cc3b-4a8c-b1f3-772bdded83d6")
-		(property "Reference" "A2"
+		(property "Reference" "A?"
 			(at 27.94 77.47 0)
 			(do_not_autoplace yes)
 			(effects
@@ -11329,7 +11329,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 27.94 79.375 0)
 			(effects
 				(font
@@ -11360,7 +11360,7 @@
 			)
 		)
 		(property "Description" "SLiCAP command (.lib, .param}"
-			(at 27.94 78.74 0)
+			(at 43.18 82.804 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11381,7 +11381,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "A2")
+					(reference "A?")
 					(unit 1)
 				)
 			)
@@ -11396,7 +11396,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "d019dfba-17dc-410d-8ef3-830614f640c0")
-		(property "Reference" "X13"
+		(property "Reference" "X?"
 			(at 256.54 22.225 0)
 			(effects
 				(font
@@ -11405,7 +11405,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 256.54 24.13 0)
 			(effects
 				(font
@@ -11435,7 +11435,7 @@
 			)
 		)
 		(property "Description" "Input-referred noise sources of a MOSFET (N or P channel)"
-			(at 254 31.75 0)
+			(at 282.194 20.066 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11501,7 +11501,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X13")
+					(reference "X?")
 					(unit 1)
 				)
 			)
@@ -11517,7 +11517,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "db0d280b-d09e-4cf9-a1b8-74cfe8f50cb3")
-		(property "Reference" "J1"
+		(property "Reference" "J?"
 			(at 165.1 30.6724 0)
 			(effects
 				(font
@@ -11526,7 +11526,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 166.37 27.94 0)
 			(effects
 				(font
@@ -11555,7 +11555,7 @@
 			)
 		)
 		(property "Description" "Junction FET (small-signal model, N or P channel)"
-			(at 163.83 31.75 0)
+			(at 190.5 35.56 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11585,7 +11585,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "J1")
+					(reference "J?")
 					(unit 1)
 				)
 			)
@@ -11600,7 +11600,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "e85badd1-d305-4d79-9749-686cd43deded")
-		(property "Reference" "E2"
+		(property "Reference" "E?"
 			(at 111.125 83.82 0)
 			(effects
 				(font
@@ -11640,7 +11640,7 @@
 			)
 		)
 		(property "Description" "Voltage-controlled voltage source with output impedance"
-			(at 107.95 85.09 0)
+			(at 139.7 92.71 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11684,7 +11684,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "E2")
+					(reference "E?")
 					(unit 1)
 				)
 			)
@@ -11700,7 +11700,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "e9d2da8e-a738-4051-9c8d-774cbebc78f5")
-		(property "Reference" "E1"
+		(property "Reference" "E?"
 			(at 60.96 30.4799 0)
 			(effects
 				(font
@@ -11740,7 +11740,7 @@
 			)
 		)
 		(property "Description" "Voltage-controlled voltage source"
-			(at 57.15 31.75 0)
+			(at 77.216 37.846 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11749,7 +11749,7 @@
 			)
 		)
 		(property "model" "E"
-			(at 60.325 35.56 0)
+			(at 60.198 35.306 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11774,7 +11774,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "E1")
+					(reference "E?")
 					(unit 1)
 				)
 			)
@@ -11790,7 +11790,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "f5993959-fc0a-4ef9-873a-dd69fc96ebaa")
-		(property "Reference" "I1"
+		(property "Reference" "I?"
 			(at 146.05 26.6699 0)
 			(effects
 				(font
@@ -11830,7 +11830,7 @@
 			)
 		)
 		(property "Description" "Independent current source"
-			(at 142.24 31.75 0)
+			(at 159.512 39.116 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11888,7 +11888,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "I1")
+					(reference "I?")
 					(unit 1)
 				)
 			)
@@ -11903,7 +11903,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "f7b29f27-a1b2-47f3-8205-ce632c6da9b4")
-		(property "Reference" "X3"
+		(property "Reference" "X?"
 			(at 95.25 62.865 0)
 			(effects
 				(font
@@ -11912,7 +11912,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" ""
 			(at 94.615 67.945 0)
 			(effects
 				(font
@@ -11941,7 +11941,7 @@
 			)
 		)
 		(property "Description" "MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
-			(at 93.98 69.85 0)
+			(at 129.032 76.962 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12007,7 +12007,7 @@
 		(instances
 			(project "SLiCAP"
 				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "X3")
+					(reference "X?")
 					(unit 1)
 				)
 			)
