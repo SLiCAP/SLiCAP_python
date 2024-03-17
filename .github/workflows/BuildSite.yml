@@ -37,8 +37,9 @@ jobs:
           repository: SLiCAP/SLiCAP_python
       - name: update apt-get then install software dependencies
         run: |
+          sudo add-apt-repository ppa:kicad/kicad-8.0-nightly
           sudo apt update
-          sudo apt-get install -y pdf2svg lepton-eda
+          sudo apt-get install -y pdf2svg lepton-eda kicad
       - name: install python packages, SLiCAP dependencies
         run: |
           python -m pip install --upgrade pip
