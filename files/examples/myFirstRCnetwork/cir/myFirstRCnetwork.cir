@@ -1,6 +1,6 @@
 "myFirstRCnetwork"
 .param R=1k C={1/(2*pi*R*f_c)} f_c=1k
 C1 0 out C value={C} vinit=0
-R1 out 1 R value={R} dcvar=0 dcvarlot=0 noiseflow=0 noisetemp=0
-V1 1 0 V value={V} dc=0 dcvar=0 noise=0
+R1 out 1 R value={R} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 1 0 V value=0 noise=0 dc=0 dcvar=0
 .end

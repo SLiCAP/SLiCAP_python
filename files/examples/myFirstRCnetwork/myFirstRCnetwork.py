@@ -14,9 +14,10 @@ prj = initProject('My first RC network') # Sets all the paths and creates the HT
 
 fileName = "myFirstRCnetwork"
 
-# KiCAD
-#parseKiCADnetlist(fileName + ".kicad_sch")
-#KiCADsch2svg(fileName + ".kicad_sch")
+# KiCAD version 8.0
+kicadPath = fileName + "/"
+parseKiCADnetlist(fileName + ".kicad_sch", kicadPath=kicadPath)
+KiCADsch2svg(fileName + ".kicad_sch", kicadPath=kicadPath)
 
 # LTspice
 #schematicFile = fileName + '.asc'
