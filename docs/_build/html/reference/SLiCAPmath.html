@@ -103,6 +103,7 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPkicad.html">SLiCAPkicad.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPmath.py</a></li>
@@ -350,6 +351,22 @@ Laplace variable.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int, float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.checkNumeric">
+<span class="sig-name descname"><span class="pre">checkNumeric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exprList</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.checkNumeric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True is all entries in the list ‘exprList’ are numeric.</p>
+<p>:param exprList; List with numbers and/or expressions
+:type exprList: list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True is all entries in ‘exprList’ are numeric.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1020,6 +1037,11 @@ and converts integers into floats if their number of digits exceeds ini.disp</p>
 </pre></div>
 </div>
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.sort_rows_for_laplace">
+<span class="sig-name descname"><span class="pre">sort_rows_for_laplace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.sort_rows_for_laplace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.step2PeriodicPulse">

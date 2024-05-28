@@ -102,6 +102,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPhtml.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPkicad.html">SLiCAPkicad.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
@@ -190,41 +191,6 @@
   <div class="section" id="module-SLiCAP.SLiCAPhtml">
 <span id="slicaphtml-py"></span><h1>SLiCAPhtml.py<a class="headerlink" href="#module-SLiCAP.SLiCAPhtml" title="Permalink to this heading">¶</a></h1>
 <p>SLiCAP module with HTML functions.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAPhtml.HTMLfoot">
-<span class="sig-name descname"><span class="pre">HTMLfoot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexFile</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPhtml.HTMLfoot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns html page footer with link to ‘indexFile’.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>indexFile</strong> (<em>str</em>) – name of ther hml index file to which a link must be
-placed in the footer.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>html: HTML footer with link to ‘indexFile’</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAPhtml.HTMLhead">
-<span class="sig-name descname"><span class="pre">HTMLhead</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pageTitle</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPhtml.HTMLhead" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the html head for a new html page.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>pageTitle</strong> (<em>str</em>) – Title of the page</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>html: Page head for a html page</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPhtml.Label">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPhtml.Label" title="Permalink to this definition">¶</a></dt>
@@ -566,7 +532,7 @@ and creates a link to this file on the active html page.</p>
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPhtml.insertHTML">
 <span class="sig-name descname"><span class="pre">insertHTML</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">htmlInsert</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPhtml.insertHTML" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inserts html in the file specified by ‘fileName’ at the location of the
-string ‘HTMLINSERT’.</p>
+string ‘htmlInsert’.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">

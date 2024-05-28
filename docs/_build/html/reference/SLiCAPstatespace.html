@@ -103,6 +103,7 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPkicad.html">SLiCAPkicad.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
@@ -308,7 +309,7 @@ from the equation:</p>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>res: [Ares,Bres,C,D] where A and C are sympy matrices 
+<dd class="field-even"><p>res: [Ares,Bres,C,D] where A and C are sympy matrices
 and B and D are lists of sympy matrices</p>
 </dd>
 <dt class="field-odd">Return type</dt>
@@ -321,7 +322,7 @@ and B and D are lists of sympy matrices</p>
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPstatespace.Vector2srcCoeffMatrices">
 <span class="sig-name descname"><span class="pre">Vector2srcCoeffMatrices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPstatespace.Vector2srcCoeffMatrices" title="Permalink to this definition">¶</a></dt>
 <dd><p>For Vector ‘V’ that is a linear function of the ‘src’ vector
-and the laplace variable ‘var’ then this function decomposes V to get 
+and the laplace variable ‘var’ then this function decomposes V to get
 the matrix Mres where: Mres*src=V. Then it returns the list of
 coefficent matrices of the laplace variable.</p>
 <dl class="field-list simple">
@@ -335,7 +336,7 @@ and the laplace variable ‘var’</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Mres: Mres is a list of Coefficent Matrices that correspond 
+<dd class="field-even"><p>Mres: Mres is a list of Coefficent Matrices that correspond
 to the basis (s^0,…,s^n) where is the laplace variables</p>
 </dd>
 <dt class="field-odd">Return type</dt>
@@ -365,7 +366,7 @@ to the basis (s^0,…,s^n) where is the laplace variables</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPstatespace.backsubstitute">
 <span class="sig-name descname"><span class="pre">backsubstitute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPstatespace.backsubstitute" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the vector ‘x’ to the system of equations: Ux=b 
+<dd><p>Returns the vector ‘x’ to the system of equations: Ux=b
 where U must be Upper triangular.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -398,7 +399,7 @@ where U must be Upper triangular.</p>
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPstatespace.backsubstituteND">
 <span class="sig-name descname"><span class="pre">backsubstituteND</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">U</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPstatespace.backsubstituteND" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is the same as backsubstitute except it converts to num den first.
-Returns the vector ‘x’ to the system of equations: Ux=b 
+Returns the vector ‘x’ to the system of equations: Ux=b
 where U must be Upper triangular.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -452,7 +453,7 @@ where U must be Upper triangular.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPstatespace.getStateSpace">
 <span class="sig-name descname"><span class="pre">getStateSpace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPstatespace.getStateSpace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the the state space representation of the 
+<dd><p>Returns the the state space representation of the
 circuit defined in the instruction:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

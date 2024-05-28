@@ -102,6 +102,7 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPini.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPkicad.html">SLiCAPkicad.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
@@ -201,7 +202,7 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class for global variables.</p>
 <p>The following globals are defined:</p>
-<ol class="arabic">
+<ol class="arabic simple">
 <li><p>path settings</p>
 <ul class="simple">
 <li><p>installPath       : Directory with SLiCAP modules files</p></li>
@@ -217,15 +218,20 @@
 <li><p>imgPath           : Directory with images for HTML output</p></li>
 <li><p>defaultLib        : Directory with SLiCAP basic library files</p></li>
 <li><p>docPath           : Directory with html documentation</p></li>
-<li><dl class="simple">
-<dt>ngspiceCMD<span class="classifier">NGspice command</span></dt><dd><p>MS windows: ‘~Spice64binngspice.exe’
-Linux     : ‘ngspice’
-Mac       : ‘ngspice’</p>
-</dd>
-</dl>
-</li>
 </ul>
 </li>
+</ol>
+<p># - commands</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>kicad             : KiCad command</p></li>
+<li><p>inkscape          : Inkscape command</p></li>
+<li><p>ngspice           : NGspice command</p></li>
+<li><p>ltspice           : LTspice command</p></li>
+<li><p>gschem            : gnetlist command</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic">
 <li><p>active HTML pages and active HTMLfile prefix</p>
 <ul class="simple">
 <li><p>htmlIndex         : Active HTML index page</p></li>
@@ -254,14 +260,14 @@ Mac       : ‘ngspice’</p>
 <blockquote>
 <div><p>numer:</p>
 <blockquote>
-<div><p>“ME”      : Method = SLiCAP Minor expansion (always accurate) Default
+<div><p>“ME”      : Method = SLiCAP Minor expansion (default)
 “BS”      : Method = SLiCAP Bareis fraction-free algorithm
 “LU”      : Method = Sympy LU decomposition
 “bareiss” : Method = Sympy Bareiss fraction-free algorithm</p>
 </div></blockquote>
 <p>denom:</p>
 <blockquote>
-<div><p>“ME”      : Method = SLiCAP Minor expansion (always accurate) Default
+<div><p>“ME”      : Method = SLiCAP Minor expansion (default)
 “BS”      : Method = SLiCAP Bareis fraction-free algorithm
 “LU”      : Method = Sympy LU decomposition
 “bareiss” : Method = Sympy Bareiss fraction-free algorithm</p>
@@ -320,12 +326,6 @@ and polar plots are square and have their height set to their width.</p></li>
 <ul class="simple">
 <li><p>notebook: True adapts HTML math return variables to markdown format
 required by Jupyter notebook</p></li>
-</ul>
-</li>
-<li><p>Netlister settings:</p>
-<ul class="simple">
-<li><p>ltspice : os command for batch netlist creation with LTspice</p></li>
-<li><p>netlist : os command for batch netlist creation with gschem or lepton-eda</p></li>
 </ul>
 </li>
 </ol>
@@ -455,8 +455,8 @@ gain types:</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlIndex">
 <span class="sig-name descname"><span class="pre">htmlIndex</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlIndex" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name (<em>str</em>) of the active html index file.
-Wiil be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
+<dd><p>Name (<em>str</em>) of the active html index file.</p>
+<p>Will be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -473,8 +473,8 @@ Wiil be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlPage">
 <span class="sig-name descname"><span class="pre">htmlPage</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlPage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name (<em>str</em>) of the active html file.
-Wiil be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
+<dd><p>Name (<em>str</em>) of the active html file.</p>
+<p>Will be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -493,8 +493,8 @@ Defaults to: None.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.htmlPrefix">
 <span class="sig-name descname"><span class="pre">htmlPrefix</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.htmlPrefix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name (<em>str</em>) of athe ctive html prefix (first part of the file name).
-Wiil be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
+<dd><p>Name (<em>str</em>) of athe ctive html prefix (first part of the file name).</p>
+<p>Will be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -504,9 +504,21 @@ Wiil be set by <strong>SLiCAP.initProject()</strong>. Defaults to: None.</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.inkscape">
+<span class="sig-name descname"><span class="pre">inkscape</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.inkscape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inkscape install directory;  defaults to ‘’.</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.installPath">
 <span class="sig-name descname"><span class="pre">installPath</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.installPath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Installation path of SLiCAP (<em>str</em>), defaults to None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.kicad">
+<span class="sig-name descname"><span class="pre">kicad</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.kicad" title="Permalink to this definition">¶</a></dt>
+<dd><p>KiCad install directory;  defaults to ‘’.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -547,13 +559,8 @@ update. This is set by <strong>SLiCAP.initProject()</strong>.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.ltspice">
 <span class="sig-name descname"><span class="pre">ltspice</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.ltspice" title="Permalink to this definition">¶</a></dt>
-<dd><p>Operating system command prefix for batch generation of a netlist from an
+<dd><p>Operating system command for batch generation of a netlist from an
 LTspice circuit.</p>
-<p>Defaults to <em>SLiCAPconfig.LTSPICE</em></p>
-<ul class="simple">
-<li><p>Windows: ‘C:/Program Files/LTC/LTspiceXVII/XVIIx64.exe -netlist ‘</p></li>
-<li><p>Linux (Wine): ‘wine ~/.wine/drive_c/ProgramFiles/LTC/LTspiceXVII/XVIIx64.exe -netlist ‘</p></li>
-</ul>
 <p>This variable is set during installation.</p>
 </dd></dl>
 
@@ -573,31 +580,13 @@ Defaults to 12.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.netlist">
 <span class="sig-name descname"><span class="pre">netlist</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.netlist" title="Permalink to this definition">¶</a></dt>
-<dd><p>gschem or lepton-schematic command for generating a netlist.</p>
-<p>Defaults to <em>SLiCAPconfig.NETLIST</em></p>
-<p>For lepton-schematic use ‘lepton-netlist -g spice-noqsi’.</p>
-<p>For gschem (deprecated) use: ‘gnetlist -q -g spice-noqsi’.</p>
-<p>The netlister: <em>gnet-spice-noqsi.scm</em> must be stored in the gschem or
-lepton-geda directory with the other netlisters. Commonly used
-locations are:</p>
-<ul class="simple">
-<li><p>Linux systems:</p>
-<ul>
-<li><p><em>lepton-eda:</em> /usr/share/lepton-eda/scheme/backend/</p></li>
-<li><p><em>gschem:</em> /usr/share/gEDA/scheme/</p></li>
-</ul>
-</li>
-<li><p>MS Windows systems:</p>
-<ul>
-<li><p><em>gschem</em>:  ‘C:Program Files (x86)gEDAgEDAsharegEDAscheme’</p></li>
-</ul>
-</li>
-</ul>
+<dd><p>gschem or lepton-schematic command for generating a netlist.’</p>
+<p>This variable is set during installation.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.ngspiceCMD">
-<span class="sig-name descname"><span class="pre">ngspiceCMD</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.ngspiceCMD" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPini.settings.ngspice">
+<span class="sig-name descname"><span class="pre">ngspice</span></span><a class="headerlink" href="#SLiCAP.SLiCAPini.settings.ngspice" title="Permalink to this definition">¶</a></dt>
 <dd><p>Command (<em>str</em>), to start ngspice.</p>
 </dd></dl>
 
