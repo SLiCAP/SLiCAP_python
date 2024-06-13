@@ -731,7 +731,7 @@ def addResNoiseSources(instr):
     if Boltzmann not in list(instr.circuit.parDefs.keys()):
         instr.circuit.parDefs[Boltzmann] = SLiCAPPARAMS['k']
     if Temp not in list(instr.circuit.parDefs.keys()):
-        instr.circuit.parDefs[Boltzmann] = SLiCAPPARAMS['T']
+        instr.circuit.parDefs[Temp] = SLiCAPPARAMS['T']
     return instr
 
 def delResNoiseSources(instr):
