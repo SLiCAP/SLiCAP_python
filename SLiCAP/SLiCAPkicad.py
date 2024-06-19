@@ -30,7 +30,7 @@ def checkTitle(title):
     return title.replace('""', '"')
 
 def parseKiCADnetlist(kicad_sch, kicadPath=''):
-    fieldNames = ["noise", "noisetemp", "noiseflow", "vinit", "iinit", "dc", "dcvar","dcvarlot"]
+    fieldNames = ["noise", "noisetemp", "noiseflow", "vinit", "iinit", "dc", "dcvar","dcvarlot", "sv", "si"]
     fileName   = '.'.join(kicad_sch.split('.')[0:-1])
     subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.circuitPath + kicadPath + fileName + ".net", ini.circuitPath + kicadPath + fileName + ".kicad_sch"])
     components = {}
