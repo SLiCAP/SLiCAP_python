@@ -30,7 +30,7 @@ def checkTitle(title):
     return title.replace('""', '"')
 
 def parseKiCADnetlist(kicad_sch, kicadPath=''):
-    fieldNames = ["noise", "noisetemp", "noiseflow", "vinit", "iinit", "dc", "dcvar","dcvarlot", "sv", "si"]
+    reserved = ["Description", "Footprint", "Datasheet"]
     fileName   = '.'.join(kicad_sch.split('.')[0:-1])
     subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.circuitPath + kicadPath + fileName + ".net", ini.circuitPath + kicadPath + fileName + ".kicad_sch"])
     components = {}
@@ -67,7 +67,7 @@ def parseKiCADnetlist(kicad_sch, kicadPath=''):
                     newComp.refs.append(fieldValue)
                 elif fieldName == 'command':
                     newComp.command = ' '.join(fields[3:])[1:-1]
-                elif fieldName in fieldNames:
+                elif fieldName not in reserved:
                     newComp.params[fieldName] = fieldValue
             except IndexError:
                 # Field has no value!
@@ -119,9 +119,10 @@ def parseKiCADnetlist(kicad_sch, kicadPath=''):
     return netlist
 
 def KiCADsch2svg(fileName, kicadPath = ''):
-    imgFile = fileName.split('.')[0] + ".svg"
+    imgFile = fileName.split('.')[0]
     subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.imgPath, '-e', '-n', ini.circuitPath + kicadPath + fileName])
-    subprocess.run([ini.inkscape, '-o', ini.imgPath + imgFile, '-D', ini.imgPath + imgFile])
+    subprocess.run([ini.inkscape, '-o', ini.imgPath + imgFile + ".svg", '-D', ini.imgPath + imgFile + ".svg"])
+    subprocess.run([ini.inkscape, '-o', ini.imgPath + imgFile + ".pdf", '-D', ini.imgPath + imgFile + ".svg"])
 
 if __name__=='__main__':
     from SLiCAP import initProject
