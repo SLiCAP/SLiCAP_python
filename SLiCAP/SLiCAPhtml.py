@@ -656,7 +656,7 @@ def pz2html(instObj, label = '', labelText = ''):
     html += '<h3>Gain type: %s</h3>'%(instObj.gainType)
     if DCgain != None and instObj.dataType =='pz':
         if instObj.numeric == True:
-            html += '\n' + '<p>DC value = ' + str(sp.N(DCgain, ini.disp)) + '</p>\n'
+            html += '\n' + '<p>DC value = $' + sp.latex(roundN(sp.N(DCgain))) + '$</p>\n'
         else:
             html += '\n<p>DC gain = $' + sp.latex(roundN(DCgain)) + '$</p>\n'
     elif instObj.dataType =='pz':
@@ -853,7 +853,7 @@ def dcVar2html(instObj, label = '', labelText = ''):
     html += '<h3>Detector-referred variance</h3>\n'
     html += '$$\sigma_{out}^2=%s\, %s$$\n'%(sp.latex(roundN(instObj.ovar, numeric = instObj.numeric)), detUnits)
     if instObj.srcUnits != None:
-        srcUnits = '\mathrm{\left[\\frac{%s^2}{Hz}\\right]}'%(instObj.srcUnits)
+        srcUnits = '\mathrm{\left[ %s^2 \\right]}'%(instObj.srcUnits)
         html += '<h3>Source-referred variance</h3>\n'
         html += '$$\sigma_{in}^2=%s\, %s$$\n'%(sp.latex(roundN(instObj.ivar, numeric = instObj.numeric)), srcUnits)
     html += '<h3>Contributions of individual component variances</h3><table>\n'
@@ -870,7 +870,7 @@ def dcVar2html(instObj, label = '', labelText = ''):
         except:
             srcValue = 0
         if numeric:
-            srcValue = fullSubs(srcValue, instObj.parDefs)
+            srcValue = fullSubs(srcValue, instObj.circuit.parDefs)
         html += '<tr><td class="title">Source variance:</td><td>$%s$</td><td class="units">$\,%s$</td></tr>\n'%(sp.latex(roundN(srcValue, numeric = instObj.numeric)), nUnits)
         html += '<tr><td class="title">Detector-referred:</td><td>$%s$</td><td class="units">$\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.ovarTerms[key], numeric = instObj.numeric)), detUnits)
         if instObj.srcUnits != None:

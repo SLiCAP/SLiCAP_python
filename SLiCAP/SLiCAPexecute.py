@@ -1498,7 +1498,6 @@ def doPySolve(instr, result):
     return result
 
 def doPyLoopGainServo(instr, result):
-    result = makeAllMatrices(instr, result)
     if instr.lgValue[0] != None:
         lg1 = instr.lgValue[0]
     else:

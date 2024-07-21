@@ -256,14 +256,14 @@ class figure(object):
         **SLiCAPplots.figure.plot()**. Defaults to [].
         """
 
-        self.fileName = fileName + '.' + ini.figureFileType
+        self.fileName = fileName + '.' + self.fileType
         """
         File name of the figure. Defaults to: fileName + '.' + ini.figureFileType.
         """
 
     def plot(self):
         """
-        Creates the figure, displays it if SLiCAPplots.figure.show == True and
+        Creates the figure, displays it if SLiCAPplots.figure.show == True, and
         saves it to disk.
         """
         axes = np.array(self.axes)
