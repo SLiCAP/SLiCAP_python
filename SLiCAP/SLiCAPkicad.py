@@ -42,6 +42,15 @@ def parseKiCADnetlist(kicad_sch, kicadPath=''):
     kicad_netlist_lines = f.readlines()
     f.close()
     for line in kicad_netlist_lines:
+        
+        # remove spaces in expression
+        try:
+            startExpr = line.index("{")
+            stopExpr = line.index("}", startExpr)
+            line = line[0:startExpr] + line[startExpr:stopExpr].replace(" ", "").replace("\t", "") + line[stopExpr:]
+        except ValueError:
+            pass
+        
         fields = line.split()
         fields = [removeParenthesis(field) for field in fields]
         if fields[0] == "title":
