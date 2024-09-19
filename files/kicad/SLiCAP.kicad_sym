@@ -222,8 +222,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "SLiCAP command (.lib, .param}"
-			(at 15.24 -4.064 0)
+		(property "Description" "SLiCAP command (.lib, .param, .model. subckt}"
+			(at 23.114 -4.064 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1327,6 +1327,103 @@
 			)
 		)
 	)
+	(symbol "GND"
+		(power)
+		(pin_numbers hide)
+		(pin_names
+			(offset 0) hide)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "#0"
+			(at 0 -5.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "0"
+			(at 0 -2.54 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 -10.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "0V reference potential"
+			(at 0 -7.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "ki_keywords" "simulation"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "GND_0_1"
+			(polyline
+				(pts
+					(xy -1.27 0) (xy 0 -1.27) (xy 1.27 0) (xy -1.27 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "GND_1_1"
+			(pin power_in line
+				(at 0 0 0)
+				(length 0)
+				(name "~"
+					(effects
+						(font
+							(size 1.016 1.016)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.016 1.016)
+						)
+					)
+				)
+			)
+		)
+	)
 	(symbol "H"
 		(pin_numbers hide)
 		(pin_names
@@ -2243,8 +2340,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Input-referred noise sources of a JFET (N or P channel)"
-			(at 32.512 -3.81 0)
+		(property "Description" "Input-referred noise sources of a JFET (N or P channel, parameters ID and IG)"
+			(at 40.894 -3.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3032,7 +3129,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Input-referred noise sources of a MOSFET (N or P channel)"
+		(property "Description" "Input-referred noise sources of a MOSFET (N or P channel, parameters W, L, ID, and IG)"
 			(at 28.194 11.684 0)
 			(effects
 				(font
@@ -3520,7 +3617,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Nullor with input-referred DC offset voltage, offset current and bias current"
+		(property "Description" "Nullor with dcvar parameters for the input-referred DC offset voltage and offset current, and for the bias current"
 			(at 40.64 -6.35 0)
 			(effects
 				(font
@@ -3578,7 +3675,7 @@
 		(symbol "N_dcvar_0_0"
 			(polyline
 				(pts
-					(xy -10.16 11.43) (xy -10.16 8.89)
+					(xy -8.89 -6.35) (xy -8.89 -8.89)
 				)
 				(stroke
 					(width 0)
@@ -3590,43 +3687,7 @@
 			)
 			(polyline
 				(pts
-					(xy -9.525 -6.35) (xy -9.525 -8.89)
-				)
-				(stroke
-					(width 0)
-					(type default)
-				)
-				(fill
-					(type none)
-				)
-			)
-			(polyline
-				(pts
-					(xy -11.43 10.16) (xy -13.97 10.16) (xy -13.97 5.08)
-				)
-				(stroke
-					(width 0)
-					(type default)
-				)
-				(fill
-					(type none)
-				)
-			)
-			(polyline
-				(pts
-					(xy -10.795 -7.62) (xy -13.97 -7.62) (xy -13.97 -5.08)
-				)
-				(stroke
-					(width 0)
-					(type default)
-				)
-				(fill
-					(type none)
-				)
-			)
-			(polyline
-				(pts
-					(xy -8.89 10.16) (xy -3.175 10.16) (xy -3.175 -7.62) (xy -8.255 -7.62)
+					(xy -8.89 11.43) (xy -8.89 8.89)
 				)
 				(stroke
 					(width 0)
@@ -3700,7 +3761,7 @@
 			)
 			(polyline
 				(pts
-					(xy -8.89 12.065) (xy -11.43 12.065)
+					(xy -8.255 -9.525) (xy -10.795 -9.525)
 				)
 				(stroke
 					(width 0)
@@ -3712,7 +3773,7 @@
 			)
 			(polyline
 				(pts
-					(xy -8.255 -9.525) (xy -10.795 -9.525)
+					(xy -7.62 12.065) (xy -10.16 12.065)
 				)
 				(stroke
 					(width 0)
@@ -3748,6 +3809,54 @@
 			)
 			(polyline
 				(pts
+					(xy -2.54 -7.62) (xy -7.62 -7.62)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy -13.97 -5.08) (xy -13.97 -7.62) (xy -10.16 -7.62)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy -13.97 5.08) (xy -13.97 10.16) (xy -10.16 10.16)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy -2.54 -7.62) (xy -2.54 10.16) (xy -7.62 10.16)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
 					(xy -12.7 -1.27) (xy -12.7 -5.08) (xy -5.715 -5.08) (xy -5.715 -2.54)
 				)
 				(stroke
@@ -3760,7 +3869,7 @@
 			)
 			(polyline
 				(pts
-					(xy -8.89 12.065) (xy -9.652 12.319) (xy -9.652 11.811) (xy -8.89 12.065)
+					(xy -8.255 -9.525) (xy -9.017 -9.271) (xy -9.017 -9.779) (xy -8.255 -9.525)
 				)
 				(stroke
 					(width 0)
@@ -3772,7 +3881,7 @@
 			)
 			(polyline
 				(pts
-					(xy -8.255 -9.525) (xy -9.017 -9.271) (xy -9.017 -9.779) (xy -8.255 -9.525)
+					(xy -7.62 12.065) (xy -8.382 12.319) (xy -8.382 11.811) (xy -7.62 12.065)
 				)
 				(stroke
 					(width 0)
@@ -3833,7 +3942,7 @@
 				)
 			)
 			(pin power_out line
-				(at -3.175 -10.16 90)
+				(at -2.54 -10.16 90)
 				(length 2.54)
 				(name "bias"
 					(effects
@@ -3864,7 +3973,7 @@
 				)
 			)
 			(circle
-				(center -10.16 5.08)
+				(center -8.89 -7.62)
 				(radius 1.27)
 				(stroke
 					(width 0)
@@ -3875,7 +3984,7 @@
 				)
 			)
 			(circle
-				(center -10.16 10.16)
+				(center -8.89 5.08)
 				(radius 1.27)
 				(stroke
 					(width 0)
@@ -3886,7 +3995,7 @@
 				)
 			)
 			(circle
-				(center -9.525 -7.62)
+				(center -8.89 10.16)
 				(radius 1.27)
 				(stroke
 					(width 0)
@@ -3927,7 +4036,7 @@
 				)
 			)
 			(text "ib"
-				(at -6.985 -9.525 0)
+				(at -6.35 -9.525 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -3935,7 +4044,7 @@
 				)
 			)
 			(text "ib"
-				(at -6.985 11.43 0)
+				(at -5.715 11.43 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -3951,7 +4060,7 @@
 				)
 			)
 			(text "vo"
-				(at -10.16 7.62 0)
+				(at -8.89 7.62 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -4042,12 +4151,13 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Nullor with input-referred noise sources"
-			(at 21.844 -3.81 0)
+		(property "Description" "Nullor with parameters for the input-referred noise voltage and current sources in V^2/Hz and A^2/Hz, respectively"
+			(at 2.286 -3.556 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -4396,6 +4506,18 @@
 		(symbol "O_0_1"
 			(polyline
 				(pts
+					(xy 6.35 0) (xy 7.62 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
 					(xy 7.62 0) (xy 6.985 0)
 				)
 				(stroke
@@ -4427,7 +4549,7 @@
 				)
 			)
 			(pin power_out line
-				(at 0 -6.985 90)
+				(at -1.27 -7.62 90)
 				(length 2.54)
 				(name "outN"
 					(effects
@@ -4448,7 +4570,7 @@
 		(symbol "O_1_1"
 			(polyline
 				(pts
-					(xy 6.985 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.985 0)
+					(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
 				)
 				(stroke
 					(width 0)
@@ -4558,7 +4680,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "OpAmp (nullor) with input-referred DC offset voltage, offset current and bias current"
+		(property "Description" "OpAmp (nullor) with dcvar parameters for the  input-referred DC offset voltage and offset current and for the bias current"
 			(at 45.72 -13.97 0)
 			(effects
 				(font
@@ -4660,6 +4782,18 @@
 			)
 			(polyline
 				(pts
+					(xy 6.35 0) (xy 7.62 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
 					(xy 7.62 0) (xy 6.985 0)
 				)
 				(stroke
@@ -4727,7 +4861,7 @@
 				)
 			)
 			(pin power_out line
-				(at 0 -6.985 90)
+				(at -1.27 -7.62 90)
 				(length 2.54)
 				(name "outN"
 					(effects
@@ -4794,7 +4928,7 @@
 			)
 			(polyline
 				(pts
-					(xy 6.985 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.985 0)
+					(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
 				)
 				(stroke
 					(width 0)
@@ -4988,6 +5122,18 @@
 			)
 			(polyline
 				(pts
+					(xy 6.35 0) (xy 7.62 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
 					(xy 7.62 0) (xy 6.985 0)
 				)
 				(stroke
@@ -5019,7 +5165,7 @@
 				)
 			)
 			(pin power_out line
-				(at 0 -6.985 90)
+				(at -1.27 -7.62 90)
 				(length 2.54)
 				(name "outN"
 					(effects
@@ -5098,7 +5244,7 @@
 			)
 			(polyline
 				(pts
-					(xy 6.985 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.985 0)
+					(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
 				)
 				(stroke
 					(width 0)
@@ -6420,7 +6566,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Junction FET (small-signal model, N or P channel with ID)"
+		(property "Description" "Junction FET (small-signal model, N or P channel with parameter ID)"
 			(at 29.464 -6.096 0)
 			(effects
 				(font
@@ -6615,7 +6761,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
+		(property "Description" "MOSFET (small-signal N or P channel subcircuit with parameters W,  L, and ID)"
 			(at 35.052 -7.112 0)
 			(effects
 				(font
@@ -6886,7 +7032,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
+		(property "Description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with parameters W,  L, and ID)"
 			(at 26.924 -6.096 0)
 			(effects
 				(font
@@ -7265,7 +7411,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "MOSFET (push-pull stage, small-signal channel subcircuit with W_N,  L_N,  ID_N, W_P,  L_P,  and ID_P)"
+		(property "Description" "MOSFET (push-pull stage, small-signal channel subcircuit with parameters W_N,  L_N,  ID_N, W_P,  L_P,  and ID_P)"
 			(at 52.832 -7.112 0)
 			(effects
 				(font
@@ -7569,8 +7715,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "MOSFET (small-signal N or P channel subcircuit with W. L, and VG, VD, and VS, relative to bulk voltage)"
-			(at 53.086 -6.858 0)
+		(property "Description" "MOSFET (small-signal N or P channel subcircuit with parameters W, L, and VG, VD, and VS, relative to bulk voltage)"
+			(at 58.928 -7.112 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7862,8 +8008,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-			(at 49.53 -6.858 0)
+		(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with parameters IC and VCE)"
+			(at 55.118 -7.112 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8075,8 +8221,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-			(at 42.418 -5.334 0)
+		(property "Description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model wit parameters IC and VCE)"
+			(at 47.244 -6.096 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8301,6 +8447,1172 @@
 				)
 				(fill
 					(type none)
+				)
+			)
+		)
+	)
+	(symbol "Xamp3"
+		(pin_numbers hide)
+		(pin_names
+			(offset 0) hide)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X?"
+			(at -4.826 12.319 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" ""
+			(at -2.921 10.414 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "3-terminal amp sub circuit"
+			(at 3.302 -10.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "model" "?"
+			(at -4.826 10.414 0)
+			(show_name)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(symbol "Xamp3_1_0"
+			(pin power_out line
+				(at 8.89 0 180)
+				(length 2.54)
+				(name "out"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_out line
+				(at -1.27 -7.62 90)
+				(length 2.54)
+				(name "REF"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(symbol "Xamp3_1_1"
+			(polyline
+				(pts
+					(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+			(pin input line
+				(at -7.62 0 0)
+				(length 2.54)
+				(name "in"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+	)
+	(symbol "Xamp4"
+		(pin_numbers hide)
+		(pin_names
+			(offset 0) hide)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X?"
+			(at -4.826 12.319 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" ""
+			(at -2.921 10.414 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "4-terminal amplifier sub circuit"
+			(at 3.302 -10.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "model" "?"
+			(at -4.826 10.414 0)
+			(show_name)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(symbol "Xamp4_0_1"
+			(polyline
+				(pts
+					(xy 5.08 -5.08) (xy 2.54 -5.08) (xy 2.54 -2.54)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 5.08 5.08) (xy 2.54 5.08) (xy 2.54 2.54)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "Xamp4_1_0"
+			(pin power_out line
+				(at 7.62 5.08 180)
+				(length 2.54)
+				(name "outP"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_out line
+				(at 7.62 -5.08 180)
+				(length 2.54)
+				(name "outN"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "4"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(symbol "Xamp4_1_1"
+			(polyline
+				(pts
+					(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+			(text "+"
+				(at -4.064 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "+"
+				(at 2.54 1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "-"
+				(at -4.064 -4.826 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "-"
+				(at 2.54 -1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 5.08 0)
+				(length 2.54)
+				(name "inP"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 -5.08 0)
+				(length 2.54)
+				(name "inN"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+	)
+	(symbol "Xamp5"
+		(pin_numbers hide)
+		(pin_names
+			(offset 0) hide)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X?"
+			(at -4.826 12.319 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" ""
+			(at -2.921 10.414 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "5-terminal amplifier sub circuit"
+			(at 3.302 -10.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "model" "?"
+			(at -4.826 10.414 0)
+			(show_name)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(symbol "Xamp5_0_1"
+			(polyline
+				(pts
+					(xy 5.08 -5.08) (xy 2.54 -5.08) (xy 2.54 -2.54)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 5.08 5.08) (xy 2.54 5.08) (xy 2.54 2.54)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "Xamp5_1_0"
+			(pin power_out line
+				(at 7.62 5.08 180)
+				(length 2.54)
+				(name "outP"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_out line
+				(at 7.62 -5.08 180)
+				(length 2.54)
+				(name "outN"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "4"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_out line
+				(at -1.27 -7.62 90)
+				(length 2.54)
+				(name "REF"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "5"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(symbol "Xamp5_1_1"
+			(polyline
+				(pts
+					(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type color)
+					(color 255 255 194 1)
+				)
+			)
+			(text "+"
+				(at -4.064 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "+"
+				(at 2.54 1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "-"
+				(at -4.064 -4.826 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "-"
+				(at 2.54 -1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 5.08 0)
+				(length 2.54)
+				(name "inP"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 -5.08 0)
+				(length 2.54)
+				(name "inN"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+	)
+	(symbol "Xio3"
+		(pin_numbers hide)
+		(pin_names
+			(offset 0) hide)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X?"
+			(at -5.08 6.477 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" ""
+			(at -3.175 4.572 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "3-terminal i-o sub circuit"
+			(at 3.302 -10.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "model" "?"
+			(at -5.08 4.572 0)
+			(show_name)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(symbol "Xio3_1_0"
+			(pin power_out line
+				(at 7.62 0 180)
+				(length 2.54)
+				(name "out"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_out line
+				(at 0 -8.89 90)
+				(length 2.54)
+				(name "REF"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(symbol "Xio3_1_1"
+			(rectangle
+				(start -5.08 2.54)
+				(end 5.08 -6.35)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+			(text "in"
+				(at -3.302 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "out"
+				(at 2.794 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "REF"
+				(at 0 -4.826 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 0 0)
+				(length 2.54)
+				(name "in"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+	)
+	(symbol "Xio4"
+		(pin_numbers hide)
+		(pin_names
+			(offset 0) hide)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X?"
+			(at -4.826 9.779 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" ""
+			(at -2.921 7.874 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "4-terminal i-o sub circuit"
+			(at 3.302 -10.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "model" "?"
+			(at -4.826 7.874 0)
+			(show_name)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(symbol "Xio4_1_0"
+			(pin power_out line
+				(at 7.62 5.08 180)
+				(length 2.54)
+				(name "outP"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_out line
+				(at 7.62 -5.08 180)
+				(length 2.54)
+				(name "outN"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "4"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(symbol "Xio4_1_1"
+			(rectangle
+				(start -5.08 6.35)
+				(end 5.08 -6.35)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+			(text "+"
+				(at -3.81 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "+"
+				(at 3.81 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "-"
+				(at -3.81 -4.826 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "-"
+				(at 3.81 -4.826 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "in"
+				(at -3.302 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "out"
+				(at 2.794 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 5.08 0)
+				(length 2.54)
+				(name "inP"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 -5.08 0)
+				(length 2.54)
+				(name "inN"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+	)
+	(symbol "Xio5"
+		(pin_numbers hide)
+		(pin_names
+			(offset 0) hide)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X?"
+			(at -4.826 10.033 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" ""
+			(at -2.921 8.128 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 2.54 -1.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "5-terminal i-o sub circuit"
+			(at 3.302 -10.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "model" "?"
+			(at -4.826 8.128 0)
+			(show_name)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(symbol "Xio5_1_0"
+			(pin power_out line
+				(at 7.62 5.08 180)
+				(length 2.54)
+				(name "outP"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_out line
+				(at 7.62 -5.08 180)
+				(length 2.54)
+				(name "outN"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "4"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_out line
+				(at 0 -8.89 90)
+				(length 2.54)
+				(name "REF"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "5"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(symbol "Xio5_1_1"
+			(rectangle
+				(start -5.08 6.35)
+				(end 5.08 -6.35)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+			(text "+"
+				(at -3.81 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "+"
+				(at 3.81 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "-"
+				(at -3.81 -4.826 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "-"
+				(at 3.81 -4.826 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "in"
+				(at -3.302 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "out"
+				(at 2.794 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(text "REF"
+				(at 0 -4.826 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 5.08 0)
+				(length 2.54)
+				(name "inP"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at -7.62 -5.08 0)
+				(length 2.54)
+				(name "inN"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
 				)
 			)
 		)

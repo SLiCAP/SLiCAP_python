@@ -51,6 +51,7 @@ class InstallWrapper(install):
         self._gen_config_file()
         install.run(self)
 
+
     def _find_installed_windows_software(self, package_list):
         """
         Searches for installed packages from the package list
@@ -76,49 +77,68 @@ class InstallWrapper(install):
             if y_n == 'y':
                 search_list.append('NGspice')
             print('')
-            for drive in win32api.GetLogicalDriveStrings().split('\000')[:-1]:
-                for root,dirs,files in os.walk(drive):
-                    for name in dirs:
-                        for package in search_list:
-                            if package not in commands.keys():
+            for package in search_list:
+                if package not in commands.keys():
+                    found = False
+                    for drive in win32api.GetLogicalDriveStrings().split('\000')[:-1]:
+                        for root,dirs,files in os.walk(drive):
+                            for name in dirs:
                                 if package == 'LTspice':
                                     if re.match('LT(S|s)pice*', name, flags=0):
                                         if os.path.exists(os.path.join(root,name,'XVIIx64.exe')):
                                             print("LTSpice command set as:", os.path.join(root,name,'XVIIx64.exe'))
                                             commands[package] = os.path.join(root,name,'XVIIx64.exe')
-                                        elif  os.path.exists(os.path.join(root,name,'LTspice.exe')):
+                                            found = True
+                                        elif os.path.exists(os.path.join(root,name,'LTspice.exe')):
                                             print("LTSpice command set as:", os.path.join(root,name,'LTspice.exe'))
                                             commands[package] = os.path.join(root,name,'LTspice.exe')
-                                        elif  os.path.exists(os.path.join(root,name,'ltspice.exe')):
+                                            found = True
+                                        elif os.path.exists(os.path.join(root,name,'ltspice.exe')):
                                             print("LTSpice command set as:", os.path.join(root,name,'ltspice.exe'))
                                             commands[package] = os.path.join(root,name,'ltspice.exe')
-                                if package == 'Inkscape':
+                                            found = True
+                                elif package == 'Inkscape':
                                     if re.match('Inkscape', name, flags=0):
                                         file_name = os.path.join(root, name,'bin','inkscape.exe')
                                         if os.path.exists(file_name):
                                             print("Inkscape command set as:", os.path.join(root,name,'inkscape.exe'))
                                             commands[package] = file_name
-                                if package == 'KiCad':
+                                            found = True
+                                elif package == 'KiCad':
                                     if re.match('KiCad', name, flags=0):
                                         version=os.listdir(os.path.join(root, name))[0]
                                         file_name = os.path.join(root, name, version, 'bin','kicad-cli.exe')
                                         if os.path.exists(file_name):
                                             print("KiCad command set as:", os.path.join(root,name,'kicad-cli.exe'))
                                             commands[package] = file_name
-                                if package == 'gEDA':
+                                            found = True
+                                elif package == 'Maxima':
+                                    if re.match('maxima-*', name, flags=0):
+                                        file_name = os.path.join(root, name,'bin', 'maxima.bat')
+                                        if os.path.exists(file_name):
+                                            print("Maxima command set as:", os.path.join(root,name,'maxima.bat'))
+                                            commands[package] = file_name
+                                            found = True
+                                elif package == 'gEDA':
                                     if re.match('gEDA', name, flags=0):
                                         file_name = os.path.join(root, name, 'gEDA', 'bin' ,'gnetlist.exe')
                                         if os.path.exists(file_name):
                                             print("gnetlist command set as:", os.path.join(root,name,'gnetlist.exe'))
                                             commands[package] = file_name
-                                if package == 'NGspice':
+                                            found = True
+                                elif package == 'NGspice':
                                     if re.match('Spice64', name, flags=0):
                                         file_name = os.path.join(root, name, 'bin' ,'ngspice.exe')
                                         if os.path.exists(file_name):
                                             print("NGspice command set as:", os.path.join(root,name,'ngspice.exe'))
                                             commands[package] = file_name
-                            if len(list(commands.keys())) == len(search_list):
-                                return commands
+                                            found = True
+                                if found:
+                                    break
+                            if found:
+                                break
+                        if found:
+                            break
         return(commands)
 
     def _find_LTspice_wine(self):
