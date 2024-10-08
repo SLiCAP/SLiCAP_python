@@ -43,6 +43,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:kicad/kicad-8.0-nightly
           sudo apt update
+          dpkg --add-architecture i386 && apt-get update && apt-get install wine32
           sudo apt-get install -y pdf2svg lepton-eda kicad inkscape wine-stable
       - name: install ltspice
         run: |
