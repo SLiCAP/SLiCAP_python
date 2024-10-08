@@ -6,9 +6,9 @@ Created on Sun Apr 18 14:29:07 2021
 @author: anton
 """
 
-from SLiCAP import *
+import SLiCAP as sl
 
-prj = initProject('Noise Figures')
+sl.initProject('Noise Figures')
 
-import noiseFigureRp
-import noiseFigureAmp
+from noiseFigureRp import *
+from noiseFigureAmp import *

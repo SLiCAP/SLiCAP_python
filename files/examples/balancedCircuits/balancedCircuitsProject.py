@@ -5,9 +5,9 @@ Created on Wed Feb 22 17:14:45 2023
 
 @author: anton
 """
-from SLiCAP import *
+import SLiCAP as sl
 
-prj = initProject("Balanced circuits")
+prj = sl.initProject("Balanced circuits")
 
 from Tcircuit1 import *
 from balancedAmp import *

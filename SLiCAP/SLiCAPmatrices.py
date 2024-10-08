@@ -5,13 +5,13 @@ SLiCAP module for building the MNA matrix and the associated vectors.
 """
 
 import sympy as sp
-from SLiCAP.SLiCAPini import ini
+import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import fullSubs, float2rational, normalizeRational
 
-def getValues(elmt, param, numeric, parDefs):
+def _getValues(elmt, param, numeric, parDefs, substitute):
     """
     Returns the symbolic or numeric value of numerator and the denominator
-    of a parameter of an element. This function is called by makeMatrices().
+    of a parameter of an element. This function is called by _makeMatrices().
 
     :parm elmt: element object
     :type elmt: SLiCAPprotos.element
@@ -33,19 +33,19 @@ def getValues(elmt, param, numeric, parDefs):
              and the denominator of the element parameter.
     :return type: tuple
     """
-    value = getValue(elmt, param, numeric, parDefs)
-    if ini.Laplace in value.atoms(sp.Symbol):
+    value = _getValue(elmt, param, numeric, parDefs, substitute)
+    if ini.laplace in value.atoms(sp.Symbol):
         numer, denom = normalizeRational(value).as_numer_denom()
     else:
         numer = value
         denom = sp.Rational(1)
     return (numer, denom)
 
-def getValue(elmt, param, numeric, parDefs):
+def _getValue(elmt, param, numeric, parDefs, substitute):
     """
     Returns the symbolic or numeric value of a parameter of an element.
 
-    This function is called by makeMatrices().
+    This function is called by _makeMatrices().
 
     :parm elmt: element object
     :type elmt: SLiCAPprotos.element
@@ -73,11 +73,33 @@ def getValue(elmt, param, numeric, parDefs):
         value = None
     if param in list(elmt.params.keys()):
         value = elmt.params[param]
+        if substitute == True:
+            #value = float2rational(sp.N(fullSubs(value, parDefs)))
+            value = fullSubs(value, parDefs)
         if numeric == True:
-            value = float2rational(sp.N(fullSubs(value, parDefs)))
+            value = sp.N(value)
     return value
 
-def makeMatrices(instr):
+def _createDepVarIndex(circuitObject):
+    """
+    Creates an index dict for the dependent variables, this easies the
+    construction of the matrix.
+
+    :param circuitObject: Circuit object to be updated
+    :type circuitObject: SLiCAPprotos.circuit
+
+    :return: SLiCAP circuit object
+    :rtype: SLiCAP circuit object
+    """
+    varIndex = {}
+    for i in range(len(circuitObject.depVars)):
+        if circuitObject.depVars[i][0:2] == 'V_':
+            varIndex[circuitObject.depVars[i][2:]] = i
+        else:
+            varIndex[circuitObject.depVars[i]] = i
+    return varIndex
+
+def _makeMatrices(instr):
     """
     Returns the MNA matrix and the vector with dependent variables of a circuit.
     The entries in the matrix depend on the instruction type.
@@ -98,12 +120,13 @@ def makeMatrices(instr):
              #. Vector with dependent variables Dv
     :return type: tuple
     """
-    cir      = instr.circuit
-    parDefs  = instr.parDefs
-    numeric  = instr.numeric
-
-    varIndex = cir.varIndex
-    dim = len(list(cir.varIndex.keys()))
+    cir        = instr.circuit
+    parDefs    = instr.parDefs
+    numeric    = instr.numeric
+    substitute = instr.substitute
+    varIndex  = _createDepVarIndex(cir)
+    
+    dim = len(list(varIndex.keys()))
     Dv = sp.Matrix([0 for i in range(dim)])
     M  = sp.zeros(dim)
     for i in range(len(cir.depVars)):
@@ -113,25 +136,25 @@ def makeMatrices(instr):
         if elmt.model == 'C':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            value = getValue(elmt, 'value', numeric, parDefs)
-            M[pos0, pos0] += value * ini.Laplace
-            M[pos0, pos1] -= value * ini.Laplace
-            M[pos1, pos0] -= value * ini.Laplace
-            M[pos1, pos1] += value * ini.Laplace
+            value = _getValue(elmt, 'value', numeric, parDefs, substitute)
+            M[pos0, pos0] += value * ini.laplace
+            M[pos0, pos1] -= value * ini.laplace
+            M[pos1, pos0] -= value * ini.laplace
+            M[pos1, pos1] += value * ini.laplace
         elif elmt.model == 'L':
             dVarPos = varIndex['I_'+ elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            value = getValue(elmt, 'value', numeric, parDefs)
+            value = _getValue(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
             M[dVarPos, pos0] += 1
             M[dVarPos, pos1] -= 1
-            M[dVarPos, dVarPos] -= value * ini.Laplace
+            M[dVarPos, dVarPos] -= value * ini.laplace
         elif elmt.model == 'R':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            value = float2rational(1/getValue(elmt, 'value', numeric, parDefs))
+            value = float2rational(1/_getValue(elmt, 'value', numeric, parDefs, substitute))
             M[pos0, pos0] += value
             M[pos0, pos1] -= value
             M[pos1, pos0] -= value
@@ -140,7 +163,7 @@ def makeMatrices(instr):
             dVarPos = varIndex['I_' + elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            value = getValue(elmt, 'value', numeric, parDefs)
+            value = _getValue(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
             M[dVarPos, pos0] += 1
@@ -152,7 +175,7 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = getValues(elmt, 'value', numeric, parDefs)
+            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
             M[dVarPos, pos0] += denom
@@ -165,8 +188,8 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            numer, denom = getValues(elmt, 'value', numeric, parDefs)
-            zoN, zoD = getValues(elmt, 'zo', numeric, parDefs)
+            numer, denom = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            zoN, zoD = _getValues(elmt, 'zo', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
             M[dVarPos, pos0] += denom * zoD
@@ -180,7 +203,7 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = getValues(elmt, 'value', numeric, parDefs)
+            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += numer
             M[pos1, dVarPos] -= numer
             M[pos2, dVarPos] += denom
@@ -192,7 +215,7 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            value = getValue(elmt, 'value', numeric, parDefs)
+            value = _getValue(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, pos2] += value
             M[pos0, pos3] -= value
             M[pos1, pos2] -= value
@@ -203,7 +226,7 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = getValues(elmt, 'value', numeric, parDefs)
+            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
             M[dVarPos, pos2] += numer
@@ -216,7 +239,7 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = getValues(elmt, 'value', numeric, parDefs)
+            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPosO] += 1
             M[pos1, dVarPosO] -= 1
             M[pos2, dVarPosI] += 1
@@ -233,8 +256,8 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = getValues(elmt, 'value', numeric, parDefs)
-            (zoN, zoD) = getValues(elmt, 'zo', numeric, parDefs)
+            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            (zoN, zoD) = _getValues(elmt, 'zo', numeric, parDefs, substitute)
             M[pos0, dVarPosO] += 1
             M[pos1, dVarPosO] -= 1
             M[pos2, dVarPosI] += 1
@@ -261,7 +284,7 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            value = getValue(elmt, 'value', numeric, parDefs)
+            value = _getValue(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
             M[pos2, dVarPos] -= value
@@ -279,7 +302,7 @@ def makeMatrices(instr):
             M[dVarPos, pos0] += 1
             M[dVarPos, pos1] -= 1
         elif elmt.model == 'VZ':
-            (zoN, zoD) = getValues(elmt, 'zo', numeric, parDefs)
+            (zoN, zoD) = _getValues(elmt, 'zo', numeric, parDefs, substitute)
             pos1 = varIndex[elmt.nodes[1]]
             pos0 = varIndex[elmt.nodes[0]]
             M[pos0, dVarPos] += 1
@@ -292,7 +315,7 @@ def makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            value = getValue(elmt, 'value', numeric, parDefs)
+            value = _getValue(elmt, 'value', numeric, parDefs, substitute)
             M[pos0, pos2] += value
             M[pos0, pos3] -= value
             M[pos1, pos2] -= value
@@ -304,10 +327,10 @@ def makeMatrices(instr):
         elif elmt.model == 'K':
             refPos1 = varIndex['I_' + elmt.refs[0]]
             refPos0 = varIndex['I_' + elmt.refs[1]]
-            ind0    = getValue(cir.elements[elmt.refs[0]], 'value', numeric, parDefs)
-            ind1    = getValue(cir.elements[elmt.refs[1]], 'value', numeric, parDefs)
-            value = getValue(elmt, 'value', numeric, parDefs)
-            value = value * ini.Laplace * sp.sqrt(ind0 * ind1)
+            ind0    = _getValue(cir.elements[elmt.refs[0]], 'value', numeric, parDefs, substitute)
+            ind1    = _getValue(cir.elements[elmt.refs[1]], 'value', numeric, parDefs, substitute)
+            value = _getValue(elmt, 'value', numeric, parDefs)
+            value = value * ini.laplace * sp.sqrt(ind0 * ind1)
             M[refPos0, refPos1] -= value
             M[refPos1, refPos0] -= value
     gndPos = varIndex['0']
@@ -317,7 +340,7 @@ def makeMatrices(instr):
     Dv.row_del(gndPos)
     return (M, Dv)
 
-def makeSrcVector(cir, parDefs, elid, value = 'id', numeric = True):
+def _makeSrcVector(cir, parDefs, elid, value = 'id', numeric = True, substitute=True):
     """
     Creates the vector with independent variables.
     The vector can be created for a single independent variable or for all.
@@ -356,8 +379,8 @@ def makeSrcVector(cir, parDefs, elid, value = 'id', numeric = True):
     :return type: sympy.Matrix
     """
     # varIndex holds the position of dependent variables in the matrix.
-    varIndex = cir.varIndex
-    dim = len(list(cir.varIndex.keys()))
+    varIndex = _createDepVarIndex(cir)
+    dim = len(list(varIndex.keys()))
     # Define the vector
     Iv = [0 for i in range(dim)]
     # Select the elements of interest
@@ -373,13 +396,13 @@ def makeSrcVector(cir, parDefs, elid, value = 'id', numeric = True):
             else:
                 val = 1
         elif value == 'value':
-            val = getValue(elmt, 'value', numeric, parDefs)
+            val = _getValue(elmt, 'value', numeric, parDefs, substitute)
         elif value == 'noise':
-            val = getValue(elmt, 'noise', numeric, parDefs)
+            val = _getValue(elmt, 'noise', numeric, parDefs, substitute)
         elif value == 'dc':
-            val = getValue(elmt, 'dc', numeric, parDefs)
+            val = _getValue(elmt, 'dc', numeric, parDefs, substitute)
         elif value == 'dcvar':
-            val = getValue(elmt, 'dcvar', numeric, parDefs)
+            val = _getValue(elmt, 'dcvar', numeric, parDefs)
         if elmt.model == 'I':
             if val != None:
                 pos0 = varIndex[elmt.nodes[0]]
@@ -396,7 +419,7 @@ def makeSrcVector(cir, parDefs, elid, value = 'id', numeric = True):
     return Iv
 
 if __name__ == "__main__":
-    s = ini.Laplace
+    s = ini.laplace
 
     MNA = sp.Matrix([[5.0e-12*s + 0.01, 0, 0, -5.0e-12*s - 0.01, 0, 0, 0, 0, 1],
                   [0, 1.98e-11*s + 0.0001, -1.2e-11*s, -1.8e-12*s - 1.0e-5, 0, 0, 0, 0, 0],
@@ -407,5 +430,3 @@ if __name__ == "__main__":
                   [0, 0, 0, 1, 0, 0, -1.0e-6*s, -3.1623e-11*s, 0],
                   [0, 0, -1, 0, 1, 0, -3.1623e-11*s, -1.0e-9*s, 0],
                   [2.048e-20*s**3 + 2.688e-11*s**2 + 0.0016*s + 1, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-    print(det(MNA))

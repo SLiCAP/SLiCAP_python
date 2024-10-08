@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SLiCAPshell.py &mdash; SLiCAP 3.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=08bfcbec"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SLiCAP tutorials" href="../tutorials/SLiCAPtutorials.html" />
+    <link rel="prev" title="SLiCAPstatespace.py" href="SLiCAPstatespace.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            SLiCAP
+          </a>
+              <div class="version">
+                3.0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP Version 3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPreference.html">SLiCAP reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="SLiCAP.html">SLiCAP.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPconfigure.html">SLiCAPconfigure.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPltspice.html">SLiCAPltspice.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPngspice.html">SLiCAPngspice.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPshell.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#general-instruction-format">General instruction format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doDC"><code class="docutils literal notranslate"><span class="pre">doDC()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doDCsolve"><code class="docutils literal notranslate"><span class="pre">doDCsolve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doDCvar"><code class="docutils literal notranslate"><span class="pre">doDCvar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doDenom"><code class="docutils literal notranslate"><span class="pre">doDenom()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doImpulse"><code class="docutils literal notranslate"><span class="pre">doImpulse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doLaplace"><code class="docutils literal notranslate"><span class="pre">doLaplace()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doMatrix"><code class="docutils literal notranslate"><span class="pre">doMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doNoise"><code class="docutils literal notranslate"><span class="pre">doNoise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doNumer"><code class="docutils literal notranslate"><span class="pre">doNumer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doPZ"><code class="docutils literal notranslate"><span class="pre">doPZ()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doPoles"><code class="docutils literal notranslate"><span class="pre">doPoles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doSolve"><code class="docutils literal notranslate"><span class="pre">doSolve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doStep"><code class="docutils literal notranslate"><span class="pre">doStep()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doTime"><code class="docutils literal notranslate"><span class="pre">doTime()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doTimeSolve"><code class="docutils literal notranslate"><span class="pre">doTimeSolve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doZeros"><code class="docutils literal notranslate"><span class="pre">doZeros()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.makeCircuit"><code class="docutils literal notranslate"><span class="pre">makeCircuit()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="SLiCAPreference.html">SLiCAP reference</a></li>
+      <li class="breadcrumb-item active">SLiCAPshell.py</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/SLiCAPshell.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-SLiCAP.SLiCAPshell">
+<span id="slicapshell-py"></span><h1>SLiCAPshell.py<a class="headerlink" href="#module-SLiCAP.SLiCAPshell" title="Link to this heading"></a></h1>
+<p>This module creates a shell around basic SLiCAP instructions.
+This yields a strongly simplified and reduced set of SLiCAP user commands.</p>
+<section id="general-instruction-format">
+<h2>General instruction format<a class="headerlink" href="#general-instruction-format" title="Link to this heading"></a></h2>
+<p>result = do&lt;Instruction&gt;(cir, transfer=None, source=’circuit’,
+detector=’circuit’, lgref=’circuit’, convtype=None, pardefs=None, 
+numeric=False, stepdict=None),</p>
+<p>where &lt;Instruction&gt; describes the analysis to be performed. Below an overview 
+of instructions that have been implemented in SLiCAP.</p>
+<ol class="arabic simple">
+<li><p>Network equations:</p>
+<ul class="simple">
+<li><p>doMatrix()     : matrix equation of the circuit</p></li>
+</ul>
+</li>
+<li><p>Complex frequency domain (Laplace) analysis:</p>
+<ul class="simple">
+<li><p>doLaplace_vi() : Laplace Transform of the detector voltage or current</p></li>
+<li><p>doLaplace()    : transfer function (Laplace expression)</p></li>
+<li><p>doNumer()      : numerator of a transfer function</p></li>
+<li><p>doDenom()      : denominator of a transfer function</p></li>
+<li><p>doSolve()      : Laplace Transform of the network solution</p></li>
+</ul>
+</li>
+<li><p>Complex frequency domain analysis: Poles and zeros of transfer functions:</p>
+<ul class="simple">
+<li><p>doPoles()      : poles of a transfer, including non-controllable and 
+non-observable (complex frequency solutions of Denom)</p></li>
+<li><p>doZeros()      : zeros of a transfer (complex frequency solutions of Numer)</p></li>
+<li><p>doPZ()         : DC value, poles and zeros of a transfer (with pole-zero 
+canceling)</p></li>
+</ul>
+</li>
+<li><p>Noise analysis:</p>
+<ul class="simple">
+<li><p>doNoise()      : spectral densities of detector and source-referred noise</p></li>
+</ul>
+</li>
+<li><p>Time domain analysis, based on the Inverse Laplace Transform:</p>
+<ul class="simple">
+<li><p>doTime()       : detector voltage or current</p></li>
+<li><p>doImpulse()    : unit-impulse response of a transfer</p></li>
+<li><p>doStep()       : unit-step response of a transfer</p></li>
+<li><p>doTimeSolve()  : Time-domain solution of a network</p></li>
+</ul>
+</li>
+<li><p>DC (zero-frequency) analysis:</p>
+<ul class="simple">
+<li><p>doDC_vi()      : DC detector voltage or current</p></li>
+<li><p>doDC()         : Zero-frequency value of a transfer</p></li>
+<li><p>doDCsolve()    : DC network solution</p></li>
+<li><p>doDCvar()      : detector-referred and source-referred DC variance</p></li>
+</ul>
+</li>
+</ol>
+<p>Some analysis types require definitions of a signal source, a signal detector, 
+and/or a loop gain reference. Souce, detector and loop gain reference are
+specified with the circuit.</p>
+<ul>
+<li><p>A <strong>detector</strong> specification is <strong>NOT</strong> required for the instructions:</p>
+<ul class="simple">
+<li><p>doMatrix()</p></li>
+<li><p>doDenom()</p></li>
+<li><p>doPoles()</p></li>
+<li><p>doSolve()</p></li>
+<li><p>doDCsolve()</p></li>
+<li><p>doTimeSolve()</p></li>
+</ul>
+<p><strong>AND</strong> for transfer types:</p>
+<ul class="simple">
+<li><p>loopgain</p></li>
+<li><p>servo</p></li>
+</ul>
+<p>In all other cases a definition of a detector is required.</p>
+</li>
+<li><p>A <strong>source</strong> specification is required for transfers: ‘gain’, ‘direct’, 
+and ‘asymptotic’.</p>
+<p>If a source definition is given, instructions ‘doNoise()’ and ‘doDCvar()’ 
+also return the source-referred noise and source referred DC variance, 
+respectively.</p>
+</li>
+<li><p>A <strong>loop gain reference</strong> specification is required for the transfers: ‘
+asymptotic’, direct’, ‘loopgain’, and ‘servo’.</p></li>
+</ul>
+<hr class="docutils" />
+<dl class="field-list">
+<dt class="field-odd">param cir<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Circuit object that will be used for the analysis. The signal 
+source, the signal detector, the loop gain reference, and 
+definitions of circuit parameters are attributes the circuit.</p>
+</dd>
+<dt class="field-even">type circuit<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAPprotos.circuit() object</p>
+</dd>
+<dt class="field-odd">param source<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>‘circuit’: signal source as defined in the netlist</p></li>
+<li><p>str: name (refDes) of independent source</p></li>
+<li><p>list: list with two names of independent sources</p></li>
+</ul>
+</dd>
+<dt class="field-even">param detector<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>‘circuit’: signal detector as defined in the netlist</p></li>
+<li><p>str: name a dependent variable</p></li>
+<li><p>list: list with two names of dependent variables</p></li>
+</ul>
+</dd>
+<dt class="field-odd">param lgref<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>‘circuit’: loop gain reference as defined in the netlist</p></li>
+<li><p>str: name a controlled source</p></li>
+<li><p>list: list with two names of controlled sources</p></li>
+</ul>
+</dd>
+<dt class="field-even">param transfer<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p>None: calculation of detector voltage or current</p></li>
+<li><p>‘gain’: calculation of complex ratio of detector 
+voltage/current and source voltage/current</p></li>
+<li><p>‘asymptotic’: as gain with loop gain reference replace with 
+a nullor</p></li>
+<li><p>‘loopgain’: gain enclosed in the loop involving the loop 
+gain reference</p></li>
+<li><p>‘servo’ :-L/(1-L), where L is the loop gain</p></li>
+<li><p>‘direct’: as gain with the transfer of the loop gain 
+reference set to zero</p></li>
+</ul>
+<p>Defaults to ‘gain’.</p>
+<p>In some analysis types the transfer value is ignored and 
+considered None</p>
+</dd>
+<dt class="field-odd">type transfer<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>NoneType, str</p></li>
+</ul>
+</dd>
+<dt class="field-even">param convType<span class="colon">:</span></dt>
+<dd class="field-even"><ul>
+<li><p>None: No matrix conversion takes place</p></li>
+<li><p>‘all’: Dependent variables and independent variables will be 
+grouped in differential-mode and common-mode variables. 
+The circuit matrix dimension is not changed.</p></li>
+<li><p>‘dd’: After grouping of the vaiables in differential-mode
+and common-mode variables, only the differential-mode 
+variables of both dependent and independent variables are 
+considered.</p>
+<p>The matrix equation describes the differential-
+mode behavior of the circuit.</p>
+</li>
+<li><p>‘cc’: After grouping of the vaiables in differential-mode
+and common-mode variables, only the common-mode variables of 
+both dependent and independent variables are considered.</p>
+<p>The matrix equation describes the common-mode behavior of 
+the circuit.</p>
+</li>
+<li><p>‘dc’: After grouping of the vaiables in differential-mode
+and common-mode variables, only the differential-mode 
+dependent variables and the common-mode independent 
+variables are considered.</p>
+<p>The matrix equation describes the common-mode to 
+differential-mode conversion of the circuit.</p>
+</li>
+<li><p>‘cd’: After grouping of the vaiables in differential-mode
+and common-mode variables, only the common-mode dependent 
+variables and the differential-mode independent ariables are c
+onsidered.</p>
+<p>The matrix equation describes the differential-mode to 
+common-mode conversion of the circuit.</p>
+</li>
+</ul>
+<p>Defaults to None</p>
+</dd>
+<dt class="field-odd">type convType<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">param pardefs<span class="colon">:</span></dt>
+<dd class="field-even"><ol class="arabic">
+<li><p>None:</p>
+<p>Analysis is performed with circuit element values or 
+expressions.</p>
+</li>
+<li><p>‘circuit’:</p>
+<p>Analysis is performed with circuit element values or 
+expressions in which parameters defined with the circuit are 
+recursively substituted.</p>
+</li>
+<li><p>A dictionary with key-value pairs:</p>
+<ul class="simple">
+<li><p>key = parameter name (sympy.Symbol),</p></li>
+<li><p>value = parameter expression (sympy.Expr) or a numeric 
+value (int, float).</p></li>
+</ul>
+<p>Analysis is performed with circuit element values or 
+expressions in which parameters defined in the dictionary 
+are recursively substituted.</p>
+</li>
+</ol>
+<p>Defaults to None</p>
+</dd>
+<dt class="field-odd">type pardefs<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NoneType, str or dict</p>
+</dd>
+<dt class="field-even">param numeric<span class="colon">:</span></dt>
+<dd class="field-even"><ol class="arabic simple">
+<li><p>True: results will be returned in float format with pi
+substituted with its numeric value and numerically evaluated
+functions.</p></li>
+<li><p>False: results will be returned with rational numbers and
+without numeric evaluation of functions or constants.</p></li>
+</ol>
+<p>Defaults to False</p>
+</dd>
+<dt class="field-odd">type numeric<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+<dt class="field-even">param stepdict<span class="colon">:</span></dt>
+<dd class="field-even"><p>Parameter stepping is implemented for plotting.
+&lt;stepdict&gt; defines if stepping will be applied.</p>
+<ol class="arabic simple">
+<li><p>None: no parameter(s) will be stepped.</p></li>
+<li><p>A dictionary with key-value pairs of stepping parameters: 
+this will invoke parameter stepping. Keys and possible 
+associated values are given below.</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>stepmethod (str); ‘lin’, ‘log’, ‘list’, ‘array’</p></li>
+<li><p>params    : (str, sympy.Symbol) for stepmethod: lin’, 
+‘log’, and ‘list’ (list of str or sympy.Symbol) for 
+stepmethod: ‘array’</p></li>
+<li><p>start     : (float, int, str): start value for linear and 
+log stepping</p></li>
+<li><p>stop      : (float, int, str): stop value for lin and log 
+stepping</p></li>
+<li><p>num       : (int), number of steps for lin and log 
+stepping</p></li>
+<li><p>values    : (list of int, float, or str) step values for
+stepmethod: ‘list’ (list of lists of int, float, or str)
+step values for stepmethod: ‘array’</p></li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</section>
+<hr class="docutils" />
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doDC">
+<span class="sig-name descname"><span class="pre">doDC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doDC" title="Link to this definition"></a></dt>
+<dd><p>Returns the zero-frequency value (DC value) of a transfer or a detector
+voltge or current.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doDC(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doDC(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doDC(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doDC(&lt;circuit&gt;).numer: Numerator of the DC voltage transfer from V1 to 
+V_out (sympy.Expr)</p></li>
+<li><p>doDC&lt;circuit&gt;).denom: Denominator of the DC voltage transfer from V1 to 
+V_out (sympy.Expr)</p></li>
+<li><p>doDC(&lt;circuit&gt;).laplace: DC voltage transfer from V1 to V_out 
+(sympy.Expr)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the DC voltage transfer from V1 to V_out:</span>
+<span class="n">V_DCgain</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doDC</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">laplace</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doDCsolve">
+<span class="sig-name descname"><span class="pre">doDCsolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doDCsolve" title="Link to this definition"></a></dt>
+<dd><p>Returns the DC solution of the circuit.</p>
+<p>The dc values of all independent sources are taken as input signals.</p>
+<p>The arguments for source, detector, lgref and transfer will be ignored and
+considered: None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doSolve(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doSolve(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doSolve(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doSolve(&lt;circuit&gt;).DCsolve Vector with DC solutions of dependent 
+variables (sympy.Matrix)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the DC network solution:</span>
+<span class="n">DCsolution</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doDCsolve</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">DCsolve</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doDCvar">
+<span class="sig-name descname"><span class="pre">doDCvar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doDCvar" title="Link to this definition"></a></dt>
+<dd><p>Evaluates the variance of the detector DC voltage or current and the 
+individual contributions of all noise sources to it.</p>
+<p>If a signal source is specified, it also calculates the source-referred 
+DC variance and the individual contributions of all DC sources and 
+resistors to it.</p>
+<p>The DC variance of all independent sources and resistors are taken as 
+inputs. Correlation can be accounted for using matching and tracking
+specifications.</p>
+<p>The arguments for lgref and transfer will be ignored and considered: None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doDCvar(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doDCvar(&lt;circuit&gt;).Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doDCvar(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doDCvar(&lt;circuit&gt;).ovar: detector-referred DC variance in V^2 or A^2 
+(sympy.Expr)</p></li>
+<li><p>doDCvar(&lt;circuit&gt;).ovarTerms: dictionary with key-value pairs:</p>
+<ul>
+<li><p>key (str): name of the variance source, the variance of the current
+associated with a resistor ‘Rx’ is referred to as ‘I_dcvar_Rx’</p></li>
+<li><p>value (sympy.Expr): contribution of this source to the detector-
+referred variance in V^2 or A^2</p></li>
+</ul>
+</li>
+<li><p>doDCvar(&lt;circuit&gt;).ivar: source-referred DC variance in V^2 or A^2 
+(sympy.Expr)</p></li>
+<li><p>doDCvar(&lt;circuit&gt;).inoiseTerms: dictionary with key-value pairs:</p>
+<ul>
+<li><p>key (str): name of the variance source, the variance of the current
+associated with a resistor ‘Rx’ is referred to as ‘I_dcvar_Rx’</p></li>
+<li><p>value (sympy.Expr): contribution of this source to the source-
+referred variance in V^2 or A^2</p></li>
+</ul>
+</li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doDenom">
+<span class="sig-name descname"><span class="pre">doDenom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doDenom" title="Link to this definition"></a></dt>
+<dd><p>Returns the denominator of a transfer or a detector voltage or current.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doLaplace(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;).denom: Denominator of the voltage transfer from V1 
+to V_out (sympy.Expr)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the numerator od the voltage transfer from V1 to V_out:</span>
+<span class="n">V_gain</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doNumer</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">laplace</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doImpulse">
+<span class="sig-name descname"><span class="pre">doImpulse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doImpulse" title="Link to this definition"></a></dt>
+<dd><p>Returns the unit-impulse response of a transfer (ILT of a transfer 
+function). The argument ‘transfer’ will be set to gain if None is given.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doImpulse(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doImpulse(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doImpulse(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doImpulse(&lt;circuit&gt;).numer: Numerator of the voltage transfer from V1 to
+V_out (sympy.Expr)</p></li>
+<li><p>doImpulse(&lt;circuit&gt;).denom: Denominator of the voltage transfer from V1
+to V_out (sympy.Expr)</p></li>
+<li><p>doImpulse(&lt;circuit&gt;).laplace: Voltage transfer from V1 to V_out 
+(sympy.Expr)</p></li>
+<li><p>doImpulse(&lt;circuit&gt;).impulse: Unit-impulse response of the Voltage 
+transfer from V1 to V_out (sympy.Expr)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the unit impulse response of the transfer from V1 to V_out:</span>
+<span class="n">h_t</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doImpulse</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">impulse</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doLaplace">
+<span class="sig-name descname"><span class="pre">doLaplace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doLaplace" title="Link to this definition"></a></dt>
+<dd><p>Returns a transfer function or a detector voltage or current.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doLaplace(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;).numer: Numerator of the voltage transfer from V1 to
+V_out (sympy.Expr)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;).denom: Denominator of the voltage transfer from V1
+to V_out (sympy.Expr)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;).laplace: Voltage transfer from V1 to V_out 
+(sympy.Expr)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the voltage transfer from V1 to V_out:</span>
+<span class="n">V_gain</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doLaplace</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">laplace</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doMatrix">
+<span class="sig-name descname"><span class="pre">doMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doMatrix" title="Link to this definition"></a></dt>
+<dd><p>Returns the MNA matrix, the vector with dependent variables and the vector 
+with independent variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doMatrix(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doMatrix(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doMatrix(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+</ul>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the matrix equation of the circuit</span>
+<span class="n">matrixResult</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doMatrix</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span>
+<span class="c1"># Create an HTML page for displaying the results</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">htmlPage</span><span class="p">(</span><span class="s2">&quot;Matrix equation&quot;</span><span class="p">)</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">matrices2html</span><span class="p">(</span><span class="n">matrixResult</span><span class="p">)</span>
+<span class="c1"># assign the MNA matris to the variable M</span>
+<span class="n">M</span>  <span class="o">=</span> <span class="n">matrixResult</span><span class="o">.</span><span class="n">M</span>  
+<span class="c1"># assign the vector with independent variables to Iv</span>
+<span class="n">Iv</span> <span class="o">=</span> <span class="n">matrixResult</span><span class="o">.</span><span class="n">Iv</span>
+<span class="c1"># assign the vector with dependent variables to Dv</span>
+<span class="n">Dv</span> <span class="o">=</span> <span class="n">matrixResult</span><span class="o">.</span><span class="n">Dv</span> 
+<span class="c1"># Print the result of the matrix multiplication to the active HTML page</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">eqn2html</span><span class="p">(</span><span class="n">Iv</span><span class="p">,</span> <span class="n">M</span><span class="o">*</span><span class="n">Dv</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doNoise">
+<span class="sig-name descname"><span class="pre">doNoise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doNoise" title="Link to this definition"></a></dt>
+<dd><p>Evaluates the detector noise spectral density and the individual 
+contributions of all noise sources to it.</p>
+<p>If a signal source is specified, it also calculates the source-referred 
+noise spectral density and the individual contributions of all noise
+sources to it.</p>
+<p>The noise of all independent sources, the noise temperatures and the 
+flicker noise corner frequencies of resistors are taken as inputs. All
+noise sources are assumed to be uncorrelated. Correlation can modeled with
+transfer functions (controlled sources).</p>
+<p>The arguments for lgref and transfer will be ignored and considered: None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doNoise(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doNoise(&lt;circuit&gt;).Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doNoise(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doNoise(&lt;circuit&gt;).onoise: detector-referred noise spectrum in V^2/Hz or 
+A^2/Hz (sympy.Expr)</p></li>
+<li><p>doNoise(&lt;circuit&gt;).onoiseTerms: dictionary with key-value pairs:</p>
+<ul>
+<li><p>key (str): name of the noise source, the noise source associated with a 
+resistor ‘Rx’ is referred to as ‘I_noise_Rx’</p></li>
+<li><p>value (sympy.Expr): contribution of this source to the detector-
+referred noise in V^2/Hz or A^2/Hz</p></li>
+</ul>
+</li>
+<li><p>doNoise(&lt;circuit&gt;).inoise: source-referred noise spectrum in V^2/Hz or 
+A^2/Hz (sympy.Expr)</p></li>
+<li><p>doNoise(&lt;circuit&gt;).inoiseTerms: dictionary with key-value pairs:</p>
+<ul>
+<li><p>key (str): name of the noise source, the noise source associated with a 
+resistor ‘Rx’ is referred to as ‘I_noise_Rx’</p></li>
+<li><p>value (sympy.Expr): contribution of this source to the source-referred 
+noise in V^2/Hz or A^2/Hz</p></li>
+</ul>
+</li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doNumer">
+<span class="sig-name descname"><span class="pre">doNumer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doNumer" title="Link to this definition"></a></dt>
+<dd><p>Returns the numerator of a transfer or of a detector voltage or current.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doLaplace(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doLaplace(&lt;circuit&gt;).numer: Numerator of the voltage transfer from V1 to
+V_out (sympy.Expr)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the numerator od the voltage transfer from V1 to V_out:</span>
+<span class="n">V_gain</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doNumer</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">laplace</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doPZ">
+<span class="sig-name descname"><span class="pre">doPZ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doPZ" title="Link to this definition"></a></dt>
+<dd><p>Returns the DC value, the zeros, and the poles of a transfer function. 
+Poles and zeros that coincide within the diaplay accuracy (ini.disp) are
+canceled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doPZ(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doPZ(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doPZ(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doPZ(&lt;circuit&gt;).numer: Numerator of the voltage transfer from V1
+to V_out (sympy.Expr)</p></li>
+<li><p>doPZ(&lt;circuit&gt;).denom: Denominator of the voltage transfer from V1
+to V_out (sympy.Expr)</p></li>
+<li><p>doPZ(&lt;circuit&gt;).zeros: List with solutions of numer=0 for the Laplace 
+variable (ini.laplace) (list with sympy.Expr or floats)</p></li>
+<li><p>doPZ(&lt;circuit&gt;).poles: List with solutions of denom=0 for the Laplace 
+variable (ini.laplace) (list with sympy.Expr or floats)</p></li>
+<li><p>doPZ(&lt;circuit&gt;).DCvalue: Zero frequency value of the  voltage transfer 
+from V1 to V_out (sympy.Expr)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p>Frequencies of poles and zeros are always in radians per seconds. The 
+setting of ini.hz only affects the diplay of tables in the console 
+(listPZ()), on HTML pages (pz2httml()), or in LaTeX and RST reports.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the zeros of the transfer from V1 to V_out:</span>
+<span class="n">Zeros</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doZeros</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">zeros</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doPoles">
+<span class="sig-name descname"><span class="pre">doPoles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doPoles" title="Link to this definition"></a></dt>
+<dd><p>Returns the poles of a transfer function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doPoles(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doPoles(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doPoles(&lt;circuit&gt;).denom: Denominator of the voltage transfer from V1
+to V_out (sympy.Expr)</p></li>
+<li><p>doPoles(&lt;circuit&gt;).poles: List with solutions of denom=0 for the Laplace 
+variable (ini.laplace) (list with sympy.Expr or floats)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p>Frequencies of poles are always in radians per seconds. The setting of 
+ini.hz only affects the diplay of tables in the console (listPZ()), on HTML
+pages (pz2httml()), or in LaTeX and RST reports.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the poles of the transfer from V1 to V_out:</span>
+<span class="n">Poles</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doPoles</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">poles</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doSolve">
+<span class="sig-name descname"><span class="pre">doSolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doSolve" title="Link to this definition"></a></dt>
+<dd><p>Returns the (Laplace) solution of the circuit.</p>
+<p>The (Laplace) values of all independent sources are taken as input signals.
+The application of initial conditions has not yet been implemented.</p>
+<p>The arguments for source, detector, lgref and transfer will be ignored and
+considered: None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doSolve(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doSolve(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doSolve(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doSolve(&lt;circuit&gt;).solve Vector with solutions of dependent variables
+(sympy.Matrix)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the network solution:</span>
+<span class="n">solution</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doSolve</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">solve</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doStep">
+<span class="sig-name descname"><span class="pre">doStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doStep" title="Link to this definition"></a></dt>
+<dd><p>Returns the unit-step response of a transfer (based upon the ILT).  The 
+argument ‘transfer’ will be set to gain if None is given.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doStep(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doStep(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doStep(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doStep(&lt;circuit&gt;).numer: Numerator of the voltage transfer from V1 to
+V_out (sympy.Expr)</p></li>
+<li><p>doStep(&lt;circuit&gt;).denom: Denominator of the voltage transfer from V1
+to V_out (sympy.Expr)</p></li>
+<li><p>doStep(&lt;circuit&gt;).laplace: Voltage transfer from V1 to V_out (sympy.Expr)</p></li>
+<li><p>doStep(&lt;circuit&gt;).stepResp: Unit-step response of the Voltage transfer 
+from V1 to V_out (sympy.Expr)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the unit-step response of the transfer from V1 to V_out:</span>
+<span class="n">a_t</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doStep</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">stepResp</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doTime">
+<span class="sig-name descname"><span class="pre">doTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doTime" title="Link to this definition"></a></dt>
+<dd><p>Returns the detector voltage or current (Inverse Laplace Transform).</p>
+<p>The (Laplace) values of all independent sources are taken as input signals.
+Application of initial conditions has not yet ben implemented.</p>
+<p>The arguments for source and transfer will be ignored and both considered:
+None).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doTime&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doLaplaceVI(&lt;circuit&gt;.Iv: Vector with independent variables 
+(sympy.Matrix)</p></li>
+<li><p>doTime&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doTime(&lt;circuit&gt;).numer: Numerator of the Laplace Transform of the
+detector voltage or current  (sympy.Expr)</p></li>
+<li><p>doTime&lt;circuit&gt;).denom: Denominator of the Laplace Transfor of the
+detector voltage or current  (sympy.Expr)</p></li>
+<li><p>doTime(&lt;circuit&gt;).laplace: Laplace Transform of the detector voltage
+or current (sympy.Expr)</p></li>
+<li><p>doTime(&lt;circuit&gt;).time: Detector voltage or current</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the Lapace transform of the detector voltage V_out:</span>
+<span class="n">V_out</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doLaplaceVI</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">laplace</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doTimeSolve">
+<span class="sig-name descname"><span class="pre">doTimeSolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doTimeSolve" title="Link to this definition"></a></dt>
+<dd><p>Returns the time-domain solution of the circuit, using the Inverse Laplace
+Transform.</p>
+<p>The (Laplace) values of all independent sources are taken as input signals.
+The application of initial conditions has not yet been implemented.</p>
+<p>The arguments for source, detector, lgref and transfer will be ignored and
+considered: None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doTimeSolve(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doTimeSolve(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doTimeSolve(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doTimeSolve&lt;circuit&gt;).timeSolve Vector with Dtime-domain solutions of 
+dependent variables (sympy.Matrix)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the DC network solution:</span>
+<span class="n">timeSolution</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doTimeSolve</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">DCsolve</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doZeros">
+<span class="sig-name descname"><span class="pre">doZeros</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doZeros" title="Link to this definition"></a></dt>
+<dd><p>Returns the zeros of a transfer function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SLiCAP results object of which the following attributes with be
+set as a result of this instruction:</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SLiCAP.SLiCAPprotos.allResults object</p>
+</dd>
+</dl>
+<p><strong>Return value attributes</strong></p>
+<ul class="simple">
+<li><p>doZeros(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doZeros(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doZeros(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doZeros(&lt;circuit&gt;).numer: Numerator of the voltage transfer from V1
+to V_out (sympy.Expr)</p></li>
+<li><p>doZeros(&lt;circuit&gt;).zeros: List with solutions of numer=0 for the Laplace 
+variable (ini.laplace) (list with sympy.Expr or floats)</p></li>
+</ul>
+<p>If parameter stepping is applied, all above attributes are lists of values
+or expressions for each step.</p>
+<p>Frequencies of zeros are always in radians per seconds. The setting of 
+ini.hz only affects the diplay of tables in the console (listPZ()), on HTML
+pages (pz2httml()), or in LaTeX and RST reports.</p>
+<p><strong>Parameters</strong></p>
+<p>See section <a class="reference internal" href="#general-instruction-format">General instruction format</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC Network&quot;</span><span class="p">)</span>
+<span class="c1"># Generate the circuit object from the netlist</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="s2">&quot;myFirstRCnetwork.cir&quot;</span><span class="p">)</span>
+<span class="c1"># Obtain the zeros of the transfer from V1 to V_out:</span>
+<span class="n">Zeros</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doZeros</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">zeros</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.makeCircuit">
+<span class="sig-name descname"><span class="pre">makeCircuit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cirTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imgWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expansion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.makeCircuit" title="Link to this definition"></a></dt>
+<dd><ol class="arabic simple">
+<li><p>Creates and returns a circuit object from:</p>
+<ul class="simple">
+<li><p>A netlist file (“.cir” file: always in the cir folder of the project
+folder)</p></li>
+<li><p>A KiCAD schematic file (“.kicad_sch” file, full path or relative to 
+project folder)</p></li>
+<li><p>An LTspice schematic file (“.asc” file, full path or relative to 
+project folder)</p></li>
+<li><p>A Lepton-eda schematic file (“.sch” file, full path or relative to 
+project folder; Linux and maxOS only)</p></li>
+<li><p>A gschem schematic file (“.sch” file, full path or relative to script; 
+MSWindows only)</p></li>
+</ul>
+</li>
+<li><p>Creates drawing size PDF and SVG image files of the schematics diagram 
+(KiCAD and Lepton-eda only, KiCAD requires installation of Inkscape) and 
+puts these images in the ini.img_path folder.</p></li>
+<li><p>Creates an HTML page with circuit information.</p></li>
+</ol>
+<hr class="docutils" />
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fileName</strong> (<em>str</em>) – <p>Circuit file name, netlist files “.cir” are located in the
+ini.cir directory, which can be altered in the SLiCAP.ini
+file in the project directory.</p>
+<p>Schematic files from KiCAD, LTspice, Lepton-eda or gschem
+should be given with their path relative to the project
+folder or with their absolute path.</p>
+</p></li>
+<li><p><strong>udate</strong> – <ul>
+<li><p>True: a new netlist and image will be created</p></li>
+<li><p>False: existing netlist and image will be used</p></li>
+</ul>
+<p>Defaults to True</p>
+</p></li>
+<li><p><strong>cirTitle</strong> (<em>str</em>) – <p>Title of the circuit if no title is given for netlist generation:</p>
+<ul>
+<li><p>KiCAD: uses Title field on schematic or the filename
+without  “.kicad_sch”</p></li>
+<li><p>LTspice, gschem, lepton-eda use the filename without 
+extension “.asc” or “.sch”.</p></li>
+</ul>
+<p>Defaults to None</p>
+</p></li>
+<li><p><strong>imgWidth</strong> (<em>int</em><em>, </em><em>None</em>) – <ul>
+<li><p>Width of the circuit image in pixels (for placement on 
+the HTML page with circuit data)</p></li>
+<li><p>None: No image file will be placed on the HTML page with
+circuit data</p></li>
+</ul>
+<p>Defaults to 500</p>
+</p></li>
+<li><p><strong>expansion</strong> (<em>Bool</em>) – <ul>
+<li><p>True: expanded netlist and parameter definitions are
+shown on the “Circuit Data” HTML page</p></li>
+<li><p>False: only the circuit image and the circuit netlist 
+are shown on the “Circuit Data” HTML page</p></li>
+</ul>
+</p></li>
+<li><p><strong>description</strong> (<em>str</em>) – <p>Name of the file with a HTML Description of the
+circuit. It will be included in the HTML page with the 
+circuit data.</p>
+<p>SLiCAP will look for this text file in the ini.txt
+directory (default ‘./txt/’)</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="SLiCAPstatespace.html" class="btn btn-neutral float-left" title="SLiCAPstatespace.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tutorials/SLiCAPtutorials.html" class="btn btn-neutral float-right" title="SLiCAP tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, SLiCAP development team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

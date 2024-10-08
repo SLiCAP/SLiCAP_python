@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on February 8, 2024
-
-@author: anton
+SLiCAP module for interfacing with KiCAD
 """
-import os
-from SLiCAP.SLiCAPini import ini
 import subprocess
+import os
+import SLiCAP.SLiCAPconfigure as ini
 
-class KiCADcomponent(object):
+class _KiCADcomponent(object):
     def __init__(self):
         self.refDes = ""
         self.nodes = {}
@@ -18,31 +16,38 @@ class KiCADcomponent(object):
         self.params = {}
         self.cmd = ""
 
-def removeParenthesis(field):
+def _removeParenthesis(field):
     while field[0] == "(":
         field = field[1:]
     while field[-1] == ")":
         field = field[:-1]
     return field
 
-def checkTitle(title):
+def _checkTitle(title):
     title = '"' + title + '"'
     return title.replace('""', '"')
 
-def parseKiCADnetlist(kicad_sch, kicadPath=''):
-    reserved = ["Description", "Footprint", "Datasheet"]
+def _parseKiCADnetlist(kicad_sch, kicadPath=''):
     fileName   = '.'.join(kicad_sch.split('.')[0:-1])
-    subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.circuitPath + kicadPath + fileName + ".net", ini.circuitPath + kicadPath + fileName + ".kicad_sch"])
+    subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.cir_path + kicadPath + fileName + ".net", ini.cir_path + kicadPath + fileName + ".kicad_sch"])
+    f = open(ini.cir_path + kicadPath + fileName + ".net", "r")
+    lines = f.readlines()
+    f.close()
+    netlist = _parseKiCADnetlistlines(lines)
+    cirName = fileName.split('/')[-1].split('.')[0]
+    cirFile = ini.cir_path + cirName + ".cir"
+    f = open(cirFile, 'w')
+    f.write(netlist)
+    f.close()
+    
+def _parseKiCADnetlistlines(lines, cirTitle):
+    reserved   = ["Description", "Footprint", "Datasheet"]
     components = {}
     nodes      = {}
     nodelist   = []
     comps      = False
     title      = False
-    f = open(ini.circuitPath + kicadPath + fileName + ".net", "r")
-    kicad_netlist_lines = f.readlines()
-    f.close()
-    for line in kicad_netlist_lines:
-        
+    for line in lines:
         # remove spaces in expression
         try:
             startExpr = line.index("{")
@@ -50,14 +55,13 @@ def parseKiCADnetlist(kicad_sch, kicadPath=''):
             line = line[0:startExpr] + line[startExpr:stopExpr].replace(" ", "").replace("\t", "") + line[stopExpr:]
         except ValueError:
             pass
-        
         fields = line.split()
-        fields = [removeParenthesis(field) for field in fields]
+        fields = [_removeParenthesis(field) for field in fields]
         if fields[0] == "title":
             if len(fields) > 1:
-                title = checkTitle(" ".join(fields[1:]))
+                title = _checkTitle(" ".join(fields[1:]))
         elif fields[0] == "comp":
-            newComp = KiCADcomponent()
+            newComp = _KiCADcomponent()
             newComp.refDes = fields[-1][1:-1]
             comps= True
         elif fields[0] == "tstamps":
@@ -103,9 +107,7 @@ def parseKiCADnetlist(kicad_sch, kicadPath=''):
         for node in components[refDes].nodes.keys():
             components[refDes].nodes[node] = nodes[components[refDes].nodes[node]]
     if not title:
-        while not title:
-            print("Error: missing a valid circuit title")
-            title = checkTitle(input("Enter a circuit title: "))
+        title = cirTitle
     netlist = title
     for refDes in components.keys():
         if refDes[0] != "A":
@@ -122,20 +124,38 @@ def parseKiCADnetlist(kicad_sch, kicadPath=''):
         else:
             netlist +='\n' + components[refDes].command
     netlist += "\n.end"
-    f = open(ini.circuitPath + fileName + ".cir", 'w')
-    f.write(netlist)
-    f.close()
     return netlist
 
-def KiCADsch2svg(fileName, kicadPath = ''):
+def _KiCADsch2svg(fileName, kicadPath = ''):
     imgFile = fileName.split('.')[0]
-    subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.imgPath, '-e', '-n', ini.circuitPath + kicadPath + fileName])
-    subprocess.run([ini.inkscape, '-o', ini.imgPath + imgFile + ".svg", '-D', ini.imgPath + imgFile + ".svg"])
-    subprocess.run([ini.inkscape, '-o', ini.imgPath + imgFile + ".pdf", '-D', ini.imgPath + imgFile + ".svg"])
+    subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', ini.cir_path + kicadPath + fileName])
+    subprocess.run([ini.inkscape, '-o', ini.img_path + imgFile + ".svg", '-D', ini.img_path + imgFile + ".svg"])
+    subprocess.run([ini.inkscape, '-o', ini.img_path + imgFile + ".pdf", '-D', ini.img_path + imgFile + ".svg"])
+    
+def _kicadNetlist(fileName, cirTitle):
+    if os.path.isfile(fileName):
+        print("Creating netlist of {} using KiCAD".format(fileName))
+        kicadnetlist  = fileName.split('.')[0] + '.net'        
+        subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', kicadnetlist, fileName])
+        f = open(kicadnetlist, "r")
+        lines = f.readlines()
+        f.close()
+        netlist = _parseKiCADnetlistlines(lines, cirTitle)
+        cirName = fileName.split('/')[-1].split('.')[0]
+        cirFile = ini.cir_path + cirName + ".cir"
+        f = open(cirFile, 'w')
+        f.write(netlist)
+        f.close()
+        print("Creating drawing-size SVG and PDF images of {}".format(fileName))
+        subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', fileName])
+        subprocess.run([ini.inkscape, '-o', ini.img_path + cirName + ".svg", '-D', ini.img_path + cirName + ".svg"])
+        subprocess.run([ini.inkscape, '-o', ini.img_path + cirName + ".pdf", '-D', ini.img_path + cirName + ".svg"])
+    else:
+        print("Error: could not open: '{}'.".format(fileName))
 
 if __name__=='__main__':
     from SLiCAP import initProject
     prj=initProject('kicad')
     fileName    = "SLiCAP.kicad_sch"
-    print(parseKiCADnetlist(fileName))
-    KiCADsch2svg(fileName)
+    print(_parseKiCADnetlist(fileName))
+    _KiCADsch2svg(fileName)

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun 10 17:24:17 2023
 
-@author: anton
-
-Public functions for generating snippets that can be stored as LaTeX files
+SLiCAP functions for generating snippets that can be stored as LaTeX files
 and included in other LaTeX files.
+
+IMPORTANT: In future versions of SLiCAP, these functions will be replaced with 
+a latex formatter.
 
 """
 import sympy as sp
-from SLiCAP.SLiCAPini import *
-from SLiCAP.SLiCAPmath import fullSubs, roundN, checkNumeric
+import SLiCAP.SLiCAPconfigure as ini
+from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric
 
 def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
     """
@@ -19,7 +19,7 @@ def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
     a LaTeX document and returns this string.
 
     :param netlistFile: Name of the netlist file that resides in the
-                        ini.circuitPath directory
+                        ini.cir_path directory
     :type netListFile: str
 
     :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
@@ -38,7 +38,7 @@ def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
         TEX += ', linerange={' + lineRange + '}'
     if firstNumber != None:
         TEX += ', firstnumber=' + str(int(firstNumber))
-    TEX += ']{' + ini.circuitPath + netlistFile + '}\n\n'
+    TEX += ']{' + ini.cir_path + netlistFile + '}\n\n'
     return TEX
 
 def elementData2TEX(circuitObject, label='', append2caption=''):
@@ -100,7 +100,7 @@ def elementData2TEX(circuitObject, label='', append2caption=''):
     caption = 'Expanded netlist of: ' + circuitObject.title + '. '
     if append2caption != '':
         caption += append2caption
-    TEX = TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
     return TEX
 
 def parDefs2TEX(circuitObject, label='', append2caption=''):
@@ -138,7 +138,7 @@ def parDefs2TEX(circuitObject, label='', append2caption=''):
                 circuitObject.parDefs[parName],
                 fullSubs(circuitObject.parDefs[parName], circuitObject.parDefs)]
             linesList.append(line)
-        TEX += TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
     else:
         TEX = "{\\textbf{No parameter definitions in: " +  circuitObject.title + '}}\n\n'
     return TEX
@@ -174,8 +174,8 @@ def params2TEX(circuitObject, label='', append2caption = ''):
         alignstring = '[c]{l}'
         linesList   = []
         for parName in circuitObject.params:
-            lineList.append([parName])
-        TEX += TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+            linesList.append([parName])
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
     else:
         TEX = '{\\textbf{No undefined parameters in: ' +  circuitObject.title + '}}\n\n'
     return TEX
@@ -209,7 +209,7 @@ def pz2TEX(resultObject, label='', append2caption=''):
         print("pz2TEX: Errors found in instruction.")
         TEX = ''
     elif resultObject.dataType != 'poles' and resultObject.dataType != 'zeros' and resultObject.dataType != 'pz':
-        print("pz2TEX: Error: 'pz2RST()' expected dataType: 'poles', 'zeros', or 'pz', got: '{0}'.".format(instObj.dataType))
+        print("pz2TEX: Error: 'pz2RST()' expected dataType: 'poles', 'zeros', or 'pz', got: '{0}'.".format(resultObject.dataType))
         TEX = ''
     elif resultObject.step == True :
         print("pz2TEX: Error: parameter stepping not implemented for 'pz2RST()'.")
@@ -217,22 +217,22 @@ def pz2TEX(resultObject, label='', append2caption=''):
     else:
         TEX = ''
         if len(resultObject.poles) != 0:
-            numericPoles = checkNumeric(resultObject.poles)
+            numericPoles = _checkNumeric(resultObject.poles)
         if len(resultObject.zeros) != 0:
-            numericZeros = checkNumeric(resultObject.zeros)
+            numericZeros = _checkNumeric(resultObject.zeros)
         if numericPoles and numericZeros:
             numeric = True
         else:
             numeric = False
         if numeric:
             alignstring = '[c]{lrrrrr}'
-            if ini.Hz == True:
+            if ini.hz == True:
                 headerList = ['\\#', 'Re [Hz]', 'Im [Hz]', 'f [Hz]', 'Q']
             else:
                 headerList = ['\\#', 'Re [rad/s]', 'Im [rad/s]', '$\\omega$ [rad/s]', 'Q']
         else:
             alignstring = '[c]{ll}'
-            if ini.Hz == True:
+            if ini.hz == True:
                 headerList = ['\\#', 'f [Hz]']
             else:
                 headerList = ['\\#', '$\\omega$ [rad/s]']
@@ -240,16 +240,16 @@ def pz2TEX(resultObject, label='', append2caption=''):
         if len(resultObject.poles) != 0:
             name = 'Poles of: ' + resultObject.gainType
             if numeric:
-                linesList += numRoots2TEX(resultObject.poles, ini.Hz, 'p')
+                linesList += _numRoots2TEX(resultObject.poles, ini.hz, 'p')
             else:
-                linesList = symRoots2TEX(resultObject.poles, ini.Hz, 'p')
+                linesList = _symRoots2TEX(resultObject.poles, ini.hz, 'p')
         if len(resultObject.zeros) != 0:
             if resultObject.dataType == 'pz':
                 linesList += [' ']
             if numeric:
-                linesList += numRoots2TEX(resultObject.zeros, ini.Hz, 'z')
+                linesList += _numRoots2TEX(resultObject.zeros, ini.hz, 'z')
             else:
-                linesList = symRoots2TEX(resultObject.zeros, ini.Hz, 'z')
+                linesList = _symRoots2TEX(resultObject.zeros, ini.hz, 'z')
         if resultObject.dataType == 'poles':
             caption = 'Poles of: ' + resultObject.gainType + '.'
         elif resultObject.dataType == 'zeros':
@@ -258,7 +258,7 @@ def pz2TEX(resultObject, label='', append2caption=''):
             caption = 'Poles and zeros of: ' + resultObject.gainType + '; DC value = $' + sp.latex(roundN(resultObject.DCvalue)) + '$.\n'
         if append2caption != '':
             caption += ' ' + append2caption
-        TEX += TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
     return TEX
 
 def noiseContribs2TEX(resultObject, label='', append2caption=''):
@@ -309,7 +309,7 @@ def noiseContribs2TEX(resultObject, label='', append2caption=''):
                 linesList.append(line)
             line = [src + ': Detector-referred', resultObject.onoiseTerms[src], detunits]
             linesList.append(line)
-        TEX += TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, caption='Noise contributions. ' + append2caption + '.', label=label)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, caption='Noise contributions. ' + append2caption + '.', label=label)
     else:
         print('noiseContribs2TEX: Error: wrong data type, or stepped analysis.')
     return TEX
@@ -362,7 +362,7 @@ def dcvarContribs2TEX(resultObject, append2caption='', label=''):
                 linesList.append(line)
             line = [src + ': Detector-referred', resultObject.ovarTerms[src], detunits]
             linesList.append(line)
-        TEX += TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, caption='DC variance contributions ' + append2caption + '.', label=label)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, caption='DC variance contributions ' + append2caption + '.', label=label)
     else:
         print('dcvarContribs2TEX: Error: wrong data type, or stepped analysis.')
     return TEX
@@ -395,9 +395,9 @@ def specs2TEX(specs, specType, label='', caption=''):
     headerList  = ["name", "description", "value", "units"]
     for specItem in specs:
         if specItem.specType.lower()==specType.lower():
-            linesList.append(specItem.specLine())
+            linesList.append(specItem._specLine())
     if len(linesList) > 0:
-        TEX = TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=3, caption=caption, label=label) + '\n'
+        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=3, caption=caption, label=label) + '\n'
     else:
         TEX =  "\\textbf{Found no specifications of type: " + specType + ".}\n\n"
     return TEX
@@ -515,7 +515,7 @@ def stepArray2TEX(stepVars, stepArray, label='', caption=''):
         for j in range(numVars):
             line.append(stepArray[j][i])
         linesList.append(line)
-    TEX = TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+    TEX = _TEXcreateCSVtable(headerList, linesList, alignString, label=label, caption=caption)
     return TEX
 
 def coeffsTransfer2TEX(transferCoeffs, label = '', append2caption=''):
@@ -560,16 +560,16 @@ def coeffsTransfer2TEX(transferCoeffs, label = '', append2caption=''):
         linesList.append([sp.sympify('d_' + str(i)), denomCoeffs[i]])
     caption += '$n_i$ = numerator coefficient of i-th order, $d_i$ = denominator coefficient of i-th order. '
     caption += append2caption
-    TEX = TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
     return TEX
 
-def slicap2TEX(scriptFile, firstLine=None, lineRange=None):
+def slicap2TEX(scriptFile, firstNumber=None, firstLine=None, lineRange=None):
     """
     Converts a SLiCAP script file into a LaTeX string that can be included in
     a LaTeX document and returns this string.
 
     :param scriptFile: Name of the script file that resides in the
-                        ini.projectPath directory
+                        ini.project_path directory
     :type scriptFile: str
 
     :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
@@ -588,7 +588,7 @@ def slicap2TEX(scriptFile, firstLine=None, lineRange=None):
         TEX += ', linerange={' + lineRange + '}'
     if firstNumber != None:
         TEX += ', firstnumber=' + str(int(firstNumber))
-    TEX += ']{' + ini.projectPath + scriptFile + '}\n\n'
+    TEX += ']{' + ini.project_path + scriptFile + '}\n\n'
     return TEX
 
 # Public functions for generating snippets to be put in a dictionary for inline
@@ -653,7 +653,7 @@ def save2TEXinline(vardict):
     """
     Saves the key-value pairs of 'vardict' in the CSV file:
 
-    <ini.latexPath>SLiCAPdata/TEXsubstitutions.tex
+    <_TEXPATH>SLiCAPdata/TEXsubstitutions.tex
 
     :param vardict: Dictionary with inline LaTeX subsitutions
     :type vardict: dict
@@ -670,7 +670,7 @@ def saveTEX(TEX, fileName):
     """
     Saves a LaTeX snippet for inclusion in a LaTeX file into:
 
-    <ini.latexPath>SLiCAdata/<fileName>.tex
+    <_TEXPATH>SLiCAdata/<fileName>.tex
     :param TEX: LaTeX snippet.
     :type TEX: str
 
@@ -680,13 +680,13 @@ def saveTEX(TEX, fileName):
     :return: None
     :rtype: NoneType
     """
-    f = open(ini.latexPath + 'SLiCAPdata/' + fileName + '.tex', 'w')
+    f = open(ini.tex_path + 'SLiCAPdata/' + fileName + '.tex', 'w')
     f.write(TEX)
     f.close()
 
 # Non-public functions for creating table snippets
 
-def TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label=''):
+def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label=''):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
 
@@ -713,7 +713,7 @@ def TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption=
     :return: LaTeX snippet to be included in a LaTeX document
     :rtype: str
     """
-    TEX =  '\\begin{table}[h]\n\centering\n'
+    TEX =  '\\begin{table}[h]\n\\centering\n'
     TEX += '\\begin{tabular}' + alignstring + '\n'
     for field in headerList:
         if type(field) == str:
@@ -747,7 +747,7 @@ def TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption=
     TEX += '\\end{table}\n\n'
     return TEX
 
-def numRoots2TEX(roots, Hz, pz):
+def _numRoots2TEX(roots, Hz, pz):
     """
     Returns a list of lists with row data for the creation of a LaTeX table
     with numeric poles or zeros.
@@ -783,7 +783,7 @@ def numRoots2TEX(roots, Hz, pz):
         lineList.append(line)
     return lineList
 
-def symRoots2TEX(roots, Hz, pz):
+def _symRoots2TEX(roots, Hz, pz):
     """
     Returns a list of lists with row data for the creation of a LaTeX table
     with symbolic poles or zeros.

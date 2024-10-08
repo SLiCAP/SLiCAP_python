@@ -7,11 +7,9 @@ Created on Fri Nov 18 13:24:17 2022
 """
 
 import sympy as sp
-from SLiCAP.SLiCAPmath import checkExpression
-from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPmath import roundN
-from SLiCAP.SLiCAPhtml import insertHTML
-
+import SLiCAP.SLiCAPconfigure as ini
+from SLiCAP.SLiCAPmath import _checkExpression, roundN
+from SLiCAP.SLiCAPhtml import _insertHTML
 
 class specItem(object):
     """
@@ -28,26 +26,33 @@ class specItem(object):
         """
         Initializes the instance of this class and checks the syntax.
 
-        :param symbol: Symbol of this specification item (must be unique)
-        :type symbol: sympy.Symbo
+        :param symbol: Parameter name of this specification item
+                       (must be unique)
+        :type symbol: sympy.Symbol, str
 
-        :param description: Description of this specification item. Defaults to ''.
+        :param description: Description of this specification item. 
+                            Defaults to ''.
         :type description: str
 
         :param value: Value of this specification item. Defaults to ''.
         :type value: str, int, float, sympy.Expr, sympy.Symbol
 
-        :param units: Units of thi specitem
+        :param units: Units of this specification item
         :type units: str, sympy.Expr, sympy.Symbol
+        
+        :param specType: Name of the specification type; free to choose.
+                         In reports, specification tables will be displayed for
+                         each type.
+                         
         """
         self.symbol      = symbol
         self.description = description
         self.value       = value
         self.units       = units
         self.spectype    = specType
-        self.update()
+        self._update()
 
-    def update(self):
+    def _update(self):
         """
         Checks the syntax and updates the attributes of this specitem.
 
@@ -57,11 +62,11 @@ class specItem(object):
         self.specType    = str(self.spectype)
         self.symbol      = sp.Symbol(str(self.symbol))
         if self.value != '':
-            self.value = checkExpression(self.value)
+            self.value = _checkExpression(self.value)
         if self.units != '':
             self.units = sp.sympify(str(self.units)) # TODO a SLiCAP function: checkUnits!
 
-    def csvLine(self):
+    def _csvLine(self):
         """
         Creates a comma separated output line for this spec item. Commas in the
         description are replaced with their html code '&#44;'.
@@ -88,7 +93,7 @@ class specItem(object):
         csv      += self.specType + '\n'
         return csv
 
-    def htmlLine(self):
+    def _htmlLine(self):
         """
         Creates an html output line for this spec item.
 
@@ -111,7 +116,7 @@ class specItem(object):
             html += '<td class="left">$\\mathrm{' + sp.latex(self.units) + '}$</td></tr>\n'       # Units
         return html
 
-    def specLine(self):
+    def _specLine(self):
         """
         Creates an output line for this spec item (used with latex and rst reports)
 
@@ -138,8 +143,8 @@ class specItem(object):
 
 def specList2dict(specList):
     """
-    Creates a dict with spec items. the parameter name is used as key. Also
-    checks for unique parameter names.
+    Creates a dictionary with spec items. the parameter name is used as key.
+    Also checks for unique parameter names.
 
     :param specList: List with spec items
     :type specList: List
@@ -153,13 +158,16 @@ def specList2dict(specList):
         item = specList[i]
         if str(item.symbol) in list(specDict.keys()):
             print("Warning: symbol %s already used, its definition will be overwritten!"%(str(item.symbol)))
-        item.update()
+        item._update()
         specDict[str(item.symbol)] = item
     return specDict
 
 def specs2csv(specList, fileName):
     """
     Saves the list with spec items as a CSV file.
+    
+    The file will be stored in the ini.csv_folder, which defaults to the 'csv'
+    folder in the project diretory.
 
     :param specList: List with spec items
     :type specList: list
@@ -169,25 +177,28 @@ def specs2csv(specList, fileName):
 
     """
     dictWithSpecs = specList2dict(specList)
-    f = open(ini.csvPath + fileName, 'w')
+    f = open(ini.csv_path + fileName, 'w')
     f.write("symbol, description, value, units, type\n")
     for spec in list(dictWithSpecs.keys()):
         item = dictWithSpecs[spec]
-        f.write(item.csvLine())
+        f.write(item._csvLine())
     f.close()
 
 def csv2specs(csvFile):
     """
     Reads the CSV file with specifications and converts it into a list with
     specitems.
+    
+    The file will be read from the ini.csv_folder, which defaults to the 'csv'
+    folder in the project diretory.
 
-    :param csvFile: name of the CSV file in the directory 'ini.csvPath'
+    :param csvFile: name of the CSV file in the directory 'ini.csv_path'
     :type csvFile: str
 
     :return: Lit with specification items
     :rtype: list
     """
-    f = open(ini.csvPath + csvFile)
+    f = open(ini.csv_path + csvFile)
     lines = f.readlines()
     f.close()
     specList = []
@@ -198,30 +209,29 @@ def csv2specs(csvFile):
         specList.append(newSpecItem)
     return specList
 
-def specs2circuit(specList, instr):
+def specs2circuit(specList, cir):
     """
-    Adds prameter definitions from the specList to instr.
+    Adds all prameter definitions from the specList to the circuit 'cir'.
 
     :param specList: List with spec items
     :type specList: list
 
-    :param instr: instruction to which the parameters definitions will be added
-    :type instr: SLiCAPinstruction.instruction
+    :param cir: circuit to which the parameters definitions will be added
+    :type cir: SLiCAPprotos.circuit
 
     :return: None
     :rtype: NoneType
     """
     for item in specList:
         if item.value != '':
-            instr.defPar(item.symbol, item.value)
-
-# Below should move to SLiCAPhtml.py, but required different import scheme because
-# of specList2dict().
+            cir.defPar(item.symbol, item.value)
 
 def specs2html(specs, types=[]):
     """
-    Places the contents of a dictionary with specifications on the active html
-    page. If a list of specification types is provided, it creates tables
+    Displays specification items for the list 'specs' on the active HTML
+    page. Specifications of the same type are placed in one table.
+    
+    If a list of specification types is provided, it creates tables
     for specified types only. By default, tables for all types will be created.
 
     :param specs: List with spec items.
@@ -231,7 +241,7 @@ def specs2html(specs, types=[]):
                   defaults to [].
     :type types: str
 
-    :return: html code
+    :return: HTML code that will be placed on the page
     :rtype: str
     """
     dictWithSpecs = specList2dict(specs)
@@ -243,9 +253,9 @@ def specs2html(specs, types=[]):
             html[dictWithSpecs[key].specType] =  '<h3>' + dictWithSpecs[key].specType + ' specification</h3>\n'
             html[dictWithSpecs[key].specType] += '<table><a id="table_' + dictWithSpecs[key].specType + '"></a><caption>Table ' + dictWithSpecs[key].specType + ' specification </caption>'
             html[dictWithSpecs[key].specType] += '<tr><th class="left">symbol</th><th class="left">description</th><th class="left">value</th><th class="left">units</th></tr>\n'
-            html[dictWithSpecs[key].specType] += dictWithSpecs[key].htmlLine()
+            html[dictWithSpecs[key].specType] += dictWithSpecs[key]._htmlLine()
         else:
-            html[dictWithSpecs[key].specType] += dictWithSpecs[key].htmlLine()
+            html[dictWithSpecs[key].specType] += dictWithSpecs[key]._htmlLine()
     txt = ''
     # Copy html code for desired type to output txt
     if len(types):
@@ -258,7 +268,7 @@ def specs2html(specs, types=[]):
         # Copy htl code for each type to output txt
         for key in list(html.keys()):
             txt += html[key] + '</table>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, txt)
+    _insertHTML(ini.html_path + ini.html_page, txt)
     if ini.notebook:
         txt = txt.replace('$', '$$')
     return txt

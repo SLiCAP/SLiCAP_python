@@ -1,5 +1,0 @@
-mosEKVplots
-* SLiCAP netlist file
-X1 d g s 0 CMOS18P W={W} L={L} ID={I_D}
-.param W=220n L=180n
-.end

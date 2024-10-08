@@ -5,104 +5,55 @@ Created on Wed Feb 22 17:14:45 2023
 
 @author: anton
 """
-from SLiCAP import *
+import SLiCAP as sl
+import sympy as sp
 
-fileName = "Tcircuit1"
+fileName = "Tcircuit1.asc"
 
-#makeNetlist(fileName + ".asc", "T circuit -1-")
+cir = sl.makeCircuit(sl.ini.cir_path + fileName, imgWidth=600)
 
-i1 = instruction()
-i1.setCircuit(fileName + ".cir")
+sl.htmlPage("DM-CM decomposition")
 
-htmlPage("Circuit Data")
-head2html("Circuit diagram")
-img2html(fileName + ".svg", 600)
-netlist2html(fileName + ".cir")
-elementData2html(i1.circuit)
-params2html(i1.circuit)
+sl.head2html("MNA matrix equation")
+result = sl.doMatrix(cir)
+sl.matrices2html(result)
 
-i1.setSimType('symbolic')
-i1.setSource(['I1P', 'I1N'])
+sl.head2html("DM-CM matrix equation")
+result = sl.doMatrix(cir, convtype='all')
+sl.matrices2html(result)
 
-htmlPage("DM-CM decomposition")
-# Define the decomposition
-head2html("MNA matrix equation")
-head3html("Gain type: vi")
-i1.setGainType("vi")
-i1.setDataType("matrix")
-result = i1.execute()
-matrices2html(result)
-i1.setDetector('V_C')
-i1.setGainType('gain')
-i1.setDataType('laplace')
-result = i1.execute()
-head3html("Gain type: gain")
-matrices2html(result)
+sl.head2html("DM matrix equation")
+result = sl.doMatrix(cir, convtype='dd')
+sl.matrices2html(result)
 
-head2html("DM-CM matrix equation")
-head3html("Gain type: vi")
-i1.setPairExt(['P', 'N'])
-i1.setConvType('all')
-i1.setGainType("vi")
-i1.setDataType("matrix")
-result = i1.execute()
-matrices2html(result)
-i1.setDetector('V_C')
-i1.setGainType('gain')
-i1.setDataType('laplace')
-result = i1.execute()
-head3html("Gain type: gain")
-matrices2html(result)
+sl.head2html("DM transfer")
+result = sl.doLaplace(cir, convtype='dd')
+sl.eqn2html("Z_dm", result.laplace)
 
-head2html("DM matrix equation")
-head3html("Gain type: vi")
-i1.setConvType('dd')
-i1.setGainType("vi")
-i1.setDataType("matrix")
-result = i1.execute()
-matrices2html(result)
-i1.setDetector('V_in_D')
-i1.setGainType('gain')
-i1.setDataType('laplace')
-result = i1.execute()
-head3html("Gain type: gain")
-matrices2html(result)
-eqn2html("Z_dm", result.laplace)
+sl.head2html("CM matrix equation")
+result = sl.doMatrix(cir, convtype='cc', detector="V_C")
+sl.matrices2html(result)
 
-head2html("CM matrix equation")
-head3html("Gain type: vi")
-i1.setConvType('cc')
-i1.setGainType("vi")
-i1.setDataType("matrix")
-result = i1.execute()
-matrices2html(result)
-i1.setDetector('V_in_C')
-i1.setGainType('gain')
-i1.setDataType('laplace')
-result = i1.execute()
-head3html("Gain type: gain")
-matrices2html(result)
-eqn2html("Z_cm", result.laplace)
+sl.head2html("CM transfer to V_C")
+result = sl.doLaplace(cir, convtype='cc', detector="V_C")
+sl.eqn2html("Z_cm", result.laplace)
 
-htmlPage("Noise Analysis")
-head2html("Differential detector")
-i1.setConvType(None)
-i1.setGainType("vi")
-i1.setDataType("noise")
-i1.setDetector(['V_inP', 'V_inN'])
-noiseResult = i1.execute()
-noise2html(noiseResult)
+sl.head2html("CM transfer to V_in_C")
+result = sl.doLaplace(cir, convtype='cc')
+sl.eqn2html("Z_cm", result.laplace)
+
+sl.htmlPage("Noise Analysis")
+sl.head2html("Differential detector")
+noiseResult = sl.doNoise(cir)
+sl.noise2html(noiseResult)
 DMonoise = noiseResult.onoise
 DMinoise = noiseResult.inoise
 
-htmlPage("DM Noise analysis")
-i1.setConvType('dd')
-i1.setDetector('V_in_D')
-i1.setGainType("vi")
-i1.setDataType("noise")
-noiseResult = i1.execute()
-matrices2html(noiseResult)
-noise2html(noiseResult)
+sl.htmlPage("DM Noise analysis")
+
+noiseResult = sl.doNoise(cir, convtype = 'dd')
+sl.noise2html(noiseResult)
+
 if sp.N(noiseResult.onoise - DMonoise) == sp.N(0):
     print('DMonoise OK!')
 else:
@@ -111,12 +62,6 @@ if sp.N(noiseResult.onoise - DMonoise) == sp.N(0):
     print('DMinoise OK!')
 else:
     print('DMinoise NOT OK!')
-
-htmlPage("CM Noise analysis")
-i1.setDetector('V_in_C')
-i1.setGainType("vi")
-i1.setDataType("noise")
-i1.setConvType('cc')
-noiseResult = i1.execute()
-matrices2html(noiseResult)
-noise2html(noiseResult)
+sl.htmlPage("CM Noise analysis")
+noiseResult = sl.doNoise(cir, convtype='cc')
+sl.noise2html(noiseResult)

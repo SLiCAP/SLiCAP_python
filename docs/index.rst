@@ -5,12 +5,7 @@
 SLiCAP Manual
 =============
 
-.. image:: https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png
-    :target: https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png
-    :width: 88
-    :alt: Creative Commons License
-
-SLiCAP is licensed under a `Creative Commons 4.0 International License <https://creativecommons.org/licenses/by/4.0/>`_. Based on a work at: `https://www.analog-electronics.tudelft.nl/slicap/slicap.html <https://www.analog-electronics.tudelft.nl/slicap/slicap.html>`_
+SLiCAP is distributed under the `MIT license <https://opensource.org/license/mit>`_
 
 --------
 Contents
@@ -22,6 +17,5 @@ Contents
    introduction/SLiCAPintroduction
    userguide/SLiCAPuserguide
    syntax/SLiCAPnetlistSyntax
-   development/SLiCAPdevelopment
    reference/SLiCAPreference
    tutorials/SLiCAPtutorials

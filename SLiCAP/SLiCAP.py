@@ -7,64 +7,55 @@ When working with Jupyter notebooks the main imort module is SLiCAPnotebook.py.
 It will import SLiCAP.py and some extra modules for displaying LaTeX, SVG and
 RST in the Jupyter notebooks.
 """
-from datetime import datetime
-import getpass
-import platform
 import os
-import subprocess
-from shutil import copy2
-from SLiCAP.SLiCAPyacc import makeLibraries, CIRCUITNAMES, CIRCUITS, DEVICES, DEVICETYPES, SLiCAPLIBS, SLiCAPMODELS, SLiCAPPARAMS, SLiCAPCIRCUITS, USERLIBS, USERMODELS, USERCIRCUITS, USERPARAMS
-from time import time
-import sympy as sp
+import webbrowser
 import numpy as np
+import SLiCAP.SLiCAPconfigure as ini
+from datetime import datetime
+from shutil import copy2
+from SLiCAP.SLiCAPyacc import _initializeParser
 from scipy.optimize import newton, fsolve
 from scipy.integrate import quad
-from SLiCAP.SLiCAPini import ini, Help
-from SLiCAP.SLiCAPdesignData import specItem, specs2csv, specs2circuit, csv2specs, specs2html
-from SLiCAP.SLiCAPinstruction import instruction, listPZ
-from SLiCAP.SLiCAPmath import coeffsTransfer, normalizeRational, findServoBandwidth, fullSubs, assumeRealParams, assumePosParams, clearAssumptions, phaseMargin, doCDS, doCDSint, routh, equateCoeffs, step2PeriodicPulse, butterworthPoly, besselPoly, rmsNoise, PdBm2V, float2rational, rational2float, roundN, nonPolyCoeffs, ilt
-from SLiCAP.SLiCAPhtml import startHTML, htmlPage, text2html, eqn2html, expr2html, head2html, head3html, netlist2html, lib2html, elementData2html, params2html, img2html, csv2html, matrices2html, pz2html, noise2html, dcVar2html, coeffsTransfer2html, stepArray2html, fig2html, file2html, href, htmlLink, links2html
-from SLiCAP.SLiCAPplots import trace, axis, figure, plotSweep, plotPZ, plot, traces2fig, LTspiceData2Traces, LTspiceAC2SLiCAPtraces, csv2traces, Cadence2traces, addTraces
+from SLiCAP.SLiCAPdesignData import *
+from SLiCAP.SLiCAPinstruction import _instruction, listPZ
+from SLiCAP.SLiCAPmath import *
+from SLiCAP.SLiCAPplots import *
 from SLiCAP.SLiCAPlatex import *
 from SLiCAP.SLiCAPrst import *
 from SLiCAP.SLiCAPfc import computeFC
 from SLiCAP.SLiCAPstatespace import getStateSpace
 from SLiCAP.SLiCAPngspice import MOS, ngspice2traces
-from SLiCAP.SLiCAPkicad import *
+from SLiCAP.SLiCAPltspice import runLTspice
+from SLiCAP.SLiCAPshell import *
+from SLiCAP.SLiCAPhtml import *
+from SLiCAP.SLiCAPhtml import _startHTML
 
 try:
     __IPYTHON__
     print("Running from an Ipython environment, importing SLiCAPnotebook.")
     from SLiCAP.SLiCAPnotebook import *
-    ini.notebook = True
+    _NOTEBOOK = True
 except NameError:
-    ini.notebook = False
+    _NOTEBOOK = False
 
-class SLiCAPproject(object):
+# Increase width for display of numpy arrays:
+np.set_printoptions(edgeitems=30, linewidth=1000,
+    formatter=dict(float=lambda x: "%11.4e" % x))
+
+def Help():
     """
-    Prototype of a SLiCAPproject.
+    Opens the SLiCAP HTML documentation in the default browser.
+    
+    :example:
+    
+    >>> import SLiCAP as sl
+    >>> # Display the SLiCAP HTML help in your default browser:
+    >>> sl.Help()
     """
-    def __init__(self, name):
+    webbrowser.open_new(ini.doc_path + 'index.html')
+    return
 
-        self.name = name
-        """
-        SLiCAPproject.name (str) is the name of the project. It will appear
-        on the main html index page
-        """
-
-        self.lastUpdate = datetime.now()
-        """
-        SLiCAPproject.lastUpdate (datetime.datetime) will be updated by
-        running: SLiCAPproject.initProject(<name>)
-        """
-
-        self.author = getpass.getuser()
-        """
-        SLiCAPproject.author (str) Will be updated by running:
-        SLiCAPproject.initProject(<name>)
-        """
-
-def copyNotOverwrite(src, dest):
+def _copyNotOverwrite(src, dest):
     """
     Copies the file 'src' to 'dest' if the latter one does not exist.
 
@@ -78,7 +69,7 @@ def copyNotOverwrite(src, dest):
         copy2(src, dest)
     return
 
-def makeDir(dirName):
+def _makeDir(dirName):
     """
     Creates the directory 'dirName' if it does not yet exist.
 
@@ -90,232 +81,108 @@ def makeDir(dirName):
         os.makedirs(dirName)
     return
 
-def initProject(name, port=""):
+def initProject(name):
     """
     Initializes a SLiCAP project.
 
     - Copies the directory structure from the templates subdirectory to the
-      project directory in the case it has not yet been created.
+      project directory in cases it has not yet been created.
     - Creates index.html in the html directory with the project name in the
       title bar
     - Compiles the system libraries
-    - Creates or updates 'SLiCAPconfig.py' in the project directory
-    - Creates instance of SLiCAPproject object
+    - Creates or updates 'SLiCAPconfigure.py' in the project directory
 
-    :param name: Name of the project will be passed to an instance of the
-                 SLiCAPproject object.
+    :param name: Name of the project: appears on the main html index page.
     :type name: str
 
-    :param port: Port number for communication with maxima CAS (> 8000).
-    :type port: int
-
-    :return:     SLiCAPproject
-    :rtype:      SLiCAP.SLiCAPproject
-
+    :return:     None
+    :rtype:      NoneType
 
     :Example:
 
-    >>> prj = initProject('my first SLiCAP project')
-    >>> print prj.author
-    anton
+    >>> import SLiCAP as sl 
+    >>> # At the first run it will create a 'SLiCAP.ini' file in the SLiCAP 
+    >>> # home folder:  '~/SLiCAP/'. 
+    >>> # To this end it searches for installed applications. 
+    >>> # Under MSwindows this may take a while.
+    >>> sl.initProject('my first SLiCAP project')
+    >>> # At the first run this will create a 'SLiCAP.ini' file in the SLiCAP 
+    >>> # project folder:  './'. Once created it will only reset some values.
+    >>> # This function also resets the netlist parser and (re)creates the 
+    >>> # system library objects.
+    >>> sl.ini.dump() 
+    >>> # Prints the SLiCAP global settings obtained from both ini files.
 
     """
-    prj = SLiCAPproject(name)
-    ini.lastUpdate = prj.lastUpdate
-    ini.projectPath = os.path.abspath('.') + '/'
-    if not os.path.exists(ini.projectPath + 'SLiCAPconfig.py'):
-        lines = ['#!/usr/bin/env python3\n',
-                 '# -*- coding: utf-8 -*-\n',
-                 '"""\n',
-                 'SLiCAP module with user-defined path settings.\n',
-                 'Default values:\n',
-                 '>>> # PATHS: relative to the project path\n',
-                 '>>> HTMLPATH    = "html/"   # path for html output\n',
-                 '>>> CIRCUITPATH = "cir/"    # path for .asc, .net, .cir, .sch files\n',
-                 '>>> LIBRARYPATH = "lib/"    # path for include and library files\n',
-                 '>>> TXTPATH     = "txt/"    # path for text files\n',
-                 '>>> CSVPATH     = "csv/"    # path for CSV files\n',
-                 '>>> LATEXPATH   = "tex/"    # path for LaTeX output\n',
-                 '>>> MATHMLPATH  = "mathml/" # path for mathML output\n',
-                 '>>> IMGPATH     = "img/"    # path for image files\n',
-                 '>>> SPHINXPATH  = "sphinx/" # path for Sphinx output\n',
-                 '"""\n',
-                 '# PATHS: relative to the project path\n',
-                 'HTMLPATH    = "html/"   # path for html output\n',
-                 'CIRCUITPATH = "cir/"    # path for .asc, .net, .cir, .sch files\n',
-                 'LIBRARYPATH = "lib/"    # path for include and library files\n',
-                 'TXTPATH     = "txt/"    # path for text files\n',
-                 'CSVPATH     = "csv/"    # path for CSV files\n',
-                 'LATEXPATH   = "tex/"    # path for LaTeX output\n',
-                 'MATHMLPATH  = "mathml/" # path for mathML output\n',
-                 'IMGPATH     = "img/"    # path for image files\n',
-                 'SPHINXPATH  = "sphinx/" # path for Sphinx output\n',
-                 '# Project information\n',
-                 'PROJECT    = ' + '\'' + prj.name + '\'\n',
-                 'AUTHOR     = ' + '\'' + prj.author + '\'\n',
-                 'CREATED    = ' + '\'' + str(prj.lastUpdate) + '\'\n',
-                 'LASTUPDATE = ' + '\'' + str(prj.lastUpdate) + '\'\n',
-                ]
-        f = open(ini.projectPath + 'SLiCAPconfig.py', 'w')
-        f.writelines(lines)
-        f.close()
-    else:
-        f = open(ini.projectPath + 'SLiCAPconfig.py', 'r')
-        lines = f.readlines()[0:-1]
-        f.close()
-        lines.append('LASTUPDATE = ' + '\'' + str(prj.lastUpdate) + '\'')
-        f = open(ini.projectPath + 'SLiCAPconfig.py', 'w')
-        f.writelines(lines)
-        f.close()
-    # Define the paths:
-    from SLiCAPconfig import HTMLPATH, CIRCUITPATH, LIBRARYPATH, TXTPATH, CSVPATH, LATEXPATH, MATHMLPATH, IMGPATH, SPHINXPATH
-    ini.htmlPath         = ini.projectPath + HTMLPATH
-    ini.mathmlPath       = ini.projectPath + MATHMLPATH
-    ini.circuitPath      = ini.projectPath + CIRCUITPATH
-    ini.libraryPath      = ini.projectPath + LIBRARYPATH
-    ini.txtPath          = ini.projectPath + TXTPATH
-    ini.csvPath          = ini.projectPath + CSVPATH
-    ini.latexPath        = ini.projectPath + LATEXPATH
-    ini.sphinxPath       = ini.projectPath + SPHINXPATH
-    ini.imgPath          = ini.projectPath + IMGPATH
-    ini.htmlIndex        = ''
-    ini.htmlPrefix       = ''
-    ini.htmlPage         = ''
-    ini.htmlLabels       = {}
-    ini.htmlPages        = []
-    makeDir(ini.circuitPath)
-    makeDir(ini.imgPath)
-    makeDir(ini.libraryPath)
-    makeDir(ini.csvPath)
-    makeDir(ini.txtPath)
-    makeDir(ini.htmlPath)
-    makeDir(ini.htmlPath + 'img/')
-    makeDir(ini.htmlPath + 'css/')
-    copyNotOverwrite(ini.userPath + '/html/css/slicap.css', ini.htmlPath + 'css/slicap.css')
-    copyNotOverwrite(ini.userPath + '/html/img/Grid.png', ini.htmlPath + 'css/Grid.png')
-    makeDir(ini.sphinxPath)
-    copyNotOverwrite(ini.userPath + '/sphinx/make.bat', ini.sphinxPath + 'make.bat')
-    copyNotOverwrite(ini.userPath + '/sphinx/Makefile', ini.sphinxPath + 'Makefile')
-    makeDir(ini.sphinxPath + 'SLiCAPdata/')
-    makeDir(ini.sphinxPath + 'source/')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/conf.py', ini.sphinxPath + 'source/conf.py')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/index.rst', ini.sphinxPath + 'source/index.rst')
-    makeDir(ini.sphinxPath + 'source/img/')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/img' + '/colorCode.svg', ini.sphinxPath + 'source/img/colorCode.svg')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/img' + '/SLiCAP.svg', ini.sphinxPath + 'source/img/SLiCAP.svg')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/img' + '/SLiCAP-h1.svg', ini.sphinxPath + 'source/img/SLiCAP-h1.svg')
-    makeDir(ini.sphinxPath + 'source/_static/')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/_static/html_logo.png', ini.sphinxPath + 'source/_static/html_logo.png')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/_static/custom.css', ini.sphinxPath + 'source/_static/custom.css')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/_static/handsontable.full.min.css', ini.sphinxPath + 'source/_static/handsontable.full.min.css')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/_static/handsontable.full.min.js', ini.sphinxPath + 'source/_static/handsontable.full.min.js')
-    makeDir(ini.sphinxPath + 'source/_templates/')
-    copyNotOverwrite(ini.userPath + '/sphinx/source/_templates/layout.html', ini.sphinxPath + 'source/_templates/layout.html')
-    makeDir(ini.mathmlPath)
-    makeDir(ini.latexPath)
-    makeDir(ini.latexPath + 'SLiCAPdata/')
-    copyNotOverwrite(ini.userPath + '/tex/preambuleSLiCAP.tex', ini.latexPath + 'preambuleSLiCAP.tex')
+    
+    # Obtain the project data from the configuration file
+    project_config = ini._read_project_config()
+    
+    # Redefine the globals accoringly
+    # This makes it possible to work with multiple projects from different
+    # directories in one python module.
+    ini.project_path  = project_config['projectpaths']['project']
+    ini.html_path     = project_config['projectpaths']['html']
+    ini.cir_path      = project_config['projectpaths']['cir']
+    ini.img_path      = project_config['projectpaths']['img']
+    ini.csv_path      = project_config['projectpaths']['csv']
+    ini.txt_path      = project_config['projectpaths']['txt']
+    ini.tex_path      = project_config['projectpaths']['tex']
+    ini.user_lib_path = project_config['projectpaths']['lib']
+    ini.mathml_path   = project_config['projectpaths']['mathml']
+    ini.sphinx_path   = project_config['projectpaths']['sphinx']
+    ini.created       = project_config['project']['created']
+    ini.author        = project_config['project']['author']
+    ini.notebook      = _NOTEBOOK
+    
+    # Define the project title and reset the html pages 
+    ini.project_title = name
+    ini.html_page     = 'index.html'
+    ini.html_index    = 'index.html'
+    ini.html_pages    = []
+    ini.html_labels   = {}
+    ini.html_prefix   = ''
+    ini.last_updated  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Update the configuration file
+    ini._update_project_config()
+    
+    # Create the project directory structure, at the first run of initProject()
+    _makeDir(ini.html_path)
+    _makeDir(ini.txt_path)
+    _makeDir(ini.csv_path)
+    _makeDir(ini.img_path)
+    _makeDir(ini.sphinx_path)
+    _makeDir(ini.mathml_path)
+    _makeDir(ini.cir_path)
+    _makeDir(ini.user_lib_path)
+    _makeDir(ini.tex_path)
+    _makeDir(ini.html_path + 'img/')
+    _makeDir(ini.html_path + 'css/')
+    _copyNotOverwrite(ini.home_path + 'html/css/slicap.css', ini.html_path + 'css/slicap.css')
+    _copyNotOverwrite(ini.home_path+ 'html/img/Grid.png', ini.html_path + 'css/Grid.png')
+    _copyNotOverwrite(ini.home_path + 'sphinx/make.bat', ini.sphinx_path + 'make.bat')
+    _copyNotOverwrite(ini.home_path + 'sphinx/Makefile', ini.sphinx_path + 'Makefile')
+    _makeDir(ini.sphinx_path + 'SLiCAPdata/')
+    _makeDir(ini.sphinx_path + 'source/')
+    _copyNotOverwrite(ini.home_path + 'sphinx/conf.py', ini.sphinx_path + 'source/conf.py')
+    _copyNotOverwrite(ini.home_path + 'sphinx/index.rst', ini.sphinx_path + 'source/index.rst')
+    _makeDir(ini.sphinx_path + 'source/img/')
+    _copyNotOverwrite(ini.home_path + 'sphinx/img' + '/colorCode.svg', ini.sphinx_path + 'source/img/colorCode.svg')
+    _copyNotOverwrite(ini.home_path + 'sphinx/img' + '/SLiCAP.svg', ini.sphinx_path + 'source/img/SLiCAP.svg')
+    _copyNotOverwrite(ini.home_path + 'sphinx/img' + '/SLiCAP-h1.svg', ini.sphinx_path + 'source/img/SLiCAP-h1.svg')
+    _makeDir(ini.sphinx_path + 'source/_static/')
+    _copyNotOverwrite(ini.home_path + 'sphinx/_static/html_logo.png', ini.sphinx_path + 'source/_static/html_logo.png')
+    _copyNotOverwrite(ini.home_path + 'sphinx/_static/custom.css', ini.sphinx_path + 'source/_static/custom.css')
+    _copyNotOverwrite(ini.home_path + 'sphinx/_static/handsontable.full.min.css', ini.sphinx_path + 'source/_static/handsontable.full.min.css')
+    _copyNotOverwrite(ini.home_path + 'sphinx/_static/handsontable.full.min.js', ini.sphinx_path + 'source/_static/handsontable.full.min.js')
+    _makeDir(ini.sphinx_path + 'source/_templates/')
+    _copyNotOverwrite(ini.home_path + 'sphinx/_templates/layout.html', ini.sphinx_path + 'source/_templates/layout.html')
+    _makeDir(ini.tex_path + 'SLiCAPdata/')
+    _copyNotOverwrite(ini.home_path + 'tex/preambuleSLiCAP.tex', ini.tex_path + 'preambuleSLiCAP.tex')
+    #
     # Create the HTML project index file
-    startHTML(name)
-    # Initialize the parser
-    CIRCUITNAMES    = []
-    CIRCUITS        = {}
-    DEVICETYPES     = list(DEVICES.keys())
-    SLiCAPLIBS      = ['SLiCAP.lib', 'SLiCAPmodels.lib']
-    SLiCAPMODELS    = {}
-    SLiCAPPARAMS    = {}
-    SLiCAPCIRCUITS  = {}
-    USERLIBS        = []
-    USERMODELS      = {}
-    USERCIRCUITS    = {}
-    USERPARAMS      = {}
-    makeLibraries()
-    return prj
-
-def makeNetlist(fileName, cirTitle):
-    """
-    Creates a netlist from a schematic file generated with LTspice or gschem.
-
-    - LTspice: '.asc' file
-    - gschem: '.sch' file
-
-    :param fileName: Name of the file, relative to **ini.circuitPath**
-    :type fileName: str
-
-    :param cirTitle: Title of the schematic.
-    :type cirTitle: str
-    """
-    if not os.path.isfile(ini.circuitPath + fileName):
-        print("Error: could not open: '%s'."%(ini.circuitPath + fileName))
-        return
-    else:
-        fileNameParts = fileName.split('.')
-        fileType = fileNameParts[-1].lower()
-        baseFileName = ini.circuitPath + '.'.join(fileNameParts[0:-1])
-        if fileType == 'asc':
-            file = os.path.abspath(baseFileName + '.asc')
-            print(file)
-            if platform.system() == 'Windows':
-                file = file.replace('\\','\\\\')
-                subprocess.run([ini.ltspice, '-netlist', file])
-            else:
-                subprocess.run(['wine', ini.ltspice, '-wine', '-netlist', file], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-            try:
-                f = open(baseFileName + '.net', 'r')
-                netlistLines = ['"' + cirTitle + '"\n'] + f.readlines()
-                f.close()
-                f = open(baseFileName + '.cir', 'w')
-                f.writelines(netlistLines)
-                f.close()
-            except:
-                print("Error: could not open: '%s'."%(baseFileName + '.net'))
-        elif fileType == 'sch':
-            outputfile = os.path.abspath(baseFileName + '.net')
-            inputfile = os.path.abspath(baseFileName + '.sch')
-            print('input: ',inputfile, ' output: ', outputfile)
-            if platform.system() != 'Windows':
-                try:
-                    subprocess.run(['lepton-netlist', '-g', 'spice-noqsi', '-o', outputfile, inputfile])
-                except:
-                    print("Could not generate netlist using Lepton-eda")
-            try:
-                if platform.system() == 'Windows':
-                    outputfile = outputfile.replace('\\','\\\\')
-                    inputfile = inputfile.replace('\\','\\\\')
-                subprocess.run(['gnetlist', '-q', '-g', 'spice-noqsi', '-o', outputfile, inputfile])
-            except:
-                print("Could not generate netlist using gschem")
-            try:
-                f = open(baseFileName + '.net', 'r')
-                netlistLines = ['"' + cirTitle + '"\n'] + f.readlines()[1:] + ['.end\n']
-                f.close()
-                f = open(baseFileName + '.cir', 'w')
-                f.writelines(netlistLines)
-                f.close()
-            except:
-                print("Error: could not open: '{0}'.".format(baseFileName + '.net'))
-    return
-
-def runLTspice(fileName):
-    """
-    Runs LTspice netlist (.cir) file.
-
-    :param fileName: Name of the circuit (.cir) file, relative to the
-                     project directory (cir/<myCircuit>.cir)
-    :type fileName: str
-
-    :return: None
-    :rtype: Nonetype
-    """
-    if not os.path.isfile(fileName):
-        print("Error: could not open: '%s'."%(fileName))
-        return
-    else:
-        fileNameParts = fileName.split('.')
-        fileType = fileNameParts[-1].lower()
-        if fileType == 'cir':
-            if platform.system() == 'Windows':
-                fileName = fileName.replace('\\','\\\\')
-                subprocess.run([ini.ltspice, '-b', fileName])
-            else:
-                subprocess.run(['wine', ini.ltspice, '-b', '-wine', fileName], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    _startHTML(name)
+    # Initialize the parser, this will create the libraries and delete all
+    # previously defined circuits
+    _initializeParser()

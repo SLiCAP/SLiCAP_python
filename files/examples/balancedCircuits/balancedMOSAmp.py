@@ -5,59 +5,27 @@ Created on Wed Feb 22 17:14:45 2023
 
 @author: anton
 """
-from SLiCAP import *
-fileName = "balancedMOSAmp"
+import SLiCAP as sl
 
-#prj = initProject(fileName)
+cir = sl.makeCircuit(sl.ini.cir_path + "balancedMOSAmp.asc", imgWidth=600)
 
-#makeNetlist(fileName + ".asc", "Balanced Line Driver")
-
-i1 = instruction()
-i1.setCircuit(fileName + ".cir")
-
-htmlPage("Circuit Data")
-head2html("Circuit diagram")
-img2html(fileName + ".svg", 600)
-netlist2html(fileName + ".cir")
-elementData2html(i1.circuit)
-params2html(i1.circuit)
-
-
-i1.setSimType("symbolic")
-htmlPage("DM-CM decomposition")
+sl.htmlPage("DM-CM decomposition")
 # Define the decomposition
-head2html("MNA matrix equation")
-i1.setGainType("vi")
-i1.setDataType("matrix")
-matrices2html(i1.execute())
+sl.head2html("MNA matrix equation")
 
+sl.matrices2html(sl.doMatrix(cir, pardefs=None))
 
-head2html("DM-CM matrix equation")
-i1.setPairExt(['P', 'N'])
-i1.setLGref(["Gm_M1_XU1P","Gm_M1_XU1N"])
-i1.setConvType('all')
-matrices2html(i1.execute())
+sl.head2html("DM-CM matrix equation")
+sl.matrices2html(sl.doMatrix(cir, pardefs=None, convtype='all'))
 
-head2html("DM matrix equation")
-i1.setConvType('dd')
-matrices2html(i1.execute())
+sl.head2html("DM matrix equation")
+sl.matrices2html(sl.doMatrix(cir, pardefs=None, convtype='dd'))
 
-head2html("CM matrix equation")
-i1.setConvType('cc')
-matrices2html(i1.execute())
-i1.setSimType("numeric")
+sl.head2html("CM matrix equation")
+sl.matrices2html(sl.doMatrix(cir, pardefs=None, convtype='cc'))
 
-
-htmlPage("Loop Gain")
-head2html("Loop Gain of the DM transfer")
-i1.setDetector('V_out_D')
-i1.setSource(['V1P', 'V1N'])
-i1.setConvType('dd')
-i1.setDataType('laplace')
-i1.setGainType('loopgain')
-i1.defPars({"ID":"1u","L":"0.18u","W":"0.22u"})
-i1.setSimType("numeric")
-
-result = i1.execute()
-
-eqn2html("L_G", result.laplace)
+sl.htmlPage("Loop Gain")
+sl.head2html("Loop Gain of the DM transfer")
+result = sl.doLaplace(cir, transfer='loopgain', pardefs='circuit', 
+                      convtype='dd', numeric=True)
+sl.eqn2html("L_G", result.laplace)

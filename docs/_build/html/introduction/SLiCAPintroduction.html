@@ -1,250 +1,138 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>SLiCAP introduction &mdash; SLiCAP 2.0.1 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
+  <title>SLiCAP Version 3.0 &mdash; SLiCAP 3.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
   
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=08bfcbec"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="What is SLiCAP" href="SLiCAPwhatWhyHow.html" />
+    <link rel="next" title="Why should you use SLiCAP" href="SLiCAPwhy.html" />
     <link rel="prev" title="SLiCAP Manual" href="../index.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> SLiCAP
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            SLiCAP
           </a>
-
-          
-            
-            
               <div class="version">
-                2.0.1
+                3.0.1
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">SLiCAP introduction</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPwhatWhyHow.html">What is SLiCAP</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPwhatWhyHow.html#why-should-you-use-slicap">Why should you use SLiCAP</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPwhatWhyHow.html#how-to-use-slicap">How to use SLiCAP</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPcontribute.html">How to contribute to SLiCAP</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPandSED.html">SLiCAP and Structured Electronics Design</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">SLiCAP Version 3.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPwhy.html">Why should you use SLiCAP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhow.html">How to use SLiCAP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPcontributions.html">SLiCAP Development Team</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../reference/SLiCAPreference.html">SLiCAP reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">SLiCAP</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>SLiCAP introduction</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">SLiCAP Version 3.0</li>
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/introduction/SLiCAPintroduction.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="slicap-introduction">
-<h1>SLiCAP introduction<a class="headerlink" href="#slicap-introduction" title="Permalink to this heading">¶</a></h1>
-<a class="reference external image-reference" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png" style="width: 88px;" /></a>
-<p>SLiCAP is licensed under a <a class="reference external" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>. Based on a work at: <a class="reference external" href="http://www.analog-electronics.eu/slicap/slicap.html">http://www.analog-electronics.eu/slicap/slicap.html</a></p>
+             
+  <section id="slicap-version-3-0">
+<h1>SLiCAP Version 3.0<a class="headerlink" href="#slicap-version-3-0" title="Link to this heading"></a></h1>
+<p>SLiCAP Version 3 is distributed under the <a class="reference external" href="https://opensource.org/license/mit">MIT license</a></p>
+<p><strong>Analog design</strong> often starts with an application description comprising target requirements for the functionality, the physical appearance, the performance quality, and the cost factors of the desired product. The analog circuit designer somehow has to convert this into a chip or a PCA (printed Circuit board Assembly) with a test plan that makes it possible to verify performance to requirements.</p>
+<p><strong>Circuit simulators</strong> and PCB or chip layout software are commonly at the disposal of analog design engineers to help them fullfill their tasks. Circuit simulators (such as SPICE), however, can only perform numeric design verification. Hence, the topology and the devices with their geometries and operating conditions need to be designed before simulation.</p>
+<p><strong>The question</strong> pops up how these design decisions have been made and in which way the selected topology, component values, geometries and operating conditions link to the original requirements. Moreover, can we be sure that the requirements can be met with the selected topology and with the components and their assigned geometries and operating conditions?</p>
+<p><strong>Experienced designers</strong> find their way intuitively, often resorting to familiar topologies and manual calculations with overly simplified models. However, a straightforward design method with a supporting design tool and adequate models largely will improve the motivation, the quality, and the tracebility of design decisions. As a matter of fact, such a tool is indispensible for first-time-right design. In addition, it will speed up knowledge building within companies thereby quickly turning novices into experienced designers.</p>
+<p><strong>Structured Electronics Design</strong>, as taught at the <a class="reference external" href="https://analog-electronics.tudelft.nl">TU Delft</a>, presents a design method which is based on systems engineering, device physics, signal processing, control theory and last but not least: on network theory. It presents a top-down hierarchical design method that accounts for bottom-up show-stoppers.</p>
+<p><strong>SLiCAP</strong>, is a mixed symbolic/numeric network simulator that interfaces with a design database, integrates with a documentation system, and supports the advocated design method. It fills the gap between the initial specification and numeric circuit simulation. With SLiCAP, designers easily find design limits for component values, geometry and operating conditions of devices, and relate them to performance and/or cost budgets derived from the initial specifications.</p>
+<ul class="simple">
+<li><p>SLiCAP is an acronym for: <strong>S</strong> ymbolic <strong>Li</strong> near <strong>C</strong> ircuit <strong>A</strong> nalysis <strong>P</strong> rogram</p></li>
+<li><p>SliCAP is a tool for <strong>algorithmic analog design automation</strong></p></li>
+<li><p>SLiCAP is intended for setting up and solving <strong>design equations</strong> of electronic circuits</p></li>
+<li><p>SLiCAP is a an <strong>open source</strong> application written in Python, originally created by <a class="reference external" href="https://montagne.nl">Anton J.M. Montagne</a></p></li>
+<li><p>SLiCAP is part of the tool set for teaching <a class="reference external" href="https://analog-electronics.tudelft.nl">Structured Electronic Design</a> at the Delft University of Technology</p></li>
+</ul>
 <div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPwhatWhyHow.html">What is SLiCAP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPwhatWhyHow.html#why-should-you-use-slicap">Why should you use SLiCAP</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPwhatWhyHow.html#features">Features</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPwhatWhyHow.html#capabilities">Capabilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPwhatWhyHow.html#technology">Technology</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPwhatWhyHow.html#how-to-use-slicap">How to use SLiCAP</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPwhatWhyHow.html#way-of-working">Way of working</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPcontribute.html">How to contribute to SLiCAP</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPcontribute.html#adding-features">Adding features</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPcontribute.html#bugs">Bugs</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="SLiCAPandSED.html">SLiCAP and Structured Electronics Design</a></li>
-</ul>
 </div>
-</div>
+<img alt="../_images/colorCode.svg" src="../_images/colorCode.svg" />
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="SLiCAPwhatWhyHow.html" class="btn btn-neutral float-right" title="What is SLiCAP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../index.html" class="btn btn-neutral float-left" title="SLiCAP Manual" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="SLiCAPwhy.html" class="btn btn-neutral float-right" title="Why should you use SLiCAP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2024, SLiCAP development team.
-
-    </p>
+    <p>&#169; Copyright 2024, SLiCAP development team.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

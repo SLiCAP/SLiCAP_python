@@ -2,95 +2,120 @@
 # -*- coding: utf-8 -*-
 
 """
-SLiCAP three-pass netlist parser:
+SLiCAP multi-pass netlist parser:
 
-pass 1: parseNetlist(<netlist>)
-        Converts the netlist into a nested circuit object mainCircuit = circuit()
-        - mainCircuit.elements:
-            list with element objects from element definition lines
-        - mainCircuit.modelDefs:
-            dictionary with modelDef objects from .model definition lines:
-                key   = model name (str)
-                value = modelDef object for this model
-        - mainCircuit.parDefs   parDef objects from .param definition lines :
-            dictionary with parameters:
-                key   = parameter name (str)
-                value = sympy object (Symbol, Expression, Integer, Float)
-        - mainCircuit.libs:
-            list with file names (str) from .include and .lib lines
-        - (sub)circuit definitions:
-            dictionary with circuit objects:
-                key   = subcircuit name
-                value = circuit object, as the main object, but with nodes
-                        and parameters that can be passed.
+pass 1: The netlist is converted into a nested circuit object (mainCircuit)
+        
+- mainCircuit.elements:
+  list with element objects from element definition lines
+- mainCircuit.modelDefs:
+  dictionary with modelDef objects from .model definition lines:
+  key   = model name (str)
+  value = modelDef object for this model
+- mainCircuit.parDefs   parDef objects from .param definition lines:
+  dictionary with parameters:
+  key   = parameter name (str)
+  value = sympy object (Symbol, Expression, Integer, Float)
+- mainCircuit.libs:
+  list with file names (str) from .include and .lib lines
+- (sub)circuit definitions:
+  dictionary with circuit objects:
+  key   = subcircuit name
+  value = circuit object, as the main object, but with nodes and 
+  parameters that can be passed.
 
-pass 2: checkData(<circuit>)
-        Checks and completes the data of the nested circuits object:
-        - check if referenced elements exist in the circuit
-        - check if library files exist
-        - create modelDef objects from the libraries
-        - create (sub)circuit objects from the libraries
+pass 2: Checks and completes the data of the nested circuits object:
+            
+- check if referenced elements exist in the circuit
+- check if library files exist
+- create modelDef objects from the libraries
+- create (sub)circuit objects from the libraries
 
 pass 3: Flattens the netlist: the nested circuit is converted into one circuit.
 
-You can include .include or .lib commands in library files but library files
-will always be global.
+pass 4: Generates/updates the instructions data, such as available sources,
+detectors and loop gain references
 """
 
 import os
 import sympy as sp
+import SLiCAP.SLiCAPconfigure as ini
 from copy import deepcopy
 from SLiCAP.SLiCAPhtml import htmlPage
-from SLiCAP.SLiCAPlex import tokenize, printError
-from SLiCAP.SLiCAPprotos import MODELS, DEVICES, circuit, element, modelDef
-from SLiCAP.SLiCAPini import ini
+from SLiCAP.SLiCAPlex import _tokenize, _printError
+from SLiCAP.SLiCAPprotos import _MODELS, _DEVICES, circuit, element, modelDef
 from SLiCAP.SLiCAPmath import fullSubs
 
 # Composite tokens
-NODES           = ['NODEID', 'ID', 'INT']
-VALEXPR         = ['FLT', 'EXPR', 'SCI', 'INT']
-TITLE           = ['ID', 'QSTRING', 'FNAME']
+_NODES           = ['NODEID', 'ID', 'INT']
+_VALEXPR         = ['FLT', 'EXPR', 'SCI', 'INT']
+_TITLE           = ['ID', 'QSTRING', 'FNAME']
 
 # Lists with constrolled and independent sources
-CONTROLLED      = ['E', 'F', 'G', 'H']  # Controlled sources
-INDEPSCRCS      = ['I', 'V']            # Independent sources
+_CONTROLLED      = ['E', 'F', 'G', 'H']  # Controlled sources
+_INDEPSCRCS      = ['I', 'V']            # Independent sources
 
 # list with (sub)circuit names for checking hierarchy
 # last name is current circuit during hierarchical checking
-CIRCUITNAMES    = []
+_CIRCUITNAMES    = []
 
 # Dictionary with (sub)circuit definitions, keys are from CIRCUITNAMES,
 # values are circuit objects.
-CIRCUITS        = {}
+_CIRCUITS        = {}
 
 # List with SLiCAP device types
-DEVICETYPES     = list(DEVICES.keys())
+_DEVICETYPES     = list(_DEVICES.keys())
 
 # List with default SLiCAP libraries
-SLiCAPLIBS      = ['SLiCAP.lib', 'SLiCAPmodels.lib']
+_SLiCAPLIBS      = ['SLiCAP.lib', 'SLiCAPmodels.lib']
 
 # SLiCAP built-in models
-SLiCAPMODELS    = {}
+_SLiCAPMODELS    = {}
 
 # SLiCAP global parameters
-SLiCAPPARAMS    = {}
+_SLiCAPPARAMS    = {}
 
 # SLiCAP built-in subcircuits
-SLiCAPCIRCUITS  = {}
+_SLiCAPCIRCUITS  = {}
 
 # User include files and library files
-USERLIBS        = []
+_USERLIBS        = []
 
 # User defined models from library files
-USERMODELS      = {}
+_USERMODELS      = {}
 
 # User defined circuit from library files
-USERCIRCUITS    = {}
+_USERCIRCUITS    = {}
 
 # User defined global parameters from library files
-USERPARAMS      = {}
+_USERPARAMS      = {}
 
-def compileSLiCAPLibraries():
+def _initializeParser():
+    global _CIRCUITNAMES, _CIRCUITS, _SLiCAPMODELS, _SLiCAPPARAMS
+    global _SLiCAPCIRCUITS, _USERLIBS, _USERMODELS, _USERCIRCUITS, _USERPARAMS
+    
+    _CIRCUITNAMES    = []
+    _CIRCUITS        = {}
+    _SLiCAPMODELS    = {}
+    _SLiCAPPARAMS    = {}
+    _SLiCAPCIRCUITS  = {}
+    _USERLIBS        = []
+    _USERMODELS      = {}
+    _USERCIRCUITS    = {}
+    _USERPARAMS      = {}
+    _makeLibraries()
+    
+def _resetParser():
+    global _CIRCUITNAMES, _CIRCUITS, _USERCIRCUITS, _USERPARAMS, _USERLIBS, _USERMODELS
+
+    _CIRCUITNAMES    = []
+    _CIRCUITS        = {}
+    _USERLIBS        = []
+    _USERMODELS      = {}
+    _USERCIRCUITS    = {}
+    _USERPARAMS      = {}
+    
+def _compileSLiCAPLibraries():
     """
     Compiles the SLiCAP bult-in libraries and writes the subcircuit, models,
     and global parameters to SLiCAPCIRCUITS, SLiCAPMODELS, and SLiCAPPARAMS,
@@ -99,25 +124,26 @@ def compileSLiCAPLibraries():
     :return: None
     :rtype: NoneType
     """
-    global SLiCAPCIRCUITS, SLiCAPMODELS, SLiCAPPARAMS
-    for fi in SLiCAPLIBS:
+    global _SLiCAPCIRCUITS, _SLiCAPMODELS, _SLiCAPPARAMS
+    for fi in _SLiCAPLIBS:
         print("Compiling library: " + fi + ".")
-        f = open(ini.defaultLib + '/' + fi, 'r')
+        f = open(ini.main_lib_path + fi, 'r')
         netlist = f.read()
         f.close()
         cirName  = fi.split('.')[0]
-        parseNetlist(netlist, cirName, SLiCAPCIRCUITS)
-        for model in list(SLiCAPCIRCUITS[cirName].modelDefs.keys()):
-            SLiCAPMODELS[model] = SLiCAPCIRCUITS[cirName].modelDefs[model]
-        for param in list(SLiCAPCIRCUITS[cirName].parDefs.keys()):
-            SLiCAPPARAMS[param] = SLiCAPCIRCUITS[cirName].parDefs[param]
-        del SLiCAPCIRCUITS[cirName]
+        _parseNetlist(netlist, cirName, 'system')
+        for model in _SLiCAPCIRCUITS[cirName].modelDefs.keys():
+            _SLiCAPMODELS[model] = _SLiCAPCIRCUITS[cirName].modelDefs[model]
+        for param in _SLiCAPCIRCUITS[cirName].parDefs.keys():
+            _SLiCAPPARAMS[param] = _SLiCAPCIRCUITS[cirName].parDefs[param]
+        del _SLiCAPCIRCUITS[cirName]
     # PASS 2 and 3
-    for cir in list(SLiCAPCIRCUITS.keys()):
-        checkReferences(SLiCAPCIRCUITS[cir])
-        #expandCircuit(SLiCAPCIRCUITS[cir])
+    for cir in _SLiCAPCIRCUITS.keys():
+        _checkReferences(_SLiCAPCIRCUITS[cir])
+        _expandCircuit(_SLiCAPCIRCUITS[cir])
+    ini.SLiCAPPARAMS = _SLiCAPPARAMS
 
-def compileUSERLibrary(fileName):
+def _compileUSERLibrary(fileName):
     """
     Parses a user library file and writes the subcircuit, models,
     and global parameters to USERCIRCUITS, USERPMODELS, and USERPARAMS,
@@ -130,110 +156,243 @@ def compileUSERLibrary(fileName):
     :return: None
     :rtype: NoneType
     """
-    global CIRCUITNAMES, USERCIRCUITS, USERPARAMS, USERMODELS
+    global _USERCIRCUITS, _USERPARAMS, _USERMODELS
     print("Compiling library: " + fileName + ".")
     f = open(fileName, 'r')
     netlist = f.read()
     f.close()
     cirName  = '__library__'
-    parseNetlist(netlist, cirName, USERCIRCUITS)
-    for model in list(USERCIRCUITS[cirName].modelDefs.keys()):
-        USERMODELS[model] = USERCIRCUITS[cirName].modelDefs[model]
-    for param in list(USERCIRCUITS[cirName].parDefs.keys()):
-        USERPARAMS[param] = USERCIRCUITS[cirName].parDefs[param]
-    del USERCIRCUITS[cirName]
+    _parseNetlist(netlist, cirName, 'user')
+    for model in _USERCIRCUITS[cirName].modelDefs.keys():
+        _USERMODELS[model] = _USERCIRCUITS[cirName].modelDefs[model]
+    for param in _USERCIRCUITS[cirName].parDefs.keys():
+        _USERPARAMS[param] = _USERCIRCUITS[cirName].parDefs[param]
+    del _USERCIRCUITS[cirName]
     # PASS 2 and 3
-    for cir in list(USERCIRCUITS.keys()):
-        checkReferences(USERCIRCUITS[cir])
+    for cir in _USERCIRCUITS.keys():
+        _checkReferences(_USERCIRCUITS[cir])
 
-def parseNetlist(netlist, cirName = 'main', circuitDict = CIRCUITS):
+def _parseNetlist(netlist, name, cirType):
     """
     Netlist parser: converts a netlist to the active circuit object.
     The name of the active circuit object is the last name in the global
-    CIRCUITNAMES: CIRCUITNAMES[-1]. The circuit object itself is stored in the
-    dictionary CIRCUITS under this name: circuitDict[CIRCUITNAMES[-1]].
+    _CIRCUITNAMES: _CIRCUITNAMES[-1]. The circuit object itself is stored in a
+    dictionary that depends on the variable cirType.
 
     :param netlist: Netlist of the circuit
     :type netlist: String
 
-    :param cirName: Name of the (sub)circuit, defaults to 'main'
-    :type cirName: String (no whitespace characters)
+    :param name: Name of the (sub)circuit, defaults to 'main'
+    :type name: String (no whitespace characters)
 
-    :param circuitDict: Dictionary to which the definition will be written
-    :type circuitDict: dictionary
+    :param cirType: pointer to the dictionary to which the circuit elements 
+                    and commands will be written.
+    :type cirType: str
 
     :return: None
 
     :rtype: Nonetype
     """
-    global CIRCUITNAMES
-    CIRCUITNAMES.append(cirName)
-    circuitDict[cirName] = circuit()
-    lines, errors = tokenize(netlist)
+    global _CIRCUITNAMES
+    _CIRCUITNAMES.append(name)
+    _createCircuit(name, cirType)
+    lines, errors = _tokenize(netlist)
     if errors == 0:
-        if cirName == 'main' and lines[0][0].type in TITLE:
-            circuitDict[cirName].title = lines[0][0].value
+        if name == 'main' and lines[0][0].type in _TITLE:
+            title = lines[0][0].value
             if lines[0][0].type == 'QSTRING':
                 # Remove the double quotes, this conflicts with HTML files
-                circuitDict[cirName].title = circuitDict[cirName].title[1:-1]
+                title = title[1:-1]
+            _addTitle(name, cirType, title)
         lines = lines[1:]
         for line in lines:
+            #print("NAMES:", _CIRCUITNAMES, name, cirType, list(_CIRCUITS.keys()))
             if line[0].type == "ID":
                 deviceType = line[0].value[0].upper()
                 if deviceType != 'X':
-                    circuitDict[cirName].errors = parseElement(line, circuitDict)
+                    _parseElement(line, name, cirType)
                 else:
-                    circuitDict[cirName].errors = parseSubcircuitElement(line, circuitDict)
+                    _parseSubcircuitElement(line, name, cirType)
             elif line[0].type == "CMD":
                 cmdType = line[0].value.upper()
                 if cmdType == "SUBCKT":
                     if len(line) > 1:
                         if line[1].type == "ID":
                             cirName = line[1].value
-                            if cirName not in CIRCUITNAMES:
-                                CIRCUITNAMES.append(cirName)
-                                if cirName not in list(CIRCUITS.keys()):
-                                    circuitDict[cirName] = circuit()
-                                    circuitDict[cirName].title = line[1].value
-                                    # Change the type of params of the subcircuit
-                                    # Better: create a subcircuitParams attribute
-                                    circuitDict[cirName].params = {}
+                            if cirName not in _CIRCUITNAMES:
+                                _createSubCKT(line, cirName, cirType)
+                                _CIRCUITNAMES.append(cirName)
+                                name = cirName
                             else:
-                                circuitDict[cirName].errors += 1
-                                printError("Error: Hierarchical loop involving '" + line[1].value + "'.", line[1])
+                                _printError("Error: Hierarchical loop involving '" + line[1].value + "'.", line[1])
+                                _addErrors(name, cirType, 1)
                         else:
-                           printError("Error: Expected a circuit title.", line[1])
-                           circuitDict[cirName].errors += 1
+                           _printError("Error: Expected a circuit title.", line[1])
+                           _addErrors(name, cirType, 1)
                     else:
-                        printError("Error: Missing circuit title", line[0])
-                        circuitDict[cirName].errors += 1
+                        _printError("Error: Missing circuit title", line[0])
+                        _addErrors(name, cirType)
+                elif cmdType == "SOURCE":
+                    source = None
                     if len(line) > 2:
-                        for i in range(2, len(line)):
-                            if line[i].type in NODES:
-                                circuitDict[cirName].nodes.append(line[i].value)
-                            elif line[i].type == "PARDEF":
-                                parName, parValue = line[i].value
-                                circuitDict[cirName].params[parName] = parValue
-                            else:
-                                printError("Error: Unexpected input.", line[i])
-                                circuitDict[cirName].errors += 1
+                        source = [line[1].value, line[2].value]
+                    elif len(line) > 1:
+                        source = [line[1].value, None]
+                    else:
+                        _printError("Error: Missing source definition", line[0])
+                        _addErrors(name, cirType)
+                    _addSource(name, cirType, source)
+                elif cmdType == "DETECTOR":
+                    detector = None
+                    if len(line) > 2:
+                        detector = [line[1].value, line[2].value]
+                    elif len(line) > 1:
+                        detector = [line[1].value, None]
+                    else:
+                        _printError("Error: Missing detector definition", line[0])
+                        _addErrors(name, cirType)
+                    _addDetector(name, cirType, detector)
+                elif cmdType == "LGREF":
+                    lgRef = None
+                    if len(line) > 2:
+                        lgRef = [line[1].value, line[2].value]
+                    elif len(line) > 1:
+                        lgRef = [line[1].value, None]
+                    else:
+                        _printError("Error: Missing lgRef definition", line[0])
+                        _addErrors(name, cirType)
+                    _addLGref(name, cirType, lgRef)
+                elif cmdType == "DETECTOR":
+                    pass
                 elif cmdType == "ENDS":
-                    subcktErrors =  circuitDict[CIRCUITNAMES[-1]].errors
-                    del CIRCUITNAMES[-1]
-                    circuitDict[CIRCUITNAMES[-1]].circuits[cirName] = circuitDict[cirName]
-                    circuitDict[CIRCUITNAMES[-1]].errors += subcktErrors
-                    cirName = CIRCUITNAMES[-1]
+                    del _CIRCUITNAMES[-1]
+                    name = _CIRCUITNAMES[-1]
                 elif cmdType == "END":
-                    del CIRCUITNAMES[-1]
+                    del _CIRCUITNAMES[-1]
                 else:
-                    circuitDict[cirName].errors += parseCommand(line, circuitDict)
+                    _parseCommand(line, name, cirType)
     else:
-        circuitDict[cirName].errors += errors
-        if cirName != 'main':
+        _addErrors(name, cirType, errors)
+        if name != 'main':
             print("Error: something wring with circuit hierachy, probably missing '.ends'. in a subcircuit definition.")
     return
 
-def parseElement(line, circuitDict = CIRCUITS):
+def _createCircuit(name, cirType):
+    newCircuit = circuit()
+    _saveCircuit(newCircuit, name, cirType)
+    
+def _addTitle(name, cirType, title):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if cirType == 'system':
+        _SLiCAPCIRCUITS[name].title = title
+    elif cirType == 'user':
+        _USERCIRCUITS[name].title = title
+    elif cirType == 'main':
+        _CIRCUITS[name].title = title
+    
+def _createSubCKT(line, name, cirType):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    nodes  = []
+    params = {}
+    errors = 0
+    for i in range(2, len(line)):
+        if line[i].type in _NODES:
+            nodes.append(line[i].value)
+        elif line[i].type == "PARDEF":
+            parName, parValue = line[i].value
+            params[parName] = parValue
+        else:
+            _printError("Error: Unexpected input.", line[i])
+            errors += 1
+    subCKT = circuit()
+    subCKT.title  = name
+    subCKT.nodes  = nodes
+    subCKT.params = params
+    subCKT.errors += errors
+    _saveCircuit(subCKT, name, cirType)
+    
+def _addErrors(name, cirType, n):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if cirType == 'system':
+        _SLiCAPCIRCUITS[name].errors += n
+    elif cirType == 'user':
+        _USERCIRCUITS[name].errors += n
+    elif cirType == 'main':
+        _CIRCUITS[name].errors += n
+    
+def _saveCircuit(cir, name, cirType):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if cirType == 'system':
+        _SLiCAPCIRCUITS[name] = cir
+    elif cirType == 'user':
+        _USERCIRCUITS[name] = cir
+    elif cirType == 'main':
+        _CIRCUITS[name] = cir
+        
+def _addElement(el, name, cirType):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if cirType == 'system':
+        _SLiCAPCIRCUITS[name].elements[el.refDes] = el
+    elif cirType == 'user':
+        _USERCIRCUITS[name].elements[el.refDes] = el
+    elif cirType == 'main':
+        _CIRCUITS[name].elements[el.refDes] = el
+        
+def _addModel(name, cirType, model):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if model != None:
+        if cirType == 'system':
+            _SLiCAPCIRCUITS[name].modelDefs[model.name] = model
+        elif cirType == 'user':
+            _USERCIRCUITS[name].modelDefs[model.name] = model
+        elif cirType == 'main':
+            _CIRCUITS[name].modelDefs[model.name] = model
+            
+def _addParDef(name, cirType, parDefs):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if parDefs != None:
+        if cirType == 'system':
+            for key in parDefs.keys():
+                _SLiCAPCIRCUITS[name].parDefs[key] = parDefs[key]
+        elif cirType == 'user':
+            for key in parDefs.keys():
+                _USERCIRCUITS[name].parDefs[key] = parDefs[key]
+        elif cirType == 'main':
+            for key in parDefs.keys():
+                _CIRCUITS[name].parDefs[key] = parDefs[key]
+            
+def _addSource(name, cirType, source):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if source != None:
+        if cirType == 'system':
+            _SLiCAPCIRCUITS[name].source = source
+        elif cirType == 'user':
+            _USERCIRCUITS[name].source = source
+        elif cirType == 'main':
+            _CIRCUITS[name].source = source
+            
+def _addDetector(name, cirType, detector):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if detector != None:
+        if cirType == 'system':
+            _SLiCAPCIRCUITS[name].detector = detector
+        elif cirType == 'user':
+            _USERCIRCUITS[name].detector = detector
+        elif cirType == 'main':
+            _CIRCUITS[name].detector = detector
+
+def _addLGref(name, cirType, lgRef):
+    global _CIRCUITS, _USERCIRCUITS, _SLiCAPCIRCUITS
+    if lgRef != None:
+        if cirType == 'system':
+            _SLiCAPCIRCUITS[name].lgRef= lgRef
+        elif cirType == 'user':
+            _USERCIRCUITS[name].lgRef= lgRef
+        elif cirType == 'main':
+            _CIRCUITS[name].lgRef= lgRef
+
+
+def _parseElement(line, name, cirType):
     """
     Parsing of an element line to the active circuit object.
     The name of the active circuit object is the last name in the global
@@ -250,77 +409,76 @@ def parseElement(line, circuitDict = CIRCUITS):
 
     :rtype: Integer
     """
-    global CIRCUITNAMES
+    global _CIRCUITNAMES
     newElement = element()
     deviceType = line[0].value[0].upper()
     errors = 0
-    if deviceType in DEVICETYPES:
+    if deviceType in _DEVICETYPES:
         newElement.type = deviceType
         newElement.refDes =  line[0].value
-        nNodes = DEVICES[deviceType].nNodes
-        nRefs = DEVICES[deviceType].nRefs
+        nNodes = _DEVICES[deviceType].nNodes
+        nRefs = _DEVICES[deviceType].nRefs
         nFields = 1 + nNodes + nRefs
-        if DEVICES[deviceType].value == True:
+        if _DEVICES[deviceType].value == True:
             nFields += 1
         if len(line) < nFields:
-            printError("Error: incomplete element specification.", line[-1])
+            _printError("Error: incomplete element specification.", line[-1])
             errors += 1
         else:
             for i in range(nNodes):
                 pos = 1 + i
-                if line[pos].type in NODES:
+                if line[pos].type in _NODES:
                     newElement.nodes.append(line[pos].value)
                 else:
-                    printError("Error: syntax error in node ID", line[pos])
+                    _printError("Error: syntax error in node ID", line[pos])
                     errors += 1
-            for i in range(DEVICES[deviceType].nRefs):
+            for i in range(_DEVICES[deviceType].nRefs):
                 pos = 1 + nNodes + i
                 if line[pos].type == "ID":
                     newElement.refs.append(line[pos].value)
                 else:
-                    printError("Error: syntax error in device ID", line[pos])
+                    _printError("Error: syntax error in device ID", line[pos])
                     errors += 1
             pos = 1 + nNodes + nRefs
-            if DEVICES[deviceType].value:
+            if _DEVICES[deviceType].value:
                 if line[pos].type == "ID":
                     newElement.model = line[pos].value
-                elif line[pos].type in VALEXPR:
-                    newElement.model = DEVICES[deviceType].models[0]
+                elif line[pos].type in _VALEXPR:
+                    newElement.model = _DEVICES[deviceType].models[0]
                     if line[pos].type == 'EXPR':
                         newElement.params['value'] = line[pos].value
-                        if newElement.model in list(MODELS.keys()):
-                            if not MODELS[newElement.model].params['value'] and ini.Laplace in list(newElement.params['value'].atoms(sp.Symbol)):
-                                printError("Error: Laplace variable not allowed in this expression.", line[pos])
+                        if newElement.model in _MODELS.keys():
+                            if not _MODELS[newElement.model].params['value'] and ini.laplace in newElement.params['value'].atoms(sp.Symbol):
+                                _printError("Error: Laplace variable not allowed in this expression.", line[pos])
                     else:
                         newElement.params['value'] = sp.Rational(str(line[pos].value))
                 elif line[pos].type == "PARDEF":
-                    printError("Error: missing model definition", line[pos])
+                    _printError("Error: missing model definition", line[pos])
                     errors += 1
                 else:
-                    printError("Error: syntax error in model definition", line[pos])
+                    _printError("Error: syntax error in model definition", line[pos])
                     errors += 1
                 for i in range(len(line) - nFields):
                     pos = nFields + i
                     if line[pos].type == "PARDEF":
                         key, value = line[pos].value
                         newElement.params[key] = value
-                        if newElement.model in list(MODELS.keys()):
-                            if key in list(MODELS[newElement.model].params.keys()):
-                                if not MODELS[newElement.model].params[key] and ini.Laplace in list(value.atoms(sp.Symbol)):
-                                    printError("Error: Laplace variable not allowed in this expression.", line[pos])
+                        if newElement.model in _MODELS.keys():
+                            if key in _MODELS[newElement.model].params.keys():
+                                if not _MODELS[newElement.model].params[key] and ini.laplace in value.atoms(sp.Symbol):
+                                    _printError("Error: Laplace variable not allowed in this expression.", line[pos])
                             else:
-                                printError("Error: unknown model parameter", line[pos])
+                                _printError("Error: unknown model parameter", line[pos])
                     else:
-                        printError("Error: expected a parameter definition.", line[pos])
+                        _printError("Error: expected a parameter definition.", line[pos])
                         errors += 1
     else:
-        printError("Error: unknown element.", line[-1])
+        _printError("Error: unknown element.", line[-1])
         errors += 1
     if errors == 0:
-        circuitDict[CIRCUITNAMES[-1]].elements[newElement.refDes] = newElement
-    return errors
+        _addElement(newElement, name, cirType)
 
-def parseSubcircuitElement(line, circuitDict = CIRCUITS):
+def _parseSubcircuitElement(line, name, cirType):
     """
     Parsing of a subcircuit call (an X element) in the netlist in the active
     circuit object.
@@ -339,7 +497,7 @@ def parseSubcircuitElement(line, circuitDict = CIRCUITS):
 
     :rtype: Integer
     """
-    global CIRCUITNAMES
+    global _CIRCUITNAMES
     errors = 0
     # Check if there are parameter definitions
     for modelPos in range(len(line)):
@@ -351,11 +509,11 @@ def parseSubcircuitElement(line, circuitDict = CIRCUITS):
     newElement.type = 'X'
     newElement.model = line[modelPos].value
     for i in range(1, modelPos):
-        if line[i].type in NODES:
+        if line[i].type in _NODES:
             newElement.nodes.append(line[i].value)
         else:
             errors += 1
-            printError("Error: Expected a node ID.", line[i])
+            _printError("Error: Expected a node ID.", line[i])
     if len(line) > modelPos + 1:
         for i in range(modelPos + 1, len(line)):
             if line[i].type == "PARDEF":
@@ -363,12 +521,11 @@ def parseSubcircuitElement(line, circuitDict = CIRCUITS):
                 newElement.params[key] = value
             else:
                 errors += 1
-                printError("Error: Expected a parameter definition.", line[i])
+                _printError("Error: Expected a parameter definition.", line[i])
     if errors == 0:
-        circuitDict[CIRCUITNAMES[-1]].elements[newElement.refDes] = newElement
-    return errors
+        _addElement(newElement, name, cirType)
 
-def parseCommand(line, circuitDict = CIRCUITS):
+def _parseCommand(line, name, cirType):
     """
     Parsing of a command the netlist to the active circuit object.
     The name of the active circuit object is the last name in the global
@@ -386,49 +543,53 @@ def parseCommand(line, circuitDict = CIRCUITS):
 
     :rtype: Integer
     """
-    global CIRCUITNAMES
+    global _CIRCUITNAMES
+    parDef = {}
+    model  = None
     errors = 0
     cmd = line[0].value.upper()
     if cmd == 'LIB' or (len(cmd) >= 3 and cmd[:3] == 'INC'):
-        parseLibrary(line, circuitDict = CIRCUITS)
+        _parseLibrary(line, name, cirType)
     elif cmd == 'PARAM':
         for i in range(1, len(line)):
             if line[i].type == 'PARDEF':
                 parName, parValue = line[i].value
-                circuitDict[CIRCUITNAMES[-1]].parDefs[parName] = parValue
+                parDef[parName] = parValue
             else:
                 errors += 1
-                printError("Error: Expected a parameter definition.", line[i])
+                _printError("Error: Expected a parameter definition.", line[i])
+        if errors == 0:
+            _addParDef(name, cirType, parDef)
     elif cmd == 'MODEL':
         if len(line) < 3:
-            printError("Error: Incomplete model specification.", line[-1])
+            _printError("Error: Incomplete model specification.", line[-1])
         else:
             newModelDef = modelDef()
             if line[1].type == 'ID':
                 newModelDef.name = line[1].value
             else:
                 errors += 1
-                printError("Error: Expected a model name.", line[1])
+                _printError("Error: Expected a model name.", line[1])
             if line[1].type == 'ID':
                 modelType = line[2].value
-                if modelType not in list(MODELS.keys()):
+                if modelType not in _MODELS.keys():
                     errors += 1
-                    printError("Error: Unknown model.", line[2])
+                    _printError("Error: Unknown model.", line[2])
                     newModelDef.type = False
                 else:
                     newModelDef.type = line[2].value
             else:
                 errors +=1
-                printError("Error: Expected a model type.", line[1])
+                _printError("Error: Expected a model type.", line[1])
         if len(line) > 3:
-            validParams = MODELS[newModelDef.type].params
+            validParams = _MODELS[newModelDef.type].params
             for i in range(3, len(line)):
                 if line[i].type == "PARDEF":
                     parName, parValue = line[i].value
                     if parName in validParams:
-                        if MODELS[newModelDef.type].params[parName] == False:
-                            if ini.Laplace in list(parValue.atoms(sp.Symbol)):
-                                printError("Error: Laplace variable not allowed in the expression for this parameter.", line[i])
+                        if _MODELS[newModelDef.type].params[parName] == False:
+                            if ini.laplace in parValue.atoms(sp.Symbol):
+                                _printError("Error: Laplace variable not allowed in the expression for this parameter.", line[i])
                                 errors += 1
                             else:
                                 newModelDef.params[parName] = parValue
@@ -436,19 +597,19 @@ def parseCommand(line, circuitDict = CIRCUITS):
                             newModelDef.params[parName] = parValue
                     else:
                         errors += 1
-                        printError("Error: unknown model parameter.", line[i])
+                        _printError("Error: unknown model parameter.", line[i])
                 else:
                     errors += 1
-                    printError("Error: Expected a parameter definition.", line[i])
+                    _printError("Error: Expected a parameter definition.", line[i])
         if errors == 0:
-            circuitDict[CIRCUITNAMES[-1]].modelDefs[newModelDef.name] = newModelDef
-    return errors
+            model = newModelDef
+            _addModel(name, cirType, model)
 
-def parseLibrary(line, circuitDict = CIRCUITS):
+def _parseLibrary(line, name, cirType):
     """
     Parsing of a .include or .lib command. If the library exists and has not
     been called earlier, the path of the library will be stured in the list
-    USERLIBS, and the library will be compiled (see: compileUSERLibrary()).
+    USERLIBS, and the library will be compiled (see: _compileUSERLibrary()).
 
     If the library does not exist the error count of the active circuit will be
     increased with one.
@@ -479,7 +640,7 @@ def parseLibrary(line, circuitDict = CIRCUITS):
 
     :rtype: Integer
     """
-    global CIRCUITNAMES
+    global _CIRCUITNAMES, _USERLIBS
     for i in range(1, len(line)):
         errors = 0
         if line[i].type == 'FNAME':
@@ -492,31 +653,30 @@ def parseLibrary(line, circuitDict = CIRCUITS):
             # Libraries are always global!
             fileName = line[i].value
             if fileName == 'SLiCAP.lib':
-                printError("Warning: a system library call in the netlist will be ignored.", line[i])
-                errors += 1
+                _printError("Warning: a system library call in the netlist will be ignored.", line[i])
+                return
             else:
                 if os.path.exists(fileName):
                     pass
-                elif os.path.exists(ini.circuitPath + fileName):
-                    fileName = ini.circuitPath + fileName
-                elif os.path.exists(ini.libraryPath + fileName):
-                    fileName = ini.libraryPath + fileName
+                elif os.path.exists(ini.cir_path + fileName):
+                    fileName = ini.cir_path + fileName
+                elif os.path.exists(ini.user_lib_path + fileName):
+                    fileName = ini.user_lib_path + fileName
                 else:
-                    printError("Error: cannot find library file: " + fileName + ".", line[i])
-                    circuitDict[CIRCUITNAMES[-1]].errors += 1
-                    fileName = False
-                if fileName != False:
-                    if fileName not in USERLIBS:
-                        USERLIBS.append(fileName)
-                        compileUSERLibrary(fileName)
+                    _printError("Error: cannot find library file: " + fileName + ".", line[i])
+                    errors += 1
+                    _addErrors(name, cirType, errors)
+                if errors == 0 and fileName not in _USERLIBS:
+                    _USERLIBS.append(fileName)
+                    _compileUSERLibrary(fileName)
         else:
             errors += 1
-            printError("Error: Expected a file path.", line[i])
+            _printError("Error: Expected a file path.", line[i])
     return errors
 
 """ PASS 2 FUNCTIONS """
 
-def checkReferences(circuitObject):
+def _checkReferences(circuitObject):
     """
     Second pass of the parser:
 
@@ -535,14 +695,14 @@ def checkReferences(circuitObject):
     :return: None
     :rtype: NoneType
     """
-    checkElementReferences(circuitObject)
-    checkModelDefs(circuitObject)
-    checkElementModel(circuitObject)
-    subCircuits = list(circuitObject.circuits.keys())
+    _checkElementReferences(circuitObject)
+    _checkModelDefs(circuitObject)
+    _checkElementModel(circuitObject)
+    subCircuits = circuitObject.circuits.keys()
     for cir in subCircuits:
-        checkReferences(circuitObject.circuits[cir])
+        _checkReferences(circuitObject.circuits[cir])
 
-def checkElementReferences(circuitObject):
+def _checkElementReferences(circuitObject):
     """
     Checks if referenced elements exist in the circuit.
 
@@ -557,7 +717,7 @@ def checkElementReferences(circuitObject):
                 circuitObject.errors += 1
                 print("Error: unknown referenced element: " + referencedElement)
 
-def checkModelDefs(circuitObject):
+def _checkModelDefs(circuitObject):
     """
     Checks if the parameters given with a model statement (.model line)
     correspond with those of the model definition.
@@ -569,16 +729,16 @@ def checkModelDefs(circuitObject):
     :return: None
     :rtype: NoneType
     """
-    for modelName in list(circuitObject.modelDefs.keys()):
+    for modelName in circuitObject.modelDefs.keys():
         baseModel = circuitObject.modelDefs[modelName].type
-        modelParams = list(MODELS[baseModel].params.keys())
-        referredParams = list(circuitObject.modelDefs[modelName].params.keys())
+        modelParams = _MODELS[baseModel].params.keys()
+        referredParams = circuitObject.modelDefs[modelName].params.keys()
         for parName in referredParams:
             if parName not in modelParams:
                 print("Error: unknown model parameter: " + parName)
                 circuitObject.errors += 1
 
-def checkElementModel(circuitObject):
+def _checkElementModel(circuitObject):
     """
     Checks:
         1. If the element has a correct model definition
@@ -609,11 +769,11 @@ def checkElementModel(circuitObject):
     for i in range(len(elementNames)):
         elType  = circuitObject.elements[elementNames[i]].type
         if elType != 'X':
-            circuitObject = checkElementModelParams(circuitObject, circuitObject.elements[elementNames[i]])
+            circuitObject = _checkElementModelParams(circuitObject, circuitObject.elements[elementNames[i]])
         else:
-            circuitObject = checkSubCircuitElementModelParams(circuitObject, circuitObject.elements[elementNames[i]])
+            circuitObject = _checkSubCircuitElementModelParams(circuitObject, circuitObject.elements[elementNames[i]])
 
-def checkElementModelParams(circuitObject, el):
+def _checkElementModelParams(circuitObject, el):
     """
     Checks the model parameters used in elements that are not subcircuits (X).
     If the model parameters correspond with those of the prototype, the values
@@ -635,21 +795,21 @@ def checkElementModelParams(circuitObject, el):
     modelParams = {}
     elModel = el.model
     if elModel == '':
-        basicModel = DEVICES[el.type].models[0]
-    elif elModel in DEVICES[el.type].models:
+        basicModel = _DEVICES[el.type].models[0]
+    elif elModel in _DEVICES[el.type].models:
         basicModel = elModel
-    elif elModel != '' and elModel not in DEVICES[el.type].models:
+    elif elModel != '' and elModel not in _DEVICES[el.type].models:
         # If not present in the circuit model definitions, find it in the libraries
         # and replace the model name with the base model and parameters
-        if elModel in list(circuitObject.modelDefs.keys()):
+        if elModel in circuitObject.modelDefs.keys():
             modelParams = circuitObject.modelDefs[elModel].params
             basicModel =  circuitObject.modelDefs[elModel].type
-        elif elModel in list(USERMODELS.keys()):
-            modelParams = USERMODELS[elModel].params
-            basicModel = USERMODELS[elModel].type
-        elif elModel in list(SLiCAPMODELS.keys()):
-            modelParams = SLiCAPMODELS[elModel].params
-            basicModel = SLiCAPMODELS[elModel].type
+        elif elModel in _USERMODELS.keys():
+            modelParams = _USERMODELS[elModel].params
+            basicModel = _USERMODELS[elModel].type
+        elif elModel in _SLiCAPMODELS.keys():
+            modelParams = _SLiCAPMODELS[elModel].params
+            basicModel = _SLiCAPMODELS[elModel].type
         else:
             print("Error: missing definition of model: " + str(elModel) + ".")
             circuitObject.errors += 1
@@ -658,34 +818,34 @@ def checkElementModelParams(circuitObject, el):
     el.model = basicModel
     # Check parameter names and complete the list of parameters with default values
     givenParams = el.params
-    allParams   = MODELS[basicModel].params
+    allParams   = _MODELS[basicModel].params
     for parName in givenParams:
         if parName not in allParams:
             circuitObject.errors += 1
             print("Error: unknown parameter '%s' for element '%s' in circuit '%s'."%(parName, el.refDes, circuitObject.title))
-        elif MODELS[basicModel].params[parName] == False:
+        elif _MODELS[basicModel].params[parName] == False:
             # Laplace variable not allowed inexpression.
-            if ini.Laplace in el.params[parName].atoms(sp.Symbol):
-                print("Error: Laplace variable not allowed in expression of %s."%(elementNames[i]))
-    for parName in list(allParams.keys()):
-        if parName not in list(givenParams.keys()):
+            if ini.laplace in el.params[parName].atoms(sp.Symbol):
+                print("Error: Laplace variable not allowed in expression of %s."%(el.refDes))
+    for parName in allParams.keys():
+        if parName not in givenParams.keys():
             if parName not in modelParams:
                 # Assign default values to missing parameters
-                if MODELS[basicModel].stamp:
+                if _MODELS[basicModel].stamp:
                     el.params[parName] = sp.N(0)
                 else:
-                    el.params[parName] = SLiCAPCIRCUITS[basicModel].params[parName]
+                    el.params[parName] = _SLiCAPCIRCUITS[basicModel].params[parName]
             else:
                 el.params[parName] = modelParams[parName]
         else:
             el.params[parName] = givenParams[parName]
-    if not MODELS[basicModel].stamp:
+    if not _MODELS[basicModel].stamp:
         # Assign the expansion circuit to the model attribute
-        el.model = SLiCAPCIRCUITS[basicModel]
+        el.model = _SLiCAPCIRCUITS[basicModel]
     circuitObject.elements[el.refDes] = el
     return circuitObject
 
-def checkSubCircuitElementModelParams(circuitObject, el):
+def _checkSubCircuitElementModelParams(circuitObject, el):
     """
     Checks the model parameters of subcircuit elements (X).
     If the model parameters correspond with those of the prototype, the values
@@ -704,33 +864,36 @@ def checkSubCircuitElementModelParams(circuitObject, el):
     :rtype: SLiCAPprotos.circuit
     """
     if type(el.model) != circuit:
-        if el.model in list(circuitObject.circuits.keys()):
+        if el.model in circuitObject.circuits.keys():
             validParams = circuitObject.circuits[el.model].params
             el.model = circuitObject.circuits[el.model]
-        elif el.model in list(USERCIRCUITS.keys()):
-            validParams = USERCIRCUITS[el.model].params
-            el.model = USERCIRCUITS[el.model]
-        elif el.model in list(SLiCAPCIRCUITS.keys()):
-            validParams = SLiCAPCIRCUITS[el.model].params
-            el.model = SLiCAPCIRCUITS[el.model]
+        elif el.model in _USERCIRCUITS.keys():
+            validParams = _USERCIRCUITS[el.model].params
+            el.model = _USERCIRCUITS[el.model]
+        elif el.model in _SLiCAPCIRCUITS.keys():
+            validParams = _SLiCAPCIRCUITS[el.model].params
+            el.model = _SLiCAPCIRCUITS[el.model]
+        elif el.model in _CIRCUITS.keys():
+            validParams = _CIRCUITS[el.model].params
+            el.model = _CIRCUITS[el.model]
         else:
             print("Error: missing definition of subcircuit: " + el.model + ".")
             circuitObject.errors += 1
             el.model = False
             validParams = {}
         for parName in el.params:
-            if parName not in list(validParams.keys()):
+            if parName not in validParams.keys():
                 print("Error: unknown model parameter: " + parName)
                 circuitObject.errors += 1
-            elif ini.Laplace in el.params[parName].atoms(sp.Symbol):
-                print("Error: Laplace variable not allowed in subcircuit calls!\n  Parameter: '%s', element: `%s`, circuit: '%s'."%(parName, elementNames[i], circuitObject.title))
+            elif ini.laplace in el.params[parName].atoms(sp.Symbol):
+                print("Error: Laplace variable not allowed in subcircuit calls!\n  Parameter: '%s', element: `%s`, circuit: '%s'."%(parName, el.ID, circuitObject.title))
                 circuitObject.errors += 1
     circuitObject.elements[el.refDes] = el
     return circuitObject
 
 """ PASS 3 FUNCTIONS """
 
-def expandCircuit(circuitObject):
+def _expandCircuit(circuitObject):
     """
     This functions flattens the hierarchy of circuitObject:
 
@@ -743,40 +906,42 @@ def expandCircuit(circuitObject):
     :return: SLiCAP circuit object of the expanded circuit
     :rtype: SLiCAP circuit object
     """
-    elNames = list(circuitObject.elements.keys())
-    for elName in elNames:
+    #elNames = list(circuitObject.elements.keys())
+    for elName in list(circuitObject.elements.keys()):
         el = circuitObject.elements[elName]
-        if type(el.model) == circuit:
-            parentRefDes    = el.refDes
-            parentNodes     = el.nodes
-            prototypeNodes  = el.model.nodes
-            parentParams    = el.params
-            prototypeParams = el.model.params
-            parentParDefs   = circuitObject.parDefs
-            # Update the parameter definitions of the parent circuit
-            childParDefs  = el.model.parDefs
-            circuitObject.parDefs = updateParDefs(parentParDefs, childParDefs, parentParams, prototypeParams, parentRefDes)
-            for subElement in list(el.model.elements.keys()):
-                newElement = deepcopy(el.model.elements[subElement])
-                # Update the refDes
-                newElement.refDes = el.model.elements[subElement].refDes + '_' + el.refDes
-                # Update the nodes
-                newElement = updateNodes(newElement, parentNodes, prototypeNodes, parentRefDes)
-                # Update the parameters used in element expressions and in parameter definitions
-                newElement, newParDefs = updateElementParams(newElement, parentParams, prototypeParams, parentRefDes)
-                for key in list(newParDefs.keys()):
-                    if key not in list(circuitObject.parDefs.keys()):
-                        circuitObject.parDefs[key] = newParDefs[key]
-                # Apply hierarchy
-                if el.model.elements[subElement].model == circuit:
-                    circuitObject = expandCircuit(el.model.elements[subElement])
-                # Add the new element to the parent circuit
-                circuitObject.elements[newElement.refDes] = newElement
-            # Remove the parent element
-            del circuitObject.elements[elName]
+        if isinstance(el.model, circuit):
+            circuitObject = _doExpand(el, circuitObject)
+    return circuitObject
+    
+def _doExpand(el, circuitObject):
+    parentRefDes    = el.refDes
+    parentNodes     = el.nodes
+    parentParams    = el.params
+    prototypeNodes  = el.model.nodes
+    prototypeParams = el.model.params
+    parentParDefs   = circuitObject.parDefs
+    childParDefs  = el.model.parDefs
+    circuitObject.parDefs = _updateParDefs(parentParDefs, childParDefs, parentParams, prototypeParams, parentRefDes)
+    for subElement in list(el.model.elements.keys()):
+        newElement = deepcopy(el.model.elements[subElement])
+        # Update the refDes
+        newElement.refDes = el.model.elements[subElement].refDes + '_' + el.refDes
+        # Update the nodes
+        newElement = _updateNodes(newElement, parentNodes, prototypeNodes, parentRefDes)
+        # Update the parameters used in element expressions and in parameter definitions
+        newElement, newParDefs = _updateElementParams(newElement, parentParams, prototypeParams, parentRefDes)
+        for key in newParDefs.keys():
+            if key not in circuitObject.parDefs.keys():
+                circuitObject.parDefs[key] = newParDefs[key]
+        # Add the new element to the parent circuit
+        circuitObject.elements[newElement.refDes] = newElement
+        # If the new element is a sub circuit, it needs to be expanded
+        if isinstance(newElement.model, circuit): 
+            circuitObject = _doExpand(newElement, circuitObject)
+    del circuitObject.elements[el.refDes]
     return circuitObject
 
-def updateNodes(newElement, parentNodes, prototypeNodes, parentRefDes):
+def _updateNodes(newElement, parentNodes, prototypeNodes, parentRefDes):
     """
     Determines the nodes of a subcircuit element.
 
@@ -811,7 +976,7 @@ def updateNodes(newElement, parentNodes, prototypeNodes, parentRefDes):
                     newElement.nodes[i] += '_' + parentRefDes
     return newElement
 
-def updateElementParams(newElement, parentParams, prototypeParams, parentRefDes):
+def _updateElementParams(newElement, parentParams, prototypeParams, parentRefDes):
     """
     After expansion of the elements, the element parameters can be:
     'value'
@@ -870,42 +1035,42 @@ def updateElementParams(newElement, parentParams, prototypeParams, parentRefDes)
     for parName in parNames:
         params += list(newElement.params[parName].atoms(sp.Symbol))
     for parName in params:
-        if str(parName) in list(parentParams.keys()):
+        if str(parName) in parentParams.keys():
             substDict[parName] = parentParams[str(parName)]
-        elif str(parName) in list(prototypeParams.keys()):
+        elif str(parName) in prototypeParams.keys():
             substDict[parName] = prototypeParams[str(parName)]
-        elif str(parName) in list(USERPARAMS.keys()):
-            newParDefs[parName] = USERPARAMS[str(parName)]
+        elif str(parName) in _USERPARAMS.keys():
+            newParDefs[parName] = _USERPARAMS[str(parName)]
 
             # recursively add parameters from expression in parameter definition
             # from USERPARAMS
 
-        elif str(parName) in list(SLiCAPPARAMS.keys()):
-            newParDefs[parName] = SLiCAPPARAMS[str(parName)]
+        elif str(parName) in _SLiCAPPARAMS.keys():
+            newParDefs[parName] = _SLiCAPPARAMS[str(parName)]
 
             # recursively add parameters from expression in parameter definition
             # from SLiAPPARAMS
 
-        elif parName != ini.Laplace and parName != ini.frequency:
+        elif parName != ini.laplace and parName != ini.frequency:
             substDict[parName] = sp.Symbol(str(parName) + '_' + parentRefDes)
     # Perform the full substitution in the parameter values of the element
     for parName in parNames:
         newElement.params[parName] = fullSubs(newElement.params[parName], substDict)
     return newElement, newParDefs
 
-def updateParDefs(parentParDefs, childParDefs, parentParams, prototypeParams, parentRefDes):
+def _updateParDefs(parentParDefs, childParDefs, parentParams, prototypeParams, parentRefDes):
     """
     The parameter definitions of the parent circuit will be updated:
 
     Parameters of the child circuit as well as parameters in their expressions
     will be treated as follows:
 
-    #. If the parameter is a parameter of the parent circuit, then it needs to
-       obtain the value given with the parent circuit.
-    #. Else if the parameter is a parameter of the prototype circuit, then it
-       needs to obtain the value given with the prototype circuit
-    #. Else if the parameter is defined in a user library (in USERPARAMS), then
-       the definition from this library needs to be added to the parameter
+    #. If the parameter is a parameter of the parent circuit, then the child 
+       needs to obtain the value given with the parent circuit.
+    #. Else if the parameter is a parameter of the prototype circuit, then the
+       child needs to obtain the value given with the prototype circuit
+    #. Else if the parameter is defined in a user library (in _USERPARAMS),
+       then the definition from this library needs to be added to the parameter
        definitions of the parent circuit.
     #. Else if the parameter is defined in a system library (in SLiCAPPARAMS),
        then the definition from this library needs to be added to the parameter
@@ -937,7 +1102,7 @@ def updateParDefs(parentParDefs, childParDefs, parentParams, prototypeParams, pa
     :rtype: SLiCAPprotos.element
     """
     # Create a list with all parameters
-    allParams = list(childParDefs.keys())
+    allParams = childParDefs.keys()
     allAtoms = []
     for parName in allParams:
         allAtoms += childParDefs[parName].atoms(sp.Symbol)
@@ -946,29 +1111,29 @@ def updateParDefs(parentParDefs, childParDefs, parentParams, prototypeParams, pa
     substDictNames  = {}
     substDictValues = {}
     for parName in allParams:
-        if parName != ini.Laplace and parName != ini.frequency:
-            if str(parName) in list(parentParams.keys()):
+        if parName != ini.laplace and parName != ini.frequency:
+            if str(parName) in parentParams.keys():
                 substDictValues[parName] = parentParams[str(parName)]
-            elif str(parName) in list(prototypeParams.keys()):
+            elif str(parName) in prototypeParams.keys():
                 substDictValues[parName] = prototypeParams[str(parName)]
-            elif str(parName) in list(USERPARAMS.keys()):
-                parentParDefs = addParDefsParam(parName, parentParDefs)
-            elif str(parName) in list(SLiCAPPARAMS.keys()):
-                parentParDefs = addParDefsParam(parName, parentParDefs)
+            elif str(parName) in _USERPARAMS.keys():
+                parentParDefs = _addParDefsParam(parName, parentParDefs)
+            elif str(parName) in _SLiCAPPARAMS.keys():
+                parentParDefs = _addParDefsParam(parName, parentParDefs)
             else :
                 substDictNames[parName] = sp.Symbol(str(parName) + '_' + parentRefDes)
                 substDictValues[parName] = sp.Symbol(str(parName) + '_' + parentRefDes)
-    for parName in list(childParDefs.keys()):
+    for parName in childParDefs.keys():
         """
         Add a child parameter definition to the parent parameter definitions if:
             - the parameter is not the Laplace or Fourier variable
             - the parameter is not in the prototype definition
         """
-        if sp.Symbol(parName) != ini.Laplace and sp.Symbol(parName) != ini.frequency and parName not in list(prototypeParams.keys()):
+        if sp.Symbol(parName) != ini.laplace and sp.Symbol(parName) != ini.frequency and parName not in prototypeParams.keys():
             parentParDefs[fullSubs(sp.Symbol(parName), substDictNames)] = fullSubs(childParDefs[parName], substDictValues)
     return parentParDefs
 
-def addParDefsParam(parName, parDict):
+def _addParDefsParam(parName, parDict):
     """
     Adds a the definition of a global parameter (from SLiCAP.lib or from a
     user library) and, recursively, the parameters from its expression to
@@ -981,126 +1146,22 @@ def addParDefsParam(parName, parDict):
     :rtype: dict
     """
     parName = str(parName)
-    if parName not in list(parDict.keys()):
-        if parName in list(USERPARAMS.keys()):
-            parDict[parName] = USERPARAMS[parName]
-            newParams = list(USERPARAMS[parName].atoms(sp.Symbol))
+    if parName not in parDict.keys():
+        if parName in _USERPARAMS.keys():
+            parDict[parName] = _USERPARAMS[parName]
+            newParams = _USERPARAMS[parName].atoms(sp.Symbol)
             for newParam in newParams:
-                addParDefsParam(newParam, parDict)
-        elif parName in list(SLiCAPPARAMS.keys()):
-            parDict[parName] = SLiCAPPARAMS[parName]
-            newParams = list(SLiCAPPARAMS[parName].atoms(sp.Symbol))
+                _addParDefsParam(newParam, parDict)
+        elif parName in _SLiCAPPARAMS.keys():
+            parDict[parName] = _SLiCAPPARAMS[parName]
+            newParams = _SLiCAPPARAMS[parName].atoms(sp.Symbol)
             for newParam in newParams:
-                addParDefsParam(newParam, parDict)
+                _addParDefsParam(newParam, parDict)
     return parDict
 
 """ PASS 4 FUNCTIONS """
-def sortDepVars(mainCircuit):
-    """
-    Sort the dependent variables. This controls the construction of the matrix
-    such that the number of zero entries per column decreases from left to right.
 
-    :param mainCircuit: Main (fully expanded) circuit object.
-    :type mainCircuit: SLiCAP.protos.circuit
-
-    :return: mainCircuit: Main circuit with updated attributes *depVars* and *varIndex*.
-    :rtype: SLiCAPprotos.circuit
-    """
-    vGnd = []
-    nGnd = []
-    rGnd = []
-    lGnd = []
-    eGnd = []
-    ezGnd = []
-    gGnd = []
-    tGnd = []
-    hGnd = []
-    hzGnd = []
-    fGnd = []
-    v = []
-    n = []
-    r = []
-    l = []
-    e = []
-    ez = []
-    f = []
-    g = []
-    t = []
-    h = []
-    hz = []
-    depVars = mainCircuit.depVars
-    for var in depVars:
-        varType = var[0]
-        if varType == 'I':
-            if var[1] == '_':
-                varElement = var[2:]
-                model = mainCircuit.elements[varElement].model
-                nodes = mainCircuit.elements[varElement].nodes
-                if nodes[0] == '0' or nodes[1] == '0':
-                    if model == 'V':
-                        vGnd.append(var)
-                    elif model == 'r':
-                        rGnd.append(var)
-                    elif model == 'L':
-                        lGnd.append(var)
-                else:
-                    if model == 'V':
-                        v.append(var)
-                    elif model == 'r':
-                        r.append(var)
-                    elif model == 'L':
-                        l.append(var)
-            if var[2] == '_':
-                varElement = var[3:]
-                model = mainCircuit.elements[varElement].model
-                nodes = mainCircuit.elements[varElement].nodes
-                if nodes[0] == '0' or nodes[1] == '0':
-                    if model == 'N':
-                        nGnd.append(var)
-                    elif model == 'E':
-                        eGnd.append(var)
-                    elif model == 'G':
-                        gGnd.append(var)
-                    elif model == 'T':
-                        tGnd.append(var)
-                    elif model == 'H':
-                        hGnd.append(var)
-                    elif model == 'EZ':
-                        ezGnd.append(var)
-                    elif model == 'HZ':
-                        hzGnd.append(var)
-                    elif model == 'F':
-                        fGnd.append(var)
-                else:
-                    if model == 'N':
-                        n.append(var)
-                    elif model == 'E':
-                        e.append(var)
-                    elif model == 'G':
-                        g.append(var)
-                    elif model == 'T':
-                        t.append(var)
-                    elif model == 'H':
-                        h.append(var)
-                    elif model == 'EZ':
-                        ez.append(var)
-                    elif model == 'HZ':
-                        hz.append(var)
-                    elif model == 'F':
-                        f.append(var)
-    mainCircuit.depVars = vGnd + nGnd + rGnd + lGnd + eGnd + fGnd + gGnd + hGnd + ezGnd + hzGnd + tGnd + v + n + r + l + e + f + g + h + ez + hz + t
-    mainCircuit.varIndex = {}
-    varIndexPos = 0
-    for i in range(len(mainCircuit.depVars)):
-        mainCircuit.varIndex[mainCircuit.depVars[i]] = varIndexPos
-        varIndexPos += 1
-    for i in range(len(mainCircuit.nodes)):
-        mainCircuit.depVars.append('V_' + mainCircuit.nodes[i])
-        mainCircuit.varIndex[mainCircuit.nodes[i]] = varIndexPos
-        varIndexPos += 1
-    return mainCircuit
-
-def updateCirData(circuitObject):
+def _updateCirData(circuitObject):
     """
     Updates data of the main expanded circuit required for instructions.
 
@@ -1130,43 +1191,45 @@ def updateCirData(circuitObject):
     circuitObject.nodes = []
     circuitObject.depVars = []
     circuitObject.indepVars = []
-    for elmt in list(circuitObject.elements.keys()):
+    
+    for elmt in circuitObject.elements.keys():
+        
         circuitObject.nodes += circuitObject.elements[elmt].nodes
-        if circuitObject.elements[elmt].type in INDEPSCRCS:
+        if circuitObject.elements[elmt].type in _INDEPSCRCS:
             circuitObject.indepVars.append(elmt)
-        elif circuitObject.elements[elmt].type in CONTROLLED:
+        elif circuitObject.elements[elmt].type in _CONTROLLED:
             circuitObject.controlled.append(elmt)
-        for i in range(len(MODELS[circuitObject.elements[elmt].model].depVars)):
-            depVar = MODELS[circuitObject.elements[elmt].model].depVars[i]
+        for i in range(len(_MODELS[circuitObject.elements[elmt].model].depVars)):
+            depVar = _MODELS[circuitObject.elements[elmt].model].depVars[i]
             circuitObject.depVars.append(depVar + '_' + elmt)
         # Add parameters used in element expressions to circuit.params
-        for par in list(circuitObject.elements[elmt].params.keys()):
+        for par in circuitObject.elements[elmt].params.keys():
             try:
-                circuitObject.params += list(circuitObject.elements[elmt].params[par].atoms(sp.Symbol))
+                circuitObject.params += circuitObject.elements[elmt].params[par].atoms(sp.Symbol)
             except:
                 pass
     # Add parameters used in parDef expressions to circuit.params
     for par in list(circuitObject.parDefs.keys()):
         circuitObject.params.append(par)
-        circuitObject.params += list(circuitObject.parDefs[par].atoms(sp.Symbol))
+        circuitObject.params += circuitObject.parDefs[par].atoms(sp.Symbol)
     circuitObject.params = list(set(circuitObject.params))
     # Try to find required global parameter definitions for undefined params
+    
     for par in circuitObject.params:
-        if par != ini.Laplace and par != ini.frequency and par not in list(circuitObject.parDefs.keys()):
-            if str(par) in list(SLiCAPPARAMS.keys()):
-                circuitObject.parDefs[par] = SLiCAPPARAMS[str(par)]
-                newParams = list(SLiCAPPARAMS[str(par)].atoms(sp.Symbol))
-                for newParam in newParams:
-                    # Parameters in the expression of a global parameter also have a global definition
-                    circuitObject.parDefs[newParam] = SLiCAPPARAMS[str(newParam)]
-        elif par == ini.Laplace or par == ini.frequency:
-            circuitObject.params.remove(par)
-    for par in circuitObject.parDefs.keys():
-        if par in circuitObject.params:
-            circuitObject.params.remove(par)
+        if par != ini.laplace and par != ini.frequency and par not in list(circuitObject.parDefs.keys()):
+            circuitObject = _addGlobalParam(par, circuitObject)
+            
+    # Remove parameters with definitions from the undefined parameters list
+    newParams=[]
+    circuitObject.params = list(set(circuitObject.params))
+    for par in circuitObject.params:
+        if par != ini.laplace and par != ini.frequency and par not in list(circuitObject.parDefs.keys()):
+            newParams.append(par)
+    circuitObject.params = newParams
+            
     # check for two connections per node (warning)
     connections = {i:circuitObject.nodes.count(i) for i in circuitObject.nodes}
-    for key in list(connections.keys()):
+    for key in connections.keys():
         if connections[key] < 2:
             print("Warning less than two connections at node: '{0}'.".format(key))
     # Remove duplicate entries from node list and sort the list."
@@ -1178,31 +1241,37 @@ def updateCirData(circuitObject):
     nodeVoltages = ['V_' + circuitObject.nodes[i] for i in range(len(circuitObject.nodes))]
     #circuitObject.depVars = nodeVoltages + circuitObject.depVars
     circuitObject.depVars += nodeVoltages
-    circuitObject = createDepVarIndex(circuitObject)
-    #circuitObject = sortDepVars(circuitObject)
+    # Check source
+    if circuitObject.source != None:
+        for src in circuitObject.source:
+            if src != None:
+                if src not in circuitObject.indepVars:
+                    print("Error: unknown signal source: {}.".format(src))
+                    circuitObject.errors += 1
+    # Check loop gain reference
+    if circuitObject.lgRef!= None:
+        for lgRef in circuitObject.lgRef:
+            if lgRef != None:
+                if lgRef not in circuitObject.controlled:
+                    print("Error: unknown loop gain reference: {}.".format(lgRef))
+                    circuitObject.errors += 1
+    #circuitObject = _createDepVarIndex(circuitObject)
     return circuitObject
 
-def createDepVarIndex(circuitObject):
-    """
-    Creates an index dict for the dependent variables, this easies the
-    construction of the matrix.
-
-    :param circuitObject: Circuit object to be updated
-    :type circuitObject: SLiCAPprotos.circuit
-
-    :return: SLiCAP circuit object
-    :rtype: SLiCAP circuit object
-    """
-    circuitObject.varIndex = {}
-    #varIndexPos = 0
-    for i in range(len(circuitObject.depVars)):
-        if circuitObject.depVars[i][0:2] == 'V_':
-            circuitObject.varIndex[circuitObject.depVars[i][2:]] = i
-        else:
-            circuitObject.varIndex[circuitObject.depVars[i]] = i
+def _addGlobalParam(par, circuitObject):       
+    if str(par) in _SLiCAPPARAMS.keys():
+        circuitObject.parDefs[par] = _SLiCAPPARAMS[str(par)]
+        newParams = _SLiCAPPARAMS[str(par)].atoms(sp.Symbol)
+        for newParam in newParams:
+            # Parameters in the expression of a global parameter also have a 
+            # global definition 
+            # circuitObject.parDefs[newParam] = _SLiCAPPARAMS[str(newParam)]
+            circuitObject = _addGlobalParam(par, circuitObject)
+    elif par == ini.laplace or par == ini.frequency:
+        circuitObject.params.remove(par)
     return circuitObject
 
-def checkCircuit(fileName):
+def _checkCircuit(fileName):
     """
     Main function for checking a netlist and converting it into a 'flattened'
     circuit object.
@@ -1224,7 +1293,8 @@ def checkCircuit(fileName):
     :return: Circuit object
     :rtype: SLiCAPprotos.circuit
     """
-    fileName = ini.circuitPath + fileName
+    _resetParser()
+    fileName = ini.cir_path + fileName
     print("Checking netlist:", fileName)
     # Read the netlist
     f = open(fileName, 'r')
@@ -1232,92 +1302,26 @@ def checkCircuit(fileName):
     f.close()
     # Check the circuit
     # PASS 1
-    parseNetlist(netlist) # Tokenize and parse the netlist to a nested circuit object
+    _parseNetlist(netlist, 'main', 'main') # Tokenize and parse the netlist to a nested circuit object
     # PASS 2
-
-    if CIRCUITS['main'].errors == 0:
-        checkReferences(CIRCUITS['main']) # Complete all data, include libraries and replace models and circuits to be expanded with thei prototype circuit
-        if CIRCUITS['main'].errors == 0:
+      
+    if _CIRCUITS['main'].errors == 0:
+        for key in _CIRCUITS.keys():
+            _checkReferences(_CIRCUITS[key]) # Complete all data, include libraries and replace models and circuits to be expanded with thei prototype circuit
+        if _CIRCUITS[key].errors == 0:
             # PASS 3
-            CIRCUITS['main'] = expandCircuit(CIRCUITS['main']) # Expand subcircuits and models
-            CIRCUITS['main'] = expandCircuit(CIRCUITS['main']) # Expand subcircuits and models
+            _CIRCUITS['main'] = _expandCircuit(_CIRCUITS['main']) # Expand subcircuits and models
             # PASS 4
-            CIRCUITS['main'] = updateCirData(CIRCUITS['main']) # Complete data for instructions
-        if CIRCUITS['main'].errors == 0:
-            ini.htmlPrefix = ('-'.join(CIRCUITS['main'].title.split()) + '_')
-            ini.htmlIndex = 'index.html'
-            htmlPage(CIRCUITS['main'].title, index = True)
+            _CIRCUITS['main'] = _updateCirData(_CIRCUITS['main']) # Complete data for instructions
+        if _CIRCUITS['main'].errors == 0:
+            ini.html_prefix = ('-'.join(_CIRCUITS['main'].title.split()) + '_')
+            ini.html_index = 'index.html'
+            htmlPage(_CIRCUITS['main'].title, index = True)
         else:
-            print("Errors found during updating of circuit data from '{0}'. Instructions with this circuit will not be executed.".format(CIRCUITS['main'].title))
+            print("Errors found during updating of circuit data from '{0}'. Instructions with this circuit will not be executed.".format(_CIRCUITS['main'].title))
     else:
-        print("Found", CIRCUITS['main'].errors, "error(s).")
+        print("Found", _CIRCUITS['main'].errors, "error(s).")
+    return _CIRCUITS['main']
 
-    return CIRCUITS['main']
-
-
-def makeLibraries():
-    compileSLiCAPLibraries()
-
-if __name__ == '__main__':
-    """
-    Since we are not running a project, we need to define project data.
-    The paths are OK with Linux
-    """
-    t0=time()
-    compileSLiCAPLibraries()
-    t1=time()
-
-    fi = 'hierarchy.cir'
-    ini.circuitPath = '/mnt/DATA/SLiCAP/SLiCAP_python_tests/basicTests/cir/'
-    ini.libraryPath = '/mnt/DATA/SLiCAP/SLiCAP_python_tests/basicTests/lib/'
-    ini.htmlPath    = '/mnt/DATA/SLiCAP/SLiCAP_python_tests/basicTests/html/'
-    ini.htmlIndex   = 'index.html'
-    ini.lastUpdate  = datetime.now()
-
-    print("Checking:", fi)
-
-    checkCircuit(fi)
-
-    # Print the circuit data
-    if CIRCUITS['main'].errors == 0:
-        #for cirName in list(CIRCUITS.keys()):
-        myCir = CIRCUITS['main']
-        print("\nCircuit:", myCir.title)
-
-        print("\nSubcircuit nodes:", myCir.nodes)
-
-        print("\nSubcircuit parameters:")
-        for param in myCir.params:
-            print(param)
-
-        print("\n Circuit elements:")
-        keys = list(myCir.elements.keys())
-
-        for key in keys:
-            el = myCir.elements[key]
-            print('\nElement    :', key)
-            print('Nodes      :', el.nodes)
-            print('Refs       :', el.refs)
-            print('Model      :', el.model)
-            print('Params     :')
-            for par in list(el.params.keys()):
-                print(' ', par, '=', el.params[par])
-
-        print('\nCircuit parameter definitions:')
-        for param in list(myCir.parDefs.keys()):
-            print(' ', param, '=', myCir.parDefs[param])
-
-        print('\nCircuit model definitions:')
-        for model in list(myCir.modelDefs.keys()):
-            print('\n Model name: ', myCir.modelDefs[model].name)
-            print(" Model type: ", myCir.modelDefs[model].type)
-            for key in myCir.modelDefs[model].params.keys():
-                print("   ", key, '=', myCir.modelDefs[model].params[key])
-
-        print('\nLibraries and include files:')
-        for lib in myCir.libs:
-            print(lib)
-
-        print('\nSub circuit definitions:')
-        for cir in list(myCir.circuits.keys()):
-            print(cir)
+def _makeLibraries():
+    _compileSLiCAPLibraries()

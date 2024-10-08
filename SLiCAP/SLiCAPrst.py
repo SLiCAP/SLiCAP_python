@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun 10 17:14:37 2023
+SLiCAP functions for generating snippets that can be stored as RST files
+and included in other RST files.
 
-@author: anton
+IMPORTANT: In future versions of SLiCAP, these functions will be replaced with 
+an RST formatter.
 """
-from SLiCAP.SLiCAPmath import fullSubs, roundN, checkNumeric
-from SLiCAP.SLiCAPini import ini
+import SLiCAP.SLiCAPconfigure as ini
 import sympy as sp
 from shutil import copyfile
+from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric
 
 # Public functions for generating snippets that can be stored as RST files
 # to be included by other RST files.
@@ -19,7 +21,7 @@ def netlist2RST(netlistFile, lineRange=None, firstNumber=None, position=0):
     a ReStructuredText document and returns this string.
 
     :param netlistFile: Name of the netlist file that resides in the
-                        ini.circuitPath directory
+                        ini.cir_path directory
     :type netListFile: str
 
     :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
@@ -35,8 +37,8 @@ def netlist2RST(netlistFile, lineRange=None, firstNumber=None, position=0):
     :return: RST snippet to be included in a ReStructuredText document
     :rtype: str
     """
-    copyfile(ini.circuitPath + netlistFile, ini.sphinxPath + 'SLiCAPdata/' + netlistFile)
-    spaces = makeSpaces(position)
+    copyfile(ini.cir_path + netlistFile, ini.sphinx_path + 'SLiCAPdata/' + netlistFile)
+    spaces = _makeSpaces(position)
     RST = spaces + '.. literalinclude:: ../SLiCAPdata/' + netlistFile + '\n'
     RST += spaces + '    :linenos:\n'
     if lineRange != None:
@@ -70,7 +72,6 @@ def elementData2RST(circuitObject, label='', append2caption='', position=0):
     :return: RST snippet to be included in a ReStructuredText document
     :rtype: str
     """
-    spaces     = makeSpaces(position)
     name       = 'Expanded netlist of: ' + circuitObject.title + '. ' + append2caption
     headerList = ["ID", "Nodes", "Refs", "Model", "Param", "Symbolic", "Numeric"]
     linesList   = []
@@ -79,7 +80,6 @@ def elementData2RST(circuitObject, label='', append2caption='', position=0):
         line = [key]
 
         lineItem = ''
-        nodes = ''
         for node in el.nodes:
             lineItem += node + ' '
         line.append(lineItem)
@@ -105,7 +105,7 @@ def elementData2RST(circuitObject, label='', append2caption='', position=0):
                     line.append(el.params[keys[i]])
                     line.append(fullSubs(el.params[keys[i]], circuitObject.parDefs))
         linesList.append(line)
-    RST = RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
+    RST = _RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
     return RST
 
 def parDefs2RST(circuitObject, label='', append2caption='', position=0):
@@ -134,7 +134,6 @@ def parDefs2RST(circuitObject, label='', append2caption='', position=0):
     :rtype: str
     """
     if len(circuitObject.parDefs) > 0:
-        spaces     = makeSpaces(position)
         name       = 'Parameter defnitions in: ' + circuitObject.title + '. ' + append2caption
         headerList = ["Name", "Symbolic", "Numeric"]
         linesList   = []
@@ -143,7 +142,7 @@ def parDefs2RST(circuitObject, label='', append2caption='', position=0):
                 circuitObject.parDefs[parName],
                 fullSubs(circuitObject.parDefs[parName], circuitObject.parDefs)]
             linesList.append(line)
-        RST = RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
+        RST = _RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
     else:
         RST = "**No parameter definitions in: " +  circuitObject.title + '**\n\n'
     return RST
@@ -174,13 +173,12 @@ def params2RST(circuitObject, label='', append2caption='', position=0):
     :rtype: str
     """
     if len(circuitObject.params) > 0:
-        spaces     = makeSpaces(position)
         name       = 'Undefined parameters in: ' + circuitObject.title + '. ' + append2caption
         headerList = ["Name"]
         linesList   = []
         for parName in circuitObject.params:
-            lineList.append([parName])
-        RST = RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
+            linesList.append([parName])
+        RST = _RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
     else:
         RST = '**No undefined parameters in: ' +  circuitObject.title + '**\n\n'
     return RST
@@ -216,43 +214,43 @@ def pz2RST(resultObject, label = '', append2caption='', position=0):
     if resultObject.errors != 0:
         print("pz2RST: Errors found in instruction.")
     elif resultObject.dataType != 'poles' and resultObject.dataType != 'zeros' and resultObject.dataType != 'pz':
-        print("pz2RST: Error: 'pz2RST()' expected dataType: 'poles', 'zeros', or 'pz', got: '{0}'.".format(instObj.dataType))
+        print("pz2RST: Error: 'pz2RST()' expected dataType: 'poles', 'zeros', or 'pz', got: '{0}'.".format(resultObject.dataType))
     elif resultObject.step == True :
         print("pz2RST: Error: parameter stepping not implemented for 'pz2RST()'.")
     else:
         if resultObject.dataType == 'poles':
             name = 'Poles of: ' + resultObject.gainType + '. ' + append2caption
-            numeric = checkNumeric(resultObject.poles)
+            numeric = _checkNumeric(resultObject.poles)
         elif resultObject.dataType == 'zeros':
             name = 'Zeros of: ' + resultObject.gainType + '. ' + append2caption
-            numeric = checkNumeric(resultObject.zeros)
+            numeric = _checkNumeric(resultObject.zeros)
         elif resultObject.dataType == 'pz':
             name = 'Poles and zeros of: ' + resultObject.gainType + '. DC gain = :math:`' + sp.latex(roundN(resultObject.DCvalue)) + '`. ' + append2caption
-            numeric = checkNumeric(resultObject.poles) and checkNumeric(resultObject.zeros)
+            numeric = _checkNumeric(resultObject.poles) and _checkNumeric(resultObject.zeros)
         if numeric:
-            if ini.Hz == True:
+            if ini.hz == True:
                 headerList = ['#', 'Re [Hz]', 'Im [Hz]', ':math:`f` [Hz]', 'Q']
             else:
-                headerList = ['#', 'Re [rad/s]', 'Im [rad/s]', ':math:`\omega` [rad/s]', 'Q']
+                headerList = ['#', 'Re [rad/s]', 'Im [rad/s]', ':math:`\\omega` [rad/s]', 'Q']
         else:
-            if ini.Hz == True:
+            if ini.hz == True:
                 headerList = ['#', ':math:`f` [Hz]']
             else:
-                headerList = ['#', ':math:`\omega` [rad/s]']
+                headerList = ['#', ':math:`\\omega` [rad/s]']
         linesList = []
         if resultObject.dataType == 'poles' or resultObject.dataType == 'pz':
             if numeric:
-                linesList += numRoots2RST(resultObject.poles, ini.Hz, 'p')
+                linesList += _numRoots2RST(resultObject.poles, ini.hz, 'p')
             else:
-                linesList += symRoots2RST(resultObject.poles, ini.Hz, 'p')
+                linesList += _symRoots2RST(resultObject.poles, ini.hz, 'p')
 
         if resultObject.dataType == 'zeros' or resultObject.dataType == 'pz':
             if numeric:
-                linesList += numRoots2RST(resultObject.zeros, ini.Hz, 'z')
+                linesList += _numRoots2RST(resultObject.zeros, ini.hz, 'z')
             else:
-                linesList += symRoots2RST(resultObject.zeros, ini.Hz, 'z')
+                linesList += _symRoots2RST(resultObject.zeros, ini.hz, 'z')
 
-        RST += RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
+        RST += _RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
     return RST
 
 def noiseContribs2RST(resultObject, label='', append2caption='', position=0):
@@ -304,7 +302,7 @@ def noiseContribs2RST(resultObject, label='', append2caption='', position=0):
                 linesList.append(line)
             line = [src + ': Detector-referred', resultObject.onoiseTerms[src], detunits]
             linesList.append(line)
-        RST = RSTcreateCSVtable(name, headerList, linesList, unitpos=2, label=label)
+        RST = _RSTcreateCSVtable(name, headerList, linesList, unitpos=2, label=label)
     else:
         RST = ''
         print('noise2RST: Error: wrong data type, or stepped analysis.')
@@ -359,7 +357,7 @@ def dcvarContribs2RST(resultObject, label='', append2caption='', position=0):
                 linesList.append(line)
             line = [src + ': Detector-referred', resultObject.ovarTerms[src], detunits]
             linesList.append(line)
-        RST = RSTcreateCSVtable(name, headerList, linesList, unitpos=2, label=label)
+        RST = _RSTcreateCSVtable(name, headerList, linesList, unitpos=2, label=label)
     else:
         RST = ''
         print('dcvar2RST: Error: wrong data type, or stepped analysis.')
@@ -392,9 +390,9 @@ def specs2RST(specs, specType='', label='', caption='', position=0):
     headerList = ["Name", "Description", "value", "units"]
     for specItem in specs:
         if specItem.specType.lower()==specType.lower():
-            linesList.append(specItem.specLine())
+            linesList.append(specItem._specLine())
     if len(linesList) > 0:
-        RST = RSTcreateCSVtable(caption, headerList, linesList, label=label, position=position) + '\n'
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, position=position) + '\n'
     else:
         RST =  "**Found no specifications of type: " + specType + ".**\n\n"
     return RST
@@ -422,7 +420,7 @@ def eqn2RST(LHS, RHS, units='', position=0, label=''):
     :return: RST snippet to be included in a ReStructuredText document.
     :rtype: str
     """
-    spaces = makeSpaces(position)
+    spaces = _makeSpaces(position)
     RST = spaces + '.. math::\n'
     if label != '':
         RST += spaces + '    :label: ' + label + '\n'
@@ -433,7 +431,7 @@ def eqn2RST(LHS, RHS, units='', position=0, label=''):
         units = ''
     RST += spaces + '    ' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
     if units != '':
-        RST += '\,\,\\left[\\mathrm{' + units + '}\\right]\n\n'
+        RST += '\\,\\,\\left[\\mathrm{' + units + '}\\right]\n\n'
     return RST
 
 def matrices2RST(Iv, M, Dv, position=0, label=''):
@@ -457,7 +455,7 @@ def matrices2RST(Iv, M, Dv, position=0, label=''):
     :return: RST snippet to be included in a ReStructuredText document.
     :rtype: str
     """
-    spaces = makeSpaces(position)
+    spaces = _makeSpaces(position)
     RST = spaces + '.. math::\n'
     if label != '':
         RST += spaces + '    :label: ' + label + '\n'
@@ -501,7 +499,7 @@ def stepArray2rst(stepVars, stepArray, label='', caption='', position=0):
         for j in range(numVars):
             line.append(stepArray[i][j])
         linesList.append(line)
-    RST = RSTcreateCSVtable(caption, headerList, linesList, position=position, label=label) + '\n\n'
+    RST = _RSTcreateCSVtable(caption, headerList, linesList, position=position, label=label) + '\n\n'
     return RST
 
 def coeffsTransfer2RST(transferCoeffs, label = '', append2caption='', position=0):
@@ -548,16 +546,16 @@ def coeffsTransfer2RST(transferCoeffs, label = '', append2caption='', position=0
         linesList.append([sp.sympify('d_' + str(i)), denomCoeffs[i]])
     caption += ':math:`n_i` = numerator coefficient of i-th order, :math:`d_i` = denominator coefficient of i-th order. '
     caption += append2caption
-    RST = RSTcreateCSVtable(caption, headerList, linesList, label=label, position=position)
+    RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, position=position)
     return RST
 
-def slicap2RST(scriptFile, firstLine=None, lineRange=None):
+def slicap2RST(scriptFile, position=0, firstNumber=None, firstLine=None, lineRange=None):
     """
     Converts a SLiCAP script file into an RST string that can be included in
     a ReStructuredText document and returns this string.
 
     :param scriptFile: Name of the script file that resides in the
-                       ini.projectPath directory
+                       _PROJECTPATH directory
     :type scriptFile: str
 
     :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
@@ -570,8 +568,8 @@ def slicap2RST(scriptFile, firstLine=None, lineRange=None):
     :return: RST snippet to be included in a ReStructuredText document
     :rtype: str
     """
-    copyfile(ini.projectPath + scriptFile, ini.sphinxPath + 'SLiCAPdata/' + scriptFile)
-    spaces = makeSpaces(position)
+    copyfile(ini.project_path + scriptFile, ini.sphinx_path + 'SLiCAPdata/' + scriptFile)
+    spaces = _makeSpaces(position)
     RST = spaces + '.. literalinclude:: ../SLiCAPdata/' + scriptFile + '\n'
     RST += spaces + '    :linenos:\n'
     if lineRange != None:
@@ -644,7 +642,7 @@ def save2RSTinline(vardict):
     """
     Saves the key-value pairs of 'vardict' in the CSV file:
 
-    <ini.sphinxPath>SLiCAPdata/RSTsubstitutions.rst
+    <ini.sphinx_path>SLiCAPdata/RSTsubstitutions.rst
 
     :param vardict: Dictionary with inline RST subsitutions
     :type vardict: dict
@@ -674,13 +672,13 @@ def saveRST(RST, fileName):
     :return: None
     :rtype: NoneType
     """
-    f = open(ini.sphinxPath + 'SLiCAPdata/' + fileName + '.rst', 'w')
+    f = open(ini.sphinx_path + 'SLiCAPdata/' + fileName + '.rst', 'w')
     f.write(RST)
     f.close()
 
 # Non-public functions for creating table snippets
 
-def RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None, label=''):
+def _RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None, label=''):
     """
     Creates and returns an RST table snippet that can be included in a
     ReStructuredText document.
@@ -706,7 +704,7 @@ def RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None, lab
     :rtype: str
     """
     RST = ''
-    spaces = makeSpaces(position)
+    spaces = _makeSpaces(position)
     if label != '':
         RST += spaces + '.. _' + label + ':\n'
     RST += spaces + '.. csv-table:: ' + name + '\n'
@@ -733,7 +731,7 @@ def RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None, lab
     RST += '\n\n'
     return RST
 
-def numRoots2RST(roots, Hz, pz):
+def _numRoots2RST(roots, Hz, pz):
     """
     Returns a list of lists with row data for the creation of an RST table
     with numeric poles or zeros.
@@ -769,7 +767,7 @@ def numRoots2RST(roots, Hz, pz):
         lineList.append(line)
     return lineList
 
-def symRoots2RST(roots, Hz, pz):
+def _symRoots2RST(roots, Hz, pz):
     """
     Returns a list of lists with row data for the creation of an RST table
     with symbolic poles or zeros.
@@ -797,7 +795,7 @@ def symRoots2RST(roots, Hz, pz):
         lineList.append(line)
     return lineList
 
-def makeSpaces(n):
+def _makeSpaces(n):
     """
     Creates and returns a string with <n> spaces.
 

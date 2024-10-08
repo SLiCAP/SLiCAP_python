@@ -5,13 +5,13 @@ SLiCAP module with math functions.
 """
 import sys
 import sympy as sp
-from sympy.combinatorics import Permutation
 import numpy as np
+import SLiCAP.SLiCAPconfigure as ini
+from sympy.combinatorics import Permutation
 from numpy.polynomial import Polynomial
 from scipy.integrate import quad
 from scipy.optimize import fsolve
-from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPlex import replaceScaleFactors
+from SLiCAP.SLiCAPlex import _replaceScaleFactors
 from SLiCAP.SLiCAPfc import computeFC
 
 def det(M, method="ME"):
@@ -45,16 +45,15 @@ def det(M, method="ME"):
         elif dim == 2:
             D = sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1])
         elif method == "ME":
-            M, sign = sort_rows_for_laplace(M)
-            D = detME(M)*sign
+            D = _detME(M)
         elif method == "BS":
-            D = detBS(M)
+            D = _detBS(M)
         elif method == "LU":
             D = M.det(method="LU")
         elif method == "bareiss":
             D = M.det(method="bareiss")
         elif method == "FC":
-            D = detFC(M)
+            D = _detFC(M)
         else:
             print("ERROR: Unknown method for det(M).")
             D = None
@@ -63,29 +62,7 @@ def det(M, method="ME"):
         D = None
     return sp.collect(D, sp.Symbol("s"))
 
-def sort_rows_for_laplace(matrix):
-    row, col = matrix.shape
-    r_zeros = []
-    # Number of zeros in each row
-    for r in range(row):
-        acc = sum(1 for c in range(col) if matrix[r, c].is_zero)
-        r_zeros.append((acc, r))
-    # Sort columns based on the number of zeros
-    r_zeros.sort()
-    r_zeros.reverse()
-    pre_sort = [i[1] for i in r_zeros]
-    # Compute permutation sign
-    perm = Permutation(pre_sort)
-    sign = perm.signature()
-    # Represent the sorted matrix
-    result = sp.Matrix.zeros(row, col)
-    r = 0
-    for it in pre_sort:
-        result[r,:] = matrix[it, :]
-        r += 1
-    return result, sign
-
-def detME(M):
+def _detME(M):
     dim = M.shape[0]
     if dim == 2:
         D = M[0,0]*M[1,1] - M[1,0]*M[0,1]
@@ -96,12 +73,12 @@ def detME(M):
                 newM = M.copy()
                 newM.row_del(row)
                 newM.col_del(0)
-                minor = detME(newM)
+                minor = _detME(newM)
                 if minor != 0:
                     D += M[row,0] * (-1)**(row%2) * minor
     return sp.expand(D)
 
-def detBS(M):
+def _detBS(M):
     newM = M.copy()
     sign = 1
     dim  = M.shape[0]
@@ -123,21 +100,21 @@ def detBS(M):
     D = sign * newM[dim-1, dim-1]
     return D
 
-def detFC(M):
+def _detFC(M):
     fc = computeFC(M)
-    D = det(sp.Matrix(sp.eye(fc.shape[0])*ini.Laplace + fc), method='BS')
+    D = det(sp.Matrix(sp.eye(fc.shape[0])*ini.laplace + fc), method='BS')
     return D
 
-def Roots(expr, var):
+def _Roots(expr, var):
     if isinstance(expr, sp.Basic) and isinstance(var, sp.Symbol):
         params = expr.atoms(sp.Symbol)
         if var in params:
             if len(params) == 1:
-                rts = numRoots(expr, var)
+                rts = _numRoots(expr, var)
             elif len(params) == 2 and sp.pi in params:
-                rts = numRoots(expr, var)
+                rts = _numRoots(expr, var)
             else:
-                rts = symRoots(expr, var)
+                rts = _symRoots(expr, var)
         else:
             rts = []
     else:
@@ -145,7 +122,7 @@ def Roots(expr, var):
         rts = None
     return rts
 
-def symRoots(expr, var):
+def _symRoots(expr, var):
     expr = assumeRealParams(expr)
     polyExpr = sp.poly(expr, var)
     rootDict = sp.roots(polyExpr)
@@ -155,7 +132,7 @@ def symRoots(expr, var):
             rts.append(clearAssumptions(rt))
     return rts
 
-def numRoots(expr, var):
+def _numRoots(expr, var):
     """
     Returns the roots of the polynomial 'expr' with indeterminate 'var'.
 
@@ -190,7 +167,7 @@ def numRoots(expr, var):
         print("Error: cannot determine the roots of:", str(p))
     return rts
 
-def coeffsTransfer(rational, var=ini.Laplace, method='lowest'):
+def coeffsTransfer(rational, var=ini.laplace, method='lowest'):
     """
     Returns a nested list with the coefficients of the variable of the
     numerator and of the denominator of 'rational'.
@@ -250,13 +227,13 @@ def coeffsTransfer(rational, var=ini.Laplace, method='lowest'):
         denCoeffs = [1]
     return (gain, numCoeffs, denCoeffs)
 
-def normalizeRational(rational, var=ini.Laplace, method='lowest'):
+def normalizeRational(rational, var=ini.laplace, method='lowest'):
     """
     Normalizes a rational expression to:
 
     .. math::
 
-        F(s) = gain\,s^{\ell}  \\frac{1+b_1s + ... + b_ms^m}{1+a_1s + ... + a_ns^n}
+        F(s) = gain\\,s^{\\ell}  \\frac{1+b_1s + ... + b_ms^m}{1+a_1s + ... + a_ns^n}
 
     :param Rational: Rational function of the variable.
     :type Rational: sympy.Expr
@@ -285,7 +262,7 @@ def normalizeRational(rational, var=ini.Laplace, method='lowest'):
         rational = gain*num/den
     return rational
 
-def cancelPZ(poles, zeros):
+def _cancelPZ(poles, zeros):
     """
     Cancels poles and zeros that coincide within the displayed accuracy.
 
@@ -318,7 +295,7 @@ def cancelPZ(poles, zeros):
                     newZeros.remove(zeros[j])
     return(newPoles, newZeros)
 
-def zeroValue(numer, denom, var):
+def _zeroValue(numer, denom, var):
     """
     Returns the zero frequency (s=0) value of numer/denom.
 
@@ -365,9 +342,9 @@ def findServoBandwidth(loopgainRational):
     :rtype: dict
     """
     numer, denom          = loopgainRational.as_numer_denom()
-    poles                 = numRoots(denom, ini.Laplace)
-    zeros                 = numRoots(numer, ini.Laplace)
-    poles, zeros          = cancelPZ(poles, zeros)
+    poles                 = _numRoots(denom, ini.laplace)
+    zeros                 = _numRoots(numer, ini.laplace)
+    poles, zeros          = _cancelPZ(poles, zeros)
     numPoles              = len(poles)
     numZeros              = len(zeros)
     numCornerFreqs        = numPoles + numZeros
@@ -421,7 +398,7 @@ def findServoBandwidth(loopgainRational):
             value    = new_value
             order    = new_order
             fcorner  = new_fcorner
-    if ini.Hz:
+    if ini.hz:
         if result['hpf'] != None:
             result['hpf'] = result['hpf']/np.pi/2
         if result['lpf'] != None:
@@ -457,7 +434,7 @@ def _initServoResults(fcorner, order, value):
             result['hpo'] = order
     return result
 
-def checkNumber(var):
+def _checkNumber(var):
     """
     Returns a number with its value represented by var.
 
@@ -469,7 +446,7 @@ def checkNumber(var):
     """
     input_var = var
     if type(var) == str:
-        var = replaceScaleFactors(var)
+        var = _replaceScaleFactors(var)
     else:
         var = str(var)
     try:
@@ -478,7 +455,7 @@ def checkNumber(var):
         var = None
     return var
 
-def checkNumeric(exprList):
+def _checkNumeric(exprList):
     """
     Returns True is all entries in the list 'exprList' are numeric.
 
@@ -496,7 +473,7 @@ def checkNumeric(exprList):
             break
     return numeric
 
-def checkExpression(expr):
+def _checkExpression(expr):
     """
     Returns the sympy expression of expr.
 
@@ -508,7 +485,7 @@ def checkExpression(expr):
     """
     input_expr = expr
     if type(expr) == str:
-        expr = replaceScaleFactors(expr)
+        expr = _replaceScaleFactors(expr)
     else:
         expr = str(expr)
     try:
@@ -544,7 +521,7 @@ def fullSubs(valExpr, parDefs):
     strValExpr = str(valExpr)
     i = 0
     newvalExpr = 0
-    while valExpr != newvalExpr and i < ini.maxRecSubst and isinstance(valExpr, sp.Basic):
+    while valExpr != newvalExpr and i < ini.max_rec_subst  and isinstance(valExpr, sp.Basic):
         # create a substitution dictionary with the smallest number of entries (this speeds up the substitution)
         substDict = {}
         params = valExpr.atoms(sp.Symbol)
@@ -559,7 +536,7 @@ def fullSubs(valExpr, parDefs):
         newvalExpr = valExpr
         valExpr = newvalExpr.xreplace(substDict)
         i += 1
-    if i == ini.maxRecSubst:
+    if i == ini.max_rec_subst :
         print("Warning: reached maximum number of substitutions for expression '{0}'".format(strValExpr))
     return valExpr
 
@@ -585,7 +562,7 @@ def assumeRealParams(expr, params = 'all'):
         if params == 'all':
             params = expr.atoms(sp.Symbol)
             try:
-                params.remove(ini.Laplace)
+                params.remove(ini.laplace)
             except BaseException:
                 pass
             for param in params:
@@ -620,7 +597,7 @@ def assumePosParams(expr, params = 'all'):
         if params == 'all':
             params = expr.atoms(sp.Symbol)
             try:
-                params.remove(ini.Laplace)
+                params.remove(ini.laplace)
             except BaseException:
                 pass
             for param in params:
@@ -659,7 +636,7 @@ def clearAssumptions(expr, params = 'all'):
         if params == 'all':
             params = expr.atoms(sp.Symbol)
             try:
-                params.remove(ini.Laplace)
+                params.remove(ini.laplace)
             except BaseException:
                 pass
             for param in params:
@@ -681,7 +658,7 @@ def phaseMargin(LaplaceExpr):
     unity-gain frequency. It uses the function **SLiCAPmath.findServoBandwidth()**
     for the initial guess, and ini.disp for the relative accuracy.
 
-    if ini.Hz == True, the units will be degrees and Hz, else radians and
+    if ini.hz == True, the units will be degrees and Hz, else radians and
     radians per seconds.
 
     :param LaplaceExpr: Univariate function (sympy.Expr*) or list with
@@ -701,16 +678,16 @@ def phaseMargin(LaplaceExpr):
         LaplaceExpr = [LaplaceExpr]
     for expr in LaplaceExpr:
         expr = normalizeRational(sp.N(expr))
-        if ini.Hz == True:
-            data = expr.xreplace({ini.Laplace: 2*sp.pi*sp.I*ini.frequency})
+        if ini.hz == True:
+            data = expr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
         else:
-            data = expr.xreplace({ini.Laplace: sp.I*ini.frequency})
-        func = sp.lambdify(ini.frequency, sp.Abs(data)-1, ini.lambdifyTool)
+            data = expr.xreplace({ini.laplace: sp.I*ini.frequency})
+        func = sp.lambdify(ini.frequency, sp.Abs(data)-1, ini.lambdify)
         guess = findServoBandwidth(expr)['lpf']
         try:
             #freq = newton(func, guess, tol = 10**(-ini.disp), maxiter = 50)
             freq = fsolve(func, guess)[0]
-            mrgn = phaseFunc_f(expr, freq)
+            mrgn = _phaseFunc_f(expr, freq)
         except BaseException:
             exc_type, value, exc_traceback = sys.exc_info()
             print('\n', value)
@@ -724,7 +701,7 @@ def phaseMargin(LaplaceExpr):
         freqs = freqs[0]
     return (mrgns, freqs)
 
-def makeNumData(yFunc, xVar, x, normalize=True):
+def _makeNumData(yFunc, xVar, x, normalize=True):
     """
     Returns a list of values y, where y[i] = yFunc(x[i]).
 
@@ -752,21 +729,21 @@ def makeNumData(yFunc, xVar, x, normalize=True):
         if len(yFunc.atoms(sp.Heaviside)) != 0:
             y = [sp.N(yFunc.subs(xVar, x[i])).doit() for i in range(len(x))]
         else:
-            func = sp.lambdify(xVar, yFunc, ini.lambdifyTool)
+            func = sp.lambdify(xVar, yFunc, ini.lambdify)
             y = func(x)
     else:
         y = [sp.N(yFunc) for i in range(len(x))]
     return y
 
-def magFunc_f(LaplaceExpr, f):
+def _magFunc_f(LaplaceExpr, f):
     """
     Calculates the magnitude at the real frequency f (Fourier) from the
     univariate function 'LaplaceExpr' of the Laplace variable.
 
-    If ini.Hz == true, the Laplace variable will be replaced with
+    If ini.hz == true, the Laplace variable will be replaced with
     2*sp.pi*sp.I*ini.frequency.
 
-    If ini.Hz == False, the Laplace variable will be replaced with
+    If ini.hz == False, the Laplace variable will be replaced with
     sp.I*ini.frequency.
 
     :param LaplaceExpr: Univariate function of the Laplace variable.
@@ -785,22 +762,22 @@ def magFunc_f(LaplaceExpr, f):
         # Convert lists into numpy arrays
         f = np.array(f)
     # Obtain the Fourier transform from the Laplace transform
-    if ini.Hz == True:
-        data = LaplaceExpr.xreplace({ini.Laplace: 2*sp.pi*sp.I*ini.frequency})
+    if ini.hz == True:
+        data = LaplaceExpr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
     else:
-        data = LaplaceExpr.xreplace({ini.Laplace: sp.I*ini.frequency})
-    result = makeNumData(sp.Abs(data), ini.frequency, f, normalize=False)
+        data = LaplaceExpr.xreplace({ini.laplace: sp.I*ini.frequency})
+    result = _makeNumData(sp.Abs(data), ini.frequency, f, normalize=False)
     return result
 
-def dBmagFunc_f(LaplaceExpr, f):
+def _dB_magFunc_f(LaplaceExpr, f):
     """
     Calculates the dB magnitude at the real frequency f (Fourier) from the
     univariate function 'LaplaceExpr' of the Laplace variable.
 
-    If ini.Hz == true, the Laplace variable will be replaced with
+    If ini.hz == true, the Laplace variable will be replaced with
     2*sp.pi*sp.I*ini.frequency.
 
-    If ini.Hz == False, the Laplace variable will be replaced with
+    If ini.hz == False, the Laplace variable will be replaced with
     sp.I*ini.frequency.
 
     :param LaplaceExpr: Univariate function of the Laplace variable.
@@ -817,22 +794,22 @@ def dBmagFunc_f(LaplaceExpr, f):
     LaplaceExpr = normalizeRational(sp.N(LaplaceExpr))
     if type(f) == list:
         f = np.array(f)
-    if ini.Hz == True:
-        data = LaplaceExpr.xreplace({ini.Laplace: 2*sp.pi*sp.I*ini.frequency})
+    if ini.hz == True:
+        data = LaplaceExpr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
     else:
-        data = LaplaceExpr.xreplace({ini.Laplace: sp.I*ini.frequency})
-    result = makeNumData(20*sp.log(sp.Abs(sp.N(data)), 10), ini.frequency, f, normalize=False)
+        data = LaplaceExpr.xreplace({ini.laplace: sp.I*ini.frequency})
+    result = _makeNumData(20*sp.log(sp.Abs(sp.N(data)), 10), ini.frequency, f, normalize=False)
     return result
 
-def phaseFunc_f(LaplaceExpr, f):
+def _phaseFunc_f(LaplaceExpr, f):
     """
     Calculates the phase angle at the real frequency f (Fourier) from the
     univariate function 'LaplaceExpr' of the Laplace variable.
 
-    If ini.Hz == true, the Laplace variable will be replaced with
+    If ini.hz == true, the Laplace variable will be replaced with
     2*sp.pi*sp.I*ini.frequency.
 
-    If ini.Hz == False, the Laplace variable will be replaced with
+    If ini.hz == False, the Laplace variable will be replaced with
     sp.I*ini.frequency.
 
     :param LaplaceExpr: Univariate function of the Laplace variable.
@@ -849,14 +826,14 @@ def phaseFunc_f(LaplaceExpr, f):
     LaplaceExpr = normalizeRational(sp.N(LaplaceExpr))
     if type(f) == list:
         f = np.array(f)
-    if ini.Hz == True:
-        data = LaplaceExpr.xreplace({ini.Laplace: 2*sp.pi*sp.I*ini.frequency})
+    if ini.hz == True:
+        data = LaplaceExpr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
     else:
-        data = LaplaceExpr.xreplace({ini.Laplace: sp.I*ini.frequency})
+        data = LaplaceExpr.xreplace({ini.laplace: sp.I*ini.frequency})
     data = sp.N(normalizeRational(data, ini.frequency))
     if ini.frequency in data.atoms(sp.Symbol):
         try:
-            func = sp.lambdify(ini.frequency, data, ini.lambdifyTool)
+            func = sp.lambdify(ini.frequency, data, ini.lambdify)
             phase = np.angle(func(f))
         except BaseException:
             phase = []
@@ -873,19 +850,19 @@ def phaseFunc_f(LaplaceExpr, f):
         phase = np.unwrap(phase)
     except BaseException:
         pass
-    if ini.Hz:
+    if ini.hz:
         phase = phase * 180/np.pi
     return phase
 
-def delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
+def _delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
     """
     Calculates the group delay at the real frequency f (Fourier) from the
     univariate function 'LaplaceExpr' of the Laplace variable.
 
-    If ini.Hz == true, the Laplace variable will be replaced with
+    If ini.hz == true, the Laplace variable will be replaced with
     2*sp.pi*sp.I*ini.frequency.
 
-    If ini.Hz == False, the Laplace variable will be replaced with
+    If ini.hz == False, the Laplace variable will be replaced with
     sp.I*ini.frequency.
 
     :param LaplaceExpr: Univariate function of the Laplace variable.
@@ -902,14 +879,14 @@ def delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
 
     if type(f) == list:
         f = np.array(f)
-    if ini.Hz == True:
-        data = LaplaceExpr.xreplace({ini.Laplace: 2*sp.pi*sp.I*ini.frequency})
+    if ini.hz == True:
+        data = LaplaceExpr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
     else:
-        data = LaplaceExpr.xreplace({ini.Laplace: sp.I*ini.frequency})
+        data = LaplaceExpr.xreplace({ini.laplace: sp.I*ini.frequency})
     if ini.frequency in data.atoms(sp.Symbol):
         data = sp.N(normalizeRational(data, ini.frequency))
         try:
-            func = sp.lambdify(ini.frequency, data, ini.lambdifyTool)
+            func = sp.lambdify(ini.frequency, data, ini.lambdify)
             angle1 = np.angle(func(f))
             angle2 = np.angle(func(f*(1+delta)))
         except BaseException:
@@ -921,61 +898,11 @@ def delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
         except BaseException:
             pass
         delay  = (angle1 - angle2)/delta/f
-        if ini.Hz == True:
+        if ini.hz == True:
             delay = delay/2/np.pi
     else:
         delay = [0 for i in range(len(f))]
     return delay
-
-def mag_f(LaplaceExpr):
-    """
-    Returns the magnitude as a function of the real frequency f (Fourier)
-    from the Laplace function 'LaplaceExpr'.
-
-    If ini.Hz == true, the Laplace variable will be replaced with
-    2*sp.pi*sp.I*ini.frequency.
-
-    If ini.Hz == False, the Laplace variable will be replaced with
-    sp.I*ini.frequency.
-
-    :param LaplaceExpr: Function of the Laplace variable.
-    :type LaplaceExpr: sympy.Expr
-
-    :return: Sympy expression representing the magnitude of the Fourier Transform.
-    :rtype: sympy.Expr
-    """
-    LaplaceExpr = sp.N(normalizeRational(LaplaceExpr))
-    if ini.Hz == True:
-        data = LaplaceExpr.xreplace({ini.Laplace: 2*sp.pi*sp.I*ini.frequency})
-    else:
-        data = LaplaceExpr.xreplace({ini.Laplace: sp.I*ini.frequency})
-    return sp.Abs(sp.N(data))
-
-def phase_f(LaplaceExpr):
-    """
-    Calculates the phase as a function of the real frequency f (Fourier)
-    from the Laplace function 'LaplaceExpr'.
-
-    If ini.Hz == true, the Laplace variable will be replaced with
-    2*sp.pi*sp.I*ini.frequency.
-
-    If ini.Hz == False, the Laplace variable will be replaced with
-    sp.I*ini.frequency.
-
-    :param LaplaceExpr: Function of the Laplace variable.
-    :type LaplaceExpr: sympy.Expr
-
-    :return: Sympy expression representing the phase of the Fourier Transform.
-    :rtype: sympy.Expr
-    """
-    LaplaceExpr = sp.N(normalizeRational(LaplaceExpr))
-    if ini.Hz == True:
-        data = LaplaceExpr.xreplace({ini.Laplace: 2*sp.pi*sp.I*ini.frequency})
-        phase = 180 * sp.arg(data) / sp.N(sp.pi)
-    else:
-        data = LaplaceExpr.xreplace({ini.Laplace: sp.I*ini.frequency})
-        phase = sp.arg(sp.N(data))
-    return phase
 
 def doCDSint(noiseResult, tau, f_min, f_max):
     """
@@ -1020,9 +947,9 @@ def doCDS(noiseResult, tau):
 
 def routh(charPoly, eps=sp.Symbol('epsilon')):
     """
-    Returns the Routh array of a polynomial of the Laplace variable (ini.Laplace).
+    Returns the Routh array of a polynomial of the Laplace variable (ini.laplace).
 
-    :param charPoly: Expression that can be written as a polynomial of the Laplace variable (ini.Laplace).
+    :param charPoly: Expression that can be written as a polynomial of the Laplace variable (ini.laplace).
     :type charPoly:  sympy.Expr
 
     :param eps:      Symbolic variable used to indicate marginal stability. Use a symbol that is not present in *charPoly*.
@@ -1033,7 +960,7 @@ def routh(charPoly, eps=sp.Symbol('epsilon')):
 
     :Example:
 
-    >>> # ini.Laplace = sp.Symbol('s')
+    >>> # ini.laplace = sp.Symbol('s')
     >>> s, eps = sp.symbols('s, epsilon')
     >>> charPoly = s**4+2*s**3+(3+k)*s**2+(1+k)*s+(1+k)
     >>> M = routh(charPoly, eps)
@@ -1042,7 +969,7 @@ def routh(charPoly, eps=sp.Symbol('epsilon')):
     >>>                 # Routh array
     Matrix([[1], [2], [k/2 + 5/2], [(k**2 + 2*k + 1)/(k + 5)], [k + 1]])
     """
-    coeffs = sp.Poly(charPoly, ini.Laplace).all_coeffs()
+    coeffs = sp.Poly(charPoly, ini.laplace).all_coeffs()
     orders = len(coeffs)
     dim = int(np.ceil(orders/2))
     M  = [[0 for i in range(dim)] for i in range(orders)]
@@ -1111,19 +1038,18 @@ def equateCoeffs(protoType, transfer, noSolve = [], numeric=True):
 
     :rtype: dict
     """
+    values = {}
     pars = list(set(list(protoType.atoms(sp.Symbol)) + list(transfer.atoms(sp.Symbol))))
     for i in range(len(noSolve)):
         noSolve[i] = sp.Symbol(str(noSolve[i]))
     params = []
     for par in pars:
-        if par != ini.Laplace and par not in noSolve:
+        if par != ini.laplace and par not in noSolve:
             params.append(par)
     gainP, pN, pD = coeffsTransfer(protoType)
     gainT, tN, tD = coeffsTransfer(transfer)
     if len(pN) != len(tN) or len(pD) != len(tD):
         print('Error: unequal orders of prototype and target.')
-        return values
-    values = {}
     equations = []
     for i in range(len(pN)):
         eqn = sp.Eq(pN[i], tN[i])
@@ -1144,7 +1070,6 @@ def equateCoeffs(protoType, transfer, noSolve = [], numeric=True):
                 for key in values.keys():
                     values[key] = sp.N(values[key])
         else:
-            values = {}
             for i in range(len(params)):
                 if numeric:
                     values[params[i]] = sp.N(solution[i])
@@ -1161,7 +1086,7 @@ def step2PeriodicPulse(ft, t_pulse, t_period, n_periods):
     Converts a step response in a periodic pulse response. Works with symbolic
     and numeric time functions.
 
-    For evaluation of numeric values, use the SLiCAP function: makeNumData().
+    For evaluation of numeric values, use the SLiCAP function: _makeNumData().
 
     :param ft: Time function f(t)
     :type ft: sympy.Expr
@@ -1206,7 +1131,7 @@ def butterworthPoly(n):
     :return: Butterworth polynomial of the n-th order of the Laplace variable
     :rtype: sympy.Expression
     """
-    s = ini.Laplace
+    s = ini.laplace
     if n%2:
         B_s = (s+1)
         for i in range(int((n-1)/2)):
@@ -1231,7 +1156,7 @@ def besselPoly(n):
     :return: Bessel polynomial of the n-th order of the Laplace variable
     :rtype: sympy.Expression
     """
-    s = ini.Laplace
+    s = ini.laplace
     B_s = 0
     for k in range(n+1):
         B_s += (sp.factorial(2*n-k)/((2**(n-k))*sp.factorial(k)*sp.factorial(n-k)))*s**k
@@ -1304,8 +1229,8 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
             except sp.SympifyError:
                 print("Error in expression: rmsNoise( ... , tau =", tau, ").")
                 errors += 1
-    fMi = checkNumber(fmin)
-    fMa = checkNumber(fmax)
+    fMi = _checkNumber(fmin)
+    fMa = _checkNumber(fmax)
     if fMi != None:
         # Numeric value for fmin
         fmin = fMi
@@ -1349,9 +1274,9 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
             var_i = 0
             for src in noiseSources:
                 if type(noiseData[src]) != list:
-                    data = noiseData[src]
+                    data = float2rational(noiseData[src])
                 else:
-                    data = noiseData[src][i]
+                    data = float2rational(noiseData[src][i])
                 if CDS:
                     var_i += doCDSint(data, tau, fmin, fmax)
                 else:
@@ -1368,7 +1293,7 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
                         func = assumePosParams(data)
                         result = sp.integrate(func, (assumePosParams(ini.frequency), fmin, fmax))
                         var_i += clearAssumptions(result)
-            if noiseResult.simType == 'numeric':
+            if noiseResult.numeric == True:
                 rms.append(sp.N(sp.sqrt(sp.expand(var_i))))
             else:
                 rms.append(sp.sqrt(sp.expand(var_i)))
@@ -1608,7 +1533,7 @@ def nonPolyCoeffs(expr, var):
 
 if __name__ == "__main__":
     from time import time
-    ini.Hz=True
+    ini.hz=True
     """
     t = sp.Symbol('t')
     s = sp.Symbol('s')
@@ -1624,7 +1549,7 @@ if __name__ == "__main__":
     #charPoly = 10 + 11*s +4*s**2 + 2*s**3 + 2*s**4 + s**5
     #charPoly = s**4-1
     #charPoly = s**5+s**4+2*s**3+2*s**2+s+1
-    #roots = numRoots(charPoly, ini.Laplace)
+    #roots = _numRoots(charPoly, ini.laplace)
     print(routh(charPoly, eps))
 
     numer    = sp.sympify('3*f/4+b*s+c*s^2')

@@ -2,181 +2,191 @@
 Work with parameters
 ====================
 
-*Circuit parameters* are symbolic variables used in element expressions. There are two ways of assigning values or expressions to these parameters:
+.. image:: /img/colorCode.svg
 
-#. In the netlist using the SPICE '.PARAM' directives. 
-#. From the python using the instruction.defPar() method.
 
-When SLiCAP is working in numeric simulation mode, parameter and expressions values will recursively be substituted into element expressions. 
+*Circuit parameters* are symbolic variables used in element expressions. There are four ways of assigning values or expressions to these parameters:
 
-The sections show parameter related topics:
+#. In the netlist using the SPICE '.PARAM' directives
+#. In python using the circuit.defPar() method
+#. In python using the 'pardefs' argument in in anstruction
+#. In python using the specs2circuit() function
 
-#. :ref:`parDefs`; including parameters without definition
-#. :ref:`parVals`
-#. :ref:`delPar`
-#. :ref:`defPar`
-#. :ref:`defPars`
-#. :ref:`getPar`
-#. :ref:`getPars`
-
-.. _parDefs:
-
---------------------------
 Get all circuit parameters
---------------------------
+==========================
 
 A list with all circuit parameters can be obtained as follows:
 
 .. code-block:: python
 
-    >>> from SLiCAP import *
-    >>> prj = initProject('My first RC network') # Initialize a SLiCAP project
-    >>> instr = instruction() # Create an instance of an instruction object
-    >>> instr.setCircuit('myFirstRCnetwork.cir') # Create a circuit from 'myFirstRCnetwork.cir'
-    No errors found for circuit: 'My first RC network' from file: 'myFirstRCnetwork.cir'.
+    import SLiCAP as sl
+    sl.initProject('My first RC network') # Initialize a SLiCAP project
+    # Create a circuit object from an existing netlist:
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    # Print the contents of the dictionary with circuit parameter definitions:
+    if len(cir.parDefs.keys()):
+        print("\nParameters with definitions:\n")
+        for key in cir.parDefs.keys():
+            print(key, cir.parDefs[key])
+    else: 
+        print("\nFound no parameter definitions")
+    # Print the contents of the list with parameters that have no definition:
+    if len(cir.params):
+        print("\nParameters that have no definition:\n")
+        for param in cir.params:
+            print(param)
+    else:
+        print("\nFound no parameters without definition")
+        
+This yields:
 
-    >>> all_param_names = list(instr.circuit.parDefs.keys()) + instr.circuit.params
-    >>> print(all_param_names)
-    [f_c, C, R]
+.. code-block:: text
 
-.. _parVals:
+    Parameters with definitions:
 
------------------------------
-Get all parameter definitions
------------------------------
+    R 1000
+    C 1/(2*pi*R*f_c)
+    f_c 1000
 
-A dictionary with key-value pairs of all circuit parameter definitions can be obtained as follows:
+    Found no parameters without definition
 
-.. code-block:: python
-
-    >>> from SLiCAP import *
-    >>> prj = initProject('My first RC network') # Initialize a SLiCAP project
-    >>> instr = instruction() # Create an instance of an instruction object
-    >>> instr.setCircuit('myFirstRCnetwork.cir') # Create a circuit from 'myFirstRCnetwork.cir'
-    No errors found for circuit: 'My first RC network' from file: 'myFirstRCnetwork.cir'.
-
-    >>> all_par_defs = instr.circuit.parDefs
-    >>> print(all_par_defs)
-    {f_c: 1000.00000000000, C: 1/(2*pi*R*f_c), R: 1000.00000000000}
-
-.. _delPar:
-
------------------------------
-Delete a parameter definition
------------------------------
-
-You can delete a parameter definition using the method **SLiCAPinstruction.instruction.delPar(*args)**. This method does not delete the circuit parameter itself: it only clears its definition so that it can be used as a symbolic variable in numeric simulations.
-
-.. code-block:: python
-
-    >>> from SLiCAP import *
-    >>> prj = initProject('My first RC network') # Initialize a SLiCAP project
-    >>> instr = instruction() # Create an instance of an instruction object
-    >>> instr.setCircuit('myFirstRCnetwork.cir') # Create a circuit from 'myFirstRCnetwork.cir'
-    No errors found for circuit: 'My first RC network' from file: 'myFirstRCnetwork.cir'.
-
-    >>> instr.defPar('R', 'tau/C')      # Define the value of 'R'
-    >>> instr.defPar('C', '10n')        # Define the value of 'C'  
-    >>> instr.defPar('tau', '1u')       # Define the value of 'tau'
-    >>> instr.delPar('f_c')             # Delete the definition of 'f_c'
-    >>> print(instr.circuit.parDefs)
-    {C: 1.00000000000000e-8, tau: 1.00000000000000e-6, R: tau/C}
-
-.. _defPar:
-
-----------------------------------------------
 Assign a value or an expression to a parameter
-----------------------------------------------
+==============================================
 
-The method **SLiCAPinstruction.instruction.defPar(*args)** sets the value of a parameter.
+The method `circuit.defPar() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.defPar>`__ can be used to assign a value or an expression to a parameter.
 
 .. code-block:: python
 
-    >>> from SLiCAP import *
-    >>> prj = initProject('My first RC network') # Initialize a SLiCAP project
-    >>> instr = instruction() # Create an instance of an instruction object
-    >>> instr.setCircuit('myFirstRCnetwork.cir') # Create a circuit from 'myFirstRCnetwork.cir'
-    No errors found for circuit: 'My first RC network' from file: 'myFirstRCnetwork.cir'.
+    import SLiCAP as sl
+    sl.initProject('My first RC network') # Initialize a SLiCAP project
+    # Create a circuit object from an existing netlist:
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    #
+    cir.defPar('R', 'tau/C') # Define R = tau/C
+    cir.defPar('C', '10n')   # Define C = 10 nF
+    cir.defPar('tau', '1u')  # Define tau = 1 us
+    print(cir.parDefs)
+    
+This yields:
 
-    >>> instr.defPar('R', 'tau/C')      # Define the value of 'R' as :math:`C=\frac{\tau}{C}`
-    >>> instr.defPar('C', '10n')        # Define the value of 'C' as :math:`C=10 \cdot 10^{-9}`
-    >>> instr.defPar('tau', '1u')       # Define the value of 'tau' as :math:`\tau = 1 \cdot 10^{-6}`
-    >>> print(instr.circuit.parDefs)
-    {f_c: 1000.00000000000, C: 1.00000000000000e-8, tau: 1.00000000000000e-6, R: tau/C}
+.. code-block:: text
 
-.. _defPars:
+    {R: tau/C, C: 1/100000000, f_c: 1000, tau: 1/1000000}
 
----------------------------------------------------
 Assign values or expressions to multiple parameters
----------------------------------------------------
+===================================================
 
-Multiple parameters can be assigned by passing a dictionary with key-value pairs of parameters as argument of the method **SLiCAPinstruction.instruction.defPar(*args)**:
-
-.. code-block:: python
-
-    >>> from SLiCAP import *
-    >>> prj = initProject('My first RC network') # Initialize a SLiCAP project
-    >>> instr = instruction() # Create an instance of an instruction object
-    >>> instr.setCircuit('myFirstRCnetwork.cir') # Create a circuit from 'myFirstRCnetwork.cir'
-    No errors found for circuit: 'My first RC network' from file: 'myFirstRCnetwork.cir'.
-
-    >>> instr.defPars({'R': 'tau/C', 'C': '10n', 'tau': '1u'})
-    >>> instr.setSimType('numeric')
-    >>> print(instr.getParValue(['R', 'C']))
-    {C: 1.00000000000000e-8, R: 100.000000000000}
-
-.. _getPar:
-
-------------------------------------------------------
-Get the definition or the numeric value of a parameter
-------------------------------------------------------
-
-The method **SLiCAPinstruction.instruction.getParValue(*args)** returns the value of a parameter. If the simulation type (SLiCAPinstruction.instruction.simType) has been set to 'symbolic' it returns the symbolic definition of the parameter. If the simulation type has been set to 'numeric' it returns its value after recursive substitution of all parameter definitions:
+The method `circuit.defPars() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.defPars>`__ can be used to assign definitions to multiple parameters.
 
 .. code-block:: python
 
-    >>> from SLiCAP import *
-    >>> prj = initProject('My first RC network') # Initialize a SLiCAP project
-    >>> instr = instruction() # Create an instance of an instruction object
-    >>> instr.setCircuit('myFirstRCnetwork.cir') # Create a circuit from 'myFirstRCnetwork.cir'
-    No errors found for circuit: 'My first RC network' from file: 'myFirstRCnetwork.cir'.
-
-    >>> instr.defPar('R', 'tau/C')      # Define the value of 'R'
-    >>> instr.defPar('C', '10n')        # Define the value of 'C'  
-    >>> instr.defPar('tau', '1u')       # Define the value of 'tau'
-    >>> instr.setSimType('symbolic')
-    >>> R_sym_value = instr.getParValue('R')
-    >>> print(R_sym_value)
-    tau/C
-    >>> instr.setSimType('numeric')
-    >>> R_num_value = instr.getParValue('R')
-    >>> print(R_num_value)
-    100.000000000000
-
-.. _getPars:
-
-----------------------------------------------------------------
-Get the definitions or the numeric values of multiple parameters
-----------------------------------------------------------------
-
-If the argument of the method **SLiCAPinstruction.instruction.getParValues(*args)** is a list with parameter names, this method returns a dict with key-value pairs of those parameters. If the simulation type (SLiCAPinstruction.instruction.simType) has been set to 'symbolic' it returns the symbolic definitions. If the simulation type has been set to 'numeric' it returns the values after recursive substitution of all parameter definitions:
+    import SLiCAP as sl
+    sl.initProject('My first RC network') # Initialize a SLiCAP project
+    # Create a circuit object from an existing netlist:
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    #
+    cir.defPars({'R': 'tau/C', 'C': '10n', 'tau': '1u'})
+    print(cir.parDefs)
+    
+This yields the same as above:
 
 .. code-block:: python
 
-    >>> from SLiCAP import *
-    >>> prj = initProject('My first RC network') # Initialize a SLiCAP project
-    >>> instr = instruction() # Create an instance of an instruction object
-    >>> instr.setCircuit('myFirstRCnetwork.cir') # Create a circuit from 'myFirstRCnetwork.cir'
-    No errors found for circuit: 'My first RC network' from file: 'myFirstRCnetwork.cir'.
+    {R: tau/C, C: 1/100000000, f_c: 1000, tau: 1/1000000}
 
-    >>> instr.defPar('R', 'tau/C')      # Define the value of 'R'
-    >>> instr.defPar('C', '10n')        # Define the value of 'C'  
-    >>> instr.defPar('tau', '1u')       # Define the value of 'tau'
-    >>> instr.setSimType('symbolic')
-    >>> R_C = getParValue(['R', 'C'])
-    >>> print(R_C)
-    {C: 1.00000000000000e-8, R: tau/C}
-    >>> instr.setSimType('numeric')
-    >>> R_C = instr.getParValue(['R', 'C'])
-    >>> print(R_C)
-    {C: 1.00000000000000e-8, R: 100.000000000000}
+Delete a parameter definition
+=============================
+
+You can delete a parameter definition using the method `circuit.delPar() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.delPar>`__ . This method does not delete the circuit parameter itself, it only clears its definition so that it can be used as a symbolic variable.
+
+.. code-block:: python
+
+    import SLiCAP as sl
+    sl.initProject('My first RC network') # Initialize a SLiCAP project
+    # Create a circuit object from an existing netlist:
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    #
+    cir.defPar('R', 'tau/C')    # Define the value of R
+    cir.defPar('C', '10n')      # Define the value of C
+    cir.defPar('tau', '1/f_c')  # Define the value of tau
+    cir.delPar('f_c')           # Delete the definition of f_c
+    #
+    # Print the contents of the dictionary with circuit parameter definitions:
+    if len(cir.parDefs.keys()):
+        print("\nParameters with definitions:\n")
+        for key in cir.parDefs.keys():
+            print(key, cir.parDefs[key])
+    else: 
+        print("\nFound no parameter definitions")
+    # Print the contents of the list with parameters that have no definition:
+    if len(cir.params):
+        print("\nParameters that have no definition:\n")
+        for param in cir.params:
+            print(param)
+    else:
+        print("\nFound no parameters without definition")
+
+This yields:
+
+.. code-block:: text
+
+    Parameters with definitions:
+
+    R tau/C
+    C 1/100000000
+    tau 1/f_c
+
+    Parameters that have no definition:
+
+    f_c
+
+Get the definition or value of a specific parameter
+===================================================
+
+The method `circuit.getParValue() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValue>`__  returns the definition or the evaluated value of a parameter.
+
+If the keyword argument 'substitute' is True (default), all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see `fullSubs <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs>`__)
+
+If the keyword argument 'numeric' is True (default is False), functions and constants are numerically evaluated in floating poit numbers.
+
+.. code-block:: python
+
+    sl.initProject('My first RC network') # Initialize a SLiCAP project
+    # Create a circuit object from an existing netlist:
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    #
+
+    cir.defPar('R', '10*tau/C')    # Define the value of R
+    cir.defPar('C', '10n')      # Define the value of C
+    cir.defPar('tau', '1u')     # Define the value of tau
+
+    R_defined           = cir.getParValue('R', substitute=False, numeric=False)
+    R_evaluated         = cir.getParValue('R', substitute=True,  numeric=False)
+    R_defined_numeric   = cir.getParValue('R', substitute=False, numeric=True)
+    R_evaluated_numeric = cir.getParValue('R', substitute=True,  numeric=True)
+
+    print('\nR_defined            :', R_defined)
+    print('R_evaluated          :', R_evaluated)
+    print('R_defined_numeric    :', R_defined_numeric)
+    print('R_evaluated_numeric :', R_evaluated_numeric)
+
+This yields:
+
+.. code-block:: text
+
+    R_defined            : 10*tau/C
+    R_evaluated          : 1000
+    R_defined_numeric    : 10.0*tau/C
+    RR_evaluated_numeric : 1000.00000000000
+
+Get the definitions or evauated values of multiple parameters
+=============================================================
+
+The method `circuit.getParValues() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValues>`__  returns a dictionary with key-value pairs. The keys are the names of the parameters and the values their defenition or evaluation of it. 
+
+If the keyword argument 'substitute' is True (default), for each parameter, all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see `fullSubs <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs>`__)
+
+If the keyword argument 'numeric' is True (default is False), functions and constants are numerically evaluated in floating poit numbers.
+    
+.. image:: /img/colorCode.svg
+

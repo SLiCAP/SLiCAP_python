@@ -1,373 +1,198 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>SLiCAP.py &mdash; SLiCAP 2.0.1 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
+  <title>SLiCAP.py &mdash; SLiCAP 3.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
   
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=08bfcbec"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="SLiCAPdesignData.py" href="SLiCAPdesignData.html" />
+    <link rel="next" title="SLiCAPconfigure.py" href="SLiCAPconfigure.html" />
     <link rel="prev" title="SLiCAP reference" href="SLiCAPreference.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> SLiCAP
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            SLiCAP
           </a>
-
-          
-            
-            
               <div class="version">
-                2.0.1
+                3.0.1
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP Version 3.0</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../development/SLiCAPdevelopment.html">SLiCAP development</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="SLiCAPreference.html">SLiCAP reference</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAP.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAP.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAP.Help"><code class="docutils literal notranslate"><span class="pre">Help()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAP.initProject"><code class="docutils literal notranslate"><span class="pre">initProject()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPconfigure.html">SLiCAPconfigure.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPexecute.html">SLiCAPexecute.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPini.html">SLiCAPini.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPkicad.html">SLiCAPkicad.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPlex.html">SLiCAPlex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPltspice.html">SLiCAPltspice.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPmath.html">SLiCAPmath.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPmatrices.html">SLiCAPmatrices.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPngspice.html">SLiCAPngspice.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPnotebook.html">SLiCAPnotebook.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPplots.html">SLiCAPplots.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPprotos.html">SLiCAPprotos.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPrst.html">SLiCAPrst.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPsetting.html">SLiCAPsetting.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPyacc.html">SLiCAPyacc.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPstatespace.html">SLiCAPstatespace.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPshell.html">SLiCAPshell.py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">SLiCAP</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="SLiCAPreference.html">SLiCAP reference</a> &raquo;</li>
-        
-      <li>SLiCAP.py</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="SLiCAPreference.html">SLiCAP reference</a></li>
+      <li class="breadcrumb-item active">SLiCAP.py</li>
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/reference/SLiCAP.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="module-SLiCAP.SLiCAP">
-<span id="slicap-py"></span><h1>SLiCAP.py<a class="headerlink" href="#module-SLiCAP.SLiCAP" title="Permalink to this heading">¶</a></h1>
+             
+  <section id="module-SLiCAP.SLiCAP">
+<span id="slicap-py"></span><h1>SLiCAP.py<a class="headerlink" href="#module-SLiCAP.SLiCAP" title="Link to this heading"></a></h1>
 <p>Main module for running SLiCAP from a console or from within a Python IDE.</p>
 <p>When working with Jupyter notebooks the main imort module is SLiCAPnotebook.py.
 It will import SLiCAP.py and some extra modules for displaying LaTeX, SVG and
 RST in the Jupyter notebooks.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.SLiCAPproject">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SLiCAPproject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAP.SLiCAPproject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Prototype of a SLiCAPproject.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.SLiCAPproject.author">
-<span class="sig-name descname"><span class="pre">author</span></span><a class="headerlink" href="#SLiCAP.SLiCAP.SLiCAPproject.author" title="Permalink to this definition">¶</a></dt>
-<dd><p>SLiCAPproject.author (str) Will be updated by running:
-SLiCAPproject.initProject(&lt;name&gt;)</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.SLiCAPproject.lastUpdate">
-<span class="sig-name descname"><span class="pre">lastUpdate</span></span><a class="headerlink" href="#SLiCAP.SLiCAP.SLiCAPproject.lastUpdate" title="Permalink to this definition">¶</a></dt>
-<dd><p>SLiCAPproject.lastUpdate (datetime.datetime) will be updated by
-running: SLiCAPproject.initProject(&lt;name&gt;)</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.SLiCAPproject.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#SLiCAP.SLiCAP.SLiCAPproject.name" title="Permalink to this definition">¶</a></dt>
-<dd><p>SLiCAPproject.name (str) is the name of the project. It will appear
-on the main html index page</p>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.copyNotOverwrite">
-<span class="sig-name descname"><span class="pre">copyNotOverwrite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAP.copyNotOverwrite" title="Permalink to this definition">¶</a></dt>
-<dd><p>Copies the file ‘src’ to ‘dest’ if the latter one does not exist.</p>
+<dt class="sig sig-object py" id="SLiCAP.SLiCAP.Help">
+<span class="sig-name descname"><span class="pre">Help</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAP.Help" title="Link to this definition"></a></dt>
+<dd><p>Opens the SLiCAP HTML documentation in the default browser.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>src</strong> (<em>str</em>) – Name of the source file.</p></li>
-<li><p><strong>dest</strong> (<em>str</em>) – Name of the desitination file.</p></li>
-</ul>
-</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
 </dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.initProject">
-<span class="sig-name descname"><span class="pre">initProject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAP.initProject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initializes a SLiCAP project.</p>
-<ul class="simple">
-<li><p>Copies the directory structure from the templates subdirectory to the
-project directory in the case it has not yet been created.</p></li>
-<li><p>Creates index.html in the html directory with the project name in the
-title bar</p></li>
-<li><p>Compiles the system libraries</p></li>
-<li><p>Creates or updates ‘SLiCAPconfig.py’ in the project directory</p></li>
-<li><p>Creates instance of SLiCAPproject object</p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – Name of the project will be passed to an instance of the
-SLiCAPproject object.</p></li>
-<li><p><strong>port</strong> (<em>int</em>) – Port number for communication with maxima CAS (&gt; 8000).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>SLiCAPproject</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#SLiCAP.SLiCAP.SLiCAPproject" title="SLiCAP.SLiCAP.SLiCAPproject">SLiCAP.SLiCAPproject</a></p>
-</dd>
-<dt class="field-even">Example</dt>
-<dd class="field-even"><p></p></dd>
-</dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">prj</span> <span class="o">=</span> <span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;my first SLiCAP project&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="n">prj</span><span class="o">.</span><span class="n">author</span>
-<span class="go">anton</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Display the SLiCAP HTML help in your default browser:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">Help</span><span class="p">()</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.makeDir">
-<span class="sig-name descname"><span class="pre">makeDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAP.makeDir" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates the directory ‘dirName’ if it does not yet exist.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>dirName</strong> (<em>str</em>) – Name of the ditectory.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.makeNetlist">
-<span class="sig-name descname"><span class="pre">makeNetlist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cirTitle</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAP.makeNetlist" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a netlist from a schematic file generated with LTspice or gschem.</p>
+<dt class="sig sig-object py" id="SLiCAP.SLiCAP.initProject">
+<span class="sig-name descname"><span class="pre">initProject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAP.initProject" title="Link to this definition"></a></dt>
+<dd><p>Initializes a SLiCAP project.</p>
 <ul class="simple">
-<li><p>LTspice: ‘.asc’ file</p></li>
-<li><p>gschem: ‘.sch’ file</p></li>
+<li><p>Copies the directory structure from the templates subdirectory to the
+project directory in cases it has not yet been created.</p></li>
+<li><p>Creates index.html in the html directory with the project name in the
+title bar</p></li>
+<li><p>Compiles the system libraries</p></li>
+<li><p>Creates or updates ‘SLiCAPconfigure.py’ in the project directory</p></li>
 </ul>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fileName</strong> (<em>str</em>) – Name of the file, relative to <strong>ini.circuitPath</strong></p></li>
-<li><p><strong>cirTitle</strong> (<em>str</em>) – Title of the schematic.</p></li>
-</ul>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name of the project: appears on the main html index page.</p>
 </dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="SLiCAP.SLiCAP.runLTspice">
-<span class="sig-name descname"><span class="pre">runLTspice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAP.runLTspice" title="Permalink to this definition">¶</a></dt>
-<dd><p>Runs LTspice netlist (.cir) file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>fileName</strong> (<em>str</em>) – Name of the circuit (.cir) file, relative to the
-project directory (cir/&lt;myCircuit&gt;.cir)</p>
-</dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Nonetype</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NoneType</p>
 </dd>
+<dt class="field-even">Example<span class="colon">:</span></dt>
+<dd class="field-even"><p></p></dd>
 </dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># At the first run it will create a &#39;SLiCAP.ini&#39; file in the SLiCAP </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># home folder:  &#39;~/SLiCAP/&#39;. </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># To this end it searches for installed applications. </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Under MSwindows this may take a while.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;my first SLiCAP project&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># At the first run this will create a &#39;SLiCAP.ini&#39; file in the SLiCAP </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># project folder:  &#39;./&#39;. Once created it will only reset some values.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># This function also resets the netlist parser and (re)creates the </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># system library objects.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Prints the SLiCAP global settings obtained from both ini files.</span>
+</pre></div>
+</div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="SLiCAPdesignData.html" class="btn btn-neutral float-right" title="SLiCAPdesignData.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="SLiCAPreference.html" class="btn btn-neutral float-left" title="SLiCAP reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="SLiCAPconfigure.html" class="btn btn-neutral float-right" title="SLiCAPconfigure.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2024, SLiCAP development team.
-
-    </p>
+    <p>&#169; Copyright 2024, SLiCAP development team.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

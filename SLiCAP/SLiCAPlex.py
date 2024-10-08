@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-SLiCAP tokenizer for netlist files.
+SLiCAP _tokenizer for netlist files.
 
 """
-from SLiCAP.SLiCAPini import ini
 import ply.lex as lex
 import sys
 import sympy as sp
@@ -16,7 +15,7 @@ tokens = ('PARDEF', 'EXPR', 'SCALE', 'SCI', 'FLT', 'INT', 'CMD', 'FNAME',
           'PARAMS', 'ID', 'QSTRING', 'PLUS', 'LEFTBR', 'RIGHTBR', 'COMMENT',
           'NEWLINE')
 
-SCALEFACTORS    =  {'y':'-24','z':'-21','a':'-18','f':'-15','p':'-12','n':'-9',
+_SCALEFACTORS    =  {'y':'-24','z':'-21','a':'-18','f':'-15','p':'-12','n':'-9',
                     'u':'-6','m':'-3','k':'3','M':'6','G':'9','T':'12','P':'15'} #,
                     #'E':'18','Z':'21','Y':'24'}
 
@@ -36,14 +35,14 @@ def t_PARDEF(t):
         pos = 1
         out = ''
         for m in re.finditer(r'\d+\.?\d*[yzafpnumkMGTP]', t.value[1]):
-            out += t.value[1][pos: m.end()-1] + 'e' + SCALEFACTORS[m.group(0)[-1]]
+            out += t.value[1][pos: m.end()-1] + 'e' + _SCALEFACTORS[m.group(0)[-1]]
             pos = m.end()
         out += t.value[1][pos:-1]
         t.value[1] = out
     else:
         # Do this for a numeric value: last character is scale factor
         try:
-            scaleFactor = SCALEFACTORS[t.value[1][-1]]
+            scaleFactor = _SCALEFACTORS[t.value[1][-1]]
             t.value[1] = t.value[1][0:-1] + 'e' + scaleFactor
         except KeyError:
             pass
@@ -53,12 +52,12 @@ def t_PARDEF(t):
     except TypeError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        printError("Error in expression.", get_input_line(t), find_column(t))
+        _printError("Error in expression.", _get_input_line(t), _find_column(t))
         lexer.errCount += 1
     except sp.SympifyError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        printError("Error in expression.", get_input_line(t), find_column(t))
+        _printError("Error in expression.", _get_input_line(t), _find_column(t))
         lexer.errCount += 1
     return t
 
@@ -114,7 +113,7 @@ def t_EXPR(t):
     pos = 1
     out = ''
     for m in re.finditer(r'\d+\.?\d*([yzafpnumkMGTP])', t.value):
-        out += t.value[pos: m.end()-1] + 'e' + SCALEFACTORS[m.group(0)[-1]]
+        out += t.value[pos: m.end()-1] + 'e' + _SCALEFACTORS[m.group(0)[-1]]
         pos = m.end()
     out += t.value[pos:-1]
     t.value = out
@@ -123,12 +122,12 @@ def t_EXPR(t):
     except TypeError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        printError("Error in expression.", get_input_line(t), find_column(t))
+        _printError("Error in expression.", _get_input_line(t), _find_column(t))
         lexer.errCount += 1
     except sp.SympifyError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        printError("Error in expression.", get_input_line(t), find_column(t))
+        _printError("Error in expression.", _get_input_line(t), _find_column(t))
         lexer.errCount += 1
     return t
 
@@ -144,7 +143,7 @@ def t_SCI(t):
     except TypeError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        printError('Cannot convert number to float.', t)
+        _printError('Cannot convert number to float.', t)
     return t
 
 # Define a rule so we can track line numbers
@@ -164,11 +163,11 @@ def t_SCALE(t):
     Replaces scale factors in numbers and converts numbers into floats
     """
     try:
-        t.value = sp.Rational(t.value[0:-1] + 'e' + SCALEFACTORS[t.value[-1]])
+        t.value = sp.Rational(t.value[0:-1] + 'e' + _SCALEFACTORS[t.value[-1]])
     except TypeError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        printError('Cannot convert number to float.', t)
+        _printError('Cannot convert number to float.', t)
         lexer.errCount += 1
     t.type = 'FLT'
     return t
@@ -201,10 +200,10 @@ def t_PLUS(t):
 # Error handling rule
 def t_error(t):
     t.lexer.errCount += 1
-    printError("Error: illegal character.", t)
+    _printError("Error: illegal character.", t)
     t.lexer.skip(1)
 
-def replaceScaleFactors(txt):
+def _replaceScaleFactors(txt):
     """
     Replaces scale factors in expressions with their value in scientific
     notation:
@@ -218,18 +217,18 @@ def replaceScaleFactors(txt):
 
     :Example:
 
-    >>> replaceScaleFactors('sin(2*pi*1M)')
+    >>> _replaceScaleFactors('sin(2*pi*1M)')
     'sin(2*pi*1E6)'
     """
     pos = 0
     out = ''
     for m in re.finditer(r'\d+\.?\d*([yzafpnumkMGTP])', txt):
-        out += txt[pos: m.end()-1] + 'e' + SCALEFACTORS[m.group(0)[-1]]
+        out += txt[pos: m.end()-1] + 'e' + _SCALEFACTORS[m.group(0)[-1]]
         pos = m.end()
     out += txt[pos:]
     return out
 
-def tokenize(netlist):
+def _tokenize(netlist):
     """
     Reset the lexer, and create the tokens from the file: 'cirFileName'.
 
@@ -262,7 +261,7 @@ def tokenize(netlist):
         tok = lexer.token()
     return lines, lexer.errCount
 
-def printError(msg, tok):
+def _printError(msg, tok):
     """
     Prints the line with the error and an error message, and shows the position
     of the error.
@@ -279,15 +278,15 @@ def printError(msg, tok):
     :return: out: Input line with error message.
     :rtype: str
     """
-    pos = find_column(tok)
-    txt = get_input_line(tok)
+    pos = _find_column(tok)
+    txt = _get_input_line(tok)
     out = '\n' + txt + '\n'
     for i in range(pos-1):
         out += '.'
     out += '|\n' + msg
     print(out)
 
-def find_column(token):
+def _find_column(token):
     """
     Computes and returns the column number of 'token'.
 
@@ -300,7 +299,7 @@ def find_column(token):
     line_start = lexer.lexdata.rfind('\n', 0, token.lexpos) + 1
     return (token.lexpos - line_start) + 1
 
-def get_input_line(token):
+def _get_input_line(token):
     """
     Returns the input text line of the token.
 
@@ -321,7 +320,7 @@ if __name__ == '__main__':
     f = open(fi, 'r')
     netlist = f.read()
     f.close()
-    lines, errors = tokenize(netlist)
+    lines, errors = _tokenize(netlist)
     for line in lines:
         print(line)
     print('\nnumber of errors =', errors, '\n')

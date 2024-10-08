@@ -7,9 +7,11 @@ import numpy as np
 import sympy as sp
 import matplotlib._pylab_helpers as plotHelp
 import matplotlib.pyplot as plt
-from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPlex import SCALEFACTORS
-from SLiCAP.SLiCAPmath import makeNumData, dBmagFunc_f, magFunc_f, phaseFunc_f, delayFunc_f, checkNumber, fullSubs
+import SLiCAP.SLiCAPconfigure as ini
+from random import randint
+from SLiCAP.SLiCAPlex import _SCALEFACTORS
+from SLiCAP.SLiCAPmath import _makeNumData, _dB_magFunc_f, _magFunc_f, _phaseFunc_f
+from SLiCAP.SLiCAPmath import _delayFunc_f, _checkNumber, fullSubs
 
 plt.ioff() # Turn off the interactive mode for plotting
 
@@ -225,21 +227,21 @@ class figure(object):
     """
     def __init__(self, fileName):
 
-        self.fileType = ini.figureFileType
+        self.fileType = ini.plot_file_type
         """
         Graphic file type (*str*) for saving the figure. Defaults to fileName
         """
 
-        self.axisHeight = ini.figureAxisHeight
+        self.axisHeight = ini.axis_height
         """
-        Relative height (*int, float*) of a single axis. Defaults to ini.figureAxisHeight.
+        Relative height (*int, float*) of a single axis. Defaults to ini.axis_height.
 
         To do: absolute measures in inch or cm.
         """
 
-        self.axisWidth = ini.figureAxisWidth
+        self.axisWidth = ini.axis_width
         """
-        Relative width (*int, float*) of a single axis. Defaults to ini.figureAxisWidth.
+        Relative width (*int, float*) of a single axis. Defaults to ini.axis_width.
 
         To do: absolute measures in inch or cm.
         """
@@ -258,7 +260,7 @@ class figure(object):
 
         self.fileName = fileName + '.' + self.fileType
         """
-        File name of the figure. Defaults to: fileName + '.' + ini.figureFileType.
+        File name of the figure. Defaults to: fileName + '.' + ini.plot_file_type.
         """
 
     def plot(self):
@@ -329,35 +331,35 @@ class figure(object):
                     if axesList[i].traces[j].color:
                         Color = axesList[i].traces[j].color
                     else:
-                        Color = ini.defaultColors[j % len(ini.defaultColors)]
+                        Color = ini.default_colors[j % len(ini.default_colors)]
                     if axesList[i].traces[j].marker:
                         Marker = axesList[i].traces[j].marker
                     else:
-                        Marker = ini.defaultMarkers[j % len(ini.defaultMarkers)]
+                        Marker = ini.default_markers[j % len(ini.default_markers)]
                     if axesList[i].traces[j].markerColor:
                         MarkerColor = axesList[i].traces[j].markerColor
                     else:
-                        MarkerColor = ini.defaultColors[j % len(ini.defaultColors)]
-                    try:
-                        if axesList[i].xScaleFactor in list(SCALEFACTORS.keys()):
-                            scaleX = 10**eval(SCALEFACTORS[axesList[i].xScaleFactor])
-                        else:
-                            scaleX = 1
-                        if axesList[i].yScaleFactor in list(SCALEFACTORS.keys()):
-                            scaleY = 10**eval(SCALEFACTORS[axesList[i].yScaleFactor])
-                        else:
-                            scaleY = 1
-                        plt.plot(axesList[i].traces[j].xData/scaleX, axesList[i].traces[j].yData/scaleY, label = axesList[i].traces[j].label, linewidth = axesList[i].traces[j].lineWidth,
-                                 color = Color, marker = Marker, markeredgecolor = MarkerColor, markersize = axesList[i].traces[j].markerSize, markeredgewidth = 2, markerfacecolor = axesList[i].traces[j].markerFaceColor, linestyle = axesList[i].traces[j].lineType)
-                    except:
-                        print("Error in plot data of '{0}'.".format(self.fileName))
+                        MarkerColor = ini.default_colors[j % len(ini.default_colors)]
+                    #try:
+                    if axesList[i].xScaleFactor in list(_SCALEFACTORS.keys()):
+                        scaleX = 10**eval(_SCALEFACTORS[axesList[i].xScaleFactor])
+                    else:
+                        scaleX = 1
+                    if axesList[i].yScaleFactor in list(_SCALEFACTORS.keys()):
+                        scaleY = 10**eval(_SCALEFACTORS[axesList[i].yScaleFactor])
+                    else:
+                        scaleY = 1
+                    plt.plot(axesList[i].traces[j].xData/scaleX, axesList[i].traces[j].yData/scaleY, label = axesList[i].traces[j].label, linewidth = axesList[i].traces[j].lineWidth,
+                             color = Color, marker = Marker, markeredgecolor = MarkerColor, markersize = axesList[i].traces[j].markerSize, markeredgewidth = 2, markerfacecolor = axesList[i].traces[j].markerFaceColor, linestyle = axesList[i].traces[j].lineType)
+                    #except:
+                    #    print("Error in plot data of '{0}'.".format(self.fileName))
                     if axesList[i].text:
                         X, Y, txt = axesList[i].text
-                        plt.text(X, Y, txt, fontsize = ini.plotFontSize)
+                        plt.text(X, Y, txt, fontsize = ini.plot_fontsize)
                     # Set default font sizes and grid
                     defaultsPlot()
         # Save the figure"
-        plt.savefig(ini.imgPath + self.fileName)
+        plt.savefig(ini.img_path + self.fileName)
         if self.show:
             plt.show()
         plt.close(fig)
@@ -371,21 +373,21 @@ def defaultsPlot():
     for fig in figures:
         plt.tight_layout()
         for i in range(len(fig.axes)):
-            fig.axes[i].title.set_fontsize(ini.plotFontSize)
+            fig.axes[i].title.set_fontsize(ini.plot_fontsize)
             fig.axes[i].grid(visible=True, which='major', color='0.5',linestyle='-')
             fig.axes[i].grid(visible=True, which='minor', color='0.5',linestyle=':')
-            fig.axes[i].tick_params(axis="both", labelsize=ini.plotFontSize)
+            fig.axes[i].tick_params(axis="both", labelsize=ini.plot_fontsize)
             t = fig.axes[i].xaxis.get_offset_text()
-            t.set_fontsize(ini.plotFontSize)
+            t.set_fontsize(ini.plot_fontsize)
             t = fig.axes[i].yaxis.get_offset_text()
-            t.set_fontsize(ini.plotFontSize)
+            t.set_fontsize(ini.plot_fontsize)
             try:
-                fig.axes[i].xaxis.label.set_fontsize(ini.plotFontSize)
-                fig.axes[i].yaxis.label.set_fontsize(ini.plotFontSize)
+                fig.axes[i].xaxis.label.set_fontsize(ini.plot_fontsize)
+                fig.axes[i].yaxis.label.set_fontsize(ini.plot_fontsize)
             except:
                 pass
             try:
-                leg = fig.axes[i].legend(loc = ini.legendLoc,
+                leg = fig.axes[i].legend(loc = ini.legend_loc,
                                 borderpad = 0.2,
                                 labelspacing = 0,
                                 handletextpad = 0.2,
@@ -393,7 +395,7 @@ def defaultsPlot():
                                 scatterpoints = 1,
                                 numpoints = 1)
                 for t in leg.get_texts():
-                    t.set_fontsize(ini.plotFontSize)
+                    t.set_fontsize(ini.plot_fontsize)
             except:
                 pass
     return
@@ -422,7 +424,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
       - data type == 'noise', 'laplace', 'numer' or 'denom': sweepVar = ini.frequency
         for data types 'laplace', 'numer' or 'denom' the laplace variable will
         be replaced with sympy.i*ini.frequency or with 2*sympy.pi*sympy.i*ini.frequency
-        before sweeping, when ini.Hz == False, or ini.Hz== True, respectively.
+        before sweeping, when ini.frequency == False, or ini.frequency== True, respectively.
       - dataType == 'time', 'impulse' or 'step': sweepVar = sympy.Symbol('t')
 
     The type of axis can be 'lin', 'log', 'semilogx', 'semilogy' or 'polar'.
@@ -512,7 +514,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
     if type(results) != list:
         results = [results]
     colNum = 0
-    numColors = len(ini.defaultColors)
+    numColors = len(ini.default_colors)
     # first results defines the axis type and labels
     result = results[0]
     if result.dataType not in plotDataTypes:
@@ -593,7 +595,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
             if funcType == 'inoise':
                 yUnits = result.srcUnits
             ax.xLabel = 'frequency [' + sweepScale + 'Hz]'
-        elif ini.Hz == True:
+        elif ini.hz == True:
             ax.xLabel = 'frequency [' + sweepScale + 'Hz]'
         else:
             ax.xLabel = 'frequency [' + sweepScale + 'rad/s]'
@@ -608,7 +610,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
     elif funcType == 'dBmag':
         ax.yLabel = 'magnitude [' + yScale + 'dB]'
     elif funcType == 'phase':
-        if ini.Hz == True:
+        if ini.hz == True:
             ax.yLabel = 'phase [' + yScale + 'deg]'
         else:
             ax.yLabel = 'phase [' + yScale + 'rad]'
@@ -622,13 +624,13 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
         ax.yLabel = 'spectral density [$\\left(' + yScale + yUnits +'\\right)^2/Hz$]'
     # Create the sweep, lin or log depending on the x-axis type
     try:
-        xScaleFactor = 10**int(SCALEFACTORS[sweepScale])
+        xScaleFactor = 10**int(_SCALEFACTORS[sweepScale])
     except:
         xScaleFactor = 1.
     if ax.xScale == 'log' or ax.xScale == 'semilogx' or ax.polar == True:
-        x = np.geomspace(float(checkNumber(sweepStart))*xScaleFactor, float(checkNumber(sweepStop))*xScaleFactor, int(checkNumber(sweepNum)))
+        x = np.geomspace(float(_checkNumber(sweepStart))*xScaleFactor, float(_checkNumber(sweepStop))*xScaleFactor, int(_checkNumber(sweepNum)))
     elif ax.xScale == 'lin' or ax.xScale == 'semilogy':
-        x = np.linspace(float(checkNumber(sweepStart))*xScaleFactor, float(checkNumber(sweepStop))*xScaleFactor, int(checkNumber(sweepNum)))
+        x = np.linspace(float(_checkNumber(sweepStart))*xScaleFactor, float(_checkNumber(sweepStop))*xScaleFactor, int(_checkNumber(sweepNum)))
     # Create the plot:
     # Create the plot data for param plots, only one simulation result alowed
     # Other simulation results are simply ignored (plots would become messy).
@@ -640,13 +642,13 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                 for i in range(len(keys)):
                     newTrace = trace([xData[keys[i]], yData[keys[i]]])
                     newTrace.label = '$%s: %s$ = %8.1e'%(sp.latex(sp.Symbol(yVar[j])), sp.latex(result.stepVar), result.stepList[i])
-                    newTrace.color = ini.defaultColors[colNum % numColors]
+                    newTrace.color = ini.default_colors[colNum % numColors]
                     colNum += 1
                     ax.traces.append(newTrace)
             else:
                 newTrace = trace([xData, yData])
                 newTrace.label = '$' + sp.latex(sp.Symbol(yVar[j])) + '$'
-                newTrace.color = ini.defaultColors[colNum % numColors]
+                newTrace.color = ini.default_colors[colNum % numColors]
                 colNum += 1
                 ax.traces.append(newTrace)
     else:
@@ -672,31 +674,31 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                     yLabel = '$' + sp.latex(sp.Symbol(result.detLabel)) + '$'
                 if funcType == 'mag':
                     if ax.polar:
-                        radius = magFunc_f(yData, x)
-                        angle = phaseFunc_f(yData, x)
-                        if ini.Hz:
+                        radius = _magFunc_f(yData, x)
+                        angle = _phaseFunc_f(yData, x)
+                        if ini.hz:
                             angle = angle/180*np.pi
                         newTrace = trace([angle, radius])
                     else:
-                        newTrace = trace([x, magFunc_f(yData, x)])
+                        newTrace = trace([x, _magFunc_f(yData, x)])
                 elif funcType == 'dBmag':
                     if ax.polar:
-                        radius = dBmagFunc_f(yData, x)
-                        angle = phaseFunc_f(yData, x)
-                        if ini.Hz:
+                        radius = _dB_magFunc_f(yData, x)
+                        angle = _phaseFunc_f(yData, x)
+                        if ini.hz:
                             angle = angle/180*np.pi
                         newTrace = trace([angle, radius])
                     else:
-                        newTrace = trace([x, dBmagFunc_f(yData, x)])
+                        newTrace = trace([x, _dB_magFunc_f(yData, x)])
                 elif funcType == 'phase':
                     if not ax.polar:
-                        newTrace = trace([x, phaseFunc_f(yData, x)])
+                        newTrace = trace([x, _phaseFunc_f(yData, x)])
                 elif funcType == 'delay':
                     if not ax.polar:
-                        newTrace = trace([x, delayFunc_f(yData, x)])
+                        newTrace = trace([x, _delayFunc_f(yData, x)])
                 elif funcType == 'time':
                     if not ax.polar:
-                        y = makeNumData(yData, sp.Symbol('t'), x, normalize=False)
+                        y = _makeNumData(yData, sp.Symbol('t'), x, normalize=False)
                         newTrace = trace([x, y])
                 if result.dataType != 'noise':
                     newTrace.label = result.label
@@ -714,12 +716,12 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                     if result.label == '':
                         if result.gainType != 'vi':
                             try:
-                                newTrace.color = ini.gainColors[result.gainType]
+                                newTrace.color = ini.gain_colors[result.gainType]
                             except:
-                                newTrace.color = ini.defaultColors[colNum % numColors]
+                                newTrace.color = ini.default_colors[colNum % numColors]
                                 colNum += 1
                     else:
-                        newTrace.color = ini.defaultColors[colNum % numColors]
+                        newTrace.color = ini.default_colors[colNum % numColors]
                         colNum += 1
                     try:
                         ax.traces.append(newTrace)
@@ -732,7 +734,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                             yData = sp.simplify(sp.N(result.onoise))
                         elif funcType == 'inoise':
                             yData = sp.N(result.inoise)
-                        y = makeNumData(yData, ini.frequency, x)
+                        y = _makeNumData(yData, ini.frequency, x)
                         newTrace = trace([x, y])
                         newTrace.label = funcType + result.detLabel
                         ax.traces.append(newTrace)
@@ -742,9 +744,9 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                                 yData = sp.simplify(sp.N(result.onoiseTerms[srcName]))
                             elif funcType == 'inoise':
                                 yData = sp.simplify(sp.N(result.inoiseTerms[srcName]))
-                            y = makeNumData(yData, ini.frequency, x)
+                            y = _makeNumData(yData, ini.frequency, x)
                             noiseTrace = trace([x, y])
-                            noiseTrace.color = ini.defaultColors[colNum % numColors]
+                            noiseTrace.color = ini.default_colors[colNum % numColors]
                             colNum += 1
                             noiseTrace.label = funcType + ': ' + srcName + result.detLabel
                             ax.traces.append(noiseTrace)
@@ -753,9 +755,9 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                             yData = sp.simplify(sp.N(result.onoiseTerms[noiseSources]))
                         elif funcType == 'inoise':
                             yData = sp.simplify(sp.N(result.inoiseTerms[noiseSources]))
-                        y = makeNumData(yData, ini.frequency, x)
+                        y = _makeNumData(yData, ini.frequency, x)
                         noiseTrace = trace([x, y])
-                        noiseTrace.color = ini.defaultColors[colNum % numColors]
+                        noiseTrace.color = ini.default_colors[colNum % numColors]
                         colNum += 1
                         noiseTrace.label = funcType + ': ' + noiseSources + result.detLabel
                         ax.traces.append(noiseTrace)
@@ -766,14 +768,14 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                                     yData = sp.simplify(sp.N(result.onoiseTerms[srcName]))
                                 elif funcType == 'inoise':
                                     yData = sp.simplify(sp.N(result.inoiseTerms[srcName]))
-                                y = makeNumData(yData, ini.frequency, x)
+                                y = _makeNumData(yData, ini.frequency, x)
                                 noiseTrace = trace([x, y])
-                                noiseTrace.color = ini.defaultColors[colNum % numColors]
+                                noiseTrace.color = ini.default_colors[colNum % numColors]
                                 colNum += 1
                                 noiseTrace.label = funcType + ': ' + srcName + result.detLabel
                                 ax.traces.append(noiseTrace)
                     else:
-                        print("Error: cannot understand 'sources={0}'.".format(str(sources)))
+                        print("Error: cannot understand 'sources={0}'.".format(str(noiseSources)))
                         return fig
             else:
                 if result.stepMethod != 'array':
@@ -821,37 +823,37 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                         yLabel += ', %s = %8.1e'%(result.stepVar, result.stepList[i])
                     if funcType == 'mag':
                         if ax.polar:
-                            radius = magFunc_f(yData, x)
-                            angle = phaseFunc_f(yData, x)
-                            if ini.Hz:
+                            radius = _magFunc_f(yData, x)
+                            angle = _phaseFunc_f(yData, x)
+                            if ini.hz:
                                 angle = angle/180*np.pi
                             newTrace = trace([angle, radius])
                         else:
-                            newTrace = trace([x, magFunc_f(yData, x)])
+                            newTrace = trace([x, _magFunc_f(yData, x)])
                     elif funcType == 'dBmag':
                         if ax.polar:
-                            radius = dBmagFunc_f(yData, x)
-                            angle = phaseFunc_f(yData, x)
-                            if ini.Hz:
+                            radius = _dB_magFunc_f(yData, x)
+                            angle = _phaseFunc_f(yData, x)
+                            if ini.hz:
                                 angle = angle/180*np.pi
                             newTrace = trace([angle, radius])
                         else:
-                            newTrace = trace([x, dBmagFunc_f(yData, x)])
+                            newTrace = trace([x, _dB_magFunc_f(yData, x)])
                     elif funcType == 'phase':
                         if not ax.polar:
-                            newTrace = trace([x, phaseFunc_f(yData, x)])
+                            newTrace = trace([x, _phaseFunc_f(yData, x)])
                     elif funcType == 'delay':
                         if not ax.polar:
-                            newTrace = trace([x, delayFunc_f(yData, x)])
+                            newTrace = trace([x, _delayFunc_f(yData, x)])
                     elif funcType == 'time':
                         if not ax.polar:
-                            y = makeNumData(yData, sp.Symbol('t'), x, normalize=False)
+                            y = _makeNumData(yData, sp.Symbol('t'), x, normalize=False)
                             newTrace = trace([x, y])
                     elif funcType == 'onoise' or funcType == 'inoise':
                         if not ax.polar:
-                            y = makeNumData(yData, ini.frequency, x)
+                            y = _makeNumData(yData, ini.frequency, x)
                             newTrace = trace([x, y])
-                    newTrace.color = ini.defaultColors[colNum % numColors]
+                    newTrace.color = ini.default_colors[colNum % numColors]
                     colNum += 1
                     newTrace.label = yLabel
                     try:
@@ -925,14 +927,14 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
     pz.xScale = 'lin'
     pz.yScale = 'lin'
     try:
-        xScaleFactor = 10**int(SCALEFACTORS[xscale])
+        xScaleFactor = 10**int(_SCALEFACTORS[xscale])
     except:
         xScaleFactor = 1.
     try:
-        yScaleFactor = 10**int(SCALEFACTORS[yscale])
+        yScaleFactor = 10**int(_SCALEFACTORS[yscale])
     except:
         yScaleFactor = 1.
-    if ini.Hz == True:
+    if ini.hz == True:
         pz.xLabel = 'Re [' + xscale + 'Hz]'
         pz.yLabel = 'Im [' + yscale + 'Hz]'
     else:
@@ -940,24 +942,24 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
         pz.yLabel = 'Im [' + yscale + 'rad/s]'
     pzTraces = []
     if xmin != None and xmax != None:
-        pz.xLim = [float(checkNumber(xmin)), float(checkNumber(xmax))]
+        pz.xLim = [float(_checkNumber(xmin)), float(_checkNumber(xmax))]
     if ymin != None and xmax != None:
-        pz.yLim = [float(checkNumber(ymin)), float(checkNumber(ymax))]
+        pz.yLim = [float(_checkNumber(ymin)), float(_checkNumber(ymax))]
     if type(results) != list:
         results = [results]
     colNum = 0
-    numColors = len(ini.defaultColors)
+    numColors = len(ini.default_colors)
     for result in results:
         if not result.step:
             if result.dataType == 'poles' or result.dataType == 'pz':
-                if ini.Hz == True:
+                if ini.hz == True:
                     polesTrace = trace([np.real(result.poles)/2/np.pi/xScaleFactor, np.imag(result.poles)/2/np.pi/yScaleFactor])
                 else:
                     polesTrace = trace([np.real(result.poles)/xScaleFactor, np.imag(result.poles)/yScaleFactor])
                 try:
-                    polesTrace.markerColor = ini.gainColors[result.gainType]
+                    polesTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
-                    polesTrace.markerColor = ini.defaultColors[colNum % numColors]
+                    polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 polesTrace.color = ''
                 polesTrace.marker = 'x'
@@ -968,15 +970,15 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                     polesTrace.label = 'poles ' + result.label
                 pzTraces.append(polesTrace)
             if result.dataType == 'zeros' or result.dataType == 'pz':
-                if ini.Hz == True:
+                if ini.hz == True:
                     zerosTrace = trace([np.real(result.zeros)/2/np.pi/xScaleFactor, np.imag(result.zeros)/2/np.pi/yScaleFactor])
                 else:
                     zerosTrace = trace([np.real(result.zeros)/xScaleFactor, np.imag(result.zeros)/yScaleFactor])
                 zerosTrace.color = ''
                 try:
-                    zerosTrace.markerColor = ini.gainColors[result.gainType]
+                    zerosTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
-                    zerosTrace.markerColor = ini.defaultColors[colNum % numColors]
+                    zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 zerosTrace.marker = 'o'
                 zerosTrace.lineWidth = '0'
@@ -992,14 +994,14 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
             poles = result.poles
             if len(poles) != 0:
                 # start of root locus
-                if ini.Hz == True:
+                if ini.hz == True:
                     polesTrace = trace([np.real(result.poles[0])/2/np.pi/xScaleFactor, np.imag(result.poles[0])/2/np.pi/yScaleFactor])
                 else:
                     polesTrace = trace([np.real(result.poles[0])/xScaleFactor, np.imag(result.poles[0])/yScaleFactor])
                 try:
-                    polesTrace.markerColor = ini.gainColors[result.gainType]
+                    polesTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
-                    polesTrace.markerColor = ini.defaultColors[colNum % numColors]
+                    polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 polesTrace.color = ''
                 polesTrace.marker = 'x'
@@ -1014,14 +1016,14 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                     polesTrace.label += ', %s = %8.1e'%(result.stepVar, result.stepList[0])
                 pzTraces.append(polesTrace)
                 # end of root locus
-                if ini.Hz == True:
+                if ini.hz == True:
                     polesTrace = trace([np.real(result.poles[-1])/2/np.pi/xScaleFactor, np.imag(result.poles[-1])/2/np.pi/yScaleFactor])
                 else:
                     polesTrace = trace([np.real(result.poles[-1]/xScaleFactor), np.imag(result.poles[-1])/yScaleFactor])
                 try:
-                    polesTrace.markerColor = ini.gainColors[result.gainType]
+                    polesTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
-                    polesTrace.markerColor = ini.defaultColors[colNum % numColors]
+                    polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 polesTrace.color = ''
                 polesTrace.marker = '+'
@@ -1040,14 +1042,14 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 allPoles = np.array([])
                 for i in range(len(poles)):
                     allPoles = np.concatenate((allPoles, poles[i]), axis = None)
-                if ini.Hz == True:
+                if ini.hz == True:
                     polesTrace = trace([np.real(allPoles)/2/np.pi/xScaleFactor, np.imag(allPoles)/2/np.pi/yScaleFactor])
                 else:
                     polesTrace = trace([np.real(allPoles)/xScaleFactor, np.imag(allPoles)/yScaleFactor])
                 try:
-                    polesTrace.markerColor = ini.gainColors[result.gainType]
+                    polesTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
-                    polesTrace.markerColor = ini.defaultColors[colNum % numColors]
+                    polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 polesTrace.color = ''
                 polesTrace.marker = '.'
@@ -1066,14 +1068,14 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
             zeros = result.zeros
             if len(zeros) != 0:
                 # start of zeros locus
-                if ini.Hz == True:
+                if ini.hz == True:
                     zerosTrace = trace([np.real(result.zeros[0])/2/np.pi/xScaleFactor, np.imag(result.zeros[0])/2/np.pi/yScaleFactor])
                 else:
                     zerosTrace = trace([np.real(result.zeros[0])/xScaleFactor, np.imag(result.zeros[0])/yScaleFactor])
                 try:
-                    zerosTrace.markerColor = ini.gainColors[result.gainType]
+                    zerosTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
-                    zerosTrace.markerColor = ini.defaultColors[colNum % numColors]
+                    zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 zerosTrace.color = ''
                 zerosTrace.marker = 'o'
@@ -1088,14 +1090,14 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                     zerosTrace.label += ', %s = %8.1e'%(result.stepVar, result.stepList[0])
                 pzTraces.append(zerosTrace)
                 # end of zeros locus
-                if ini.Hz == True:
+                if ini.hz == True:
                     zerosTrace = trace([np.real(result.zeros[-1])/2/np.pi/xScaleFactor, np.imag(result.zeros[-1])/2/np.pi/yScaleFactor])
                 else:
                     zerosTrace = trace([np.real(result.zeros[-1])/xScaleFactor, np.imag(result.zeros[-1])/yScaleFactor])
                 try:
-                    zerosTrace.markerColor = ini.gainColors[result.gainType]
+                    zerosTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
-                    zerosTrace.markerColor = ini.defaultColors[colNum % numColors]
+                    zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 zerosTrace.color = ''
                 zerosTrace.marker = 's'
@@ -1113,14 +1115,14 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 allZeros = np.array([])
                 for i in range(len(zeros)):
                     allZeros = np.concatenate((allZeros, result.zeros[i]), axis = None)
-                if ini.Hz == True:
+                if ini.hz == True:
                     zerosTrace = trace([np.real(allZeros)/2/np.pi/xScaleFactor, np.imag(allZeros)/2/np.pi/yScaleFactor])
                 else:
                     zerosTrace = trace([np.real(allZeros)/xScaleFactor, np.imag(allZeros)/yScaleFactor])
                 try:
-                    zerosTrace.markerColor = ini.gainColors[result.gainType]
+                    zerosTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
-                    zerosTrace.markerColor = ini.defaultColors[colNum % numColors]
+                    zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 zerosTrace.color = ''
                 zerosTrace.marker = '.'
@@ -1203,7 +1205,7 @@ def plot(fileName, title, axisType, plotData, xName = '', xScale = '', xUnits = 
     fig.show = show
     ax = axis(title)
     colNum = 0
-    numColors = len(ini.defaultColors)
+    numColors = len(ini.default_colors)
     if axisType == 'lin':
         ax.xScale = 'lin'
         ax.yScale = 'lin'
@@ -1236,7 +1238,7 @@ def plot(fileName, title, axisType, plotData, xName = '', xScale = '', xUnits = 
         else:
             newTrace = trace(plotData[key])
             newTrace.label = key
-            newTrace.color = ini.defaultColors[colNum % numColors]
+            newTrace.color = ini.default_colors[colNum % numColors]
             colNum += 1
         ax.traces.append(newTrace)
     fig.axes = [[ax]]
@@ -1307,7 +1309,7 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
         elif results.stepMethod == 'list':
             p = results.stepList
         else:
-            print("Error: dataType 'params' not implemented for stepMethod '", str(result.stepMethod), "'." )
+            print("Error: dataType 'params' not implemented for stepMethod '", str(results.stepMethod), "'." )
             errors += 1
     if errors == 0:
         substitutions = {}
@@ -1330,7 +1332,7 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
                 if yVar != sVar:
                     y = sp.N(f.subs(results.stepVar, parValue))
                     try:
-                        yfunc = sp.lambdify(sp.Symbol(sVar), y, ini.lambdifyTool)
+                        yfunc = sp.lambdify(sp.Symbol(sVar), y, ini.lambdify)
                         yValues[parValue] = yfunc(sweepList)
                     except:
                         yValues[parValue] = [y.subs(sp.Symbol(sVar), sweepList[i]) for i in range(len(sweepList))]
@@ -1339,7 +1341,7 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
                 if xVar != sVar:
                     x = g.subs(results.stepVar, parValue)
                     try:
-                        xfunc = sp.lambdify(sp.Symbol(sVar), x, ini.lambdifyTool)
+                        xfunc = sp.lambdify(sp.Symbol(sVar), x, ini.lambdify)
                         xValues[parValue] = xfunc(sweepList)
                     except:
                         xValues[parValue] = [x.subs(sp.Symbol(sVar), sweepList[i]) for i in range(len(sweepList))]
@@ -1348,7 +1350,7 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
         else:
             if yVar != sVar:
                 try:
-                    y = sp.lambdify(sp.Symbol(sVar), f, ini.lambdifyTool)
+                    y = sp.lambdify(sp.Symbol(sVar), f, ini.lambdify)
                     yValues = y(sweepList)
                 except:
                     yValues = [f.subs(sp.Symbol(sVar), sweepList[i]) for i in range(len(sweepList))]
@@ -1356,7 +1358,7 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
                 yValues = sweepList
             if xVar != sVar:
                 try:
-                    x = sp.lambdify(sp.Symbol(sVar), g, ini.lambdifyTool)
+                    x = sp.lambdify(sp.Symbol(sVar), g, ini.lambdify)
                     xValues = x(sweepList)
                 except:
                     xValues = [g.subs(sp.Symbol(sVar), sweepList[i]) for i in range(len(sweepList))]
@@ -1394,7 +1396,7 @@ def LTspiceData2Traces(txtFile):
     Generates a dictionary with traces (key = label, value = trace object) from
     LTspice plot data (saved as .txt file).
 
-    :param txtFile: Name of the text file stored in the ini.txtPath directory
+    :param txtFile: Name of the text file stored in the ini.txt_path directory
     :type txtFile: str
 
     :return: Dictionary with key-value pairs:
@@ -1405,11 +1407,11 @@ def LTspiceData2Traces(txtFile):
     :rtype: dict
     """
     try:
-        f = open(ini.txtPath + txtFile, 'r', encoding='utf-8', errors='replace')
+        f = open(ini.txt_path + txtFile, 'r', encoding='utf-8', errors='replace')
         lines = f.readlines()
         f.close()
     except:
-        print('Error: could not find LTspice trace data:', ini.txtPath + txtFile)
+        print('Error: could not find LTspice trace data:', ini.txt_path + txtFile)
         return {}
     traceDict = {}
     # Check for parameter stepping
@@ -1422,7 +1424,7 @@ def LTspiceData2Traces(txtFile):
     yData = []
     label = None
     traceNum = 0
-    numColors = len(ini.defaultColors)
+    numColors = len(ini.default_colors)
     for i in range(start, len(lines)):
         lineData = lines[i].split()
         if len(lineData) > 2 and ' '.join(lineData[0:2]) == 'Step Information:':
@@ -1442,7 +1444,7 @@ def LTspiceData2Traces(txtFile):
                 if label != None:
                     newTrace = trace([xData, yData])
                     newTrace.label = label
-                    newTrace.color = ini.defaultColors[0]
+                    newTrace.color = ini.default_colors[0]
                     traceDict[label] = newTrace
                 label = lineData[1]
     newTrace = trace([xData, yData])
@@ -1457,7 +1459,7 @@ def LTspiceAC2SLiCAPtraces(fileName, dB=False, color='c'):
     Stepping is not (yet) supported.
 
     :param fileName: Name of the file. The file should be located in
-                     the ditectory given in *ini.txtPath*.
+                     the ditectory given in *ini.txt_path*.
     :type fileName:  str
 
     :param dB: True if the trace magnitude should be in dB, else False.
@@ -1478,7 +1480,7 @@ def LTspiceAC2SLiCAPtraces(fileName, dB=False, color='c'):
     >>> LTmag, LTphase = LTspiceAC2SLiCAPtraces('LTspiceACdata.txt')
     """
     try:
-        f = open(ini.txtPath + fileName, 'r', encoding='utf-8', errors='replace')
+        f = open(ini.txt_path + fileName, 'r', encoding='utf-8', errors='replace')
         lines = f.readlines()
         f.close()
     except:
@@ -1490,7 +1492,7 @@ def LTspiceAC2SLiCAPtraces(fileName, dB=False, color='c'):
     for i in range(len(lines)):
         if i != 0:
             line = lines[i].split()
-            if ini.Hz:
+            if ini.hz:
                 freqs.append(eval(line[0]))
             else:
                 freqs.append(eval(line[0])*2*np.pi)
@@ -1501,7 +1503,7 @@ def LTspiceAC2SLiCAPtraces(fileName, dB=False, color='c'):
                 mag.append(10**(dBmag/20))
             else:
                 mag.append(dBmag)
-            if ini.Hz:
+            if ini.hz:
                 phase.append(deg)
             else:
                 phase.append(np.pi*deg/180)
@@ -1526,7 +1528,7 @@ def csv2traces(csvFile):
 
     The traces will be named  with their y label.
 
-    :param csvFile: name of the csv file (in the ini.csvPath directory)
+    :param csvFile: name of the csv file (in the ini.csv_path directory)
     :type csvFile: str
 
     :return: dictionary with key-value pairs:
@@ -1537,18 +1539,18 @@ def csv2traces(csvFile):
     :rtype: dict
     """
     try:
-        f = open(ini.csvPath + csvFile)
+        f = open(ini.csv_path + csvFile)
         lines = f.readlines()
         f.close()
     except:
-        print('Error: could not find CSV trace data:', ini.csvPath + csvFile)
+        print('Error: could not find CSV trace data:', ini.csv_path + csvFile)
         return {}
     traceDict = {}
     labels = []
     for i in range(len(lines)):
         data = lines[i].split(',')
         if len(data) % 2 != 0:
-            print("Error: expected an even number of columns in csv file:", ini.csvPath + csvFile)
+            print("Error: expected an even number of columns in csv file:", ini.csv_path + csvFile)
             return traceDict
         elif i == 0:
             for j in range(int(len(data)/2)):
@@ -1572,7 +1574,7 @@ def Cadence2traces(csvFile, absx = False, logx = False, absy = False, logy = Fal
     """
     Generates a dictionary with traces (key = label, value = trace object) from
     data from a csv file generated in Cadence.
-    :param csvFile: name of the csv file (in the ini.csvPath directory)
+    :param csvFile: name of the csv file (in the ini.csv_path directory)
     :type csvFile: str
     :param absx: if 'True', it applies the absolute (abs) function to the indpendent variable data (xData)
     :type absx: bool
@@ -1598,16 +1600,16 @@ def Cadence2traces(csvFile, absx = False, logx = False, absy = False, logy = Fal
     :rtype: dict
     """
     try:
-        f = open(ini.csvPath + csvFile)
+        f = open(ini.csv_path + csvFile)
         lines = f.readlines()
         f.close()
     except:
-        print('Error: could not find CSV trace data:', ini.csvPath + csvFile)
+        print('Error: could not find CSV trace data:', ini.csv_path + csvFile)
         return {}
     traceDict = {}
     labels = []
     if assignID:
-        ID_dict=" (ID:"+str(randint(0,100))+")"
+        ID_dict=" (ID:"+str(randint(0,100)) + ")"
     else:
         ID_dict=""
     last_raw_x=lines[-1].split(',')[1::2]
@@ -1623,7 +1625,7 @@ def Cadence2traces(csvFile, absx = False, logx = False, absy = False, logy = Fal
         else:
             data = lines[i].split(',')
         if len(data) % 2 != 0:
-            print("Error: expected an even number of columns in csv file:", ini.csvPath + csvFile)
+            print("Error: expected an even number of columns in csv file:", ini.csv_path + csvFile)
             return traceDict
         elif i == 0:
             for j in range(int(len(data)/2)):
@@ -1643,7 +1645,7 @@ def Cadence2traces(csvFile, absx = False, logx = False, absy = False, logy = Fal
                     try:
                         xData = np.log10(xData)
                     except:
-                        print("Could not calculate the log10 of the xData of:", ini.csvPath + csvFile)
+                        print("Could not calculate the log10 of the xData of:", ini.csv_path + csvFile)
                 try:
                     yData = eval(data[2*j+1])
                 except:
@@ -1654,7 +1656,7 @@ def Cadence2traces(csvFile, absx = False, logx = False, absy = False, logy = Fal
                     try:
                         yData = np.log10(yData)
                     except:
-                        print("Could not calculate the log10 of the yData of:", ini.csvPath + csvFile)
+                        print("Could not calculate the log10 of the yData of:", ini.csv_path + csvFile)
                 traceDict[labels[j]].xData.append(xData)
                 traceDict[labels[j]].yData.append(yData)
     for label in labels:
@@ -1711,7 +1713,7 @@ def addTraces(figObj, traceDict):
     return figObj
 
 if __name__=='__main__':
-    ini.imgPath = ''
+    ini.img_path = ''
     x = np.linspace(0, 2*np.pi, endpoint = True)
     y1 = np.sin(x)
     y2 = np.cos(x)

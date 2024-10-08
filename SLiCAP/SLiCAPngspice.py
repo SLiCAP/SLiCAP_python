@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 15 15:05:13 2021
-
-@author: anton
+SLiCAP module for interfacing with NGspice.
 
 """
+import SLiCAP.SLiCAPconfigure as ini
 from os     import system, remove
 from sympy  import Symbol
-from SLiCAP.SLiCAPini import ini
 from SLiCAP.SLiCAPplots import plot, trace
 from numpy  import array, sqrt, arctan, pi, unwrap, log10, linspace, geomspace
 from re     import findall

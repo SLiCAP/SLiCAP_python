@@ -5,30 +5,22 @@ SLiCAP instruction class definition.
 """
 import sympy as sp
 import numpy as np
-from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPyacc import checkCircuit, updateCirData
-from SLiCAP.SLiCAPexecute import doInstruction, addResNoiseSources, delResNoiseSources
-from SLiCAP.SLiCAPprotos import circuit
-from SLiCAP.SLiCAPmath import checkNumber
+from SLiCAP.SLiCAPyacc import _updateCirData
+from SLiCAP.SLiCAPexecute import _doInstruction, _addResNoiseSources, _delResNoiseSources
+from SLiCAP.SLiCAPprotos import circuit, allResults
+from SLiCAP.SLiCAPmath import _checkNumber
 
-GAINTYPES = ['vi', 'gain', 'loopgain', 'servo', 'asymptotic', 'direct']
-CONVTYPES = ['dd', 'dc', 'cd', 'cc', 'all']
-DATATYPES = ['matrix', 'noise', 'solve', 'time', 'dc', 'dcvar', 'dcsolve', 'timesolve',
+_GAINTYPES = ['vi', 'gain', 'loopgain', 'servo', 'asymptotic', 'direct']
+_CONVTYPES = ['dd', 'dc', 'cd', 'cc', 'all']
+_DATATYPES = ['matrix', 'noise', 'solve', 'time', 'dc', 'dcvar', 'dcsolve', 'timesolve',
              'numer', 'denom', 'laplace', 'zeros', 'poles', 'pz', 'impulse',
              'step', 'params']
 
-class instruction(object):
+class _instruction(object):
     """
     Prototype Instruction object.
     """
     def __init__(self):
-
-        self.simType = 'numeric'
-        """
-        Defines the simulation gain type.
-
-        See **instruction.setSimType(<simType>)** for specification of *instruction.simType*.
-        """
 
         self.gainType = None
         """
@@ -136,7 +128,7 @@ class instruction(object):
         See **instruction.setDetector(<detector>)** for specification of the detector.
         """
 
-        self.pairExt = [None, None]
+        self.pairExt = ['P', 'N']
         """
         Extensions used to indicate paired nodes or elements.
         Default is: [None, None].
@@ -190,18 +182,21 @@ class instruction(object):
         >>> # instruction:
         >>> my_instr.setCircuit('my_circuit.cir')
         """
-
+        
         self.numeric = None
         """
-        Variable used during analysis an presentation of analysis results.
-
-        :note:
-
-        The instruction.numeric attribute should not be modified
-        directly by the user. Use the method **instruction.setSimType(<simTipe>)**
-        to alter the simulation method!
+        If True, functions and constants will be evaluated numerically and
+        rational numbers will be converted in sympy.Float
         """
 
+        self.substitute = None
+        """
+        If True: parameters from self.circuit will be substituted recursively
+        in element values. 
+        
+        Else: element values defined in the circuit will be used
+        """
+        
         self.errors = 0
         """
         Number of errors found in the definition of this instruction.
@@ -239,7 +234,7 @@ class instruction(object):
         Parameter definitions for the instruction. Will be updated by executing
         the instruction.
         """
-
+        
     def setSimType(self, simType):
         """
         Defines the simulation type for the instruction.
@@ -277,10 +272,10 @@ class instruction(object):
 
         """
         self.simType = simType
-        self.checkSimType()
+        self._checkSimType()
         return
 
-    def checkSimType(self):
+    def _checkSimType(self):
         """
         Checks if the simulation type is defined correctly."
 
@@ -316,16 +311,16 @@ class instruction(object):
         >>> my_instr.setGainType('gain')
         """
         self.gainType = gainType
-        self.checkGainType()
+        self._checkGainType()
 
-    def checkGainType(self):
+    def _checkGainType(self):
         """
         Checks if the gain type is defined correctly."
 
         Called by **instruction.check()** and by **setGainType(<gainType>)**.
         """
         if type(self.gainType) == str:
-            if self.gainType.lower() in GAINTYPES:
+            if self.gainType.lower() in _GAINTYPES:
                 self.gainType = self.gainType.lower()
             else:
                 print("Error: unknown gain type: '{0}'.".format(self.gainType))
@@ -347,16 +342,16 @@ class instruction(object):
 
         """
         self.convType = convType
-        self.checkConvType()
+        self._checkConvType()
 
-    def checkConvType(self):
+    def _checkConvType(self):
         """
         Checks if the circuit conversion type is defined correctly."
 
         Called by **instruction.check()** and by **setConvType(<convType>)**.
         """
         if type(self.convType) == str:
-            if self.convType.lower() in CONVTYPES:
+            if self.convType.lower() in _CONVTYPES:
                 self.convType = self.convType.lower()
             else:
                 print("Error: unknown conversion type: '{0}'.".format(self.convType))
@@ -469,7 +464,7 @@ class instruction(object):
         Called by **instruction.check()** and by **setDataType(<dataType>)**.
         """
         if type(self.dataType) == str:
-            if self.dataType.lower() in DATATYPES:
+            if self.dataType.lower() in _DATATYPES:
                 self.dataType = self.dataType.lower()
             else:
                 print("Error: unknown data type: '{0}'.".format(self.dataType))
@@ -727,7 +722,7 @@ class instruction(object):
             self.errors += 1
             print("Error: missing stepStart value.")
         else:
-            value = float(checkNumber(self.stepStart))
+            value = float(_checkNumber(self.stepStart))
             if value == None:
                 self.errors += 1
                 print("Error: cannot determine numeric value of stepStart.")
@@ -771,7 +766,7 @@ class instruction(object):
             self.errors += 1
             print("Error: missing stepStop value.")
         else:
-            value = float(checkNumber(self.stepStop))
+            value = float(_checkNumber(self.stepStop))
             if value == None:
                 self.errors += 1
                 print("Error: cannot determine numeric value of stepStop.")
@@ -869,7 +864,7 @@ class instruction(object):
                 self.errors += 1
                 print("Error: empty stepList.")
             for i in range(len(self.stepList)):
-                value = checkNumber(self.stepList[i])
+                value = _checkNumber(self.stepList[i])
                 if value == None:
                     self.errors += 1
                     print("Error: cannot determine numeric value of stepList[{0}].".format(i))
@@ -936,7 +931,7 @@ class instruction(object):
                         print("Error: unequal number of steps for step variables.")
                     if self.errors == 0:
                         for j in range(numSteps):
-                            value = checkNumber(self.stepArray[i][j])
+                            value = _checkNumber(self.stepArray[i][j])
                             if value == None:
                                 self.errors += 1
                                 print("Error: cannot determine numeric value of stepArray[{0}, {1}].".format(i, j))
@@ -1004,23 +999,24 @@ class instruction(object):
 
         :type need: bool
         """
-        for i in range(len(self.source)):
-            if self.source[i] == None:
-                if need and i == 0:
-                    self.errors += 1
-                    print("Error: missing source definition.")
-            elif self.source[i] != None and self.source[i] not in self.indepVars():
-                self.errors += 1
-                print("Error: unkown source: '{0}'.".format(self.source[i]))
-            elif self.source[i] != None:
-                if i == 0:
-                    self.srcUnits = self.source[i][0].upper()
-                else:
-                    if self.source[i][0].upper() != self.srcUnits:
+        if self.source != None:
+            for i in range(len(self.source)):
+                if self.source[i] == None:
+                    if need and i == 0:
                         self.errors += 1
-                        print("Error: two sources must be of the same type.")
-        if self.srcUnits == 'I':
-            self.srcUnits = 'A'
+                        print("Error: missing source definition.")
+                elif self.source[i] != None and self.source[i] not in self.indepVars():
+                    self.errors += 1
+                    print("Error: unkown source: '{0}'.".format(self.source[i]))
+                elif self.source[i] != None:
+                    if i == 0:
+                        self.srcUnits = self.source[i][0].upper()
+                    else:
+                        if self.source[i][0].upper() != self.srcUnits:
+                            self.errors += 1
+                            print("Error: two sources must be of the same type.")
+            if self.srcUnits == 'I':
+                self.srcUnits = 'A'
         return
 
     def setDetector(self, detector):
@@ -1116,7 +1112,7 @@ class instruction(object):
                     print("Error: unkown detector: '{0}'.".format(detN))
                     print("Available detectors:", str(self.depVars()))
 
-            if self.errors == 0:
+            if self.errors == 0 and self.lgRef != None:
                 for lgRef in self.lgRef:
                     if lgRef != None:
                         # Impossible to calculate the asymptotic gain with these values
@@ -1453,7 +1449,7 @@ class instruction(object):
             print("Error: not SLiCAP a circuit object for this instruction.")
         return
 
-    def checkNumeric(self):
+    def _checkNumeric(self):
         """
         Checks if the simulation type is set to 'numeric'. This is required for
         pole-zero analysis.
@@ -1536,13 +1532,12 @@ class instruction(object):
         if self.dataType == 'noise':
             # Noise sources of resistors add k and T to the circuit parameters
             # These sources should be added before executing the instruction.
-            delResNoiseSources(self)
-            self.circuit = updateCirData(self.circuit)
-            self = addResNoiseSources(self)
-            self.circuit = updateCirData(self.circuit)
+            _delResNoiseSources(self)
+            self.circuit = _updateCirData(self.circuit)
+            self = _addResNoiseSources(self)
+            self.circuit = _updateCirData(self.circuit)
         if self.dataType != 'params':
-            self.checkSimType()
-            self.checkGainType()
+            self._checkGainType()
             self.checkDataType()
             if self.errors == 0:
                 if self.gainType == 'vi':
@@ -1586,6 +1581,10 @@ class instruction(object):
                         # need source and detector
                         self.checkDetector()
                         self.checkSource()
+                    elif self.dataType == 'dc':
+                        # need source and detector
+                        self.checkDetector()
+                        self.checkSource()
                     elif self.dataType == 'numer':
                         # need source and detector
                         self.checkDetector()
@@ -1603,16 +1602,16 @@ class instruction(object):
                         self.checkSource()
                     elif self.dataType == 'poles':
                         # need numeric
-                        # self.checkNumeric()
+                        # self._checkNumeric()
                         pass
                     elif self.dataType == 'zeros':
                         # need numeric, source and detector
-                        #self.checkNumeric()
+                        #self._checkNumeric()
                         self.checkDetector()
                         self.checkSource()
                     elif self.dataType == 'pz':
                         # need numeric source and detector
-                        #self.checkNumeric()
+                        #self._checkNumeric()
                         self.checkDetector()
                         self.checkSource()
                     else:
@@ -1624,7 +1623,7 @@ class instruction(object):
                 else:
                     pass
         if self.convType != None:
-            self.checkConvType()
+            self._checkConvType()
             if self.pairExt != [None, None]:
                 self.checkPairExt(self.pairExt)
         if self.step == True:
@@ -1658,8 +1657,6 @@ class instruction(object):
         >>> my_instr.source = 'V1'
         >>> # Assign 'V_out' detector:
         >>> my_instr.detector = 'V_out'
-        >>> # Set the simulation type to 'symbolic'
-        >>> my_instr.simType = 'symbolic'
         >>> # Set the gain type to 'gain'
         >>> my_instr.gainType = 'gain'
         >>> # Set the data type to 'laplace'
@@ -1669,10 +1666,11 @@ class instruction(object):
         """
         self.check()
         if self.errors != 0:
+            r = allResults()
             print("Errors found. Instruction will not be executed.")
-            return(allResults())
+            return(r)
         else:
-            return doInstruction(self)
+            return _doInstruction(self)
 
     def useMatrixConversion(self, method=None):
         """
@@ -1694,7 +1692,7 @@ class instruction(object):
         :rType: NoneType
         """
         METHODS = [None, 'DM', 'CM', 'DMCM', 'CMDM', 'ALL' ]
-        if method in methods:
+        if method in METHODS:
             self.conversionMethod = method
 
 def listPZ(pzResult):
@@ -1756,16 +1754,3 @@ def listPZ(pzResult):
     print('\n')
     return
 
-if __name__ == '__main__':
-    i = instruction()
-    i.circuit = circuit()
-    i.gainType = 'loopgain'
-    i.dataType = 'zeros'
-    i.simType = 'numeric'
-    i.detector = 'V_11'
-    i.source = 'V1'
-    i.lgRef = 'G1'
-    i.step = True
-    i.stepMethod = 'lin'
-    i.stepNum = '5a'
-    i.execute()

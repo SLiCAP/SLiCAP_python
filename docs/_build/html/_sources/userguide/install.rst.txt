@@ -1,42 +1,21 @@
-======================================
-Download, install and configure SLiCAP
-======================================
+============================================
+Download, install, configure and test SLiCAP
+============================================
 
----------------------------
-Download and Install SLiCAP
----------------------------
-
-SLiCAP is available under the following license:
-
-.. image:: https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png
-    :target: http://creativecommons.org/licenses/by-nc-nd/4.0/
-    :width: 88
-    :alt: Creative Commons License
-
-SLiCAP is licensed under a `Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License <http://creativecommons.org/licenses/by-nc-nd/4.0/>`_. Based on a work at: `http://www.analog-electronics.eu/slicap/slicap.html <http://www.analog-electronics.eu/slicap/slicap.html>`_
+.. image:: /img/colorCode.svg
 
 Requirements
-------------
+============
 
-SLiCAP requires the Python 3 packages listed in `https://github.com/SLiCAP/SLiCAP_python/requirements.txt <https://github.com/SLiCAP/SLiCAP_python/blob/master/requirements.txt>`_.
+#. You need to have python3 installed
+#. Under MSWindows it is strongly advised to install Python under `Anaconda <https://www.anaconda.com/download>`_
 
-MSWindows installation of maxima
-````````````````````````````````
-The preferred install path for maxima under MSWindows is on the system drive. If the program is installed on another drive, SLiCAP will only work after the *MAXIMA* command in the *SLiCAPsettings.py* has been set to the correct value. The file *SLiCAPsettings.py* is located in the SLiCAP installation directory (use file search).
-
-MSWindows installation of LTspice
-`````````````````````````````````
-The preferred install path for LTspice under MSWindows is on the system drive. If the program is installed on another drive, *makeNetlist(<netlistFile>.asc)* will only work after the *LTspice* command in the *SLiCAPsettings.py* has been set to the correct value. The file *SLiCAPsettings.py* is located in the SLiCAP installation directory (use file search).
-
-MacOS installation of maxima
-````````````````````````````
-#. Install maxima on macOs using the *homebrew* package manager (see `brew.sh <https://brew.sh/>`_ for installation instructions)
-#. Install maxima with homebrew: open a terminal and enter: *brew install maxima*. 
+SLiCAP requires the Python3 packages listed in `https://github.com/SLiCAP/SLiCAP_python/requirements.txt <https://github.com/SLiCAP/SLiCAP_python/blob/master/requirements.txt>`_.
 
 Download SLiCAP
----------------
+===============
 
-- Open a command window or terminal in a folder where you want to store the downloaded files and clone `https://github.com/SLiCAP/SLiCAP_python <https://github.com/SLiCAP/SLiCAP_python>`_ into that folder:
+- Open a command window or terminal in a folder where you want to store the downloaded files and clone `SLiCAP <https://github.com/SLiCAP/SLiCAP_python <https://github.com/SLiCAP/SLiCAP_python>`_ into that folder:
 
 .. code-block:: bash
 
@@ -44,94 +23,80 @@ Download SLiCAP
 
 or 
 
-- Download the zip file from: `https://github.com/SLiCAP/SLiCAP_python <https://github.com/SLiCAP/SLiCAP_python>`_ and extract it in some folder.
+- Download the zip file from: `SLiCAP <https://github.com/SLiCAP/SLiCAP_python <https://github.com/SLiCAP/SLiCAP_python>`_ and extract it in some folder.
 
 Install SLiCAP
---------------
+==============
 
 - If you work with Anaconca open the *Anaconda Prompt* 
 - If you have python installed under Windows, open a terminal by running the command *cmd*
 - If you have python installed under Linux or mac Open a *terminal*
+- Navigate to the folder with the file *setup.py* (usually: *<where_you_downloaded_or_cloned>/SLiCAP_python-master/)* and enter the command:
 
-Go to the folder with the file *setup.py* (usually: *<where_you_downloaded_or_cloned>/SLiCAP_python-master/)* and enter the command:
+  .. code-block:: python
+
+     python -m pip install .
+
+  Dont forget the dot '**.**' at the end!
+
+  This wil install:
+
+  - SLiCAP documentation and libraries in the **SLiCAP home directory**: ~/SLiCAP/
+  - SLiCAP module scripts in the python environment
+
+Other packages
+==============
+
+SLiCAP has symbol libraries for creating circuit diagrams with:
+
+- `KiCAD <https://www.kicad.org/>`_. This is the preferred package fo working with SLiCAP
+- `LTspice <https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html>`_
+- `gSchem for windows: gEDA-20130122.zip <https://analog-electronics.tudelft.nl/downloads/gEDA-20130122.zip>`_
+- `Lepton EDA <https://github.com/lepton-eda/lepton-eda>`_
+
+For these packages, SLiCAP also has build in netlist generation. SLiCAP uses `Inkscape <https://inkscape.org/>`_ for scaling of KiCAD images from page format to drawing format. For detaied information see `Schematic capture <schematics.html>`_.
+
+SLiCAP also interacts with `NGspice <https://ngspice.sourceforge.io/>`_ for performing more elaborate numeric simulations.
+ 
+Main configuration
+==================
+
+On its first import, SLiCAP searches the above packages and creates commands to start them. To this end it creates a SLiCAP.ini file in the **SLiCAP home directory**: ~/SLiCAP/ and stores the information in it. You can edit this file manually and you can delete it. SLiCAP generates an updated version on the next run. The minimum code to generate this file is:
 
 .. code-block:: python
 
-   python setup.py install --user
+   # Import the SLiCAP modules in a separate namespace (preferred)
+   # Create (but don't overwrite) SLiCAP.ini in the ~/SLiCAP/ folder
+   import SLiCAP as sl
 
-- If you install SLiCAP under MSWindows (Anaconda), the installation searches for the maxima command and the LTspice command.
+Project configuration
+=====================
 
-- In cases in which maxima cannot be found, SLiCAP will only work after maxima has been installed and the *MAXIMA* command in the *SLiCAPsettings.py* has been set to the correct value. The file *SLiCAPsettings.py* is located in the SLiCAP installation directory (use file search).
+SLiCAP projects should be placed in separate folders. Don't place them in the **SLiCAP home directory**. This folder will be recreated if you update SLiCAP.
 
-- In cases in which the LTspice command is not found, the instruction *makeNetlist(<cirFileName>.asc)* will only run after LTspice has been installed and the *LTSPICE* command in the *SLiCAPsettings.py* has been set to the correct value. The file *SLiCAPsettings.py* is located in the SLiCAP installation directory (use file search).
+On the first project run, SLiCAP creates the directory structure in the project directory, copies some files into it, and creates a project configuration file SLiCAP.ini in the project directory. This configuration file contains default math settings, color settings, etc. You can edit or delete this file. After deletion it will be recreated at the next project run.
 
-------------------------
-Configure SLiCAP options
-------------------------
-
-You can configure SLiCAP options after you have created a project. To this end you create a python file 
-in some project directory. The minimum content of this (python) file is:
+The python script below generates both configuration files, displays their contents and opens the HTML documentation in the default browser:
 
 .. code-block:: python
 
-   # import the SLiCAP modules
-   from SLiCAP import *
-   # Create a SLiCAP project, this creates the folder structure
-   # and compiles the libraries.
-   my_project = initProject('my_firstSLiCAP_project')
+   # Import the SLiCAP modules in a separate namespace (preferred)
+   # Create (but don't overwrite) SLiCAP.ini in the ~/SLiCAP/ folder
+   import SLiCAP as sl
+   # Create the project folder structure
+   # Start an HTML report
+   # Compiles the libraries
+   # Create but do not overwrite the project configuration file
+   my_project = sl.initProject('my_firstSLiCAP_project')
+   # Display the configuration settings:
+   sl.ini.dump()
+   # Open de HTML documentation in the browser:
+   sl.Help()
+   
+Test the installation
+=====================
 
-You can modify the directory structure and update the paths for circuit files, library files, etc in the
-``SLiCAPconfig.py`` file, which is created in the project directory.
-
-MathJax
--------
-
-SLiCAP uses MathJax to render LaTeX embedded in html. LaTeX is used for expressions. MathJax rendering of equations requires an Internet connection. The scripts of the `MathJax CDN`_ will then be used for this purpose. For proper rendering of equations you need to be connected to the Internet and have JavaScript enabled in your browser.
-
-.. _MathJax CDN: https://www.mathjax.org/
-
-Global parameters
------------------
-
-Global parameters are parameters that are defined in a library outside a subcircuit environment. SLiCAP has a number of built-in global parameters. These parameters are defined in the ``SLiCAPmodels.lib`` library file in the ``lib/`` folder
-You can define other global parameters by adding SPICE .param declarations in this file.
-
-.. literalinclude:: ../../files/lib/SLiCAPmodels.lib
-    :language: text
-    :linenos: 
-    :lines: 1-56
-    :lineno-start: 1
-
-Path settings
--------------
-
-The project path settings are defined in **SLiCAPconflig.py**. This file is created in the project directory the by **initProject()**. Once created, it can be edited to modify the path settings. **initProject()** will not overwrite the existing **SLiCAPconflig.py**. If you want it to be regenerated, simply delete it before running **initProject()**. 
-
-The default values are:
-
-.. literalinclude:: ../../SLiCAP/SLiCAPconfig/SLiCAPconfig.py
-    :language: python
-    :linenos:
+You can test the installation by running the example 'myFirstRCnetwork.py' in the ~/SLiCAP/examples/myFirstRCnetwork/ folder. It generates an HTML report in the ~/SLiCAP/examples/myFirstRCnetwork/html folder.
     
-SLiCAP configuration parameters
--------------------------------
-
-The configuration parameters for SLiCAP are defined in `SLiCAP.SLiCAPini.py <../reference/SLiCAPini.html#module-SLiCAPini>`_.
-
-To list the values of the SLiCAP configuration parameters enter:
-
-.. code:: python
-
-   >>> ini.dump()
-
-------------
-Getting Help
-------------
-
-For help open the ``index.html`` in the ``doc/`` folder in the SLiCAP main library path that you have selected during installation. 
-
-If you are working in a python IDE or in a jupyter notebook, use the *Help()* function (with capital **H**).
-
-.. code:: python
-
-   >>> Help() # This will open the HTML documentation in your default web browser.
+.. image:: /img/colorCode.svg
+   

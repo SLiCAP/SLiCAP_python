@@ -1,67 +1,65 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-SLiCAP module with HTML functions.
+SLiCAP module with functions for creating a basic HTML report.
 """
 
 import sympy as sp
+import SLiCAP.SLiCAPconfigure as ini
 from shutil import copy2
-from SLiCAP.SLiCAPini import ini
-from SLiCAP.SLiCAPmath import roundN, fullSubs, checkNumeric
+from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric
 
-_HTMLINSERT       = '<!-- INSERT -->' # pattern to be replaced in html files
-_LABELTYPES       = ['headings', 'data', 'fig', 'eqn', 'analysis']
+_HTMLINSERT = '<!-- INSERT -->' # pattern to be replaced in html files
+_LABELTYPES = ['heading', 'data', 'fig', 'eqn', 'analysis']
 
-class Label(object):
+def _Label(name, typ, page, text):
+    return [typ, page, '"' + text + '"']
+
+def _addLabel(label, fileName='', caption='', labelType=''):
+    if label != '':
+        #
+        if caption == '':
+            labelText = fileName
+        else:
+            labelText = caption
+        ini.html_labels[label] = _Label(label, labelType, ini.html_page, labelText)
+        label = '<a id="' + label + '"></a>'
+    return label
+
+def printHTMLinfo():
     """
-    Prototype HTML label
+    Prints current HTML pages and labels to stdout
+    
+    :return: None
+    :rtype: NoneType
     """
-    def __init__(self, name, typ, page, text):
-        self.name = name
-        """
-        Label name *(str)*
+    print("Current page       :", ini.html_page)
+    print("Current index page :", ini.html_index)
+    print("Available pages    :")
+    for page in ini.html_pages:
+        print("  ", page)
+    print("Labels             :")
+    for key in ini.html_labels.keys():
+        print("  " + key +";")
+        print("    type:", ini.html_labels[key][0])
+        print("    page:", ini.html_labels[key][1])
+        print("    text:", ini.html_labels[key][2])
 
-        Automatically set by HTML functions that have a label as parameter.
-        """
-
-        self.type = typ
-        """
-        Type of label *(str)*
-
-        Automatically set by HTML functions that have a label as parameter.
-        Used by **SLiCALhtml.links2html()** for sorting the links. Value can be:
-        'headings', 'data', 'fig', 'eqn' or 'analysis'.
-        """
-
-        self.page = page
-        """
-        Name of the page on which the label is placed  *(str)*
-
-        Automatically set by HTML functions that have a label as parameter.
-        """
-
-        self.text = text
-        """
-        Label text  *(str)* to be placed with the label when using links2html.
-        If the label is attached to a figure, this text is the figure caption.
-        """
-
-        return
-
-def startHTML(projectName):
+def _startHTML(projectName):
     """
     Creates main project index page.
 
     :param: projectName: Name of the project.
     :type projectName: str
+    
+    :return: None
+    :rtype: NoneType
     """
-    ini.htmlIndex = 'index.html'
     toc = '<h2>Table of contents</h2>'
-    html = _HTMLhead(projectName) + toc + '<ol>' + _HTMLINSERT + '</ol>' + _HTMLfoot(ini.htmlIndex)
-    f = open(ini.htmlPath + ini.htmlIndex, 'w')
-    f.write(html)
-    f.close()
-    ini.htmlPages.append(ini.htmlIndex)
+    html = _HTMLhead(projectName) + toc + '<ol>' + _HTMLINSERT + '</ol>' + _HTMLfoot(ini.html_index)
+    _writeFile(ini.html_path + ini.html_index, html)
+    ini.html_page = ini.html_index
+    ini.html_pages.append(ini.html_page)
     return
 
 def _HTMLhead(pageTitle):
@@ -70,7 +68,8 @@ def _HTMLhead(pageTitle):
 
     :param pageTitle: Title of the page
     :type pageTitle: str
-    :return: html: Page head for a html page
+    
+    :return: Page head for a html page
     :rtype: str
     """
     html = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"\n'
@@ -82,7 +81,7 @@ def _HTMLhead(pageTitle):
     html += '<script>MathJax = {tex:{tags: \'ams\', inlineMath:[[\'$\',\'$\'],]}, svg:{fontCache:\'global\'}};</script>\n'
     html += '<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>\n'
     html += '</head><body><div id="top"><h1>' + pageTitle + '</h1></div>\n'
-    return(html)
+    return html
 
 def _HTMLfoot(indexFile):
     """
@@ -91,39 +90,44 @@ def _HTMLfoot(indexFile):
     :param indexFile: name of ther hml index file to which a link must be
                       placed in the footer.
     :type indexFile: str
+    
     :return: html: HTML footer with link to 'indexFile'
     :rtype: str
     """
-    idx = ini.htmlIndex.split('.')[0]
+    idx = ini.html_index.split('.')[0]
     html = '\n<div id="footnote">\n'
-    html += '<p>Go to <a href="' + ini.htmlIndex + '">' + idx + '</a></p>\n'
+    html += '<p>Go to <a href="' +  ini.html_index + '">' + idx + '</a></p>\n'
     html += '<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 2.0.1 &copy 2009-2024 SLiCAP development team</p>\n'
     html += '<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>\n'
-    html += '<p>Last project update: %s</p>\n'%(ini.lastUpdate.strftime("%Y-%m-%d %H:%M:%S"))
+    html += '<p>Last project update: %s</p>\n'%(ini.last_updated)
     html += '</div></body></html>'
-    return(html)
+    return html
 
-def insertHTML(fileName, htmlInsert):
+def _insertHTML(fileName, htmlInsert):
     """
     Inserts html in the file specified by 'fileName' at the location of the
     string 'htmlInsert'.
 
     :param fileName: name of the file
     :type fileName: str
+    
     :param htmlInsert: HTML that must be inserted in this file
     :type htmlInsert: str
     """
-    html = readFile(fileName)
+    html = _readFile(fileName)
     html = html.replace(_HTMLINSERT, htmlInsert + _HTMLINSERT)
-    writeFile(fileName, html)
-    return
+    _writeFile(fileName, html)
+    if ini.notebook:
+        htmlInsert = htmlInsert.replace("$", "SS")
+    return htmlInsert
 
-def readFile(fileName):
+def _readFile(fileName):
     """
     Returns the contents of a file as a string.
 
     :param fileName: Name of the file
     :type fileName: str
+    
     :return: txt: contents of the file.
     :rtype: str
     """
@@ -136,18 +140,23 @@ def readFile(fileName):
         txt = ''
     return txt
 
-def writeFile(fileName, txt):
+def _writeFile(fileName, txt):
     """
     Writes a text string to a file.
 
     :param fileName: Name of the file
     :type fileName: str
+    
     :param txt: Text to be written to the file.
     :type txt: str
     """
     f = open(fileName, 'w')
     f.write(txt)
     f.close()
+    # Update project configuration file. In this way the HTML info is preserved
+    # with next import of SLiCAP in the same project; it is only reset with
+    # initProject()
+    ini._update_project_config()
     return
 
 ### User Functions ###########################################################
@@ -161,158 +170,156 @@ def htmlPage(pageTitle, index = False, label = ''):
 
     :param pageTitle:Title of the page.
     :type param: str
+    
     :param index: True or False
     :type index: Bool
-    :param label: ID of a labelthat can be assigned to this page.
+    
+    :param label: ID of a label to be assigned to this page.
     :type label: str
 
-    :Example:
-
-    >>> htmlPage('Circuit data')
-    """
+    :return: None
+    :rtype: NoneType
+    
+    """    
     if index == True:
         # The page is a  new index page
-        fileName = ini.htmlPrefix + 'index.html'
+        fileName = ini.html_prefix + 'index.html'
         # Place link on old index page
         href = '<li><a href="' + fileName +'">' + pageTitle + '</a></li>'
-        insertHTML(ini.htmlPath + ini.htmlIndex, href)
+        _insertHTML(ini.html_path + ini.html_index, href)
         # Create the new HTML file
         toc = '<h2>Table of contents</h2>'
-        html = _HTMLhead(pageTitle) + toc + '<ol>' + _HTMLINSERT + '</ol>' + _HTMLfoot(ini.htmlIndex)
-        writeFile(ini.htmlPath + fileName, html)
+        html = _HTMLhead(pageTitle) + toc + '<ol>' + _HTMLINSERT + '</ol>' + _HTMLfoot(ini.html_index)
+        _writeFile(ini.html_path + fileName, html)
         # Make this page the new index page
-        ini.htmlIndex = fileName
+        ini.html_index = fileName
     else:
-        fileName = ini.htmlPrefix + '-'.join(pageTitle.split()) + '.html'
+        fileName = ini.html_prefix + '-'.join(pageTitle.split()) + '.html'
         # Place link on the current index page
         href = '<li><a href="' + fileName +'">' + pageTitle + '</a></li>'
-        insertHTML(ini.htmlPath + ini.htmlIndex, href)
+        _insertHTML(ini.html_path + ini.html_index, href)
         # Create the new HTML page
-        if label != None:
-            #
-            newlabel = Label(label, 'headings', fileName, pageTitle)
-            ini.htmlLabels[label] = newlabel
-            #
-            #ini.htmlLabels[label] = ini.htmlPage
+        if label != "":
+            ini.html_labels[label] = _Label(label, 'heading', fileName, pageTitle)
             label = '<a id="' + label + '"></a>'
-        html = label + _HTMLhead(pageTitle) + _HTMLINSERT + _HTMLfoot(ini.htmlIndex)
-        writeFile(ini.htmlPath + fileName, html)
+        html = label + _HTMLhead(pageTitle) + _HTMLINSERT + _HTMLfoot(ini.html_index)
+        _writeFile(ini.html_path + fileName, html)
     # Make this page the active HTML page
-    ini.htmlPage = fileName
-    ini.htmlPages.append(fileName)
-    # Remove double entries in ini.htmlPages
-    ini.htmlPages = list(set(ini.htmlPages))
+    ini.html_page = fileName
+    ini.html_pages.append(fileName)
     return
 
 def head2html(headText, label=''):
     """
-    Places a level 2 heading on the active HTML page.
+    Places a level 2 header on the active HTML page.
 
     :param headText: header text
     :type headText: str
-    :param label: ID of a labelthat can be assigned to this page.
+    
+    :param label: ID of a labelt to be assigned to this header.
     :type label: str
+    
     :return: HTML string of this header
     :rtype: str
 
-
     """
-    if label != '':
-        #
-        newlabel = Label(label, 'headings', ini.htmlPage, headText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
+    label = _addLabel(label, labelType="heading")
     html = '<h2>' + label + headText + '</h2>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
 def head3html(headText, label=''):
     """
-    Places a level 3 heading on the active HTML page.
+    Places a level 3 header on the active HTML page.
 
     :param headText: header text
     :type headText: str
-    :param label: ID of a labelthat can be assigned to this page.
+    
+    :param label: ID of a labelt to be assigned to this header.
     :type label: str
+    
     :return: HTML string of this header
     :rtype: str
     """
-    if label != '':
-        newlabel = Label(label, 'headings', ini.htmlPage, headText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
+    label = _addLabel(label, labelType="heading")
     html = '<h3>' + label + headText + '</h3>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
 def text2html(txt):
     """
     Places txt on the active HTML page.
+    
     :param txt: Text to be placed on the HTML page
     :type txt: str
-    :return: html: HTML string placed on the page
+    
+    :return: HTML string placed on the page: "<p>" + txt + "</p>\\n""
     :rtype: str
     """
     html = '<p>' + txt + '</p>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def netlist2html(fileName, label=''):
+def netlist2html(fileName, label='', labelText =''):
     """
     Places the netlist of the circuit file 'fileName' on the active HTML page.
-
+    The file must be located in the ini.cir_path folder.
+    
     :param fileName: Name of the netlist file
     :type fileName: str
+    
     :param label: Label ID for this object.
     :type label: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
     try:
-        if label != '':
-            newlabel = Label(label, 'data', ini.htmlPage, 'Netlist: ' + fileName)
-            ini.htmlLabels[label] = newlabel
-            label = '<a id="' + label + '"></a>'
-        netlist = readFile(ini.circuitPath + fileName)
+        label = _addLabel(label, fileName=fileName, caption=labelText, labelType="data")
+        netlist = _readFile(ini.cir_path + fileName)
         html = '<h2>' + label + 'Netlist: ' + fileName + '</h2>\n<pre>' + netlist + '</pre>\n'
-        insertHTML(ini.htmlPath + ini.htmlPage, html)
+        _insertHTML(ini.html_path + ini.html_page, html)
     except:
         print("Error: could not open netlist file: '{0}'.".format(fileName))
         html = ''
     return html
 
 
-def lib2html(fileName, label=''):
+def lib2html(fileName, label='', lib='user'):
     """
     Places the contents of the library file 'fileName' on the active HTML page.
+    
+    The library is assumed to be located in the user library path.
 
     :param fileName: Name of the library file
     :type fileName: str
+    
     :param label: Label ID for this object.
     :type label: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :param lib: Library path, can either be "user", or "system".
+    :type lib: str
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
+    lib = lib.lower()
     try:
-        if label != '':
-            newlabel = Label(label, 'data', ini.htmlPage, 'Netlist: ' + fileName)
-            ini.htmlLabels[label] = newlabel
-            label = '<a id="' + label + '"></a>'
-        netlist = readFile(ini.libraryPath + fileName)
+        label = _addLabel(label, fileName=fileName, labelType="data")
+        if lib == 'user':
+            netlist = _readFile(ini.user_lib_path + fileName)
+        elif lib == 'system':
+            netlist = _readFile(ini.main_lib_path + fileName)
+        else:
+            print("ERROR: unknown library type (lib='user' or 'system').")
         html = '<h2>' + label + 'Library: ' + fileName + '</h2>\n<pre>' + netlist + '</pre>\n'
-        insertHTML(ini.htmlPath + ini.htmlPage, html)
+        html = _insertHTML(ini.html_path + ini.html_page, html)
     except:
         print("Error: could not open netlist file: '{0}'.".format(fileName))
         html = ''
     return html
 
-def elementData2html(circuitObject, label = '', caption = ''):
+def elementData2html(circuitObject, label='', caption=''):
     """
     Displays a table with element data on the active html page:
 
@@ -323,22 +330,21 @@ def elementData2html(circuitObject, label = '', caption = ''):
 
     :param circuitObject: SLiCAP circuit object of which the element data will
                           be displayed on the HTML page.
-    :type circuitObject: *SLiCAPprotos.circuit*
+                          
+    :type circuitObject: SLiCAPprotos.circuit
+    
     :param label: Label that will be assigned to this table.
     :type label: str
+    
     :param caption: Caption that will be placed with this table.
     :type caption: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
-    if label != '':
-        #
-        newlabel = Label(label, 'data', ini.htmlPage, circuitObject.title + ': element data')
-        ini.htmlLabels[label] = newlabel
-        #
-        #ini.htmlLabels[label] = ini.htmlPage
-        label = '<a id="' + label + '"></a>'
-    caption = "<caption>Table: Element data of expanded netlist '%s'</caption>"%(circuitObject.title)
+    label = _addLabel(label, fileName='', caption=caption, labelType="data")
+    if caption == '':
+        caption = "<caption>Table: Element data of expanded netlist '%s'</caption>"%(circuitObject.title)
     html = '%s<table>%s\n'%(label, caption)
     html += '<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>\n'
     elementNames = list(circuitObject.elements.keys())
@@ -366,31 +372,30 @@ def elementData2html(circuitObject, label = '', caption = ''):
                     html += '<tr><td></td><td></td><td></td><td></td><td class="left">' + param + '</td><td class="left">' + symValue + '</td><td class="left">' + numValue + '</td></tr>\n'
                 i += 1
     html += '</table>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def params2html(circuitObject, label = '', caption = ''):
+def params2html(circuitObject, label='', caption=''):
     """
     Displays a table with circuit parameters, their definitions and numeric
     values on the actibe htmal page.
 
     :param circuitObject: SLiCAP circuit object of which the element data will
                           be displayed on the HTML page.
-    :type circuitObject: *SLiCAPprotos.circuit*
+                          
+    :type circuitObject: SLiCAPprotos.circuit
     :param label: Label that will be assigned to this table.
     :type label: str
+    
     :param caption: Caption that will be placed with this table.
     :type caption: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
-    if label != '':
-        newlabel = Label(label, 'data', ini.htmlPage, circuitObject.title + ': circuit parameters')
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
-    caption = "<caption>Table: Parameter definitions in '%s'.</caption>"%(circuitObject.title)
+    label = _addLabel(label, fileName='', caption=caption, labelType='data')
+    if caption == '':
+        caption = "<caption>Table: Parameter definitions in '%s'.</caption>"%(circuitObject.title)
     html = '%s<table>%s\n'%(label, caption)
     html += '<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>\n'
     parNames = list(circuitObject.parDefs.keys())
@@ -426,20 +431,21 @@ def params2html(circuitObject, label = '', caption = ''):
             parName = '$' + sp.latex(par) + '$'
             html += '<tr><td class="left">' + parName +'</td></tr>\n'
         html += '</table>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
+    _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def img2html(fileName, width, label = '', caption = ''):
+def img2html(fileName, width, label='', caption=''):
     """
     Places an image from file 'fileName' on the active html page.
 
     Copies the image file to the 'img.' subdirectory of the 'html/' directory
     and creates a link to this file on the active html page.
 
-    :param fileName: Name of the image file
+    :param fileName: Name of the image file, must be located in the 
+                     ini.img_path folder.
+                     
     :type fileName: str
+    
     :param width: With of the image in pixels
     :type width: int
     :param label: ID of the label to be assigned to this image, defaults to ''.
@@ -449,53 +455,42 @@ def img2html(fileName, width, label = '', caption = ''):
     :return: file path for this image.
     :rtype: str
     """
-    if label != '':
-        #
-        if caption == '':
-            labelText = fileName
-        else:
-            labelText = caption
-        newlabel = Label(label, 'fig', ini.htmlPage, labelText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
+    label = _addLabel(label, fileName=fileName, caption=caption, labelType="fig")
     try:
-        copy2(ini.imgPath + fileName, ini.htmlPath + 'img/' + fileName)
+        copy2(ini.img_path + fileName, ini.html_path + 'img/' + fileName)
     except:
         print("Error: could not copy: '{0}'.".format(fileName))
     html = '<figure>{0}<img src="img/{1}" alt="{2}" style="width:{3}px">\n'.format(label, fileName, caption, width)
     if caption != '':
         html+='<figcaption>Figure: %s<br>%s</figcaption>\n'%(fileName, caption)
     html += '</figure>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    return '%s'%(ini.htmlPath + 'img/' + fileName)
+    _insertHTML(ini.html_path + ini.html_page, html)
+    return '%s'%(ini.html_path + 'img/' + fileName)
 
-def csv2html(fileName, label = '', separator = ',', caption = ''):
+def csv2html(fileName, label='', separator=',', caption=''):
     """
     Displays the contents of a csv file as a table on the active HTML page.
+    The file must be located in the ini.csv_path folder.
 
     :param fileName: Name of the csv file file
     :type fileName: str
+    
     :param label: ID of the label assigned to this table.
     :type label: str
+    
     :param separator: Field separator for this csv file; defaults to ','.
     :type separator: str
+    
     :param caption: Caption for this table.
     :type caption: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
-    if label != '':
-        #
-        if caption == '':
-            labelText = fileName
-        else:
-            labelText = caption
-        newlabel = Label(label, 'data', ini.htmlPage, labelText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
+    label = _addLabel(label, fileName=fileName, caption=caption, labelType="data")
     caption = '<caption>Table: %s<br>%s.</caption>'%(fileName, caption)
     html = '%s<table>%s'%(label, caption)
-    csvLines = readFile(ini.csvPath + fileName).splitlines()
+    csvLines = _readFile(ini.csv_path + fileName).splitlines()
     for i in range(len(csvLines)):
         cells = csvLines[i].split(separator)
         html += '<tr>'
@@ -507,47 +502,49 @@ def csv2html(fileName, label = '', separator = ',', caption = ''):
                 html += '<td>%s</td>'%(cell)
         html += '</tr>\n'
     html += '</table>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
+    _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def expr2html(expr, units = ''):
+def expr2html(expr, units=''):
     """
     Inline display of an expression optional with units.
 
     :param expr: Expression
     :type expr: sympy.Expr
+    
     :param units: Units for this expression, defaults to ''.
     :type units: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
     if isinstance(expr, sp.Basic):
         if units != '':
             units = '\\left[\\mathrm{' + sp.latex(sp.sympify(units)) + '}\\right]'
         html = '$' + sp.latex(roundN(expr)) + units + '$'
-        insertHTML(ini.htmlPath + ini.htmlPage, html)
+        html = _insertHTML(ini.html_path + ini.html_page, html)
     else:
         print("Error: expr2html, expected a Sympy expression.")
         html = ''
-    if ini.notebook:
-        html = html.replace('$', '$$')
     return html
 
-def eqn2html(arg1, arg2, units = '', label = '', labelText = ''):
+def eqn2html(arg1, arg2, units='', label='', labelText=''):
     """
     Displays an equation on the active HTML page'.
 
     :param arg1: left hand side of the equation
     :type arg1: str, sympy.Symbol, sympy.Expr
+    
     :param arg2: right hand side of the equation
     :type arg2: str, sympy.Symbol, sympy.Expr
+    
     :param label: ID of the label assigned to this equation; defaults to ''.
     :type label: str
+    
     :param labelText: Label text to be displayed by **links2html()**; defaults to ''
     :type labelText: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
     if arg1 == None or arg2 == None:
@@ -556,58 +553,44 @@ def eqn2html(arg1, arg2, units = '', label = '', labelText = ''):
     arg2 = sp.sympify(str(arg2))
     if units != '':
         units = '\\,\\left[ \\mathrm{' + sp.latex(sp.sympify(units)) + '}\\right]'
-
-    if label != '':
-        #
-        if labelText == '':
-            labelText = label
-        newlabel = Label(label, 'eqn', ini.htmlPage, labelText)
-        ini.htmlLabels[label] = newlabel
-        label   = '<a id="'+ label +'"></a>\n'
+    label = _addLabel(label, caption=labelText, labelType='eqn')
     html = label + '\\begin{equation}\n' + sp.latex(roundN(arg1)) + '=' + sp.latex(roundN(arg2)) + units + '\n'
     html += '\\end{equation}\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = ('$$' + html + '$$')
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def matrices2html(instrObj, label = '', labelText = ''):
+def matrices2html(results, label='', labelText=''):
     """
     Displays the MNA equation on the active HTML page.
 
     :param instrObj: Results of instruction with data type matrix.
     :type instrObj: SLiCAPprotos.allResults
+    
     :param label: ID of the label assigned to this equation; defaults to ''.
     :type label: str
-    :param labelText: Label text to be displayed by **links2html()**; defaults to ''
+    
+    :param labelText: Label text displayed by **links2html()**; defaults to ''
     :type labelText: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
-    if instrObj.errors != 0:
+    if results.errors != 0:
         print("Errors found during execution.")
         return ''
     html = ''
     try:
-        (Iv, M, Dv) = (instrObj.Iv, instrObj.M, instrObj.Dv)
+        (Iv, M, Dv) = (results.Iv, results.M, results.Dv)
         Iv = sp.latex(roundN(Iv))
         M  = sp.latex(roundN(M))
         Dv = sp.latex(roundN(Dv))
-        if label != '':
-            #
-            if labelText == '':
-                labelText = label
-            newlabel = Label(label, 'eqn', ini.htmlPage, labelText)
-            ini.htmlLabels[label] = newlabel
-            label = '<a id="' + label + '"></a>'
+        label = _addLabel(label, caption=labelText, labelType='eqn')
         html = '<h3>' + label + 'Matrix equation:</h3>\n'
         html += '\\begin{equation}\n' + Iv + '=' + M + '\\cdot' + Dv + '\n'
         html += '\\end{equation}\n'
-        insertHTML(ini.htmlPath + ini.htmlPage, html)
+        html = _insertHTML(ini.html_path + ini.html_page, html)
     except:
         print("Error: unexpected input for 'matrices2html()'.")
-    if ini.notebook:
-        html = html.replace('$', '$$')
     return html
 
 def pz2html(instObj, label = '', labelText = ''):
@@ -615,15 +598,18 @@ def pz2html(instObj, label = '', labelText = ''):
     Displays the DC transfer, and tables with poles and zeros on the active
     HTML page.
 
-    Not (yet) implemented with parameter stepping.
+    Not implemented with parameter stepping.
 
     :param instObj: Results of an instruction with data type 'poles', 'zeros' or 'pz'.
     :type instObj: SLiCAP.protos.allResults
+    
     :param label: ID of the label assigned to these tables; defaults to ''.
     :type label: str
+    
     :param labelText: Label text to be displayed by **links2html()**; defaults to ''
     :type labelText: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
     html = ''
@@ -636,13 +622,7 @@ def pz2html(instObj, label = '', labelText = ''):
     elif instObj.step == True :
         print("Error: parameter stepping not implemented for 'pz2html()'.")
         return html
-
-    if label != '':
-        if labelText == '':
-            labelText = label
-        newlabel = Label(label, 'analysis', ini.htmlPage, labelText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
+    label = _addLabel(label, caption=labelText, labelType="data")
     (poles, zeros, DCgain) = (instObj.poles, instObj.zeros, instObj.DCvalue)
     if type(DCgain) == list and len(DCgain) != 0:
         DCgain = DCgain[0]
@@ -661,7 +641,7 @@ def pz2html(instObj, label = '', labelText = ''):
             html += '\n<p>DC gain = $' + sp.latex(roundN(DCgain)) + '$</p>\n'
     elif instObj.dataType =='pz':
         html += '<p>DC gain could not be determined.</p>\n'
-    if ini.Hz == True:
+    if ini.hz == True:
         unitsM = 'Mag [Hz]'
         unitsR = 'Re [Hz]'
         unitsI = 'Im [Hz]'
@@ -672,11 +652,11 @@ def pz2html(instObj, label = '', labelText = ''):
         unitsI = 'Im [rad/s]'
         unitsS = '[rad/s]'
     if len(poles) > 0 and instObj.dataType == 'poles' or instObj.dataType == 'pz':
-        if checkNumeric(poles):
+        if _checkNumeric(poles):
             html += '<table><tr><th>pole</th><th>' + unitsR + '</th><th>' + unitsI + '</th><th>' + unitsM + '</th><th>Q</th></tr>\n'
             for i in range(len(poles)):
                 p = poles[i]
-                if ini.Hz == True:
+                if ini.hz == True:
                     p  = p/2/sp.pi
                 Re = sp.re(p)
                 Im = sp.im(p)
@@ -698,18 +678,18 @@ def pz2html(instObj, label = '', labelText = ''):
             html += '<table><tr><th>pole</th><th>value ' + unitsS + '</th></tr>'
             for i in range(len(poles)):
                 p = poles[i]
-                if ini.Hz == True:
+                if ini.hz == True:
                     p  = p/2/sp.pi
                 html += '\n<tr><td> $p_{' +str(i) + '}$</td><td>$' + sp.latex(roundN(p)) + '$</td></tr>\n'
             html += '</table>\n'
     elif instObj.dataType == 'poles' or instObj.dataType == 'pz':
         html += '<p>No poles found.</p>\n'
     if len(zeros) > 0 and instObj.dataType == 'zeros' or instObj.dataType == 'pz':
-        if checkNumeric(zeros):
+        if _checkNumeric(zeros):
             html += '<table><tr><th>zero</th><th>' + unitsR + '</th><th>' + unitsI + '</th><th>' + unitsM + '</th><th>Q</th></tr>\n'
             for i in range(len(zeros)):
                 z = zeros[i]
-                if ini.Hz == True:
+                if ini.hz == True:
                     z = z/2/sp.pi
                 Re = sp.re(z)
                 Im = sp.im(z)
@@ -731,16 +711,16 @@ def pz2html(instObj, label = '', labelText = ''):
             html += '<table><tr><th>zero</th><th>value ' + unitsS + '</th></tr>'
             for i in range(len(zeros)):
                 z = zeros[i]
-                if ini.Hz == True:
+                if ini.hz == True:
                     z = sp.simplify(z/2/sp.pi)
                 html += '\n<tr><td> $z_{' +str(i) + '}$</td><td>$' + sp.latex(roundN(z)) + '$</td></tr>\n'
             html += '</table>\n'
     elif instObj.dataType == 'zeros' or instObj.dataType == 'pz':
         html += '<p>No zeros found.</p>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def noise2html(instObj, label = '', labelText = ''):
+def noise2html(instObj, label='', labelText=''):
     """
     Displays the reults of a noise analysis on the active html page.
 
@@ -748,11 +728,14 @@ def noise2html(instObj, label = '', labelText = ''):
 
     :param instObj: Results of an instruction with data type 'noise'.
     :type instObj: SLiCAP.protos.allResults
+    
     :param label: ID of the label assigned to these tables; defaults to ''.
     :type label: str
+    
     :param labelText: Label text to be displayed by **links2html()**; defaults to ''
     :type labelText: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
     html = ''
@@ -766,24 +749,15 @@ def noise2html(instObj, label = '', labelText = ''):
         print("Error: parameter stepping not implemented for 'noise2html()'.")
         return html
     if label != '':
-        if labelText == '':
-            labelText = label
-        newlabel = Label(label, 'analysis', ini.htmlPage, labelText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
-    detUnits = '\mathrm{\left[\\frac{%s^2}{Hz}\\right]}'%(instObj.detUnits)
-    if instObj.simType == 'symbolic':
-        html = '<h2>Symbolic noise analysis results</h2>\n'
-        numeric = False
-    else:
-        html = '<h2>Numeric noise analysis results</h2>\n'
-        numeric = True
+        label = _addLabel(label, caption=labelText, labeType="data")
+    detUnits = '\\mathrm{\\left[\\frac{%s^2}{Hz}\\right]}'%(instObj.detUnits)
+    html = '<h2>Noise analysis results</h2>\n'
     html += '<h3>Detector-referred noise spectrum</h3>\n'
-    html += '$$S_{out}=%s\, %s$$\n'%(sp.latex(roundN(instObj.onoise, numeric = instObj.numeric)), detUnits)
+    html += '$$S_{out}=%s\\, %s$$\n'%(sp.latex(roundN(instObj.onoise, numeric = instObj.numeric)), detUnits)
     if instObj.srcUnits != None:
-        srcUnits = '\mathrm{\left[\\frac{%s^2}{Hz}\\right]}'%(instObj.srcUnits)
+        srcUnits = '\\mathrm{\\left[\\frac{%s^2}{Hz}\\right]}'%(instObj.srcUnits)
         html += '<h3>Source-referred noise spectrum</h3>\n'
-        html += '$$S_{in}=%s\, %s$$\n'%(sp.latex(roundN(instObj.inoise, numeric = instObj.numeric)), srcUnits)
+        html += '$$S_{in}=%s\\, %s$$\n'%(sp.latex(roundN(instObj.inoise, numeric = instObj.numeric)), srcUnits)
     html += '<h3>Contributions of individual noise sources</h3><table>\n'
     keys = list(instObj.onoiseTerms.keys())
     keys.sort()
@@ -791,38 +765,40 @@ def noise2html(instObj, label = '', labelText = ''):
         nUnits = key[0].upper()
         if nUnits == 'I':
             nUnits = 'A'
-        nUnits = '\mathrm{\left[\\frac{%s^2}{Hz}\\right]}'%(nUnits)
+        nUnits = '\\mathrm{\\left[\\frac{%s^2}{Hz}\\right]}'%(nUnits)
         html += '<th colspan = "3" class="center">Noise source: %s</th>'%(key)
         try:
             srcValue = instObj.snoiseTerms[key]
         except:
             srcValue = 0
-        if numeric:
+        if instObj.substitute:
             srcValue = fullSubs(srcValue, instObj.circuit.parDefs)
-        html += '<tr><td class="title">Spectral density:</td><td>$%s$</td><td class="units">$\,%s$</td></tr>\n'%(sp.latex(roundN(srcValue, numeric = instObj.numeric)), nUnits)
-        html += '<tr><td class="title">Detector-referred:</td><td>$%s$</td><td class="units">$\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.onoiseTerms[key], numeric = instObj.numeric)), detUnits)
+        if instObj.numeric:
+            srcValue = sp.N(srcValue, ini.disp)
+        html += '<tr><td class="title">Spectral density:</td><td>$%s$</td><td class="units">$\\,%s$</td></tr>\n'%(sp.latex(roundN(srcValue, numeric = instObj.numeric)), nUnits)
+        html += '<tr><td class="title">Detector-referred:</td><td>$%s$</td><td class="units">$\\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.onoiseTerms[key], numeric = instObj.numeric)), detUnits)
         if instObj.srcUnits != None:
-            html += '<tr><td class="title">Source-referred:</td><td>$%s$</td><td class="units">$\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.inoiseTerms[key], numeric = instObj.numeric)), srcUnits)
+            html += '<tr><td class="title">Source-referred:</td><td>$%s$</td><td class="units">$\\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.inoiseTerms[key], numeric = instObj.numeric)), srcUnits)
     html += '</table>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
-        html = html.replace('$$$$', '$$')
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
 def dcVar2html(instObj, label = '', labelText = ''):
     """
-    Displays the reults of a dcVAr analysis on the active html page.
+    Displays the reults of a dc variance analysis on the active html page.
 
     Not implemented with parameter stepping.
 
     :param instObj: Results of an instruction with data type 'dcvar'.
     :type instObj: SLiCAP.protos.allResults
+    
     :param label: ID of the label assigned to these tables; defaults to ''.
     :type label: str
+    
     :param labelText: Label text to be displayed by **links2html()**; defaults to ''
     :type labelText: str
-    :return: html: HTML string that will be placed on the page.
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
     html = ''
@@ -835,27 +811,18 @@ def dcVar2html(instObj, label = '', labelText = ''):
     elif instObj.step == True :
         print("Error: parameter stepping not implemented for 'dcvar2html()'.")
         return html
-    if label != '':
-        if labelText == '':
-            labelText = label
-        newlabel = Label(label, 'dcvar', ini.htmlPage, labelText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
-    detUnits = '\mathrm{\left[ %s^2 \\right]}'%(instObj.detUnits)
-    if instObj.simType == 'symbolic':
-        html = '<h2>Symbolic dcvar analysis results</h2>\n'
-        numeric = False
-    else:
-        html = '<h2>Numeric dcvar analysis results</h2>\n'
-        numeric = True
+    if label != "":
+        label = _addLabel(label, caption=labelText, labelType="data")
+    detUnits = '\\mathrm{\\left[ %s^2 \\right]}'%(instObj.detUnits)
+    html = '<h2>Dcvar analysis results</h2>\n'
     html += '<h3>DC solution of the network</h3>\n'
     html += '$$%s=%s$$\n'%(sp.latex(roundN(instObj.Dv)), sp.latex(roundN(instObj.dcSolve, numeric = instObj.numeric)))
     html += '<h3>Detector-referred variance</h3>\n'
-    html += '$$\sigma_{out}^2=%s\, %s$$\n'%(sp.latex(roundN(instObj.ovar, numeric = instObj.numeric)), detUnits)
+    html += '$$\\sigma_{out}^2=%s\\, %s$$\n'%(sp.latex(roundN(instObj.ovar, numeric = instObj.numeric)), detUnits)
     if instObj.srcUnits != None:
-        srcUnits = '\mathrm{\left[ %s^2 \\right]}'%(instObj.srcUnits)
+        srcUnits = '\\mathrm{\\left[ %s^2 \\right]}'%(instObj.srcUnits)
         html += '<h3>Source-referred variance</h3>\n'
-        html += '$$\sigma_{in}^2=%s\, %s$$\n'%(sp.latex(roundN(instObj.ivar, numeric = instObj.numeric)), srcUnits)
+        html += '$$\\sigma_{in}^2=%s\\, %s$$\n'%(sp.latex(roundN(instObj.ivar, numeric = instObj.numeric)), srcUnits)
     html += '<h3>Contributions of individual component variances</h3><table>\n'
     keys = list(instObj.ovarTerms.keys())
     keys.sort()
@@ -863,35 +830,43 @@ def dcVar2html(instObj, label = '', labelText = ''):
         nUnits = key[0].upper()
         if nUnits == 'I':
             nUnits = 'A'
-        nUnits = '\mathrm{\left[ %s^2 \\right]}'%(nUnits)
+        nUnits = '\\mathrm{\\left[ %s^2 \\right]}'%(nUnits)
         html += '<th colspan = "3" class="center">Variance of source: %s</th>'%(key)
         try:
             srcValue = instObj.svarTerms[key]
         except:
             srcValue = 0
-        if numeric:
+        if instObj.substitute:
             srcValue = fullSubs(srcValue, instObj.circuit.parDefs)
-        html += '<tr><td class="title">Source variance:</td><td>$%s$</td><td class="units">$\,%s$</td></tr>\n'%(sp.latex(roundN(srcValue, numeric = instObj.numeric)), nUnits)
-        html += '<tr><td class="title">Detector-referred:</td><td>$%s$</td><td class="units">$\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.ovarTerms[key], numeric = instObj.numeric)), detUnits)
+        if instObj.numeric:
+            srcValue=sp.N(srcValue, ini.disp)
+        html += '<tr><td class="title">Source variance:</td><td>$%s$</td><td class="units">$\\,%s$</td></tr>\n'%(sp.latex(roundN(srcValue, numeric = instObj.numeric)), nUnits)
+        html += '<tr><td class="title">Detector-referred:</td><td>$%s$</td><td class="units">$\\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.ovarTerms[key], numeric = instObj.numeric)), detUnits)
         if instObj.srcUnits != None:
-            html += '<tr><td class="title">Source-referred:</td><td>$%s$</td><td class="units">$\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.ivarTerms[key], numeric = instObj.numeric)), srcUnits)
+            html += '<tr><td class="title">Source-referred:</td><td>$%s$</td><td class="units">$\\,%s$</td></tr>\n'%(sp.latex(roundN(instObj.ivarTerms[key], numeric = instObj.numeric)), srcUnits)
     html += '</table>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
-        html = html.replace('$$$$', '$$')
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def coeffsTransfer2html(transferCoeffs, label = '', labelText = ''):
+def coeffsTransfer2html(transferCoeffs, label='', labelText=''):
     """
-    Displays the coefficients of the numerator and the denominator of a transfer function on the active html page.
+    Displays the gain factor and the coefficients of the numerator and the 
+    denominator of a transfer function on the active html page.
+    
+    :param transferCoeffs: Result of coeffsTransfer() function
+    :type transferCoeffs: list
+    
+    :param label: ID of the label assigned to these tables; defaults to ''.
+    :type label: str
+    
+    :param labelText: Label text to be displayed by **links2html()**; defaults to ''
+    :type labelText: str
+    
+    :return: HTML string that will be placed on the page.
+    :rtype: str
+    
     """
-    if label != '':
-        if labelText == '':
-            labelText = label
-        newlabel = Label(label, 'analysis', ini.htmlPage, labelText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
+    label = _addLabel(label, caption=labelText, labelType="data")
     (gain, numerCoeffs, denomCoeffs) = transferCoeffs
     html = '<h3>Gain factor</h3>\n<p>$%s$</p>\n'%(sp.latex(roundN(gain)))
     html += '<h3>Normalized coefficients of the numerator:</h3>\n<table><tr><th class=\"center\">order</th><th class=\"left\">coefficient</th></tr>\n'
@@ -904,20 +879,32 @@ def coeffsTransfer2html(transferCoeffs, label = '', labelText = ''):
         value = sp.latex(roundN(denomCoeffs[i]))
         html += '<tr><td class=\"center\">$' + str(i) + '$</td><td class=\"left\">$' + value + '$</td></tr>\n'
     html += '</table>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
-    if ini.notebook:
-        html = html.replace('$', '$$')
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def stepArray2html(stepVars, stepArray):
+def stepArray2html(stepVars, stepArray, label="", labelText=""):
     """
     Displays the step array on the active HTML page.
 
-    :return: html: HTML string that will be placed on the page.
+    :param stepVars: List with step variables
+    :type tepVars: list
+    
+    :param stepArray: List with lists for step data
+    :type stepArray: list
+    
+    :param label: ID of the label assigned to these tables; defaults to ''.
+    :type label: str
+    
+    :param labelText: Label text to be displayed by **links2html()**; defaults to ''
+    :type labelText: str
+    
+    :return: HTML string that will be placed on the page.
     :rtype: str
     """
     numVars = len(stepVars)
     numRuns = len(stepArray[0])
+    if label != "":
+        label = _addLabel(label, caption=labelText, labelType="data")
     html = '<h3>Step array</h3>\n<table><tr><th>Run</th>'
     for i in range(numVars):
         html += '<th>$%s$</th>'%(sp.latex(stepVars[i]))
@@ -928,66 +915,85 @@ def stepArray2html(stepVars, stepArray):
             html += '<td>%8.2e</td>'%(stepArray[j][i])
         html += '</tr>\n'
     html += '</table>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
-def fig2html(figureObject, width, label = '', caption = ''):
+def fig2html(figureObject, width, label='', caption=''):
     """
     Copies the image file to the 'img.' subdirectory of the 'html/' directory
     set by HTMLPATH in SLiCAPini.py and creates a link to this file on the
     active html page.
+    
+    :param figureObject: SLiCAP figure object generated with a plot function.
+    :type figureObject: SLiCAPplots.figure
+    
+    :param width: Width of the figure in pixels
+    :type width: int
+    
+    :param label: ID of the label assigned to these tables; defaults to ''.
+    :type label: str
+    
+    :param labelText: Label text to be displayed by **links2html()**; defaults to ''
+    :type labelText: str
+    
+    :return: HTML string that will be placed on the page.
+    :rtype: str
     """
-    if label != '':
-        if caption == '':
-            labelText = figureObject.fileName
-        else:
-            labelText = caption
-        newlabel = Label(label, 'fig', ini.htmlPage, labelText)
-        ini.htmlLabels[label] = newlabel
-        label = '<a id="' + label + '"></a>'
+    label = _addLabel(label, caption=caption, labelType="fig")
     html = '<figure>%s<img src="img/%s" alt="%s" style="width:%spx">\n'%(label, figureObject.fileName, caption, width)
     if caption != '':
         html+='<figcaption>Figure: %s<br>%s</figcaption>\n'%(figureObject.fileName, caption)
     html += '</figure>\n'
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     try:
-        copy2(ini.imgPath + figureObject.fileName, ini.htmlPath + 'img/' + figureObject.fileName)
+        copy2(ini.img_path + figureObject.fileName, ini.html_path + 'img/' + figureObject.fileName)
     except:
-        print("Error: could not copy: '{0}'.".format(ini.imgPath + figureObject.fileName))
-    return ini.htmlPath + 'img/' + figureObject.fileName
+        print("Error: could not copy: '{0}'.".format(ini.img_path + figureObject.fileName))
+    return ini.html_path + 'img/' + figureObject.fileName
 
 def file2html(fileName):
     """
-    Writes the contents of a file to the active html page.
+    Writes the contents of a file to the active html page. The file must be
+    located in the ini.txt_path.
 
-    :param fileName: Name of the file (relative to ini.textPath)
+    :param fileName: Name of the file
     :type fileName: str
-    :return: html code
+    
+    :return: html code that will be inserted in the HTML file
     :rtype: str
     """
-    f = open(ini.txtPath + fileName)
+    f = open(ini.txt_path + fileName)
     html = f.read()
     f.close()
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
 ### HTML links and labels
 
-def href(label, fileName = ''):
+def href(label, fileName=''):
     """
     Returns the html code for a jump to a label 'labelName'.
     This label can be on any page. If referring backwards 'fileName' can be
     detected automatically. When referring forward 'fileName' must be the
     name of the file that will be created later. Run a project 2 times without
     closing it after the first run, automaitcally detects all labels.
+    
+    :param label: ID of the label.
+    :type label: str
+    
+    :param fileName: Name of the HTML page for inserting the link.
+    :type fileName: str
+    
+    :return: HTML code that will be inserted
+    :rtype: str
     """
     html = ''
     if fileName == '':
-        fileName = ini.htmlLabels[label].page
-    if fileName == ini.htmlPage:
-        html = '<a href="#' + label + '">' + ini.htmlLabels[label].text + '</a>'
+        fileName = ini.html_labels[label][1]
+    if fileName == ini.html_page:
+        html = '<a href="#' + label + '">' + ini.html_labels[label][2] + '</a>'
     else:
-        html = '<a href="' + fileName + '#' + label + '">' + ini.htmlLabels[label].text + '</a>'
+        html = '<a href="' + fileName + '#' + label + '">' + ini.html_labels[label][2] + '</a>'
     return html
 
 def links2html():
@@ -1005,13 +1011,20 @@ def links2html():
     :return: html: HTML string that will be placed on the page.
     :rtype: str
     """
+    
+    # [typ, page, '"' + text + '"']
+    
     htmlPage('Links')
     labelDict = {}
     html = ''
+    
+    # Create a dictionary with key = label type and value is labes of that type
     for labelType in _LABELTYPES:
         labelDict[labelType] = []
-    for labelName in list(ini.htmlLabels.keys()):
-        labelDict[ini.htmlLabels[labelName].type].append(labelName)
+        for labelName in ini.html_labels.keys():
+            if ini.html_labels[labelName][0] == labelType:
+                labelDict[labelType].append(labelName)        
+    # Print the labels with a heading fot each group
     for labelType in _LABELTYPES:
         if len(labelDict[labelType]) != 0:
             labelDict[labelType].sort()
@@ -1035,7 +1048,7 @@ def links2html():
                 html += '<h2>Analysis results</h2>\n'
                 for name in labelDict[labelType]:
                     html += '<p>%s</p>\n'%(href(name))
-    insertHTML(ini.htmlPath + ini.htmlPage, html)
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return
 
 def htmlLink(address, text):
@@ -1045,34 +1058,31 @@ def htmlLink(address, text):
     :param address: link address
     :type address: str
 
-    :return: html code
+    :return: HTML code
     :rtype: str
     """
     html = '<a href="' + address + '">' + text + '</a>\n'
     return html
 
-def htmlParValue(instr, parName):
+def htmlParValue(cir, parName):
     """
     Returns code for inline display of parameter 'parName' from instruction
-    'instr'. If instr.simType == 'numeric' it applies a full substitution of
-    all other parameter definitions.
-
-    :param instr: Instruction that holds the parameter definition
-    :type instr: SLiCAPinstruction.instruction
+    'instr'. 
+    :param cir: Circuit object that holds the parameter definition
+    :type instr: SLiCAPprotos.circuit
 
     :param parName: Name of the parameter
     :type parName: string
 
-    :return: html code for the parameter value
+    :return: HTML code for the parameter value
     :rtype: string
     """
-    return '$' + str(sp.latex(roundN(instr.getParValue(parName)))) + '$'
+    return '$' + str(sp.latex(roundN(cir.getParValue(parName)))) + '$'
 
-def htmlElValue(instr, elName):
+def htmlElValue(cir, elName, param='value', numeric=False):
     """
     Returns code for inline display of value of element 'elName' from instruction
-    'instr'. If instr.simType == 'numeric' it applies a full substitution of
-    all other parameter definitions.
+    'instr'.
 
     :param instr: Instruction that holds the parameter definition
     :type instr: SLiCAPinstruction.instruction
@@ -1080,7 +1090,17 @@ def htmlElValue(instr, elName):
     :param elName: Element identifier
     :type elName: string
 
-    :return: html code for the element value
+    :param param: Element parameter name
+    :type param: string
+    
+    :param numeric: - True: full recursive substitution of circuit parameters.
+                    - False: value or expression of the parameter given with 
+                      the element.
+                      
+                    Defaults to False
+
+    :return: HTML code for the element value
     :rtype: string
     """
-    return '$' + str(sp.latex(roundN(instr.getElementValue(elName)))) + '$'
+    return '$' + str(sp.latex(roundN(cir.getElementValue(elName, param=param, 
+                                                         numeric=numeric)))) + '$'
