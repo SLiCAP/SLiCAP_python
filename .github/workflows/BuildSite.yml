@@ -59,11 +59,10 @@ jobs:
           pip install -r requirements.txt
       - name: install SLiCAP
         run: python -m pip install .
-      - name: Hacky solution to get around problem
-        run: alias lepton-eda="lepton-cli"
       - name: run example projects
         run: |
           cd files/examples
+          alias lepton-eda="lepton-cli"
           . ./RunExamples.sh
       - name: make html files
         run: |
