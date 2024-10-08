@@ -43,7 +43,11 @@ jobs:
         run: |
           sudo add-apt-repository ppa:kicad/kicad-8.0-nightly
           sudo apt update
-          sudo apt-get install -y pdf2svg lepton-eda kicad inkscape
+          sudo apt-get install -y pdf2svg lepton-eda kicad inkscape wine-stable
+      - name: install ltspice
+        run: |
+          wget https://ltspice.analog.com/software/LTspice64.exe
+          wine LTspice64.exe
       - name: install python packages, SLiCAP dependencies
         run: |
           python -m pip install --upgrade pip
