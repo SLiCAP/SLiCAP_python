@@ -1,4 +1,4 @@
-* Z:\home\anton\DATA\SLiCAP\SLiCAP_github\SLiCAP_python_pip\files\examples\noiseFigure\cir\ExNoiseFigureAmp.asc
+* Z:\home\charles\Programming\SLICAP\SLiCAPv2\SLiCAP_python\files\examples\noiseFigure\cir\ExNoiseFigureAmp.asc
 V1 N001 0 V value=0 dc=0 dcvar=0 noise={4*k*T*R_s}
 R1 N002 N001 R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
 I1 out 0 I value=0 dc=0 dcvar=0 noise={S_i}

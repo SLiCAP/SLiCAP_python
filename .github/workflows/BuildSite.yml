@@ -30,6 +30,9 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
     steps:
       - name: Checkout SLiCAP repository
         uses: actions/checkout@v3

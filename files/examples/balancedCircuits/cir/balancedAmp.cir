@@ -1,5 +1,5 @@
 "balancedAmp"
-* Z:\home\anton\SLiCAP\examples\balancedCircuits\cir\balancedAmp.asc
+* Z:\home\charles\Programming\SLICAP\SLiCAPv2\SLiCAP_python\files\examples\balancedCircuits\cir\balancedAmp.asc
 O1N inN fbN outN 0 OPA627_A0
 R2 fbP fbN R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
 R3P outP fbP R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
