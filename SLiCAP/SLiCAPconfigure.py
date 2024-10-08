@@ -272,7 +272,7 @@ def _generate_main_config():
     SLiCAPconfig['version']      = {"install_version" : install_version,
                                      "latest_version" : _check_version()}
     SLiCAPconfig['installpaths'] = install_paths
-    SLiCAPconfig['commands']     = str(commands)
+    SLiCAPconfig['commands']     = commands
     SLiCAPconfig['simulation']   = {'gain_types': gain_types,
                                     'data_types': data_types,
                                     'sim_types' : "symbolic, numeric"
