@@ -39,12 +39,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+      - name: install wine
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt update
+          sudo apt-get install -y wine32 wine-stable
       - name: update apt-get then install software dependencies
         run: |
           sudo add-apt-repository ppa:kicad/kicad-8.0-nightly
           sudo apt update
-          dpkg --add-architecture i386 && apt-get update && apt-get install wine32
-          sudo apt-get install -y pdf2svg lepton-eda kicad inkscape wine-stable
+          sudo apt-get install -y pdf2svg lepton-eda kicad inkscape 
       - name: install ltspice
         run: |
           wget https://ltspice.analog.com/software/LTspice64.exe
