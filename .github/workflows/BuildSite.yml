@@ -62,7 +62,6 @@ jobs:
       - name: run example projects
         run: |
           cd files/examples
-          alias lepton-eda="lepton-cli"
           . ./RunExamples.sh
       - name: make html files
         run: |
