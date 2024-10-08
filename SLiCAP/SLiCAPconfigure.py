@@ -234,7 +234,11 @@ def _generate_project_config():
                                     }
     SLiCAPconfig['display']      = {'Hz'             : True,
                                     'Digits'         : 4}
-    SLiCAPconfig['project']      = {'author'         : os.getlogin(),
+    try:
+       getoslogin=str(os.getlogin())
+    except:
+        getoslogin="default"
+    SLiCAPconfig['project']      = {'author'         : getoslogin,
                                     'created'        : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     'last_updated'   : '',
                                     'title'          : ''
