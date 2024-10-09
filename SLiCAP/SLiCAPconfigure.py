@@ -146,6 +146,10 @@ def _find_installed_windows_software():
                     break
             if found:
                 break
+    for package in search_list: # Only search for installed software
+        p_name = package.lower()
+        if p_name not in commands.keys():
+            commands[p_name] = ''
     return commands
 
 def _find_LTspice_wine():
