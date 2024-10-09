@@ -175,6 +175,7 @@ def _find_LTspice_wine():
                     elif  os.path.exists(os.path.join(root,name,'ltspice.exe')):
                         cmd = os.path.join(root,name,'ltspice.exe')
                     return cmd
+    return cmd
 
 def _find_installed_software():
     system = platform.system()
