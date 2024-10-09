@@ -58,11 +58,12 @@
 <li class="toctree-l3"><a class="reference internal" href="#assign-values-or-expressions-to-multiple-parameters">Assign values or expressions to multiple parameters</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#delete-a-parameter-definition">Delete a parameter definition</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#get-the-definition-or-value-of-a-specific-parameter">Get the definition or value of a specific parameter</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#get-the-definitions-or-evauated-values-of-multiple-parameters">Get the definitions or evauated values of multiple parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-the-definitions-or-evaluated-values-of-multiple-parameters">Get the definitions or evaluated values of multiple parameters</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Perform analysis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reports.html">Create reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html">Work with analysis results</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
@@ -111,7 +112,7 @@
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
 <span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;My first RC network&#39;</span><span class="p">)</span> <span class="c1"># Initialize a SLiCAP project</span>
 <span class="c1"># Create a circuit object from an existing netlist:</span>
-<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/cir/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
 <span class="c1"># Print the contents of the dictionary with circuit parameter definitions:</span>
 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cir</span><span class="o">.</span><span class="n">parDefs</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Parameters with definitions:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -145,7 +146,7 @@ Found no parameters without definition
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
 <span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;My first RC network&#39;</span><span class="p">)</span> <span class="c1"># Initialize a SLiCAP project</span>
 <span class="c1"># Create a circuit object from an existing netlist:</span>
-<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/cir/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
 <span class="c1">#</span>
 <span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;tau/C&#39;</span><span class="p">)</span> <span class="c1"># Define R = tau/C</span>
 <span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;10n&#39;</span><span class="p">)</span>   <span class="c1"># Define C = 10 nF</span>
@@ -164,7 +165,7 @@ Found no parameters without definition
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
 <span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;My first RC network&#39;</span><span class="p">)</span> <span class="c1"># Initialize a SLiCAP project</span>
 <span class="c1"># Create a circuit object from an existing netlist:</span>
-<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/cir/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
 <span class="c1">#</span>
 <span class="n">cir</span><span class="o">.</span><span class="n">defPars</span><span class="p">({</span><span class="s1">&#39;R&#39;</span><span class="p">:</span> <span class="s1">&#39;tau/C&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">:</span> <span class="s1">&#39;10n&#39;</span><span class="p">,</span> <span class="s1">&#39;tau&#39;</span><span class="p">:</span> <span class="s1">&#39;1u&#39;</span><span class="p">})</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">cir</span><span class="o">.</span><span class="n">parDefs</span><span class="p">)</span>
@@ -181,7 +182,7 @@ Found no parameters without definition
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
 <span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;My first RC network&#39;</span><span class="p">)</span> <span class="c1"># Initialize a SLiCAP project</span>
 <span class="c1"># Create a circuit object from an existing netlist:</span>
-<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/cir/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
 <span class="c1">#</span>
 <span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;tau/C&#39;</span><span class="p">)</span>    <span class="c1"># Define the value of R</span>
 <span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;10n&#39;</span><span class="p">)</span>      <span class="c1"># Define the value of C</span>
@@ -222,14 +223,16 @@ f_c
 <p>The method <a class="reference external" href="../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValue">circuit.getParValue()</a>  returns the definition or the evaluated value of a parameter.</p>
 <p>If the keyword argument ‘substitute’ is True (default), all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see <a class="reference external" href="../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs">fullSubs</a>)</p>
 <p>If the keyword argument ‘numeric’ is True (default is False), functions and constants are numerically evaluated in floating poit numbers.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;My first RC network&#39;</span><span class="p">)</span> <span class="c1"># Initialize a SLiCAP project</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;My first RC network&#39;</span><span class="p">)</span> <span class="c1"># Initialize a SLiCAP project</span>
 <span class="c1"># Create a circuit object from an existing netlist:</span>
-<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/myFirstRCnetwork.cir&#39;</span><span class="p">)</span>
+<span class="n">cir</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">makeCircuit</span><span class="p">(</span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">example_path</span> <span class="o">+</span> <span class="s1">&#39;myFirstRCnetwork/cir/myFirstRCnetwork.asc&#39;</span><span class="p">)</span>
 <span class="c1">#</span>
 
-<span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;10*tau/C&#39;</span><span class="p">)</span>    <span class="c1"># Define the value of R</span>
-<span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;10n&#39;</span><span class="p">)</span>      <span class="c1"># Define the value of C</span>
-<span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;tau&#39;</span><span class="p">,</span> <span class="s1">&#39;1u&#39;</span><span class="p">)</span>     <span class="c1"># Define the value of tau</span>
+<span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;1/2/pi/f_c/C&#39;</span><span class="p">)</span>    <span class="c1"># Define the value of R</span>
+<span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;10n&#39;</span><span class="p">)</span>             <span class="c1"># Define the value of C</span>
+<span class="n">cir</span><span class="o">.</span><span class="n">defPar</span><span class="p">(</span><span class="s1">&#39;f_c&#39;</span><span class="p">,</span> <span class="s1">&#39;1M&#39;</span><span class="p">)</span>            <span class="c1"># Define the value of tau</span>
 
 <span class="n">R_defined</span>           <span class="o">=</span> <span class="n">cir</span><span class="o">.</span><span class="n">getParValue</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="n">substitute</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">numeric</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">R_evaluated</span>         <span class="o">=</span> <span class="n">cir</span><span class="o">.</span><span class="n">getParValue</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="n">substitute</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="n">numeric</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -239,19 +242,19 @@ f_c
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">R_defined            :&#39;</span><span class="p">,</span> <span class="n">R_defined</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;R_evaluated          :&#39;</span><span class="p">,</span> <span class="n">R_evaluated</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;R_defined_numeric    :&#39;</span><span class="p">,</span> <span class="n">R_defined_numeric</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;R_evaluated_numeric :&#39;</span><span class="p">,</span> <span class="n">R_evaluated_numeric</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;R_evaluated_numeric  :&#39;</span><span class="p">,</span> <span class="n">R_evaluated_numeric</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This yields:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R_defined            : 10*tau/C
-R_evaluated          : 1000
-R_defined_numeric    : 10.0*tau/C
-RR_evaluated_numeric : 1000.00000000000
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R_defined            : 1/(2*pi*C*f_c)
+R_evaluated          : 50/pi
+R_defined_numeric    : 0.159154943091895/(C*f_c)
+R_evaluated_numeric  : 15.9154943091895
 </pre></div>
 </div>
 </section>
-<section id="get-the-definitions-or-evauated-values-of-multiple-parameters">
-<h2>Get the definitions or evauated values of multiple parameters<a class="headerlink" href="#get-the-definitions-or-evauated-values-of-multiple-parameters" title="Link to this heading"></a></h2>
+<section id="get-the-definitions-or-evaluated-values-of-multiple-parameters">
+<h2>Get the definitions or evaluated values of multiple parameters<a class="headerlink" href="#get-the-definitions-or-evaluated-values-of-multiple-parameters" title="Link to this heading"></a></h2>
 <p>The method <a class="reference external" href="../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValues">circuit.getParValues()</a>  returns a dictionary with key-value pairs. The keys are the names of the parameters and the values their defenition or evaluation of it.</p>
 <p>If the keyword argument ‘substitute’ is True (default), for each parameter, all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see <a class="reference external" href="../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs">fullSubs</a>)</p>
 <p>If the keyword argument ‘numeric’ is True (default is False), functions and constants are numerically evaluated in floating poit numbers.</p>

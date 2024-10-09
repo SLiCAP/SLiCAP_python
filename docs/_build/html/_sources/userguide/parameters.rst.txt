@@ -22,7 +22,7 @@ A list with all circuit parameters can be obtained as follows:
     import SLiCAP as sl
     sl.initProject('My first RC network') # Initialize a SLiCAP project
     # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.cir')
     # Print the contents of the dictionary with circuit parameter definitions:
     if len(cir.parDefs.keys()):
         print("\nParameters with definitions:\n")
@@ -60,7 +60,7 @@ The method `circuit.defPar() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos
     import SLiCAP as sl
     sl.initProject('My first RC network') # Initialize a SLiCAP project
     # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.cir')
     #
     cir.defPar('R', 'tau/C') # Define R = tau/C
     cir.defPar('C', '10n')   # Define C = 10 nF
@@ -83,7 +83,7 @@ The method `circuit.defPars() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPproto
     import SLiCAP as sl
     sl.initProject('My first RC network') # Initialize a SLiCAP project
     # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.cir')
     #
     cir.defPars({'R': 'tau/C', 'C': '10n', 'tau': '1u'})
     print(cir.parDefs)
@@ -104,7 +104,7 @@ You can delete a parameter definition using the method `circuit.delPar() <../ref
     import SLiCAP as sl
     sl.initProject('My first RC network') # Initialize a SLiCAP project
     # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.cir')
     #
     cir.defPar('R', 'tau/C')    # Define the value of R
     cir.defPar('C', '10n')      # Define the value of C
@@ -151,14 +151,16 @@ If the keyword argument 'numeric' is True (default is False), functions and cons
 
 .. code-block:: python
 
+    import SLiCAP as sl
+
     sl.initProject('My first RC network') # Initialize a SLiCAP project
     # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/myFirstRCnetwork.cir')
+    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.asc')
     #
 
-    cir.defPar('R', '10*tau/C')    # Define the value of R
-    cir.defPar('C', '10n')      # Define the value of C
-    cir.defPar('tau', '1u')     # Define the value of tau
+    cir.defPar('R', '1/2/pi/f_c/C')    # Define the value of R
+    cir.defPar('C', '10n')             # Define the value of C
+    cir.defPar('f_c', '1M')            # Define the value of tau
 
     R_defined           = cir.getParValue('R', substitute=False, numeric=False)
     R_evaluated         = cir.getParValue('R', substitute=True,  numeric=False)
@@ -168,19 +170,19 @@ If the keyword argument 'numeric' is True (default is False), functions and cons
     print('\nR_defined            :', R_defined)
     print('R_evaluated          :', R_evaluated)
     print('R_defined_numeric    :', R_defined_numeric)
-    print('R_evaluated_numeric :', R_evaluated_numeric)
+    print('R_evaluated_numeric  :', R_evaluated_numeric)
 
 This yields:
 
 .. code-block:: text
 
-    R_defined            : 10*tau/C
-    R_evaluated          : 1000
-    R_defined_numeric    : 10.0*tau/C
-    RR_evaluated_numeric : 1000.00000000000
+    R_defined            : 1/(2*pi*C*f_c)
+    R_evaluated          : 50/pi
+    R_defined_numeric    : 0.159154943091895/(C*f_c)
+    R_evaluated_numeric  : 15.9154943091895
 
-Get the definitions or evauated values of multiple parameters
-=============================================================
+Get the definitions or evaluated values of multiple parameters
+==============================================================
 
 The method `circuit.getParValues() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValues>`__  returns a dictionary with key-value pairs. The keys are the names of the parameters and the values their defenition or evaluation of it. 
 

@@ -13,5 +13,6 @@ SLiCAP user guide
     parameters
     analysis
     reports
+    math
     
 .. image:: /img/colorCode.svg

@@ -7,7 +7,7 @@ import sympy as sp
 # Creates the SLiCAP libraries and the project HTML index page
 prj = sl.initProject('4-th order Linkwitz-Riley Filter') 
 
-cir = sl.makeCircuit(sl.ini.cir_path + "LowPassLR.cir", imgWidth=600)
+cir = sl.makeCircuit(sl.ini.cir_path + "FilterDesign/FilterDesign.kicad_sch", imgWidth=400)
 # Find the Laplace transfer of the network
 resultLapl  = sl.doLaplace(cir, pardefs=None)
 transfer    = resultLapl.laplace
@@ -36,7 +36,7 @@ sl.head2html('Prototype function')
 sl.eqn2html('P_s', protoType)
 
 sl.head2html('Circuit implementation')
-sl.img2html('LowPassLR.svg', 400)
+sl.img2html('FilterDesign.svg', 400)
 
 sl.head2html('Transfer of the network')
 sl.eqn2html('T_s', transfer)

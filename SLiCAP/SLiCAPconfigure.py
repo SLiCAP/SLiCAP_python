@@ -146,10 +146,6 @@ def _find_installed_windows_software():
                     break
             if found:
                 break
-    for package in search_list: # Only search for installed software
-        p_name = package.lower()
-        if p_name not in commands.keys():
-            commands[p_name] = ''
     return commands
 
 def _find_LTspice_wine():
@@ -238,11 +234,7 @@ def _generate_project_config():
                                     }
     SLiCAPconfig['display']      = {'Hz'             : True,
                                     'Digits'         : 4}
-    try:
-       getoslogin=str(os.getlogin())
-    except:
-        getoslogin="default"
-    SLiCAPconfig['project']      = {'author'         : getoslogin,
+    SLiCAPconfig['project']      = {'author'         : os.getlogin(),
                                     'created'        : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     'last_updated'   : '',
                                     'title'          : ''
@@ -280,8 +272,6 @@ def _generate_main_config():
     SLiCAPconfig['version']      = {"install_version" : install_version,
                                      "latest_version" : _check_version()}
     SLiCAPconfig['installpaths'] = install_paths
-    #for i in commands.keys():
-    #    commands[i]=str(commands[i])
     SLiCAPconfig['commands']     = commands
     SLiCAPconfig['simulation']   = {'gain_types': gain_types,
                                     'data_types': data_types,

@@ -22,5 +22,9 @@ If you would like to contribute to SLiCAP please `Mail us <mailto:anton@montagne
 
    Developed the `Cadence2traces function <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.Cadence2traces>`__
 
+#. Jokin Segundo Babarro
+
+   Advises on Python methods and techniques
+
 .. image:: /img/colorCode.svg
 

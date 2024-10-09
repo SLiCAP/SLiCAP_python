@@ -23,7 +23,7 @@ SLiCAP Version 3 is distributed under the `MIT license <https://opensource.org/l
 - SLiCAP is part of the tool set for teaching `Structured Electronic Design <https://analog-electronics.tudelft.nl>`_ at the Delft University of Technology
 
 .. toctree::
-    :hidden:
+    :maxdepth: 2
 
     SLiCAPwhy
     SLiCAPhow
