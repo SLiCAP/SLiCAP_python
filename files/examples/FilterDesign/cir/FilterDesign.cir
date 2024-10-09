@@ -1,0 +1,10 @@
+"Filter Design"
+.source V1
+.detector V_out
+C1 1 0 C value={C_a/R} vinit=0
+C2 out 0 C value={C_b/R} vinit=0
+L2 1 out L value={L_b*R} iinit=0
+L3 2 1 L value={L_a*R} iinit=0
+R1 out 0 R value={R} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 2 0 V value=1 noise=0 dc=0 dcvar=0
+.end
