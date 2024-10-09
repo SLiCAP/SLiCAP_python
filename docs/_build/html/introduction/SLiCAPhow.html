@@ -50,7 +50,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="SLiCAPintroduction.html">SLiCAP Version 3.0</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPwhy.html">Why should you use SLiCAP</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">How to use SLiCAP</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#way-of-working">Way of working</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#workflow">Workflow</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPcontributions.html">SLiCAP Development Team</a></li>
@@ -90,50 +90,68 @@
   <section id="how-to-use-slicap">
 <h1>How to use SLiCAP<a class="headerlink" href="#how-to-use-slicap" title="Link to this heading"></a></h1>
 <img alt="../_images/colorCode.svg" src="../_images/colorCode.svg" />
-<section id="way-of-working">
-<h2>Way of working<a class="headerlink" href="#way-of-working" title="Link to this heading"></a></h2>
+<section id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Link to this heading"></a></h2>
 <p>Working with SLiCAP usually proceeds as follows:</p>
 <ol class="arabic">
-<li><p>Initialize a SLiCAP project; this will</p>
+<li><p><strong>Initialize a SLiCAP project</strong>: this will</p>
 <ul class="simple">
 <li><p>Create the directory structure for your project</p></li>
 <li><p>Create a configuration file for your project</p></li>
 <li><p>Create the main html index page for this project</p></li>
 </ul>
 </li>
-<li><p>Create a circuit that models the performance aspect(s) and/or cost factor(s) of interest and create  netlist from this circuit.</p>
+<li><p><strong>Create a circuit model</strong> that models the performance aspect(s) and/or cost factor(s) of interest and create netlist from it</p>
 <ul class="simple">
 <li><p>SLiCAP supports netlist generation with KiCAD, LTspice, gSchem and lepton-eda</p></li>
 </ul>
 </li>
-<li><p>Import design budgets for performance and cost factors, as well as circuit parameters determined in earlier design steps to the circuit</p>
+<li><p><strong>Import design budgets</strong> for performance and cost factors, as well as circuit parameters determined in earlier design steps to the circuit</p>
 <ul class="simple">
 <li><p>SLiCAP writes and reads design data to and from a CSV file</p></li>
 </ul>
 </li>
-<li><p>Perform a mixed symbolic/numeric analysis to obtain an expression that writes the performance or costs as a function of the circuit parameters.</p>
-<p>SLiCAP has 18 predefined analysis types grouped in:</p>
+<li><p><strong>Perform mixed symbolic/numeric circuit analysis</strong> with this model and obtain an expression that writes the performance or costs as a function of the circuit parameters</p>
+<p>SLiCAP has 16 predefined (mixed symbolic/numeric) analysis types grouped in:</p>
 <ul class="simple">
-<li><p>DC and DC variance analysis for finding budgets for:</p>
+<li><p>DC and DC variance analysis for finding valid ranges for:</p>
 <ul>
 <li><p>resistor tolerances</p></li>
 <li><p>offset voltages and currents and their temperature dependency</p></li>
 <li><p>matching and temperature tracking properties of resistors</p></li>
 </ul>
 </li>
-<li><p>Noise analysis for finding budgets for:</p>
+<li><p>Noise analysis for finding valid ranges for:</p>
 <ul>
 <li><p>resistor values</p></li>
 <li><p>equivalent input noise sources of operational amplifiers</p></li>
 <li><p>geometry and operating current of semiconductor devices</p></li>
 </ul>
 </li>
-<li><p>Complex frequency domain analysis (Laplace)</p></li>
-<li><p>Time-domain analysis (Inverse Laplace)</p></li>
+<li><p>Complex frequency domain analysis (Laplace) for finding</p>
+<ul>
+<li><p>minimum gain-bandwidth product of operational amplifiers</p></li>
+<li><p>minimum number of stages in a feedback amplifier</p></li>
+<li><p>budgets for geometry and operating current of semiconductor devices considering bandwidth limitations</p></li>
+<li><p>component values for filters and frequency compensation elements</p></li>
 </ul>
 </li>
-<li><p>Obtain valid ranges for circuit parameters (component values, geometry and operating voltages and currents) and save them in the design database.</p></li>
-<li><p>Go to (2) for the next design aspect.</p></li>
+<li><p>Complex frequency domain analysis (Poles and Zeros) for determination of</p>
+<ul>
+<li><p>frequency stability</p></li>
+<li><p>non-observable or non-controllable states</p></li>
+</ul>
+</li>
+<li><p>Time-domain analysis (Inverse Laplace) for finding valid ranges for</p>
+<ul>
+<li><p>component values, geometry and operating current of semiconductor devices, considering settling time requirements</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Obtain valid ranges for circuit parameters</strong> (component values, geometry and operating voltages and currents) and save them in the design database</p></li>
+<li><p><strong>Assign values to circuit parameters</strong> and save them in the data base</p></li>
+<li><p><strong>Go to (2)</strong> for the next design aspect or the next hierarchical level</p></li>
 </ol>
 <img alt="../_images/colorCode.svg" src="../_images/colorCode.svg" />
 </section>

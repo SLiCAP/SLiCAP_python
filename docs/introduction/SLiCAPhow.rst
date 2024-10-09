@@ -4,47 +4,61 @@ How to use SLiCAP
 
 .. image:: /img/colorCode.svg
 
-Way of working
-==============
+Workflow
+========
 
 Working with SLiCAP usually proceeds as follows:
 
-#. Initialize a SLiCAP project; this will
+#. **Initialize a SLiCAP project**: this will
 
    - Create the directory structure for your project
    - Create a configuration file for your project 
    - Create the main html index page for this project
 
-#. Create a circuit that models the performance aspect(s) and/or cost factor(s) of interest and create  netlist from this circuit.
+#. **Create a circuit model** that models the performance aspect(s) and/or cost factor(s) of interest and create netlist from it
 
    - SLiCAP supports netlist generation with KiCAD, LTspice, gSchem and lepton-eda
     
-#. Import design budgets for performance and cost factors, as well as circuit parameters determined in earlier design steps to the circuit
+#. **Import design budgets** for performance and cost factors, as well as circuit parameters determined in earlier design steps to the circuit
 
    - SLiCAP writes and reads design data to and from a CSV file
    
-#. Perform a mixed symbolic/numeric analysis to obtain an expression that writes the performance or costs as a function of the circuit parameters.
+#. **Perform mixed symbolic/numeric circuit analysis** with this model and obtain an expression that writes the performance or costs as a function of the circuit parameters
 
-   SLiCAP has 18 predefined analysis types grouped in:
+   SLiCAP has 16 predefined (mixed symbolic/numeric) analysis types grouped in:
    
-   - DC and DC variance analysis for finding budgets for:
+   - DC and DC variance analysis for finding valid ranges for:
     
      - resistor tolerances
      - offset voltages and currents and their temperature dependency
      - matching and temperature tracking properties of resistors
    
-   - Noise analysis for finding budgets for:
+   - Noise analysis for finding valid ranges for:
    
      - resistor values
      - equivalent input noise sources of operational amplifiers
      - geometry and operating current of semiconductor devices
      
-   - Complex frequency domain analysis (Laplace)
+   - Complex frequency domain analysis (Laplace) for finding
    
-   - Time-domain analysis (Inverse Laplace)
+     - minimum gain-bandwidth product of operational amplifiers
+     - minimum number of stages in a feedback amplifier
+     - budgets for geometry and operating current of semiconductor devices considering bandwidth limitations
+     - component values for filters and frequency compensation elements
+   
+   - Complex frequency domain analysis (Poles and Zeros) for determination of
+   
+     - frequency stability
+     - non-observable or non-controllable states
      
-#. Obtain valid ranges for circuit parameters (component values, geometry and operating voltages and currents) and save them in the design database.
+   - Time-domain analysis (Inverse Laplace) for finding valid ranges for
+    
+     - component values, geometry and operating current of semiconductor devices, considering settling time requirements
+     
+#. **Obtain valid ranges for circuit parameters** (component values, geometry and operating voltages and currents) and save them in the design database
 
-#. Go to (2) for the next design aspect.
+#. **Assign values to circuit parameters** and save them in the data base
+
+#. **Go to (2)** for the next design aspect or the next hierarchical level
 
 .. image:: /img/colorCode.svg

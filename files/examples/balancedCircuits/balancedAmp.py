@@ -45,7 +45,7 @@ result = sl.doPoles(cir, pardefs='circuit', convtype='all', numeric=True)
 sl.listPZ(result)
 # Poles common-mode transfer
 sl.head2html("poles and zeros of the CM transfer")
-sl.result = sl.doPoles(cir, pardefs='circuit', convtype='cc', numeric=True)
+result = sl.doPoles(cir, pardefs='circuit', convtype='cc', numeric=True)
 sl.listPZ(result)
 sl.pz2html(result)
 # Poles and zeros differential-mode transfer
@@ -55,5 +55,5 @@ sl.listPZ(result)
 sl.pz2html(result)
 # Differential-mode loop gain
 sl.head2html("Loop Gain of the DM transfer")
-sl.result = sl.doLaplace(cir, transfer='loopgain', convtype='dd', pardefs=None)
-sl.eqn2html("L_G",result.laplace)
+result = sl.doLaplace(cir, transfer='loopgain', convtype='dd', pardefs=None)
+sl.eqn2html("L_G", result.laplace)

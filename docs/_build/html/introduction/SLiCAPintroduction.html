@@ -85,13 +85,7 @@
              
   <section id="slicap-version-3-0">
 <h1>SLiCAP Version 3.0<a class="headerlink" href="#slicap-version-3-0" title="Link to this heading"></a></h1>
-<p>SLiCAP Version 3 is distributed under the <a class="reference external" href="https://opensource.org/license/mit">MIT license</a></p>
-<p><strong>Analog design</strong> often starts with an application description comprising target requirements for the functionality, the physical appearance, the performance quality, and the cost factors of the desired product. The analog circuit designer somehow has to convert this into a chip or a PCA (printed Circuit board Assembly) with a test plan that makes it possible to verify performance to requirements.</p>
-<p><strong>Circuit simulators</strong> and PCB or chip layout software are commonly at the disposal of analog design engineers to help them fullfill their tasks. Circuit simulators (such as SPICE), however, can only perform numeric design verification. Hence, the topology and the devices with their geometries and operating conditions need to be designed before simulation.</p>
-<p><strong>The question</strong> pops up how these design decisions have been made and in which way the selected topology, component values, geometries and operating conditions link to the original requirements. Moreover, can we be sure that the requirements can be met with the selected topology and with the components and their assigned geometries and operating conditions?</p>
-<p><strong>Experienced designers</strong> find their way intuitively, often resorting to familiar topologies and manual calculations with overly simplified models. However, a straightforward design method with a supporting design tool and adequate models largely will improve the motivation, the quality, and the tracebility of design decisions. As a matter of fact, such a tool is indispensible for first-time-right design. In addition, it will speed up knowledge building within companies thereby quickly turning novices into experienced designers.</p>
-<p><strong>Structured Electronics Design</strong>, as taught at the <a class="reference external" href="https://analog-electronics.tudelft.nl">TU Delft</a>, presents a design method which is based on systems engineering, device physics, signal processing, control theory and last but not least: on network theory. It presents a top-down hierarchical design method that accounts for bottom-up show-stoppers.</p>
-<p><strong>SLiCAP</strong>, is a mixed symbolic/numeric network simulator that interfaces with a design database, integrates with a documentation system, and supports the advocated design method. It fills the gap between the initial specification and numeric circuit simulation. With SLiCAP, designers easily find design limits for component values, geometry and operating conditions of devices, and relate them to performance and/or cost budgets derived from the initial specifications.</p>
+<img alt="../_images/colorCode.svg" src="../_images/colorCode.svg" />
 <ul class="simple">
 <li><p>SLiCAP is an acronym for: <strong>S</strong> ymbolic <strong>Li</strong> near <strong>C</strong> ircuit <strong>A</strong> nalysis <strong>P</strong> rogram</p></li>
 <li><p>SliCAP is a tool for <strong>algorithmic analog design automation</strong></p></li>
@@ -99,6 +93,14 @@
 <li><p>SLiCAP is a an <strong>open source</strong> application written in Python, originally created by <a class="reference external" href="https://montagne.nl">Anton J.M. Montagne</a></p></li>
 <li><p>SLiCAP is part of the tool set for teaching <a class="reference external" href="https://analog-electronics.tudelft.nl">Structured Electronic Design</a> at the Delft University of Technology</p></li>
 </ul>
+<p>SLiCAP Version 3 is distributed under the <a class="reference external" href="https://opensource.org/license/mit">MIT license</a></p>
+<img alt="../_images/colorCode.svg" src="../_images/colorCode.svg" />
+<p><strong>Analog design</strong> often starts with an application description comprising target requirements for the functionality, the physical appearance, the performance quality, and the cost factors of the desired product. The analog circuit designer somehow has to convert this into a chip or a PCA (printed Circuit board Assembly) with a test plan that makes it possible to verify performance to requirements.</p>
+<p><strong>Circuit simulators</strong> and PCB or chip layout software are commonly at the disposal of analog design engineers to help them fullfill their tasks. Circuit simulators (such as SPICE), however, can only perform numeric design verification. Hence, the topology and the devices with their geometries and operating conditions need to be designed before simulation.</p>
+<p><strong>The question</strong> pops up how these design decisions have been made and in which way the selected topology, component values, geometries and operating conditions link to the original requirements. Moreover, can we be sure that the requirements can be met with the selected topology and with the components and their assigned geometries and operating conditions?</p>
+<p><strong>Experienced designers</strong> find their way intuitively, often resorting to familiar topologies and manual calculations with overly simplified models. The use of a straightforward design method with a supporting design tool and adequate models, however, will largely improve the motivation, the quality, and the tracebility of design decisions. As a matter of fact, such a tool is indispensible for first-time-right design. In addition, it will speed up knowledge building within companies thereby quickly turning novices into analog design experts.</p>
+<p><strong>Structured Electronics Design</strong>, as taught at the <a class="reference external" href="https://analog-electronics.tudelft.nl">TU Delft</a>, presents a design method based on systems engineering, device physics, signal processing, control theory and last but not least: on network theory. It presents a top-down hierarchical design method that accounts for bottom-up show-stoppers.</p>
+<p><strong>SLiCAP</strong>, is a mixed symbolic/numeric network simulator that interfaces with a design database, integrates with a documentation system, and supports the advocated design method. It fills the gap between the initial specification and numeric circuit verification. With SLiCAP, designers easily find valid ranges for component values, geometry and operating conditions of devices, with a clear relation to the performance and/or cost budgets from the initial specifications.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="SLiCAPwhy.html">Why should you use SLiCAP</a><ul>
@@ -107,7 +109,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="SLiCAPhow.html">How to use SLiCAP</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPhow.html#way-of-working">Way of working</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPhow.html#workflow">Workflow</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="SLiCAPcontributions.html">SLiCAP Development Team</a></li>
