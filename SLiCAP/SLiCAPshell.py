@@ -51,6 +51,10 @@ of instructions that have been implemented in SLiCAP.
    - doDC()         : Zero-frequency value of a transfer
    - doDCsolve()    : DC network solution
    - doDCvar()      : detector-referred and source-referred DC variance
+   
+#. Parametric sweep
+
+   - doParams()     : Parametric sweep, used for plots only.
 
 Some analysis types require definitions of a signal source, a signal detector, 
 and/or a loop gain reference. Souce, detector and loop gain reference are
@@ -1227,6 +1231,23 @@ def doDCvar(cir, source='circuit', detector='circuit', lgref='circuit',
                                  stepdict=stepdict)
 
     return result
+
+def doParams(cir, source='circuit', detector='circuit', lgref='circuit', 
+            transfer=None, convtype=None, pardefs='circuit', numeric=True, 
+            stepdict=None):
+    
+    """
+    This function can be used in combination with plotSweep(funcType='param')
+    It only needs the circuit object argument and returns the SLiCAP results 
+    object with the circuit object as attribute. This is used by plotSweep() to
+    plot parameters against each other.
+    """
+    result =  _executeInstruction(cir, transfer=None, source=None, 
+                                 detector=None, lgref=None, 
+                                 convtype=None, datatype='params', 
+                                 pardefs=pardefs, numeric=numeric, 
+                                 stepdict=stepdict)
+    return result
     
 def _executeInstruction(cir, transfer=None, source='circuit', 
                         detector='circuit', lgref='circuit', convtype='circuit', 
@@ -1311,7 +1332,7 @@ def _makeStepParams(stepdict):
     for the basic instruction.
 
     """
-    outDict = []
+    outDict = {}
     outDict['stepMethod'] = stepdict['method']
     try:
         outDict['stepStart'] = stepdict['start']
