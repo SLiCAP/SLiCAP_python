@@ -1329,10 +1329,15 @@ def float2rational(expr):
     :return: expression in which floats have been replaced with rational numbers.
     :rtype:  sympy.Expression
     """
-    try:
-        expr = expr.xreplace({n: sp.Rational(str(n)) for n in expr.atoms(sp.Float)})
-    except AttributeError:
+    if type(expr) == int:
         pass
+    elif type(expr) == float:
+        expr = sp.Rational(expr)
+    else:
+        try:
+            expr = expr.xreplace({n: sp.Rational(str(n)) for n in expr.atoms(sp.Float)})
+        except AttributeError:
+            pass
     return expr
 
 def rational2float(expr):
