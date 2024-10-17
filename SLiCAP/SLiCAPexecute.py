@@ -416,11 +416,11 @@ def _doNoise(instr, result):
         for key in list(result.onoiseTerms.keys()):
             if type(result.onoiseTerms[key]) == list and len(result.onoiseTerms[key]) != 0 :
                 result.onoiseTerms[key] = result.onoiseTerms[key][0]
-                if instr.source != [None, None]:
+                if instr.source != [None, None] and instr.source != None:
                     result.inoiseTerms[key] = result.inoiseTerms[key][0]
             else:
                 del(result.onoiseTerms[key])
-                if instr.source != [None, None]:
+                if instr.source != [None, None] and instr.source != None:
                     del(result.inoiseTerms[key])
     result = _correctDMcurrentResult(instr, result)
     return result
@@ -468,7 +468,7 @@ def _doDCvar(instr, result):
                 result = _doPyDCvar(instr, result)
                 _delDCvarSources(instr)
     else:
-        result = _makeAllMatrices(instr, result)
+        reslt = _makeAllMatrices(instr, result)
         result = _makeAllMatrices(instr, result)
         instr.dataType = 'dcsolve'
         result.dataType = 'dcsolve'
@@ -482,11 +482,11 @@ def _doDCvar(instr, result):
         for key in list(result.ovarTerms.keys()):
             if len(result.ovarTerms[key]) > 0:
                 result.ovarTerms[key] = result.ovarTerms[key][0]
-                if instr.source != [None, None]:
+                if instr.source != [None, None] and instr.source != None:
                     result.ivarTerms[key] = result.ivarTerms[key][0]
             else:
                 del(result.ovarTerms[key])
-                if instr.source != [None, None]:
+                if instr.source != [None, None] and instr.source != None:
                     del(result.ivarTerms[key])
         _delDCvarSources(instr)
     result = _correctDMcurrentResult(instr, result)
@@ -927,7 +927,7 @@ def _doDCsolve(instr, result):
             result.M = result.M.subs(ini.laplace, 0)
             result.Iv = result.Iv.subs(ini.laplace, 0)
             result = _doPySolve(instr, result)
-            sol = result.solve[-1]
+            sol = sp.simplify(result.solve[-1])
             result.dcSolve = _stepFunctions(instr.stepDict, sol)
         else:
             stepVars = list(instr.stepDict.keys())
@@ -939,13 +939,13 @@ def _doDCsolve(instr, result):
                 result.M = result.M.subs(ini.laplace, 0)
                 result.Iv = result.Iv.subs(ini.laplace, 0)
                 result = _doPySolve(instr, result)
-                result.dcSolve.append(result.solve[-1])
+                result.dcSolve.append(sp.simplify(result.solve[-1]))
     else:
         result = _makeAllMatrices(instr, result)
         result.M = result.M.subs(ini.laplace, 0)
         result.Iv = result.Iv.subs(ini.laplace, 0)
         result = _doPySolve(instr, result)
-        result.dcSolve = result.solve[0]
+        result.dcSolve = sp.simplify(result.solve[0])
     return result
 
 def _doTimeSolve(instr, result):
@@ -1563,7 +1563,7 @@ def _doPyNoise(instr, result):
     den = assumeRealParams(den)
     re_den, im_den = den.as_real_imag()
     den_sq = re_den**2 + im_den**2
-    if instr.source != [None, None]:
+    if instr.source != [None, None] and instr.source != None:
         instr.gainType = 'gain'
         result.gainType = 'gain'
         result = _makeAllMatrices(instr, result)
@@ -1601,7 +1601,7 @@ def _doPyNoise(instr, result):
                 onoiseTerm = sp.factor(onoiseTerm)
             result.onoiseTerms[src].append(clearAssumptions(onoiseTerm))
             onoise += result.onoiseTerms[src][-1]
-            if instr.source != [None, None]:
+            if instr.source != [None, None] and instr.source != None:
                 inoiseTerm = result.snoiseTerms[src]*num_sq/sl_num_sq
                 if ini.factor:
                     inoiseTerm = sp.factor(inoiseTerm)
@@ -1615,7 +1615,6 @@ def _doPyNoise(instr, result):
 
 def _doPyDCvar(instr, result):
     """
-    Attribute numer rewriten or appended?! Check with stepping.
     """
     instr.dataType='dcvar'
     result.dataType='dcvar'
@@ -1629,14 +1628,15 @@ def _doPyDCvar(instr, result):
             result.svarTerms[name] = value
     result = _makeAllMatrices(instr, result)
     result.M = result.M.subs(ini.laplace, 0)
-    Iv_var = result.Iv
+    Iv_var = result.Iv.subs(ini.laplace, 0)
     den = _doPyDenom(result).denom[0]
     den_sq = den**2
-    if instr.source != [None, None]:
+    if instr.source != [None, None] and instr.source != None:
         instr.gainType = 'gain'
         result.gainType = 'gain'
         result = _makeAllMatrices(instr, result)
-        Iv_gain = result.Iv
+        Iv_gain = result.Iv.subs(ini.laplace, 0)
+        result.M = result.M.subs(ini.laplace, 0)
         result.Iv = Iv_gain
         result = _doPyNumer(instr, result)
         num = result.numer[-1]
@@ -1668,7 +1668,7 @@ def _doPyDCvar(instr, result):
                 ovarTerm = sp.factor(ovarTerm)
             result.ovarTerms[src].append(ovarTerm)
             ovar += result.ovarTerms[src][-1]
-            if instr.source != [None, None]:
+            if instr.source != [None, None] and instr.source != None:
                 ivarTerm = result.svarTerms[src]*num_sq/sl_num_sq
                 if ini.factor:
                     ivarTerm = sp.factor(ivarTerm)

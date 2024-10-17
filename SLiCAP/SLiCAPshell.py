@@ -1012,10 +1012,10 @@ def doDCsolve(cir, source=None, detector=None, lgref=None, transfer=None,
     
     **Return value attributes**
     
-    - doSolve(<circuit>).M: MNA matrix (sympy.Matrix)
-    - doSolve(<circuit>.Iv: Vector with independent variables (sympy.Matrix)
-    - doSolve(<circuit>).Dv: Vector with dependent variables (sympy.Matrix)
-    - doSolve(<circuit>).DCsolve Vector with DC solutions of dependent 
+    - doDCSolve(<circuit>).M: MNA matrix (sympy.Matrix)
+    - doDCSolve(<circuit>.Iv: Vector with independent variables (sympy.Matrix)
+    - doDCSolve(<circuit>).Dv: Vector with dependent variables (sympy.Matrix)
+    - doDCSolve(<circuit>).dcSolve: Vector with DC solutions of dependent 
       variables (sympy.Matrix)
       
     If parameter stepping is applied, all above attributes are lists of values

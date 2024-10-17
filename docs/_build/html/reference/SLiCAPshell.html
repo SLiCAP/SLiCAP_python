@@ -77,6 +77,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doNoise"><code class="docutils literal notranslate"><span class="pre">doNoise()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doNumer"><code class="docutils literal notranslate"><span class="pre">doNumer()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doPZ"><code class="docutils literal notranslate"><span class="pre">doPZ()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doParams"><code class="docutils literal notranslate"><span class="pre">doParams()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doPoles"><code class="docutils literal notranslate"><span class="pre">doPoles()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doSolve"><code class="docutils literal notranslate"><span class="pre">doSolve()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPshell.doStep"><code class="docutils literal notranslate"><span class="pre">doStep()</span></code></a></li>
@@ -170,6 +171,11 @@ canceling)</p></li>
 <li><p>doDC()         : Zero-frequency value of a transfer</p></li>
 <li><p>doDCsolve()    : DC network solution</p></li>
 <li><p>doDCvar()      : detector-referred and source-referred DC variance</p></li>
+</ul>
+</li>
+<li><p>Parametric sweep</p>
+<ul class="simple">
+<li><p>doParams()     : Parametric sweep, used for plots only.</p></li>
 </ul>
 </li>
 </ol>
@@ -423,10 +429,10 @@ set as a result of this instruction:</p>
 </dl>
 <p><strong>Return value attributes</strong></p>
 <ul class="simple">
-<li><p>doSolve(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
-<li><p>doSolve(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
-<li><p>doSolve(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
-<li><p>doSolve(&lt;circuit&gt;).DCsolve Vector with DC solutions of dependent 
+<li><p>doDCSolve(&lt;circuit&gt;).M: MNA matrix (sympy.Matrix)</p></li>
+<li><p>doDCSolve(&lt;circuit&gt;.Iv: Vector with independent variables (sympy.Matrix)</p></li>
+<li><p>doDCSolve(&lt;circuit&gt;).Dv: Vector with dependent variables (sympy.Matrix)</p></li>
+<li><p>doDCSolve(&lt;circuit&gt;).dcSolve: Vector with DC solutions of dependent 
 variables (sympy.Matrix)</p></li>
 </ul>
 <p>If parameter stepping is applied, all above attributes are lists of values
@@ -796,6 +802,15 @@ setting of ini.hz only affects the diplay of tables in the console
 <span class="n">Zeros</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">doZeros</span><span class="p">(</span><span class="n">cir</span><span class="p">)</span><span class="o">.</span><span class="n">zeros</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPshell.doParams">
+<span class="sig-name descname"><span class="pre">doParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lgref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pardefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circuit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numeric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPshell.doParams" title="Link to this definition"></a></dt>
+<dd><p>This function can be used in combination with plotSweep(funcType=’param’)
+It only needs the circuit object argument and returns the SLiCAP results 
+object with the circuit object as attribute. This is used by plotSweep() to
+plot parameters against each other.</p>
 </dd></dl>
 
 <dl class="py function">
