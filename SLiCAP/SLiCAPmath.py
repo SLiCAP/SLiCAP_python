@@ -398,6 +398,11 @@ def findServoBandwidth(loopgainRational):
             value    = new_value
             order    = new_order
             fcorner  = new_fcorner
+    for key in result.keys():
+        try:
+            result[key] = float(result[key])
+        except TypeError:
+            pass
     if ini.hz:
         if result['hpf'] != None:
             result['hpf'] = result['hpf']/np.pi/2
@@ -686,8 +691,8 @@ def phaseMargin(LaplaceExpr):
         guess = findServoBandwidth(expr)['lpf']
         try:
             #freq = newton(func, guess, tol = 10**(-ini.disp), maxiter = 50)
-            freq = fsolve(func, guess)[0]
-            mrgn = _phaseFunc_f(expr, freq)
+            freq = float(fsolve(func, guess)[0])
+            mrgn = float(_phaseFunc_f(expr, freq))
         except BaseException:
             exc_type, value, exc_traceback = sys.exc_info()
             print('\n', value)

@@ -28,7 +28,7 @@ def _createResultObject(instr):
     result.dataType       = instr.dataType
     result.step           = instr.step
     result.stepVar        = instr.stepVar
-    result.stepVars       = []
+    result.stepVars       = instr.stepVars
     if type(instr.stepVars) == list:
         # Make a deep copy of the list
         result.stepVars = [var for var in instr.stepVars]

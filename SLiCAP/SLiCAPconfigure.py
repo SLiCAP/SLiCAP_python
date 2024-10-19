@@ -227,7 +227,7 @@ def _generate_project_config():
                                     "defaultcolors"  : "r,b,g,c,m,y,k",
                                     "defaultmarkers" : "",
                                     "legendloc"      : "best",
-                                    "plotfontsize"   : 10,
+                                    "plotfontsize"   : 12,
                                     "plotfiletype"   : "svg"
                                     }                            
     SLiCAPconfig['gaincolors']   = {"asymptotic"     : "r",
@@ -478,7 +478,6 @@ axis_width      = eval(config['plot']['axiswidth'])
 legend_loc      = config['plot']['legendloc']
 default_colors  = config['plot']['defaultcolors'].split(',')
 default_markers = config['plot']['defaultmarkers'].split(',')
-plot_fontsize   = config['plot']['plotfontsize']
 plot_file_type  = config['plot']['plotfiletype']
 gain_types      = config['simulation']['gain_types'].split(',')
 data_types      = config['simulation']['data_types'].split(',')
