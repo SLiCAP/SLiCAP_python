@@ -78,16 +78,17 @@ def _find_installed_windows_software():
             name = name.split()[0]
             if name in package_list:
                 search_list.append(name)
+    y_n = input("\nDo you have NGspice installed? [y/n] >>> ").lower()[0]
+    while y_n != 'y' and y_n != 'n':
+        y_n = input("\nPlease enter 'y' for 'yes' or 'n' for 'no' >>> ").lower()[0]
+    if y_n == 'y':
+        search_list.append('NGspice')
+    else:
+        commands['ngspice'] = ''
     # search for the command to start each app
     if len(search_list) > 0:
-        print("\nSearching installed software, this can take some time!")
-        y_n = input("\nDo you have NGspice installed? [y/n] >>> ").lower()[0]
-        while y_n != 'y' and y_n != 'n':
-            y_n = input("\nPlease enter 'y' for 'yes' or 'n' for 'no' >>> ").lower()[0]
-        if y_n == 'y':
-            search_list.append('NGspice')
-        else:
-            commands['ngspice'] = ''
+        found_all = False
+        print("\nSearching installed software, this may take a while!")
         for drive in win32api.GetLogicalDriveStrings().split('\000')[:-1]:
             for root, dirs, files in os.walk(drive):
                 for name in dirs:
@@ -140,13 +141,22 @@ def _find_installed_windows_software():
                                         print("NGspice command set as:", os.path.join(root,name,'ngspice.exe'))
                                         commands[p_name] = file_name
                                         found = True
-                    if found:
-                        break
-                if found:
+                            if found:
+                                # Stop walking is all packages are found
+                                found_all = True
+                                for item in search_list:
+                                    if item.lower() not in list(commands.keys()):
+                                        found_all = False
+                                        break
+                                if found_all == True:
+                                    print("Found all packages.")
+                                    break
+                if found_all:
                     break
-            if found:
+            if found_all:
                 break
-    for package in search_list: # Only search for installed software
+    # Complete the commands dictionary
+    for package in search_list:
         p_name = package.lower()
         if p_name not in commands.keys():
             commands[p_name] = ''
