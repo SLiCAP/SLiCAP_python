@@ -600,16 +600,20 @@ def assumePosParams(expr, params = 'all'):
             expr = expr.xreplace({sp.Symbol(params[i]): sp.Symbol(params[i], positive = True)})
     elif type(params) == str:
         if params == 'all':
-            params = expr.atoms(sp.Symbol)
+            params = list(expr.atoms(sp.Symbol))
             try:
                 params.remove(ini.laplace)
             except BaseException:
                 pass
+            try:
+                params.remove(ini.frequency)
+            except BaseException:
+                pass
             for param in params:
-                param = sp.Symbol(str(param))
+                #param = sp.Symbol(str(param))
                 if param == sp.Symbol('t'):
                     expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
-                expr = expr.xreplace({sp.Symbol(str(param)): sp.Symbol(str(param), positive = True)})
+                expr = expr.xreplace({param: sp.Symbol(str(param), positive = True)})
         else:
             if params == 't':
                 expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
@@ -1296,12 +1300,11 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
                     else:
                         # Try sympy integration
                         func = assumePosParams(data)
-                        result = sp.integrate(func, (assumePosParams(ini.frequency), fmin, fmax))
-                        var_i += clearAssumptions(result)
+                        result = sp.integrate(func, [ini.frequency, fmin, fmax])
             if noiseResult.numeric == True:
-                rms.append(sp.N(sp.sqrt(sp.expand(var_i))))
+                rms.append(clearAssumptions(sp.N(sp.sqrt(sp.expand(result)))))
             else:
-                rms.append(sp.sqrt(sp.expand(var_i)))
+                rms.append(clearAssumptions(sp.sqrt(sp.expand(result))))
     if len(rms) == 1:
         rms = rms[0]
     return rms
