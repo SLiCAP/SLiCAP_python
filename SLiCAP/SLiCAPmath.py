@@ -1301,10 +1301,11 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
                         # Try sympy integration
                         func = assumePosParams(data)
                         result = sp.integrate(func, [ini.frequency, fmin, fmax])
+                        var_i += result
             if noiseResult.numeric == True:
-                rms.append(clearAssumptions(sp.N(sp.sqrt(sp.expand(result)))))
+                rms.append(clearAssumptions(sp.N(sp.sqrt(sp.expand(var_i)))))
             else:
-                rms.append(clearAssumptions(sp.sqrt(sp.expand(result))))
+                rms.append(clearAssumptions(sp.sqrt(sp.expand(var_i))))
     if len(rms) == 1:
         rms = rms[0]
     return rms
