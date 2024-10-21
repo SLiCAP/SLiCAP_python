@@ -1280,32 +1280,32 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
         if type(noiseResult.onoise) == list:
             numSteps = len(noiseResult.onoise)
         for i in range(numSteps):
-            var_i = 0
+            var_i = sp.N(0)
             for src in noiseSources:
                 if type(noiseData[src]) != list:
                     data = float2rational(noiseData[src])
                 else:
                     data = float2rational(noiseData[src][i])
-                if CDS:
-                    var_i += doCDSint(data, tau, fmin, fmax)
-                else:
-                    params = sp.N(data).atoms(sp.Symbol)
-                    if len(params) == 0 or ini.frequency not in params:
-                        # Frequency-independent spectrum, multiply with (fmax-fmin)
-                        var_i += data * (fmax - fmin)
-                    elif len(params) == 1 and ini.frequency in params and numlimits:
-                        # Numeric frequency-dependent spectrum, use numeric integration
-                        noise_spectrum = sp.lambdify(ini.frequency, sp.N(data))
-                        var_i += quad(noise_spectrum, fmin, fmax)[0]
+                if data != 0:
+                    if CDS:
+                        var_i += doCDSint(data, tau, fmin, fmax)
                     else:
-                        # Try sympy integration
-                        func = assumePosParams(data)
-                        result = sp.integrate(func, [ini.frequency, fmin, fmax])
-                        var_i += result
+                        params = sp.N(data).atoms(sp.Symbol)
+                        if len(params) == 0 or ini.frequency not in params:
+                            # Frequency-independent spectrum, multiply with (fmax-fmin)
+                            var_i += data * (fmax - fmin)
+                        elif len(params) == 1 and ini.frequency in params and numlimits:
+                            # Numeric frequency-dependent spectrum, use numeric integration
+                            noise_spectrum = sp.lambdify(ini.frequency, sp.N(data))
+                            var_i += quad(noise_spectrum, fmin, fmax)[0]
+                        else:
+                            # Try sympy integration
+                            func = assumePosParams(data)
+                            var_i += sp.integrate(func, [ini.frequency, fmin, fmax])
             if noiseResult.numeric == True:
                 rms.append(clearAssumptions(sp.N(sp.sqrt(sp.expand(var_i)))))
             else:
-                rms.append(clearAssumptions(sp.sqrt(sp.expand(var_i))))
+                rms.append(clearAssumptions(sp.sqrt(var_i)))
     if len(rms) == 1:
         rms = rms[0]
     return rms
