@@ -18,6 +18,9 @@ import requests
 from os.path import expanduser
 from datetime import datetime
 from sympy import Symbol
+from time import time
+
+TIMEOUT = 120
     
 if platform.system() == 'Windows':
     import win32api
@@ -67,7 +70,7 @@ def _find_installed_windows_software():
     Dictionary with key-value pairs: key = package name, value = command
     """
     package_list = ['LTspice', 'Inkscape', 'KiCad', 'gEDA', 'NGspice']
-    commands = {'lepton-eda': ''}
+    commands = {}
     search_list = []
     # get list with installed apps
     software_list = wi.get_installed_software()
@@ -85,12 +88,27 @@ def _find_installed_windows_software():
         search_list.append('NGspice')
     else:
         commands['ngspice'] = ''
+        """
+    for package in search_list:
+        y_n = input("\nDo you want SLiCAP to search for the {} command? [y/n] >>> ".format(package)).lower()[0]
+        while y_n != 'y' and y_n != 'n':
+            y_n = input("\nPlease enter 'y' for 'yes' or 'n' for 'no' >>> ").lower()[0]
+        if y_n == 'y':
+            pass
+        else:
+            commands[package.lower()] = ''
+        """
     # search for the command to start each app
     if len(search_list) > 0:
         found_all = False
-        print("\nSearching installed software, this may take a while!")
+        t_start = time()
+        time_out = False
+        print("\nSearching installed software, this will time-out after {} seconds!\n".format(str(TIMEOUT)))
         for drive in win32api.GetLogicalDriveStrings().split('\000')[:-1]:
             for root, dirs, files in os.walk(drive):
+                t_now = time()
+                if t_now - t_start >TIMEOUT:
+                    time_out = True
                 for name in dirs:
                     for package in search_list: # Only search for installed software
                         p_name = package.lower()
@@ -148,18 +166,36 @@ def _find_installed_windows_software():
                                     if item.lower() not in list(commands.keys()):
                                         found_all = False
                                         break
-                                if found_all == True:
-                                    print("Found all packages.")
+                                if found_all == True or time_out:
                                     break
-                if found_all:
+                if found_all or time_out:
                     break
-            if found_all:
+            if found_all or time_out:
                 break
+    found_list = list(commands.keys())    
+    if found_all:
+        print("SLiCAP found all installed apps!")
+    elif time_out:
+        print("\nSearching time for apps aborted due to time-out!\n")
+        for app in search_list:
+            if app.lower() not in found_list:
+                print("-", app, ": installed but not found")
+        print("\nIf you want SLiCAP to make calls to these apps, please edit " + 
+              "the main configuration file: 'SLiCAP.ini' in the ~/SLiCAP/ " +
+              "folder. More information is available in the SLiCAP HTML help.")
     # Complete the commands dictionary
-    for package in search_list:
-        p_name = package.lower()
-        if p_name not in commands.keys():
-            commands[p_name] = ''
+    if len(found_list) != len(package_list):
+        for package in package_list:
+            p_name = package.lower()
+            if p_name not in found_list:
+                commands[p_name] = ''
+            if package not in search_list:
+                print("-", package, ": not installed")      
+    if len(search_list) != len(package_list):
+        print("After installation of missing apps, delete the 'SLiCAP.ini' " +
+              "file in the ~/SLiCAP/ folder. It will be recreated with the " +
+              "next SLiCAP import.")
+    commands['lepton-eda'] = ''
     return commands
 
 def _find_LTspice_wine():
@@ -206,6 +242,18 @@ def _find_installed_software():
                 commands[key] = ""
     if system != 'Windows' and commands['lepton-eda'] != '':
         commands['geda'] = 'lepton-netlist'
+    # print not installed packages
+    not_installed = []
+    for key in commands.keys():
+        if commands[key] == '':
+            not_installed.append(key)
+    if len(not_installed) > 0:
+        print("The following apps have not been installed:")
+        for app in not_installed:
+            print("-", app)
+        print("After installation of missing apps, delete the 'SLiCAP.ini' " +
+              "file in the ~/SLiCAP/ folder. It will be recreated with the " +
+              "next SLiCAP import.")
     return commands
 
 def _generate_project_config():
@@ -495,9 +543,9 @@ sim_types       = config['simulation']['sim_types'].split(',')
 notebook        = False
 
 SLiCAPPARAMS    = {}
-
+"""
 if __name__ == "__main__":
     for mainkey in config.keys():
         print("\n", mainkey)
         for subkey in config[mainkey].keys():
-            print('\t', subkey, ":", config[mainkey][subkey])
+            print('\t', subkey, ":", config[mainkey][subkey])"""
