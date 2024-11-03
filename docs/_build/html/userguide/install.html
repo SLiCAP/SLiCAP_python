@@ -55,7 +55,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#install-slicap">Install SLiCAP</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#other-packages">Other packages</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#main-configuration">Main configuration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#project-configuration">Project configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project-configuration">Project configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#changing-settings">Changing settings</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#test-the-installation">Test the installation</a></li>
 </ul>
 </li>
@@ -160,6 +163,32 @@
 <span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
 </pre></div>
 </div>
+<p>Updating of the main configuration file is recommended if:</p>
+<ol class="arabic simple">
+<li><p>One or more apps listed above are installed or removed</p></li>
+<li><p>During installation under MS-Windows, searching to the apps listed above timed out</p></li>
+</ol>
+<p>In these cases the commands (under MS-Windows the locatation of the executables) need to be set in the <em>command</em> section.</p>
+<p>Below an example of the command section for user “USER” under Linux with default installation of LTspice under <em>wine</em>. The main configuration file is located at: /home/USER/SLiCAP/SLiCAP.ini:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
+<span class="n">ltspice</span> <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/.</span><span class="n">wine</span><span class="o">/</span><span class="n">drive_c</span><span class="o">/</span><span class="n">Program</span> <span class="n">Files</span><span class="o">/</span><span class="n">ADI</span><span class="o">/</span><span class="n">LTspice</span><span class="o">/</span><span class="n">LTspice</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">inkscape</span> <span class="o">=</span> <span class="n">inkscape</span>
+<span class="n">kicad</span> <span class="o">=</span> <span class="n">kicad</span><span class="o">-</span><span class="n">cli</span>
+<span class="n">geda</span> <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">netlist</span>
+<span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">cli</span>
+<span class="n">ngspice</span> <span class="o">=</span> <span class="n">ngspice</span>
+</pre></div>
+</div>
+<p>Below an example of the command section for user “USER” under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:UsersUSERSLiCAPSLiCAP.ini:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
+<span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span>
+<span class="n">inkscape</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">Inkscape</span>\<span class="nb">bin</span>\<span class="n">inkscape</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">kicad</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">KiCad</span>\<span class="mf">8.0</span>\<span class="nb">bin</span>\<span class="n">kicad</span><span class="o">-</span><span class="n">cli</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">ltspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">LTC</span>\<span class="n">LTspiceXVII</span>\<span class="n">XVIIx64</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">geda</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span> <span class="p">(</span><span class="n">x86</span><span class="p">)</span>\<span class="n">gEDA</span>\<span class="n">gEDA</span>\<span class="nb">bin</span>\<span class="n">gnetlist</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">ngspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Users</span>\<span class="n">anton</span>\<span class="n">ngspice</span>\<span class="n">Spice64</span>\<span class="nb">bin</span>\<span class="n">ngspice</span><span class="o">.</span><span class="n">exe</span>
+</pre></div>
+</div>
 </section>
 <section id="project-configuration">
 <h2>Project configuration<a class="headerlink" href="#project-configuration" title="Link to this heading"></a></h2>
@@ -180,6 +209,81 @@
 <span class="n">sl</span><span class="o">.</span><span class="n">Help</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>The default execution result of the command sl.ini.dump() after initialization of the example project “My First RC Network” for user “USER” under MS-Windows in the Anaconda environment is shown below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prj</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC network&quot;</span><span class="p">)</span>
+
+<span class="go">Compiling library: SLiCAP.lib.</span>
+<span class="go">Compiling library: SLiCAPmodels.lib.</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
+
+<span class="go">ini.install_version = 3.0.1</span>
+<span class="go">ini.latest_version  = 3.0.1</span>
+<span class="go">ini.install_path    = C:/Users/USER/anaconda3/lib/site-packages/</span>
+<span class="go">ini.home_path       = C:/Users/USER/SLiCAP/</span>
+<span class="go">ini.main_lib_path   = C:/Users/USER/SLiCAP/lib/</span>
+<span class="go">ini.example_path    = C:/Users/USER/SLiCAP/examples/</span>
+<span class="go">ini.doc_path        = C:/Users/USER/SLiCAP/docs/</span>
+<span class="go">ini.ltspice         = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe</span>
+<span class="go">ini.inkscape        = C:\Program Files\Inkscape\bin\inkscape.exe</span>
+<span class="go">ini.gnetlist        = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe</span>
+<span class="go">ini.kicad           = C:\Program Files\KiCad\8.0\bin\kicad-cli.exe</span>
+<span class="go">ini.ngspice         = C:\Users\USER\ngspice\Spice64\bin\ngspice.exe</span>
+<span class="go">ini.lepton_eda      =</span>
+<span class="go">ini.project_path    = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/</span>
+<span class="go">ini.html_path       = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/html/</span>
+<span class="go">ini.cir_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/cir/</span>
+<span class="go">ini.img_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/img/</span>
+<span class="go">ini.csv_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/csv/</span>
+<span class="go">ini.txt_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/txt/</span>
+<span class="go">ini.tex_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/tex/</span>
+<span class="go">ini.user_lib_path   = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/lib/</span>
+<span class="go">ini.mathml_path     = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/mathml/</span>
+<span class="go">ini.sphinx_path     = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/sphinx/</span>
+<span class="go">ini.html_prefix     =</span>
+<span class="go">ini.html_index      = index.html</span>
+<span class="go">ini.html_page       = index.html</span>
+<span class="go">ini.html_pages      = [&#39;&#39;]</span>
+<span class="go">ini.html_labels     = &lt;Section: labels&gt;</span>
+<span class="go">ini.disp            = 4</span>
+<span class="go">ini.last_updated    = 2024-11-03 22:11:36</span>
+<span class="go">ini.project_title   = My first RC network</span>
+<span class="go">ini.created         = 2024-11-03 21:55:14</span>
+<span class="go">ini.author          = USER</span>
+<span class="go">ini.laplace         = s</span>
+<span class="go">ini.frequency       = f</span>
+<span class="go">ini.numer           = ME</span>
+<span class="go">ini.denom           = ME</span>
+<span class="go">ini.lambdify        = numpy</span>
+<span class="go">ini.step_function   = True</span>
+<span class="go">ini.factor          = True</span>
+<span class="go">ini.max_rec_subst   = 15</span>
+<span class="go">ini.hz              = True</span>
+<span class="go">ini.gain_colors     = {&#39;asymptotic&#39;: &#39;r&#39;, &#39;gain&#39;: &#39;b&#39;, &#39;loopgain&#39;: &#39;k&#39;, &#39;servo&#39;: &#39;m&#39;, &#39;direct&#39;: &#39;g&#39;, &#39;vi&#39;: &#39;c&#39;}</span>
+<span class="go">ini.plot_fontsize   = 10</span>
+<span class="go">ini.axis_height     = 5</span>
+<span class="go">ini.axis_width      = 7</span>
+<span class="go">ini.legend_loc      = best</span>
+<span class="go">ini.default_colors  = [&#39;r&#39;, &#39;b&#39;, &#39;g&#39;, &#39;c&#39;, &#39;m&#39;, &#39;y&#39;, &#39;k&#39;]</span>
+<span class="go">ini.default_markers = [&#39;&#39;]</span>
+<span class="go">ini.plot_fontsize   = 10</span>
+<span class="go">ini.plot_file_type  = svg</span>
+<span class="go">ini.gain_types      = [&#39;gain&#39;, &#39;asymptotic&#39;, &#39;loopgain&#39;, &#39;servo&#39;, &#39;direct&#39;, &#39;vi&#39;]</span>
+<span class="go">ini.data_types      = [&#39;dc&#39;, &#39;dcvar&#39;, &#39;dcsolve&#39;, &#39;laplace&#39;, &#39;numer&#39;, &#39;denom&#39;, &#39;solve&#39;, &#39;noise&#39;, &#39;pz&#39;, &#39;poles&#39;, &#39;zeros&#39;, &#39;time&#39;, &#39;impulse&#39;, &#39;step&#39;]</span>
+<span class="go">ini.sim_types       = [&#39;symbolic&#39;, &#39; numeric&#39;]</span>
+<span class="go">ini.notebook        =  False</span>
+</pre></div>
+</div>
+<section id="changing-settings">
+<h3>Changing settings<a class="headerlink" href="#changing-settings" title="Link to this heading"></a></h3>
+<p>It is strongly advised not to change any settings in the project SLiCAP.ini file. The preferred way of changing settings is to do it in the python scripts:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ini</span><span class="o">.</span><span class="n">disp</span>          <span class="o">=</span> <span class="mi">3</span>     <span class="c1"># set the number of significant digits in reports and listings to 3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ini</span><span class="o">.</span><span class="n">hz</span>            <span class="o">=</span> <span class="kc">False</span> <span class="c1"># set the default frequency units to *rad/s*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ini</span><span class="o">.</span><span class="n">max_rec_subst</span> <span class="o">=</span> <span class="mi">20</span>    <span class="c1"># set the maximum number of recursive substitution of expressions to 20</span>
+</pre></div>
+</div>
+</section>
 </section>
 <section id="test-the-installation">
 <h2>Test the installation<a class="headerlink" href="#test-the-installation" title="Link to this heading"></a></h2>

@@ -69,6 +69,37 @@ On its first import, SLiCAP searches the above packages and creates commands to 
    # Create (but don't overwrite) SLiCAP.ini in the ~/SLiCAP/ folder
    import SLiCAP as sl
 
+Updating of the main configuration file is recommended if:
+
+#. One or more apps listed above are installed or removed
+#. During installation under MS-Windows, searching to the apps listed above timed out
+
+In these cases the commands (under MS-Windows the locatation of the executables) need to be set in the *command* section.
+
+Below an example of the command section for user "USER" under Linux with default installation of LTspice under *wine*. The main configuration file is located at: /home/USER/SLiCAP/SLiCAP.ini:
+
+.. code-block:: python
+
+    [commands]
+    ltspice = /home/USER/.wine/drive_c/Program Files/ADI/LTspice/LTspice.exe
+    inkscape = inkscape
+    kicad = kicad-cli
+    geda = lepton-netlist
+    lepton-eda = lepton-cli
+    ngspice = ngspice
+    
+Below an example of the command section for user "USER" under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:\Users\USER\SLiCAP\SLiCAP.ini:
+
+.. code-block:: python
+
+    [commands]
+    lepton-eda = 
+    inkscape = C:\Program Files\Inkscape\bin\inkscape.exe
+    kicad = C:\Program Files\KiCad\8.0\bin\kicad-cli.exe
+    ltspice = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe
+    geda = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe
+    ngspice = C:\Users\anton\ngspice\Spice64\bin\ngspice.exe
+
 Project configuration
 =====================
 
@@ -92,6 +123,85 @@ The python script below generates both configuration files, displays their conte
    sl.ini.dump()
    # Open de HTML documentation in the browser:
    sl.Help()
+
+The default execution result of the command sl.ini.dump() after initialization of the example project "My First RC Network" for user "USER" under MS-Windows in the Anaconda environment is shown below:
+
+.. code-block:: python
+
+    >>> import SLiCAP as sl
+    >>> prj = sl.initProject("My First RC network")
+    
+    Compiling library: SLiCAP.lib.
+    Compiling library: SLiCAPmodels.lib.
+    
+    >>> sl.dump()
+    
+    ini.install_version = 3.0.1
+    ini.latest_version  = 3.0.1
+    ini.install_path    = C:/Users/USER/anaconda3/lib/site-packages/
+    ini.home_path       = C:/Users/USER/SLiCAP/
+    ini.main_lib_path   = C:/Users/USER/SLiCAP/lib/
+    ini.example_path    = C:/Users/USER/SLiCAP/examples/
+    ini.doc_path        = C:/Users/USER/SLiCAP/docs/
+    ini.ltspice         = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe
+    ini.inkscape        = C:\Program Files\Inkscape\bin\inkscape.exe
+    ini.gnetlist        = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe
+    ini.kicad           = C:\Program Files\KiCad\8.0\bin\kicad-cli.exe
+    ini.ngspice         = C:\Users\USER\ngspice\Spice64\bin\ngspice.exe
+    ini.lepton_eda      = 
+    ini.project_path    = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/
+    ini.html_path       = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/html/
+    ini.cir_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/cir/
+    ini.img_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/img/
+    ini.csv_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/csv/
+    ini.txt_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/txt/
+    ini.tex_path        = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/tex/
+    ini.user_lib_path   = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/lib/
+    ini.mathml_path     = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/mathml/
+    ini.sphinx_path     = C:/Users/USER/SLiCAP/examples/myFirstRCnetwork/sphinx/
+    ini.html_prefix     = 
+    ini.html_index      = index.html
+    ini.html_page       = index.html
+    ini.html_pages      = ['']
+    ini.html_labels     = <Section: labels>
+    ini.disp            = 4
+    ini.last_updated    = 2024-11-03 22:11:36
+    ini.project_title   = My first RC network
+    ini.created         = 2024-11-03 21:55:14
+    ini.author          = USER
+    ini.laplace         = s
+    ini.frequency       = f
+    ini.numer           = ME
+    ini.denom           = ME
+    ini.lambdify        = numpy
+    ini.step_function   = True
+    ini.factor          = True
+    ini.max_rec_subst   = 15
+    ini.hz              = True
+    ini.gain_colors     = {'asymptotic': 'r', 'gain': 'b', 'loopgain': 'k', 'servo': 'm', 'direct': 'g', 'vi': 'c'}
+    ini.plot_fontsize   = 10
+    ini.axis_height     = 5
+    ini.axis_width      = 7
+    ini.legend_loc      = best
+    ini.default_colors  = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
+    ini.default_markers = ['']
+    ini.plot_fontsize   = 10
+    ini.plot_file_type  = svg
+    ini.gain_types      = ['gain', 'asymptotic', 'loopgain', 'servo', 'direct', 'vi']
+    ini.data_types      = ['dc', 'dcvar', 'dcsolve', 'laplace', 'numer', 'denom', 'solve', 'noise', 'pz', 'poles', 'zeros', 'time', 'impulse', 'step']
+    ini.sim_types       = ['symbolic', ' numeric']
+    ini.notebook        =  False
+    
+Changing settings
+-----------------
+
+It is strongly advised not to change any settings in the project SLiCAP.ini file. The preferred way of changing settings is to do it in the python scripts:
+
+.. code-block:: python
+
+   >>> ini.disp          = 3     # set the number of significant digits in reports and listings to 3
+   >>> ini.hz            = False # set the default frequency units to *rad/s*
+   >>> ini.max_rec_subst = 20    # set the maximum number of recursive substitution of expressions to 20
    
 Test the installation
 =====================

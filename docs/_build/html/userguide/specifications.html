@@ -51,7 +51,14 @@
 <li class="toctree-l1 current"><a class="reference internal" href="SLiCAPuserguide.html">SLiCAP user guide</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="install.html">Download, install, configure and test SLiCAP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="circuit.html">Create a SLiCAP circuit object</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Work with specifications</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Work with specifications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-specitem-objects">Creating specItem objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#storing-specs-in-csv-files">Storing specs in CSV files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#importing-specs-from-csv-files">Importing specs from CSV files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#assigning-specs-to-circuit-parameters">Assigning specs to circuit parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#displaying-specs-on-an-html-page">Displaying specs on an HTML page</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="parameters.html">Work with parameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Perform analysis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reports.html">Create reports</a></li>
@@ -92,10 +99,12 @@
 <h1>Work with specifications<a class="headerlink" href="#work-with-specifications" title="Link to this heading"></a></h1>
 <img alt="../_images/colorCode.svg" src="../_images/colorCode.svg" />
 <p>Working with specifications is a powerful feature of SLiCAP. Specifications can be read from and stored to CSV files. Editing of the CSV file with a spreadsheet program or a text editor is possible but not preferred.</p>
+<section id="creating-specitem-objects">
+<h2>Creating specItem objects<a class="headerlink" href="#creating-specitem-objects" title="Link to this heading"></a></h2>
 <p>The preferred way of working is to create SLiCAP specItem objects. Detailed information about specItems can be found in the <a class="reference external" href="../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specItem">specItem()</a>.</p>
 <p>The example below shows how to create a list with specifications. In this example we will define four specifications for a transimpedance amplifier:</p>
 <ol class="arabic simple">
-<li><p>The typical value of the signal source cpacitance in F; this is considered an ‘interface’ specification</p></li>
+<li><p>The typical value of the signal source capacitance in F; this is considered an ‘interface’ specification</p></li>
 <li><p>The target value of its current-to-voltage transfer (transimpedance gain); this is considered a ‘functional’ specification</p></li>
 <li><p>The target value of its -3dB bandwidth; this is considered a ‘performance’ specification</p></li>
 <li><p>The target value of its (unweighted) RMS output noise; this is considered a ‘performance’ specification</p></li>
@@ -137,15 +146,32 @@
                          <span class="n">specType</span>    <span class="o">=</span> <span class="s2">&quot;Performance&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>The specifications will be stored in a CSV file with <a class="reference external" href="../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2csv">specs2csv()</a>). The specifications are stored in the ‘sl.ini.csv_path’ folder. By default this id the ‘csv’ folder in the project directory.</p>
+<div class="warning admonition">
+<p class="admonition-title">Note</p>
+<p><strong>You can only assign a single value or expression to a parameter.</strong> A list of values is not supported because this would conflict with assigning values of specified prameters to circuit parameters.</p>
+</div>
+</section>
+<section id="storing-specs-in-csv-files">
+<h2>Storing specs in CSV files<a class="headerlink" href="#storing-specs-in-csv-files" title="Link to this heading"></a></h2>
+<p>The specifications can be stored in a CSV file with <a class="reference external" href="../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2csv">specs2csv()</a>). The specifications are stored in the ‘sl.ini.csv_path’ folder. By default this is the ‘csv’ folder in the project directory.</p>
+</section>
+<section id="importing-specs-from-csv-files">
+<h2>Importing specs from CSV files<a class="headerlink" href="#importing-specs-from-csv-files" title="Link to this heading"></a></h2>
 <p>The can be imported from this file with <a class="reference external" href="../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2csv">csv2specs()</a>).</p>
 <p>The example below shows how to store them in a csv file and import them from this file.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sl</span><span class="o">.</span><span class="n">specs2csv</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="s2">&quot;specs.csv&quot;</span><span class="p">)</span>   <span class="c1"># Store the specifications in the file &quot;specs.csv&quot;</span>
 <span class="n">specs</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">csv2specs</span><span class="p">(</span><span class="s2">&quot;specs.csv&quot;</span><span class="p">)</span>  <span class="c1"># Import the specifications from the file &quot;specs.csv&quot;</span>
 </pre></div>
 </div>
+</section>
+<section id="assigning-specs-to-circuit-parameters">
+<h2>Assigning specs to circuit parameters<a class="headerlink" href="#assigning-specs-to-circuit-parameters" title="Link to this heading"></a></h2>
 <p>Specifications can be assigned to circuit parameters using <a class="reference external" href="../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2circuit">specs2circuit()</a>). Circuit parameters that have the same name as a specItem() will then obtain the value of that specItem().</p>
+</section>
+<section id="displaying-specs-on-an-html-page">
+<h2>Displaying specs on an HTML page<a class="headerlink" href="#displaying-specs-on-an-html-page" title="Link to this heading"></a></h2>
 <p>Specifications can be listed on the active HTML page using <a class="reference external" href="../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2html">specs2html()</a>).</p>
+</section>
 </section>
 
 

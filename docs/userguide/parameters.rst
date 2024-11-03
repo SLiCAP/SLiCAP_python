@@ -184,7 +184,7 @@ This yields:
 Get the definitions or evaluated values of multiple parameters
 ==============================================================
 
-The method `circuit.getParValues() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValues>`__  returns a dictionary with key-value pairs. The keys are the names of the parameters and the values their defenition or evaluation of it. 
+The method `circuit.getParValue() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValue>`__  returns a dictionary with key-value pairs. The keys are the names of the parameters and the values their defenition or evaluation of it. 
 
 If the keyword argument 'substitute' is True (default), for each parameter, all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see `fullSubs <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs>`__)
 
