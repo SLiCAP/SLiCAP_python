@@ -78,7 +78,7 @@ jobs:
         uses: actions/configure-pages@v3
       - name: Upload artifact
         # Automatically uploads an artifact from the './_site' directory by default
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v1
         with:
           path: "builthtml"
 
