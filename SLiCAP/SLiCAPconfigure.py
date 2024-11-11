@@ -259,16 +259,15 @@ def _find_installed_software():
 def _generate_project_config():
     os.path.abspath('.') + '/'
     project_path  = os.path.abspath('.').replace('\\', '/') + '/'
-    project_paths = {"project"   : project_path,
-                     "html"      : project_path + 'html/',
-                     "cir"       : project_path + 'cir/',
-                     "lib"       : project_path + 'lib/',
-                     "csv"       : project_path + 'csv/',
-                     "txt"       : project_path + 'txt/',
-                     "img"       : project_path + 'img/',
-                     "mathml"    : project_path + 'mathml/',
-                     "sphinx"    : project_path + 'sphinx/',
-                     "tex"       : project_path + 'tex/'
+    project_paths = {"html"      : 'html/',
+                     "cir"       : 'cir/',
+                     "lib"       : 'lib/',
+                     "csv"       : 'csv/',
+                     "txt"       : 'txt/',
+                     "img"       : 'img/',
+                     "mathml"    : 'mathml/',
+                     "sphinx"    : 'sphinx/',
+                     "tex"       : 'tex/'
                     }
     SLiCAPconfig = configparser.ConfigParser()
     SLiCAPconfig['math']         = {"laplace"        : "s",
@@ -441,7 +440,6 @@ def dump():
     print('ini.kicad           =', config['commands']['kicad'])
     print('ini.ngspice         =', config['commands']['ngspice'])
     print('ini.lepton_eda      =', config['commands']['lepton-eda'])
-    print('ini.project_path    =', config['projectpaths']['project'])
     print('ini.html_path       =', config['projectpaths']['html'])
     print('ini.cir_path        =', config['projectpaths']['cir'])
     print('ini.img_path        =', config['projectpaths']['img'])
@@ -500,7 +498,6 @@ gnetlist        = config['commands']['geda']
 kicad           = config['commands']['kicad']
 ngspice         = config['commands']['ngspice']
 lepton_eda      = config['commands']['lepton-eda']
-project_path    = config['projectpaths']['project']
 html_path       = config['projectpaths']['html']
 cir_path        = config['projectpaths']['cir']
 img_path        = config['projectpaths']['img']

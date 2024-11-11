@@ -121,7 +121,6 @@ def initProject(name):
     # Redefine the globals accoringly
     # This makes it possible to work with multiple projects from different
     # directories in one python module.
-    ini.project_path  = project_config['projectpaths']['project']
     ini.html_path     = project_config['projectpaths']['html']
     ini.cir_path      = project_config['projectpaths']['cir']
     ini.img_path      = project_config['projectpaths']['img']
