@@ -128,6 +128,8 @@ Vo 1 3 V dcvar={svo^2}
 N1 4 COMMON 3 2
 .ends 
 
+* Device models
+***************
 .subckt CMOS18N drain gate source bulk W={W} L={L} ID={ID}
 * EKV model of transistor without bulk resistances
 * Voltage dependency of bulk capacitances not modeled
@@ -144,21 +146,20 @@ M1 drain gate source bulk CMOS18N
 + cgb     = {c_gb}
 + cdb     = {c_db}
 + csb     = {c_sb}
-* Parameters will be substituted if simType is set to "numeric"
 .param
 * device equations EKV model
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 + IC_CRIT = {1/(4*(N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
 + g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {g_m*N_s_N18*U_T*sqrt(1+IC/IC_CRIT)/(VAL_N18*L)}
++ g_o     = {ID/(VAL_N18*L)}
 + g_b     = {(N_s_N18-1)*g_m}
 + c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W} 
 + c_dg    = {CGSO_N18*W}
 + c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
 + c_db    = {CJB0_N18*W*LDS_N18}
 + c_sb    = {CJB0_N18*W*LDS_N18}
-+ IC_i    = {ID*L/W/I_0_N18} ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*sqrt(1+(IC_i/IC_CRIT))} ; Inversion coefficient corrected for short-channel effects
++ IC_i    = {ID*L/W/I_0_N18}                ; Initial estimate of inversion coefficient
++ IC      = {IC_i*sqrt(1+2*(IC_i/IC_CRIT))} ; Better fit with BSIM, whatever it's worth
 + V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/IC_CRIT)))-1) + Vth_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
@@ -182,7 +183,6 @@ M1 drain gate source bulk CMOS18N_V
 + cgb     = {c_gb}
 + cdb     = {c_db}
 + csb     = {c_sb}
-* Parameters will be substituted if simType is set to "numeric"
 .param
 * device equations EKV model
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
@@ -206,7 +206,7 @@ M1 drain gate source bulk CMOS18N_V
 + g_mF    = {I_DSF/(N_s_N18*U_T*sqrt(IC_F*(1+IC_F/IC_CRIT)+0.5*sqrt(IC_F*(1+IC_F/IC_CRIT))+1))}
 + g_mR    = {I_DSR/(N_s_N18*U_T*sqrt(IC_R*(1+IC_R/IC_CRIT)+0.5*sqrt(IC_R*(1+IC_R/IC_CRIT))+1))}
 + g_m     = {g_mF-g_mR}
-+ g_o     = {I_DSF/(V_A+VD-VS)+g_mR}
++ g_o     = {I_DSF/(V_A+VD-VS)+g_mR} ; Only forward region
 + g_b     = {(N_s_N18-1)*g_m}
 + c_gsi   = {2/3*(1-(x_r^2+x_r+0.5*x_f)/(x_f+x_r)^2)*C_OX_N18*W*L} 
 + c_dgi   = {2/3*(1-(x_f^2+x_f+0.5*x_r)/(x_f+x_r)^2)*C_OX_N18*W*L}
@@ -235,7 +235,6 @@ M1 drain1 drain2 gate1 gate2 CMOS18ND
 + go      = {g_o/2} 
 + cdg     = {c_dg}
 + cdd     = {c_db/2}
-* Parameters will be substituted if simType is set to "numeric"
 .param
 * device equations EKV model
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
@@ -246,9 +245,9 @@ M1 drain1 drain2 gate1 gate2 CMOS18ND
 + c_dg    = {CGSO_N18*W}
 + c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
 + c_db    = {CJB0_N18*W*LDS_N18}
-+ IC_i    = {ID*L/W/I_0_N18} ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*sqrt(1+(IC_i/IC_CRIT))} ; Inversion coefficient corrected for short-channel effects
-+ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC))-1)+Vth_N18}
++ IC_i    = {ID*L/W/I_0_N18}                ; Initial estimate of inversion coefficient
++ IC      = {IC_i*sqrt(1+2*(IC_i/IC_CRIT))} ; Better fit with BSIM, whatever it's worth
++ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/IC_CRIT)))-1) + Vth_N18}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
@@ -267,13 +266,12 @@ M1 drain gate source bulk CMOS18P
 + cgb     = {c_gb}
 + cdb     = {c_db}
 + csb     = {c_sb}
-* Parameters will be substituted if simType is set to "numeric"
 .param
 * device equations EKV model
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 + IC_CRIT = {1/(4*(N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
 + g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {g_m*N_s_P18*U_T/(VAL_P18*L)}
++ g_o     = {-ID/(VAL_P18*L)}
 + g_b     = {(N_s_P18-1)*g_m}
 + c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W} 
 + c_dg    = {CGSO_P18*W}
@@ -281,7 +279,7 @@ M1 drain gate source bulk CMOS18P
 + c_db    = {CJB0_P18*W*LDS_P18}
 + c_sb    = {CJB0_P18*W*LDS_P18}
 + IC      = {-ID*L/W/I_0_P18} ; Inversion coefficient
-+ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+IC/IC_CRIT)))-1)+Vth_P18}
++ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18} ; Better fit with BSIM, whatever it's worth
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
@@ -303,11 +301,11 @@ M1 drain gate source bulk CMOS18P_V
 + cgb     = {c_gb}
 + cdb     = {c_db}
 + csb     = {c_sb}
-* Parameters will be substituted if simType is set to "numeric"
 .param
 * device equations EKV model
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 * See EKV2.6 model manual
+* gm calculated from derivative of ID(V_GS) curve
 + V_A     = {VAL_P18*L}
 + C_gso   = {CGSO_P18*W}
 + C_gdo   = {CGSO_P18*W}
@@ -356,7 +354,6 @@ M1 drain gate source bulk CMOS18PD
 + go      = {g_o/2} 
 + cdg     = {c_dg}
 + cdd     = {c_db/2}
-* Parameters will be substituted if simType is set to "numeric"
 .param
 * device equations EKV model
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
@@ -368,7 +365,7 @@ M1 drain gate source bulk CMOS18PD
 + c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
 + c_db    = {CJB0_P18*W*LDS_P18}
 + IC      = {-ID*L/W/I_0_P18} ; Inversion coefficient
-+ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC))-1)+Vth_P18}
++ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
@@ -391,8 +388,9 @@ I2 ext comm I value=0 noise={2*q*IG}              ; gate shot noise
 + c_db    = {CJB0_N18*W*LDS_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
-+ IC_i    = {ID*L/W/I_0_N18}            ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*sqrt(1+IC_i/IC_CRIT)} ; Inversion coefficient corrected for short-channel effects
++ IC_i    = {ID*L/W/I_0_N18}                ; Initial estimate of inversion coefficient
++ IC      = {IC_i*sqrt(1+2*(IC_i/IC_CRIT))} ; Better fit with BSIM, whatever it's worth
++ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/IC_CRIT)))-1) + Vth_N18}
 + k_f     = {KF_N18*(1+2*N_s_N18*U_T*sqrt(IC)/V_KF_N18)^2/(W*L*C_OX_N18^2)}
 + f_ell   = {(f_T*2*pi*KF_N18*((2-x)/3+(1+x)/3*(N_s_N18-1)/N_s_N18 )/(N_s_N18*Gamma*4*k*T*C_OX_N18))**(1/AF_N18)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
@@ -418,6 +416,7 @@ I2 ext comm I value=0 noise={2*q*IG}              ; gate shot noise
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
 + IC      = {-ID*L/W/I_0_P18}            ; Initial estimate of inversion coefficient
++ VGS     = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18} ; Better fit with BSIM, whatever it's worth
 + k_f     = {KF_P18*(1+2*N_s_P18*U_T*sqrt(IC)/V_KF_P18)^2/(W*L*C_OX_P18^2)}
 + f_ell   = {(f_T*2*pi*KF_P18*((2-x)/3+(1+x)/3*(N_s_P18-1)/N_s_P18 )/(N_s_P18*Gamma*4*k*T*C_OX_P18))**(1/AF_P18)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
@@ -438,7 +437,6 @@ M1 drain gate source bulk CMOS18PN
 + cgb     = {c_gb}
 + cdb     = {c_db}
 + csb     = {c_sb}
-* Parameters will be substituted if simType is set to "numeric"
 .param
 * device equations EKV model
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
@@ -454,13 +452,15 @@ M1 drain gate source bulk CMOS18PN
 + c_gb      = {W_N*L_N*C_OX_N18*(1+x_N)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L_N + W_P*L_P*C_OX_P18*(1+x_P)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L_P}
 + c_db      = {CJB0_N18*W_N*LDS_N18 + CJB0_P18*W_P*LDS_P18}
 + c_sb      = {CJB0_N18*W_N*LDS_N18 + CJB0_P18*W_P*LDS_P18}
-+ IC_iN     = {ID_N*L_N/W_N/I_0_N18} ; Initial estimate of inversion coefficient
-+ IC_N      = {IC_iN*sqrt(1+IC_iN/IC_CRIT_N)} ; Inversion coefficient corrected for short-channel effects
++ IC_iN     = {ID_N*L_N/W_N/I_0_N18}            ; Initial estimate of inversion coefficient
++ IC_N      = {IC_iN*sqrt(1+2*IC_iN/IC_CRIT_N)} ; Better fit with BSIM, whatever it's worth
 + IC_P      = {-ID_P*L_P/W_P/I_0_P18} ; Initial estimate of inversion coefficient
 + c_iss     = {c_gs+c_dg+c_gb}
 + f_T_PN    = {g_m/2/pi/c_iss}
 + x_N       = {(sqrt(IC_N + 0.25) + 1.5)/(sqrt(IC_N + 0.25) + 0.5)^2}
 + x_P       = {(sqrt(IC_P + 0.25) + 1.5)/(sqrt(IC_P + 0.25) + 0.5)^2}
++ V_GS_N    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_iN*(1+IC_iN/IC_CRIT_N)))-1) + Vth_N18}
++ V_GS_P    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18}
 .ends
 
 .end

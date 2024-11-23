@@ -638,7 +638,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
         for j in range(len(yVar)):
             xData, yData = stepParams(result, xVar, yVar[j], sweepVar, x)
             if type(xData) == dict:
-                keys = sorted(list(xData.keys()))
+                keys = list(xData.keys())
                 for i in range(len(keys)):
                     newTrace = trace([xData[keys[i]], yData[keys[i]]])
                     newTrace.label = '$%s: %s$ = %8.1e'%(sp.latex(sp.Symbol(yVar[j])), sp.latex(result.stepVar), result.stepList[i])

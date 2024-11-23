@@ -19,43 +19,46 @@
 + U_T           = {k*T/q}           ; Thermal voltage [V]
 
 * CMOS18 technology parameters for EKV models (SI units)
+* Manual fit to "nch" and "pch" devices in BSIM 3.2 log018.l
+* Good match on gm(ID) fT(ID) and noise 
+* over a wide current range and geometry range
 ********************************************************
 
 .param
-+ TOX_N18     = 4.1n  ; oxide thickness [m]
-+ Vth_N18     = 0.36  ; threshold voltage [V]
-+ N_s_N18     = 1.35  ; substrate factor [-]
-+ Theta_N18   = 0.28  ; vertical field mobility reduction coefficient [1/V]
-+ E_CRIT_N18  = 5.6M  ; lateral field strength for velocity saturation [V/m]
-+ u_0_N18     = 42m   ; zero field carrier mobility [m^2/V/s]
++ TOX_N18     = 4.2n  ; oxide thickness [m]
++ Vth_N18     = 0.42  ; threshold voltage [V]
++ N_s_N18     = 1.38  ; substrate factor [-]
++ Theta_N18   = 0.41  ; vertical field mobility reduction coefficient [1/V]
++ E_CRIT_N18  = 10.7M ; lateral field strength for velocity saturation [V/m]
++ u_0_N18     = 68m   ; zero field carrier mobility [m^2/V/s]
 + CGBO_N18    = 1p    ; gate-bulk overlap capacitance [F/m]
-+ CGSO_N18    = 300p  ; gate-source and gate-drain overlap capacitance [F/m]
++ CGSO_N18    = 330p  ; gate-source and gate-drain overlap capacitance [F/m]
 + CJB0_N18    = 1m    ; source/bulk drain/bulk capacitance [F/m^2]
 + LDS_N18     = 180n  ; length of drain and source [m]
-+ VAL_N18     = 40M   ; Early voltage per unit of length [V/m]
-+ KF_N18      = 2e-27 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
-+ AF_N18      = 1     ; flicker noise exponent [-]
++ VAL_N18     = 48M   ; Early voltage per unit of length [V/m]
++ KF_N18      = 5e-27 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
++ AF_N18      = 0.82  ; flicker noise exponent [-]
++ V_KF_N18    = 2     ; flicker noise voltage dependency factor [V]
 + C_OX_N18    = {epsilon_0 * epsilon_SiO2 / TOX_N18}; oxide capacitance per unit of area [F/m^2]
 + I_0_N18     = {2*N_s_N18*u_0_N18*C_OX_N18*U_T^2}  ; technology current [A]
-+ V_KF_N18    = 2     ; flicker noise voltage coefficient [V]
 
 .param
-+ TOX_P18     = 4.1n  ; oxide thickness [m]
-+ Vth_P18     = -0.36 ; threshold voltage [V]
-+ N_s_P18     = 1.35  ; substrate factor [-]
-+ Theta_P18   = 0.35  ; vertical field mobility reduction factor [1/V]
-+ E_CRIT_P18  = 14M   ; lateral field strength for velocity saturation [V/m]
-+ u_0_P18     = 8.92m ; zero field carrier mobility [m^2/V/s]
-+ CGBO_P18    = 1p    ; gate-bulk overlap capacitance [F/m]
-+ CGSO_P18    = 300p  ; gate-source and gate-drain overlap capacitance [F/m]
-+ CJB0_P18    = 1m    ; source/bulk drain/bulk capacitance [F/m^2]
-+ LDS_P18     = 180n  ; length of drain and source [m]
-+ VAL_P18     = 40M   ; Early voltage per unit of length [V/m]
-+ KF_P18      = 1e-27 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
-+ AF_P18      = 1     ; flicker noise exponent [-]
++ TOX_P18     = 4n      ; oxide thickness [m]
++ Vth_P18     = -0.415  ; threshold voltage [V]
++ N_s_P18     = 1.35    ; substrate factor [-]
++ Theta_P18   = 0.4     ; vertical field mobility reduction factor [1/V]
++ E_CRIT_P18  = 1G      ; lateral field strength for velocity saturation [V/m]
++ u_0_P18     = 9.2m    ; zero field carrier mobility [m^2/V/s]
++ CGBO_P18    = 1p      ; gate-bulk overlap capacitance [F/m]
++ CGSO_P18    = 350p    ; gate-source and gate-drain overlap capacitance [F/m]
++ CJB0_P18    = 1m      ; source/bulk drain/bulk capacitance [F/m^2]
++ LDS_P18     = 180n    ; length of drain and source [m]
++ VAL_P18     = 25M     ; Early voltage per unit of length [V/m]
++ KF_P18      = 4.2e-28 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
++ AF_P18      = 1.25    ; flicker noise exponent [-]
++ V_KF_P18    = 0.2     ; flicker noise voltage dependency factor [V]
 + C_OX_P18    = {epsilon_0 * epsilon_SiO2 / TOX_P18}; oxide capacitance per unit of area [F/m^2]
 + I_0_P18     = {2*N_s_P18*u_0_P18*C_OX_P18*U_T^2} ; technology current [A]
-+ V_KF_P18    = 0.2   ; flicker noise voltage coefficient [V]
 
 * Sub circuits for expansion models
 ***********************************
