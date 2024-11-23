@@ -29,16 +29,19 @@ def _checkTitle(title):
 
 def _parseKiCADnetlist(kicad_sch, kicadPath=''):
     fileName   = '.'.join(kicad_sch.split('.')[0:-1])
-    subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.cir_path + kicadPath + fileName + ".net", ini.cir_path + kicadPath + fileName + ".kicad_sch"])
-    f = open(ini.cir_path + kicadPath + fileName + ".net", "r")
-    lines = f.readlines()
-    f.close()
-    netlist = _parseKiCADnetlistlines(lines)
-    cirName = fileName.split('/')[-1].split('.')[0]
-    cirFile = ini.cir_path + cirName + ".cir"
-    f = open(cirFile, 'w')
-    f.write(netlist)
-    f.close()
+    try:
+        subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.cir_path + kicadPath + fileName + ".net", ini.cir_path + kicadPath + fileName + ".kicad_sch"])
+        f = open(ini.cir_path + kicadPath + fileName + ".net", "r")
+        lines = f.readlines()
+        f.close()
+        netlist = _parseKiCADnetlistlines(lines)
+        cirName = fileName.split('/')[-1].split('.')[0]
+        cirFile = ini.cir_path + cirName + ".cir"
+        f = open(cirFile, 'w')
+        f.write(netlist)
+        f.close()
+    except FileNotFoundError:
+        print("\nError: could not run Kicad using '{}'.".format(ini.kicad))
     
 def _parseKiCADnetlistlines(lines, cirTitle):
     reserved   = ["Description", "Footprint", "Datasheet"]
@@ -128,30 +131,47 @@ def _parseKiCADnetlistlines(lines, cirTitle):
 
 def _KiCADsch2svg(fileName, kicadPath = ''):
     imgFile = fileName.split('.')[0]
-    subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', ini.cir_path + kicadPath + fileName])
-    subprocess.run([ini.inkscape, '-o', ini.img_path + imgFile + ".svg", '-D', ini.img_path + imgFile + ".svg"])
-    subprocess.run([ini.inkscape, '-o', ini.img_path + imgFile + ".pdf", '-D', ini.img_path + imgFile + ".svg"])
+    try:
+        subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', ini.cir_path + kicadPath + fileName])
+    except FileNotFoundError:
+        print("\nError: could not run Kicad using '{}'.".format(ini.kicad))
+    try:
+        subprocess.run([ini.inkscape, '-o', ini.img_path + imgFile + ".svg", '-D', ini.img_path + imgFile + ".svg"])
+        subprocess.run([ini.inkscape, '-o', ini.img_path + imgFile + ".pdf", '-D', ini.img_path + imgFile + ".svg"])
+    except FileNotFoundError:
+        print("\nError: could not run Inkscape using '{}'.".format(ini.inkscape))
     
 def _kicadNetlist(fileName, cirTitle):
-    if os.path.isfile(fileName):
-        print("Creating netlist of {} using KiCAD".format(fileName))
-        kicadnetlist  = fileName.split('.')[0] + '.net'        
-        subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', kicadnetlist, fileName])
-        f = open(kicadnetlist, "r")
-        lines = f.readlines()
-        f.close()
-        netlist = _parseKiCADnetlistlines(lines, cirTitle)
-        cirName = fileName.split('/')[-1].split('.')[0]
-        cirFile = ini.cir_path + cirName + ".cir"
-        f = open(cirFile, 'w')
-        f.write(netlist)
-        f.close()
-        print("Creating drawing-size SVG and PDF images of {}".format(fileName))
-        subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', fileName])
-        subprocess.run([ini.inkscape, '-o', ini.img_path + cirName + ".svg", '-D', ini.img_path + cirName + ".svg"])
-        subprocess.run([ini.inkscape, '-o', ini.img_path + cirName + ".pdf", '-D', ini.img_path + cirName + ".svg"])
+    Kicad = False
+    Inkscape = False
+    if ini.kicad == "":
+        print("Please install Kicad, delete '~/SLiCAP.ini', and run this script again.")
     else:
-        print("Error: could not open: '{}'.".format(fileName))
+        Kicad = True
+    if ini.inkscape == "":
+        print("Please install Inkscape, delete '~/SLiCAP.ini', and run this script again.")
+    else:
+        Inkscape = True
+    if Kicad and Inkscape:
+        if os.path.isfile(fileName):
+            print("Creating netlist of {} using KiCAD".format(fileName))
+            kicadnetlist  = fileName.split('.')[0] + '.net'        
+            subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', kicadnetlist, fileName])
+            f = open(kicadnetlist, "r")
+            lines = f.readlines()
+            f.close()
+            netlist = _parseKiCADnetlistlines(lines, cirTitle)
+            cirName = fileName.split('/')[-1].split('.')[0]
+            cirFile = ini.cir_path + cirName + ".cir"
+            f = open(cirFile, 'w')
+            f.write(netlist)
+            f.close()
+            print("Creating drawing-size SVG and PDF images of {}".format(fileName))
+            subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', fileName])
+            subprocess.run([ini.inkscape, '-o', ini.img_path + cirName + ".svg", '-D', ini.img_path + cirName + ".svg"])
+            subprocess.run([ini.inkscape, '-o', ini.img_path + cirName + ".pdf", '-D', ini.img_path + cirName + ".svg"])
+        else:
+            print("Error: could not open: '{}'.".format(fileName))
 
 if __name__=='__main__':
     from SLiCAP import initProject

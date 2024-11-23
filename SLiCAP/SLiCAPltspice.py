@@ -18,31 +18,37 @@ def _LTspiceNetlist(fileName, cirTitle):
     :param cirTitle: Title of the schematic.
     :type cirTitle: str
     """
-    if not os.path.isfile(fileName):
-        print("Error: could not open: '%s'."%(fileName))
+    if ini.ltspice == "":
+        print("Please install LTspice, delete '~/SLiCAP.ini', and run this script again.")
     else:
-        print("Creating netlist of {} using LTspice.".format(fileName))
-        if platform.system() == 'Windows':
-            fileName = fileName.replace('\\','\\\\')
-            subprocess.run([ini.ltspice, '-netlist', fileName])
+        if not os.path.isfile(fileName):
+            print("Error: could not open: '{}'.".format(fileName))
         else:
-            subprocess.run(['wine', ini.ltspice, '-wine', '-netlist', fileName], 
-                           stdout=subprocess.DEVNULL, 
-                           stderr=subprocess.STDOUT)
-        baseFileName = fileName.split('.')[0]
-        cirFileName = baseFileName.split('/')[-1]
-        #try:
-        f = open(baseFileName + '.net', 'r')
-        netlistLines = ['"' + cirTitle + '"\n'] + f.readlines()
-        f.close()
-        f = open(ini.cir_path + cirFileName + '.cir', 'w')
-        f.writelines(netlistLines)
-        f.close()
-        print("\nWarning: Auto-update of schematic diagram image files, "
-              + "not supported with LTspice.\nPlease update the image file"
-              + " manually!\n")
-        #except:
-        #    print("Error: could not open: '%s'."%(baseFileName + '.net'))
+            print("Creating netlist of '{}' using LTspice.".format(fileName))
+            try:
+                if platform.system() == 'Windows':
+                    fileName = fileName.replace('\\','\\\\')
+                    subprocess.run([ini.ltspice, '-netlist', fileName])
+                else:
+                    subprocess.run(['wine', ini.ltspice, '-wine', '-netlist', fileName], 
+                                   stdout=subprocess.DEVNULL, 
+                                   stderr=subprocess.STDOUT)
+            except FileNotFoundError:
+                print("\nError: could not run LTspice using '{}'.".format(ini.ltspice))   
+            baseFileName = fileName.split('.')[0]
+            cirFileName = baseFileName.split('/')[-1]
+            try:
+                f = open(baseFileName + '.net', 'r')
+                netlistLines = ['"' + cirTitle + '"\n'] + f.readlines()
+                f.close()
+                f = open(ini.cir_path + cirFileName + '.cir', 'w')
+                f.writelines(netlistLines)
+                f.close()
+                print("\nWarning: Auto-update of schematic diagram image files, "
+                      + "not supported with LTspice.\nPlease update the image file"
+                      + " manually!\n")
+            except FileNotFoundError:
+                print("\nError: could not open: '{}'.\nUnable to create netlist with LTspice.".format(baseFileName + '.net'))
     return
 
 def runLTspice(fileName):
@@ -57,17 +63,23 @@ def runLTspice(fileName):
     :return: None
     :rtype: Nonetype
     """
-    if not os.path.isfile(fileName):
-        print("Error: could not open: '%s'."%(fileName))
-        return
+    if ini.ltspice == "":
+        print("Please install LTspice, delete '~/SLiCAP.ini' and run this script again.")
     else:
-        fileNameParts = fileName.split('.')
-        fileType = fileNameParts[-1].lower()
-        if fileType == 'cir':
-            if platform.system() == 'Windows':
-                fileName = fileName.replace('\\','\\\\')
-                subprocess.run([ini.ltspice, '-b', fileName])
-            else:
-                subprocess.run(['wine', ini.ltspice, '-b', '-wine', fileName], 
-                               stdout=subprocess.DEVNULL, 
-                               stderr=subprocess.STDOUT)
+        if not os.path.isfile(fileName):
+            print("Error: could not open: '{}'.".format(fileName))
+            return
+        else:
+            fileNameParts = fileName.split('.')
+            fileType = fileNameParts[-1].lower()
+            if fileType == 'cir':
+                try:
+                    if platform.system() == 'Windows':
+                        fileName = fileName.replace('\\','\\\\')
+                        subprocess.run([ini.ltspice, '-b', fileName])
+                    else:
+                        subprocess.run(['wine', ini.ltspice, '-b', '-wine', fileName], 
+                                       stdout=subprocess.DEVNULL, 
+                                       stderr=subprocess.STDOUT)
+                except FileNotFoundError:
+                    print("\nError: Could not run LTspice using: '{}'.".format(ini.ltspice))
