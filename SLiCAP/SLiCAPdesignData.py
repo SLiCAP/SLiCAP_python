@@ -226,6 +226,26 @@ def specs2circuit(specList, cir):
         if item.value != '':
             cir.defPar(item.symbol, item.value)
 
+def createSubstDict(specs):
+    """
+    Returns a subsitutution dictionary from a list with specifications.
+    substDict[<parname>] = <parValue>
+    
+    :param specs: list with specItem objects
+    :type specs: list
+    
+    :return: dictionary with key-value pairs; for each specitem:
+             
+             - key: parameter name (sympy.Symbol)
+             - value: parameter value (sympy.expression)
+             
+    :rtype: dict
+    """
+    substDict = {}
+    for spec in specs:
+        substDict[spec.symbol] = spec.value
+    return substDict
+
 def specs2html(specs, types=[]):
     """
     Displays specification items for the list 'specs' on the active HTML
