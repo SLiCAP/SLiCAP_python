@@ -1258,7 +1258,7 @@ def _updateCirData(circuitObject):
     #circuitObject = _createDepVarIndex(circuitObject)
     return circuitObject
 
-def _addGlobalParam(par, circuitObject):       
+def _addGlobalParam(par, circuitObject):
     if str(par) in _SLiCAPPARAMS.keys():
         circuitObject.parDefs[par] = _SLiCAPPARAMS[str(par)]
         newParams = _SLiCAPPARAMS[str(par)].atoms(sp.Symbol)
@@ -1266,7 +1266,7 @@ def _addGlobalParam(par, circuitObject):
             # Parameters in the expression of a global parameter also have a 
             # global definition 
             # circuitObject.parDefs[newParam] = _SLiCAPPARAMS[str(newParam)]
-            circuitObject = _addGlobalParam(par, circuitObject)
+            circuitObject = _addGlobalParam(newParam, circuitObject)
     elif par == ini.laplace or par == ini.frequency:
         circuitObject.params.remove(par)
     return circuitObject
