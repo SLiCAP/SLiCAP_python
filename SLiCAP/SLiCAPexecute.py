@@ -468,7 +468,6 @@ def _doDCvar(instr, result):
                 result = _doPyDCvar(instr, result)
                 _delDCvarSources(instr)
     else:
-        reslt = _makeAllMatrices(instr, result)
         result = _makeAllMatrices(instr, result)
         instr.dataType = 'dcsolve'
         result.dataType = 'dcsolve'
@@ -1104,8 +1103,8 @@ def _checkDetector(detector, detectors):
     errors = 0
     if type(detector) != list:
         detector = [detector, None]
-    for det in detector:
-        if det != None and sp.Symbol(det) not in detectors:
+    for detr in detector:
+        if detr != None and sp.Symbol(detr) not in detectors:
             errors +=1
     return detector, errors
     
@@ -1362,10 +1361,6 @@ def _pairVariables(instr):
 
 def _makeNewDetector(instr, pair, baseName):
     if pair[0] in instr.detector and pair[1] in instr.detector:
-        if instr.detector[0] == pair[0]:
-            sign = 1
-        else:
-            sign = -1
         if instr.convType == 'dd' or instr.convType == 'dc':
             instr.detector = baseName + "D"
             print("Detector changed to:", instr.detector)

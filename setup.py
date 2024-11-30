@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Sep 29 09:28:49 2020
-
-@author: luc_e
-
-Modified by Anton September 30 2024
-Updated to version 1.8.0
-"""
 
 import os, shutil
 from os.path import expanduser
 import setuptools
 from setuptools.command.install import install
 
-INSTALLVERSION="3.0.1"
+INSTALLVERSION="3.1.0"
 
 class InstallWrapper(install):
     """
@@ -83,8 +75,8 @@ setuptools.setup(
     cmdclass={'install': InstallWrapper},
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: Attribution-NonCommercial-NoDerivatives 4.0 International",
+        "License :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.12',
 )

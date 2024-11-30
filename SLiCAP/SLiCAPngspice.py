@@ -7,7 +7,7 @@ SLiCAP module for interfacing with NGspice.
 import SLiCAP.SLiCAPconfigure as ini
 from os     import system, remove
 from sympy  import Symbol
-from SLiCAP.SLiCAPplots import plot, trace
+from SLiCAP.SLiCAPplots import trace
 from numpy  import array, sqrt, arctan, pi, unwrap, log10, linspace, geomspace
 from re     import findall
 
@@ -257,8 +257,8 @@ class MOS(object):
         CDD = self.params['cds'] + self.params['cdg'] + self.params['cdb']
         CSS = self.params['csd'] + self.params['csg'] + self.params['csb']
         CBB = self.params['cbd'] + self.params['cbg'] + self.params['cbs']
-        CGG_error = (CGG-self.params['cgg'])/self.params['cgg']
-        self.errors['cgg'] = (CDD-self.params['cdd'])/self.params['cdd']
+        self.errors['cgg'] = (CGG-self.params['cgg'])/self.params['cgg']
+        self.errors['cdd'] = (CDD-self.params['cdd'])/self.params['cdd']
         self.errors['css'] = (CSS-self.params['css'])/self.params['css']
         self.errors['cbb'] = (CBB-self.params['cbb'])/self.params['cbb']
         self.errors['cgs'] = ((self.params['cgs']-self.params['csg'])/(self.params['cgs']+self.params['csg']))

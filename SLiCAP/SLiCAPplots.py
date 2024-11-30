@@ -1291,7 +1291,7 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
         print("Error: unknown parameter: '{0}' for 'x variable'.".format(xVar))
         errors += 1
     if sVar == None:
-         svar = xVar
+         sVar = xVar
     elif sp.Symbol(xVar) not in parNames:
         print("Error: unknown parameter: '{0}' for sweep variable.".format(xVar))
         errors += 1
@@ -1424,7 +1424,6 @@ def LTspiceData2Traces(txtFile):
     yData = []
     label = None
     traceNum = 0
-    numColors = len(ini.default_colors)
     for i in range(start, len(lines)):
         lineData = lines[i].split()
         if len(lineData) > 2 and ' '.join(lineData[0:2]) == 'Step Information:':

@@ -71,7 +71,6 @@ def elementData2TEX(circuitObject, label='', append2caption=''):
         el = circuitObject.elements[key]
         line = [key]
         lineItem = ''
-        nodes = ''
         for node in el.nodes:
             lineItem += node + ' '
         line.append(lineItem)
@@ -238,7 +237,6 @@ def pz2TEX(resultObject, label='', append2caption=''):
                 headerList = ['\\#', '$\\omega$ [rad/s]']
         linesList = []
         if len(resultObject.poles) != 0:
-            name = 'Poles of: ' + resultObject.gainType
             if numeric:
                 linesList += _numRoots2TEX(resultObject.poles, ini.hz, 'p')
             else:

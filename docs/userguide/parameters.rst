@@ -9,7 +9,7 @@ Work with parameters
 
 #. In the netlist using the SPICE '.PARAM' directives
 #. In python using the circuit.defPar() method
-#. In python using the 'pardefs' argument in in anstruction
+#. In python using the 'pardefs' argument in an instruction
 #. In python using the specs2circuit() function
 
 Get all circuit parameters

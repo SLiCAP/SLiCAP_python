@@ -1429,7 +1429,7 @@ class _instruction(object):
         >>> # instruction:
         >>> my_instr.setCircuit('my_circuit.cir')
         """
-        self.circuit = checkCircuit(fileName)
+        self.circuit = self.checkCircuit(fileName)
         return
 
     def checkCircuit(self):

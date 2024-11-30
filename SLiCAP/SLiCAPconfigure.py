@@ -258,7 +258,6 @@ def _find_installed_software():
 
 def _generate_project_config():
     os.path.abspath('.') + '/'
-    project_path  = os.path.abspath('.').replace('\\', '/') + '/'
     project_paths = {"html"      : 'html/',
                      "cir"       : 'cir/',
                      "lib"       : 'lib/',

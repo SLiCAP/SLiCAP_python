@@ -40,4 +40,3 @@ def rstfile(filename):
     with open(filename, 'r') as file:
         cell = file.read()
     return HTML(docutils.core.publish_string(cell, writer=writer).decode('UTF-8'))
-

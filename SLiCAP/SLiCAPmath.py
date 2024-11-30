@@ -7,7 +7,6 @@ import sys
 import sympy as sp
 import numpy as np
 import SLiCAP.SLiCAPconfigure as ini
-from sympy.combinatorics import Permutation
 from numpy.polynomial import Polynomial
 from scipy.integrate import quad
 from scipy.optimize import fsolve
@@ -449,7 +448,6 @@ def _checkNumber(var):
     :return: sympy expression
     :rtype: int, float
     """
-    input_var = var
     if type(var) == str:
         var = _replaceScaleFactors(var)
     else:

@@ -1,11 +1,12 @@
-docutils>=0.16
-numpy>=1.17.4
-sympy>=1.7.1
-scipy>=1.4.1
+python>=3.12
+docutils>=0.18
+numpy>=1.26
+sympy>=1.12
+scipy>=1.12
 ply>=3.11
-matplotlib>=3.7.3
-sphinx-rtd-theme
+matplotlib>=3.8.0
+sphinx-rtd-theme>=1.2.0
 windows_tools>=2.4; sys_platform == "win32"
-pywin32>305; sys_platform =="win32"
+pywin32>306; sys_platform =="win32"
 
 #This should be all additional packages required for python, other imports should be included in the default distribution of python

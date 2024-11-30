@@ -262,7 +262,6 @@ def _Block2StateSpace(rank,vlen,q,G,C,V,u,var=ini.laplace):
     dim = G.shape[0]
     #If Q isn't an identity I need to invert:
     Qinv= sp.eye(dim-rank)
-    dumQ=sp.Matrix(C[0:rank,0:rank])
     # Todo: add condition here to avoid inverting Q
     Qinv=sp.Matrix(C[0:rank,0:rank]).inv()
     U = sp.Matrix.diag(Qinv,sp.eye(dim-rank))

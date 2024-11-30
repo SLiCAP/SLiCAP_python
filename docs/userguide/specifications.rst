@@ -51,7 +51,7 @@ The designer is free to define any type of specification. In reports, SLiCAP pla
                              value       = Bf,
                              units       = "Hz",
                              specType    = "Performance"))
-    specs.append(sl.specItem("C_s", 
+    specs.append(sl.specItem("V_n", 
                              description = "Maximum unweighted RMS output noise voltage",
                              value       = Vn,
                              units       = "V",
