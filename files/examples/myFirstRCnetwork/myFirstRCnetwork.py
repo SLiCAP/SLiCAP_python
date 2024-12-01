@@ -18,23 +18,21 @@ t1=time()
 # Define all the paths, create the HTML main index page, reset the parser, and
 # compile the SLiCAP libraries.
 
-prj = sl.initProject('My first RC network') 
+sl.initProject('My first RC network') 
 
 # Create a circuit object from a schematic file or a SLiCAP netlist:
-    
-fileName = "myFirstRCnetwork"
 
 # KiCAD version 8.0
-fileName = sl.ini.cir_path + fileName + '/' + fileName + '.kicad_sch'
+fileName = 'kicad/myFirstRCnetwork/myFirstRCnetwork.kicad_sch'
 
 # LTspice
-#fileName = ini.cir_path + fileName + '.asc'
+#fileName = 'ltspice/myFirstRCnetwork.asc'
 
 # gSchem or lepton-eda
-#fileName = ini.cir_path + fileName + '.sch'
+#fileName = 'lepton-eda/myFirstRCnetwork.sch'
 
 # Use existing netlist that resides in the ini.cir_path directory
-#fileName = fileName + '.cir'
+#fileName = myFirstRCnetwork.cir'
 
 cir = sl.makeCircuit(fileName, update=True, imgWidth=400)
 
