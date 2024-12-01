@@ -114,11 +114,10 @@ def _insertHTML(fileName, htmlInsert):
     :param htmlInsert: HTML that must be inserted in this file
     :type htmlInsert: str
     """
-    html = _readFile(fileName)
-    html = html.replace(_HTMLINSERT, htmlInsert + _HTMLINSERT)
-    _writeFile(fileName, html)
-    if ini.notebook:
-        htmlInsert = htmlInsert.replace("$", "SS")
+    if not ini.notebook:
+        html = _readFile(fileName)
+        html = html.replace(_HTMLINSERT, htmlInsert + _HTMLINSERT)
+        _writeFile(fileName, html)
     return htmlInsert
 
 def _readFile(fileName):
@@ -180,33 +179,34 @@ def htmlPage(pageTitle, index = False, label = ''):
     :return: None
     :rtype: NoneType
     
-    """    
-    if index == True:
-        # The page is a  new index page
-        fileName = ini.html_prefix + 'index.html'
-        # Place link on old index page
-        href = '<li><a href="' + fileName +'">' + pageTitle + '</a></li>'
-        _insertHTML(ini.html_path + ini.html_index, href)
-        # Create the new HTML file
-        toc = '<h2>Table of contents</h2>'
-        html = _HTMLhead(pageTitle) + toc + '<ol>' + _HTMLINSERT + '</ol>' + _HTMLfoot(ini.html_index)
-        _writeFile(ini.html_path + fileName, html)
-        # Make this page the new index page
-        ini.html_index = fileName
-    else:
-        fileName = ini.html_prefix + '-'.join(pageTitle.split()) + '.html'
-        # Place link on the current index page
-        href = '<li><a href="' + fileName +'">' + pageTitle + '</a></li>'
-        _insertHTML(ini.html_path + ini.html_index, href)
-        # Create the new HTML page
-        if label != "":
-            ini.html_labels[label] = _Label(label, 'heading', fileName, pageTitle)
-            label = '<a id="' + label + '"></a>'
-        html = label + _HTMLhead(pageTitle) + _HTMLINSERT + _HTMLfoot(ini.html_index)
-        _writeFile(ini.html_path + fileName, html)
-    # Make this page the active HTML page
-    ini.html_page = fileName
-    ini.html_pages.append(fileName)
+    """   
+    if not ini.notebook:
+        if index == True:
+            # The page is a  new index page
+            fileName = ini.html_prefix + 'index.html'
+            # Place link on old index page
+            href = '<li><a href="' + fileName +'">' + pageTitle + '</a></li>'
+            _insertHTML(ini.html_path + ini.html_index, href)
+            # Create the new HTML file
+            toc = '<h2>Table of contents</h2>'
+            html = _HTMLhead(pageTitle) + toc + '<ol>' + _HTMLINSERT + '</ol>' + _HTMLfoot(ini.html_index)
+            _writeFile(ini.html_path + fileName, html)
+            # Make this page the new index page
+            ini.html_index = fileName
+        else:
+            fileName = ini.html_prefix + '-'.join(pageTitle.split()) + '.html'
+            # Place link on the current index page
+            href = '<li><a href="' + fileName +'">' + pageTitle + '</a></li>'
+            _insertHTML(ini.html_path + ini.html_index, href)
+            # Create the new HTML page
+            if label != "":
+                ini.html_labels[label] = _Label(label, 'heading', fileName, pageTitle)
+                label = '<a id="' + label + '"></a>'
+            html = label + _HTMLhead(pageTitle) + _HTMLINSERT + _HTMLfoot(ini.html_index)
+            _writeFile(ini.html_path + fileName, html)
+        # Make this page the active HTML page
+        ini.html_page = fileName
+        ini.html_pages.append(fileName)
     return
 
 def head2html(headText, label=''):

@@ -84,17 +84,17 @@ class trace(object):
         Marker face color (*str*) in matplotlib format. Defaults to 'none'.
         """
 
-        self.markerSize = 7
+        self.markerSize = ini.marker_size
         """
         Marker size (*int*). Defaults to 7.
         """
 
-        self.lineWidth = 2
+        self.lineWidth = ini.line_width
         """
         Line width (*int*) in pixels. Defaults to 2.
         """
 
-        self.lineType = '-'
+        self.lineType = ini.line_type
         """
         Line type (*str*) in matplotlib format. Defaults to '-'.
         """
@@ -1003,9 +1003,10 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
-                polesTrace.color = ''
                 polesTrace.marker = 'x'
+                polesTrace.color = ''
                 polesTrace.lineWidth = '0'
+                polesTrace.markerSize = str(ini.marker_size)
                 if result.label == '':
                     polesTrace.label = 'poles ' + result.gainType
                 else:
@@ -1025,10 +1026,8 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
-                polesTrace.color = ''
                 polesTrace.marker = '+'
-                polesTrace.markerSize = 10
-                polesTrace.lineWidth = '0'
+                polesTrace.markerSize = int(np.sqrt(2)*ini.marker_size)
                 if result.label == '':
                     polesTrace.label = 'poles ' + result.gainType
                 else:
@@ -1051,10 +1050,8 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
-                polesTrace.color = ''
                 polesTrace.marker = '.'
-                polesTrace.lineWidth = '0'
-                polesTrace.markerSize = 2
+                polesTrace.markerSize = ini.line_width
                 polesTrace.markerFaceColor = polesTrace.markerColor
                 if result.label == '':
                     polesTrace.label = 'poles ' + result.gainType
@@ -1079,6 +1076,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                     colNum += 1
                 zerosTrace.color = ''
                 zerosTrace.marker = 'o'
+                polesTrace.markerSize = str(ini.marker_size)
                 zerosTrace.lineWidth = '0'
                 if result.label == '':
                     zerosTrace.label = 'zeros ' + result.gainType
@@ -1099,9 +1097,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
-                zerosTrace.color = ''
                 zerosTrace.marker = 's'
-                zerosTrace.lineWidth = '0'
                 if result.label == '':
                     zerosTrace.label = 'zeros ' + result.gainType
                 else:
@@ -1124,10 +1120,8 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
-                zerosTrace.color = ''
                 zerosTrace.marker = '.'
-                zerosTrace.lineWidth = '0'
-                zerosTrace.markerSize = 2
+                zerosTrace.markerSize = str(ini.line_width)
                 zerosTrace.markerFaceColor = zerosTrace.markerColor
                 if result.label == '':
                     zerosTrace.label = 'zeros ' + result.gainType

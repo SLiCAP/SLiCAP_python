@@ -25,7 +25,7 @@ prj = sl.initProject('My first RC network')
 fileName = "myFirstRCnetwork"
 
 # KiCAD version 8.0
-#fileName = sl.ini.cir_path + fileName + '/' + fileName + '.kicad_sch'
+fileName = sl.ini.cir_path + fileName + '/' + fileName + '.kicad_sch'
 
 # LTspice
 #fileName = ini.cir_path + fileName + '.asc'
@@ -34,7 +34,7 @@ fileName = "myFirstRCnetwork"
 #fileName = ini.cir_path + fileName + '.sch'
 
 # Use existing netlist that resides in the ini.cir_path directory
-fileName = fileName + '.cir'
+#fileName = fileName + '.cir'
 
 cir = sl.makeCircuit(fileName, update=True, imgWidth=400)
 

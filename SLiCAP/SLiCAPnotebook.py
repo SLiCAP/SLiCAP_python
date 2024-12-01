@@ -10,7 +10,7 @@ in notebooks.
 """
 
 import docutils
-from IPython.core.display import HTML, SVG
+from IPython.core.display import HTML
 from IPython.core.magic import register_cell_magic, register_line_magic
 from IPython.display import Image
 
@@ -40,3 +40,6 @@ def rstfile(filename):
     with open(filename, 'r') as file:
         cell = file.read()
     return HTML(docutils.core.publish_string(cell, writer=writer).decode('UTF-8'))
+
+def SVG(fileName, width=400):
+    return HTML('<img src="%s" width="%spx">'%(fileName, str(width)))

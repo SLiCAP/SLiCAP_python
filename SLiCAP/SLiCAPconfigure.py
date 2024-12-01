@@ -284,7 +284,10 @@ def _generate_project_config():
                                     "defaultmarkers" : "",
                                     "legendloc"      : "best",
                                     "plotfontsize"   : 12,
-                                    "plotfiletype"   : "svg"
+                                    "plotfiletype"   : "svg",
+                                    "linewidth"      : 2,
+                                    "markersize"     : 7,
+                                    "linetype"       : "-"
                                     }                            
     SLiCAPconfig['gaincolors']   = {"asymptotic"     : "r",
                                     "gain"           : "b",
@@ -294,7 +297,8 @@ def _generate_project_config():
                                     "vi"             : "c"
                                     }
     SLiCAPconfig['display']      = {'Hz'             : True,
-                                    'Digits'         : 4}
+                                    'Digits'         : 4,
+                                    'notebook'       : False}
     try: 
         _author = os.getlogin()
     except:
@@ -471,6 +475,9 @@ def dump():
     print('ini.plot_fontsize   =', eval(config['plot']['plotfontsize']))
     print('ini.axis_height     =', eval(config['plot']['axisheight']))
     print('ini.axis_width      =', eval(config['plot']['axiswidth']))
+    print('ini.line_width      =', eval(config['plot']['linewidth']))
+    print('ini.marker_size     =', eval(config['plot']['markersize']))
+    print('ini.line_type       =', config['plot']['linetype'])
     print('ini.legend_loc      =', config['plot']['legendloc'])
     print('ini.default_colors  =', config['plot']['defaultcolors'].split(','))
     print('ini.default_markers =', config['plot']['defaultmarkers'].split(','))
@@ -479,7 +486,7 @@ def dump():
     print('ini.gain_types      =', config['simulation']['gain_types'].split(','))
     print('ini.data_types      =', config['simulation']['data_types'].split(','))
     print('ini.sim_types       =', config['simulation']['sim_types'].split(','))
-    print('ini.notebook        = ',False)
+    print('ini.notebook        =', _get_tf('display', 'notebook'))
     
 config        = _read_config()
 
@@ -529,6 +536,9 @@ gain_colors     = config['gaincolors']
 plot_fontsize   = eval(config['plot']['plotfontsize'])
 axis_height     = eval(config['plot']['axisheight'])
 axis_width      = eval(config['plot']['axiswidth'])
+line_width      = eval(config['plot']['linewidth'])
+marker_size     = eval(config['plot']['markersize'])
+line_type       = config['plot']['linetype']
 legend_loc      = config['plot']['legendloc']
 default_colors  = config['plot']['defaultcolors'].split(',')
 default_markers = config['plot']['defaultmarkers'].split(',')

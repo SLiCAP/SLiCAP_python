@@ -29,14 +29,7 @@ from SLiCAP.SLiCAPltspice import runLTspice
 from SLiCAP.SLiCAPshell import *
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
-
-try:
-    __IPYTHON__
-    print("Running from an Ipython environment, importing SLiCAPnotebook.")
-    from SLiCAP.SLiCAPnotebook import *
-    _NOTEBOOK = True
-except NameError:
-    _NOTEBOOK = False
+from SLiCAP.SLiCAPnotebook import *
 
 # Increase width for display of numpy arrays:
 np.set_printoptions(edgeitems=30, linewidth=1000,
@@ -81,7 +74,7 @@ def _makeDir(dirName):
         os.makedirs(dirName)
     return
 
-def initProject(name):
+def initProject(name, notebook=False):
     """
     Initializes a SLiCAP project.
 
@@ -132,7 +125,12 @@ def initProject(name):
     ini.sphinx_path   = project_config['projectpaths']['sphinx']
     ini.created       = project_config['project']['created']
     ini.author        = project_config['project']['author']
-    ini.notebook      = _NOTEBOOK
+    ini.notebook      = notebook
+    if notebook:
+        ini.axis_width    = 4
+        ini.axis_height   = 3
+        ini.plot_fontsize = 9
+        ini.line_width    = 1
     
     # Define the project title and reset the html pages 
     ini.project_title = name
@@ -180,8 +178,9 @@ def initProject(name):
     _makeDir(ini.tex_path + 'SLiCAPdata/')
     _copyNotOverwrite(ini.home_path + 'tex/preambuleSLiCAP.tex', ini.tex_path + 'preambuleSLiCAP.tex')
     #
-    # Create the HTML project index file
-    _startHTML(name)
+    if not ini.notebook:
+        # Create the HTML project index file
+        _startHTML(name)
     # Initialize the parser, this will create the libraries and delete all
     # previously defined circuits
     _initializeParser()
