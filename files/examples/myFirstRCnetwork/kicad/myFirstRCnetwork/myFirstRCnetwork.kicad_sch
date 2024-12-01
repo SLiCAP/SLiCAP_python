@@ -776,6 +776,17 @@
 		)
 		(uuid "d4f882ac-8793-45bf-8c54-82fb7d80c01a")
 	)
+	(label "in"
+		(at 67.31 52.07 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "4eab24d7-758d-4fb7-a66b-6314c3525098")
+	)
 	(label "out"
 		(at 81.28 52.07 0)
 		(fields_autoplaced yes)
@@ -883,7 +894,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "0"
+		(property "Value" "{V_s}"
 			(at 69.85 60.8329 0)
 			(effects
 				(font
