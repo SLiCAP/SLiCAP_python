@@ -35,7 +35,7 @@
 - Symbolic and numeric derivation and solution of design equations for bandwidh, frequency response, noise, dc variance, and temperature stability
 
 ## Setting up SLiCAP
-1. Intall Python 3 with the packages listed in requirements.txt (for MSwindows Anaconda installation is preferred)
+1. Intall Python 3.12+ with the packages listed in requirements.txt (for MSwindows Anaconda installation is preferred)
 2. Download or clone the SLiCAP archive from github
 3. Extract it in some directory
 4. Open a terminal (or an Anaconda terminal if you run python from Anaconda) in the directory with setup.py
