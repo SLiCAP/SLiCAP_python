@@ -1003,10 +1003,9 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
-                polesTrace.marker = 'x'
                 polesTrace.color = ''
+                polesTrace.marker = 'x'
                 polesTrace.lineWidth = '0'
-                polesTrace.markerSize = str(ini.marker_size)
                 if result.label == '':
                     polesTrace.label = 'poles ' + result.gainType
                 else:
@@ -1026,8 +1025,10 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
+                polesTrace.color = ''
                 polesTrace.marker = '+'
                 polesTrace.markerSize = int(np.sqrt(2)*ini.marker_size)
+                polesTrace.lineWidth = '0'
                 if result.label == '':
                     polesTrace.label = 'poles ' + result.gainType
                 else:
@@ -1050,7 +1051,9 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
+                polesTrace.color = ''
                 polesTrace.marker = '.'
+                polesTrace.lineWidth = '0'
                 polesTrace.markerSize = ini.line_width
                 polesTrace.markerFaceColor = polesTrace.markerColor
                 if result.label == '':
