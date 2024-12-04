@@ -29,14 +29,10 @@ from SLiCAP.SLiCAPltspice import runLTspice
 from SLiCAP.SLiCAPshell import *
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
-from IPython.core.display import HTML
 
 # Increase width for display of numpy arrays:
 np.set_printoptions(edgeitems=30, linewidth=1000,
     formatter=dict(float=lambda x: "%11.4e" % x))
-
-def SVG(fileName, width=400):
-    return HTML('<img src="%s" width="%spx">'%(fileName, str(width)))
 
 def Help():
     """

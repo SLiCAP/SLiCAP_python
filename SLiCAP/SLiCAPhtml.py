@@ -8,6 +8,7 @@ import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from shutil import copy2
 from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric
+from IPython.core.display import HTML
 
 _HTMLINSERT = '<!-- INSERT -->' # pattern to be replaced in html files
 _LABELTYPES = ['heading', 'data', 'fig', 'eqn', 'analysis']
@@ -114,7 +115,9 @@ def _insertHTML(fileName, htmlInsert):
     :param htmlInsert: HTML that must be inserted in this file
     :type htmlInsert: str
     """
-    if not ini.notebook:
+    if ini.notebook:
+        htmlInsert = HTML(htmlInsert)
+    else:
         html = _readFile(fileName)
         html = html.replace(_HTMLINSERT, htmlInsert + _HTMLINSERT)
         _writeFile(fileName, html)
@@ -278,7 +281,7 @@ def netlist2html(fileName, label='', labelText =''):
         label = _addLabel(label, fileName=fileName, caption=labelText, labelType="data")
         netlist = _readFile(ini.cir_path + fileName)
         html = '<h2>' + label + 'Netlist: ' + fileName + '</h2>\n<pre>' + netlist + '</pre>\n'
-        _insertHTML(ini.html_path + ini.html_page, html)
+        html = _insertHTML(ini.html_path + ini.html_page, html)
     except:
         print("Error: could not open netlist file: '{0}'.".format(fileName))
         html = ''
@@ -431,7 +434,7 @@ def params2html(circuitObject, label='', caption=''):
             parName = '$' + sp.latex(par) + '$'
             html += '<tr><td class="left">' + parName +'</td></tr>\n'
         html += '</table>\n'
-    _insertHTML(ini.html_path + ini.html_page, html)
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
 def img2html(fileName, width, label='', caption=''):
@@ -464,8 +467,8 @@ def img2html(fileName, width, label='', caption=''):
     if caption != '':
         html+='<figcaption>Figure: %s<br>%s</figcaption>\n'%(fileName, caption)
     html += '</figure>\n'
-    _insertHTML(ini.html_path + ini.html_page, html)
-    return '%s'%(ini.html_path + 'img/' + fileName)
+    html = _insertHTML(ini.html_path + ini.html_page, html)
+    return html
 
 def csv2html(fileName, label='', separator=',', caption=''):
     """
@@ -502,7 +505,7 @@ def csv2html(fileName, label='', separator=',', caption=''):
                 html += '<td>%s</td>'%(cell)
         html += '</tr>\n'
     html += '</table>\n'
-    _insertHTML(ini.html_path + ini.html_page, html)
+    html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
 def expr2html(expr, units=''):
@@ -949,7 +952,7 @@ def fig2html(figureObject, width, label='', caption=''):
         copy2(ini.img_path + figureObject.fileName, ini.html_path + 'img/' + figureObject.fileName)
     except:
         print("Error: could not copy: '{0}'.".format(ini.img_path + figureObject.fileName))
-    return ini.html_path + 'img/' + figureObject.fileName
+    return html
 
 def file2html(fileName):
     """
@@ -1049,7 +1052,7 @@ def links2html():
                 for name in labelDict[labelType]:
                     html += '<p>%s</p>\n'%(href(name))
     html = _insertHTML(ini.html_path + ini.html_page, html)
-    return
+    return html
 
 def htmlLink(address, text):
     """
