@@ -288,7 +288,5 @@ def specs2html(specs, types=[]):
         # Copy htl code for each type to output txt
         for key in list(html.keys()):
             txt += html[key] + '</table>\n'
-    _insertHTML(ini.html_path + ini.html_page, txt)
-    if ini.notebook:
-        txt = txt.replace('$', '$$')
+    txt = _insertHTML(ini.html_path + ini.html_page, txt)
     return txt
