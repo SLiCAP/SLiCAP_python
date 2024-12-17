@@ -1281,9 +1281,9 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
             var_i = sp.N(0)
             for src in noiseSources:
                 if type(noiseData[src]) != list:
-                    data = float2rational(noiseData[src])
+                    data = float2rational(sp.simplify(noiseData[src]))
                 else:
-                    data = float2rational(noiseData[src][i])
+                    data = float2rational(sp.simplify(noiseData[src][i]))
                 if data != 0:
                     if CDS:
                         var_i += doCDSint(data, tau, fmin, fmax)
