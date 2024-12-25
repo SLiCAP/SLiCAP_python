@@ -1522,11 +1522,11 @@ def _doPyLoopGainServo(instr, result):
     if instr.numeric:
         LG = float2rational(sp.N(LG))
     num, den = LG.as_numer_denom()
-    LG = normalizeRational(num/den, ini.laplace).subs({_LGREF_1: lg1, _LGREF_2: lg2})
-    num, den = LG.as_numer_denom()
+    LG = sp.simplify(num/den).subs({_LGREF_1: lg1, _LGREF_2: lg2})
     if instr.gainType == 'loopgain':
         result.laplace.append(LG)
     elif instr.gainType == 'servo':
+        num, den = LG.as_numer_denom()
         SVnum = - num
         SVden = sp.expand(den - num)
         num, den = SVnum, SVden
