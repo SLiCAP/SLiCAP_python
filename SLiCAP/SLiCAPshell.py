@@ -226,7 +226,7 @@ specified with the circuit.
 from copy import deepcopy
 from SLiCAP.SLiCAPhtml import htmlPage, img2html, head2html, elementData2html 
 from SLiCAP.SLiCAPhtml import params2html, file2html, netlist2html
-from SLiCAP.SLiCAPinstruction import _instruction
+from SLiCAP.SLiCAPinstruction import instruction
 from SLiCAP.SLiCAPyacc import _checkCircuit
 from SLiCAP.SLiCAPkicad import _kicadNetlist, KiCADsch2svg
 from SLiCAP.SLiCAPltspice import _LTspiceNetlist
@@ -1258,7 +1258,7 @@ def _executeInstruction(cir, transfer=None, source='circuit',
     and returns the result.
 
     """
-    i1             = _instruction()
+    i1             = instruction()
     i1.circuit     = cir
     if detector == 'circuit':
         i1.detector = cir.detector

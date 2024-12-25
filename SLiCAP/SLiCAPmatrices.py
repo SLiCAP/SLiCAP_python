@@ -74,10 +74,9 @@ def _getValue(elmt, param, numeric, parDefs, substitute):
     if param in list(elmt.params.keys()):
         value = elmt.params[param]
         if substitute == True:
-            #value = float2rational(sp.N(fullSubs(value, parDefs)))
-            value = fullSubs(value, parDefs)
+            value = float2rational(fullSubs(value, parDefs))
         if numeric == True:
-            value = sp.N(value)
+            value = float2rational(sp.N(value))
     return value
 
 def _createDepVarIndex(circuitObject):
@@ -329,7 +328,7 @@ def _makeMatrices(instr):
             refPos0 = varIndex['I_' + elmt.refs[1]]
             ind0    = _getValue(cir.elements[elmt.refs[0]], 'value', numeric, parDefs, substitute)
             ind1    = _getValue(cir.elements[elmt.refs[1]], 'value', numeric, parDefs, substitute)
-            value = _getValue(elmt, 'value', numeric, parDefs)
+            value = _getValue(elmt, 'value', numeric, parDefs, substitute)
             value = value * ini.laplace * sp.sqrt(ind0 * ind1)
             M[refPos0, refPos1] -= value
             M[refPos1, refPos0] -= value

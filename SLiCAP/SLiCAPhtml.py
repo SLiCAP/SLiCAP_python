@@ -7,7 +7,7 @@ SLiCAP module with functions for creating a basic HTML report.
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from shutil import copy2
-from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric
+from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric, ENG
 from IPython.core.display import HTML
 
 _HTMLINSERT = '<!-- INSERT -->' # pattern to be replaced in html files
@@ -26,6 +26,20 @@ def _addLabel(label, fileName='', caption='', labelType=''):
         ini.html_labels[label] = _Label(label, labelType, ini.html_page, labelText)
         label = '<a id="' + label + '"></a>'
     return label
+
+def _latex_ENG(num):
+    if ini.scalefactors or ini.eng_notation:
+        num, exp = ENG(num, scaleFactors=ini.scalefactors)
+        if exp != None:
+            if ini.scalefactors:
+                num = str(num) + '\\, \\mathrm{' + str(exp) + '}'
+            else:
+                num = str(num) + '\\cdot 10^{' + str(exp) + '}'
+        else:
+            num = sp.latex(roundN(num))
+    else:
+        num = sp.latex(roundN(num))
+    return num
 
 def printHTMLinfo():
     """
@@ -367,8 +381,10 @@ def elementData2html(circuitObject, label='', caption=''):
         else:
             i = 0
             for param in parNames:
-                symValue = '$' + sp.latex(roundN(elmt.params[param])) +'$'
-                numValue = '$' + sp.latex(roundN(fullSubs(elmt.params[param], circuitObject.parDefs), numeric=True)) + '$'
+                symValue = '$' + _latex_ENG(elmt.params[param]) + '$'
+                #symValue ='$' + sp.latex(roundN(elmt.params[param])) +'$'
+                numValue = '$' + _latex_ENG(sp.N(fullSubs(elmt.params[param], circuitObject.parDefs))) + '$'
+                #numValue = '$' + sp.latex(roundN(fullSubs(elmt.params[param], circuitObject.parDefs), numeric=True)) + '$'
                 if i == 0:
                     html += '<td class="left">' + param + '</td><td class="left">' + symValue + '</td><td class="left">' + numValue + '</td></tr>\n'
                 else:
@@ -420,8 +436,10 @@ def params2html(circuitObject, label='', caption=''):
     for par in parNames:
         parName = '$' + sp.latex(par) + '$'
         try:
-            symValue = '$' + sp.latex(roundN(circuitObject.parDefs[par], numeric=False)) + '$'
-            numValue = '$' + sp.latex(roundN(fullSubs(circuitObject.parDefs[par], circuitObject.parDefs), numeric=True)) + '$'
+            symValue = '$' + _latex_ENG(circuitObject.parDefs[par]) + '$'
+            #ymValue = '$' + sp.latex(roundN(circuitObject.parDefs[par], numeric=False)) + '$'
+            numValue = '$' + _latex_ENG(sp.N(fullSubs(circuitObject.parDefs[par], circuitObject.parDefs))) + '$'
+            #numValue = '$' + sp.latex(roundN(fullSubs(circuitObject.parDefs[par], circuitObject.parDefs), numeric=True)) + '$'
             html += '<tr><td class="left">' + parName +'</td><td class="left">' + symValue + '</td><td class="left">' + numValue + '</td></tr>\n'
         except:
             pass
@@ -524,7 +542,8 @@ def expr2html(expr, units=''):
     if isinstance(expr, sp.Basic):
         if units != '':
             units = '\\left[\\mathrm{' + sp.latex(sp.sympify(units)) + '}\\right]'
-        html = '$' + sp.latex(roundN(expr)) + units + '$'
+        html = '$' + _latex_ENG(expr) + units + '$'
+        #html = '$' + sp.latex(roundN(expr)) + units + '$'
         html = _insertHTML(ini.html_path + ini.html_page, html)
     else:
         print("Error: expr2html, expected a Sympy expression.")
@@ -557,7 +576,9 @@ def eqn2html(arg1, arg2, units='', label='', labelText=''):
     if units != '':
         units = '\\,\\left[ \\mathrm{' + sp.latex(sp.sympify(units)) + '}\\right]'
     label = _addLabel(label, caption=labelText, labelType='eqn')
-    html = label + '\\begin{equation}\n' + sp.latex(roundN(arg1)) + '=' + sp.latex(roundN(arg2)) + units + '\n'
+    value = _latex_ENG(arg2)
+    #value =  sp.latex(roundN(arg2))
+    html = label + '\\begin{equation}\n' + sp.latex(roundN(arg1)) + '=' + value + units + '\n'
     html += '\\end{equation}\n'
     html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
@@ -665,13 +686,17 @@ def pz2html(instObj, label = '', labelText = ''):
                 Im = sp.im(p)
                 F  = sp.sqrt(Re**2+Im**2)
                 if Im != 0:
-                    Q = str(sp.N(F/2/abs(Re), ini.disp))
+                    #Q = str(sp.N(F/2/abs(Re), ini.disp))
+                    Q = "$" + _latex_ENG(sp.N(F/2/abs(Re), ini.disp)) + "$"
                 else:
                     Q = ''
-                F  = str(sp.N(F, ini.disp))
-                Re = str(sp.N(Re, ini.disp))
+                #F  = str(sp.N(F, ini.disp))
+                F  = "$" +_latex_ENG(sp.N(F, ini.disp)) + "$"
+                #Re = str(sp.N(Re, ini.disp))
+                Re = "$" +_latex_ENG(sp.N(Re, ini.disp)) + "$"
                 if Im != 0.:
-                    Im = str(sp.N(Im, ini.disp))
+                    #Im = str(sp.N(Im, ini.disp))
+                    Im = "$" +_latex_ENG(sp.N(Im, ini.disp)) + "$"
                 else:
                     Im = ''
                 name = 'p<sub>' + str(i + 1) + '</sub>'
@@ -698,13 +723,17 @@ def pz2html(instObj, label = '', labelText = ''):
                 Im = sp.im(z)
                 F  = sp.sqrt(Re**2+Im**2)
                 if Im != 0:
-                    Q = str(sp.N(F/2/abs(Re), ini.disp))
+                    #Q = str(sp.N(F/2/abs(Re), ini.disp))
+                    Q = "$" + _latex_ENG(sp.N(F/2/abs(Re), ini.disp)) + "$"
                 else:
                     Q = ''
-                F  = str(sp.N(F, ini.disp))
-                Re = str(sp.N(Re, ini.disp))
+                #F  = str(sp.N(F, ini.disp))
+                F  = "$" + _latex_ENG(sp.N(F, ini.disp)) + "$"
+                #Re = str(sp.N(Re, ini.disp))
+                Re = "$" + _latex_ENG(sp.N(Re, ini.disp)) + "$"
                 if Im != 0.:
-                    Im = str(sp.N(Im, ini.disp))
+                    #Im = str(sp.N(Im, ini.disp))
+                    Im = "$" + _latex_ENG(sp.N(Im, ini.disp)) + "$"
                 else:
                     Im = ''
                 name = 'z<sub>' + str(i + 1) + '</sub>'

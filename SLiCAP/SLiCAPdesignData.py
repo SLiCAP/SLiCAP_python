@@ -9,7 +9,7 @@ Created on Fri Nov 18 13:24:17 2022
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import _checkExpression, roundN
-from SLiCAP.SLiCAPhtml import _insertHTML
+from SLiCAP.SLiCAPhtml import _insertHTML, _latex_ENG
 
 class specItem(object):
     """
@@ -100,6 +100,7 @@ class specItem(object):
         :return: html code of this specitem
         :rtype: str
         """
+        value = _latex_ENG(roundN(self.value))
         # symbol
         html     = '<td class="left">$' + sp.latex(self.symbol) + '$</td>'
         # description
@@ -108,7 +109,8 @@ class specItem(object):
         if type(self.value) == str:
             html += '<td></td>'
         else:
-            html += '<td class="left">$' + sp.latex(roundN(self.value)) + '$</td>' # value
+            #html += '<td class="left">$' + sp.latex(roundN(self.value)) + '$</td>' # value
+            html += '<td class="left">$' + value + '$</td>' # value
         # units
         if type(self.units) == str:
             html += '<td></td></tr>\n'

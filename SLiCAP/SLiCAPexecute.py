@@ -71,8 +71,8 @@ def _doInstruction(instr):
     """
     Executes the instruction and returns the result.
     
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -158,8 +158,8 @@ def _doNumer(instr, result):
     The result will be stored in the **.numer** attribute of the resturn object. In
     cases of parameter stepping, this attribute is a list with numerators.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -209,8 +209,8 @@ def _doDenom(instr, result):
     The result will be stored in the **.denom** attribute of the resturn object. In
     cases of parameter stepping, this attribute is a list with numerators.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -259,8 +259,8 @@ def _doLaplace(instr, result):
     The result will be stored in the **.laplace** attribute of the resturn object. In
     cases of parameter stepping, this attribute is a list with numerators.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -308,8 +308,8 @@ def _doPoles(instr, result):
     """
     Adds the result of a poles analysis to result.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -330,8 +330,8 @@ def _doZeros(instr, result):
     """
     Adds the result of a zeros analysis to result.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -352,8 +352,8 @@ def _doPZ(instr, result):
     """
     Adds the result of a pole-zero analysis to result.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -388,8 +388,8 @@ def _doNoise(instr, result):
     """
     Adds the result of a noise analysis to result.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -429,8 +429,8 @@ def _doDCvar(instr, result):
     """
     Adds the result of a dcvar analysis to result.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -497,8 +497,8 @@ def _correctDMcurrentResult(instr, result):
     differential output current, or its associated transfer must be divided by
     two I_diff = (I_P - I_N)/2
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -543,8 +543,8 @@ def _addDCvarSources(instr, dcSolution):
     """
     Adds the dcvar sources of resistors to instr.circuit for dataType: 'dcvar'.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param dcSolution: DC solution of the network obtained from execution of
                        this instruction with dataType: 'dcsolve'
@@ -629,8 +629,8 @@ def _delDCvarSources(instr):
     Deletes the dcVar sources from instr.circuit, added by executing this
     instruction with dataType: 'dcvar'.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :return: updated instruction object
     :rtype: :class`SLiCAPinstruction.instruction`
@@ -651,8 +651,8 @@ def _addResNoiseSources(instr):
     """
     Adds the noise sources of resistors to instr.circuit for dataType: 'noise'.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :return: updated instruction object
     :rtype: :class:`SLiCAPinstruction.instruction`
@@ -690,8 +690,8 @@ def _delResNoiseSources(instr):
     Deletes the noise sources from instr.circuit, added by executing this
     instruction with dataType: 'noise'.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :return: updated instruction object
     :rtype: :class:`SLiCAPinstruction.instruction`
@@ -715,8 +715,8 @@ def _doDC(instr, result):
 
     The result will be stored in the .dc attribute of the result object.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -784,8 +784,8 @@ def _doImpulse(instr, result):
 
     The result will be stored in the .impulse attribute of the result object.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -821,8 +821,8 @@ def _doStep(instr, result):
     The unit step response will be stored in the .stepResp  attribute of the
     result object.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -847,8 +847,8 @@ def _doTime(instr, result):
     """
     Calculates the inverse Laplace transform of the detector voltage or current.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -876,8 +876,8 @@ def _doSolve(instr, result):
     Solves the network: calculates the Laplace transform of all dependent
     variables.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -911,8 +911,8 @@ def _doDCsolve(instr, result):
     The DC solution will be stored in the .dcSolve attribute of the result
     object.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -953,8 +953,8 @@ def _doTimeSolve(instr, result):
 
     The result will be stored in the .timeSolve attribute of the result object.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -1000,8 +1000,8 @@ def _doMatrix(instr, result):
     - .Dv: Vector with dependent variables (nodal voltages and branch currents)
     - .M: Matrix: Iv=M*Dv
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -1023,8 +1023,8 @@ def _makeAllMatrices(instr, result):
         - Dv = Vector with dependent variables (unknown nodal voltages and
           branch currents)
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -1113,11 +1113,11 @@ def _makeSubsDict(instr):
     Creates a substitution dictionary that does not contain the step parameters
     for the instruction.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :return: Updated instruction object
-    :rtype: :class`SLiCAPinstruction._instruction)`
+    :rtype: :class`SLiCAPinstruction.instruction)`
     """
     if instr.substitute and ini.step_function and instr.step:
         instr.parDefs = {}
@@ -1166,10 +1166,10 @@ def _pairParDefs(instr):
     instr.parDefs.
 
     :param instr: instruction with circuit and pairing extensions
-    :type instr: SLiCAPinstruction._instruction)
+    :type instr: SLiCAPinstruction.instruction)
 
     :return: instr
-    :rtupe: SLiCAPinstruction._instruction)
+    :rtupe: SLiCAPinstruction.instruction)
     """
     lenExt  = len(instr.pairExt[0])
     substDict = {}
@@ -1216,8 +1216,8 @@ def _convertMatrices(instr, result):
         - 'all' The complete vectors with redefined and re-arranged common-mode
           and differential-mode quantities.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -1249,8 +1249,8 @@ def _createConversionMatrices(instr):
     Creates the matrax for a base transformation from nodal voltages and branches
     currents to common-mode and differential-mode equivalents.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :return: pairs, unPaired, dmVars, cmVars, A
 
@@ -1299,8 +1299,8 @@ def _pairVariables(instr):
 
     Pairing is defined by the instr.pairedVars and instr.pairedCircuits.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :return: pairs, unPaired, dmVars, cmVars
 
@@ -1417,8 +1417,8 @@ def _makeDetPos(result):
     """
     Returns the index of the detector colum(s) for calculation of Cramer's rule.
 
-    :param instr: **_instruction)** object that holds instruction data.
-    :type instr: :class:`_instruction)`
+    :param instr: **instruction)** object that holds instruction data.
+    :type instr: :class:`instruction)`
 
     :param result: **allResults()** object that holds instruction results
     :type result: :class:`allResult()`
@@ -1509,8 +1509,8 @@ def _doPyLoopGainServo(instr, result):
         lg1 = fullSubs(lg1, instr.parDefs)
         lg2 = fullSubs(lg2, instr.parDefs)
     if instr.numeric:
-        lg1 = sp.N(lg1)
-        lg2 = sp.N(lg2)
+        lg1 = float2rational(sp.N(lg1))
+        lg2 = float2rational(sp.N(lg2))
     _LGREF_1, _LGREF_2 = sp.symbols('_LGREF_1, _LGREF_2')
     MD = result.M
     M0 = result.M.subs({_LGREF_1: 0, _LGREF_2: 0})
@@ -1520,7 +1520,7 @@ def _doPyLoopGainServo(instr, result):
     if instr.substitute:
         LG = fullSubs(LG, instr.parDefs)
     if instr.numeric:
-        LG = sp.N(LG)
+        LG = float2rational(sp.N(LG))
     num, den = LG.as_numer_denom()
     LG = normalizeRational(num/den, ini.laplace).subs({_LGREF_1: lg1, _LGREF_2: lg2})
     num, den = LG.as_numer_denom()
@@ -1541,33 +1541,29 @@ def _doPyNoise(instr, result):
     """
     Attribute numer rewriten or appended?! Check with stepping.
     """
-    s2f = 2*sp.pi*sp.I*ini.frequency
+    s2f = 2*sp.pi*sp.I*sp.Symbol('f', positive=True)
     if instr.numeric == True:
-        s2f = sp.N(s2f)
+        s2f = float2rational(sp.N(s2f))
     for name in instr.circuit.indepVars:
         if 'noise' in list(instr.circuit.elements[name].params.keys()):
             value = instr.circuit.elements[name].params['noise']
             if instr.substitute == True:
                 value = fullSubs(value, instr.parDefs)
             if instr.numeric == True:
-                value = sp.N(value)
+                value = float2rational(sp.N(value))
             result.snoiseTerms[name] = value
     result = _makeAllMatrices(instr, result)
     Iv_noise = result.Iv
-    den = _doPyDenom(result).denom[0].subs(ini.laplace, s2f)
-    den = assumeRealParams(den)
-    re_den, im_den = den.as_real_imag()
-    den_sq = re_den**2 + im_den**2
+    den = assumeRealParams(_doPyDenom(result).denom[0].subs(ini.laplace, s2f))
+    den_sq = sp.Abs(den * sp.conjugate(den))
     if instr.source != [None, None] and instr.source != None:
         instr.gainType = 'gain'
         result.gainType = 'gain'
         result = _makeAllMatrices(instr, result)
         result = _doPyNumer(instr, result)
-        num = result.numer[-1].subs(ini.laplace, s2f)
+        num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
-            num = assumeRealParams(num)
-            re_num, im_num = num.as_real_imag()
-            sl_num_sq = re_num**2 + im_num**2
+            sl_num_sq = sp.Abs(num * sp.conjugate(num))
         instr.gainType = 'vi'
         result.gainType = 'vi'
     onoise = 0
@@ -1585,11 +1581,9 @@ def _doPyNoise(instr, result):
                 Iv = Iv.subs(name, 0)
         result.Iv = Iv
         result = _doPyNumer(instr, result)
-        num = result.numer[-1].subs(ini.laplace, s2f)
+        num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
-            num = assumeRealParams(num)
-            re_num, im_num = num.as_real_imag()
-            num_sq = re_num**2 + im_num**2
+            num_sq = sp.Abs(num * sp.conjugate(num))
             gain_sq = num_sq/den_sq
             onoiseTerm = result.snoiseTerms[src]*gain_sq
             if ini.factor:
@@ -1619,7 +1613,7 @@ def _doPyDCvar(instr, result):
             if instr.substitute == True:
                 value = fullSubs(value, instr.parDefs)
             if instr.numeric == True:
-                value = sp.N(value)
+                value = float2rational(sp.N(value))
             result.svarTerms[name] = value
     result = _makeAllMatrices(instr, result)
     result.M = result.M.subs(ini.laplace, 0)

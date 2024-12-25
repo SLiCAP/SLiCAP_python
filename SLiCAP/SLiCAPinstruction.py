@@ -5,7 +5,7 @@ SLiCAP instruction class definition.
 """
 import sympy as sp
 import numpy as np
-from SLiCAP.SLiCAPyacc import _updateCirData
+from SLiCAP.SLiCAPyacc import _updateCirData, _checkCircuit
 from SLiCAP.SLiCAPexecute import _doInstruction, _addResNoiseSources, _delResNoiseSources
 from SLiCAP.SLiCAPprotos import circuit, allResults
 from SLiCAP.SLiCAPmath import _checkNumber
@@ -16,11 +16,18 @@ _DATATYPES = ['matrix', 'noise', 'solve', 'time', 'dc', 'dcvar', 'dcsolve', 'tim
              'numer', 'denom', 'laplace', 'zeros', 'poles', 'pz', 'impulse',
              'step', 'params']
 
-class _instruction(object):
+class instruction(object):
     """
     Prototype Instruction object.
     """
     def __init__(self):
+
+        self.simType = 'numeric'
+        """
+        Defines the simulation gain type.
+
+        See **instruction.setSimType(<simType>)** for specification of *instruction.simType*.
+        """
 
         self.gainType = None
         """
@@ -183,13 +190,13 @@ class _instruction(object):
         >>> my_instr.setCircuit('my_circuit.cir')
         """
         
-        self.numeric = None
+        self.numeric = True
         """
         If True, functions and constants will be evaluated numerically and
         rational numbers will be converted in sympy.Float
         """
 
-        self.substitute = None
+        self.substitute = True
         """
         If True: parameters from self.circuit will be substituted recursively
         in element values. 
@@ -271,7 +278,7 @@ class _instruction(object):
         >>> ini.recSubst = 12 # For deeply nested expressions!
 
         """
-        self.simType = simType
+        self.simType    = simType
         self._checkSimType()
         return
 
@@ -283,11 +290,13 @@ class _instruction(object):
         """
         if type(self.simType) == str:
             if self.simType.lower() == 'symbolic':
-                self.simType = 'symbolic'
-                self.numeric = False
+                self.simType    = 'symbolic'
+                self.numeric    = False
+                self.substitute = False
             elif self.simType.lower() == 'numeric':
-                self.simType = 'numeric'
-                self.numeric = True
+                self.simType    = 'numeric'
+                self.numeric    = True
+                self.substitute = True
             else:
                 print("Error: unknown simulation type: '{0}'.".format(self.simType))
                 self.errors += 1
@@ -1429,7 +1438,7 @@ class _instruction(object):
         >>> # instruction:
         >>> my_instr.setCircuit('my_circuit.cir')
         """
-        self.circuit = self.checkCircuit(fileName)
+        self.circuit = _checkCircuit(fileName)
         return
 
     def checkCircuit(self):

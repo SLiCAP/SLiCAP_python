@@ -298,7 +298,9 @@ def _generate_project_config():
                                     }
     SLiCAPconfig['display']      = {'Hz'             : True,
                                     'Digits'         : 4,
-                                    'notebook'       : False}
+                                    'notebook'       : False,
+                                    'scalefactors'   : False,
+                                    'engnotation'    : True}
     try: 
         _author = os.getlogin()
     except:
@@ -317,7 +319,6 @@ def _generate_project_config():
                                     }
     SLiCAPconfig['labels']        = {
                                     }
-    _write_project_config(SLiCAPconfig)
     return SLiCAPconfig
      
 def _generate_main_config():
@@ -347,7 +348,6 @@ def _generate_main_config():
                                     'data_types': data_types,
                                     'sim_types' : "symbolic, numeric"
                                     }
-    _write_main_config(SLiCAPconfig)
     return SLiCAPconfig
 
 def _get_home_path():
@@ -372,6 +372,7 @@ def _read_project_config():
     else:
         print("Generating project configuration file: SLiCAP.ini,\n")
         config_dict = _generate_project_config()
+        _write_project_config(config_dict)
     return config_dict
 
 def _read_main_config():
@@ -383,6 +384,7 @@ def _read_main_config():
     else:
         print("Generating main configuration file: ~/SLiCAP/SLiCAP.ini,\n")
         config_dict = _generate_main_config()
+        _write_main_config(config_dict)
     return config_dict
 
 def _write_project_config(config_dict):
@@ -392,16 +394,6 @@ def _write_project_config(config_dict):
 def _write_main_config(config_dict):
     with open(_get_home_path() + "SLiCAP.ini", "w") as f:
         config_dict.write(f)
-
-def _get_tf(key, subkey):
-    tf = config[key][subkey].lower()
-    if tf == "true":
-        tf = True
-    elif tf == "false":
-        tf = False
-    else:
-        tf = None
-    return tf
 
 def _update_project_config():
     config_dict = _read_project_config()
@@ -414,7 +406,6 @@ def _update_project_config():
     config_dict["html"]["pages"]           = (',').join(html_pages)
     config_dict["labels"]                  = html_labels
     _write_project_config(config_dict)
-    
 
 def dump():
     """
@@ -429,7 +420,7 @@ def dump():
     >>> sl.ini.dump()
     """
     config        = _read_config()
-    # Global variables from configuration files
+    # Global variables from main configuration file
     print('ini.install_version =', config['version']['install_version'])
     print('ini.latest_version  =', config['version']['latest_version'])
     print('ini.install_path    =', config['installpaths']['install'])
@@ -443,6 +434,11 @@ def dump():
     print('ini.kicad           =', config['commands']['kicad'])
     print('ini.ngspice         =', config['commands']['ngspice'])
     print('ini.lepton_eda      =', config['commands']['lepton-eda'])
+    print('ini.gain_types      =', config['simulation']['gain_types'].split(','))
+    print('ini.data_types      =', config['simulation']['data_types'].split(','))
+    print('ini.sim_types       =', config['simulation']['sim_types'].split(','))
+    
+    # Global variables from main configuration file
     print('ini.html_path       =', config['projectpaths']['html'])
     print('ini.cir_path        =', config['projectpaths']['cir'])
     print('ini.img_path        =', config['projectpaths']['img'])
@@ -458,6 +454,10 @@ def dump():
     print('ini.html_pages      =', config['html']['pages'].split(','))
     print('ini.html_labels     =', config['labels'])
     print('ini.disp            =', eval(config['display']['digits']))
+    print('ini.hz              =', eval(config['display']['Hz']))
+    print('ini.notebook        =', eval(config['display']['notebook']))
+    print('ini.scalefactors    =', eval(config['display']['scalefactors']))
+    print('ini.eng_notation    =', eval(config['display']['engnotation']))
     print('ini.last_updated    =', config['project']['last_updated'])
     print('ini.project_title   =', config['project']['title'])
     print('ini.created         =', config['project']['created'])
@@ -467,10 +467,9 @@ def dump():
     print('ini.numer           =', config['math']['numer'])
     print('ini.denom           =', config['math']['denom'])
     print('ini.lambdify        =', config['math']['lambdify'])
-    print('ini.step_function   =', _get_tf('math', 'stepfunction'))
-    print('ini.factor          =', _get_tf('math', 'factor'))
+    print('ini.step_function   =', eval(config['math']['stepfunction']))
+    print('ini.factor          =', eval(config['math']['factor']))
     print('ini.max_rec_subst   =', eval(config['math']['maxrecsubst']))
-    print('ini.hz              =', _get_tf('display', 'Hz'))
     print('ini.gain_colors     =', dict(config['gaincolors']))
     print('ini.plot_fontsize   =', eval(config['plot']['plotfontsize']))
     print('ini.axis_height     =', eval(config['plot']['axisheight']))
@@ -483,10 +482,6 @@ def dump():
     print('ini.default_markers =', config['plot']['defaultmarkers'].split(','))
     print('ini.plot_fontsize   =', config['plot']['plotfontsize'])
     print('ini.plot_file_type  =', config['plot']['plotfiletype'])
-    print('ini.gain_types      =', config['simulation']['gain_types'].split(','))
-    print('ini.data_types      =', config['simulation']['data_types'].split(','))
-    print('ini.sim_types       =', config['simulation']['sim_types'].split(','))
-    print('ini.notebook        =', _get_tf('display', 'notebook'))
     
 config        = _read_config()
 
@@ -528,10 +523,10 @@ frequency       = Symbol(config['math']['frequency'])
 numer           = config['math']['numer']
 denom           = config['math']['denom']
 lambdify        = config['math']['lambdify']
-step_function   = _get_tf('math', 'stepfunction')
-factor          = _get_tf('math', 'factor')
+step_function   = eval(config['math']['stepfunction'])
+factor          = eval(config['math']['factor'])
 max_rec_subst   = eval(config['math']['maxrecsubst'])
-hz              = _get_tf('display', 'Hz')
+hz              = eval(config['display']['Hz'])
 gain_colors     = config['gaincolors']
 plot_fontsize   = eval(config['plot']['plotfontsize'])
 axis_height     = eval(config['plot']['axisheight'])
@@ -549,9 +544,3 @@ sim_types       = config['simulation']['sim_types'].split(',')
 notebook        = False
 
 SLiCAPPARAMS    = {}
-"""
-if __name__ == "__main__":
-    for mainkey in config.keys():
-        print("\n", mainkey)
-        for subkey in config[mainkey].keys():
-            print('\t', subkey, ":", config[mainkey][subkey])"""

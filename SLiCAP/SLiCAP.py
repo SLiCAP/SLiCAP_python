@@ -10,6 +10,7 @@ RST in the Jupyter notebooks.
 import os
 import webbrowser
 import numpy as np
+from sympy import Symbol
 import SLiCAP.SLiCAPconfigure as ini
 from datetime import datetime
 from shutil import copy2
@@ -17,7 +18,7 @@ from SLiCAP.SLiCAPyacc import _initializeParser
 from scipy.optimize import newton, fsolve
 from scipy.integrate import quad
 from SLiCAP.SLiCAPdesignData import *
-from SLiCAP.SLiCAPinstruction import _instruction, listPZ
+from SLiCAP.SLiCAPinstruction import instruction, listPZ
 from SLiCAP.SLiCAPmath import *
 from SLiCAP.SLiCAPplots import *
 from SLiCAP.SLiCAPlatex import *
@@ -106,42 +107,82 @@ def initProject(name, notebook=False):
     >>> # Prints the SLiCAP global settings obtained from both ini files.
 
     """
-    
-    # Obtain the project data from the configuration file
+    # Update the project data from the project configuration file
     project_config = ini._read_project_config()
+    default_config = ini._generate_project_config()
+    main_keys = default_config.keys()
+    proj_keys = project_config.keys()
+    for main_key in main_keys:
+        if main_key not in proj_keys:
+            project_config[main_key] = default_config[main_key]
+        else:
+            sub_keys     = default_config[main_key].keys()
+            prj_sub_keys = project_config[main_key].keys()
+            for sub_key in sub_keys:
+                if sub_key not in prj_sub_keys:
+                    project_config[main_key][sub_key] = default_config[main_key][sub_key]
     
-    # Redefine the globals accoringly
-    # This makes it possible to work with multiple projects from different
-    # directories in one python module.
-    ini.html_path     = project_config['projectpaths']['html']
-    ini.cir_path      = project_config['projectpaths']['cir']
-    ini.img_path      = project_config['projectpaths']['img']
-    ini.csv_path      = project_config['projectpaths']['csv']
-    ini.txt_path      = project_config['projectpaths']['txt']
-    ini.tex_path      = project_config['projectpaths']['tex']
-    ini.user_lib_path = project_config['projectpaths']['lib']
-    ini.mathml_path   = project_config['projectpaths']['mathml']
-    ini.sphinx_path   = project_config['projectpaths']['sphinx']
-    ini.created       = project_config['project']['created']
-    ini.author        = project_config['project']['author']
-    ini.notebook      = notebook
+    # Redefine the globals from the project configuration
+    ini.html_path       = project_config['projectpaths']['html']
+    ini.cir_path        = project_config['projectpaths']['cir']
+    ini.img_path        = project_config['projectpaths']['img']
+    ini.csv_path        = project_config['projectpaths']['csv']
+    ini.txt_path        = project_config['projectpaths']['txt']
+    ini.tex_path        = project_config['projectpaths']['tex']
+    ini.user_lib_path   = project_config['projectpaths']['lib']
+    ini.mathml_path     = project_config['projectpaths']['mathml']
+    ini.sphinx_path     = project_config['projectpaths']['sphinx']
+    ini.created         = project_config['project']['created']
+    ini.author          = project_config['project']['author']
+    ini.last_updated    = project_config['project']['last_updated']
+    ini.project_title   = project_config['project']['title']
+    ini.laplace         = Symbol(project_config['math']['laplace'])
+    ini.frequency       = Symbol(project_config['math']['frequency'])
+    ini.numer           = project_config['math']['numer']
+    ini.denom           = project_config['math']['denom']
+    ini.lambdify        = project_config['math']['lambdify']
+    ini.step_function   = eval(project_config['math']['stepfunction'])
+    ini.factor          = eval(project_config['math']['factor'])
+    ini.max_rec_subst   = eval(project_config['math']['maxrecsubst'])
+    ini.hz              = eval(project_config['display']['Hz'])
+    ini.disp            = eval(project_config['display']['digits'])
+    ini.scalefactors    = eval(project_config['display']['scalefactors'])
+    ini.eng_notation    = eval(project_config['display']['engnotation'])
+    ini.gain_colors     = dict(project_config['gaincolors'])
+    ini.plot_fontsize   = eval(project_config['plot']['plotfontsize'])
+    ini.axis_height     = eval(project_config['plot']['axisheight'])
+    ini.axis_width      = eval(project_config['plot']['axiswidth'])
+    ini.line_width      = eval(project_config['plot']['linewidth'])
+    ini.marker_size     = eval(project_config['plot']['markersize'])
+    ini.line_type       = project_config['plot']['linetype']
+    ini.legend_loc      = project_config['plot']['legendloc']
+    ini.default_colors  = project_config['plot']['defaultcolors'].split(',')
+    ini.default_markers = project_config['plot']['defaultmarkers'].split(',')
+    ini.plot_file_type  = project_config['plot']['plotfiletype'] 
+    ini.notebook        = notebook
     if notebook:
+        # These values will not be stored
         ini.axis_width    = 4
         ini.axis_height   = 3
         ini.plot_fontsize = 9
         ini.line_width    = 1
-    
     # Define the project title and reset the html pages 
-    ini.project_title = name
-    ini.html_page     = 'index.html'
-    ini.html_index    = 'index.html'
-    ini.html_pages    = []
-    ini.html_labels   = {}
-    ini.html_prefix   = ''
-    ini.last_updated  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ini.project_title                         = name
+    ini.html_page                             = 'index.html'
+    project_config['html']['current_page']    = ini.html_page
+    ini.html_index                            = 'index.html'
+    project_config['html']['current_index']   = ini.html_index
+    ini.html_pages                            = []
+    project_config['html']['pages']           = (',').join(ini.html_pages)
+    ini.html_labels                           = {}
+    project_config['labels']                  = ini.html_labels
+    ini.html_prefix                           = ''
+    project_config['html']['prefix']          = ini.html_prefix
+    ini.last_updated                          = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    project_config['project']['last_updated'] = ini.last_updated
     
     # Update the configuration file
-    ini._update_project_config()
+    ini._write_project_config(project_config)
     
     # Create the project directory structure, at the first run of initProject()
     _makeDir(ini.html_path)
