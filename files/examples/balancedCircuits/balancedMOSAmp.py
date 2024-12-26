@@ -7,7 +7,7 @@ Created on Wed Feb 22 17:14:45 2023
 """
 import SLiCAP as sl
 
-cir = sl.makeCircuit(sl.ini.cir_path + "balancedMOSAmp.asc", imgWidth=600)
+cir = sl.makeCircuit("balancedMOSAmp.cir")
 
 sl.htmlPage("DM-CM decomposition")
 # Define the decomposition
@@ -26,6 +26,7 @@ sl.matrices2html(sl.doMatrix(cir, pardefs=None, convtype='cc'))
 
 sl.htmlPage("Loop Gain")
 sl.head2html("Loop Gain of the DM transfer")
+
 result = sl.doLaplace(cir, transfer='loopgain', pardefs='circuit', 
                       convtype='dd', numeric=True)
 sl.eqn2html("L_G", result.laplace)

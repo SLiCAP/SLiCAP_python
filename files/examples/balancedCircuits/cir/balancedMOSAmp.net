@@ -1,4 +1,4 @@
-* Z:\home\anton\DATA\SLiCAP\SLiCAP_github\SLiCAP_python\files\examples\balancedCircuits\cir\balancedMOSAmp.asc
+* Z:\home\anton\SLiCAP\examples\balancedCircuits\cir\balancedMOSAmp.asc
 R2 fbP fbN R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
 R3P outP fbP R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
 R3N fbN outN R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0

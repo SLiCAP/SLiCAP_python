@@ -112,7 +112,7 @@ def _HTMLfoot(indexFile):
     idx = ini.html_index.split('.')[0]
     html = '\n<div id="footnote">\n'
     html += '<p>Go to <a href="' +  ini.html_index + '">' + idx + '</a></p>\n'
-    html += '<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 3.0.1 &copy 2009-2024 SLiCAP development team</p>\n'
+    html += '<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 3.2 &copy 2009-2025 SLiCAP development team</p>\n'
     html += '<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>\n'
     html += '<p>Last project update: %s</p>\n'%(ini.last_updated)
     html += '</div></body></html>'

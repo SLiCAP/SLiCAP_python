@@ -17,8 +17,8 @@ This reference only describes SLiCAP modules with objects and functions that are
    SLiCAPdesignData
    SLiCAPfc
    SLiCAPhtml
-   SLiCAPinstruction
    SLiCAPlatex
+   SLiCAPkicad
    SLiCAPltspice
    SLiCAPmath
    SLiCAPngspice

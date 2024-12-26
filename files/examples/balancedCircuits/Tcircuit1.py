@@ -8,9 +8,9 @@ Created on Wed Feb 22 17:14:45 2023
 import SLiCAP as sl
 import sympy as sp
 
-fileName = "Tcircuit1.asc"
+fileName = "Tcircuit1.cir"
 
-cir = sl.makeCircuit(sl.ini.cir_path + fileName, imgWidth=600)
+cir = sl.makeCircuit(fileName)
 
 sl.htmlPage("DM-CM decomposition")
 

@@ -1549,9 +1549,15 @@ def ENG(number, scaleFactors=False):
     Converts a number into a tuple with a number and exponent as power of 3 or 
     as scale factor.
     
-    :param number: anything representing a number
+    :param number: Anything representing a number
     :type mumber: str, int, float, sympy.Expr, sympy.Float
     
+    :param scaleFactors: if 'True', scale factors 'y', 'z', 'a', 'f', 'p', 'n', 
+                         'u', 'm', 'k', 'M', 'G', 'T', and 'P' will be returned
+                         instead of exponents -24, -21, -18, -15, -12, -9, -6, 
+                         -3, 3, 6, 9, 12, and 15, respectively.
+    :type scaleFactors: Bool
+                         
     :return: number, exp
     :rtype: tuple:
         
@@ -1613,6 +1619,65 @@ def ENG(number, scaleFactors=False):
     if exp == 0:
         exp = None
     return number, exp
+
+def listPZ(pzResult):
+    """
+    Prints lists with poles and zeros.
+
+    :param pzResult: SLiCAP execution results of pole-zero analysis.
+    :type pzResult: SLiCAPprotos.allResults
+
+    :return: None
+    :rtype: NoneType
+    """
+    if pzResult.step == False:
+        # Parameter stepping is not supported
+        try:
+            DCvalue = sp.simplify(pzResult.DCvalue)
+            print('DC value of {:}: {:8.2e}'.format(pzResult.gainType, DCvalue))
+        except:
+            pass
+        if pzResult.dataType == 'poles' or pzResult.dataType == 'pz':
+            if len(pzResult.poles) != 0:
+                print('\nPoles of ' + pzResult.gainType + ':\n')
+                poles = pzResult.poles
+                print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
+                print("--  --------------  --------------  --------------  --------")
+                for i in range(len(poles)):
+                    realPart = sp.re(poles[i])/2/np.pi
+                    imagPart = sp.im(poles[i])/2/np.pi
+                    frequency = sp.sqrt(realPart**2 + imagPart**2)
+
+                    if imagPart != 0:
+                        Q = np.abs(frequency/2/realPart)
+                        print("{:2} {:15.2e} {:15.2e} {:15.2e} {:9.2e}".format(i, float(realPart), float(imagPart), float(frequency), Q))
+                    else:
+                        print("{:2} {:15.2e} {:15.2e} {:15.2e}".format(i, float(realPart), 0.0, float(frequency)))
+
+            else:
+                print('\nFound no poles.')
+        if pzResult.dataType == 'zeros' or pzResult.dataType == 'pz':
+            if len(pzResult.zeros) != 0:
+                print('\nZeros of ' + pzResult.gainType + ':\n')
+                zeros = pzResult.zeros
+                print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
+                print("--  --------------  --------------  --------------  --------")
+                for i in range(len(zeros)):
+                    realPart = sp.re(zeros[i])/2/np.pi
+                    imagPart = sp.im(zeros[i])/2/np.pi
+                    frequency = sp.sqrt(realPart**2 + imagPart**2)
+
+                    if imagPart != 0:
+                        Q = np.abs(frequency/2/realPart)
+                        print("{:2} {:15.2e} {:15.2e} {:15.2e} {:9.2e}".format(i, float(realPart), float(imagPart), float(frequency), Q))
+                    else:
+                        print("{:2} {:15.2e} {:15.2e} {:15.2e}".format(i, float(realPart), 0.0, float(frequency)))
+            else:
+                print('\nFound no zeros.')
+    else:
+        print('\nlistPZ() does not support parameter stepping.')
+    print('\n')
+    return
 
 if __name__ == "__main__":
     from time import time

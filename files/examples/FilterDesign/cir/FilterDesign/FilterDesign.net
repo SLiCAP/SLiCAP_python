@@ -1,8 +1,8 @@
 (export (version "E")
   (design
-    (source "/home/anton/DATA/SLiCAP/SLiCAP_github/SLiCAP_python_pip/files/examples/FilterDesign/cir/FilterDesign/FilterDesign.kicad_sch")
-    (date "2024-10-07T16:51:48+0200")
-    (tool "Eeschema 8.0.5-8.0.5-0~ubuntu24.04.1")
+    (source "/home/anton/SLiCAP/examples/FilterDesign/cir/FilterDesign/FilterDesign.kicad_sch")
+    (date "2024-12-26T13:11:01+0100")
+    (tool "Eeschema 8.0.7-8.0.7-0~ubuntu24.04.1")
     (sheet (number "1") (name "/") (tstamps "/")
       (title_block
         (title "Filter Design")

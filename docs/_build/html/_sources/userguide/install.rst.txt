@@ -7,7 +7,7 @@ Download, install, configure and test SLiCAP
 Requirements
 ============
 
-#. You need to have python3 installed
+#. You need to have python 3.12+ installed
 #. Under MSWindows it is strongly advised to install Python under `Anaconda <https://www.anaconda.com/download>`_
 
 SLiCAP requires the Python3 packages listed in `https://github.com/SLiCAP/SLiCAP_python/requirements.txt <https://github.com/SLiCAP/SLiCAP_python/blob/master/requirements.txt>`_.

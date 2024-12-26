@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SLiCAPmath.py &mdash; SLiCAP 3.0.1 documentation</title>
+  <title>SLiCAPmath.py &mdash; SLiCAP 3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -15,7 +15,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=08bfcbec"></script>
+        <script src="../_static/documentation_options.js?v=828ea960"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -37,7 +37,7 @@
             SLiCAP
           </a>
               <div class="version">
-                3.0.1
+                3.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -48,7 +48,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP Version 3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP Version 3.2</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="SLiCAPreference.html">SLiCAP reference</a><ul class="current">
@@ -57,10 +57,11 @@
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPdesignData.html">SLiCAPdesignData.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPfc.html">SLiCAPfc.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPhtml.html">SLiCAPhtml.py</a></li>
-<li class="toctree-l2"><a class="reference internal" href="SLiCAPinstruction.html">SLiCAPinstruction.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPlatex.html">SLiCAPlatex.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SLiCAPkicad.html">SLiCAPkicad.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SLiCAPltspice.html">SLiCAPltspice.py</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">SLiCAPmath.py</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.ENG"><code class="docutils literal notranslate"><span class="pre">ENG()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.PdBm2V"><code class="docutils literal notranslate"><span class="pre">PdBm2V()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.assumePosParams"><code class="docutils literal notranslate"><span class="pre">assumePosParams()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.assumeRealParams"><code class="docutils literal notranslate"><span class="pre">assumeRealParams()</span></code></a></li>
@@ -76,6 +77,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.float2rational"><code class="docutils literal notranslate"><span class="pre">float2rational()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.fullSubs"><code class="docutils literal notranslate"><span class="pre">fullSubs()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.ilt"><code class="docutils literal notranslate"><span class="pre">ilt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.listPZ"><code class="docutils literal notranslate"><span class="pre">listPZ()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.nonPolyCoeffs"><code class="docutils literal notranslate"><span class="pre">nonPolyCoeffs()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.normalizeRational"><code class="docutils literal notranslate"><span class="pre">normalizeRational()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.phaseMargin"><code class="docutils literal notranslate"><span class="pre">phaseMargin()</span></code></a></li>
@@ -125,6 +127,65 @@
   <section id="module-SLiCAP.SLiCAPmath">
 <span id="slicapmath-py"></span><h1>SLiCAPmath.py<a class="headerlink" href="#module-SLiCAP.SLiCAPmath" title="Link to this heading"></a></h1>
 <p>SLiCAP module with math functions.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.ENG">
+<span class="sig-name descname"><span class="pre">ENG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaleFactors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.ENG" title="Link to this definition"></a></dt>
+<dd><p>Converts a number into a tuple with a number and exponent as power of 3 or 
+as scale factor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>number</strong> – Anything representing a number</p></li>
+<li><p><strong>scaleFactors</strong> (<em>Bool</em>) – if ‘True’, scale factors ‘y’, ‘z’, ‘a’, ‘f’, ‘p’, ‘n’, 
+‘u’, ‘m’, ‘k’, ‘M’, ‘G’, ‘T’, and ‘P’ will be returned
+instead of exponents -24, -21, -18, -15, -12, -9, -6, 
+-3, 3, 6, 9, 12, and 15, respectively.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>number, exp</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>tuple:</p>
+<ul class="simple">
+<li><p>number: int, float, or input type if conversion failed</p></li>
+<li><p>exp: int, str (in case of scaleFactors == True), or None, 
+if conversion failed</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">sympy</span> <span class="k">as</span> <span class="nn">sp</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">disp</span> <span class="c1"># number of significant digits to be diplayed</span>
+<span class="go">    4</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ENG</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+<span class="go">    (1.772, 0)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ENG</span><span class="p">(</span><span class="mi">1234567890</span><span class="p">)</span>
+<span class="go">    (1.234, 9)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ENG</span><span class="p">(</span><span class="mi">1234567890</span><span class="p">,</span> <span class="n">scaleFactors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">    (1.234, &#39;G&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ENG</span><span class="p">(</span><span class="mf">1.234567890E-4</span><span class="p">)</span>
+<span class="go">    (123.4, -6)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ENG</span><span class="p">(</span><span class="mf">1.234567890E-4</span><span class="p">,</span> <span class="n">scaleFactors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">    (123.4, &#39;u&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.PdBm2V">
 <span class="sig-name descname"><span class="pre">PdBm2V</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.PdBm2V" title="Link to this definition"></a></dt>
@@ -493,6 +554,23 @@ parameter definitions into ‘valExpr’.</p>
 </dl>
 <p>return: Inverse Laplace Transform f(t)
 :rtype: sympy.Expr</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.listPZ">
+<span class="sig-name descname"><span class="pre">listPZ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pzResult</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.listPZ" title="Link to this definition"></a></dt>
+<dd><p>Prints lists with poles and zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pzResult</strong> (<a class="reference internal" href="SLiCAPprotos.html#SLiCAP.SLiCAPprotos.allResults" title="SLiCAP.SLiCAPprotos.allResults"><em>SLiCAPprotos.allResults</em></a>) – SLiCAP execution results of pole-zero analysis.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NoneType</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

@@ -7,7 +7,7 @@ Created on Wed Feb 22 17:14:45 2023
 """
 import SLiCAP as sl
 
-cir = sl.makeCircuit(sl.ini.cir_path + 'balancedAmp.asc')
+cir = sl.makeCircuit('balancedAmp.cir')
 
 sl.htmlPage("Stability analysis")
 polesResult = sl.doPoles(cir, pardefs='circuit', numeric=True)
