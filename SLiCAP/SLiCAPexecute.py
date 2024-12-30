@@ -278,6 +278,10 @@ def _doLaplace(instr, result):
                 result = _doPyLaplace(instr, result)
             laplaceFunc = result.laplace[0]
             result.laplace = _stepFunctions(instr.stepDict, laplaceFunc)
+            numerFunc = result.numer[0]
+            result.numer = _stepFunctions(instr.stepDict, numerFunc)
+            denomFunc = result.denom[0]
+            result.denom = _stepFunctions(instr.stepDict, denomFunc)
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
@@ -365,7 +369,7 @@ def _doPZ(instr, result):
         for poly in result.numer:
             result.zeros.append(_Roots(poly, ini.laplace))
         for poly in result.denom:
-            result.poles.append(_Roots(poly, ini.laplace))
+            result.poles.append(_Roots(poly, ini.laplace))        
         for i in range(len(result.denom)):
             try:
                 result.poles[i], result.zeros[i] = _cancelPZ(result.poles[i], result.zeros[i])

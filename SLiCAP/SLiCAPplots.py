@@ -980,6 +980,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
+                zerosTrace.color = ''
                 zerosTrace.marker = 'o'
                 zerosTrace.lineWidth = '0'
                 if result.label == '':
@@ -1055,7 +1056,6 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 polesTrace.marker = '.'
                 polesTrace.lineWidth = '0'
                 polesTrace.markerSize = ini.line_width
-                polesTrace.markerFaceColor = polesTrace.markerColor
                 if result.label == '':
                     polesTrace.label = 'poles ' + result.gainType
                 else:
@@ -1079,8 +1079,8 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                     colNum += 1
                 zerosTrace.color = ''
                 zerosTrace.marker = 'o'
-                polesTrace.markerSize = str(ini.marker_size)
                 zerosTrace.lineWidth = '0'
+                zerosTrace.markerSize = str(ini.marker_size)
                 if result.label == '':
                     zerosTrace.label = 'zeros ' + result.gainType
                 else:
@@ -1100,7 +1100,10 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 except:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
+                zerosTrace.color = ''
                 zerosTrace.marker = 's'
+                zerosTrace.lineWidth = '0'
+                zerosTrace.markerSize = str(ini.marker_size)
                 if result.label == '':
                     zerosTrace.label = 'zeros ' + result.gainType
                 else:
@@ -1124,8 +1127,8 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 zerosTrace.marker = '.'
+                zerosTrace.lineWidth = '0'
                 zerosTrace.markerSize = str(ini.line_width)
-                zerosTrace.markerFaceColor = zerosTrace.markerColor
                 if result.label == '':
                     zerosTrace.label = 'zeros ' + result.gainType
                 else:
