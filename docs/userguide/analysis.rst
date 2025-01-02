@@ -65,7 +65,7 @@ The funstion arguments are:
       sl.initProject("my Project")
       cir = sl.makeCircuit(<myCircuit>)
       # Obtain the list names of dependent variables in <myCircuit>
-      print(cir.depVars)
+      print(cir.depVars())
 
 #. **lgref**: None,'circuit', <refDes>, defaults to : 'circuit'
 

@@ -91,11 +91,11 @@ def _createDepVarIndex(circuitObject):
     :rtype: SLiCAP circuit object
     """
     varIndex = {}
-    for i in range(len(circuitObject.depVars)):
-        if circuitObject.depVars[i][0:2] == 'V_':
-            varIndex[circuitObject.depVars[i][2:]] = i
+    for i in range(len(circuitObject.dep_vars)):
+        if circuitObject.dep_vars[i][0:2] == 'V_':
+            varIndex[circuitObject.dep_vars[i][2:]] = i
         else:
-            varIndex[circuitObject.depVars[i]] = i
+            varIndex[circuitObject.dep_vars[i]] = i
     return varIndex
 
 def _makeMatrices(instr):
@@ -128,8 +128,8 @@ def _makeMatrices(instr):
     dim = len(list(varIndex.keys()))
     Dv = sp.Matrix([0 for i in range(dim)])
     M  = sp.zeros(dim)
-    for i in range(len(cir.depVars)):
-        Dv[i] = sp.Symbol(cir.depVars[i])
+    for i in range(len(cir.dep_vars)):
+        Dv[i] = sp.Symbol(cir.dep_vars[i])
     for el in list(cir.elements.keys()):
         elmt = cir.elements[el]
         if elmt.model == 'C':

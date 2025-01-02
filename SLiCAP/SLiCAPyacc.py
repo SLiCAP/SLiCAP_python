@@ -1189,7 +1189,7 @@ def _updateCirData(circuitObject):
             del(circuitObject.parDefs[key])
     circuitObject.params =[]
     circuitObject.nodes = []
-    circuitObject.depVars = []
+    circuitObject.dep_vars = []
     circuitObject.indepVars = []
     
     for elmt in circuitObject.elements.keys():
@@ -1201,7 +1201,7 @@ def _updateCirData(circuitObject):
             circuitObject.controlled.append(elmt)
         for i in range(len(_MODELS[circuitObject.elements[elmt].model].depVars)):
             depVar = _MODELS[circuitObject.elements[elmt].model].depVars[i]
-            circuitObject.depVars.append(depVar + '_' + elmt)
+            circuitObject.dep_vars.append(depVar + '_' + elmt)
         # Add parameters used in element expressions to circuit.params
         for par in circuitObject.elements[elmt].params.keys():
             try:
@@ -1239,8 +1239,7 @@ def _updateCirData(circuitObject):
         circuitObject.errors += 1
         print("Error: could not find ground node '0'.")
     nodeVoltages = ['V_' + circuitObject.nodes[i] for i in range(len(circuitObject.nodes))]
-    #circuitObject.depVars = nodeVoltages + circuitObject.depVars
-    circuitObject.depVars += nodeVoltages
+    circuitObject.dep_vars += nodeVoltages
     # Check source
     if circuitObject.source != None:
         for src in circuitObject.source:

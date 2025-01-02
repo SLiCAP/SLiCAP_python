@@ -113,7 +113,7 @@ class circuit(object):
         - independent current sources.
         """
 
-        self.depVars    = []
+        self.dep_vars    = []
         """
         (*list*) with names (*str*) of independent variables:
 
@@ -121,6 +121,7 @@ class circuit(object):
 
           A nodal voltage will be named as: 'V_<node name>'. The reference node
           'V_0' is also listed, but it cannot be used as detector.
+          use circuit.dep_vars() to obtain the list of valid detectors.
 
         - branch currents. Branch current will be named ad follows:
 
@@ -161,7 +162,19 @@ class circuit(object):
         Loopgain reference: None if not defined ,or a list with two identifies
         controlled sources or one idenfifier and 'None'.
         """     
-
+    def depVars(self):
+        """
+        Returns the list with valid detectors.
+        
+        :return: list with valid detectors
+        :rtype: list
+        """
+        depvars = []
+        for name in self.dep_vars:
+            if name != "V_0":
+                depvars.append(name)
+        return depvars
+    
     def delPar(self, parName):
         """
         Deletes a parameter definition and updates the list

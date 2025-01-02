@@ -971,7 +971,7 @@ class instruction(object):
 
         A list with names of independent voltage and current sources that can be
         assigned as signal source can be obtained from the method:
-        **instruction.idepVars()**:
+        **instruction.indepVars()**:
 
         :Example:
 
@@ -981,7 +981,7 @@ class instruction(object):
         >>> # instruction:
         >>> my_instr.setCircuit('my_circuit.cir')
         >>> # Obtaine a list with names of independent sources:
-        >>> my_instr.circuit.idepVars()
+        >>> my_instr.circuit.indepVars()
         """
         if type(source) == str:
             self.source = [source, None]
@@ -1394,11 +1394,11 @@ class instruction(object):
         >>> my_instr.depVars()
         ['I_V1', 'V_N001', 'V_out']
         """
-        depVars = []
-        for var in self.circuit.depVars:
+        depvars = []
+        for var in self.circuit.dep_vars:
             if var != 'V_0':
-                depVars.append(var)
-        return depVars
+                depvars.append(var)
+        return depvars
 
     def controlled(self):
         """

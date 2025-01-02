@@ -1315,7 +1315,7 @@ def _pairVariables(instr):
 
     :rtype: tuple
     """
-    depVars = [var for var in instr.circuit.depVars]
+    depVars = [var for var in instr.circuit.dep_vars]
     paired = []
     pairs = []
     unPaired = []

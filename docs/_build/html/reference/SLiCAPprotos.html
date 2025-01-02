@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SLiCAPprotos.py &mdash; SLiCAP 3.2 documentation</title>
+  <title>SLiCAPprotos.py &mdash; SLiCAP 3.2.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -15,7 +15,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=828ea960"></script>
+        <script src="../_static/documentation_options.js?v=eb155f5e"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -36,7 +36,7 @@
             SLiCAP
           </a>
               <div class="version">
-                3.2
+                3.2.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -126,7 +126,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.defPar"><code class="docutils literal notranslate"><span class="pre">circuit.defPar()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.defPars"><code class="docutils literal notranslate"><span class="pre">circuit.defPars()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.delPar"><code class="docutils literal notranslate"><span class="pre">circuit.delPar()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.depVars"><code class="docutils literal notranslate"><span class="pre">circuit.depVars</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.depVars"><code class="docutils literal notranslate"><span class="pre">circuit.depVars()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.dep_vars"><code class="docutils literal notranslate"><span class="pre">circuit.dep_vars</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.detector"><code class="docutils literal notranslate"><span class="pre">circuit.detector</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.elements"><code class="docutils literal notranslate"><span class="pre">circuit.elements</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#SLiCAP.SLiCAPprotos.circuit.errors"><code class="docutils literal notranslate"><span class="pre">circuit.errors</span></code></a></li>
@@ -667,14 +668,29 @@ undefined parameters.</p>
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py method">
 <dt class="sig sig-object py" id="SLiCAP.SLiCAPprotos.circuit.depVars">
-<span class="sig-name descname"><span class="pre">depVars</span></span><a class="headerlink" href="#SLiCAP.SLiCAPprotos.circuit.depVars" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">depVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPprotos.circuit.depVars" title="Link to this definition"></a></dt>
+<dd><p>Returns the list with valid detectors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list with valid detectors</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPprotos.circuit.dep_vars">
+<span class="sig-name descname"><span class="pre">dep_vars</span></span><a class="headerlink" href="#SLiCAP.SLiCAPprotos.circuit.dep_vars" title="Link to this definition"></a></dt>
 <dd><p>(<em>list</em>) with names (<em>str</em>) of independent variables:</p>
 <ul>
 <li><p>nodal voltages:</p>
 <p>A nodal voltage will be named as: ‘V_&lt;node name&gt;’. The reference node
-‘V_0’ is also listed, but it cannot be used as detector.</p>
+‘V_0’ is also listed, but it cannot be used as detector.
+use circuit.dep_vars() to obtain the list of valid detectors.</p>
 </li>
 <li><p>branch currents. Branch current will be named ad follows:</p>
 <ul class="simple">
@@ -1031,7 +1047,7 @@ model.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, SLiCAP development team.</p>
+    <p>&#169; Copyright 2025, SLiCAP development team.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

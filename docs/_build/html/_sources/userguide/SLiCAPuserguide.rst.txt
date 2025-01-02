@@ -12,6 +12,7 @@ SLiCAP user guide
     specifications
     parameters
     analysis
+    plots
     reports
     math
     
