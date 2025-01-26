@@ -271,7 +271,7 @@ def _generate_project_config():
                                     "stepfunction"   : True,
                                     "factor"         : True,
                                     "maxrecsubst"    : 15,
-                                    "reducematrix"   : True
+                                    "reducematrix"   : False
                                     }
     SLiCAPconfig['plot']         = {"axisheight"     : 5,
                                     "axiswidth"      : 7,
