@@ -1,7 +1,7 @@
 (export (version "E")
   (design
     (source "/home/anton/SLiCAP/examples/FilterDesign/cir/FilterDesign/FilterDesign.kicad_sch")
-    (date "2024-12-26T13:11:01+0100")
+    (date "2025-01-26T12:54:44+0100")
     (tool "Eeschema 8.0.7-8.0.7-0~ubuntu24.04.1")
     (sheet (number "1") (name "/") (tstamps "/")
       (title_block

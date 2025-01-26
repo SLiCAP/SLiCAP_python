@@ -3,6 +3,6 @@
 .source V1
 .detector V_out
 C1 0 out C value={C} vinit=0
-R1 out 1 R value={R} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
-V1 1 0 V value=0 noise=0 dc=0 dcvar=0
+R1 out in R value={R} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 in 0 V value={V_s} noise=0 dc=0 dcvar=0
 .end

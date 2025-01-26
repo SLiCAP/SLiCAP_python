@@ -1,8 +1,8 @@
 (export (version "E")
   (design
     (source "/home/anton/SLiCAP/examples/myFirstRCnetwork/kicad/myFirstRCnetwork/myFirstRCnetwork.kicad_sch")
-    (date "2024-12-01T01:28:04+0100")
-    (tool "Eeschema 8.0.6-8.0.6-0~ubuntu24.04.1")
+    (date "2025-01-26T12:54:46+0100")
+    (tool "Eeschema 8.0.7-8.0.7-0~ubuntu24.04.1")
     (sheet (number "1") (name "/") (tstamps "/")
       (title_block
         (title "myFirstRCnetwork")
