@@ -19,14 +19,13 @@ from os.path import expanduser
 from datetime import datetime
 from sympy import Symbol
 from time import time
-
-TIMEOUT = 120
     
 if platform.system() == 'Windows':
     import win32api
     import windows_tools.installed_software as wi
 
-install_version = "3.0.1"
+TIMEOUT = 120
+INSTALLVERSION = "3.2.2"
 
 def _check_version():
     """
@@ -37,7 +36,7 @@ def _check_version():
     None.
     """
     latest = _get_latest_version()
-    if install_version != latest:
+    if INSTALLVERSION != latest:
         print("A new version of SLiCAP is available, please get it from 'https://github.com/SLiCAP/SLiCAP_python.git'.")
     else:
         print("SLiCAP Version matches with the latest release of SLiCAP on github.")
@@ -69,7 +68,7 @@ def _find_installed_windows_software():
     -------
     Dictionary with key-value pairs: key = package name, value = command
     """
-    package_list = ['LTspice', 'Inkscape', 'KiCad', 'gEDA', 'NGspice']
+    package_list = ['LTspice', 'KiCad', 'gEDA', 'NGspice']
     commands = {}
     search_list = []
     # get list with installed apps
@@ -129,22 +128,18 @@ def _find_installed_windows_software():
                                         print("LTSpice command set as:", os.path.join(root,name,'ltspice.exe'))
                                         commands[p_name] = os.path.join(root,name,'ltspice.exe')
                                         found = True
-                            elif package == 'Inkscape':
-                                if re.match('Inkscape', name, flags=0):
-                                    file_name = os.path.join(root, name,'bin','inkscape.exe')
-                                    if os.path.exists(file_name):
-                                        found = True
-                                        print("Inkscape command set as:", os.path.join(root,name,'inkscape.exe'))
-                                        commands[p_name] = file_name
-                                        found = True
                             elif package == 'KiCad':
-                                if re.match('KiCad', name, flags=0):
-                                    version=os.listdir(os.path.join(root, name))[0]
-                                    file_name = os.path.join(root, name, version, 'bin','kicad-cli.exe')
-                                    if os.path.exists(file_name):
-                                        print("KiCad command set as:", os.path.join(root,name,'kicad-cli.exe'))
-                                        commands[p_name] = file_name
-                                        found = True
+                                try:
+                                    if re.match('KiCad', name, flags=0):
+                                        version=os.listdir(os.path.join(root, name))[0]
+                                        file_name = os.path.join(root, name, version, 'bin','kicad-cli.exe')
+                                        if os.path.exists(file_name):
+                                            print("KiCad command set as:", os.path.join(root,name,'kicad-cli.exe'))
+                                            commands[p_name] = file_name
+                                            found = True
+                                except:
+                                    print("Could not find the KiCad command 'kicad-cli.exe'. " +
+                                          "Please add this command manually to the ~/SLiCAP/SLiCAP.ini file!")
                             elif package == 'gEDA':
                                 if re.match('gEDA', name, flags=0):
                                     file_name = os.path.join(root, name, 'gEDA', 'bin' ,'gnetlist.exe')
@@ -227,7 +222,6 @@ def _find_installed_software():
     system = platform.system()
     commands = {}
     commands['ltspice']      =  _find_LTspice_wine()
-    commands['inkscape']     = 'inkscape'
     commands['kicad']        = 'kicad-cli'
     commands['geda']         = 'gnetlist'
     commands['lepton-eda']   = 'lepton-cli'
@@ -276,7 +270,8 @@ def _generate_project_config():
                                     "lambdify"       : "numpy",
                                     "stepfunction"   : True,
                                     "factor"         : True,
-                                    "maxrecsubst"    : 15
+                                    "maxrecsubst"    : 15,
+                                    "reducematrix"   : True
                                     }
     SLiCAPconfig['plot']         = {"axisheight"     : 5,
                                     "axiswidth"      : 7,
@@ -287,7 +282,8 @@ def _generate_project_config():
                                     "plotfiletype"   : "svg",
                                     "linewidth"      : 2,
                                     "markersize"     : 7,
-                                    "linetype"       : "-"
+                                    "linetype"       : "-",
+                                    "svgmargin"      : 1
                                     }                            
     SLiCAPconfig['gaincolors']   = {"asymptotic"     : "r",
                                     "gain"           : "b",
@@ -340,7 +336,7 @@ def _generate_main_config():
     else:
         commands =  _find_installed_software()
     SLiCAPconfig = configparser.ConfigParser()
-    SLiCAPconfig['version']      = {"install_version" : install_version,
+    SLiCAPconfig['version']      = {"install_version" : INSTALLVERSION,
                                      "latest_version" : _check_version()}
     SLiCAPconfig['installpaths'] = install_paths
     SLiCAPconfig['commands']     = commands
@@ -362,7 +358,6 @@ def _generate_default_config():
                                        "libs"     : '',
                                        "examples" : ''},
                       'commands':{'ltspice'       : '',
-                                  'inkscape'      : '',
                                   'kicad'         : '',
                                   'geda'          : '',
                                   'lepton-eda'    : '',
@@ -451,12 +446,11 @@ def _update_ini_files():
     for main_key in main_keys:
         if main_key not in proj_keys:
             project_config[main_key] = default_config[main_key]
-        else:
-            sub_keys     = default_config[main_key].keys()
-            prj_sub_keys = project_config[main_key].keys()
-            for sub_key in sub_keys:
-                if sub_key not in prj_sub_keys:
-                    project_config[main_key][sub_key] = default_config[main_key][sub_key]
+        sub_keys     = default_config[main_key].keys()
+        prj_sub_keys = project_config[main_key].keys()
+        for sub_key in sub_keys:
+            if sub_key not in prj_sub_keys:
+                project_config[main_key][sub_key] = default_config[main_key][sub_key]
     _write_project_config(project_config)
     
     return main_config, project_config
@@ -483,7 +477,6 @@ def dump():
     print('ini.example_path    =', main_config['installpaths']['examples'])
     print('ini.doc_path        =', main_config['installpaths']['docs'])
     print('ini.ltspice         =', main_config['commands']['ltspice'])
-    print('ini.inkscape        =', main_config['commands']['inkscape'])
     print('ini.gnetlist        =', main_config['commands']['geda'])
     print('ini.kicad           =', main_config['commands']['kicad'])
     print('ini.ngspice         =', main_config['commands']['ngspice'])
@@ -525,6 +518,7 @@ def dump():
     print('ini.step_function   =', eval(project_config['math']['stepfunction']))
     print('ini.factor          =', eval(project_config['math']['factor']))
     print('ini.max_rec_subst   =', eval(project_config['math']['maxrecsubst']))
+    print('ini.reduce_matrix   =', eval(project_config['math']['reducematrix']))
     print('ini.gain_colors     =', dict(project_config['gaincolors']))
     print('ini.plot_fontsize   =', eval(project_config['plot']['plotfontsize']))
     print('ini.axis_height     =', eval(project_config['plot']['axisheight']))
@@ -537,6 +531,7 @@ def dump():
     print('ini.default_markers =', project_config['plot']['defaultmarkers'].split(','))
     print('ini.plot_fontsize   =', project_config['plot']['plotfontsize'])
     print('ini.plot_file_type  =', project_config['plot']['plotfiletype'])
+    print('ini.svg_margin      =', eval(project_config['plot']['svgmargin']))
     
 
 # Define global variables from ini files
@@ -550,7 +545,6 @@ main_lib_path   = main_config['installpaths']['libs']
 example_path    = main_config['installpaths']['examples']
 doc_path        = main_config['installpaths']['docs']
 ltspice         = main_config['commands']['ltspice']
-inkscape        = main_config['commands']['inkscape']
 gnetlist        = main_config['commands']['geda']
 kicad           = main_config['commands']['kicad']
 ngspice         = main_config['commands']['ngspice']
@@ -588,6 +582,7 @@ lambdify        = project_config['math']['lambdify']
 step_function   = eval(project_config['math']['stepfunction'])
 factor          = eval(project_config['math']['factor'])
 max_rec_subst   = eval(project_config['math']['maxrecsubst'])
+reduce_matrix   = eval(project_config['math']['reducematrix'])
 hz              = eval(project_config['display']['Hz'])
 gain_colors     = project_config['gaincolors']
 plot_fontsize   = eval(project_config['plot']['plotfontsize'])
@@ -595,6 +590,7 @@ axis_height     = eval(project_config['plot']['axisheight'])
 axis_width      = eval(project_config['plot']['axiswidth'])
 line_width      = eval(project_config['plot']['linewidth'])
 marker_size     = eval(project_config['plot']['markersize'])
+svg_margin      = eval(project_config['plot']['svgmargin'])
 line_type       = project_config['plot']['linetype']
 legend_loc      = project_config['plot']['legendloc']
 default_colors  = project_config['plot']['defaultcolors'].split(',')

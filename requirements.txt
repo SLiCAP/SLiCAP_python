@@ -5,7 +5,9 @@ scipy>=1.12
 ply>=3.11
 matplotlib>=3.8.0
 sphinx-rtd-theme>=1.2.0
-IPython
+svgelements>=1.9.6
+cairosvg>=2.7.1
+IPython>=8.19
 windows_tools>=2.4; sys_platform == "win32"
 pywin32>306; sys_platform =="win32"
 

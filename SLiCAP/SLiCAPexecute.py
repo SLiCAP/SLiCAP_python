@@ -4,10 +4,11 @@
 SLiCAP scripts for execution of an instruction.
 """
 import sympy as sp
+from copy import deepcopy
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPyacc import _updateCirData
 from SLiCAP.SLiCAPprotos import element, allResults
-from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector
+from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector, reduce_M
 from SLiCAP.SLiCAPmath import float2rational, normalizeRational, det, _Roots 
 from SLiCAP.SLiCAPmath import _cancelPZ, _zeroValue, ilt, assumeRealParams
 from SLiCAP.SLiCAPmath import  clearAssumptions, fullSubs
@@ -61,10 +62,8 @@ def _createResultObject(instr):
     result.substitute     = instr.substitute
     result.label          = instr.label
     result.parDefs        = None
-    if instr.parDefs != None:
-        result.parDefs = {}
-        for key in list(instr.parDefs.keys()):
-            result.parDefs[key] = instr.parDefs[key]
+    if not instr.ignoreCircuitParams:
+        result.parDefs = deepcopy(instr.circuit.parDefs)
     return result
 
 def _doInstruction(instr):
@@ -81,8 +80,8 @@ def _doInstruction(instr):
     :rtype: SLiCAPprotos.allResults()
     """
     if instr.errors == 0:
+        instr = _makeInstrParDict(instr)
         result = _createResultObject(instr)
-        instr = _makeSubsDict(instr)
         if instr.lgRef != None:
             oldLGrefElements = []
             for i in range(len(instr.lgRef)):
@@ -1050,7 +1049,7 @@ def _makeAllMatrices(instr, result):
             result.Iv = _makeSrcVector(instr.circuit, instr.parDefs, 'all', value = 'dc', numeric = instr.numeric, substitute=instr.substitute)
         else:
             result.Iv = _makeSrcVector(instr.circuit, instr.parDefs, 'all', value = 'value', numeric = instr.numeric, substitute=instr.substitute)
-    elif instr.gainType in transferTypes:
+    elif instr.gainType in transferTypes and instr.source != None:
         if instr.source != [None, None]:
             if instr.source[0] == None or instr.source[1] == None:
                 ns = 1
@@ -1099,7 +1098,7 @@ def _makeAllMatrices(instr, result):
         result.detector = detector
         instr.circuit.errors += errors
     return result
-
+    
 def _checkDetector(detector, detectors):
     """
     Check if the detector exists, this must be done after matrix conversion
@@ -1112,7 +1111,7 @@ def _checkDetector(detector, detectors):
             errors +=1
     return detector, errors
     
-def _makeSubsDict(instr):
+def _makeInstrParDict(instr):
     """
     Creates a substitution dictionary that does not contain the step parameters
     for the instruction.
@@ -1124,13 +1123,18 @@ def _makeSubsDict(instr):
     :rtype: :class`SLiCAPinstruction.instruction)`
     """
     if instr.substitute and ini.step_function and instr.step:
-        instr.parDefs = {}
-        for key in list(instr.circuit.parDefs.keys()):
-            if key not in list(instr.stepDict.keys()):
-                instr.parDefs[key] = instr.circuit.parDefs[key]
-    else:
-        instr.parDefs = instr.circuit.parDefs
-        
+        parDefs = {}
+        if not instr.ignoreCircuitParams:
+            for key in list(instr.circuit.parDefs.keys()):
+                if key not in list(instr.stepDict.keys()):
+                    parDefs[key] = instr.circuit.parDefs[key]
+        else:
+            for key in list(instr.parDefs.keys()):
+                if key not in list(instr.stepDict.keys()):
+                    parDefs[key] = instr.circuit.parDefs[key]
+        instr.parDefs = parDefs
+    elif not instr.ignoreCircuitParams:
+        instr.parDefs = deepcopy(instr.circuit.parDefs)
     return instr
 
 def _stepFunctions(stepDict, function):
@@ -1536,14 +1540,14 @@ def _doPyLoopGainServo(instr, result):
         num, den = SVnum, SVden
         SV = num/den
         result.laplace.append(SV)
-    #num, den = result.laplace[-1].as_numer_denom()
     result.numer.append(num)
     result.denom.append(den)
     return result
 
 def _doPyNoise(instr, result):
     """
-    Attribute numer rewriten or appended?! Check with stepping.
+    Optimization of the matrix has been implemented. This speeds up with
+    multiple independent voltage noise sources.
     """
     s2f = 2*sp.pi*sp.I*sp.Symbol('f', positive=True)
     if instr.numeric == True:
@@ -1557,22 +1561,59 @@ def _doPyNoise(instr, result):
                 value = float2rational(sp.N(value))
             result.snoiseTerms[name] = value
     result = _makeAllMatrices(instr, result)
+    
+    # Save values
     Iv_noise = result.Iv
-    den = assumeRealParams(_doPyDenom(result).denom[0].subs(ini.laplace, s2f))
+    Dv_noise = result.Dv
+    M_noise  = result.M
+    source   = result.source
+    detector = result.detector
+    
+    # Optimize the matrix for the denominator
+    result.source = None
+    result.detector = [None, None]
+    result.M, result.Iv, result.Dv, sign = reduce_M(result)
+    den = _doPyDenom(result)
+    den = assumeRealParams(sign * den.denom[0].subs(ini.laplace, s2f))
     den_sq = sp.Abs(den * sp.conjugate(den))
+    
+    # Restore values
+    result.source   = source
+    result.detector = detector
+    result.M        = M_noise
+    result.Iv       = Iv_noise
+    result.Dv       = Dv_noise
+    
     if instr.source != [None, None] and instr.source != None:
         instr.gainType = 'gain'
         result.gainType = 'gain'
         result = _makeAllMatrices(instr, result)
+        sign = 1
+        
+        # Optimize the matrix for the numerator
+        result.M, result.Iv, result.Dv, sign = reduce_M(result)
+        
         result = _doPyNumer(instr, result)
-        num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
+        num = assumeRealParams(sign*result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
             sl_num_sq = sp.Abs(num * sp.conjugate(num))
-        instr.gainType = 'vi'
-        result.gainType = 'vi'
+          
+    instr.gainType = 'vi'
+    result.gainType = 'vi'
+    instr.dataType = 'noise'
+    result = _makeAllMatrices(instr, result)
+    
+    # Save values
+    Iv_noise = result.Iv
+    Dv_noise = result.Dv
+    M_noise  = result.M
+    source   = result.source
+    detector = result.detector
+    
     onoise = 0
     inoise = 0
     for src in result.snoiseTerms.keys():
+        
         if src not in result.onoiseTerms.keys():
             result.onoiseTerms[src] = []
             result.inoiseTerms[src] = []
@@ -1584,7 +1625,20 @@ def _doPyNoise(instr, result):
             else:
                 Iv = Iv.subs(name, 0)
         result.Iv = Iv
+        result.source = [src]
+        
+        # Reduce the matrix
+        result.M, result.Iv, result.Dv, sign = reduce_M(result)
+        
         result = _doPyNumer(instr, result)
+        
+        # Restore values
+        result.source   = source
+        result.detector = detector
+        result.M        = M_noise
+        result.Iv       = Iv_noise
+        result.Dv       = Dv_noise
+        
         num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
             num_sq = sp.Abs(num * sp.conjugate(num))

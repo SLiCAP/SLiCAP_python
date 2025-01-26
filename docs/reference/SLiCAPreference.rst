@@ -15,7 +15,6 @@ This reference only describes SLiCAP modules with objects and functions that are
    SLiCAP
    SLiCAPconfigure
    SLiCAPdesignData
-   SLiCAPfc
    SLiCAPhtml
    SLiCAPlatex
    SLiCAPkicad

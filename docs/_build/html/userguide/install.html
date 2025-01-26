@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Download, install, configure and test SLiCAP &mdash; SLiCAP 3.2.1 documentation</title>
+  <title>Download, install, configure and test SLiCAP &mdash; SLiCAP 3.2.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -15,7 +15,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=eb155f5e"></script>
+        <script src="../_static/documentation_options.js?v=dcedd534"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -36,7 +36,7 @@
             SLiCAP
           </a>
               <div class="version">
-                3.2.1
+                3.2.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -153,7 +153,7 @@
 <li><p><a class="reference external" href="https://analog-electronics.tudelft.nl/downloads/gEDA-20130122.zip">gSchem for windows: gEDA-20130122.zip</a></p></li>
 <li><p><a class="reference external" href="https://github.com/lepton-eda/lepton-eda">Lepton EDA</a></p></li>
 </ul>
-<p>For these packages, SLiCAP also has build in netlist generation. SLiCAP uses <a class="reference external" href="https://inkscape.org/">Inkscape</a> for scaling of KiCAD images from page format to drawing format. For detaied information see <a class="reference external" href="schematics.html">Schematic capture</a>.</p>
+<p>For these packages, SLiCAP also has build in netlist generation. SLiCAP uses python scripts for scaling of KiCAD images from page format to drawing format. For detaied information see <a class="reference external" href="schematics.html">Schematic capture</a>.</p>
 <p>SLiCAP also interacts with <a class="reference external" href="https://ngspice.sourceforge.io/">NGspice</a> for performing more elaborate numeric simulations.</p>
 </section>
 <section id="main-configuration">
@@ -173,7 +173,6 @@
 <p>Below an example of the command section for user “USER” under Linux with default installation of LTspice under <em>wine</em>. The main configuration file is located at: /home/USER/SLiCAP/SLiCAP.ini:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
 <span class="n">ltspice</span> <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/.</span><span class="n">wine</span><span class="o">/</span><span class="n">drive_c</span><span class="o">/</span><span class="n">Program</span> <span class="n">Files</span><span class="o">/</span><span class="n">ADI</span><span class="o">/</span><span class="n">LTspice</span><span class="o">/</span><span class="n">LTspice</span><span class="o">.</span><span class="n">exe</span>
-<span class="n">inkscape</span> <span class="o">=</span> <span class="n">inkscape</span>
 <span class="n">kicad</span> <span class="o">=</span> <span class="n">kicad</span><span class="o">-</span><span class="n">cli</span>
 <span class="n">geda</span> <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">netlist</span>
 <span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">cli</span>
@@ -183,7 +182,6 @@
 <p>Below an example of the command section for user “USER” under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:UsersUSERSLiCAPSLiCAP.ini:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
 <span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span>
-<span class="n">inkscape</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">Inkscape</span>\<span class="nb">bin</span>\<span class="n">inkscape</span><span class="o">.</span><span class="n">exe</span>
 <span class="n">kicad</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">KiCad</span>\<span class="mf">8.0</span>\<span class="nb">bin</span>\<span class="n">kicad</span><span class="o">-</span><span class="n">cli</span><span class="o">.</span><span class="n">exe</span>
 <span class="n">ltspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">LTC</span>\<span class="n">LTspiceXVII</span>\<span class="n">XVIIx64</span><span class="o">.</span><span class="n">exe</span>
 <span class="n">geda</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span> <span class="p">(</span><span class="n">x86</span><span class="p">)</span>\<span class="n">gEDA</span>\<span class="n">gEDA</span>\<span class="nb">bin</span>\<span class="n">gnetlist</span><span class="o">.</span><span class="n">exe</span>
@@ -219,15 +217,14 @@
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
 
-<span class="go">ini.install_version = 3.0.1</span>
-<span class="go">ini.latest_version  = 3.0.1</span>
+<span class="go">ini.install_version = 3.2.2</span>
+<span class="go">ini.latest_version  = 3.2.2</span>
 <span class="go">ini.install_path    = C:/Users/USER/anaconda3/lib/site-packages/</span>
 <span class="go">ini.home_path       = C:/Users/USER/SLiCAP/</span>
 <span class="go">ini.main_lib_path   = C:/Users/USER/SLiCAP/lib/</span>
 <span class="go">ini.example_path    = C:/Users/USER/SLiCAP/examples/</span>
 <span class="go">ini.doc_path        = C:/Users/USER/SLiCAP/docs/</span>
 <span class="go">ini.ltspice         = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe</span>
-<span class="go">ini.inkscape        = C:\Program Files\Inkscape\bin\inkscape.exe</span>
 <span class="go">ini.gnetlist        = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe</span>
 <span class="go">ini.kicad           = C:\Program Files\KiCad\8.0\bin\kicad-cli.exe</span>
 <span class="go">ini.ngspice         = C:\Users\USER\ngspice\Spice64\bin\ngspice.exe</span>
@@ -248,7 +245,7 @@
 <span class="go">ini.html_pages      = [&#39;&#39;]</span>
 <span class="go">ini.html_labels     = &lt;Section: labels&gt;</span>
 <span class="go">ini.disp            = 4</span>
-<span class="go">ini.last_updated    = 2024-11-03 22:11:36</span>
+<span class="go">ini.last_updated    = 2025-01-25 15:55:14</span>
 <span class="go">ini.project_title   = My first RC network</span>
 <span class="go">ini.created         = 2024-11-03 21:55:14</span>
 <span class="go">ini.author          = USER</span>
@@ -260,6 +257,7 @@
 <span class="go">ini.step_function   = True</span>
 <span class="go">ini.factor          = True</span>
 <span class="go">ini.max_rec_subst   = 15</span>
+<span class="go">ini.reduce_matrix   = True</span>
 <span class="go">ini.hz              = True</span>
 <span class="go">ini.gain_colors     = {&#39;asymptotic&#39;: &#39;r&#39;, &#39;gain&#39;: &#39;b&#39;, &#39;loopgain&#39;: &#39;k&#39;, &#39;servo&#39;: &#39;m&#39;, &#39;direct&#39;: &#39;g&#39;, &#39;vi&#39;: &#39;c&#39;}</span>
 <span class="go">ini.plot_fontsize   = 10</span>
@@ -268,12 +266,13 @@
 <span class="go">ini.legend_loc      = best</span>
 <span class="go">ini.default_colors  = [&#39;r&#39;, &#39;b&#39;, &#39;g&#39;, &#39;c&#39;, &#39;m&#39;, &#39;y&#39;, &#39;k&#39;]</span>
 <span class="go">ini.default_markers = [&#39;&#39;]</span>
+<span class="go">ini.svg_margin      = 1</span>
 <span class="go">ini.plot_fontsize   = 10</span>
 <span class="go">ini.plot_file_type  = svg</span>
 <span class="go">ini.gain_types      = [&#39;gain&#39;, &#39;asymptotic&#39;, &#39;loopgain&#39;, &#39;servo&#39;, &#39;direct&#39;, &#39;vi&#39;]</span>
 <span class="go">ini.data_types      = [&#39;dc&#39;, &#39;dcvar&#39;, &#39;dcsolve&#39;, &#39;laplace&#39;, &#39;numer&#39;, &#39;denom&#39;, &#39;solve&#39;, &#39;noise&#39;, &#39;pz&#39;, &#39;poles&#39;, &#39;zeros&#39;, &#39;time&#39;, &#39;impulse&#39;, &#39;step&#39;]</span>
 <span class="go">ini.sim_types       = [&#39;symbolic&#39;, &#39; numeric&#39;]</span>
-<span class="go">ini.notebook        =  False</span>
+<span class="go">ini.notebook        = False</span>
 </pre></div>
 </div>
 <section id="changing-settings">

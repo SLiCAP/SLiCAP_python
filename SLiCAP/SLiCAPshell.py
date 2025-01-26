@@ -222,7 +222,7 @@ specified with the circuit.
                                  
 ----
 """
-
+import sympy as sp
 from copy import deepcopy
 from SLiCAP.SLiCAPhtml import htmlPage, img2html, head2html, elementData2html 
 from SLiCAP.SLiCAPhtml import params2html, file2html, netlist2html
@@ -231,6 +231,7 @@ from SLiCAP.SLiCAPyacc import _checkCircuit
 from SLiCAP.SLiCAPkicad import _kicadNetlist, KiCADsch2svg
 from SLiCAP.SLiCAPltspice import _LTspiceNetlist
 from SLiCAP.SLiCAPgschem import _gNetlist  
+from SLiCAP.SLiCAPmath import _checkExpression
 
 def _makeNetlist(fileName, cirTitle=None):
     """
@@ -1283,9 +1284,17 @@ def _executeInstruction(cir, transfer=None, source='circuit',
         i1.substitute = False
     else:
         i1.substitute = True
-    oldParDefs     = deepcopy(i1.circuit.parDefs)
+    #oldParDefs     = deepcopy(i1.circuit.parDefs)
     if type(pardefs) == dict:
-        i1.parDefs = deepcopy(pardefs)
+        i1.parDefs = {}
+        for key in pardefs.keys():
+            i1.parDefs[sp.Symbol(str(key))] = _checkExpression(pardefs[key])
+        i1.ignoreCircuitParams = True
+    elif pardefs== "circuit":
+        i1.parDefs = deepcopy(cir.parDefs)
+        i1.ignoreCircuitParams = False
+    else:
+        i1.ignoreCircuitParams = False
     if stepdict == None:
         i1.stepOff()
     else:
@@ -1323,7 +1332,7 @@ def _executeInstruction(cir, transfer=None, source='circuit',
         except KeyError:
             pass
         i1.stepOn()
-    cir.parDefs = deepcopy(oldParDefs)
+    #cir.parDefs = deepcopy(oldParDefs)
     return i1.execute()
 
 def _makeStepParams(stepdict):

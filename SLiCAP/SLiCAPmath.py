@@ -11,7 +11,6 @@ from numpy.polynomial import Polynomial
 from scipy.integrate import quad
 from scipy.optimize import fsolve
 from SLiCAP.SLiCAPlex import _replaceScaleFactors
-from SLiCAP.SLiCAPfc import computeFC
 
 def det(M, method="ME"):
     """
@@ -34,32 +33,85 @@ def det(M, method="ME"):
     :return: Determinant of 'M'
     :rtype:  sympy.Expr
     """
-    if isinstance(M, sp.Matrix):
-        if M.shape[0] != M.shape[1]:
-            print("ERROR: Cannot determine determinant of non-square matrix.")
-            D = None
-        dim = M.shape[0]
-        if dim == 1:
-            D = M[0,0]
-        elif dim == 2:
-            D = sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1])
-        elif method == "ME":
-            D = _detME(M)
-        elif method == "BS":
-            D = _detBS(M)
-        elif method == "LU":
-            D = M.det(method="LU")
-        elif method == "bareiss":
-            D = M.det(method="bareiss")
-        elif method == "FC":
-            D = _detFC(M)
-        else:
-            print("ERROR: Unknown method for det(M).")
-            D = None
-    else:
-        print("Error: det(M) requires a sympy square matrix as input.")
+    M = sp.Matrix(M) # Be sure to have an Mutable Matrix
+    if M.shape[0] != M.shape[1]:
+        print("ERROR: Cannot determine determinant of non-square matrix.")
         D = None
-    return sp.collect(D, sp.Symbol("s"))
+    if ini.reduce_matrix and ini.laplace in M.atoms(sp.Symbol):
+        M, factor = _eliminateVars(M)
+    else:
+        factor = 1
+    dim = M.shape[0]
+    if M.is_zero_matrix:
+        D = factor
+    elif dim == 1:
+        D = M[0,0]*factor
+    elif dim == 2:
+        D = sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1])*factor
+    elif method == "ME":
+        D = _detME(M)*factor
+    elif method == "BS":
+        D = _detBS(M)*factor
+    elif method == "LU":
+        D = M.det(method="LU")*factor
+    elif method == "bareiss":
+        D = M.det(method="bareiss")*factor
+    elif method == "laplace":
+        D = M.det(method="laplace")*factor
+    else:
+        print("ERROR: Unknown method for det(M).")
+        D = None
+    return D
+
+def _eliminateVars(M):
+    """
+    Reduces the size of a matrix through elimination of variables. The method
+    guarantees a division-free operation for Laplace terms in the matrix.
+    """
+    k, l   = _find_nonLaplaceEntry(M)
+    factor = 1 # Scaling factor for determinant, if no laplace variable is used
+               # factor will equal the determinant
+    dim    = M.shape[0]
+    while k >= 0:
+        dim        = M.shape[0]
+        M_cpy      = M.copy()
+        # exchange row k with row 0 and column l with column 0
+        if k != 0:
+            M_cpy[0,:] = M.row(k)
+            M_cpy[k,:] = M.row(0)
+            factor *= -1
+        if l != 0:
+            col_0      = M_cpy.col(0)
+            col_l      = M_cpy.col(l)
+            M_cpy[:,0] = col_l
+            M_cpy[:,l] = col_0
+            factor *= -1
+        factor     = sp.simplify(M_cpy[0,0]*factor)
+        for i in range(1, dim):
+            for j in range(1, dim):
+                # Substitute the variable
+                M_cpy[i,j] = sp.expand(M_cpy[i,j] - M_cpy[i,0]*M_cpy[0,j]/M_cpy[0,0])
+        # Remove row 0 and column 0
+        M     = M_cpy.minor_submatrix(0,0)
+        k, l  = _find_nonLaplaceEntry(M)
+    return M, sp.simplify(factor)
+
+def _find_nonLaplaceEntry(M):
+    """
+    Returns the (row, col) position of the first nonzero entry in the matrix
+    which is not a Laplace expression.
+    """
+    dim   = M.shape[0]
+    for i in range(dim):
+        row = M.row(i)
+        # First checking variable for i = j makes it faster
+        if row[i] !=0 and ini.laplace not in row[i].atoms(sp.Symbol):
+            return i, i
+        else:
+            for j in range(dim):
+                if row[j] != 0 and ini.laplace not in row[j].atoms(sp.Symbol):
+                    return i, j
+    return -1, -1
 
 def _detME(M):
     dim = M.shape[0]
@@ -69,18 +121,15 @@ def _detME(M):
         D = 0
         for row in range(dim):
             if M[row,0] != 0:
-                newM = M.copy()
-                newM.row_del(row)
-                newM.col_del(0)
-                minor = _detME(newM)
+                minor = _detME(M.minor_submatrix(row, 0))
                 if minor != 0:
-                    D += M[row,0] * (-1)**(row%2) * minor
+                    D += M[row,0] * (-1)**row * minor
     return sp.expand(D)
 
 def _detBS(M):
     newM = M.copy()
     sign = 1
-    dim  = M.shape[0]
+    dim  = newM.shape[0]
     for k in range(dim-1):
         if newM[k,k] == 0:
             for m in range(k+1, dim):
@@ -97,12 +146,7 @@ def _detBS(M):
                 if k:
                     newM[i,j] = sp.factor(newM[i,j] / newM[k-1, k-1])
     D = sign * newM[dim-1, dim-1]
-    return D
-
-def _detFC(M):
-    fc = computeFC(M)
-    D = det(sp.Matrix(sp.eye(fc.shape[0])*ini.laplace + fc), method='BS')
-    return D
+    return sp.simplify(D)
 
 def _Roots(expr, var):
     if isinstance(expr, sp.Basic) and isinstance(var, sp.Symbol):

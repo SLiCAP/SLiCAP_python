@@ -54,7 +54,7 @@ SLiCAP has symbol libraries for creating circuit diagrams with:
 - `gSchem for windows: gEDA-20130122.zip <https://analog-electronics.tudelft.nl/downloads/gEDA-20130122.zip>`_
 - `Lepton EDA <https://github.com/lepton-eda/lepton-eda>`_
 
-For these packages, SLiCAP also has build in netlist generation. SLiCAP uses `Inkscape <https://inkscape.org/>`_ for scaling of KiCAD images from page format to drawing format. For detaied information see `Schematic capture <schematics.html>`_.
+For these packages, SLiCAP also has build in netlist generation. SLiCAP uses python scripts for scaling of KiCAD images from page format to drawing format. For detaied information see `Schematic capture <schematics.html>`_.
 
 SLiCAP also interacts with `NGspice <https://ngspice.sourceforge.io/>`_ for performing more elaborate numeric simulations.
  
@@ -82,7 +82,6 @@ Below an example of the command section for user "USER" under Linux with default
 
     [commands]
     ltspice = /home/USER/.wine/drive_c/Program Files/ADI/LTspice/LTspice.exe
-    inkscape = inkscape
     kicad = kicad-cli
     geda = lepton-netlist
     lepton-eda = lepton-cli
@@ -94,7 +93,6 @@ Below an example of the command section for user "USER" under MS-Windows with de
 
     [commands]
     lepton-eda = 
-    inkscape = C:\Program Files\Inkscape\bin\inkscape.exe
     kicad = C:\Program Files\KiCad\8.0\bin\kicad-cli.exe
     ltspice = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe
     geda = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe
@@ -136,15 +134,14 @@ The default execution result of the command sl.ini.dump() after initialization o
     
     >>> sl.dump()
     
-    ini.install_version = 3.0.1
-    ini.latest_version  = 3.0.1
+    ini.install_version = 3.2.2
+    ini.latest_version  = 3.2.2
     ini.install_path    = C:/Users/USER/anaconda3/lib/site-packages/
     ini.home_path       = C:/Users/USER/SLiCAP/
     ini.main_lib_path   = C:/Users/USER/SLiCAP/lib/
     ini.example_path    = C:/Users/USER/SLiCAP/examples/
     ini.doc_path        = C:/Users/USER/SLiCAP/docs/
     ini.ltspice         = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe
-    ini.inkscape        = C:\Program Files\Inkscape\bin\inkscape.exe
     ini.gnetlist        = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe
     ini.kicad           = C:\Program Files\KiCad\8.0\bin\kicad-cli.exe
     ini.ngspice         = C:\Users\USER\ngspice\Spice64\bin\ngspice.exe
@@ -165,7 +162,7 @@ The default execution result of the command sl.ini.dump() after initialization o
     ini.html_pages      = ['']
     ini.html_labels     = <Section: labels>
     ini.disp            = 4
-    ini.last_updated    = 2024-11-03 22:11:36
+    ini.last_updated    = 2025-01-25 15:55:14
     ini.project_title   = My first RC network
     ini.created         = 2024-11-03 21:55:14
     ini.author          = USER
@@ -177,6 +174,7 @@ The default execution result of the command sl.ini.dump() after initialization o
     ini.step_function   = True
     ini.factor          = True
     ini.max_rec_subst   = 15
+    ini.reduce_matrix   = True
     ini.hz              = True
     ini.gain_colors     = {'asymptotic': 'r', 'gain': 'b', 'loopgain': 'k', 'servo': 'm', 'direct': 'g', 'vi': 'c'}
     ini.plot_fontsize   = 10
@@ -185,12 +183,13 @@ The default execution result of the command sl.ini.dump() after initialization o
     ini.legend_loc      = best
     ini.default_colors  = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
     ini.default_markers = ['']
+    ini.svg_margin      = 1
     ini.plot_fontsize   = 10
     ini.plot_file_type  = svg
     ini.gain_types      = ['gain', 'asymptotic', 'loopgain', 'servo', 'direct', 'vi']
     ini.data_types      = ['dc', 'dcvar', 'dcsolve', 'laplace', 'numer', 'denom', 'solve', 'noise', 'pz', 'poles', 'zeros', 'time', 'impulse', 'step']
     ini.sim_types       = ['symbolic', ' numeric']
-    ini.notebook        =  False
+    ini.notebook        = False
     
 Changing settings
 -----------------

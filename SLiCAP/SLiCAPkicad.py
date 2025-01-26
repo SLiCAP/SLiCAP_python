@@ -6,6 +6,8 @@ SLiCAP module for interfacing with KiCAD
 import subprocess
 import os
 import SLiCAP.SLiCAPconfigure as ini
+from SLiCAP.SLiCAPsvgTools import _crop_svg
+import cairosvg
 
 class _KiCADcomponent(object):
     def __init__(self):
@@ -15,7 +17,7 @@ class _KiCADcomponent(object):
         self.model = ""
         self.params = {}
         self.cmd = ""
-
+        
 def _removeParenthesis(field):
     while field[0] == "(":
         field = field[1:]
@@ -140,21 +142,15 @@ def KiCADsch2svg(fileName):
                      folder or absolute
     :type fileName: str
     """
-    Kicad = False
-    Inkscape = False
     if ini.kicad == "":
         print("Please install Kicad, delete '~/SLiCAP.ini', and run this script again.")
     else:
-        Kicad = True
-    if ini.inkscape == "":
-        print("Please install Inkscape, delete '~/SLiCAP.ini', and run this script again.")
-    elif Kicad:
         cirName = fileName.split('/')[-1].split('.')[0]
         if os.path.isfile(fileName):
             print("Creating drawing-size SVG and PDF images of {}".format(fileName))
             subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', fileName])
-            subprocess.run([ini.inkscape, '-o', ini.img_path + cirName + ".svg", '-D', ini.img_path + cirName + ".svg"])
-            subprocess.run([ini.inkscape, '-o', ini.img_path + cirName + ".pdf", '-D', ini.img_path + cirName + ".svg"])
+            _crop_svg(ini.img_path + cirName + ".svg")
+            cairosvg.svg2pdf(url=ini.img_path + cirName + ".svg", write_to=ini.img_path + cirName + ".pdf")
         else:
             print("Error: could not open: '{}'.".format(fileName))
     
@@ -185,4 +181,4 @@ if __name__=='__main__':
     prj=initProject('kicad')
     fileName    = "SLiCAP.kicad_sch"
     print(_parseKiCADnetlist(fileName))
-    _KiCADsch2svg(fileName)
+    KiCADsch2svg(fileName)

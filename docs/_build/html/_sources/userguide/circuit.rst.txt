@@ -46,7 +46,7 @@ With schematics input files netlister is selected from the file extension and th
      - Use exsisting netlist
      - Use exsisting netlist
 
-Drawing size PDF and SVG images are generated only for KiCAD and Lepton EDA schematics. With KiCAD this requires installation of `Inkscape <https://inkscape.org/>`_.
+Drawing size PDF and SVG images are generated only for KiCAD and Lepton EDA schematics.
 
 For a complete description of the function 'makeCircuit() see `makeCircuit <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__.
 
@@ -55,7 +55,7 @@ Below some notes for configuring schematic capture software for working with SLi
 KiCAD
 =====
 
-**KiCAD** is the preferred schematic capture tool for SLiCAP. This is because it works on all platforms and supports generation of PDF and SVG images. Unfortunately KiCAD doesn't support resizing of the image from the page size to the drawing size. However, `Inkscape <https://inkscape.org/>`_ is used for this purpose.
+**KiCAD** is the preferred schematic capture tool for SLiCAP. This is because it works on all platforms and supports generation of PDF and SVG images. 
 
 SLiCAP schematic circuits can be created with KiCAD using symbols from the SLiCAP symbol library: '~/SLiCAP/kicad/SLiCAp.kicad_sym'. This library must be added to the KiCAD project. 
 
@@ -165,7 +165,9 @@ Display schematics on html pages and in LaTeX reports
 
 Scalable Vector Graphics (".svg") images are preferred for displaying on HTML pages, while Portable Document Format is preferred for LaTeX reports.
 
-With **KiCAD** you can create both ".svg" files and ".pdf" files. However, even without page border, images will obtain the page size. `Inkscape <https://inkscape.org/>`_ can be used to resize the image to the drawing size. If installed, creation and resizing of images will automatically be performed with makeCircuit().
+With KiCAD and Lepton-EDA, drawing-size images will automatically be performed with makeCircuit().
+
+With **lepton-eda** running under **Linux** you can print to pdf or svg. The image size will be equal to the drawing size and no conversion is necessary.
 
 With **LTspice** you can print schematics to a .PDF file using a PDF printer. Printing and rescaling cannot be invoked by SLiCAP.
 
@@ -173,11 +175,11 @@ With **gschem** running under **MSwindows** you can write your schematic file to
 
 When running under MSWindows, you can use `pdf2svg-1 <https://github.com/jalios/pdf2svg-windows>`_ or `pdf2svg-2 <https://www.pdftron.com/documentation/cli/download/windows/>`_ for PDF to SVG conversion. 
 
-Under Linux and Mac OS you can install 'psd2svg' from the package manager.
+Under Linux and Mac OS you can install 'psf2svg' from the package manager.
 
 Alternatively, on all platforms, you can use `Inkscape <https://inkscape.org/>`_ instead. If you import PDF files with Inkscape use the import settings *Poppler/Cairo import*. With this selection, fonts will be converted to *Bezier curves*.
 
-Inkscape can also be used to resize images frompage size to drawing size. This is required for correct display on HTML pages (.svg or .png format) or in LaTeX documents (.pdf format).
+Inkscape can also be used to resize images frompage size to drawing size. This is required for correct display on HTML pages (.svg or .png format) or in LaTeX documents (.pdf format). However, for KiCAD SLiCAP uses built-in scripts for this purpose and Lepton-EDA has such capabilities by default.
 
 With **gschem** running under **Linux** or **Mac OS** you can write your schematic file to a .EPS file.
 
@@ -185,6 +187,5 @@ With **gschem** running under **Linux** or **Mac OS** you can write your schemat
 
 Ghostscript is an alternative often available in the package manager of Linux distributions. Otherwise Ghostscript versions can be downloaded from: `Ghostscript <https://ghostscript.com/download>`_. 
 
-With **lepton-eda** running under **Linux** you can print to pdf or svg. The image size will be equal to the drawing size and no conversion is necessary.
     
 .. image:: /img/colorCode.svg

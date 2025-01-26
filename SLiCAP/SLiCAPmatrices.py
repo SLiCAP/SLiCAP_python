@@ -8,6 +8,7 @@ import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import fullSubs, float2rational, normalizeRational
 
+
 def _getValues(elmt, param, numeric, parDefs, substitute):
     """
     Returns the symbolic or numeric value of numerator and the denominator
@@ -40,6 +41,7 @@ def _getValues(elmt, param, numeric, parDefs, substitute):
         numer = value
         denom = sp.Rational(1)
     return (numer, denom)
+
 
 def _getValue(elmt, param, numeric, parDefs, substitute):
     """
@@ -79,6 +81,7 @@ def _getValue(elmt, param, numeric, parDefs, substitute):
             value = float2rational(sp.N(value))
     return value
 
+
 def _createDepVarIndex(circuitObject):
     """
     Creates an index dict for the dependent variables, this easies the
@@ -97,6 +100,7 @@ def _createDepVarIndex(circuitObject):
         else:
             varIndex[circuitObject.dep_vars[i]] = i
     return varIndex
+
 
 def _makeMatrices(instr):
     """
@@ -119,15 +123,14 @@ def _makeMatrices(instr):
              #. Vector with dependent variables Dv
     :return type: tuple
     """
-    cir        = instr.circuit
-    parDefs    = instr.parDefs
-    numeric    = instr.numeric
+    cir = instr.circuit
+    parDefs = instr.parDefs
+    numeric = instr.numeric
     substitute = instr.substitute
-    varIndex  = _createDepVarIndex(cir)
-    
+    varIndex = _createDepVarIndex(cir)
     dim = len(list(varIndex.keys()))
     Dv = sp.Matrix([0 for i in range(dim)])
-    M  = sp.zeros(dim)
+    M = sp.zeros(dim)
     for i in range(len(cir.dep_vars)):
         Dv[i] = sp.Symbol(cir.dep_vars[i])
     for el in list(cir.elements.keys()):
@@ -141,7 +144,7 @@ def _makeMatrices(instr):
             M[pos1, pos0] -= value * ini.laplace
             M[pos1, pos1] += value * ini.laplace
         elif elmt.model == 'L':
-            dVarPos = varIndex['I_'+ elmt.refDes]
+            dVarPos = varIndex['I_' + elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
             value = _getValue(elmt, 'value', numeric, parDefs, substitute)
@@ -153,7 +156,8 @@ def _makeMatrices(instr):
         elif elmt.model == 'R':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            value = float2rational(1/_getValue(elmt, 'value', numeric, parDefs, substitute))
+            value = float2rational(
+                1/_getValue(elmt, 'value', numeric, parDefs, substitute))
             M[pos0, pos0] += value
             M[pos0, pos1] -= value
             M[pos1, pos0] -= value
@@ -174,7 +178,8 @@ def _makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            (numer, denom) = _getValues(
+                elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
             M[dVarPos, pos0] += denom
@@ -187,7 +192,8 @@ def _makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            numer, denom = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            numer, denom = _getValues(
+                elmt, 'value', numeric, parDefs, substitute)
             zoN, zoD = _getValues(elmt, 'zo', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
@@ -202,7 +208,8 @@ def _makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            (numer, denom) = _getValues(
+                elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += numer
             M[pos1, dVarPos] -= numer
             M[pos2, dVarPos] += denom
@@ -225,7 +232,8 @@ def _makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            (numer, denom) = _getValues(
+                elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPos] += 1
             M[pos1, dVarPos] -= 1
             M[dVarPos, pos2] += numer
@@ -238,7 +246,8 @@ def _makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            (numer, denom) = _getValues(
+                elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPosO] += 1
             M[pos1, dVarPosO] -= 1
             M[pos2, dVarPosI] += 1
@@ -255,7 +264,8 @@ def _makeMatrices(instr):
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
             pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            (numer, denom) = _getValues(
+                elmt, 'value', numeric, parDefs, substitute)
             (zoN, zoD) = _getValues(elmt, 'zo', numeric, parDefs, substitute)
             M[pos0, dVarPosO] += 1
             M[pos1, dVarPosO] -= 1
@@ -326,8 +336,10 @@ def _makeMatrices(instr):
         elif elmt.model == 'K':
             refPos1 = varIndex['I_' + elmt.refs[0]]
             refPos0 = varIndex['I_' + elmt.refs[1]]
-            ind0    = _getValue(cir.elements[elmt.refs[0]], 'value', numeric, parDefs, substitute)
-            ind1    = _getValue(cir.elements[elmt.refs[1]], 'value', numeric, parDefs, substitute)
+            ind0 = _getValue(
+                cir.elements[elmt.refs[0]], 'value', numeric, parDefs, substitute)
+            ind1 = _getValue(
+                cir.elements[elmt.refs[1]], 'value', numeric, parDefs, substitute)
             value = _getValue(elmt, 'value', numeric, parDefs, substitute)
             value = value * ini.laplace * sp.sqrt(ind0 * ind1)
             M[refPos0, refPos1] -= value
@@ -339,7 +351,8 @@ def _makeMatrices(instr):
     Dv.row_del(gndPos)
     return (M, Dv)
 
-def _makeSrcVector(cir, parDefs, elid, value = 'id', numeric = True, substitute=True):
+
+def _makeSrcVector(cir, parDefs, elid, value='id', numeric=True, substitute=True):
     """
     Creates the vector with independent variables.
     The vector can be created for a single independent variable or for all.
@@ -417,15 +430,101 @@ def _makeSrcVector(cir, parDefs, elid, value = 'id', numeric = True, substitute=
     Iv.row_del(gndPos)
     return Iv
 
-if __name__ == "__main__":
-    s = ini.laplace
-
-    MNA = sp.Matrix([[5.0e-12*s + 0.01, 0, 0, -5.0e-12*s - 0.01, 0, 0, 0, 0, 1],
-                  [0, 1.98e-11*s + 0.0001, -1.2e-11*s, -1.8e-12*s - 1.0e-5, 0, 0, 0, 0, 0],
-                  [0, -1.2e-11*s, 2.8e-11*s + 0.001, 0, -1.0e-11*s - 0.001, 0, 0, -1, 0],
-                  [-5.0e-12*s - 0.01, -1.8e-12*s - 1.0e-5, 0, 1.0068e-9*s + 0.01101, 0, 0, 1, 0, 0],
-                  [0, 0, -1.0e-11*s - 0.001, 0, 1.0e-11*s + 0.001, 1, 0, 1, 0],
-                  [0, 0, 0, 0, 1, 0, 0, 0, 0],
-                  [0, 0, 0, 1, 0, 0, -1.0e-6*s, -3.1623e-11*s, 0],
-                  [0, 0, -1, 0, 1, 0, -3.1623e-11*s, -1.0e-9*s, 0],
-                  [2.048e-20*s**3 + 2.688e-11*s**2 + 0.0016*s + 1, 0, 0, 0, 0, 0, 0, 0, 0]])
+def reduce_M(result):
+    """
+    """
+    source = result.source
+    if source == None:
+        source = [None, None]
+    detector = result.detector
+    if detector == None:
+        detector = [None, None]
+    # Create a substitution dictionary with key-value pairs:
+    # key = row number to be substituted with value
+    substitutions = {}
+    # Create a list with numbers of rows and columns to be deleted
+    deletions = []  
+    # Independent voltage sources that are not used as signal source or 
+    # detector need to be removed. Each voltage source reduces the matrix 
+    # with two
+    for var in result.Dv:
+        name = str(var)
+        vi = name[0]
+        elID = name[2:]
+        # Test for an independent voltage source not used as signal source or 
+        # (current) detector.
+        # Its associated dependent variable is "I_<Vname>", where "Vname" is
+        # the refdes of this voltage source; it starts with "V".
+        if vi == "I" and elID[0] == "V" and elID not in source and name not in detector:
+            pos = list(result.Dv).index(var)
+            deletions.append(pos)
+            row = list(result.M.row(pos))
+            try:
+                # col position of the positive node of the V source
+                colP = row.index(1)
+            except ValueError:
+                # positive node of the V source is connected to ground
+                colP = None
+            try:
+                # col position of the negative node of the V source
+                colN = row.index(-1)
+            except ValueError:
+                # negative node of the V source is connected to ground
+                colN = None
+            if colP != None and colN != None:
+                if colP in substitutions.keys():
+                    substitutions[colN] = substitutions[colP]
+                    deletions.append(colN)
+                elif colN in substitutions.keys():
+                    substitutions[colP] = substitutions[colN]
+                    deletions.append(colP)
+                else:
+                    substitutions[colN] = colP
+                    deletions.append(colN)
+            elif colP == None and colN not in substitutions.keys():
+                deletions.append(colN)
+            elif colN == None and colP not in substitutions.keys():
+                deletions.append(colP)
+    # Move the detector node if it was attached to a node of a
+    # non-grounded voltage source
+    detP, detN = detector
+    if detP != None and detP[0] == "V":
+        pos = list(result.Dv).index(sp.Symbol(detP))
+        if pos in substitutions.keys():
+            result.Dv[substitutions[pos]] = detP
+    if detN != None and detN[0] == "V":
+        pos = list(result.Dv).index(sp.Symbol(detN))
+        if pos in substitutions.keys():
+            result.Dv[substitutions[pos]] = detN
+    # Perform substitutions:
+    # First modify a copy of the original matrix
+    M = result.M.copy()
+    Iv = result.Iv.copy()
+    Dv = result.Dv.copy()
+    dim = M.shape[0]
+    # Then perform row and column additions:
+    # The substituted row or column is added to the substituting row or column,
+    # respectively
+    # Also perform these additions in the vector with independent variables
+    for i in range(dim):
+        if i in substitutions.keys():
+            M[substitutions[i], :] += M[i, :]
+            M[:, substitutions[i]] += M[:, i]
+            Iv[substitutions[i]] += Iv[i]
+    # Second, delete rows and columns that have been substituted or that need
+    # to be removed (voltages and currents of grounded voltage sources)
+    deletions = sorted(deletions)
+    i = 0
+    for rc in deletions:
+        M = M.minor_submatrix(rc-i, rc-i)
+        Iv.row_del(rc-i)
+        Dv.row_del(rc-i)
+        i += 1
+    # The sign of the determinant of the new matrix has changes if the sum of 
+    # all row numbers of the deleted rows is odd:
+    sign = 0
+    for i in range(len(deletions)):
+        sign += deletions[i]
+    sign = (-1)**(sign % 2)
+    
+    return M, Iv, Dv, sign

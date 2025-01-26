@@ -120,6 +120,13 @@ class instruction(object):
         key:   name of a step parameter (*sympy.Symbol*)
         value: list with values for this parameter
         """
+        
+        self.ignoreCircuitParams = False
+        """
+        For compatibility with version 2. If True a dictionary of parameters 
+        will be used for substitutions. Else these parameters will be taken 
+        from the circuit definition.
+        """
 
         self.source = [None, None]
         """

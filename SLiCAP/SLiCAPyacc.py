@@ -1254,7 +1254,6 @@ def _updateCirData(circuitObject):
                 if lgRef not in circuitObject.controlled:
                     print("Error: unknown loop gain reference: {}.".format(lgRef))
                     circuitObject.errors += 1
-    #circuitObject = _createDepVarIndex(circuitObject)
     return circuitObject
 
 def _addGlobalParam(par, circuitObject):
