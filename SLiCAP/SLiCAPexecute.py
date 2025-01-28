@@ -8,7 +8,7 @@ from copy import deepcopy
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPyacc import _updateCirData
 from SLiCAP.SLiCAPprotos import element, allResults
-from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector, reduce_M
+from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector
 from SLiCAP.SLiCAPmath import float2rational, normalizeRational, det, _Roots 
 from SLiCAP.SLiCAPmath import _cancelPZ, _zeroValue, ilt, assumeRealParams
 from SLiCAP.SLiCAPmath import  clearAssumptions, fullSubs
@@ -1561,59 +1561,25 @@ def _doPyNoise(instr, result):
                 value = float2rational(sp.N(value))
             result.snoiseTerms[name] = value
     result = _makeAllMatrices(instr, result)
-    
-    # Save values
-    Iv_noise = result.Iv
-    Dv_noise = result.Dv
-    M_noise  = result.M
-    source   = result.source
-    detector = result.detector
-    
-    # Optimize the matrix for the denominator
-    result.source = None
-    result.detector = [None, None]
-    result.M, result.Iv, result.Dv, sign = reduce_M(result)
     den = _doPyDenom(result)
-    den = assumeRealParams(sign * den.denom[0].subs(ini.laplace, s2f))
+    den = assumeRealParams(den.denom[0].subs(ini.laplace, s2f))
     den_sq = sp.Abs(den * sp.conjugate(den))
-    
-    # Restore values
-    result.source   = source
-    result.detector = detector
-    result.M        = M_noise
-    result.Iv       = Iv_noise
-    result.Dv       = Dv_noise
-    
     if instr.source != [None, None] and instr.source != None:
         instr.gainType = 'gain'
         result.gainType = 'gain'
-        result = _makeAllMatrices(instr, result)
-        sign = 1
-        
-        # Optimize the matrix for the numerator
-        result.M, result.Iv, result.Dv, sign = reduce_M(result)
-        
+        result = _makeAllMatrices(instr, result)     
         result = _doPyNumer(instr, result)
-        num = assumeRealParams(sign*result.numer[-1].subs(ini.laplace, s2f))
+        num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
             sl_num_sq = sp.Abs(num * sp.conjugate(num))
-          
     instr.gainType = 'vi'
     result.gainType = 'vi'
     instr.dataType = 'noise'
     result = _makeAllMatrices(instr, result)
-    
-    # Save values
     Iv_noise = result.Iv
-    Dv_noise = result.Dv
-    M_noise  = result.M
-    source   = result.source
-    detector = result.detector
-    
     onoise = 0
     inoise = 0
     for src in result.snoiseTerms.keys():
-        
         if src not in result.onoiseTerms.keys():
             result.onoiseTerms[src] = []
             result.inoiseTerms[src] = []
@@ -1626,19 +1592,7 @@ def _doPyNoise(instr, result):
                 Iv = Iv.subs(name, 0)
         result.Iv = Iv
         result.source = [src]
-        
-        # Reduce the matrix
-        result.M, result.Iv, result.Dv, sign = reduce_M(result)
-        
         result = _doPyNumer(instr, result)
-        
-        # Restore values
-        result.source   = source
-        result.detector = detector
-        result.M        = M_noise
-        result.Iv       = Iv_noise
-        result.Dv       = Dv_noise
-        
         num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
             num_sq = sp.Abs(num * sp.conjugate(num))

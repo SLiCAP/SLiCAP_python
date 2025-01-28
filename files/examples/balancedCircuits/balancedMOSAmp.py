@@ -27,6 +27,6 @@ sl.matrices2html(sl.doMatrix(cir, pardefs=None, convtype='cc'))
 sl.htmlPage("Loop Gain")
 sl.head2html("Loop Gain of the DM transfer")
 
-result = sl.doLaplace(cir, transfer='loopgain', pardefs='circuit', 
-                      convtype='dd', numeric=True)
+# If you set pardefs='circuit' also set sl.ini.reducematrix=False!
+result = sl.doLaplace(cir, transfer='loopgain', pardefs=None, convtype='dd')
 sl.eqn2html("L_G", result.laplace)

@@ -104,13 +104,12 @@ def _find_nonLaplaceEntry(M):
     dim   = M.shape[0]
     for i in range(dim):
         row = M.row(i)
-        # First checking variable for i = j makes it faster
+        # First check variable at pos i = j makes it considerably faster
         if row[i] !=0 and ini.laplace not in row[i].atoms(sp.Symbol):
             return i, i
-        else:
-            for j in range(dim):
-                if row[j] != 0 and ini.laplace not in row[j].atoms(sp.Symbol):
-                    return i, j
+        for j in range(dim):
+            if row[j] != 0 and ini.laplace not in row[j].atoms(sp.Symbol):
+                return i, j
     return -1, -1
 
 def _detME(M):

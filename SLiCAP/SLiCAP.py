@@ -29,7 +29,6 @@ from SLiCAP.SLiCAPltspice import runLTspice
 from SLiCAP.SLiCAPshell import *
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
-from SLiCAP.SLiCAPmatrices import reduce_M
 
 # Increase width for display of numpy arrays:
 np.set_printoptions(edgeitems=30, linewidth=1000,
