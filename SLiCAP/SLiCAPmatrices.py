@@ -351,7 +351,6 @@ def _makeMatrices(instr):
     Dv.row_del(gndPos)
     return (M, Dv)
 
-
 def _makeSrcVector(cir, parDefs, elid, value='id', numeric=True, substitute=True):
     """
     Creates the vector with independent variables.
@@ -429,3 +428,108 @@ def _makeSrcVector(cir, parDefs, elid, value='id', numeric=True, substitute=True
     Iv = float2rational(sp.Matrix(Iv))
     Iv.row_del(gndPos)
     return Iv
+
+def _reduceCircuit(result, inductors=False):
+    """
+    """
+    source = result.source
+    if source == None:
+        source = [None, None]
+    detector = result.detector
+    if detector == None:
+        detector = [None, None]
+    # Create a substitution dictionary with key-value pairs:
+    # row[key], col[key] wil be added to row[value], col[value], respectively
+    connections = {}
+    # Create a list with numbers of rows and columns to be deleted
+    deletions = []  
+    # Independent voltage sources that are not used as signal source or 
+    # detector need to be removed. Each voltage source reduces the matrix size
+    # with two
+    for var in result.Dv:
+        name = str(var)
+        name_parts = name.split("_")
+        vi = name_parts[0]
+        elID = "_".join(name_parts[1:])
+        # Test for an independent voltage source not used as signal source or 
+        # (current) detector, inductor used as current detector.
+        # Its associated dependent variable is "I_<Vname>", where "Vname" or
+        # L<name> is the refdes of this voltage source or inductor.
+        if vi == "I" and (elID[0] == "V" or (inductors and elID[0] == "L")) and elID not in source and str(name) not in detector:
+            pos = list(result.Dv).index(var)
+            row = list(result.M.row(pos))
+            # Find the element's nodes
+            try:
+                # col position of the positive node of the V source or inductor
+                colP = row.index(1)
+            except ValueError:
+                # positive node of the element is connected to ground
+                colP = None
+            try:
+                # col position of the negative node of the V source or inductor
+                colN = row.index(-1)
+            except ValueError:
+                # negative node of the element is connected to ground
+                colN = None
+            if colP != None and colN != None:
+                # Floating voltage source or inductor
+                if str(result.Dv[colP]) and str(result.Dv[colN]) in detector:
+                    # Both nodes are detector voltage:
+                    # leave it in the circuit
+                    pass
+                elif str(result.Dv[colP]) in detector:
+                    # Positive node is detector voltage and negative node is not GND: 
+                    # negative node will be replaced with positive node
+                    connections = _connect(connections, colN, colP)
+                    deletions.append(colN)
+                    deletions.append(pos)
+                else:# result.Dv[colN] in detector and colP != None:    
+                    # Positive node is not GND:
+                    # positive node will be replaced with negative node
+                    connections = _connect(connections, colP, colN)
+                    deletions.append(colP)
+                    deletions.append(pos)
+            elif colN != None and str(result.Dv[colN]) not in detector:    
+                # Negative node is not GND, positive node is GND:
+                # negative node will be connected to ground
+                deletions.append(colN)
+                deletions.append(pos)
+            elif colP != None and str(result.Dv[colP]) not in detector:    
+                # Positive node is not GND, negative node is GND:
+                # positive node will be connected to ground
+                deletions.append(colP)
+                deletions.append(pos)
+            else:
+                # Do nothing
+                pass
+    # Perform connections:
+    # First create a copy of the original matrix
+    M = result.M.copy()
+    Iv = result.Iv.copy()
+    Dv = result.Dv.copy()
+    dim = M.shape[0]
+    # Then perform row and column additions:
+    # The substituted row or column is added to the substituting row or column,
+    # respectively
+    # Also perform these additions in the vector with independent variables
+    for i in range(dim):
+        if i in connections.keys():
+            M[connections[i], :] += M[i, :]
+            M[:, connections[i]] += M[:, i]
+            Iv[connections[i]] += Iv[i]
+    # Then, delete rows and columns that have been substituted
+    deletions = sorted(deletions)
+    i = 0
+    for rc in deletions:
+        M = M.minor_submatrix(rc-i, rc-i)
+        Iv.row_del(rc-i)
+        Dv.row_del(rc-i)
+        i += 1
+    return M, Iv, Dv
+
+def _connect(connections, key, value):
+    if value not in connections.keys():
+        connections[key] = value
+    else:
+        connections[key] = connections[value]
+    return connections

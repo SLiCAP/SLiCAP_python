@@ -25,7 +25,7 @@ if platform.system() == 'Windows':
     import windows_tools.installed_software as wi
 
 TIMEOUT = 120
-INSTALLVERSION = "3.2.2"
+INSTALLVERSION = "3.2.3"
 
 def _check_version():
     """
@@ -271,7 +271,8 @@ def _generate_project_config():
                                     "stepfunction"   : True,
                                     "factor"         : True,
                                     "maxrecsubst"    : 15,
-                                    "reducematrix"   : True
+                                    "reducematrix"   : True,
+                                    "reducecircuit"  : True
                                     }
     SLiCAPconfig['plot']         = {"axisheight"     : 5,
                                     "axiswidth"      : 7,
@@ -519,6 +520,7 @@ def dump():
     print('ini.factor          =', eval(project_config['math']['factor']))
     print('ini.max_rec_subst   =', eval(project_config['math']['maxrecsubst']))
     print('ini.reduce_matrix   =', eval(project_config['math']['reducematrix']))
+    print('ini.reduce_circuit  =', eval(project_config['math']['reducecircuit']))
     print('ini.gain_colors     =', dict(project_config['gaincolors']))
     print('ini.plot_fontsize   =', eval(project_config['plot']['plotfontsize']))
     print('ini.axis_height     =', eval(project_config['plot']['axisheight']))
@@ -583,6 +585,7 @@ step_function   = eval(project_config['math']['stepfunction'])
 factor          = eval(project_config['math']['factor'])
 max_rec_subst   = eval(project_config['math']['maxrecsubst'])
 reduce_matrix   = eval(project_config['math']['reducematrix'])
+reduce_circuit  = eval(project_config['math']['reducecircuit'])
 hz              = eval(project_config['display']['Hz'])
 gain_colors     = project_config['gaincolors']
 plot_fontsize   = eval(project_config['plot']['plotfontsize'])
