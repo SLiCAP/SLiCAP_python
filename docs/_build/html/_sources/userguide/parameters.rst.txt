@@ -188,7 +188,7 @@ The method `circuit.getParValue() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPp
 
 If the keyword argument 'substitute' is True (default), for each parameter, all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see `fullSubs <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs>`__)
 
-If the keyword argument 'numeric' is True (default is False), functions and constants are numerically evaluated in floating poit numbers.
+If the keyword argument 'numeric' is True (default is False), functions and constants are numerically evaluated in floating point numbers.
     
 .. image:: /img/colorCode.svg
 

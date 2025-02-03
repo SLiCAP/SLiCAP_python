@@ -17,6 +17,10 @@ Working with SLiCAP usually proceeds as follows:
 
 #. **Create a circuit model** that models the performance aspect(s) and/or cost factor(s) of interest and create netlist from it
 
+   .. admonition:: note
+   
+      The complexity of the model should be as low as possible: the model should have all the information to find the answer to a design question, but not more.
+
    - SLiCAP supports netlist generation with KiCAD, LTspice, gSchem and lepton-eda
     
 #. **Import design budgets** for performance and cost factors, as well as circuit parameters determined in earlier design steps to the circuit

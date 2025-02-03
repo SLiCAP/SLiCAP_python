@@ -623,7 +623,7 @@ def assumeRealParams(expr, params = 'all'):
 def assumePosParams(expr, params = 'all'):
     """
     Returns the sympy expression 'expr' in which  variables, except the
-    Laplace variable, have been redefined as real.
+    Laplace variable, have been redefined as positive.
 
     :param expr: Sympy expression
     :type expr: sympy.Expr, sympy.Symbol

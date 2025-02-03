@@ -170,6 +170,15 @@
 <li><p>During installation under MS-Windows, searching to the apps listed above timed out</p></li>
 </ol>
 <p>In these cases the commands (under MS-Windows the locatation of the executables) need to be set in the <em>command</em> section.</p>
+<p>Below an example of the command section for user “USER” under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:\Users\USER\SLiCAP\SLiCAP.ini:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
+<span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span>
+<span class="n">kicad</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">KiCad</span>\<span class="mf">8.0</span>\<span class="nb">bin</span>\<span class="n">kicad</span><span class="o">-</span><span class="n">cli</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">ltspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">LTC</span>\<span class="n">LTspiceXVII</span>\<span class="n">XVIIx64</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">geda</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span> <span class="p">(</span><span class="n">x86</span><span class="p">)</span>\<span class="n">gEDA</span>\<span class="n">gEDA</span>\<span class="nb">bin</span>\<span class="n">gnetlist</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">ngspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Users</span>\<span class="n">anton</span>\<span class="n">ngspice</span>\<span class="n">Spice64</span>\<span class="nb">bin</span>\<span class="n">ngspice</span><span class="o">.</span><span class="n">exe</span>
+</pre></div>
+</div>
 <p>Below an example of the command section for user “USER” under Linux with default installation of LTspice under <em>wine</em>. The main configuration file is located at: /home/USER/SLiCAP/SLiCAP.ini:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
 <span class="n">ltspice</span> <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/.</span><span class="n">wine</span><span class="o">/</span><span class="n">drive_c</span><span class="o">/</span><span class="n">Program</span> <span class="n">Files</span><span class="o">/</span><span class="n">ADI</span><span class="o">/</span><span class="n">LTspice</span><span class="o">/</span><span class="n">LTspice</span><span class="o">.</span><span class="n">exe</span>
@@ -177,15 +186,6 @@
 <span class="n">geda</span> <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">netlist</span>
 <span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">cli</span>
 <span class="n">ngspice</span> <span class="o">=</span> <span class="n">ngspice</span>
-</pre></div>
-</div>
-<p>Below an example of the command section for user “USER” under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:UsersUSERSLiCAPSLiCAP.ini:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
-<span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span>
-<span class="n">kicad</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">KiCad</span>\<span class="mf">8.0</span>\<span class="nb">bin</span>\<span class="n">kicad</span><span class="o">-</span><span class="n">cli</span><span class="o">.</span><span class="n">exe</span>
-<span class="n">ltspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">LTC</span>\<span class="n">LTspiceXVII</span>\<span class="n">XVIIx64</span><span class="o">.</span><span class="n">exe</span>
-<span class="n">geda</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span> <span class="p">(</span><span class="n">x86</span><span class="p">)</span>\<span class="n">gEDA</span>\<span class="n">gEDA</span>\<span class="nb">bin</span>\<span class="n">gnetlist</span><span class="o">.</span><span class="n">exe</span>
-<span class="n">ngspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Users</span>\<span class="n">anton</span>\<span class="n">ngspice</span>\<span class="n">Spice64</span>\<span class="nb">bin</span>\<span class="n">ngspice</span><span class="o">.</span><span class="n">exe</span>
 </pre></div>
 </div>
 </section>
@@ -210,15 +210,15 @@
 </div>
 <p>The default execution result of the command sl.ini.dump() after initialization of the example project “My First RC Network” for user “USER” under MS-Windows in the Anaconda environment is shown below:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">prj</span> <span class="o">=</span> <span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC network&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s2">&quot;My First RC network&quot;</span><span class="p">)</span>
 
 <span class="go">Compiling library: SLiCAP.lib.</span>
 <span class="go">Compiling library: SLiCAPmodels.lib.</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
 
-<span class="go">ini.install_version = 3.2.2</span>
-<span class="go">ini.latest_version  = 3.2.2</span>
+<span class="go">ini.install_version = 3.2.4</span>
+<span class="go">ini.latest_version  = 3.2.4</span>
 <span class="go">ini.install_path    = C:/Users/USER/anaconda3/lib/site-packages/</span>
 <span class="go">ini.home_path       = C:/Users/USER/SLiCAP/</span>
 <span class="go">ini.main_lib_path   = C:/Users/USER/SLiCAP/lib/</span>
@@ -245,9 +245,9 @@
 <span class="go">ini.html_pages      = [&#39;&#39;]</span>
 <span class="go">ini.html_labels     = &lt;Section: labels&gt;</span>
 <span class="go">ini.disp            = 4</span>
-<span class="go">ini.last_updated    = 2025-01-25 15:55:14</span>
+<span class="go">ini.last_updated    = 2025-02-03 16:15:03</span>
 <span class="go">ini.project_title   = My first RC network</span>
-<span class="go">ini.created         = 2024-11-03 21:55:14</span>
+<span class="go">ini.created         = 2025-01-31 05:01:58</span>
 <span class="go">ini.author          = USER</span>
 <span class="go">ini.laplace         = s</span>
 <span class="go">ini.frequency       = f</span>
@@ -258,6 +258,7 @@
 <span class="go">ini.factor          = True</span>
 <span class="go">ini.max_rec_subst   = 15</span>
 <span class="go">ini.reduce_matrix   = True</span>
+<span class="go">ini.reduce_circuit  = True</span>
 <span class="go">ini.hz              = True</span>
 <span class="go">ini.gain_colors     = {&#39;asymptotic&#39;: &#39;r&#39;, &#39;gain&#39;: &#39;b&#39;, &#39;loopgain&#39;: &#39;k&#39;, &#39;servo&#39;: &#39;m&#39;, &#39;direct&#39;: &#39;g&#39;, &#39;vi&#39;: &#39;c&#39;}</span>
 <span class="go">ini.plot_fontsize   = 10</span>
@@ -278,9 +279,15 @@
 <section id="changing-settings">
 <h3>Changing settings<a class="headerlink" href="#changing-settings" title="Link to this heading"></a></h3>
 <p>It is strongly advised not to change any settings in the project SLiCAP.ini file. The preferred way of changing settings is to do it in the python scripts:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ini</span><span class="o">.</span><span class="n">disp</span>          <span class="o">=</span> <span class="mi">3</span>     <span class="c1"># set the number of significant digits in reports and listings to 3</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ini</span><span class="o">.</span><span class="n">hz</span>            <span class="o">=</span> <span class="kc">False</span> <span class="c1"># set the default frequency units to *rad/s*</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ini</span><span class="o">.</span><span class="n">max_rec_subst</span> <span class="o">=</span> <span class="mi">20</span>    <span class="c1"># set the maximum number of recursive substitution of expressions to 20</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">disp</span>            <span class="o">=</span> <span class="mi">3</span>     <span class="c1"># set the number of significant digits in reports and listings to 3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">hz</span>              <span class="o">=</span> <span class="kc">False</span> <span class="c1"># set the default frequency units to *rad/s*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">max_rec_subst</span>   <span class="o">=</span> <span class="mi">20</span>    <span class="c1"># set the maximum number of recursive substitutions in expressions to 20</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">reduce_circuit</span>  <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Do NOT eliminate unused independent voltage sources from the circuit</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">reduce_matrix</span>   <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Do NOT eliminate variables and reduce the matrix size before calculating the determinant</span>
+<span class="go">                                   # If True, the size of MNA matrices comprising Laplace expressions will be reduced through</span>
+<span class="go">                                   # elimination of variables, until all matrix enties are either zero or Laplace polynomials</span>
+<span class="go">                                   # of the first order or higher</span>
 </pre></div>
 </div>
 </section>
