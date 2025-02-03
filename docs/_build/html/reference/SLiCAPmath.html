@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SLiCAPmath.py &mdash; SLiCAP 3.2.3 documentation</title>
+  <title>SLiCAPmath.py &mdash; SLiCAP 3.2.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -15,7 +15,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=7895512d"></script>
+        <script src="../_static/documentation_options.js?v=b31cc1e0"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -37,7 +37,7 @@
             SLiCAP
           </a>
               <div class="version">
-                3.2.3
+                3.2.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -76,6 +76,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.float2rational"><code class="docutils literal notranslate"><span class="pre">float2rational()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.fullSubs"><code class="docutils literal notranslate"><span class="pre">fullSubs()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.ilt"><code class="docutils literal notranslate"><span class="pre">ilt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.integrate_monomial_coeffs"><code class="docutils literal notranslate"><span class="pre">integrate_monomial_coeffs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.integrated_monomial_coeffs"><code class="docutils literal notranslate"><span class="pre">integrated_monomial_coeffs()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.listPZ"><code class="docutils literal notranslate"><span class="pre">listPZ()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.nonPolyCoeffs"><code class="docutils literal notranslate"><span class="pre">nonPolyCoeffs()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#SLiCAP.SLiCAPmath.normalizeRational"><code class="docutils literal notranslate"><span class="pre">normalizeRational()</span></code></a></li>
@@ -553,6 +555,67 @@ parameter definitions into ‘valExpr’.</p>
 </dl>
 <p>return: Inverse Laplace Transform f(t)
 :rtype: sympy.Expr</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.integrate_monomial_coeffs">
+<span class="sig-name descname"><span class="pre">integrate_monomial_coeffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_lower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_upper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.integrate_monomial_coeffs" title="Link to this definition"></a></dt>
+<dd><p>Returns expr in which x in coefficients of monomials of 
+variables is integrated over the range x_lower … x_upper. If doit=True
+the integration will be performed, else integral operators will be returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>expr</strong> – Sympy expression</p></li>
+<li><p><strong>variables</strong> (<em>list with sympy.Symbol objects</em>) – List or tuple with variables
+(currently only two variables accepted)</p></li>
+<li><p><strong>x</strong> (<em>sympy.Symbol</em>) – integration variable</p></li>
+<li><p><strong>x_lower</strong> (<em>sympy.Symbol</em><em>, </em><em>int</em><em> or </em><em>float</em>) – start value integration</p></li>
+<li><p><strong>x_upper</strong> (<em>sympy.Symbol</em><em>, </em><em>int</em><em> or </em><em>float</em>) – end value integration</p></li>
+<li><p><strong>doit</strong> (<em>bool</em>) – True/False; If True, the integration will be performed, 
+else integral operators will be returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Integration result</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sympy.expr, int or float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="SLiCAP.SLiCAPmath.integrated_monomial_coeffs">
+<span class="sig-name descname"><span class="pre">integrated_monomial_coeffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_lower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_upper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SLiCAP.SLiCAPmath.integrated_monomial_coeffs" title="Link to this definition"></a></dt>
+<dd><p>Returns a dictionary with key-value pairs:</p>
+<ul class="simple">
+<li><p>key: monomial of variables</p></li>
+<li><p>coefficient of this monomial with x integrated over the range 
+x_lower … x_upper.</p></li>
+</ul>
+<p>If doit=True the integration will be performed, else integral operators 
+will be returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>expr</strong> – Sympy expression</p></li>
+<li><p><strong>variables</strong> (<em>list with sympy.Symbol objects</em>) – List or tuple with variables  
+(currently only two variables accepted)</p></li>
+<li><p><strong>x</strong> (<em>sympy.Symbol</em>) – integration variable</p></li>
+<li><p><strong>x_lower</strong> (<em>sympy.Symbol</em><em>, </em><em>int</em><em> or </em><em>float</em>) – start value integration</p></li>
+<li><p><strong>x_upper</strong> (<em>sympy.Symbol</em><em>, </em><em>int</em><em> or </em><em>float</em>) – end value integration</p></li>
+<li><p><strong>doit</strong> (<em>bool</em>) – True/False; If True, the integration will be performed, 
+else integral operators will be returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Integration result</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sympy.expr, int or float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

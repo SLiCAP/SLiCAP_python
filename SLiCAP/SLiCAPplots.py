@@ -731,7 +731,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                     keys = list(result.onoiseTerms.keys())
                     if noiseSources == None:
                         if funcType == 'onoise':
-                            yData = sp.simplify(sp.N(result.onoise))
+                            yData = sp.N(result.onoise)
                         elif funcType == 'inoise':
                             yData = sp.N(result.inoise)
                         y = _makeNumData(yData, ini.frequency, x)

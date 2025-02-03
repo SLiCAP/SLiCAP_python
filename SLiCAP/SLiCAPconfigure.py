@@ -25,7 +25,7 @@ if platform.system() == 'Windows':
     import windows_tools.installed_software as wi
 
 TIMEOUT = 120
-INSTALLVERSION = "3.2.3"
+INSTALLVERSION = "3.2.4"
 
 def _check_version():
     """

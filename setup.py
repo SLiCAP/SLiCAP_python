@@ -5,7 +5,7 @@ from os.path import expanduser
 import setuptools
 from setuptools.command.install import install
 
-INSTALLVERSION="3.2.3"
+INSTALLVERSION="3.2.4"
 
 class InstallWrapper(install):
     """

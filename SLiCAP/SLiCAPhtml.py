@@ -898,9 +898,9 @@ def coeffsTransfer2html(transferCoeffs, label='', labelText=''):
     :rtype: str
     
     """
-    label = _addLabel(label, caption=labelText, labelType="data")
+    label = _addLabel(label, caption=labelText, labelType="data")    
     (gain, numerCoeffs, denomCoeffs) = transferCoeffs
-    html = '<h3>Gain factor</h3>\n<p>$%s$</p>\n'%(sp.latex(roundN(gain)))
+    html = '<h3>' + label +  'Gain factor</h3>\n<p>$%s$</p>\n'%(sp.latex(roundN(gain)))
     html += '<h3>Normalized coefficients of the numerator:</h3>\n<table><tr><th class=\"center\">order</th><th class=\"left\">coefficient</th></tr>\n'
     for i in range(len(numerCoeffs)):
         value = sp.latex(roundN(numerCoeffs[i]))
@@ -914,6 +914,15 @@ def coeffsTransfer2html(transferCoeffs, label='', labelText=''):
     html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
+def monomial_coeffs2html(coeff_dict, label='', labelText=''):
+    label = _addLabel(label, caption=labelText, labelType="data")
+    html = '<h3>' + label + 'Monomial coefficients</h3>\n<table><tr><th class=\"left\">Monomial</th><th class=\"left\">Coefficient</th></tr>\n'
+    for key in coeff_dict:
+        html += '<tr><td class=\"left\">$' + sp.latex(key) + '$</td><td class=\"left\">$' + sp.latex(roundN(coeff_dict[key])) + '$</td></tr>\n'
+    html += '</table>\n'
+    html = _insertHTML(ini.html_path + ini.html_page, html)
+    return html
+        
 def stepArray2html(stepVars, stepArray, label="", labelText=""):
     """
     Displays the step array on the active HTML page.

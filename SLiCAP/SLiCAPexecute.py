@@ -1582,10 +1582,15 @@ def _doPyNoise(instr, result):
     result.gainType = 'vi'
     instr.dataType = 'noise'
     result = _makeAllMatrices(instr, result, reduce=False)
+    M_noise = result.M
     Iv_noise = result.Iv
+    Dv_noise = result.Dv
     onoise = 0
     inoise = 0
     for src in result.snoiseTerms.keys():
+        result.M = M_noise
+        result.Iv = Iv_noise
+        result.Dv = Dv_noise
         if src not in result.onoiseTerms.keys():
             result.onoiseTerms[src] = []
             result.inoiseTerms[src] = []
@@ -1598,6 +1603,8 @@ def _doPyNoise(instr, result):
                 Iv = Iv.subs(name, 0)
         result.Iv = Iv
         result.source = [src]
+        # Remove unused independent voltage sources
+        result.M, result.Iv, result.Dv = _reduceCircuit(result)
         result = _doPyNumer(instr, result)
         num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
@@ -1609,10 +1616,10 @@ def _doPyNoise(instr, result):
             result.onoiseTerms[src].append(clearAssumptions(onoiseTerm))
             onoise += result.onoiseTerms[src][-1]
             if instr.source != [None, None] and instr.source != None:
-                inoiseTerm = result.snoiseTerms[src]*num_sq/sl_num_sq
+                inoiseTerm = clearAssumptions(result.snoiseTerms[src]*num_sq/sl_num_sq)
                 if ini.factor:
                     inoiseTerm = sp.factor(inoiseTerm)
-                result.inoiseTerms[src].append(clearAssumptions(inoiseTerm))
+                result.inoiseTerms[src].append(inoiseTerm)
                 inoise += result.inoiseTerms[src][-1]
     result.onoise.append(onoise)
     if inoise == 0:
@@ -1652,10 +1659,15 @@ def _doPyDCvar(instr, result):
     result.gainType = 'vi'
     result.dataType = 'dcvar'
     result = _makeAllMatrices(instr, result, reduce=False)
+    M_var = result.M.subs(ini.laplace, 0)
     Iv_var = result.Iv.subs(ini.laplace, 0)
+    Dv_var = result.Dv
     ovar = 0
     ivar = 0
     for src in result.svarTerms.keys():
+        result.M = M_var
+        result.Iv = Iv_var
+        result.Dv = Dv_var
         if src not in result.ovarTerms.keys():
             result.ovarTerms[src] = []
             result.ivarTerms[src] = []
@@ -1668,6 +1680,7 @@ def _doPyDCvar(instr, result):
                 Iv = Iv.subs(name, 0)
         result.Iv = Iv
         result.source = [src]
+        result.M, result.Iv, result.Dv = _reduceCircuit(result)
         result = _doPyNumer(instr, result)
         num = result.numer[-1]
         if num != None:
