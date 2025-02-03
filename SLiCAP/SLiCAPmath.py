@@ -1728,16 +1728,16 @@ def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True):
     terms = zip(poly.coeffs(), poly.monoms())
     for coeff, (exp_1, exp_2) in terms:
         coeff = sp.factor(coeff)
-        try:
-            if doit:
-                integral = sp.integrate(coeff, (x, x_lower, x_upper))
-            else: 
-                integral = sp.Integral(coeff, (x, x_lower, x_upper))
-        except:
-            if len(coeff.atoms(sp.Symbol)) == 0 or (len(coeff.atoms(sp.Symbol)) == 1 and coeff.atoms(sp.Symbol)[0] == x):
-                coeff_func = sp.lambdify(x, coeff)
-                integral, error = quad(coeff_func, x_lower, x_upper)
-            else:
+        if doit and (len(coeff.atoms(sp.Symbol)) == 0 or coeff.atoms(sp.Symbol) == {x}):
+            coeff_func = sp.lambdify(x, coeff)
+            integral, error = quad(coeff_func, x_lower, x_upper)
+        else:
+            try:
+                if doit:
+                    integral = sp.integrate(coeff, (x, x_lower, x_upper))
+                else: 
+                    integral = sp.Integral(coeff, (x, x_lower, x_upper))
+            except:
                 raise NotImplementedError()
         results[(exp_1, exp_2)] = integral
     return results
