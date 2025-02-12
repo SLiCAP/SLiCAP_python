@@ -623,7 +623,7 @@ def assumeRealParams(expr, params = 'all'):
 def assumePosParams(expr, params = 'all'):
     """
     Returns the sympy expression 'expr' in which  variables, except the
-    Laplace variable, have been redefined as positive.
+    Laplace variable, have been redefined as real.
 
     :param expr: Sympy expression
     :type expr: sympy.Expr, sympy.Symbol
@@ -1443,8 +1443,8 @@ def roundN(expr, numeric=False):
         maxInt = 10**ini.disp
         floats = expr.atoms(sp.Float)
         for flt in floats:
-            intNumber = sp.Integer(flt)
-            if intNumber == flt and sp.Abs(flt) < maxInt:
+            intNumber = int(flt)
+            if float(intNumber) == float(flt) and sp.Abs(flt) < maxInt:
                 expr = expr.xreplace({flt: intNumber})
         # Replace large integers with floats
         ints = expr.atoms(sp.Integer)
@@ -1799,7 +1799,7 @@ def integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
     if len(variables) == 2:
         integrated_coeffs, orders = _integrateCoeffs2(expr, variables, x, x_lower, x_upper, doit=doit)
     else:
-        raise NotImplementedError()    
+        raise NotImplementedError("Only two-variable monomials are implemented.") 
     new_coeffs = {}
     for key in integrated_coeffs.keys():
         newkey = variables[0]**(key[0]-orders[0]) * variables[1]**(key[1]-orders[1])

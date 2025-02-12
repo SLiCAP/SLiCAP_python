@@ -30,13 +30,14 @@ def _addLabel(label, fileName='', caption='', labelType=''):
 def _latex_ENG(num):
     if ini.scalefactors or ini.eng_notation:
         num, exp = ENG(num, scaleFactors=ini.scalefactors)
+        num = roundN(num)
         if exp != None:
             if ini.scalefactors:
                 num = str(num) + '\\, \\mathrm{' + str(exp) + '}'
             else:
                 num = str(num) + '\\cdot 10^{' + str(exp) + '}'
         else:
-            num = sp.latex(roundN(num))
+            num = sp.latex(num)
     else:
         num = sp.latex(roundN(num))
     return num
@@ -577,7 +578,7 @@ def eqn2html(arg1, arg2, units='', label='', labelText=''):
         units = '\\,\\left[ \\mathrm{' + sp.latex(sp.sympify(units)) + '}\\right]'
     label = _addLabel(label, caption=labelText, labelType='eqn')
     value = _latex_ENG(arg2)
-    #value =  sp.latex(roundN(arg2))
+    #value =  sp.latex(roundN(arg2))    
     html = label + '\\begin{equation}\n' + sp.latex(roundN(arg1)) + '=' + value + units + '\n'
     html += '\\end{equation}\n'
     html = _insertHTML(ini.html_path + ini.html_page, html)

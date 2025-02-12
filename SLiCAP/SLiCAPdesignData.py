@@ -100,7 +100,10 @@ class specItem(object):
         :return: html code of this specitem
         :rtype: str
         """
-        value = _latex_ENG(roundN(self.value))
+        if self.value != '':
+            value = _latex_ENG(roundN(self.value))
+        else:
+            self.value = ''
         # symbol
         html     = '<td class="left">$' + sp.latex(self.symbol) + '$</td>'
         # description
