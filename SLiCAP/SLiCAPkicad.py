@@ -7,7 +7,10 @@ import subprocess
 import os
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPsvgTools import _crop_svg
-import cairosvg
+try:
+    import cairosvg
+except:
+    print("Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.")
 
 class _KiCADcomponent(object):
     def __init__(self):
@@ -150,7 +153,10 @@ def KiCADsch2svg(fileName):
             print("Creating drawing-size SVG and PDF images of {}".format(fileName))
             subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', fileName])
             _crop_svg(ini.img_path + cirName + ".svg")
-            cairosvg.svg2pdf(url=ini.img_path + cirName + ".svg", write_to=ini.img_path + cirName + ".pdf")
+            try:
+                cairosvg.svg2pdf(url=ini.img_path + cirName + ".svg", write_to=ini.img_path + cirName + ".pdf")
+            except:
+                print("Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.")
         else:
             print("Error: could not open: '{}'.".format(fileName))
     
