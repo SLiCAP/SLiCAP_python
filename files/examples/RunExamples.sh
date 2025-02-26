@@ -18,5 +18,3 @@ for key in "${!test_cirs[@]}"; do
     cd ..
     echo "   - \`${key} <../examples/${key}>\`_" >> ExampleCirs.rst
 done
-
-mv  ExampleCirs.rst ../../docs/tutorials/ExampleCirs.rst
