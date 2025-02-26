@@ -71,9 +71,9 @@ jobs:
           repository: SLiCAP/SLiCAPexamples
       - name: run example projects
         run: |
-          cd ./Examplesdir/Tests
+          cd ./SLiCAPdir/files/examples
           . ./RunExamples.sh
-          mv  ExampleCirs.rst ../../SLiCAPdir/docs/tutorials/ExampleCirs.rst
+          mv  ExampleCirs.rst ../../docs/tutorials/ExampleCirs.rst
       - name: make html files
         run: |
           cd ./SLiCAPdir/docs
