@@ -68,6 +68,7 @@ jobs:
       - name: Checkout Examples repository
         uses: actions/checkout@v3
         with:
+          clean: false
           path: './Examplesdir'
           repository: SLiCAP/SLiCAPexamples
       - name: run example projects
