@@ -31,6 +31,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Create a SLiCAP directory
+        run: |
+          mkdir SLiCAPdir
+          cd ./SLiCAPdir
       - name: Checkout SLiCAP repository
         uses: actions/checkout@v3
         with:
@@ -63,13 +67,19 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: SLiCAP/SLiCAPexamples
+      - name: Create an Examples directory
+        run: |
+          cd ..
+          mkdir Examplesdir
+          cd ./Examplesdir
       - name: run example projects
         run: |
           cd Tests/
           . ./RunExamples.sh
+          mv  ExampleCirs.rst ../../SLiCAPdir/docs/tutorials/ExampleCirs.rst
       - name: make html files
         run: |
-          cd docs
+          cd ../../SLiCAPdir/docs
           make html
       - name: move html files to main directory
         run: |
