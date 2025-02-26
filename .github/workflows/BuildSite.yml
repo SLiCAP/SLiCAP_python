@@ -34,10 +34,10 @@ jobs:
       - name: Create a SLiCAP directory
         run: |
           mkdir SLiCAPdir
-          cd ./SLiCAPdir
       - name: Checkout SLiCAP repository
         uses: actions/checkout@v3
         with:
+          path: './SLiCAPdir'
           repository: SLiCAP/SLiCAP_python
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -73,6 +73,7 @@ jobs:
       - name: Checkout Examples repository
         uses: actions/checkout@v3
         with:
+          path: './Examplesdir'
           repository: SLiCAP/SLiCAPexamples
       - name: run example projects
         run: |
