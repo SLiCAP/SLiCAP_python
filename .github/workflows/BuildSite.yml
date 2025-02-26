@@ -47,7 +47,6 @@ jobs:
       # Here I'm in the SLiCAPdir directory, but all installs should be in the main directory so I change the directory first
       - name: install wine
         run: |
-          cd ..
           sudo dpkg --add-architecture i386
           sudo apt update
           sudo apt-get install -y wine32 wine-stable
@@ -62,7 +61,6 @@ jobs:
           wine LTspice64.exe
       - name: install python packages, SLiCAP dependencies
         run: |
-          pwd
           python -m pip install --upgrade pip
           pip install -r ./SLiCAPdir/requirements.txt
       - name: install SLiCAP
