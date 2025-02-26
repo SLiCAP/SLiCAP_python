@@ -63,15 +63,15 @@ jobs:
           pip install -r requirements.txt
       - name: install SLiCAP
         run: python -m pip install .
-      - name: Checkout Examples repository
-        uses: actions/checkout@v3
-        with:
-          repository: SLiCAP/SLiCAPexamples
       - name: Create an Examples directory
         run: |
           cd ..
           mkdir Examplesdir
           cd ./Examplesdir
+      - name: Checkout Examples repository
+        uses: actions/checkout@v3
+        with:
+          repository: SLiCAP/SLiCAPexamples
       - name: run example projects
         run: |
           cd Tests/
