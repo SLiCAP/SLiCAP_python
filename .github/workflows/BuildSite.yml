@@ -71,9 +71,9 @@ jobs:
           repository: SLiCAP/SLiCAPexamples
       - name: run example projects
         run: |
-          cd ./SLiCAPdir/files/examples
+          cd ./Examplesdir/Tests
           . ./RunExamples.sh
-          mv  ExampleCirs.rst ../../docs/tutorials/ExampleCirs.rst
+          mv  ExampleCirs.rst ../../SLiCAPdir/docs/tutorials/ExampleCirs.rst
       - name: make html files
         run: |
           cd ./SLiCAPdir/docs
@@ -82,8 +82,8 @@ jobs:
         run: |
           mkdir builthtml
           mkdir builthtml/examples
-          mv  -v ./docs/_build/html/* builthtml
-          mv  -v ./files/examples/allhtml/* builthtml/examples
+          mv  -v ./SLiCAPdir/docs/_build/html/* builthtml
+          mv  -v ./Examplesdir/Tests/allhtml/* builthtml/examples
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
