@@ -43,8 +43,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+      # Here I'm in the SLiCAPdir directory, but all installs should be in the main directory so I change the directory first
       - name: install wine
         run: |
+          cd ..
           sudo dpkg --add-architecture i386
           sudo apt update
           sudo apt-get install -y wine32 wine-stable
@@ -60,12 +62,11 @@ jobs:
       - name: install python packages, SLiCAP dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r ./SLiCAPdir/requirements.txt
       - name: install SLiCAP
-        run: python -m pip install .
+        run: python -m pip install ./SLiCAPdir
       - name: Create an Examples directory
         run: |
-          cd ..
           mkdir Examplesdir
           cd ./Examplesdir
       - name: Checkout Examples repository
