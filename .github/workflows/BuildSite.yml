@@ -31,9 +31,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Create a repo directories
+        run: |
+          mkdir SLiCAPdir
+          mkdir Examplesdir
       - name: Checkout SLiCAP repository
         uses: actions/checkout@v3
         with:
+          path: './SLiCAPdir'
           repository: SLiCAP/SLiCAP_python
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -56,23 +61,29 @@ jobs:
       - name: install python packages, SLiCAP dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r ./SLiCAPdir/requirements.txt
       - name: install SLiCAP
-        run: python -m pip install .
+        run: python -m pip install ./SLiCAPdir
+      - name: Checkout Examples repository
+        uses: actions/checkout@v3
+        with:
+          path: './Examplesdir'
+          repository: SLiCAP/SLiCAPexamples
       - name: run example projects
         run: |
-          cd files/examples
+          cd ./Examplesdir/Tests
           . ./RunExamples.sh
+          mv  ExampleCirs.rst ../../SLiCAPdir/docs/tutorials/ExampleCirs.rst
       - name: make html files
         run: |
-          cd docs
+          cd ./SLiCAPdir/docs
           make html
       - name: move html files to main directory
         run: |
           mkdir builthtml
           mkdir builthtml/examples
-          mv  -v ./docs/_build/html/* builthtml
-          mv  -v ./files/examples/allhtml/* builthtml/examples
+          mv  -v ./SLiCAPdir/docs/_build/html/* builthtml
+          mv  -v ./Examplesdir/Tests/allhtml/* builthtml/examples
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
