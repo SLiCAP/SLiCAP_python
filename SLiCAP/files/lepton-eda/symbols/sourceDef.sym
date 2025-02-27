@@ -1,0 +1,10 @@
+v 20220529 2
+T 100 600 9 10 0 0 0 0 1
+device=directive
+T 100 400 9 8 1 1 0 0 1
+refdes=A?
+T 400 400 9 8 1 0 0 0 1
+Source
+T 100 100 8 8 1 1 0 0 1
+value=.source <sourceP> (<sourceN>)
+L 100 300 900 300 3 10 0 0 -1 -1

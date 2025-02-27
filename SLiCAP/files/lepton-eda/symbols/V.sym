@@ -1,0 +1,37 @@
+v 20200319 2
+V 200 400 200 3 10 0 0 -1 -1 0 -1 -1 -1 -1 -1
+L 200 200 200 600 3 10 0 0 -1 -1
+P 200 0 200 200 1 0 0
+{
+T 450 -100 5 6 0 0 0 0 1
+pinseq=2
+T 450 0 5 6 0 0 0 0 1
+pinnumber=2
+}
+P 200 800 200 600 1 0 0
+{
+T 450 850 5 6 0 0 0 0 1
+pinseq=1
+T 450 950 5 6 0 0 0 0 1
+pinnumber=1
+}
+T 0 1250 5 6 0 0 0 0 1
+device=V-slicap
+T 0 1150 8 6 0 0 0 0 1
+description=Independent voltage source
+T 500 550 8 8 1 0 0 0 1
+value=0
+T 500 700 8 8 1 1 0 0 1
+refdes=V?
+T 0 1050 8 6 0 0 0 0 1
+spice-prototype=? %pinseq V value=value@ dc=dc@ dcvar=dcvar@ noise=noise@
+T 250 600 9 10 1 0 0 0 1
++
+T 250 100 9 10 1 0 0 0 1
+-
+T 500 400 8 8 1 0 0 0 1
+dc=0
+T 495 250 8 8 1 0 0 0 1
+dcvar=0
+T 495 100 8 8 1 0 0 0 1
+noise=0

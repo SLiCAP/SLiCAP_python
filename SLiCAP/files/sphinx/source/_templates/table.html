@@ -1,0 +1,16 @@
+<div id="excel-{{file_name}}-sheet-{{sheet_name}}-icnt-{{icnt}}" style="margin-bottom: 24px"></div>
+<script>
+  var container = document.getElementById('excel-{{file_name}}-sheet-{{sheet_name}}-icnt-{{icnt}}');
+    var hot = new Handsontable(container, {
+    data: {{content}},
+    preventOverflow: {{overflow}},
+    readOnly: true,
+    width: {{tablewidth}},
+    colWidths: {{colwidths}},
+    manualColumnResize: true,
+    manualRowResize: true,
+    rowHeaders: {{row_header}},
+    colHeaders: {{col_header}},
+    mergeCells: {{merged_cells}}
+    });
+</script>

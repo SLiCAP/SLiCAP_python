@@ -1,0 +1,38 @@
+v 20200319 2
+P 300 100 300 200 1 0 0
+{
+T 500 -100 5 8 0 0 0 0 1
+pinseq=2
+T 500 50 5 8 0 0 0 0 1
+pinnumber=2
+}
+P 300 900 300 800 1 0 0
+{
+T 500 1000 5 8 0 0 0 0 1
+pinseq=1
+T 500 1150 5 8 0 0 0 0 1
+pinnumber=1
+}
+T 150 1650 5 8 0 0 0 0 1
+device=R-slicap
+T 150 1500 8 8 0 0 0 0 1
+description=Resistor
+T 525 800 8 8 1 1 0 0 1
+refdes=R?
+T 150 1350 8 8 0 0 0 0 1
+spice-prototype=? %pinseq r value=value@ noisetemp=noisetemp@ noiseflow=noiseflow@ dcvar=dcvar@ dcvarlot=dcvarlot@
+B 225 300 150 400 3 10 0 0 -1 -1 0 -1 -1 -1 -1 -1
+L 300 800 300 700 3 10 0 0 -1 -1
+L 300 300 300 200 3 10 0 0 -1 -1
+T 325 725 9 10 1 0 0 0 1
++
+T 525 675 8 8 1 0 0 0 1
+value=?
+T 525 525 8 8 1 0 0 0 1
+dcvar=0
+T 525 225 8 8 1 0 0 0 1
+noisetemp=0
+T 525 75 8 8 1 0 0 0 1
+noiseflow=0
+T 525 375 8 8 1 0 0 0 1
+dcvarlot=0
