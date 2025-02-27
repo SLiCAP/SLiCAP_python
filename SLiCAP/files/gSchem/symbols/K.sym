@@ -1,0 +1,18 @@
+v 20200319 2
+T -50 800 5 6 0 0 0 0 1
+device=K-slicap
+T -50 700 8 6 0 0 0 0 1
+description=Coupling factor
+T 225 250 8 8 1 1 0 0 1
+value=?
+T 225 400 8 8 1 1 0 0 1
+refdes=K?
+T -50 600 8 6 0 0 0 0 1
+spice-prototype=? %pinseq ref1@ ref2@
+A 150 125 100 90 90 3 10 0 0 -1 -1
+A 450 125 100 0 90 3 10 0 0 -1 -1
+L 150 225 450 225 3 10 0 0 -1 -1
+T 45 -5 8 8 1 1 0 3 1
+ref1=L?
+T 552 -5 8 8 1 1 0 3 1
+ref2=L?

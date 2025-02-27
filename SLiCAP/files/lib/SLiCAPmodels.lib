@@ -1,0 +1,166 @@
+"SLiCAPmodels"
+
+* Physical constants
+********************
+
+.param 
++ q             = 1.60217662e-19    ; Electron charge in [C]
++ c             = 2.99792458e+08    ; Speed of light in [m/s]
++ mu_0          = {4*pi*1e-7}       ; Permeability of vacuum in [H/m]
++ epsilon_SiO2  = 3.9               ; Relative permittivity of SiO2 [-]
++ k             = 1.38064852e-23    ; Boltzmann constant in [J/K]
++ epsilon_0     = {1/mu_0/c^2}      ; permittivity of vacuum in [F/m]
+
+* Temperature and thermal voltage
+*********************************
+
+.param
++ T             = 300               ; Default value of the absolute temperature in [K]
++ U_T           = {k*T/q}           ; Thermal voltage [V]
+
+* CMOS18 technology parameters for EKV models (SI units)
+* Manual fit to "nch" and "pch" devices in BSIM 3.2 log018.l
+* Good match on gm(ID) fT(ID) and noise 
+* over a wide current range and geometry range
+********************************************************
+
+.param
++ TOX_N18     = 4.2n  ; oxide thickness [m]
++ Vth_N18     = 0.42  ; threshold voltage [V]
++ N_s_N18     = 1.38  ; substrate factor [-]
++ u_0_N18     = 68m   ; zero field carrier mobility [m^2/V/s]
++ Theta_N18   = 0.41  ; vertical field mobility reduction coefficient [1/V]
++ E_CRIT_N18  = 10.7M ; lateral field strength for velocity saturation [V/m]
++ CGBO_N18    = 1p    ; gate-bulk overlap capacitance [F/m]
++ CGSO_N18    = 330p  ; gate-source and gate-drain overlap capacitance [F/m]
++ CJB0_N18    = 1m    ; source/bulk drain/bulk capacitance [F/m^2]
++ LDS_N18     = 180n  ; length of drain and source [m]
++ VAL_N18     = 30M   ; Early voltage per unit of length [V/m]
++ KF_N18      = 2e-25 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C^2/m^2]
++ AF_N18      = 0.82  ; flicker noise exponent [-]
++ V_KF_N18    = 2     ; flicker noise voltage dependency factor [V]
++ C_OX_N18    = {epsilon_0 * epsilon_SiO2 / TOX_N18}; oxide capacitance per unit of area [F/m^2]
++ I_0_N18     = {2*N_s_N18*u_0_N18*C_OX_N18*U_T^2}  ; technology current [A]
+
+.param
++ TOX_P18     = 4n      ; oxide thickness [m]
++ Vth_P18     = -0.425  ; threshold voltage [V]
++ N_s_P18     = 1.37    ; substrate factor [-]
++ Theta_P18   = 0.65     ; vertical field mobility reduction factor [1/V]
++ E_CRIT_P18  = 1G      ; lateral field strength for velocity saturation [V/m]
++ u_0_P18     = 11m    ; zero field carrier mobility [m^2/V/s]
++ CGBO_P18    = 1p      ; gate-bulk overlap capacitance [F/m]
++ CGSO_P18    = 350p    ; gate-source and gate-drain overlap capacitance [F/m]
++ CJB0_P18    = 1m      ; source/bulk drain/bulk capacitance [F/m^2]
++ LDS_P18     = 180n    ; length of drain and source [m]
++ VAL_P18     = 12.5M     ; Early voltage per unit of length [V/m]
++ KF_P18      = 4.2e-28 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C^2/m^2]
++ AF_P18      = 1.25    ; flicker noise exponent [-]
++ V_KF_P18    = 0.2     ; flicker noise voltage dependency factor [V]
++ C_OX_P18    = {epsilon_0 * epsilon_SiO2 / TOX_P18}; oxide capacitance per unit of area [F/m^2]
++ I_0_P18     = {2*N_s_P18*u_0_P18*C_OX_P18*U_T^2} ; technology current [A]
+
+* Sub circuits for expansion models
+***********************************
+
+* Diode
+.subckt D a c rs=0 gd=1 cd=0 ; default values
+Rs a 1 {rs}
+Gd 1 c 1 c g value = {gd}
+Cd 1 c {cd}
+.ends
+
+* JFET
+.subckt J d g s gm=1m go=0 cgs=0 cdg=0 ; default values
+Gm d s g s g value={gm}
+Cgs g s {cgs}
+Cdg d g {cdg}
+Go d s d s g value={go}
+.ends
+
+* MOSFET
+.subckt M d g s b gm=1m gb=0 go=0 cgs=0 cdg=0 cgb=0 cdb=0 csb=0 ; default values
+Gm d s g s g value={gm}
+Gb d s b s g value={gb}
+Go d s d s g value={go}
+Cgs g s {cgs}
+Cdg d g {cdg}
+Cgb g b {cgb}
+Cdb d b {cdb}
+Csb s b {csb}
+.ends
+
+* MOSFET Differential pair
+.subckt MD d1 d2 g1 g2 gm=1m go=0 cgg=0 cdd=0 cdg=0 ; default values
+Gm d1 d2 g1 g2 g value={gm}
+Go d1 d2 d1 d2 g value={go}
+Cgg g1 g2 {cgg}
+Cdd d1 d2 {cdd}
+Cdg1 d1 g1 {cdg}
+Cdg2 d2 g2 {cdg}
+.ends
+
+* Voltage feedback operational amplifier
+.subckt OV inP inN out ref av=1M zo=0 gd=0 gc=0 cd=0 cc=0 ; default values
+E out ref inP inN EZ value={av} zo={zo}
+Gd inP inN inP inN g value={gd}
+Gc1 inP ref inP ref g value={gc/2}
+Gc2 inN ref inN ref g value={gc/2}
+Cd inP inN {cd}
+Cc1 inP ref {cc/2}
+Cc2 inN ref {cc/2}
+.ends
+
+* Current feedback operational amplifier
+.subckt OC inP inN out ref gm=20m zt=50k gpn=0 gp=0 cpn=0 cp=0 zo=0; default values
+H out ref ref  1 HZ value={zt} zo={zo}
+Gm 1 inN inP inN g value={gm}
+Gp inP ref inP ref g value={gp}
+Gpn inP inN inP inP g value={gpn}
+Cp inP ref {cp}
+Cpn inP inN {cpn}
+.ends
+
+* Vertical BJT
+.subckt QV c b e s gm=40m gpi=2.5k go=0 gbc=0 rb=0 cpi=0 cbc=0 cbx=0 cs=0 ; default values
+Rb b 1 r value={rb}
+Gm c e 1 e g value={gm}
+Gpi 1 e 1 e g value={gpi}
+Go c e c e g value={go}
+Gbc 1 c 1 c g value={gbc}
+Cpi 1 e {cpi}
+Cbc 1 c {cbc}
+Cbx b c {cbx}
+Cs c s {cs}
+.ends
+
+* Lateral BJT
+.subckt QL c b e s gm=40m gpi=2.5k go=0 gbc=0 rb=0 cpi=0 cbc=0 cbx=0 cs=0 ; default values
+Rb b 1 r value={rb}
+Gm c e 1 e g value={gm}
+Gpi 1 e 1 e g value={gpi}
+Go c e c e g value={go}
+Gbc 1 c 1 c g value={gbc}
+Cpi 1 e {cpi}
+Cbc 1 c {cbc}
+Cbx b c {cbx}
+Cs b s {cs}
+.ends
+
+* BJT differential pair
+.subckt QD c1 c2 b1 b2 gm=20m gbb=5k gcc=0 gbc=0 rb=0 cbb=0 cbc=0 cbx=0 ; default values
+Gm c1 c2 1 2 g value={gm}
+Gbb 1 2 1 2 g value={gbb}
+Gcc c1 c2 c1 c2 g value={gcc}
+Gbc1 1 c1 1 c1 g value={gbc}
+Gbc2 2 c2 2 c2 g value={gbc}
+Rb1 b1 1 r value={rb}
+Rb2 b2 2 r value={rb}
+Cbb 1 2 {cbb}
+Cbc1 1 c1 {cbc}
+Cbc2 2 c2 {cbc}
+Cbx1 b1 c1 {cbx}
+Cbx2 b2 c2 {cbx}
+.ends
+
+.end
