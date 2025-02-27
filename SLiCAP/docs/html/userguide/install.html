@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download, install, configure and test SLiCAP &mdash; SLiCAP 3.2.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=b31cc1e0"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Create a SLiCAP circuit object" href="circuit.html" />
+    <link rel="prev" title="SLiCAP user guide" href="SLiCAPuserguide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            SLiCAP
+          </a>
+              <div class="version">
+                3.2.4
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP Version 3.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPuserguide.html">SLiCAP user guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Download, install, configure and test SLiCAP</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#download-slicap">Download SLiCAP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-slicap">Install SLiCAP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-packages">Other packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#completing-and-testing-the-installation">Completing and testing the installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main-configuration">Main configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#project-configuration">Project configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#change-settings">Change settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#find-slicap-schematic-symbols-libraries">Find SLiCAP schematic symbols libraries</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#jupyter-notebooks">Jupyter notebooks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#slicap-examples">SLiCAP examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="circuit.html">Create a SLiCAP circuit object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specifications.html">Work with specifications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html">Work with parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">Perform analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plots.html">Create plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reports.html">Create reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html">Work with analysis results</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../syntax/SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/SLiCAPreference.html">SLiCAP reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="SLiCAPuserguide.html">SLiCAP user guide</a></li>
+      <li class="breadcrumb-item active">Download, install, configure and test SLiCAP</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/userguide/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="download-install-configure-and-test-slicap">
+<h1>Download, install, configure and test SLiCAP<a class="headerlink" href="#download-install-configure-and-test-slicap" title="Link to this heading"></a></h1>
+<img alt="../_images/colorCode.svg" src="../_images/colorCode.svg" />
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>You need to have python 3.12+ installed</p></li>
+<li><p>Under MSWindows it is strongly advised to install Python under <a class="reference external" href="https://www.anaconda.com/download">Anaconda</a></p></li>
+</ol>
+<p>SLiCAP requires the Python3 packages listed in <a class="reference external" href="https://github.com/SLiCAP/SLiCAP_python/blob/main/requirements.txt">https://github.com/SLiCAP/SLiCAP_python/requirements.txt</a>.</p>
+</section>
+<section id="download-slicap">
+<h2>Download SLiCAP<a class="headerlink" href="#download-slicap" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Open a command window or terminal in a folder where you want to store the downloaded files and clone <a class="reference external" href="https://github.com/SLiCAP/SLiCAP_python">SLiCAP &lt;https://github.com/SLiCAP/SLiCAP_python</a> into that folder:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/SLiCAP/SLiCAP_python
+</pre></div>
+</div>
+<p>or</p>
+<ul class="simple">
+<li><p>Download the zip file from: <a class="reference external" href="https://github.com/SLiCAP/SLiCAP_python">SLiCAP &lt;https://github.com/SLiCAP/SLiCAP_python</a> and extract it in some folder.</p></li>
+</ul>
+</section>
+<section id="install-slicap">
+<h2>Install SLiCAP<a class="headerlink" href="#install-slicap" title="Link to this heading"></a></h2>
+<ul>
+<li><p>If you work with Anaconca open the <em>Anaconda Prompt</em></p></li>
+<li><p>If you have Python installed under Windows, open a terminal by running the command <em>cmd</em></p></li>
+<li><p>If you have Python installed under Linux or mac Open a <em>terminal</em></p></li>
+<li><p>Navigate to the folder with the file <em>setup.py</em> (usually: <em>&lt;where_you_downloaded_or_cloned&gt;/SLiCAP_python-master/)</em> and enter the command:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">.</span>
+</pre></div>
+</div>
+<p>Dont forget the dot ‘<strong>.</strong>’ at the end!</p>
+<p>This wil install:</p>
+<ul class="simple">
+<li><p>Required python packages</p></li>
+<li><p>SLiCAP module scripts, documentation and libraries in the active Python environment</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="other-packages">
+<h2>Other packages<a class="headerlink" href="#other-packages" title="Link to this heading"></a></h2>
+<p>SLiCAP has symbol libraries for creating circuit diagrams with:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.kicad.org/">KiCAD</a>. This is the preferred package fo working with SLiCAP</p></li>
+<li><p><a class="reference external" href="https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html">LTspice</a></p></li>
+<li><p><a class="reference external" href="https://analog-electronics.tudelft.nl/downloads/gEDA-20130122.zip">gSchem for windows: gEDA-20130122.zip</a></p></li>
+<li><p><a class="reference external" href="https://github.com/lepton-eda/lepton-eda">Lepton EDA</a></p></li>
+</ul>
+<p>For these packages, SLiCAP also has build in netlist generation. SLiCAP uses python scripts for scaling of KiCAD images from page format to drawing format. For detaied information see <a class="reference external" href="schematics.html">Schematic capture</a>.</p>
+<p>SLiCAP also interacts with <a class="reference external" href="https://ngspice.sourceforge.io/">NGspice</a> for performing more elaborate numeric simulations.</p>
+</section>
+<section id="completing-and-testing-the-installation">
+<h2>Completing and testing the installation<a class="headerlink" href="#completing-and-testing-the-installation" title="Link to this heading"></a></h2>
+<p>After installing or updating SLiCAP, you can use it as any other Python package. On its first import, however, SLiCAP searches for installed software for schematic capture or SPICE simulation, and stres this information in a SLiCAP.ini file in the <strong>user home directory</strong>: ~/SLiCAP.ini. You can edit this file manually or delete it. SLiCAP generates an updated version on the next run.</p>
+<div class="admonition-first-import-under-mswindows admonition">
+<p class="admonition-title">First import under MSWindows</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+
+<span class="go">Updating main configuration file; this may take a while.</span>
+
+<span class="go">Do you have NGspice installed? [y/n] &gt;&gt;&gt; y</span>
+
+<span class="go">Searching installed software, this will time-out after 120 seconds!</span>
+
+<span class="go">KiCad command set as: C:\Program Files\KiCad\kicad-cli.exe</span>
+<span class="go">LTSpice command set as: C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe</span>
+<span class="go">gnetlist command set as: C:\Program Files (x86)\gEDA\gnetlist.exe</span>
+<span class="go">NGspice command set as: C:\Users\&lt;USER&gt;\ngspice\Spice64\ngspice.exe</span>
+<span class="go">SLiCAP found all installed apps!</span>
+<span class="go">SLiCAP Version matches with the latest release of SLiCAP on github.</span>
+<span class="go">Generating project configuration file: SLiCAP.ini.</span>
+
+<span class="go">Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.</span>
+</pre></div>
+</div>
+</div>
+<div class="admonition-first-import-under-linux-or-macos admonition">
+<p class="admonition-title">First import under Linux or MacOS</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+
+<span class="go">Generating main configuration file: ~/SLiCAP/SLiCAP.ini.</span>
+
+<span class="go">/usr/bin/kicad-cli</span>
+<span class="go">/usr/bin/lepton-cli</span>
+<span class="go">/usr/bin/ngspice</span>
+<span class="go">SLiCAP Version matches with the latest release of SLiCAP on github.</span>
+<span class="go">Generating project configuration file: SLiCAP.ini.</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="main-configuration">
+<h2>Main configuration<a class="headerlink" href="#main-configuration" title="Link to this heading"></a></h2>
+<p>Updating of the main configuration file <cite>~/SLiCAP.ini</cite> is recommended if:</p>
+<ol class="arabic simple">
+<li><p>One or more apps listed above are installed or removed</p></li>
+<li><p>During installation under MS-Windows, searching to the apps listed above timed out</p></li>
+</ol>
+<p>Below an example of the command section for user “USER” under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:\Users\USER\SLiCAP.ini:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
+<span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span>
+<span class="n">kicad</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">KiCad</span>\<span class="mf">8.0</span>\<span class="nb">bin</span>\<span class="n">kicad</span><span class="o">-</span><span class="n">cli</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">ltspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span>\<span class="n">LTC</span>\<span class="n">LTspiceXVII</span>\<span class="n">XVIIx64</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">geda</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Program</span> <span class="n">Files</span> <span class="p">(</span><span class="n">x86</span><span class="p">)</span>\<span class="n">gEDA</span>\<span class="n">gEDA</span>\<span class="nb">bin</span>\<span class="n">gnetlist</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">ngspice</span> <span class="o">=</span> <span class="n">C</span><span class="p">:</span>\<span class="n">Users</span>\<span class="n">USER</span>\<span class="n">ngspice</span>\<span class="n">Spice64</span>\<span class="nb">bin</span>\<span class="n">ngspice</span><span class="o">.</span><span class="n">exe</span>
+</pre></div>
+</div>
+<p>Below an example of the command section for user “USER” under <strong>Linux</strong> or <strong>MacOS</strong> with default installation of LTspice under <em>wine</em>. The main configuration file is located at: ~/SLiCAP.ini:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">commands</span><span class="p">]</span>
+<span class="n">ltspice</span> <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/.</span><span class="n">wine</span><span class="o">/</span><span class="n">drive_c</span><span class="o">/</span><span class="n">Program</span> <span class="n">Files</span><span class="o">/</span><span class="n">ADI</span><span class="o">/</span><span class="n">LTspice</span><span class="o">/</span><span class="n">LTspice</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">kicad</span> <span class="o">=</span> <span class="n">kicad</span><span class="o">-</span><span class="n">cli</span>
+<span class="n">geda</span> <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">netlist</span>
+<span class="n">lepton</span><span class="o">-</span><span class="n">eda</span> <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">cli</span>
+<span class="n">ngspice</span> <span class="o">=</span> <span class="n">ngspice</span>
+</pre></div>
+</div>
+<div class="admonition-important admonition">
+<p class="admonition-title">Important</p>
+<p>SLiCAP works well without having additional packages installed. The only function that searches for installed apps is <a class="reference external" href="../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit">makeCircuit</a>.</p>
+</div>
+</section>
+<section id="project-configuration">
+<h2>Project configuration<a class="headerlink" href="#project-configuration" title="Link to this heading"></a></h2>
+<p>SLiCAP projects should be placed in separate project folders. In this folder you save the Python script(s) or Jupyter Notebook(s) for your project. On the first run of your Python project script:</p>
+<ol class="arabic">
+<li><p>Creates the directory structure in the project folder</p></li>
+<li><p>Copies some library files</p></li>
+<li><p>Creates a project configuration file SLiCAP.ini in the project directory.</p>
+<p>This configuration file contains default math settings, color settings, etc. You can edit or delete this file. After deletion it will be recreated at the next project run.</p>
+</li>
+</ol>
+<p>The python script below (user=USER, python environment=USER, os=LINUX) generates/updates the configuration files, displays their contents and opens the HTML documentation in the default browser:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the SLiCAP modules in a separate namespace (preferred)</span>
+<span class="c1"># Create (but don&#39;t overwrite) SLiCAP.ini in the ~/ folder</span>
+<span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="c1"># Create the project folder structure</span>
+<span class="c1"># Start an HTML report</span>
+<span class="c1"># Compiles the libraries</span>
+<span class="c1"># Create but do not overwrite the project configuration file</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">initProject</span><span class="p">(</span><span class="s1">&#39;SLiCAP test&#39;</span><span class="p">)</span>
+<span class="c1"># Display the configuration settings:</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span>
+<span class="c1"># Open de HTML documentation in the browser:</span>
+<span class="n">sl</span><span class="o">.</span><span class="n">Help</span><span class="p">()</span>
+
+<span class="n">Generating</span> <span class="n">project</span> <span class="n">configuration</span> <span class="n">file</span><span class="p">:</span> <span class="n">SLiCAP</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span>
+
+<span class="n">Compiling</span> <span class="n">library</span><span class="p">:</span> <span class="n">SLiCAP</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span>
+<span class="n">Compiling</span> <span class="n">library</span><span class="p">:</span> <span class="n">SLiCAPmodels</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">install_version</span> <span class="o">=</span> <span class="mf">3.2.4</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">latest_version</span>  <span class="o">=</span> <span class="mf">3.2.4</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">install_path</span>    <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">home_path</span>       <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">main_lib_path</span>   <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">doc_path</span>        <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">/</span><span class="n">docs</span><span class="o">/</span><span class="n">html</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">ltspice</span>         <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/.</span><span class="n">wine</span><span class="o">/</span><span class="n">drive_c</span><span class="o">/</span><span class="n">Program</span> <span class="n">Files</span><span class="o">/</span><span class="n">ADI</span><span class="o">/</span><span class="n">LTspice</span><span class="o">/</span><span class="n">LTspice</span><span class="o">.</span><span class="n">exe</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">gnetlist</span>        <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">netlist</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">kicad</span>           <span class="o">=</span> <span class="n">kicad</span><span class="o">-</span><span class="n">cli</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">ngspice</span>         <span class="o">=</span> <span class="n">ngspice</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">lepton_eda</span>      <span class="o">=</span> <span class="n">lepton</span><span class="o">-</span><span class="n">cli</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">ltspice_syms</span>    <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">LTspice</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">gnetlist_syms</span>   <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">gSchem</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">kicad_syms</span>      <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">kicad</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">.</span><span class="n">kicad_sym</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">lepton_eda_syms</span> <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">lepton</span><span class="o">-</span><span class="n">eda</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">latex_files</span>     <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">tex</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">sphinx_files</span>    <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">USER</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.12</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">SLiCAP</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">sphinx</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">html_path</span>       <span class="o">=</span> <span class="n">html</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">cir_path</span>        <span class="o">=</span> <span class="n">cir</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">img_path</span>        <span class="o">=</span> <span class="n">img</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">csv_path</span>        <span class="o">=</span> <span class="n">csv</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">txt_path</span>        <span class="o">=</span> <span class="n">txt</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">tex_path</span>        <span class="o">=</span> <span class="n">tex</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">user_lib_path</span>   <span class="o">=</span> <span class="n">lib</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">mathml_path</span>     <span class="o">=</span> <span class="n">mathml</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">sphinx_path</span>     <span class="o">=</span> <span class="n">sphinx</span><span class="o">/</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">html_prefix</span>     <span class="o">=</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">html_index</span>      <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">html</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">html_page</span>       <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">html</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">html_pages</span>      <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">]</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">html_labels</span>     <span class="o">=</span> <span class="o">&lt;</span><span class="n">Section</span><span class="p">:</span> <span class="n">labels</span><span class="o">&gt;</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">disp</span>            <span class="o">=</span> <span class="mi">4</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">hz</span>              <span class="o">=</span> <span class="kc">True</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">notebook</span>        <span class="o">=</span> <span class="kc">False</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">scalefactors</span>    <span class="o">=</span> <span class="kc">False</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">eng_notation</span>    <span class="o">=</span> <span class="kc">True</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">last_updated</span>    <span class="o">=</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">27</span> <span class="mi">15</span><span class="p">:</span><span class="mi">14</span><span class="p">:</span><span class="mi">01</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">project_title</span>   <span class="o">=</span> <span class="n">SLiCAP</span> <span class="n">test</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">created</span>         <span class="o">=</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">27</span> <span class="mi">15</span><span class="p">:</span><span class="mi">14</span><span class="p">:</span><span class="mi">00</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">author</span>          <span class="o">=</span> <span class="n">USER</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">laplace</span>         <span class="o">=</span> <span class="n">s</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">frequency</span>       <span class="o">=</span> <span class="n">f</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">numer</span>           <span class="o">=</span> <span class="n">ME</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">denom</span>           <span class="o">=</span> <span class="n">ME</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">lambdify</span>        <span class="o">=</span> <span class="n">numpy</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">step_function</span>   <span class="o">=</span> <span class="kc">True</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">factor</span>          <span class="o">=</span> <span class="kc">True</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">max_rec_subst</span>   <span class="o">=</span> <span class="mi">15</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">reduce_matrix</span>   <span class="o">=</span> <span class="kc">True</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">reduce_circuit</span>  <span class="o">=</span> <span class="kc">True</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">gain_colors</span>     <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;asymptotic&#39;</span><span class="p">:</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;gain&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;loopgain&#39;</span><span class="p">:</span> <span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="s1">&#39;servo&#39;</span><span class="p">:</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;direct&#39;</span><span class="p">:</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;vi&#39;</span><span class="p">:</span> <span class="s1">&#39;c&#39;</span><span class="p">}</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">plot_fontsize</span>   <span class="o">=</span> <span class="mi">12</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">axis_height</span>     <span class="o">=</span> <span class="mi">5</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">axis_width</span>      <span class="o">=</span> <span class="mi">7</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">line_width</span>      <span class="o">=</span> <span class="mi">2</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">marker_size</span>     <span class="o">=</span> <span class="mi">7</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">line_type</span>       <span class="o">=</span> <span class="o">-</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">legend_loc</span>      <span class="o">=</span> <span class="n">best</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">default_colors</span>  <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;k&#39;</span><span class="p">]</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">default_markers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">]</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">plot_fontsize</span>   <span class="o">=</span> <span class="mi">12</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">plot_file_type</span>  <span class="o">=</span> <span class="n">svg</span>
+<span class="n">ini</span><span class="o">.</span><span class="n">svg_margin</span>      <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<section id="change-settings">
+<h3>Change settings<a class="headerlink" href="#change-settings" title="Link to this heading"></a></h3>
+<p>It is strongly advised not to change any settings in the project SLiCAP.ini file. The preferred way of changing settings is to do it in the python scripts. Some examples are given below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">disp</span>            <span class="o">=</span> <span class="mi">3</span>     <span class="c1"># set the number of significant digits in reports and listings to 3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">hz</span>              <span class="o">=</span> <span class="kc">False</span> <span class="c1"># set the default frequency units to *rad/s*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">max_rec_subst</span>   <span class="o">=</span> <span class="mi">20</span>    <span class="c1"># set the maximum number of recursive substitutions in expressions to 20</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">reduce_circuit</span>  <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Do NOT eliminate unused independent voltage sources from the circuit</span>
+<span class="go">                                   # If True, the size of MNA matrices comprising independent voltage sources will be reduced</span>
+<span class="go">                                   # by eliminating these sources if they are not used as signal source or detector.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">reduce_matrix</span>   <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Do NOT eliminate variables and reduce the matrix size before calculating the determinant</span>
+<span class="go">                                   # If True, the size of MNA matrices comprising Laplace expressions will be reduced through</span>
+<span class="go">                                   # elimination of variables, until all matrix enties are either zero or Laplace polynomials</span>
+<span class="go">                                   # of the first order or higher</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">numer</span>           <span class="o">=</span> <span class="s2">&quot;BS&quot;</span>  <span class="c1"># Use Bareiss division-free determinant calculation method for the numerator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">denom</span>           <span class="o">=</span> <span class="s2">&quot;BS&quot;</span>  <span class="c1"># Use Bareiss division-free determinant calculation method for the denominator</span>
+</pre></div>
+</div>
+</section>
+<section id="find-slicap-schematic-symbols-libraries">
+<h3>Find SLiCAP schematic symbols libraries<a class="headerlink" href="#find-slicap-schematic-symbols-libraries" title="Link to this heading"></a></h3>
+<p>Since version 3.3.0 SLiCAP symbol libraries are stored in the package directory.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SLiCAP</span> <span class="k">as</span> <span class="nn">sl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">kicad_syms</span>
+
+<span class="go">&#39;/home/USER/USER/lib/python3.12/site-packages/SLiCAP/files/kicad/SLiCAP.kicad_sym&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sl</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">ltspice_syms</span>
+
+<span class="go">&#39;/home/USER/USER/lib/python3.12/site-packages/SLiCAP/files/LTspice/&#39;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="jupyter-notebooks">
+<h2>Jupyter notebooks<a class="headerlink" href="#jupyter-notebooks" title="Link to this heading"></a></h2>
+<p>Jupyter Notebooks can also run SLiCAP scripts. For proper rendering of all HTML output to your notebook use the keyword argument <code class="docutils literal notranslate"><span class="pre">notebook=True</span></code> with initProject().</p>
+</section>
+<section id="slicap-examples">
+<h2>SLiCAP examples<a class="headerlink" href="#slicap-examples" title="Link to this heading"></a></h2>
+<p>SLiCAP examples can be found on <a class="reference external" href="https://github.com/SLiCAP/SLiCAPexamples">github</a>.</p>
+<img alt="../_images/colorCode.svg" src="../_images/colorCode.svg" />
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="SLiCAPuserguide.html" class="btn btn-neutral float-left" title="SLiCAP user guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="circuit.html" class="btn btn-neutral float-right" title="Create a SLiCAP circuit object" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, SLiCAP development team.
+      <span class="lastupdated">Last updated on Feb 27, 2025.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

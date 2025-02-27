@@ -1,0 +1,2253 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Devices and built-in models &mdash; SLiCAP 3.2.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=b31cc1e0"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Schematic capture for SLiCAP" href="schematics.html" />
+    <link rel="prev" title="Netlist lines" href="netlist.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            SLiCAP
+          </a>
+              <div class="version">
+                3.2.4
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/SLiCAPintroduction.html">SLiCAP Version 3.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/SLiCAPuserguide.html">SLiCAP user guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="netlist.html">Netlist lines</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Devices and built-in models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#c-capacitor">C: Capacitor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-c">Model C</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-c">Parameters model C</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#d-diode">D: Diode</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-d">Model D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-d">Parameters model D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#e-voltage-controlled-voltage-source">E: Voltage-controlled voltage source</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#models">Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-e">Model E</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-e">Parameters model E</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-ez">Model EZ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-ez">Parameters model EZ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#f-current-controlled-current-source">F: Current-controlled current source</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-f">Model F</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-f">Parameters model F</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#g-voltage-controlled-current-source">G: Voltage-controlled current source</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-g">Model G</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-g">Parameters model G</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#real">Model g</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id6">Parameters model g</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id7">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#h-current-controlled-voltage-source">H: Current-controlled voltage source</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id8">Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-h">Model H</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-h">Parameters model H</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-hz">Model HZ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-hz">Parameters model HZ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id9">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#i-independent-current-source">I: Independent current source</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-i">Model I</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-i">Parameters model I</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id10">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#j-junction-fet">J: Junction FET</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-j">Model J</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-j">Parameters model J</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id11">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#k-coupling-factor">K: Coupling factor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-k">Model K</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-k">Parameters model K</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id12">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#l-inductor">L: Inductor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-l">Model L:</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-l">Parameters model L</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id13">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#m-4-terminal-mos">M: 4-terminal MOS</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id14">Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-m">Model M</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-m">Parameters model M</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-md">Model MD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-md">Parameters model MD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id15">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#n-nullor">N: Nullor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-n">Model N</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id16">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#o-operational-amplifier">O: Operational amplifier</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id17">Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-ov">Model OV</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-ov">Parameters model OV</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-oc">Model OC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-oc">Parameters model OC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id18">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#q-4-terminal-bjt">Q: 4-terminal BJT</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id19">Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-qv">Model QV</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-qv">Parameters model QV</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-ql">Model QL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-ql">Parameters model QL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-qd">Model QD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-qd">Parameters model QD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id20">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#r-resistor">R: Resistor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id21">Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model-r">Model R</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-r">Parameters model R</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#type-r">Model r</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id23">Parameters model r</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id24">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#t-ideal-transformer">T: Ideal transformer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-t">Model T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-t">Parameters model T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id25">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#v-independent-voltage-source">V: Independent voltage source</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-v">Model V</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-v">Parameters model V</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id26">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#w-gyrator">W: Gyrator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model-w">Model W</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parameters-model-w">Parameters model W</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id27">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#x-sub-circuit-call">X: Sub circuit call</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="schematics.html">Schematic capture for SLiCAP</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/SLiCAPreference.html">SLiCAP reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/SLiCAPtutorials.html">SLiCAP tutorials</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SLiCAP</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="SLiCAPnetlistSyntax.html">SLiCAP netlist syntax</a></li>
+      <li class="breadcrumb-item active">Devices and built-in models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/syntax/devices.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="devices-and-built-in-models">
+<h1>Devices and built-in models<a class="headerlink" href="#devices-and-built-in-models" title="Link to this heading"></a></h1>
+<p>This section gives an overview of the devices and their built-in models with their parameters. SLiCAP distinguishes two kinds of models:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Models that have an associated matrix stamp.</p></li>
+<li><p>Models that will be expanded into models with an associated matrix stamp.</p></li>
+</ol>
+</div></blockquote>
+<p>Model data will be listed in tables. The fields in these tables have the following meaning:</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: the name of the model. This name is associated with the implementation type:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">type</span></code>: the implementation type of the model:</p>
+<blockquote>
+<div><p>a <code class="docutils literal notranslate"><span class="pre">stamp</span></code>: a matrix stamp is associated with the model</p>
+<p>b <code class="docutils literal notranslate"><span class="pre">expansion</span></code>: the model is expanded into elements with models that have associated matrix stamps</p>
+</div></blockquote>
+</li>
+</ol>
+<p>3. <code class="docutils literal notranslate"><span class="pre">Ii</span></code>: <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> if a dependent variable for an input current is added to the vector
+with dependent variables else: <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>. This field applies only for models with <code class="docutils literal notranslate"><span class="pre">type=stamp</span></code>. The name of this current is the
+concatenation of two strings:</p>
+<blockquote>
+<div><p>a <code class="docutils literal notranslate"><span class="pre">&quot;Ii_&quot;</span></code> and the device name for two-port elements with model type <code class="docutils literal notranslate"><span class="pre">H</span></code> and <code class="docutils literal notranslate"><span class="pre">HZ</span></code></p>
+<p>b <code class="docutils literal notranslate"><span class="pre">&quot;I_&quot;</span></code> and the device name for twoport elements with model type <code class="docutils literal notranslate"><span class="pre">F</span></code></p>
+</div></blockquote>
+<ol class="arabic" start="4">
+<li><p><code class="docutils literal notranslate"><span class="pre">Io</span></code>: <code class="docutils literal notranslate"><span class="pre">TRUE</span></code> if an output current is added to the vector with dependent variables, else: <code class="docutils literal notranslate"><span class="pre">FALSE</span></code>. This field applies only for models with <code class="docutils literal notranslate"><span class="pre">type=stamp</span></code>. The name of this current is the concatenation of two strings:</p>
+<blockquote>
+<div><p>a <code class="docutils literal notranslate"><span class="pre">&quot;Io_&quot;</span></code> and the device name for two-port elements that have model type <code class="docutils literal notranslate"><span class="pre">E</span></code>, <code class="docutils literal notranslate"><span class="pre">EZ</span></code>, <code class="docutils literal notranslate"><span class="pre">G</span></code>, <code class="docutils literal notranslate"><span class="pre">H</span></code>, <code class="docutils literal notranslate"><span class="pre">HZ</span></code> or <code class="docutils literal notranslate"><span class="pre">N</span></code></p>
+<p>b <code class="docutils literal notranslate"><span class="pre">&quot;I_&quot;</span></code> and the device name for one port elements with model type <code class="docutils literal notranslate"><span class="pre">L</span></code>, <code class="docutils literal notranslate"><span class="pre">r</span></code>, <code class="docutils literal notranslate"><span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">Z</span></code></p>
+</div></blockquote>
+</li>
+</ol>
+</div></blockquote>
+<p>Valid model parameters and their default values are listed in the subsequent rows of the table:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">param</span></code>: the name of the parameter (case sensitive)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span> <span class="pre">|</span> <span class="pre">{expression}</span></code>: the default value or expression for the model parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Laplace</span></code>: a boolean <code class="docutils literal notranslate"><span class="pre">TRUE</span> <span class="pre">|</span> <span class="pre">FALSE</span></code> indicating if the Laplace variable <code class="docutils literal notranslate"><span class="pre">s</span></code> is allowed in the device expression</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">description</span></code>: a description of the parameter</p></li>
+</ol>
+</div></blockquote>
+<section id="c-capacitor">
+<h2>C: Capacitor<a class="headerlink" href="#c-capacitor" title="Link to this heading"></a></h2>
+<p>Below the syntax and the symbol for a capacitor and the matrix stamp for model <a class="reference internal" href="#c">C</a>.</p>
+<section id="model-c">
+<span id="c"></span><h3>Model C<a class="headerlink" href="#model-c" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id28">
+<a class="reference internal image-reference" href="../_images/stampC.svg"><img alt="Syntax, symbol and matrix stamp of a capacitor" src="../_images/stampC.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure C: Syntax, symbol and matrix stamp of a capacitor.</span><a class="headerlink" href="#id28" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>C</p></td>
+<td><p>Linear capacitor</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-c">
+<h3>Parameters model C<a class="headerlink" href="#parameters-model-c" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>capacitance</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>vinit</p></td>
+<td><p>initial voltage</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>C1 nodeP nodeN 100n                      ; Capacitor of 100n between nodeP and nodeN
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>C1 nodeP nodeN C value = 100n            ; Same as above
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>C1 nodeP nodeN C value = 100n vinit = 0  ; Same as above with initial condition (not yet implemented)
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>C1 nodeP nodeN {1/tau/R}                 ; Capacitance as an expression
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>C1 nodeP nodeN C value = {1/tau/R}       ; Same as above
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>C1 nodeP nodeN myCap                     ; Same as above with a .model line
+.model myCap C value={1/tau/R} vinit = 0
+</pre></div>
+</div>
+</section>
+</section>
+<section id="d-diode">
+<h2>D: Diode<a class="headerlink" href="#d-diode" title="Link to this heading"></a></h2>
+<p>Below the syntax, the symbol and the small-signal model expansion for the a diode: model <a class="reference internal" href="#d">D</a>.</p>
+<section id="model-d">
+<span id="d"></span><h3>Model D<a class="headerlink" href="#model-d" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id29">
+<a class="reference internal image-reference" href="../_images/modelD.svg"><img alt="Syntax, symbol and small-signal model expansion for a diode" src="../_images/modelD.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Figure D: Syntax, symbol and small-signal model expansion for a diode.</span><a class="headerlink" href="#id29" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>D</p></td>
+<td><p>Small-signal model diode</p></td>
+<td><p>expansion</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-d">
+<h3>Parameters model D<a class="headerlink" href="#parameters-model-d" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>gd</p></td>
+<td><p>conductance</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cd</p></td>
+<td><p>capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>rs</p></td>
+<td><p>series resistance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id1">
+<h3>Examples<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>D1 nodeA nodeC D ; Diode anode connected to nodeA cathode to nodeC and default parameters.
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>D1 nodeA nodeC D1N4148
++ gd = {q_e*I_D/K_b/T_A}
++ cd = {q_e*I_D/K_b/T_A/2/PI/tau_F}
++ rs = 25
+.model D1N4148 D
+.param tau_F = 4n I_D = 1m
+</pre></div>
+</div>
+</section>
+</section>
+<section id="e-voltage-controlled-voltage-source">
+<h2>E: Voltage-controlled voltage source<a class="headerlink" href="#e-voltage-controlled-voltage-source" title="Link to this heading"></a></h2>
+<p>SLiCAP has two models for voltage-controlled voltage sources: model <a class="reference internal" href="#e">E</a> and model <a class="reference internal" href="#ez">EZ</a>. The later one includes a series output impedance but has a compact matrix stamp.</p>
+<section id="models">
+<h3>Models<a class="headerlink" href="#models" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>E</p></td>
+<td><p>VCVS</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>EZ</p></td>
+<td><p>VCVS with Z-series</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-e">
+<span id="e"></span><h3>Model E<a class="headerlink" href="#model-e" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id30">
+<a class="reference internal image-reference" href="../_images/stampE.svg"><img alt="Syntax, symbol and matrix stamp of a VCVS: model E" src="../_images/stampE.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a VCVS model E</span><a class="headerlink" href="#id30" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-e">
+<h3>Parameters model E<a class="headerlink" href="#parameters-model-e" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>voltage gain</p></td>
+<td><p>1</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-ez">
+<span id="ez"></span><h3>Model EZ<a class="headerlink" href="#model-ez" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id31">
+<a class="reference internal image-reference" href="../_images/stampEZ.svg"><img alt="Syntax, symbol and matrix stamp of a VCVS with series impedance: model EZ" src="../_images/stampEZ.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a VCVS with series impedance: model EZ</span><a class="headerlink" href="#id31" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-ez">
+<h3>Parameters model EZ<a class="headerlink" href="#parameters-model-ez" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>voltage gain</p></td>
+<td><p>1</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>zo</p></td>
+<td><p>series impedance</p></td>
+<td><p>1</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id2">
+<h3>Examples<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>E1 outP outN inP inN 1M
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>E1 outP outN inP inN {1M/(1 + s/2/PI/f_-3dB)}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>E1 outP outN inP inN EZ
++ value = {A_0/(1 + s*tau)}
++ zo = {R_out*(1 + s*L_out/R_out}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>E2 outP outN inP inN simpleOpamp
+.model simpleOpamp EZ
++ value = {A_0/(1 + s*tau)}
++ zo = {R_out*(1 + s*L_out/R_out}
+</pre></div>
+</div>
+</section>
+</section>
+<section id="f-current-controlled-current-source">
+<h2>F: Current-controlled current source<a class="headerlink" href="#f-current-controlled-current-source" title="Link to this heading"></a></h2>
+<p>Below the syntax, the symbol and the matrix stamp for a CCCS: model <a class="reference internal" href="#f">F</a>.</p>
+<section id="model-f">
+<span id="f"></span><h3>Model F<a class="headerlink" href="#model-f" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id32">
+<a class="reference internal image-reference" href="../_images/stampF.svg"><img alt="Syntax, symbol and matrix stamp of a CCCS: model F" src="../_images/stampF.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a CCCS model F</span><a class="headerlink" href="#id32" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>Please notice the independent variable <span class="math notranslate nohighlight">\(I_{Fx}\)</span> which is added to the vector of independent variables equals the product of the denominator of the current gain <span class="math notranslate nohighlight">\(Df_s\)</span> and the input current <span class="math notranslate nohighlight">\(Ii_{Fx}\)</span>, rather than the input current.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>F</p></td>
+<td><p>VCVS</p></td>
+<td><p>stamp</p></td>
+<td><p>TRUE</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-f">
+<h3>Parameters model F<a class="headerlink" href="#parameters-model-f" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>current gain</p></td>
+<td><p>1</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id3">
+<h3>Examples<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>F1 outP outN inP inN 20
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>F1 outP outN inP inN {100/(1 + s/2/PI/f_-3dB)}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>F1 outP outN inP inN F value={A_i/(1 + s*tau)}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>F2 outP outN inP inN myCCCS
+.model myCCCS F value = {A_i/(1 + s*tau)}
+</pre></div>
+</div>
+</section>
+</section>
+<section id="g-voltage-controlled-current-source">
+<h2>G: Voltage-controlled current source<a class="headerlink" href="#g-voltage-controlled-current-source" title="Link to this heading"></a></h2>
+<p>SLiCAP has two models for voltage-controlled current sources, model ‘G’ for a <a class="reference internal" href="#complex">complex</a> transfer and model ‘g’ for a <a class="reference internal" href="#real">real</a> transfer.</p>
+<p>Model ‘G’ can be used for sources that need to be selected as loop gain reference variable according to the asymptotic-gain model. The transadmittance can be a function of the Laplace variable ‘s’. Model ‘g’ is intended to be used as conductance or transconductance and cannot be selected a loop gain reference variable.</p>
+<section id="id4">
+<h3>Models<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>G</p></td>
+<td><p>VCGS</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>g</p></td>
+<td><p>VCGS</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-g">
+<span id="complex"></span><h3>Model G<a class="headerlink" href="#model-g" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id33">
+<a class="reference internal image-reference" href="../_images/stampG.svg"><img alt="Syntax, symbol and matrix stamp of a VCCS: model G" src="../_images/stampG.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a VCCS: model G</span><a class="headerlink" href="#id33" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-g">
+<h3>Parameters model G<a class="headerlink" href="#parameters-model-g" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>transadmittance</p></td>
+<td><p>1</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="real">
+<span id="id5"></span><h3>Model g<a class="headerlink" href="#real" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id34">
+<a class="reference internal image-reference" href="../_images/stampGm.svg"><img alt="Syntax, symbol and matrix stamp of a VCCS: model g" src="../_images/stampGm.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a VCCS: model g</span><a class="headerlink" href="#id34" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="id6">
+<h3>Parameters model g<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>transconductance</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id7">
+<h3>Examples<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>G1 outP outN inP inN 20m
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>G1 outP outN inP inN {1m/(1 + s/2/PI/f_-3dB)}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>G1 outP outN inP inN G value = {A_y/(1 + s*tau)}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>G2 outP outN inP inN myVCCS
+.model myVCCS G valu e= {A_y/(1 + s*tau)}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>G3 outP outN inP inN g value = 1m
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>G3 outP outN inP inN g value = {q*I_c/k/T}
+</pre></div>
+</div>
+</section>
+</section>
+<section id="h-current-controlled-voltage-source">
+<h2>H: Current-controlled voltage source<a class="headerlink" href="#h-current-controlled-voltage-source" title="Link to this heading"></a></h2>
+<p>SLiCAP has two models for current-controlled voltage sources: model <a class="reference internal" href="#h">H</a> and model <a class="reference internal" href="#hz">HZ</a>. The later one includes a series output impedance but has a compact matrix stamp.</p>
+<section id="id8">
+<h3>Models<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>H</p></td>
+<td><p>CCVS</p></td>
+<td><p>stamp</p></td>
+<td><p>TRUE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>HZ</p></td>
+<td><p>CCVS with Z-series</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-h">
+<span id="h"></span><h3>Model H<a class="headerlink" href="#model-h" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id35">
+<a class="reference internal image-reference" href="../_images/stampH.svg"><img alt="Syntax, symbol and matrix stamp of a CCVS: model H" src="../_images/stampH.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a CCVS model H</span><a class="headerlink" href="#id35" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-h">
+<h3>Parameters model H<a class="headerlink" href="#parameters-model-h" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>transimpedance</p></td>
+<td><p>1</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-hz">
+<span id="hz"></span><h3>Model HZ<a class="headerlink" href="#model-hz" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id36">
+<a class="reference internal image-reference" href="../_images/stampHZ.svg"><img alt="Syntax, symbol and matrix stamp of a CCVS with series impedance: model HZ" src="../_images/stampHZ.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a CCVS with series impedance: model HZ</span><a class="headerlink" href="#id36" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-hz">
+<h3>Parameters model HZ<a class="headerlink" href="#parameters-model-hz" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>transimpedance</p></td>
+<td><p>1</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>zo</p></td>
+<td><p>series impedance</p></td>
+<td><p>1</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id9">
+<h3>Examples<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>H1 outP outN inP inN 1M
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>H1 outP outN inP inN {1M/(1 + s/2/PI/f_-3dB)}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>H1 outP outN inP inN HZ
++ value = {R_T/(1 + s*tau)}
++ zo = {R_out*(1 + s*L_out/R_out}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>H2 outP outN inP inN simpleTransimpedanceAmp
+.model simpleTransimpedanceAmp HZ
++ value = {R_T/(1 + s*tau)}
++ zo = {R_out*(1 + s*L_out/R_out}
+</pre></div>
+</div>
+</section>
+</section>
+<section id="i-independent-current-source">
+<h2>I: Independent current source<a class="headerlink" href="#i-independent-current-source" title="Link to this heading"></a></h2>
+<p>Below the syntax, the symbol and the matrix stamp for an independent current source: model <a class="reference internal" href="#i">I</a>.</p>
+<section id="model-i">
+<span id="i"></span><h3>Model I<a class="headerlink" href="#model-i" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id37">
+<a class="reference internal image-reference" href="../_images/stampI.svg"><img alt="Syntax, symbol and matrix stamp of an independent current source: model I" src="../_images/stampI.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of an independent current source: model I</span><a class="headerlink" href="#id37" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>I</p></td>
+<td><p>Independent current source</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-i">
+<h3>Parameters model I<a class="headerlink" href="#parameters-model-i" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>Current (Laplace transform)</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>dc</p></td>
+<td><p>DC value              [A]</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-even"><td><p>dcvar</p></td>
+<td><p>Variance of DC value  [A^2]</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>noise</p></td>
+<td><p>Noise current density [A^2/Hz]</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id10">
+<h3>Examples<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>* Both definitions are equivalent:
+I1 n1 n2 1m
+I1 n1 n2 I value = 1m
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Iin 0 input I value = {I_s} noise = 1e-24 dc=10n dcvar = 4e-18
+.param I_s = {1m/s}; Step of 1mA starting at t=0
+</pre></div>
+</div>
+</section>
+</section>
+<section id="j-junction-fet">
+<h2>J: Junction FET<a class="headerlink" href="#j-junction-fet" title="Link to this heading"></a></h2>
+<p>Like the PN diode, the JFET model <a class="reference internal" href="#j">J</a> is expanded into network elements that have a matrix stamp.</p>
+<section id="model-j">
+<span id="j"></span><h3>Model J<a class="headerlink" href="#model-j" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id38">
+<a class="reference internal image-reference" href="../_images/modelJ.svg"><img alt="Syntax, symbol and network expansion of a junction FET: model J" src="../_images/modelJ.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and network expansion of a junction FET: model J</span><a class="headerlink" href="#id38" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>J</p></td>
+<td><p>Small-signal model JFET</p></td>
+<td><p>expansion</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-j">
+<h3>Parameters model J<a class="headerlink" href="#parameters-model-j" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cgs</p></td>
+<td><p>contactance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cdg</p></td>
+<td><p>capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>gm</p></td>
+<td><p>forward transconductance</p></td>
+<td><p>1E-3</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>go</p></td>
+<td><p>output conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id11">
+<h3>Examples<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>J1 nodeD nodeG nodeS myJFET
+.model myJFET J cgs=20p cdg=1p gm=15m go=500u
+</pre></div>
+</div>
+</section>
+</section>
+<section id="k-coupling-factor">
+<h2>K: Coupling factor<a class="headerlink" href="#k-coupling-factor" title="Link to this heading"></a></h2>
+<p>Below the syntax, the symbol and the matrix stamp for a coupling between two inductors: model <a class="reference internal" href="#k">K</a>.</p>
+<section id="model-k">
+<span id="k"></span><h3>Model K<a class="headerlink" href="#model-k" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id39">
+<a class="reference internal image-reference" href="../_images/stampK.svg"><img alt="Syntax, symbol and matrix stamp of a coupling between two inductors: model K" src="../_images/stampK.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a coupling between two inductors: model K</span><a class="headerlink" href="#id39" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>K</p></td>
+<td><p>Coupling factor</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-k">
+<h3>Parameters model K<a class="headerlink" href="#parameters-model-k" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>coupling factor</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id12">
+<h3>Examples<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>L1 n1 n2 {L_a}
+L2 n3 n4 {L_b}
+k12 L1 L2 0.98
+</pre></div>
+</div>
+</section>
+</section>
+<section id="l-inductor">
+<h2>L: Inductor<a class="headerlink" href="#l-inductor" title="Link to this heading"></a></h2>
+<p>Below the syntax, the symbol and the matrix stamp for an inductor: model <a class="reference internal" href="#l">L</a>.</p>
+<section id="model-l">
+<span id="l"></span><h3>Model L:<a class="headerlink" href="#model-l" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id40">
+<a class="reference internal image-reference" href="../_images/stampL.svg"><img alt="Syntax, symbol and matrix stamp of an inductor: model L" src="../_images/stampL.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of an inductor: model L</span><a class="headerlink" href="#id40" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>L</p></td>
+<td><p>Linear inductor</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-l">
+<h3>Parameters model L<a class="headerlink" href="#parameters-model-l" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>inductance</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>iinit</p></td>
+<td><p>initial condition</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id13">
+<h3>Examples<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>L1 n1 n2 {L_a}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>L1 n1 n2 L value = {L_a}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>L1 n1 n2 L myL
+.model myL L value = {L_a}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>L1 n1 n2 L myL
+.model myL L value = {L_a} iinit = 0
+</pre></div>
+</div>
+</section>
+</section>
+<section id="m-4-terminal-mos">
+<h2>M: 4-terminal MOS<a class="headerlink" href="#m-4-terminal-mos" title="Link to this heading"></a></h2>
+<p>SLiCAP has two models for 4-terminal MOS transistors. Model <a class="reference internal" href="#m">M</a> for a single MOS transistor and model <a class="reference internal" href="#md">MD</a> for a differential-pair MOS. The latter one facilitates the design and analysis of negative-feedback amplifiers in which one controlled source that models the gain of the differential-pair MOS can be selected as loop gain reference variable.</p>
+<section id="id14">
+<h3>Models<a class="headerlink" href="#id14" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>M</p></td>
+<td><p>Four-terminal MOS</p></td>
+<td><p>expansion</p></td>
+</tr>
+<tr class="row-odd"><td><p>MD</p></td>
+<td><p>Four-terminal diff. pair MOS</p></td>
+<td><p>expansion</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-m">
+<span id="m"></span><h3>Model M<a class="headerlink" href="#model-m" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id41">
+<a class="reference internal image-reference" href="../_images/modelM.svg"><img alt="Syntax, symbol and network expansion of a 4-terminal MOS: model M" src="../_images/modelM.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and network expansion of a 4-terminal MOS: model M</span><a class="headerlink" href="#id41" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-m">
+<h3>Parameters model M<a class="headerlink" href="#parameters-model-m" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cgs</p></td>
+<td><p>gate-source capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cgb</p></td>
+<td><p>gate-bulk capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>cdg</p></td>
+<td><p>drain-gate capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cdb</p></td>
+<td><p>drain-bulk capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>csb</p></td>
+<td><p>source-bulk capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gm</p></td>
+<td><p>forward transconductance</p></td>
+<td><p>1E-3</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>gb</p></td>
+<td><p>bulk transconductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>go</p></td>
+<td><p>output conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-md">
+<span id="md"></span><h3>Model MD<a class="headerlink" href="#model-md" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id42">
+<a class="reference internal image-reference" href="../_images/modelMD.svg"><img alt="Syntax, symbol and network expansion of a 4-terminal MOS: model MD" src="../_images/modelMD.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and network expansion of a 4-terminal MOS: model MD</span><a class="headerlink" href="#id42" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-md">
+<h3>Parameters model MD<a class="headerlink" href="#parameters-model-md" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cgg</p></td>
+<td><p>gate-gate capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cdg</p></td>
+<td><p>drain-gate capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>cdd</p></td>
+<td><p>drain-drain capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gm</p></td>
+<td><p>forward transconductance</p></td>
+<td><p>1E-3</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>go</p></td>
+<td><p>output conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id15">
+<h3>Examples<a class="headerlink" href="#id15" title="Link to this heading"></a></h3>
+<p>Below three ways of defining a MOS in a circuit. The first example calls the mos model M with its default parameters and then overrides these parameters by local definitions in the call. The model parameter <code class="docutils literal notranslate"><span class="pre">gm</span></code> is passed as global parameter <code class="docutils literal notranslate"><span class="pre">gm</span></code>.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>M1 D G S B M gm={g_m} gb = 150u go = 100u cgs = 0.2p cdg = 10f
+</pre></div>
+</div>
+<p>The second example calls the model from a library file and redefines <code class="docutils literal notranslate"><span class="pre">g_m</span></code> as a global parameter.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>M1 D G S B myMOS gm = {g_m}
+.include myMOS.lib
+</pre></div>
+</div>
+<p>The third example calls a model and its parameters. For a given process, geometry and device operating point, these small-signal parameters can be obtained from a SPICE simulation.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>M1 D G S B M1
+.model M1 M gm = 2m gb = 150u go = 100u cgs = 0.2p cdg = 10f
+</pre></div>
+</div>
+<p>The next example shows the application of a differential-pair MOS.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>M1 D1 D2 G1 G2 myDiffPairMOS
+*parameters of the single MOS
+.param g_m = 1m g_o = 100u c_gs = 0.2p c_dg = 10f c_db = 5f
+*parameters of the diff. pair MOS
+.model myDiffPairMOS MD
++ gm  = {g_m/2}
++ go  = {g_o/2}
++ cgg = {c_gs/2}
++ cdg = {c_dg}
++ cdd = {c_db/2}
+</pre></div>
+</div>
+</section>
+</section>
+<section id="n-nullor">
+<h2>N: Nullor<a class="headerlink" href="#n-nullor" title="Link to this heading"></a></h2>
+<section id="model-n">
+<h3>Model N<a class="headerlink" href="#model-n" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id43">
+<a class="reference internal image-reference" href="../_images/stampN.svg"><img alt="Syntax, symbol and matrix stamp of a nullor: model N" src="../_images/stampN.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a nullor: model N</span><a class="headerlink" href="#id43" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>N</p></td>
+<td><p>Nullor</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id16">
+<h3>Examples<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>N_amp out 0 in+ in-
+</pre></div>
+</div>
+</section>
+</section>
+<section id="o-operational-amplifier">
+<h2>O: Operational amplifier<a class="headerlink" href="#o-operational-amplifier" title="Link to this heading"></a></h2>
+<p>SLiCAP has two built-in models for operational amplifiers:</p>
+<ol class="arabic simple">
+<li><p>A small-signal model for a <a class="reference internal" href="#voltage-feedback">voltage-feedback</a> operational amplifier: model OV</p></li>
+<li><p>A small-signal model for a <a class="reference internal" href="#current-feedback">current-feedback</a> operational amplifier: model OC</p></li>
+</ol>
+<section id="id17">
+<h3>Models<a class="headerlink" href="#id17" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>OV</p></td>
+<td><p>Voltage-feedback OpAmp</p></td>
+<td><p>expansion</p></td>
+</tr>
+<tr class="row-odd"><td><p>OC</p></td>
+<td><p>Current-feedback OpAmp</p></td>
+<td><p>expansion</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-ov">
+<span id="voltage-feedback"></span><h3>Model OV<a class="headerlink" href="#model-ov" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id44">
+<a class="reference internal image-reference" href="../_images/modelOV.svg"><img alt="Syntax, symbol and network expansion of a voltage-feedback operational amplifier: model OV" src="../_images/modelOV.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and network expansion of a voltage-feedback operational amplifier: model OV</span><a class="headerlink" href="#id44" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-ov">
+<h3>Parameters model OV<a class="headerlink" href="#parameters-model-ov" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head" colspan="2"><p>name  | description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cd</p></td>
+<td><p>differential-mode input capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cc</p></td>
+<td><p>common-mode input capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>gd</p></td>
+<td><p>differential-mode input conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gc</p></td>
+<td><p>common-mode input conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>av</p></td>
+<td><p>voltage gain</p></td>
+<td><p>1E6</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>zo</p></td>
+<td><p>output impedance</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-oc">
+<span id="current-feedback"></span><h3>Model OC<a class="headerlink" href="#model-oc" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id45">
+<a class="reference internal image-reference" href="../_images/modelOC.svg"><img alt="Syntax, symbol and network expansion of a current-feedback operational amplifier: model OC" src="../_images/modelOC.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and network expansion of a current-feedback operational amplifier: model OC</span><a class="headerlink" href="#id45" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-oc">
+<h3>Parameters model OC<a class="headerlink" href="#parameters-model-oc" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cp</p></td>
+<td><p>input capacitance non-inverting input</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gp</p></td>
+<td><p>input conductance non-inverting input</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>cpn</p></td>
+<td><p>input capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gpn</p></td>
+<td><p>input conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>gm</p></td>
+<td><p>input stage transconductance</p></td>
+<td><p>20E-3</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>zt</p></td>
+<td><p>output stage transimpedance</p></td>
+<td><p>1E6</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-even"><td><p>zo</p></td>
+<td><p>output impedance</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id18">
+<h3>Examples<a class="headerlink" href="#id18" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>O1 inP inN out 0 AD8610
+.model AD8610 OV
++ cd = 15p
++ cc = 8p
++ av = {300k*(1-s*1.3n)/(1+s*2.4m)/(1+s*1.3n)}
++ zo = 20
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>O1 inP inN out 0 LT1223
+.model LT1223 OC
++ cp = 1.5p
++ gp = 100n
++ gm = 65m
++ zt = {5M/(1+s*680u)/(1+s*1.6n)}
++ zo = 30
+</pre></div>
+</div>
+</section>
+</section>
+<section id="q-4-terminal-bjt">
+<h2>Q: 4-terminal BJT<a class="headerlink" href="#q-4-terminal-bjt" title="Link to this heading"></a></h2>
+<p>SLiCAP incorporates three models for 4-terminal Bipolar Junction Transistors (BJTs):</p>
+<ol class="arabic">
+<li><p>Model <a class="reference internal" href="#qv">QV</a> for a single vertical BJT</p></li>
+<li><p>Model <a class="reference internal" href="#ql">QL</a> for a single lateral BJT</p></li>
+<li><p>Model <a class="reference internal" href="#qd">QD</a> for a differential pair.</p>
+<blockquote>
+<div><p>The latter one facilitates the design and analysis of negative-feedback amplifiers in which one controlled source that models the gain of the differential-pair BJT can be selected as loop gain reference variable.</p>
+</div></blockquote>
+</li>
+</ol>
+<section id="id19">
+<h3>Models<a class="headerlink" href="#id19" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>QV</p></td>
+<td><p>Four-terminal vertical BJT</p></td>
+<td><p>expansion</p></td>
+</tr>
+<tr class="row-odd"><td><p>QL</p></td>
+<td><p>Four-terminal lateral BJT</p></td>
+<td><p>expansion</p></td>
+</tr>
+<tr class="row-even"><td><p>QD</p></td>
+<td><p>Four-terminal diff. pair BJT</p></td>
+<td><p>expansion</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-qv">
+<span id="qv"></span><h3>Model QV<a class="headerlink" href="#model-qv" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id46">
+<a class="reference internal image-reference" href="../_images/modelQV.svg"><img alt="SLiCAP built-in model for a 4-terminal vertical BJT: model QV" src="../_images/modelQV.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">SLiCAP built-in model for a 4-terminal vertical BJT: model QV</span><a class="headerlink" href="#id46" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-qv">
+<h3>Parameters model QV<a class="headerlink" href="#parameters-model-qv" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cpi</p></td>
+<td><p>internal base-emitter capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cbc</p></td>
+<td><p>internal base-collector capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>cbx</p></td>
+<td><p>external base-collector capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cs</p></td>
+<td><p>collector-substrate capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>gpi</p></td>
+<td><p>internal base-emitter conductance</p></td>
+<td><p>1E-3</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gm</p></td>
+<td><p>transconductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>go</p></td>
+<td><p>output conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gbc</p></td>
+<td><p>internal base-collector conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>rb</p></td>
+<td><p>base resistance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-ql">
+<span id="ql"></span><h3>Model QL<a class="headerlink" href="#model-ql" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id47">
+<a class="reference internal image-reference" href="../_images/modelQL.svg"><img alt="SLiCAP built-in model for a 4-terminal lateral BJT: model QL" src="../_images/modelQL.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">SLiCAP built-in model for a 4-terminal lateral BJT: model QL</span><a class="headerlink" href="#id47" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-ql">
+<h3>Parameters model QL<a class="headerlink" href="#parameters-model-ql" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cpi</p></td>
+<td><p>internal base-emitter capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cbc</p></td>
+<td><p>internal base-collector capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>cbx</p></td>
+<td><p>external base-collector capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cs</p></td>
+<td><p>base-substrate capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>gpi</p></td>
+<td><p>internal base-emitter conductance</p></td>
+<td><p>1E-3</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gm</p></td>
+<td><p>transconductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>go</p></td>
+<td><p>output conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gbc</p></td>
+<td><p>internal base-collector conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>rb</p></td>
+<td><p>base resistance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-qd">
+<span id="qd"></span><h3>Model QD<a class="headerlink" href="#model-qd" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id48">
+<a class="reference internal image-reference" href="../_images/modelQD.svg"><img alt="SLiCAP built-in model for a differential-pair BJT: model QD" src="../_images/modelQD.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">SLiCAP built-in model for a differential-pair BJT: model QD</span><a class="headerlink" href="#id48" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-qd">
+<h3>Parameters model QD<a class="headerlink" href="#parameters-model-qd" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>cbb</p></td>
+<td><p>internal base-base capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>cbc</p></td>
+<td><p>internal base-collector capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>cbx</p></td>
+<td><p>external base-collector capacitance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gbb</p></td>
+<td><p>internal base-base conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>gm</p></td>
+<td><p>forward transconductance</p></td>
+<td><p>1E-3</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>gcc</p></td>
+<td><p>colector-collector conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>gbc</p></td>
+<td><p>internal base-colector conductance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>rb</p></td>
+<td><p>base resistance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id20">
+<h3>Examples<a class="headerlink" href="#id20" title="Link to this heading"></a></h3>
+<p>Below a specification of a BJT of which the model parameters are expressed in SPICE model parameters, the operating point current <code class="docutils literal notranslate"><span class="pre">I_C</span></code> and the operating voltage <code class="docutils literal notranslate"><span class="pre">V_CE</span></code>. The expressions are simplifications of the nonlinear device equations for a bipolar transistor.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Q1 C B E S QV
++ gm  = {g_m}
++ gpi = {g_m/beta_F}
++ go  = {(I_c+V_ce)/VAF}
++ cbc = {c_bc}
++ cbx = {c_bx}
++ cpi = {(CJE + TAUF*g_m)}
++ rb  = {r_b}
++ gbc = {g_bc}
+.param gm = I_c/U_T
+</pre></div>
+</div>
+<p>Below a specification of a BJT that uses small-signal parameters in an operating point as they can be determined with the aid of a SPICE operating point simulation.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Q1 C B E S Q1
+.model Q1 QV
++ gm  = 20m
++ rb  = 50
++ go  = 10u
++ gbc = 0
++ cpi = 2p
++ cbc = 0.05p
++ cbx = 0.05p
++ cs  = 0.2p
+</pre></div>
+</div>
+<p>Below a specification of a lateral BJT that uses small-signal parameters in an operating point as they can be determined with the aid of a SPICE operating point simulation.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Q1 C B E S Q1
+.model Q1 QL
++ gm=20m
++ rb=50
++ go=10u
++ gbc=0
++ cpi=2p
++ cbc=0.05p
++ cbx=0.05p
++ cs=0.2p
+</pre></div>
+</div>
+<p>Below an example of a differential pair BJT of which the parameters are related to those of the single transistor stage, biased in the same operating point as the transistors of the differential pair.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Q1 C1 C2 B1 B2 myDiffPairBJT
+.model myDiffPairBJT QD
++ gm  = {I_c/2/U_T}
++ gpi = {I_c/2/U_T/beta_AC}
++ go  = {2*(I_c+V_ce)/V_AF}
++ cbc = {c_bc}
++ cbx = {c_bx}
++ cpi = {(CJE + TAUF*I_c/U_T)/2}
++ rb  = {r_b}
+* below the device parameters of the single transistor
+.param r_b = 50 V_AF=50 g_bc = 0 CJE = 2p c_bc = 0.05p c_bx = 0.05p beta_AC=100
+* below the operating point the single transistor
+.param I_c = 1m V_ce=5
+</pre></div>
+</div>
+</section>
+</section>
+<section id="r-resistor">
+<h2>R: Resistor<a class="headerlink" href="#r-resistor" title="Link to this heading"></a></h2>
+<p>The default model type for a resistor is <a class="reference internal" href="#r">R</a>. Zero value for its resistance causes a divide by zero error while building the matrix. If zero value is required, e.g. because of parameter stepping, model <a class="reference internal" href="#type-r">type r</a> should be used.</p>
+<section id="id21">
+<h3>Models<a class="headerlink" href="#id21" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>R</p></td>
+<td><p>Resistor resistance &gt; 0</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>r</p></td>
+<td><p>Resistor resistance &gt;= 0</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="model-r">
+<span id="r"></span><h3>Model R<a class="headerlink" href="#model-r" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id49">
+<a class="reference internal image-reference" href="../_images/stampR.svg"><img alt="Syntax, symbol and matrix stamp of a resistor: model R" src="../_images/stampR.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a resistor: model R</span><a class="headerlink" href="#id49" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="parameters-model-r">
+<h3>Parameters model R<a class="headerlink" href="#parameters-model-r" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>resistance</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>dcvar</p></td>
+<td><p>variance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>dcvarlot</p></td>
+<td><p>variance of lot</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>noisetemp</p></td>
+<td><p>noise temperature</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>noiseflow</p></td>
+<td><p>corner frequency 1/f noise</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>dcvar</p></td>
+<td><p>variance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="type-r">
+<span id="id22"></span><h3>Model r<a class="headerlink" href="#type-r" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id50">
+<a class="reference internal image-reference" href="../_images/stampRz.svg"><img alt="Syntax, symbol and matrix stamp of a resistor: model r" src="../_images/stampRz.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of a resistor: model r</span><a class="headerlink" href="#id50" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</div></blockquote>
+</section>
+<section id="id23">
+<h3>Parameters model r<a class="headerlink" href="#id23" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>resistance</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>dcvar</p></td>
+<td><p>variance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>dcvarlot</p></td>
+<td><p>variance of lot</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>noisetemp</p></td>
+<td><p>noise temperature</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-even"><td><p>noiseflow</p></td>
+<td><p>corner frequency 1/f noise</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+<tr class="row-odd"><td><p>dcvar</p></td>
+<td><p>variance</p></td>
+<td><p>0</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id24">
+<h3>Examples<a class="headerlink" href="#id24" title="Link to this heading"></a></h3>
+<p>The examples below illustrates four different ways for specifying a resistor that is connected between the nodes nP and nN and has a numerical value of 10kOhm.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN R value = {R} noiseTemp = {T} noiseflow ={f_ell} dcvar = {sigma_R^2}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN {20 * alpha}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN r value = {R_a} dcvar = {sigma^2}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>R1 nP nN myR
+.model myR R value = {20 * alpha}
+.param alpha = 500
+</pre></div>
+</div>
+</section>
+</section>
+<section id="t-ideal-transformer">
+<h2>T: Ideal transformer<a class="headerlink" href="#t-ideal-transformer" title="Link to this heading"></a></h2>
+<p>SLiCAP has a built-in model for an ideal <a class="reference internal" href="#transformer">transformer</a>.</p>
+<section id="model-t">
+<span id="transformer"></span><h3>Model T<a class="headerlink" href="#model-t" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id51">
+<a class="reference internal image-reference" href="../_images/stampT.svg"><img alt="Syntax, symbol and matrix stamp of an ideal transformer: model T" src="../_images/stampT.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Syntax, symbol and matrix stamp of an ideal transformer: model T</span><a class="headerlink" href="#id51" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>T</p></td>
+<td><p>Ideal transformer</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-t">
+<h3>Parameters model T<a class="headerlink" href="#parameters-model-t" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>turns ratio</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id25">
+<h3>Examples<a class="headerlink" href="#id25" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>T1 secP secN priP priN {Vpri/Vsec}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>T1 secP secN priP priN T value={Vpri/Vsec}
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>T1 secP secN priP priN myTrafo
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>.model myTrafo T value={Vpri/Vsec}
+</pre></div>
+</div>
+</section>
+</section>
+<section id="v-independent-voltage-source">
+<h2>V: Independent voltage source<a class="headerlink" href="#v-independent-voltage-source" title="Link to this heading"></a></h2>
+<section id="model-v">
+<span id="v"></span><h3>Model V<a class="headerlink" href="#model-v" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default" id="id52">
+<a class="reference internal image-reference" href="../_images/stampV.svg"><img alt="Symbol, syntax and matrix stamp of an ideal independent voltage source: model V" src="../_images/stampV.svg" style="width: 800px;" /></a>
+<figcaption>
+<p><span class="caption-text">Symbol, syntax and matrix stamp of an ideal independent voltage source: model V</span><a class="headerlink" href="#id52" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>V</p></td>
+<td><p>Independent voltage source</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-v">
+<h3>Parameters model V<a class="headerlink" href="#parameters-model-v" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>Voltage (Laplace transform)</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>dc</p></td>
+<td><p>DC value</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-even"><td><p>dcvar</p></td>
+<td><p>Variance of DC value  [V^2]</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+<tr class="row-odd"><td><p>noise</p></td>
+<td><p>Noise voltage density [V^2/Hz]</p></td>
+<td><p>0</p></td>
+<td><p>TRUE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id26">
+<h3>Examples<a class="headerlink" href="#id26" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>* Both definitions are equivalent:
+V1 n1 n2 20m
+V1 n1 n2 V value = 20m
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Vin 0 input V value = {V_s} noise = 1e-16 dc = 0 dcvar = 1e-4
+.param V_s = {1/s}; Step of 1V starting at t = 0
+</pre></div>
+</div>
+</section>
+</section>
+<section id="w-gyrator">
+<h2>W: Gyrator<a class="headerlink" href="#w-gyrator" title="Link to this heading"></a></h2>
+<p>SLiCAP is often used for conceptual design and for this reason the <a class="reference internal" href="#gyrator">gyrator</a> has been included.</p>
+<section id="model-w">
+<span id="gyrator"></span><h3>Model W<a class="headerlink" href="#model-w" title="Link to this heading"></a></h3>
+<blockquote>
+<div><figure class="align-default">
+<a class="reference internal image-reference" href="../_images/stampW.svg"><img alt="Syntax, symbol and matrix stamp of a gyrator: model W" src="../_images/stampW.svg" style="width: 800px;" /></a>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>type</p></th>
+<th class="head"><p>Ii</p></th>
+<th class="head"><p>Io</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>W</p></td>
+<td><p>Gyrator</p></td>
+<td><p>stamp</p></td>
+<td><p>FALSE</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="parameters-model-w">
+<h3>Parameters model W<a class="headerlink" href="#parameters-model-w" title="Link to this heading"></a></h3>
+<blockquote>
+<div><table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>description</p></th>
+<th class="head"><p>default</p></th>
+<th class="head"><p>Laplace</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>value</p></td>
+<td><p>transconductance</p></td>
+<td><p>1</p></td>
+<td><p>FALSE</p></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</section>
+<section id="id27">
+<h3>Examples<a class="headerlink" href="#id27" title="Link to this heading"></a></h3>
+<p>Below two definitions of a gyrator with a conversion gain of 10mA/V.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>W1 outP outN inP inN 10m
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>W1 outP outN inP inN W value = 10m
+</pre></div>
+</div>
+</section>
+</section>
+<section id="x-sub-circuit-call">
+<h2>X: Sub circuit call<a class="headerlink" href="#x-sub-circuit-call" title="Link to this heading"></a></h2>
+<p>See examples in section: <a class="reference internal" href="netlist.html#subckt"><span class="std std-ref">.subckt … .ends lines</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="netlist.html" class="btn btn-neutral float-left" title="Netlist lines" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="schematics.html" class="btn btn-neutral float-right" title="Schematic capture for SLiCAP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, SLiCAP development team.
+      <span class="lastupdated">Last updated on Feb 25, 2025.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
