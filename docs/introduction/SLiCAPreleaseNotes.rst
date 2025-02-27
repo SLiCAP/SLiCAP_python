@@ -1,8 +1,16 @@
 ================================
-SLiCAP Version 3.2 release notes
+SLiCAP Version 3.3 release notes
 ================================
 
 .. image:: /img/colorCode.svg
+
+#. SLiCAP Version 3.3 is prepared for PyPi pip install:
+
+   - Examples are no longer part of the package, they can be puleed of downloaded from `github <https://github.com/SLiCAP/SLiCAPexamples>`_.
+   - Libraries are no longer placed in the ~/SLiCAP/ folder. Library locations are found in ~/SLiCAP.ini under the section `[installpaths]`. Settings for symbol library locations in schematic editors (KiCAD, LTspice, etc.) need to be adjusted accordingly.
+
+SLiCAP Version 3.2 release notes
+================================
 
 #. SLiCAP Version 3.2 is compatible with previous versions. The use of the *instruction* object for creating instructions, however, is deprecated and no longer described in this documentation.
 

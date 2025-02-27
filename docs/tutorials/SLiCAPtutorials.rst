@@ -2,11 +2,4 @@
 SLiCAP tutorials
 ================
 
-SLiCAP is distributed under the `MIT license <https://opensource.org/license/mit>`_
-
-.. toctree::
-
-   myFirstRCnetwork
-   noise
-   FilterDesign
-   balanced
+SLiCAP examples, test files and turorials can be pulled or downloaded from `github <https://github.com/SLiCAP/SLiCAPexamples>`_.

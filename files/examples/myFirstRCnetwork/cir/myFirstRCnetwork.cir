@@ -1,8 +1,0 @@
-"myFirstRCnetwork"
-.param R=1k C={1/(2*pi*R*f_c)} f_c=1k
-.source V1
-.detector V_out
-C1 0 out C value={C} vinit=0
-R1 out in R value={R} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
-V1 in 0 V value={V_s} noise=0 dc=0 dcvar=0
-.end

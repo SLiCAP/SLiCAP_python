@@ -48,7 +48,7 @@ The netlister is selected from the file extension and the operating system.
 
 Drawing size PDF and SVG images are generated only for KiCAD and Lepton EDA schematics.
 
-For a complete description of the function 'makeCircuit() see `makeCircuit <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__.
+For a complete description of the function `makeCircuit()` see `makeCircuit <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__.
 
 Below some notes for configuring schematic capture software for working with SLiCAP.
 
@@ -59,12 +59,20 @@ KiCAD
 
 .. admonition:: Important
 
-   SLiCAP schematics created with KiCAD, should only use symbols from the SLiCAP KiCAD symbol library: '~/SLiCAP/kicad/SLiCAp.kicad_sym'. This library must be added to the KiCAD project. 
+   SLiCAP schematics created with KiCAD, should only use symbols from the SLiCAP KiCAD symbol library: 
+   
+   .. code block:: python
+
+   >>> import SLiCAP as sl
+   >>> sl.ini.kicad_syms
+   '/home/USER/USER/lib/python3.12/site-packages/SLiCAP/files/kicad/SLiCAP.kicad_sym'
+   
+This library must be added to the KiCAD project. 
 
 #. In the KiCAD schematic editor select: Preferences > Manage Symbol Libraries. This will bring up the 'Symbol Libraries' Dialog Box. 
 #. There you select the tab: "Project Specific Libraries"
 #. Click add "+" to add the library 
-#. Enter a Nickname: "SLiCAP" and select the library path: '~/SLiCAP/kicad/SLiCAp.kicad_sym'. 
+#. Enter a Nickname: "SLiCAP" and select the above library path. 
 
 Since this library contains all symbols that can be handled by the netlister, it is good practice to deactivate all built-in libraries. This is done in the 'Global Libraries' tab of the 'Symbol Libraries' Dialog Box.
 
@@ -75,7 +83,15 @@ LTspice
 
 .. admonition:: Important
 
-   SLiCAP schematics created with LTspice, should only use symbols from the SLiCAP LTspice symbol library: '~/SLiCAP/LTspice/'. This library must be added to LTspice. 
+   SLiCAP schematics created with LTspice, should only use symbols from the SLiCAP LTspice symbol library: 
+
+   .. code-block:: python
+
+      >>> import SLiCAP as sl       
+      >>> sl.ini.ltspice_syms
+      '/home/USER/USER/lib/python3.12/site-packages/SLiCAP/files/LTspice/'
+       
+   This path must be added as LTspice symbol library path. 
 
 LTspice works with Windows and Linux (under Wine). A version for MAC is also available. The MAC version of LTspice differs from the windows version and netlist generation from within the SLiCAP (python) environment for this version is not supported. Netlists can also be generated manually. 
 
@@ -107,11 +123,7 @@ SLiCAP circuits should be made with SLiCAP symbols (and not with the default LTs
 gSchem
 ======
 
-The open source **gSchem** package can also be used in conjunction with SLiCAP. SLiCAP symbols for gschem are included in the ~/SLiCAP/gSchem/symbols/ folder.
-
-For an overview of SLiCAP symbols for gSchem, please view the `gSchem <../syntax/schematics.html#gSchem>`__ section. 
-
-The use of gschem as front-end for SLiCAP has been tested under Linux and Windows. However, for Linux please use Lepton EDA instead.
+The open source **gSchem** package can also be used in conjunction with SLiCAP. The use of gschem as front-end for SLiCAP has been tested under Linux and Windows. However, for Linux please use Lepton EDA instead.
 
 An MSWindows installer for gschem can be downloaded from: `gEDA-20130122.zip <https://analog-electronics.tudelft.nl/downloads/gEDA-20130122.zip>`_. Netlist generation requires the `gnet-spice-noqsi spice netlister <https://github.com/noqsi/gnet-spice-noqsi/tree/geda-gaf>`_. SLiCAP has a built-in instruction for netlist generation with gschem and this netlister. 
 
@@ -121,16 +133,22 @@ The netlister is installed by copying 'gnet-spice-noqsi.scm' from the downloaded
 
 You need also need to create or modify the file 'gafrc' in the '~\.gEDA\' directory. It should have the following content:
 
-.. admonition:: Important
-
-   SLiCAP schematics created with gSchem, should only use symbols from the SLiCAP gSchem symbol library: '~/SLiCAP/gSchem/'. This library must be added to gSchem. 
-   
 .. code-block:: python
 
    (reset-component-library)
    (component-library "C:/Program Files (x86)/gEDA/gEDA/share/gEDA/sym/slicap")
-    
-The gSchem symbol library is found in the in the ~/SLiCAP/gSchem/symbols/ folder. Create a directory "C:\Program Files (x86)\gEDA\gEDA\share\gEDA\sym\slicap" and copy the component library files to this directory.
+
+.. admonition:: Important
+
+   SLiCAP schematics created with gSchem, should only use symbols from the SLiCAP gSchem symbol library: 
+
+   .. code-block:: python
+
+      >>> import SLiCAP as sl       
+      >>> sl.ini.ini.gnetlist_syms 
+      '/home/USER/USER/lib/python3.12/site-packages/SLiCAP/files/gSchem/'
+       
+Create a folder "C:\Program Files (x86)\gEDA\gEDA\share\gEDA\sym\slicap" and copy the contents of the above the gSchem symbol library to this folder.
     
 If you wish to have a light background you can create or modify the file 'gschemrc' in the '~\.gEDA\' directory. Its contents must be:
 
@@ -149,16 +167,24 @@ For an overview of SLiCAP symbols for lepton-eda, please view the above `gSchem 
 
 .. admonition:: Important
 
-   SLiCAP schematics created with lepton-eda, should only use symbols from the SLiCAP lepton-eda symbol library: '~/SLiCAP/lepton-eda/'. This library must be added to lepton-eda. 
+   SLiCAP schematics created with lepton-eda, should only use symbols from the SLiCAP lepton-eda symbol library: 
 
-To this end you need to create or modify the file: '~/.config/lepton-eda/gafrc' with the contents:
+   .. code-block:: python
+
+      >>> import SLiCAP as sl       
+      >>> ini.lepton_eda_syms
+      '/home/USER/USER/lib/python3.12/site-packages/SLiCAP/files/lepton-eda/'. 
+      
+   This library must be added to lepton-eda. 
+
+Create or modify the file: '~/.config/lepton-eda/gafrc' with the contents:
 
 .. code-block:: python
 
     (reset-component-library)
     (component-library "<path to SLiCAP symbol Library>" "SLiCAP")
 
-If you wish to have a light background, you can create or modify the file '~/SLiCAP/.config/lepton-eda/gschemrc' in your home directory with the contents:
+If you wish to have a light background, you can create or modify the file '~/.config/lepton-eda/gschemrc' in your home directory with the contents:
 
 .. code-block:: python
 
@@ -181,18 +207,12 @@ Display schematics on html pages and in LaTeX reports
 
 Scalable Vector Graphics (".svg") images are preferred for displaying on HTML pages, while Portable Document Format (".pdf") is preferred for LaTeX reports.
 
-With KiCAD and Lepton-EDA, drawing-size *svg* and *pdf* images will automatically be performed with makeCircuit().
-
-With **lepton-eda** running under **Linux** you can print to pdf or svg. The image size will be equal to the drawing size and no conversion is necessary.
-
-With **LTspice** you can print schematics to a .PDF file using a PDF printer. Printing and rescaling cannot be invoked by SLiCAP.
-
-With **gschem** running under **MSwindows** you can write your schematic file to a .PDF file. Printing and rescaling cannot be invoked by SLiCAP.
+- With KiCAD or Lepton-EDA running under Linux or MacOS, drawing-size *svg* and *pdf* images will automatically be generated with makeCircuit().
+- With KiCAD running under Windows, drawing-size *svg* images will automatically be generated with makeCircuit().
+- With **LTspice** you can print schematics to a .PDF file using a PDF printer. Printing and rescaling cannot be invoked by SLiCAP.
+- With **gschem** running under **MSwindows** you can write your schematic file to a .PDF file. Printing and rescaling cannot be invoked by SLiCAP.
 
 When running under MSWindows, you can use `pdf2svg-1 <https://github.com/jalios/pdf2svg-windows>`_ or `pdf2svg-2 <https://www.pdftron.com/documentation/cli/download/windows/>`_ for PDF to SVG conversion. 
-
-Under Linux and Mac OS you can install 'psf2svg' from the package manager.
-
 Alternatively, on all platforms, you can use `Inkscape <https://inkscape.org/>`_ instead. If you import PDF files with Inkscape use the import settings *Poppler/Cairo import*. With this selection, fonts will be converted to *Bezier curves*.
 
 Inkscape can also be used to resize images from page size to drawing size. This is required for correct display on HTML pages (.svg or .png format) or in LaTeX documents (.pdf format). However, for KiCAD SLiCAP uses built-in scripts for this purpose and Lepton-EDA has such capabilities by default.

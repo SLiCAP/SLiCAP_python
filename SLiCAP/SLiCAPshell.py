@@ -281,7 +281,7 @@ def makeCircuit(fileName, update=True, cirTitle=None, imgWidth=500,
        - An LTspice schematic file (".asc" file, full path or relative to 
          project folder)
        - A Lepton-eda schematic file (".sch" file, full path or relative to 
-         project folder; Linux and maxOS only)
+         project folder; Linux and macOS only)
        - A gschem schematic file (".sch" file, full path or relative to script; 
          MSWindows only)
     

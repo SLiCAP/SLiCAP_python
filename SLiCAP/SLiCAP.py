@@ -22,8 +22,6 @@ from SLiCAP.SLiCAPmath import *
 from SLiCAP.SLiCAPplots import *
 from SLiCAP.SLiCAPlatex import *
 from SLiCAP.SLiCAPrst import *
-from SLiCAP.SLiCAPfc import computeFC
-from SLiCAP.SLiCAPstatespace import getStateSpace
 from SLiCAP.SLiCAPngspice import MOS, ngspice2traces
 from SLiCAP.SLiCAPltspice import runLTspice
 from SLiCAP.SLiCAPshell import *
@@ -129,6 +127,8 @@ def initProject(name, notebook=False):
     project_config['labels']                  = ini.html_labels
     ini.html_prefix                           = ''
     project_config['html']['prefix']          = ini.html_prefix
+    ini.project_title                         = name
+    project_config['project']['title']        = ini.project_title
     ini.last_updated                          = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     project_config['project']['last_updated'] = ini.last_updated
     
@@ -146,27 +146,27 @@ def initProject(name, notebook=False):
     _makeDir(ini.tex_path)
     _makeDir(ini.html_path + 'img/')
     _makeDir(ini.html_path + 'css/')
-    _copyNotOverwrite(ini.home_path + 'html/css/slicap.css', ini.html_path + 'css/slicap.css')
-    _copyNotOverwrite(ini.home_path+ 'html/img/Grid.png', ini.html_path + 'css/Grid.png')
-    _copyNotOverwrite(ini.home_path + 'sphinx/make.bat', ini.sphinx_path + 'make.bat')
-    _copyNotOverwrite(ini.home_path + 'sphinx/Makefile', ini.sphinx_path + 'Makefile')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/html/css/slicap.css', ini.html_path + 'css/slicap.css')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/html/img/Grid.png', ini.html_path + 'css/Grid.png')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/make.bat', ini.sphinx_path + 'make.bat')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/Makefile', ini.sphinx_path + 'Makefile')
     _makeDir(ini.sphinx_path + 'SLiCAPdata/')
     _makeDir(ini.sphinx_path + 'source/')
-    _copyNotOverwrite(ini.home_path + 'sphinx/conf.py', ini.sphinx_path + 'source/conf.py')
-    _copyNotOverwrite(ini.home_path + 'sphinx/index.rst', ini.sphinx_path + 'source/index.rst')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/conf.py', ini.sphinx_path + 'source/conf.py')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/index.rst', ini.sphinx_path + 'source/index.rst')
     _makeDir(ini.sphinx_path + 'source/img/')
-    _copyNotOverwrite(ini.home_path + 'sphinx/img' + '/colorCode.svg', ini.sphinx_path + 'source/img/colorCode.svg')
-    _copyNotOverwrite(ini.home_path + 'sphinx/img' + '/SLiCAP.svg', ini.sphinx_path + 'source/img/SLiCAP.svg')
-    _copyNotOverwrite(ini.home_path + 'sphinx/img' + '/SLiCAP-h1.svg', ini.sphinx_path + 'source/img/SLiCAP-h1.svg')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/img' + '/colorCode.svg', ini.sphinx_path + 'source/img/colorCode.svg')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/img' + '/SLiCAP.svg', ini.sphinx_path + 'source/img/SLiCAP.svg')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/img' + '/SLiCAP-h1.svg', ini.sphinx_path + 'source/img/SLiCAP-h1.svg')
     _makeDir(ini.sphinx_path + 'source/_static/')
-    _copyNotOverwrite(ini.home_path + 'sphinx/_static/html_logo.png', ini.sphinx_path + 'source/_static/html_logo.png')
-    _copyNotOverwrite(ini.home_path + 'sphinx/_static/custom.css', ini.sphinx_path + 'source/_static/custom.css')
-    _copyNotOverwrite(ini.home_path + 'sphinx/_static/handsontable.full.min.css', ini.sphinx_path + 'source/_static/handsontable.full.min.css')
-    _copyNotOverwrite(ini.home_path + 'sphinx/_static/handsontable.full.min.js', ini.sphinx_path + 'source/_static/handsontable.full.min.js')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_static/html_logo.png', ini.sphinx_path + 'source/_static/html_logo.png')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_static/custom.css', ini.sphinx_path + 'source/_static/custom.css')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_static/handsontable.full.min.css', ini.sphinx_path + 'source/_static/handsontable.full.min.css')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_static/handsontable.full.min.js', ini.sphinx_path + 'source/_static/handsontable.full.min.js')
     _makeDir(ini.sphinx_path + 'source/_templates/')
-    _copyNotOverwrite(ini.home_path + 'sphinx/_templates/layout.html', ini.sphinx_path + 'source/_templates/layout.html')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_templates/layout.html', ini.sphinx_path + 'source/_templates/layout.html')
     _makeDir(ini.tex_path + 'SLiCAPdata/')
-    _copyNotOverwrite(ini.home_path + 'tex/preambuleSLiCAP.tex', ini.tex_path + 'preambuleSLiCAP.tex')
+    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/tex/preambuleSLiCAP.tex', ini.tex_path + 'preambuleSLiCAP.tex')
     #
     if not ini.notebook:
         # Create the HTML project index file

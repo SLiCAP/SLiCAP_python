@@ -36,11 +36,13 @@ def _check_version():
     None.
     """
     latest = _get_latest_version()
-    if INSTALLVERSION != latest:
+    if latest == "Unknown":
+        print("You are running SLiCAP version %s. Please check github for updates."%(INSTALLVERSION))
+    elif INSTALLVERSION != latest:
         print("A new version of SLiCAP is available, please get it from 'https://github.com/SLiCAP/SLiCAP_python.git'.")
     else:
         print("SLiCAP Version matches with the latest release of SLiCAP on github.")
-    return latest
+    return str(latest)
     
 def _get_latest_version():
     """
@@ -54,10 +56,8 @@ def _get_latest_version():
         response = requests.get("https://api.github.com/repos/SLiCAP/SLiCAP_python/releases/latest")
         version = response.json()["tag_name"]
     except BaseException:
-        exc_type, value, exc_traceback = sys.exc_info()
-        print('\n', value)
-        print("Could not access github to check the latest available version of SLiCAP.")
-        version = None
+        print("Could not determine the latest available version of SLiCAP on github.")
+        version = "Unknown"
     return version
 
 def _find_installed_windows_software():
@@ -201,21 +201,24 @@ def _find_LTspice_wine():
     -------
     LTspice command
     """
-    home = expanduser("~")
-    drives = [os.path.join(home, '.wine', 'drive_c')]
     cmd = ''
-    for drive in drives:
-        drive = os.path.join(drive, 'Program Files')
-        for root, dirs, files in os.walk(drive, topdown=True):
-            for name in dirs:
-                if re.match('LT(S|s)pice*', name, flags=0):
-                    if os.path.exists(os.path.join(root,name,'XVIIx64.exe')):
-                        cmd = os.path.join(root,name,'XVIIx64.exe')
-                    elif  os.path.exists(os.path.join(root,name,'LTspice.exe')):
-                        cmd = os.path.join(root,name,'LTspice.exe')
-                    elif  os.path.exists(os.path.join(root,name,'ltspice.exe')):
-                        cmd = os.path.join(root,name,'ltspice.exe')
-                    return cmd
+    try:
+        home = expanduser("~")
+        drives = [os.path.join(home, '.wine', 'drive_c')]
+        for drive in drives:
+            drive = os.path.join(drive, 'Program Files')
+            for root, dirs, files in os.walk(drive, topdown=True):
+                for name in dirs:
+                    if re.match('LT(S|s)pice*', name, flags=0):
+                        if os.path.exists(os.path.join(root,name,'XVIIx64.exe')):
+                            cmd = os.path.join(root,name,'XVIIx64.exe')
+                        elif  os.path.exists(os.path.join(root,name,'LTspice.exe')):
+                            cmd = os.path.join(root,name,'LTspice.exe')
+                        elif  os.path.exists(os.path.join(root,name,'ltspice.exe')):
+                            cmd = os.path.join(root,name,'ltspice.exe')
+                        return cmd
+    except:
+        pass
     return cmd
 
 def _find_installed_software():
@@ -322,15 +325,18 @@ def _generate_main_config():
     install_path  = inspect.getfile(_find_installed_software).replace('\\', '/').split('/')
     install_path  = '/'.join(install_path[0:-2]) + '/'
     slicap_home   = expanduser("~").replace('\\', '/')
-    home_path     = slicap_home + '/SLiCAP/'
-    install_paths = {"install"   : install_path,
-                     "user"      : home_path,
-                     "docs"      : os.path.join(home_path, 'docs/'),
-                     "libs"      : os.path.join(home_path, 'lib/'),
-                     "examples"  : os.path.join(home_path, 'examples/')
+    home_path     = slicap_home + '/'
+    install_paths = {"install"     : install_path,
+                     "user"        : home_path,
+                     "docs"        : os.path.join(install_path, 'SLiCAP/docs/html/'),
+                     "libs"        : os.path.join(install_path, 'SLiCAP/files/lib/'),
+                     "kicadsyms"   : os.path.join(install_path, 'SLiCAP/files/kicad/SLiCAP.kicad_sym'),
+                     "gedasyms"    : os.path.join(install_path, 'SLiCAP/files/gSchem/'),
+                     "leptonsyms"  : os.path.join(install_path, 'SLiCAP/files/lepton-eda/'),
+                     "ltspicesyms" : os.path.join(install_path, 'SLiCAP/files/LTspice/'),
+                     "latexfiles"  : os.path.join(install_path, 'SLiCAP/files/tex/'),
+                     "sphinxfiles" : os.path.join(install_path, 'SLiCAP/files/sphinx/'),
                      }
-    gain_types    = "gain,asymptotic,loopgain,servo,direct,vi"
-    data_types    = "dc,dcvar,dcsolve,laplace,numer,denom,solve,noise,pz,poles,zeros,time,impulse,step"
     
     if platform.system() == 'Windows':
         commands = _find_installed_windows_software()
@@ -341,34 +347,32 @@ def _generate_main_config():
                                      "latest_version" : _check_version()}
     SLiCAPconfig['installpaths'] = install_paths
     SLiCAPconfig['commands']     = commands
-    SLiCAPconfig['simulation']   = {'gain_types': gain_types,
-                                    'data_types': data_types,
-                                    'sim_types' : "symbolic, numeric"
-                                    }
     return SLiCAPconfig
 
 def _generate_default_config():
-    default_config = {'version':{'install_version': '',
-                                 'latest_version' : ''},
-                      'simulation':{'gain_types'  : '',
-                                    'data_types'  : '',
-                                    'sim_types'   : ''},
-                      'installpaths':{"install"   : '',
-                                       "user"     : '',
-                                       "docs"     : '',
-                                       "libs"     : '',
-                                       "examples" : ''},
-                      'commands':{'ltspice'       : '',
-                                  'kicad'         : '',
-                                  'geda'          : '',
-                                  'lepton-eda'    : '',
-                                  'ngspice'       : ''}
+    default_config = {'version':{'install_version'   : '',
+                                 'latest_version'    : ''},
+                      'installpaths':{"install"      : '',
+                                       "user"        : '',
+                                       "docs"        : '',
+                                       "libs"        : '',
+                                       "kicadsyms"   : '',
+                                       "gedasyms"    : '',
+                                       "leptonsyms"  : '',
+                                       "ltspicesyms" : '',
+                                       "latexfiles"  : '',
+                                       "sphinxfiles" : ''},
+                      'commands':{'ltspice'          : '',
+                                  'kicad'            : '',
+                                  'geda'             : '',
+                                  'lepton-eda'       : '',
+                                  'ngspice'          : ''}
                       }
     return default_config
 
 def _get_home_path():
-    slicap_home  = expanduser("~").replace('\\', '/')
-    return slicap_home + '/SLiCAP/'
+    slicap_home  = expanduser("~").replace('\\', '/') + '/'
+    return slicap_home
     
 def _read_project_config():
     try:
@@ -377,7 +381,7 @@ def _read_project_config():
             with open("SLiCAP.ini") as f:
                 config_dict.read_file(f)
         else:
-            print("Generating project configuration file: SLiCAP.ini,\n")
+            print("Generating project configuration file: SLiCAP.ini.\n")
             config_dict = _generate_project_config()
             _write_project_config(config_dict)
     except:
@@ -392,7 +396,7 @@ def _read_main_config():
             with open(path) as f:
                 config_dict.read_file(f)
         else:
-            print("Generating main configuration file: ~/SLiCAP/SLiCAP.ini,\n")
+            print("Generating main configuration file: ~/SLiCAP/SLiCAP.ini.\n")
             config_dict = _generate_main_config()
             _write_main_config(config_dict)
     except:
@@ -455,7 +459,7 @@ def _update_ini_files():
     _write_project_config(project_config)
     
     return main_config, project_config
-               
+         
 def dump():
     """
     Prints the global SLiCAP settings.
@@ -475,16 +479,18 @@ def dump():
     print('ini.install_path    =', main_config['installpaths']['install'])
     print('ini.home_path       =', main_config['installpaths']['user'])
     print('ini.main_lib_path   =', main_config['installpaths']['libs'])
-    print('ini.example_path    =', main_config['installpaths']['examples'])
     print('ini.doc_path        =', main_config['installpaths']['docs'])
     print('ini.ltspice         =', main_config['commands']['ltspice'])
     print('ini.gnetlist        =', main_config['commands']['geda'])
     print('ini.kicad           =', main_config['commands']['kicad'])
     print('ini.ngspice         =', main_config['commands']['ngspice'])
     print('ini.lepton_eda      =', main_config['commands']['lepton-eda'])
-    print('ini.gain_types      =', main_config['simulation']['gain_types'].split(','))
-    print('ini.data_types      =', main_config['simulation']['data_types'].split(','))
-    print('ini.sim_types       =', main_config['simulation']['sim_types'].split(','))
+    print('ini.ltspice_syms    =', main_config['installpaths']['ltspicesyms'])
+    print('ini.gnetlist_syms   =', main_config['installpaths']['gedasyms'])
+    print('ini.kicad_syms      =', main_config['installpaths']['kicadsyms'])
+    print('ini.lepton_eda_syms =', main_config['installpaths']['leptonsyms'])
+    print('ini.latex_files     =', main_config['installpaths']['latexfiles'])
+    print('ini.sphinx_files    =', main_config['installpaths']['sphinxfiles'])
     
     project_config = _read_project_config()
     # Global variables from main configuration file
@@ -539,22 +545,24 @@ def dump():
 # Define global variables from ini files
 
 main_config, project_config = _update_ini_files()
+
 install_version = main_config['version']['install_version']
 latest_version  = main_config['version']['latest_version']
 install_path    = main_config['installpaths']['install']
 home_path       = main_config['installpaths']['user']
 main_lib_path   = main_config['installpaths']['libs']
-example_path    = main_config['installpaths']['examples']
 doc_path        = main_config['installpaths']['docs']
+ltspice_syms    = main_config['installpaths']['ltspicesyms']
+netlist_syms    = main_config['installpaths']['gedasyms']
+kicad_syms      = main_config['installpaths']['kicadsyms']
+lepton_eda_syms = main_config['installpaths']['leptonsyms']
+latex_files     = main_config['installpaths']['latexfiles']
+sphinx_files    = main_config['installpaths']['sphinxfiles']
 ltspice         = main_config['commands']['ltspice']
 gnetlist        = main_config['commands']['geda']
 kicad           = main_config['commands']['kicad']
 ngspice         = main_config['commands']['ngspice']
 lepton_eda      = main_config['commands']['lepton-eda']
-gain_types      = main_config['simulation']['gain_types'].split(',')
-data_types      = main_config['simulation']['data_types'].split(',')
-sim_types       = main_config['simulation']['sim_types'].split(',')
-
 html_path       = project_config['projectpaths']['html']
 cir_path        = project_config['projectpaths']['cir']
 img_path        = project_config['projectpaths']['img']
