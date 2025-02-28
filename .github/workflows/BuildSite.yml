@@ -43,14 +43,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r ./requirements.txt
+      - name: install SLiCAP
+        run: python -m pip install .
       - name: make html files
         run: |
           cd ./docs
           make html
-      - name: move html files to main directory
-        run: |
-          mkdir builthtml
-          mv  -v ./docs/_build/html/* builthtml
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
@@ -59,7 +57,7 @@ jobs:
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "builthtml"
+          path: "./docs/html/*"
 
   # Deployment job
   deploy:
