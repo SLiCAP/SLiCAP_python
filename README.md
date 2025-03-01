@@ -1,5 +1,7 @@
 # SLiCAP: more than SYMBOLIC SPICE
 
+[Documentation](https://analog-electronics.tudelft.nl/slicap/html/index.html)
+
 ## What it is
 - SLiCAP is an acronym for: **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram
 - SliCAP is a tool for **algorithm-based analog design automation**
