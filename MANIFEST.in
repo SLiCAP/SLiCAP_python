@@ -1,2 +1,2 @@
-recursive-include SLiCAP/docs *
+recursive-include SLiCAP/docs/ *
 recursive-include SLiCAP/files/ *
