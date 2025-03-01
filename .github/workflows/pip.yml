@@ -1,0 +1,37 @@
+name: Publish slicap to pypi.org so it is pip installable
+on:
+  release:
+    types: [published]
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout SLiCAP repository
+        uses: actions/checkout@v3
+        with:
+          repository: SLiCAP/SLiCAP_python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: install twine and upgrade build
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install twine
+          python3 -m pip install --upgrade build
+      - name: Build a source distribution
+        run: python3 -m build --sdist
+      - name: Build a binary wheel
+        run: python3 -m build --wheel
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Upload using twine
+        env:
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+        run: twine upload dist/*
