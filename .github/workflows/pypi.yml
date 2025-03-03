@@ -4,8 +4,6 @@ on: workflow_call
 jobs:
   publish-to-pypi:
     name: Publish Python 🐍 distribution 📦 to PyPI
-    needs:
-      - build
 
     runs-on: ubuntu-latest
     environment:

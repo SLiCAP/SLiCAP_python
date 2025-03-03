@@ -4,10 +4,8 @@ on: workflow_call
 jobs:
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
-    needs:
-    - build
-    runs-on: ubuntu-latest
 
+    runs-on: ubuntu-latest
     environment:
       name: testpypi
       url: https://test.pypi.org/project/SLiCAP
