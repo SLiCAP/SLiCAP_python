@@ -71,7 +71,7 @@ jobs:
           name: "allDocs"
           path: "SLiCAP/docs"
 
-  # Deploy Documentation
+  # Deploy Documentationenv_var
   deploy:
     environment:
       name: github-pages
@@ -83,8 +83,5 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  # Build and Package
-  upload2pypi:
-    if: ${{env.buildpackage}}
-    uses: ./.github/workflows/BuildPackage.yml
+
 
