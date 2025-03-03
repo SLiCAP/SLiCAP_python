@@ -85,18 +85,15 @@ jobs:
 
   # Build and Package
   BuildPackage:
-    - name: Build Package
-      if: ${{env.buildpackage}}
-      uses: ./.github/workflows/BuildPackage.yml
+    if: env.buildpackage
+    uses: ./.github/workflows/BuildPackage.yml
 
   # Build and Package
   PublishPackage:
-    - name: Publish Package on PyPI
-      if: ${{env.pypipublish}}
-      uses: ./.github/workflows/pypi.yml
+    if: env.pypipublish
+    uses: ./.github/workflows/pypi.yml
 
   # Build and Package
   TestPublishPackage:
-    - name: Build Package
-      if: ${{!env.pypipublish}}
-      uses: ./.github/workflows/pypiTEST.yml
+    if: ${{ ! env.pypipublish }}
+    uses: ./.github/workflows/pypiTEST.yml
