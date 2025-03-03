@@ -31,6 +31,7 @@ concurrency:
 env:
   buildpackage: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
   pypipublish: ${{github.event_name == 'release'}}
+  TESTpublish: ${{github.event_name != 'release'}}
 
 jobs:
   # Build job
@@ -95,5 +96,5 @@ jobs:
 
   # Build and Package
   TestPublishPackage:
-    if: ${{ ! env.pypipublish }}
+    if: env.TESTpublish
     uses: ./.github/workflows/pypiTEST.yml
