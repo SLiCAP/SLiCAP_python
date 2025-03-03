@@ -30,8 +30,6 @@ concurrency:
 
 env:
   buildpackage: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
-  pypipublish: ${{github.event_name == 'release'}}
-  TESTpublish: ${{github.event_name != 'release'}}
 
 jobs:
   # Build job
@@ -52,6 +50,8 @@ jobs:
           python -m pip install -r requirements.txt
       - name: make html files
         run: |
+          echo "github.eventname:"
+          echo ${{github.event_name}}
           cd ./docs
           make html
       - name: Setup Pages
@@ -99,5 +99,5 @@ jobs:
   # Build and Package
   TestPublishPackage:
     needs: BuildPackage
-    if: ${{github.event_name != 'release'}}
+    if: ${{github.event_name == 'workflow_dispatch'}}
     uses: ./.github/workflows/pypiTEST.yml
