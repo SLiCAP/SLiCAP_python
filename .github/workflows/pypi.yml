@@ -23,16 +23,11 @@ jobs:
           path: SLiCAP/docs
       - name: install twine and upgrade build
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install twine
-          python3 -m pip install --upgrade build
+          python -m pip install --upgrade pip
+          python -m pip install twine
+          python -m pip install build
       - name: Build a source and wheel
-        run: python3 -m build
-      - name: Store the distribution packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
+        run: python -m build
       - name: Upload using twine
         env:
           TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
