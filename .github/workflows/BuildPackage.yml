@@ -19,7 +19,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: allDocs
-          id: documentation
           path: SLiCAP/docs
       - name: install twine and upgrade build
         run: |

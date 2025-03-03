@@ -50,8 +50,6 @@ jobs:
           python -m pip install -r requirements.txt
       - name: make html files
         run: |
-          echo "github.eventname:"
-          echo ${{github.event_name}}
           cd ./docs
           make html
       - name: Setup Pages
@@ -62,15 +60,16 @@ jobs:
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
+          name: "onlyHTML"
           path: "SLiCAP/docs/html"
       # Archive documentation used for building and packaging
       - name: Upload documentation artifact
         if: ${{env.buildpackage}}
-        id: documentation
         uses: actions/upload-artifact@v4
         with:
           name: "allDocs"
           path: "SLiCAP/docs"
+          retention-days: "1"
 
   # Deploy Documentationenv_var
   deploy:
@@ -83,6 +82,8 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: "onlyHTML"
 
   # Build and Package
   BuildPackage:
