@@ -48,7 +48,7 @@ jobs:
       - name: Install SLiCAP documentation dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements_DOCS.txt
+          python -m pip install -r requirements.txt
       - name: make html files
         run: |
           cd ./docs
