@@ -1,0 +1,43 @@
+# This should be ran after documents have been generated
+name: Publish slicap to pypi.org so it is pip installable
+on: workflow_call
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout SLiCAP repository
+        uses: actions/checkout@v3
+        with:
+          repository: SLiCAP/SLiCAP_python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: download html documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: allDocs
+          id: documentation
+          path: SLiCAP/docs
+      - name: install twine and upgrade build
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+      - name: Build a source and wheel
+        run: python -m build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  # Upload to pypi
+  upload2pypi:
+    if: ${{ env.pypiPublish }}
+    uses: ./.github/workflows/pypi.yml
+  # If the workflow was manually triggered then the build package is uploaded to test.pypi
+  upload2pypiTEST:
+    if: ${{ !env.pypiPublish }}
+    uses: ./.github/workflows/pypiTEST.yml

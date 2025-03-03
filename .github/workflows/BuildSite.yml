@@ -28,6 +28,10 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  buildpackage: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
+  pypipublish: ${{github.event_name == 'release'}}
+
 jobs:
   # Build job
   build:
@@ -41,6 +45,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+      - name: Install SLiCAP documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirement_DOCS.txt
       - name: make html files
         run: |
           cd ./docs
@@ -54,16 +62,16 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: "SLiCAP/docs/html"
-      # Archive documentation used for packaging
+      # Archive documentation used for building and packaging
       - name: Upload documentation artifact
-        if: ${{ github.event_name == 'release' }}
+        if: ${{env.buildpackage}}
         id: documentation
         uses: actions/upload-artifact@v4
         with:
           name: "allDocs"
           path: "SLiCAP/docs"
 
-  # Deployment job
+  # Deploy Documentation
   deploy:
     environment:
       name: github-pages
@@ -75,6 +83,8 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+  # Build and Package
   upload2pypi:
-    if: ${{ github.event_name == 'release' }}
-    uses: ./.github/workflows/pypi.yml
+    if: ${{env.buildpackage}}
+    uses: ./.github/workflows/BuildPackage.yml
+

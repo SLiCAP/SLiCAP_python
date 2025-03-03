@@ -28,7 +28,7 @@ The jobs that need to be completed are
 
 6. upload artifact
 
-# Building pypi distribution package
+# Building pypi distribution package from your computer
 
 The main strategy is from the [tutorial](https://packaging.python.org/en/latest/tutorials/packaging-projects/), but SLiCAP uses setuptools so I also use this [tutorial](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/). This workflow is only triggered when publishing.
 
@@ -43,4 +43,10 @@ The main strategy is from the [tutorial](https://packaging.python.org/en/latest/
 5. Build a distribution wheel
 
 6. Upload to pypi using twine
+
+# Building pypi distribution package from Github Actions
+
+The main strategy is from the [tutorial](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
+
+You have to make sure the repository is registered with pypi prior to uploading from github.
 
