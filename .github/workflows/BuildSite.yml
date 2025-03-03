@@ -74,6 +74,7 @@ jobs:
 
   # Deploy Documentationenv_var
   deploy:
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -86,15 +87,10 @@ jobs:
 
   # Build and Package
   BuildPackage:
+    needs: build
+    env:
+      buildpackage: ${{env.buildpackage}}
     if: env.buildpackage
     uses: ./.github/workflows/BuildPackage.yml
 
-  # Build and Package
-  PublishPackage:
-    if: env.pypipublish
-    uses: ./.github/workflows/pypi.yml
 
-  # Build and Package
-  TestPublishPackage:
-    if: env.TESTpublish
-    uses: ./.github/workflows/pypiTEST.yml
