@@ -6,12 +6,15 @@ jobs:
     name: Publish Python 🐍 distribution 📦 to PyPI
     needs:
       - build
+
     runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/project/SLiCAP/
+
     permissions:
       id-token: write 
+
     steps:
       - name: Download all the dists
         uses: actions/download-artifact@v4

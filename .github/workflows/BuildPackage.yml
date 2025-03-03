@@ -32,12 +32,3 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
-
-  # Upload to pypi
-  upload2pypi:
-    if: ${{ env.pypiPublish }}
-    uses: ./.github/workflows/pypi.yml
-  # If the workflow was manually triggered then the build package is uploaded to test.pypi
-  upload2pypiTEST:
-    if: ${{ !env.pypiPublish }}
-    uses: ./.github/workflows/pypiTEST.yml
