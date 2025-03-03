@@ -27,24 +27,10 @@
 # ones.
 
 import requests
-
-def _get_latest_version():
-    """
-    Gets the SLiCAP version from Github
-
-    Returns
-    -------
-    String Version.
-    """
-    try:
-        response = requests.get("https://api.github.com/repos/SLiCAP/SLiCAP_python/releases/latest")
-        version = response.json()["tag_name"]
-    except BaseException:
-        print("Could not determine the latest available version of SLiCAP on github.")
-        version = "Unknown"
-    return version
-
-_VERSION = _get_latest_version()
+import sys
+sys.path.append("..") # Location of the SLiCAP parent directory
+import SLiCAP #desired SLiCAP as long as all other versions have been uninstalled
+_VERSION = SLiCAP.__version__
     
 extensions = ['sphinx.ext.mathjax', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary']
 math_number_all = False

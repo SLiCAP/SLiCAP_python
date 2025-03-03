@@ -10,6 +10,8 @@ on:
   # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
+  release:
+    types: [published]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -39,12 +41,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: install python packages, SLiCAP dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r ./requirements.txt
-      - name: install SLiCAP
-        run: python -m pip install .
       - name: make html files
         run: |
           cd ./docs
@@ -58,6 +54,14 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: "SLiCAP/docs/html"
+      # Archive documentation used for packaging
+      - name: Upload documentation artifact
+        if: ${{ github.event_name == 'release' }}
+        id: documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: "allDocs"
+          path: "SLiCAP/docs"
 
   # Deployment job
   deploy:
@@ -70,3 +74,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  upload2pypi:
+    if: ${{ github.event_name == 'release' }}
+    uses: ./.github/workflows/pypi.yml

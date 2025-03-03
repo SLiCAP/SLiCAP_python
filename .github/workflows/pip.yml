@@ -1,7 +1,6 @@
+# This should be ran after documents have been generated
 name: Publish slicap to pypi.org so it is pip installable
-on:
-  release:
-    types: [published]
+on: workflow_call
 jobs:
   build:
     name: Build distribution
@@ -16,15 +15,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+      - name: download html documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: allDocs
+          id: documentation
+          path: SLiCAP/docs
       - name: install twine and upgrade build
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install twine
           python3 -m pip install --upgrade build
-      - name: Build a source distribution
-        run: python3 -m build --sdist
-      - name: Build a binary wheel
-        run: python3 -m build --wheel
+      - name: Build a source and wheel
+        run: python3 -m build
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
         with:

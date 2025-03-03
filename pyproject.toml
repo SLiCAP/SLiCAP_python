@@ -4,6 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SLiCAP"
+authors = [
+  { name="Anton Montagne", email="anton@montagne.nl" },
+]
+description = "SLiCAP: more than SYMBOLIC SPICE"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "numpy>=1.26",
     "sympy>=1.12",
@@ -16,16 +27,7 @@ dependencies = [
     'windows_tools>=2.4; sys_platform == "win32"',
     'pywin32>306; sys_platform == "win32"',
     ]
-authors = [
-  { name="Anton Montagne", email="anton@montagne.nl" },
-]
-description = "SLiCAP: more than SYMBOLIC SPICE"
-requires-python = ">=3.12"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
-]
-dynamic = ["version","readme","license"]
+dynamic = ["version"]
 
 [project.urls]
 Homepage = "https://slicap.github.io/SLiCAP_python/"
@@ -33,10 +35,12 @@ Issues = "https://github.com/SLiCAP/SLiCAP_python"
 
 [tool.setuptools.dynamic]
 version = {attr = "SLiCAP.__version__"}  # any module attribute compatible with ast.literal_eval
-readme = {file = ["README.md"], content-type = "text/markdown"}
 
 [project.optional-dependencies]
 docs  = [
     "docutils>=0.18",
     "sphinx-rtd-theme>=1.2.0",
     ]
+
+[tool.setuptools]
+packages = ["SLiCAP"]
