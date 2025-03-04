@@ -36,16 +36,14 @@
 - Symbolic and numeric DC and DC variance analysis for determination of budgets for resistor tolerances, offset, temperature effects, matching and tracking
 - Symbolic and numeric derivation and solution of design equations for bandwidh, frequency response, noise, dc variance, and temperature stability
 
-## Setting up SLiCAP
-1. Intall Python 3.12+ with the packages listed in requirements.txt (for MSwindows Anaconda installation is preferred)
-2. Download or clone the SLiCAP archive from github
-3. Extract it in some directory
-4. Open a terminal (or an Anaconda terminal if you run python from Anaconda) in the directory with setup.py
+## Installing SLiCAP from pypi
+1. Intall Python 3.12+ and upgrade pip with:
+
+       python -m pip install --upgrade pip
+
 5. Enter: 
 
-       python -m pip install .
-   
-   Don't forget the dot!
+       python -m pip install slicap
 
 ## Addidional software
 - SLiCAP can generate netlists from schematic files from:
@@ -91,6 +89,27 @@ Execution of the SLiCAP command:
     >>> Help()
     
 shows the HTML documentation in your default browser.
+
+## Setting up SLiCAP from source code
+1. Intall Python 3.12+ with the packages listed in requirements.txt (for MSwindows Anaconda installation is preferred)
+2. Download or clone the SLiCAP archive from github
+3. Extract it in some directory
+4. Open a terminal (or an Anaconda terminal if you run python from Anaconda) in the directory with setup.py
+5. Install requirements:
+
+       python -m pip install -r requirements.txt
+
+6. Make Documentation:
+
+       cd ./doc
+       make html
+       cd ..
+
+7. Lastly, Install: 
+
+       python -m pip install .
+   
+   Don't forget the dot!
 
 ## Contributing
 If you want to contribute to the development of SLiCAP, please [Email Us](mailto:anton@montagne.nl).

@@ -1,9 +1,22 @@
 # This should be ran after documents have been generated
 name: Publish slicap to pypi.org so it is pip installable
-on: workflow_call
+on: 
+  workflow_dispatch:
+  release:
+    types: [published]
 jobs:
+    # Build and Package
+  BuildSite:
+    uses: ./.github/workflows/BuildSite.yml
+
+  # Build and Package
+  BuildPackage:
+    needs: BuildSite
+    uses: ./.github/workflows/BuildPackage.yml
+
   publish-to-pypi:
     name: Publish Python 🐍 distribution 📦 to PyPI
+    needs: BuildPackage
 
     runs-on: ubuntu-latest
     environment:

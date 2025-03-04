@@ -10,12 +10,10 @@ on:
   # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
-  release:
-    types: [published]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
+  workflow_call:
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
@@ -29,7 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  buildpackage: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
+  buildpackage: ${{ github.event_name == 'workflow_call' }}
 
 jobs:
   # Build job
@@ -62,7 +60,7 @@ jobs:
         with:
           name: "onlyHTML"
           path: "SLiCAP/docs/html"
-      # Archive documentation used for building and packaging
+      # Archive documentation used for building and packaging, called only this workflow was called as a function
       - name: Upload documentation artifact
         if: ${{env.buildpackage}}
         uses: actions/upload-artifact@v4
