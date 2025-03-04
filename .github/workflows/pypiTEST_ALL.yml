@@ -4,15 +4,9 @@
 # documentation.
 
 # Sample workflow for building and deploying a Jekyll site to GitHub Pages
-name: Deploy SLiCAP site to Pages
+name: Deploy SLiCAP to PyPI test
 
 on:
-  # Runs on pushes targeting the default branch
-  push:
-    branches: ["main"]
-  release:
-    types: [published]
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -52,16 +46,6 @@ jobs:
         run: |
           cd ./docs
           make html
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v3
-      - name: Upload artifact
-        # Automatically uploads an artifact from the './_site' directory by default
-        id: deployment
-        uses: actions/upload-pages-artifact@v3
-        with:
-          name: "onlyHTML"
-          path: "SLiCAP/docs/html"
       # Archive documentation used for building and packaging
       - name: Upload documentation artifact
         if: ${{env.buildpackage}}
@@ -71,18 +55,32 @@ jobs:
           path: "SLiCAP/docs"
           retention-days: "1"
 
-  # Deploy Documentationenv_var
-  deploy:
+  # Build and Package
+  BuildPackage:
     needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-        with:
-          artifact_name: "onlyHTML"
+    uses: ./.github/workflows/BuildPackage.yml
 
+  # Build and Package
+  publish-to-testpypi:
+    name: Publish Python 🐍 distribution 📦 to TestPyPI
+    needs: BuildPackage
+
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/SLiCAP
+
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Publish distribution 📦 to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
 
