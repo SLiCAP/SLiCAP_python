@@ -94,11 +94,7 @@ jobs:
   # Build and Package
   PublishPackage:
     needs: BuildPackage
-    if: ${{github.event_name == 'release'}}
+    if: ${{github.event_name == 'workflow_dispatch'}}
     uses: ./.github/workflows/pypi.yml
 
-  # Build and Package
-  TestPublishPackage:
-    needs: BuildPackage
-    if: ${{github.event_name == 'workflow_dispatch'}}
-    uses: ./.github/workflows/pypiTEST.yml
+
