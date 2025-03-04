@@ -1,5 +1,5 @@
 # This should be ran after documents have been generated
-name: Publish slicap to pypi.org so it is pip installable
+name: Publish on test.pypi
 on: workflow_dispatch
 jobs:
 
