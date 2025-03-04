@@ -26,6 +26,8 @@ dependencies = [
     "IPython>=8.19",
     'windows_tools>=2.4; sys_platform == "win32"',
     'pywin32>306; sys_platform == "win32"',
+    "docutils>=0.18",
+    "sphinx-rtd-theme>=1.2.0",
     ]
 dynamic = ["version"]
 
@@ -35,12 +37,6 @@ Issues = "https://github.com/SLiCAP/SLiCAP_python"
 
 [tool.setuptools.dynamic]
 version = {attr = "SLiCAP.__version__"}  # any module attribute compatible with ast.literal_eval
-
-[project.optional-dependencies]
-docs  = [
-    "docutils>=0.18",
-    "sphinx-rtd-theme>=1.2.0",
-    ]
 
 [tool.setuptools]
 packages = ["SLiCAP"]
