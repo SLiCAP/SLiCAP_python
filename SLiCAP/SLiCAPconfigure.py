@@ -19,13 +19,14 @@ from os.path import expanduser
 from datetime import datetime
 from sympy import Symbol
 from time import time
-    
+from SLiCAP.__init__ import __version__ as INSTALLVERSION
+
 if platform.system() == 'Windows':
     import win32api
     import windows_tools.installed_software as wi
 
 TIMEOUT = 120
-INSTALLVERSION = "3.2.4"
+#INSTALLVERSION = "3.3.2"
 
 def _check_version():
     """
