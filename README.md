@@ -1,6 +1,6 @@
 # SLiCAP: more than SYMBOLIC SPICE
 
-[Documentation](https://analog-electronics.tudelft.nl/slicap/html/index.html)
+[Documentation](https://slicap.github.io/SLiCAP_python/)
 
 ## What it is
 - SLiCAP is an acronym for: **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram
@@ -43,7 +43,7 @@
 
 5. Enter: 
 
-       python -m pip install slicap
+       pip install slicap
 
 ## Addidional software
 - SLiCAP can generate netlists from schematic files from:
