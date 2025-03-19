@@ -1,7 +1,5 @@
 # SLiCAP: more than SYMBOLIC SPICE
 
-[Documentation](https://slicap.github.io/SLiCAP_python/)
-
 ## What it is
 - SLiCAP is an acronym for: **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram
 - SliCAP is a tool for **algorithm-based analog design automation**
@@ -37,11 +35,8 @@
 - Symbolic and numeric derivation and solution of design equations for bandwidh, frequency response, noise, dc variance, and temperature stability
 
 ## Installing SLiCAP from pypi
-1. Intall Python 3.12+ and upgrade pip with:
 
-       python -m pip install --upgrade pip
-
-5. Enter: 
+1. Enter: 
 
        pip install slicap
 
@@ -69,7 +64,6 @@ On the first run:
   - NGspice
   - gSchem (MSWindows only)
   - lepton-eda (Linux and MacOS)
-  - Inkscape
 - SLiCAP creates a SLiCAP.ini file in the SLiCAP home directory. This file contains initial setting and commands to start the above applications. It can be edited manually, and when deleted it will be recreated on the next run. Searching for applications on MSWindows may take a while!
 
 On the first run of a project, SLiCAP creates a SLiCAP.ini file in the project folder, each time you run the project this file is updated. If you delete it it will be recreated on the next run.
