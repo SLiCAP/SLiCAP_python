@@ -94,7 +94,7 @@ def _parseKiCADnetlistlines(lines, cirTitle):
                 # Field has no value!
                 pass
         elif fields[0] == 'net':
-            lastNode = fields[-1][1:-1]
+            lastNode = fields[4][1:-1]
             nodes[lastNode] = lastNode
         elif fields[0] == "node":
             refDes = fields[2][1:-1]
