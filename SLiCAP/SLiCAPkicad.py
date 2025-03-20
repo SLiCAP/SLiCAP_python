@@ -70,14 +70,15 @@ def _parseKiCADnetlistlines(lines, cirTitle):
                 title = _checkTitle(" ".join(fields[1:]))
         elif fields[0] == "comp":
             newComp = _KiCADcomponent()
-            newComp.refDes = fields[-1][1:-1]
+            newComp.refDes = fields[fields.index('ref')+1][1:-1]
             comps= True
         elif fields[0] == "tstamps":
             components[newComp.refDes] = newComp
             comps = False
         elif fields[0] == "value" and comps:
-            if fields[-1][1:-1] != '~':
-                newComp.params["value"] = fields[-1][1:-1]
+            value = fields[fields.index("value")+1][1:-1]
+            if value != '~':
+                newComp.params["value"] = value
         elif fields[0] == "field" and comps:
             try:
                 fieldName = fields[2][1:-1]
@@ -94,11 +95,12 @@ def _parseKiCADnetlistlines(lines, cirTitle):
                 # Field has no value!
                 pass
         elif fields[0] == 'net':
-            lastNode = fields[4][1:-1]
+            lastNode = fields[fields.index('name')+1][1:-1]
+            #lastNode = fields[4][1:-1]
             nodes[lastNode] = lastNode
         elif fields[0] == "node":
-            refDes = fields[2][1:-1]
-            pinNum = fields[4][1:-1]
+            refDes = fields[fields.index('ref')+1][1:-1]
+            pinNum = fields[fields.index("pin")+1][1:-1]
             components[refDes].nodes[pinNum] = lastNode
     nodenames = nodes.keys()
     for node in nodenames:
