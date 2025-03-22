@@ -1566,14 +1566,14 @@ def _doPyNoise(instr, result):
             if instr.numeric == True:
                 value = float2rational(sp.N(value))
             result.snoiseTerms[name] = value
-    result = _makeAllMatrices(instr, result)
+    result = _makeAllMatrices(instr, result, reduce=True, inductors=False)
     den = _doPyDenom(result)
     den = assumeRealParams(den.denom[0].subs(ini.laplace, s2f))
     den_sq = sp.Abs(den * sp.conjugate(den))
     if instr.source != [None, None] and instr.source != None:
         instr.gainType = 'gain'
         result.gainType = 'gain'
-        result = _makeAllMatrices(instr, result)     
+        result = _makeAllMatrices(instr, result, reduce=True, inductors=False)     
         result = _doPyNumer(instr, result)
         num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
@@ -1581,16 +1581,14 @@ def _doPyNoise(instr, result):
     instr.gainType = 'vi'
     result.gainType = 'vi'
     instr.dataType = 'noise'
-    result = _makeAllMatrices(instr, result, reduce=False)
+    result = _makeAllMatrices(instr, result, reduce=False, inductors=False)
+    # Save full matrices
     M_noise = result.M
     Iv_noise = result.Iv
     Dv_noise = result.Dv
     onoise = 0
     inoise = 0
     for src in result.snoiseTerms.keys():
-        result.M = M_noise
-        result.Iv = Iv_noise
-        result.Dv = Dv_noise
         if src not in result.onoiseTerms.keys():
             result.onoiseTerms[src] = []
             result.inoiseTerms[src] = []
@@ -1601,10 +1599,12 @@ def _doPyNoise(instr, result):
                 Iv = Iv.subs(name, 1)
             else:
                 Iv = Iv.subs(name, 0)
+        # Modify source and source vector (reduce to single input)
         result.Iv = Iv
         result.source = [src]
         # Remove unused independent voltage sources
-        result.M, result.Iv, result.Dv = _reduceCircuit(result)
+        if ini.reduce_circuit:
+            result.M, result.Iv, result.Dv = _reduceCircuit(result, inductors=False)
         result = _doPyNumer(instr, result)
         num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
         if num != None:
@@ -1621,6 +1621,10 @@ def _doPyNoise(instr, result):
                     inoiseTerm = sp.factor(inoiseTerm)
                 result.inoiseTerms[src].append(inoiseTerm)
                 inoise += result.inoiseTerms[src][-1]
+        # Restore full matrices
+        result.M = M_noise
+        result.Iv = Iv_noise
+        result.Dv = Dv_noise
     result.onoise.append(onoise)
     if inoise == 0:
         inoise = None

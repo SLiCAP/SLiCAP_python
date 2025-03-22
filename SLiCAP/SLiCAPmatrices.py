@@ -455,7 +455,7 @@ def _reduceCircuit(result, inductors=False):
         # (current) detector, inductor used as current detector.
         # Its associated dependent variable is "I_<Vname>", where "Vname" or
         # L<name> is the refdes of this voltage source or inductor.
-        if vi == "I" and (elID[0] == "V" or (inductors and elID[0] == "L")) and elID not in source and str(name) not in detector:
+        if (vi == "I" and (elID[0] == "V" or (inductors and elID[0] == "L"))) and elID not in source and str(name) not in detector:
             pos = list(result.Dv).index(var)
             row = list(result.M.row(pos))
             # Find the element's nodes
@@ -483,40 +483,46 @@ def _reduceCircuit(result, inductors=False):
                     connections = _connect(connections, colN, colP)
                     deletions.append(colN)
                     deletions.append(pos)
-                else:# result.Dv[colN] in detector and colP != None:    
-                    # Positive node is not GND:
+                else:   
+                    # Negative node is detector voltage and positive node is not GND: 
                     # positive node will be replaced with negative node
                     connections = _connect(connections, colP, colN)
                     deletions.append(colP)
                     deletions.append(pos)
-            elif colN != None and str(result.Dv[colN]) not in detector:    
-                # Negative node is not GND, positive node is GND:
-                # negative node will be connected to ground
-                deletions.append(colN)
+            """
+            elif colN != None and colP == None and str(result.Dv[colN]) not in detector:   
+                # Negative node is not GND and not detector, positive node is GND:
+                # Negative node will be connected to ground
+                if colN in connections.keys():
+                    deletions.append(connections[colN])
+                else:
+                    deletions.append(colN)
                 deletions.append(pos)
-            elif colP != None and str(result.Dv[colP]) not in detector:    
-                # Positive node is not GND, negative node is GND:
-                # positive node will be connected to ground
-                deletions.append(colP)
+            elif colP != None and colN == None and str(result.Dv[colP]) not in detector:    
+                # Positive node is not GND and not detector, negative node is GND:
+                # Positive node will be connected to ground
+                if colP in connections.keys():
+                    deletions.append(connections[colP])
+                else:
+                    deletions.append(colP)
                 deletions.append(pos)
-            else:
-                # Do nothing
-                pass
+            """
+    deletions = list(set(deletions))
     # Perform connections:
     # First create a copy of the original matrix
-    M = result.M.copy()
-    Iv = result.Iv.copy()
-    Dv = result.Dv.copy()
+    M   = result.M.copy()
+    Iv  = result.Iv.copy()
+    Dv  = result.Dv.copy()
     dim = M.shape[0]
     # Then perform row and column additions:
     # The substituted row or column is added to the substituting row or column,
-    # respectively
+    # respectively.
     # Also perform these additions in the vector with independent variables
     for i in range(dim):
         if i in connections.keys():
             M[connections[i], :] += M[i, :]
             M[:, connections[i]] += M[:, i]
-            Iv[connections[i]] += Iv[i]
+            Iv[connections[i]]   += Iv[i]
     # Then, delete rows and columns that have been substituted
     deletions = sorted(deletions)
     i = 0
