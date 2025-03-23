@@ -52,12 +52,12 @@ def t_PARDEF(t):
     except TypeError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        _printError("Error in expression.", _get_input_line(t), _find_column(t))
+        _printError("Error in expression.", t)
         lexer.errCount += 1
     except sp.SympifyError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        _printError("Error in expression.", _get_input_line(t), _find_column(t))
+        _printError("Error in expression.", t)
         lexer.errCount += 1
     return t
 
@@ -122,12 +122,12 @@ def t_EXPR(t):
     except TypeError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        _printError("Error in expression.", _get_input_line(t), _find_column(t))
+        _printError("Error in expression.", t)
         lexer.errCount += 1
     except sp.SympifyError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        _printError("Error in expression.", _get_input_line(t), _find_column(t))
+        _printError("Error in expression.", t)
         lexer.errCount += 1
     return t
 
