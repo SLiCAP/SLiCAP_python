@@ -140,7 +140,7 @@ def _find_installed_windows_software():
                                             found = True
                                 except:
                                     print("Could not find the KiCad command 'kicad-cli.exe'. " +
-                                          "Please add this command manually to the ~/SLiCAP/SLiCAP.ini file!")
+                                          "Please add this command manually to the ~/SLiCAP.ini file!")
                             elif package == 'gEDA':
                                 if re.match('gEDA', name, flags=0):
                                     file_name = os.path.join(root, name, 'gEDA', 'bin' ,'gnetlist.exe')
@@ -177,8 +177,8 @@ def _find_installed_windows_software():
             if app.lower() not in found_list:
                 print("-", app, ": installed but not found")
         print("\nIf you want SLiCAP to make calls to these apps, please edit " + 
-              "the main configuration file: 'SLiCAP.ini' in the ~/SLiCAP/ " +
-              "folder. More information is available in the SLiCAP HTML help.")
+              "the main configuration file: '~/SLiCAP.ini'. More information " +
+              "is available in the SLiCAP HTML help.")
     # Complete the commands dictionary
     if len(found_list) != len(package_list):
         for package in package_list:
@@ -188,9 +188,8 @@ def _find_installed_windows_software():
             if package not in search_list:
                 print("-", package, ": not installed")      
     if len(search_list) != len(package_list):
-        print("After installation of missing apps, delete the 'SLiCAP.ini' " +
-              "file in the ~/SLiCAP/ folder. It will be recreated with the " +
-              "next SLiCAP import.")
+        print("After installation of missing apps, delete the '~/SLiCAP.ini' " +
+              "file. It will be recreated with the next SLiCAP import.")
     commands['lepton-eda'] = ''
     return commands
 
@@ -249,9 +248,8 @@ def _find_installed_software():
         print("The following apps have not been installed:")
         for app in not_installed:
             print("-", app)
-        print("After installation of missing apps, delete the 'SLiCAP.ini' " +
-              "file in the ~/SLiCAP/ folder. It will be recreated with the " +
-              "next SLiCAP import.")
+        print("After installation of missing apps, delete the '~/SLiCAP.ini' " +
+              "file. It will be recreated with the next SLiCAP import.")
     return commands
 
 def _generate_project_config():
@@ -397,7 +395,7 @@ def _read_main_config():
             with open(path) as f:
                 config_dict.read_file(f)
         else:
-            print("Generating main configuration file: ~/SLiCAP/SLiCAP.ini.\n")
+            print("Generating main configuration file: ~/SLiCAP.ini.\n")
             config_dict = _generate_main_config()
             _write_main_config(config_dict)
     except:

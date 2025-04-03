@@ -1669,9 +1669,6 @@ def _doPyDCvar(instr, result):
     ovar = 0
     ivar = 0
     for src in result.svarTerms.keys():
-        result.M = M_var
-        result.Iv = Iv_var
-        result.Dv = Dv_var
         if src not in result.ovarTerms.keys():
             result.ovarTerms[src] = []
             result.ivarTerms[src] = []
@@ -1701,6 +1698,9 @@ def _doPyDCvar(instr, result):
                     ivarTerm = sp.factor(ivarTerm)
                 result.ivarTerms[src].append(ivarTerm)
                 ivar += result.ivarTerms[src][-1]
+        result.M = M_var
+        result.Iv = Iv_var
+        result.Dv = Dv_var
     result.ovar.append(ovar)
     if ivar == 0:
         ivar = None
