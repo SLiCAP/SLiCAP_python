@@ -37,9 +37,8 @@ def netlist2RST(netlistFile, lineRange=None, firstNumber=None, position=0):
     :return: RST snippet to be included in a ReStructuredText document
     :rtype: str
     """
-    copyfile(ini.cir_path + netlistFile, ini.sphinx_path + 'SLiCAPdata/' + netlistFile)
     spaces = _makeSpaces(position)
-    RST = spaces + '.. literalinclude:: ../SLiCAPdata/' + netlistFile + '\n'
+    RST = spaces + '.. literalinclude:: /' + ini.project_path + ini.cir_path + netlistFile + '\n'
     RST += spaces + '    :linenos:\n'
     if lineRange != None:
         RST += spaces + '    :lines: ' + lineRange + '\n'
@@ -397,7 +396,7 @@ def specs2RST(specs, specType='', label='', caption='', position=0):
         RST =  "**Found no specifications of type: " + specType + ".**\n\n"
     return RST
 
-def eqn2RST(LHS, RHS, units='', position=0, label=''):
+def eqn2RST(LHS, RHS, units='', label='', position=0):
     """
     Returns an RST snippet of a displayed equation with dimension and reference
     label.
@@ -434,7 +433,7 @@ def eqn2RST(LHS, RHS, units='', position=0, label=''):
         RST += '\\,\\,\\left[\\mathrm{' + units + '}\\right]\n\n'
     return RST
 
-def matrices2RST(Iv, M, Dv, position=0, label=''):
+def matrices2RST(Iv, M, Dv, label='', position=0):
     """
     Returns an RST snippet of the matrix equation Iv = M.Dv,
 
@@ -548,8 +547,11 @@ def coeffsTransfer2RST(transferCoeffs, label = '', append2caption='', position=0
     caption += append2caption
     RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, position=position)
     return RST
+    
+def monomialCoeffs2RST(monomialCoeffs, label = '', caption='', position=0):
+    raise NotImplementedError
 
-def slicap2RST(scriptFile, position=0, firstNumber=None, firstLine=None, lineRange=None):
+def file2RST(fileName, firstNumber=None, firstLine=None, lineRange=None, position=0):
     """
     Converts a SLiCAP script file into an RST string that can be included in
     a ReStructuredText document and returns this string.
@@ -568,9 +570,8 @@ def slicap2RST(scriptFile, position=0, firstNumber=None, firstLine=None, lineRan
     :return: RST snippet to be included in a ReStructuredText document
     :rtype: str
     """
-    copyfile(ini.project_path + scriptFile, ini.sphinx_path + 'SLiCAPdata/' + scriptFile)
     spaces = _makeSpaces(position)
-    RST = spaces + '.. literalinclude:: ../SLiCAPdata/' + scriptFile + '\n'
+    RST = spaces + '.. literalinclude:: /' + fileName + '\n'
     RST += spaces + '    :linenos:\n'
     if lineRange != None:
         RST += spaces + '    :lines: ' + lineRange + '\n'
@@ -581,36 +582,45 @@ def slicap2RST(scriptFile, position=0, firstNumber=None, firstLine=None, lineRan
 # Functions for generating nippets to be put in a dictionary for inline
 # substitutions in an RST file.
 
-def expr2RST(expr, units=''):
+def expr2RST(expr, units='', name=''):
     """
-    Returns an RST snippet for inline subsitution of an expression in a
-    ReStructuredText document.
+    Places a substitution in "substitutions.rst" in the rst_snippets folder.
 
+    :param name: Name of the variable to be substituted
+    :type name: str
+    
     :param expr: sympy expression for inline substitution.
     :type expr: sympy.Expression
 
     :param units: units or dimension, defaults to ''
     :type units: str
 
-    :return: RST snippet for inline substitution in a ReStructuredText document.
+    :return: None
     :rtype: str
     """
-    try:
-        units = sp.latex(sp.sympify(units))
-    except:
-        units=''
-    RST = ':math:`' + sp.latex(roundN(expr))
-    if units != '':
-        RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
+    if type(name) == str and len(name) > 0:
+        try:
+            units = sp.latex(sp.sympify(units))
+        except:
+            pass
+        RST = ':math:`' + sp.latex(roundN(expr))
+        if units != '':
+            RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
+        else:
+            RST += '` '
+        f = open(ini.rst_snippets + "substitutions.rst", "a")
+        f.write('.. |' + name + '| replace:: ' + RST + '\n')
+        f.close()
     else:
-        RST += '` '
-    return RST
-
-def eqn2RSTinline(LHS, RHS, units=''):
+        raise NameError
+        
+def eqn2RSTinline(LHS, RHS, units='', name=None):
     """
-    Returns an RST snippet for inline subsitution of an equation in a
-    ReStructuredText document.
+    Places a substitution in "substitutions.rst" in the rst_snippets folder.
 
+    :param name: Name of the variable to be substituted
+    :type name: str
+    
     :param LHS: Left hand side of the equation.
     :type LHS: sympy.Expression, str
 
@@ -620,61 +630,25 @@ def eqn2RSTinline(LHS, RHS, units=''):
     :param units: units or dimension, defaults to ''
     :type units: str
 
-    :return: RST snippet for inline substitution in a ReStructuredText document.
+    :return: None
     :rtype: str
     """
-    try:
-        units = sp.latex(sp.sympify(units))
-    except:
-        units=''
-    RST = ':math:`' + sp.latex(roundN(LHS)) + '=' + sp.latex(roundN(RHS))
-    if units != '':
-        RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
+    if type(name) == str and len(name) > 0:
+        try:
+            units = sp.latex(sp.sympify(units))
+        except:
+            pass
+        RST = ':math:`' + sp.latex(roundN(LHS)) + '=' + sp.latex(roundN(RHS))
+        if units != '':
+            RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
+        else:
+            RST += '` '
+        
+        f = open(ini.rst_snippets + "substitutions.rst", "a")
+        f.write('.. |' + name + '| replace:: ' + RST + '\n')
+        f.close()
     else:
-        RST += '` '
-    return RST
-
-# Convert the dictionary into an RST data base to be imported for inline substitutions
-# Save the output like the above functions and inport it in the document for
-# substitutions
-
-def save2RSTinline(vardict):
-    """
-    Saves the key-value pairs of 'vardict' in the CSV file:
-
-    <ini.sphinx_path>SLiCAPdata/RSTsubstitutions.rst
-
-    :param vardict: Dictionary with inline RST subsitutions
-    :type vardict: dict
-
-    :return: None
-    :rtype: NoneType
-    """
-    RST = ''
-    for key in vardict.keys():
-        RST += '.. |' + key + '| replace:: ' + vardict[key] + '\n'
-    saveRST(RST, 'RSTsubstitutions')
-
-# Function saveRST() for including RST files in the report.
-
-def saveRST(RST, fileName):
-    """
-    Saves an RST snippet for inclusion in a ReStructuredText document in:
-
-    <ini.latexPath>SLiCAdata/<fileName>.rst
-
-    :param RST: RST snippet.
-    :type RST: str
-
-    :param fileName: File name
-    :type fileName: str
-
-    :return: None
-    :rtype: NoneType
-    """
-    f = open(ini.sphinx_path + 'SLiCAPdata/' + fileName + '.rst', 'w')
-    f.write(RST)
-    f.close()
+        raise NameError
 
 # Non-public functions for creating table snippets
 

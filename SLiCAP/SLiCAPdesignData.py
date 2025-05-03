@@ -63,8 +63,10 @@ class specItem(object):
         self.symbol      = sp.Symbol(str(self.symbol))
         if self.value != '':
             self.value = _checkExpression(self.value)
-        if self.units != '':
+        try:
             self.units = sp.sympify(str(self.units)) # TODO a SLiCAP function: checkUnits!
+        except:
+            pass
 
     def _csvLine(self):
         """
@@ -116,7 +118,7 @@ class specItem(object):
             html += '<td class="left">$' + value + '$</td>' # value
         # units
         if type(self.units) == str:
-            html += '<td></td></tr>\n'
+            html += '<td class="left">' + self.units + '</td></tr>\n'
         else:
             html += '<td class="left">$\\mathrm{' + sp.latex(self.units) + '}$</td></tr>\n'       # Units
         return html
@@ -140,10 +142,10 @@ class specItem(object):
             line .append(self.value)
 
         # units
-        if type(self.units) == str:
-            line .append('')
-        else:
-            line .append(self.units)
+        #if type(self.units) == str:
+        #    line .append('')
+        #else:
+        line .append(self.units)
         return line
 
 def specList2dict(specList):

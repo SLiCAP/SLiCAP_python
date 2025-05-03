@@ -7,10 +7,12 @@ import subprocess
 import os
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPsvgTools import _crop_svg
-try:
-    import cairosvg
-except:
-    print("Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.")
+#try:
+#    import cairosvg
+#except:
+#    print("Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.")
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPDF
 
 class _KiCADcomponent(object):
     def __init__(self):
@@ -40,13 +42,14 @@ def _parseKiCADnetlist(kicad_sch, kicadPath=''):
         lines = f.readlines()
         f.close()
         netlist = _parseKiCADnetlistlines(lines)
-        cirName = fileName.split('/')[-1].split('.')[0]
-        cirFile = ini.cir_path + cirName + ".cir"
+        cirName = fileName.split('/')[-1].split('.')[0] + ".cir"
+        cirFile = ini.cir_path + cirName
         f = open(cirFile, 'w')
         f.write(netlist)
         f.close()
     except FileNotFoundError:
         print("\nError: could not run Kicad using '{}'.".format(ini.kicad))
+    return cirName
     
 def _parseKiCADnetlistlines(lines, cirTitle):
     reserved   = ["Description", "Footprint", "Datasheet"]
@@ -155,10 +158,13 @@ def KiCADsch2svg(fileName):
             print("Creating drawing-size SVG and PDF images of {}".format(fileName))
             subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', fileName])
             _crop_svg(ini.img_path + cirName + ".svg")
+            renderPDF.drawToFile(svg2rlg(ini.img_path + cirName + ".svg"), ini.img_path + cirName + ".pdf")
+            """
             try:
                 cairosvg.svg2pdf(url=ini.img_path + cirName + ".svg", write_to=ini.img_path + cirName + ".pdf")
             except:
                 print("Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.")
+            """
         else:
             print("Error: could not open: '{}'.".format(fileName))
     
@@ -175,14 +181,15 @@ def _kicadNetlist(fileName, cirTitle):
         lines = f.readlines()
         f.close()
         netlist = _parseKiCADnetlistlines(lines, cirTitle)
-        cirName = fileName.split('/')[-1].split('.')[0]
-        cirFile = ini.cir_path + cirName + ".cir"
+        cirName = fileName.split('/')[-1].split('.')[0]+ ".cir"
+        cirFile = ini.cir_path + cirName 
         f = open(cirFile, 'w')
         f.write(netlist)
         f.close()
         KiCADsch2svg(fileName)
     else:
         print("Error: could not open: '{}'.".format(fileName))
+    return cirName
 
 if __name__=='__main__':
     from SLiCAP import initProject

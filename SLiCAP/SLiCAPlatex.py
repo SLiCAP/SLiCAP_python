@@ -19,7 +19,7 @@ def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
     a LaTeX document and returns this string.
 
     :param netlistFile: Name of the netlist file that resides in the
-                        ini.cir_path directory
+                        ini.project_path + ini.cir_path directory
     :type netListFile: str
 
     :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
@@ -38,7 +38,7 @@ def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
         TEX += ', linerange={' + lineRange + '}'
     if firstNumber != None:
         TEX += ', firstnumber=' + str(int(firstNumber))
-    TEX += ']{' + ini.cir_path + netlistFile + '}\n\n'
+    TEX += ']{' + ini.project_path + ini.cir_path + netlistFile + '}\n\n'
     return TEX
 
 def elementData2TEX(circuitObject, label='', append2caption=''):
@@ -544,7 +544,7 @@ def coeffsTransfer2TEX(transferCoeffs, label = '', append2caption=''):
     :param append2caption: String that will be appended to the caption.
     :type append2caption: str
 
-    :return: RST snippet to be included in a ReStructuredText document.
+    :return: LaTeX snippet to be included in a ReStructuredText document.
     :rtype: str
     """
     (gain, numerCoeffs, denomCoeffs) = transferCoeffs
@@ -558,6 +558,40 @@ def coeffsTransfer2TEX(transferCoeffs, label = '', append2caption=''):
         linesList.append([sp.sympify('d_' + str(i)), denomCoeffs[i]])
     caption += '$n_i$ = numerator coefficient of i-th order, $d_i$ = denominator coefficient of i-th order. '
     caption += append2caption
+    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+    return TEX
+
+def monomialCoeffs2TEX(monomialCoeffs, label = '', caption=''):
+    """
+    Creates and returns a LaTeX table snippet that can be included in a LaTeX
+    document.
+
+    The table comprises the monomials with coefficients.
+
+    A label can be given as reference.
+
+    :param monomialCoeffs: Dict with key-value pairs:
+
+                       #. key = monomial (sympy expr)
+                       #. monomial coefficient
+
+
+    :type monomialCoeffs: dict
+
+    :param label: Reference lable for this table
+    :type label: str
+
+    :param caption: String that will be used as caption.
+    :type caption: str
+
+    :return: LaTeX snippet to be included in a ReStructuredText document.
+    :rtype: str
+    """
+    alignstring = '[c]{ll}'
+    headerList = ['Expr.', 'Coefficient']
+    linesList = []
+    for key in monomialCoeffs.keys():
+        linesList.append([key, monomialCoeffs[key]])
     TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
     return TEX
 
@@ -587,6 +621,41 @@ def slicap2TEX(scriptFile, firstNumber=None, firstLine=None, lineRange=None):
     if firstNumber != None:
         TEX += ', firstnumber=' + str(int(firstNumber))
     TEX += ']{' + ini.project_path + scriptFile + '}\n\n'
+    return TEX
+
+def file2TEX(fileName, firstNumber=None, firstLine=None, lineRange=None, language=None, style=None):
+    """
+    Converts a SLiCAP script file into a LaTeX string that can be included in
+    a LaTeX document and returns this string.
+
+    :param scriptFile: Name of the script file that resides in the
+                        ini.project_path directory
+    :type scriptFile: str
+
+    :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
+                      to None (display all lines)
+    :type lineRange: str
+
+    :param firstNumber: Number of the first line to be displayed
+    :type firstNumber: int, float, str
+
+    :return: LaTeX snippet to be included in a LaTeX document
+    :rtype: str
+    """
+    fileName = fileName.replace("_", "\_")
+    TEX = '\\textbf{File: ' + fileName + '}\n\n'
+    
+    if type(language) == str and len(language) > 0:
+        TEX += '\\lstinputlisting[language=%s, numbers=left'%(language)
+    elif type(style) == str and len(style) > 0:
+        TEX += '\\lstinputlisting[style=%s, numbers=left'%(style)
+    else:
+        TEX += '\\lstinputlisting[numbers=left'
+    if lineRange != None:
+        TEX += ', linerange={' + lineRange + '}'
+    if firstNumber != None:
+        TEX += ', firstnumber=' + str(int(firstNumber))
+    TEX += ']{' + fileName + '}\n\n'
     return TEX
 
 # Public functions for generating snippets to be put in a dictionary for inline
@@ -646,41 +715,6 @@ def eqn2TEXinline(LHS, RHS, units=''):
     else:
         TEX += '\\left[ \\mathrm{' + units + '} \\right]$ '
     return TEX
-
-def save2TEXinline(vardict):
-    """
-    Saves the key-value pairs of 'vardict' in the CSV file:
-
-    <_TEXPATH>SLiCAPdata/TEXsubstitutions.tex
-
-    :param vardict: Dictionary with inline LaTeX subsitutions
-    :type vardict: dict
-
-    :return: None
-    :rtype: NoneType
-    """
-    TEX = ''
-    for key in vardict.keys():
-        TEX += key + ', ' + vardict[key] + '\n'
-    saveTEX(TEX, 'TEXsubstitutions')
-
-def saveTEX(TEX, fileName):
-    """
-    Saves a LaTeX snippet for inclusion in a LaTeX file into:
-
-    <_TEXPATH>SLiCAdata/<fileName>.tex
-    :param TEX: LaTeX snippet.
-    :type TEX: str
-
-    :param fileName: File name
-    :type fileName: str
-
-    :return: None
-    :rtype: NoneType
-    """
-    f = open(ini.tex_path + 'SLiCAPdata/' + fileName + '.tex', 'w')
-    f.write(TEX)
-    f.close()
 
 # Non-public functions for creating table snippets
 

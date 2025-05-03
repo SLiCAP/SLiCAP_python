@@ -1755,7 +1755,7 @@ def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True):
 
     # Change the order to use sp.Poly
     poly =  sp.Poly(sp.simplify(func * variables[0]**var0_order * variables[1]**var1_order), variables[0], variables[1])
-
+        
     # Integrate the polynomial coefficients numerically
     integratedCoeffs = _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=doit)
     return integratedCoeffs, exponents

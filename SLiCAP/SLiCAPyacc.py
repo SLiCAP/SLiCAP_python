@@ -1229,9 +1229,10 @@ def _updateCirData(circuitObject):
             
     # check for two connections per node (warning)
     connections = {i:circuitObject.nodes.count(i) for i in circuitObject.nodes}
-    for key in connections.keys():
-        if connections[key] < 2:
-            print("Warning less than two connections at node: '{0}'.".format(key))
+    
+    #for key in connections.keys():
+    #    if connections[key] < 2:
+    #        print("Warning less than two connections at node: '{0}'.".format(key))
     # Remove duplicate entries from node list and sort the list."
     circuitObject.nodes = list(set(circuitObject.nodes))
     circuitObject.nodes.sort()

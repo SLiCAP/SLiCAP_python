@@ -464,7 +464,8 @@ M1 drain gate source bulk CMOS18PN
 .ends
 
 .subckt MN18_noisyNullor inP inN outP outN ID={ID} IG={IG} W={W} L={L}
-* intrinsic noise sources, gate resistance should be added externally
+* Nullor with input noise sources
+* NMOS intrinsic noise sources, gate resistance should be added externally
 * CMOS18 N device noise sources: copy and modify this model for other devices
 N1 outP outN int inN N
 V1 inP 1 V value=0 noise={K_F/(C_OX_N18^2*W*L*f^AF_N18)} ; flicker noise
@@ -491,10 +492,11 @@ I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
 .ends
 
 .subckt MP18_noisyNullor inP inN outP outN ID={ID} IG={IG} W={W} L={L}
-* intrinsic noise sources, gate resistance should be added externally
+* Nullor with input noise sources 
+* PMOS intrinsic noise sources, gate resistance should be added externally
 * CMOS18 P device noise sources: copy and modify this model for other devices
 N1 outP outN int inN N
-V1 inP 1 V value=0 noise={K_F/(C_OX_P18^2*W*L*f^AF_N18)} ; flicker noise
+V1 inP 1 V value=0 noise={K_F/(C_OX_P18^2*W*L*f^AF_P18)} ; flicker noise
 V2 1 int V value=0 noise={4*k*T*N_s_P18*Gamma/g_m}       ; channel noise
 G1 int inN 1 int G value={s*c_iss}                       ; channel noise
 I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
@@ -503,7 +505,7 @@ I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
 + Gamma   = {(1/2 + 2/3*IC)/(1+IC)}
 + IC_CRIT = {1/((4*N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
 + g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_P18*W}
++ c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W}
 + c_dg    = {CGSO_P18*W}
 + c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18 + CGBO_P18*2*L}
 + c_db    = {CJB0_P18*W*LDS_P18}

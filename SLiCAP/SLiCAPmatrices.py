@@ -459,7 +459,7 @@ def _defineReductions(result, inductors=False):
         # (current) detector, or inductor not used as current detector.
         # Its associated dependent variable is "I_<Vname>", or "I_<Lname>". 
         # "Vname" or L<name>: refdes of voltage source or inductor, respectively.
-        if (vi == "I" and (elID[0] == "V" or (inductors and elID[0] == "L"))) and elID not in source and str(name) not in detector:
+        if (vi == "I" and (vi == "V" or (inductors and elID[0] == "L"))) and elID not in source and str(name) not in detector:
             pos = list(result.Dv).index(var)
             row = list(result.M.row(pos))
             # Find the element's node columns

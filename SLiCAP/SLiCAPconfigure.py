@@ -253,16 +253,21 @@ def _find_installed_software():
     return commands
 
 def _generate_project_config():
-    os.path.abspath('.') + '/'
-    project_paths = {"html"      : 'html/',
-                     "cir"       : 'cir/',
-                     "lib"       : 'lib/',
-                     "csv"       : 'csv/',
-                     "txt"       : 'txt/',
-                     "img"       : 'img/',
-                     "mathml"    : 'mathml/',
-                     "sphinx"    : 'sphinx/',
-                     "tex"       : 'tex/'
+    project_paths = {"html"          : 'html/',
+                     "cir"           : 'cir/',
+                     "lib"           : 'lib/',
+                     "csv"           : 'csv/',
+                     "txt"           : 'txt/',
+                     "img"           : 'img/',
+                     "mathml"        : 'mathml/',
+                     "sphinx"        : 'sphinx/',
+                     "tex"           : 'tex/',
+                     "tex_snippets"  : 'tex/SLiCAPdata/',
+                     "rst_snippets"  : 'sphinx/SLiCAPdata/',
+                     "html_snippets" : 'sphinx/SLiCAPdata/',
+                     "myst_snippets" : 'sphinx/SLiCAPdata/',
+                     "md_snippets"   : 'sphinx/SLiCAPdata/',
+                     "project"       : os.path.abspath('.') + '/'
                     }
     SLiCAPconfig = configparser.ConfigParser()
     SLiCAPconfig['math']         = {"laplace"        : "s",
@@ -500,8 +505,14 @@ def dump():
     print('ini.txt_path        =', project_config['projectpaths']['txt'])
     print('ini.tex_path        =', project_config['projectpaths']['tex'])
     print('ini.user_lib_path   =', project_config['projectpaths']['lib'])
+    print('ini.project_path    =', project_config['projectpaths']['project'])
     print('ini.mathml_path     =', project_config['projectpaths']['mathml'])
     print('ini.sphinx_path     =', project_config['projectpaths']['sphinx'])
+    print('ini.tex_snippets    =', project_config['projectpaths']['tex_snippets'])
+    print('ini.html_snippets   =', project_config['projectpaths']['html_snippets'])
+    print('ini.rst_snippets    =', project_config['projectpaths']['rst_snippets'])
+    print('ini.myst_snippets   =', project_config['projectpaths']['myst_snippets'])
+    print('ini.md_snippets     =', project_config['projectpaths']['md_snippets'])
     print('ini.html_prefix     =', project_config['html']['prefix'])
     print('ini.html_index      =', project_config['html']['current_index'])
     print('ini.html_page       =', project_config['html']['current_page'])
@@ -562,6 +573,7 @@ gnetlist        = main_config['commands']['geda']
 kicad           = main_config['commands']['kicad']
 ngspice         = main_config['commands']['ngspice']
 lepton_eda      = main_config['commands']['lepton-eda']
+project_path    = project_config['projectpaths']['project']
 html_path       = project_config['projectpaths']['html']
 cir_path        = project_config['projectpaths']['cir']
 img_path        = project_config['projectpaths']['img']
@@ -571,6 +583,11 @@ tex_path        = project_config['projectpaths']['tex']
 user_lib_path   = project_config['projectpaths']['lib']
 mathml_path     = project_config['projectpaths']['mathml']
 sphinx_path     = project_config['projectpaths']['sphinx']
+tex_snippets    = project_config['projectpaths']['tex_snippets']
+html_snippets   = project_config['projectpaths']['html_snippets']
+rst_snippets    = project_config['projectpaths']['rst_snippets']
+myst_snippets   = project_config['projectpaths']['myst_snippets']
+md_snippets     = project_config['projectpaths']['md_snippets']
 html_prefix     = project_config['html']['prefix']
 html_index      = project_config['html']['current_index']
 html_page       = project_config['html']['current_page']

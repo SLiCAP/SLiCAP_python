@@ -481,7 +481,7 @@ def img2html(fileName, width, label='', caption=''):
     try:
         copy2(ini.img_path + fileName, ini.html_path + 'img/' + fileName)
     except:
-        print("Error: could not copy: '{0}'.".format(fileName))
+        print("Warning: could not copy: '{0}'.".format(fileName))
     html = '<figure>{0}<img src="img/{1}" alt="{2}" style="width:{3}px">\n'.format(label, fileName, caption, width)
     if caption != '':
         html+='<figcaption>Figure: %s<br>%s</figcaption>\n'%(fileName, caption)
