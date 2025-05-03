@@ -551,7 +551,7 @@ def coeffsTransfer2RST(transferCoeffs, label = '', append2caption='', position=0
 def monomialCoeffs2RST(monomialCoeffs, label = '', caption='', position=0):
     raise NotImplementedError
 
-def file2RST(fileName, firstNumber=None, firstLine=None, lineRange=None, position=0):
+def file2RST(fileName, firstNumber=None, lineRange=None, position=0):
     """
     Converts a SLiCAP script file into an RST string that can be included in
     a ReStructuredText document and returns this string.

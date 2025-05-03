@@ -595,35 +595,7 @@ def monomialCoeffs2TEX(monomialCoeffs, label = '', caption=''):
     TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
     return TEX
 
-def slicap2TEX(scriptFile, firstNumber=None, firstLine=None, lineRange=None):
-    """
-    Converts a SLiCAP script file into a LaTeX string that can be included in
-    a LaTeX document and returns this string.
-
-    :param scriptFile: Name of the script file that resides in the
-                        ini.project_path directory
-    :type scriptFile: str
-
-    :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
-                      to None (display all lines)
-    :type lineRange: str
-
-    :param firstNumber: Number of the first line to be displayed
-    :type firstNumber: int, float, str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    TEX = '\\textbf{SLiCAP script: ' + scriptFile + '}\n\n'
-    TEX += '\\lstinputlisting[style=slicap, numbers=left'
-    if lineRange != None:
-        TEX += ', linerange={' + lineRange + '}'
-    if firstNumber != None:
-        TEX += ', firstnumber=' + str(int(firstNumber))
-    TEX += ']{' + ini.project_path + scriptFile + '}\n\n'
-    return TEX
-
-def file2TEX(fileName, firstNumber=None, firstLine=None, lineRange=None, language=None, style=None):
+def file2TEX(fileName, firstNumber=None, lineRange=None, language=None, style=None):
     """
     Converts a SLiCAP script file into a LaTeX string that can be included in
     a LaTeX document and returns this string.
