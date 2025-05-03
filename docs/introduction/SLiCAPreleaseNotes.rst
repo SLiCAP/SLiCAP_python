@@ -1,8 +1,22 @@
 ================================
-SLiCAP Version 3.3 release notes
+SLiCAP Version 3.5 release notes
 ================================
 
 .. image:: /img/colorCode.svg
+
+#. SLiCAP version 3.5.1 has an improved interface to LaTeX and Sphinx:
+
+   - SLiCAPformatter.py is a multi-format formatter that generates snippets in various formats:
+   
+     Current support is limited to *ReStucturedText* (Sphinx basic format) and *LaTeX*. Future support wil be extended to *HTML*, *myST*, and *markdown*. See: `formatter <../reference/SLiCAPformatter.html#SLiCAP.SLiCAPformatter.formatter>`__.
+
+SLiCAP Version 3.4 release notes
+================================
+
+#. SLiCAP 3.4 is compatible with KiCad 9
+
+SLiCAP Version 3.3 release notes
+================================
 
 #. SLiCAP Version 3.3 is prepared for PyPi pip install:
 
