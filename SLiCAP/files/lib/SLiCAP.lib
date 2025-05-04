@@ -463,7 +463,7 @@ M1 drain gate source bulk CMOS18PN
 + V_GS_P    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18}
 .ends
 
-.subckt MN18_noisyNullor inP inN outP outN ID={ID} IG={IG} W={W} L={L}
+.subckt MN18_noisyNullor outP outN inP inN ID={ID} IG={IG} W={W} L={L}
 * Nullor with input noise sources
 * NMOS intrinsic noise sources, gate resistance should be added externally
 * CMOS18 N device noise sources: copy and modify this model for other devices
@@ -491,7 +491,7 @@ I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
-.subckt MP18_noisyNullor inP inN outP outN ID={ID} IG={IG} W={W} L={L}
+.subckt MP18_noisyNullor outP outN inP inN ID={ID} IG={IG} W={W} L={L}
 * Nullor with input noise sources 
 * PMOS intrinsic noise sources, gate resistance should be added externally
 * CMOS18 P device noise sources: copy and modify this model for other devices
