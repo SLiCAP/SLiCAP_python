@@ -111,6 +111,10 @@ class _BaseFormatter:
     def __init__(self, format):
         if format in _FORMATS.keys():
             self.format = format
+            try:
+                os.remove(ini.rst_snippets + "substitutions.rst")
+            except FileNotFoundError :
+                pass
         else:
             raise NotImplementedError
 

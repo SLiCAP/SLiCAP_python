@@ -1,50 +1,26 @@
 # -*- coding: utf-8 -*-
 
 import time
-import sphinx_bootstrap_theme
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
-    'sphinxcontrib.excel',
-    'sphinxcontrib.excel_table',
-]
-templates_path = ['_templates']
-source_suffix = '.rst'
-source_encoding = 'utf-8-sig'
-master_doc = 'index'
-project = u'SLiCAP project'
-copyright = u'The Company'
-language = None
-exclude_patterns = ['_build']
-pygments_style = 'sphinx'
-numfig = True
-def setup(app):
-    app.add_stylesheet('custom.css')
-todo_include_todos = False
-html_theme = 'bootstrap'
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
-html_title = u'SLiCAP project'
+
+project = u'SLiCAP Sphinx report'
+html_title = u'SLiCAP report'
 html_short_title = u'SLiCAP'
-html_static_path = ['_static']
+copyright = u'2024-2025, Anton Montagne'
+author = u'Anton Montagne'
+extensions = ['sphinx.ext.mathjax', 'sphinx_panels', 'sphinxcontrib.bibtex', 'sphinx.ext.autosectionlabel', "sphinx_togglebutton","sphinx_tabs.tabs"]
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 3
+bibtex_bibfiles = []
+source_suffix = '.rst'
+master_doc = 'index'
+language = 'English'
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+pygments_style = 'sphinx'
+html_theme = 'sphinx_book_theme'
 html_last_updated_fmt = time.strftime("%d/%m/%Y")
 html_domain_indices = True
 html_use_index = True
 html_show_sourcelink = False
-html_show_copyright = False
+html_show_copyright = True
+math_eqref_format = "({number})"
 numfig = True
-html_theme_options = {
-    'navbar_title': "Home",
-    'navbar_site_name': "Pages",
-    'navbar_links': [('SLiCAP','https://analog-electronics.tudelft.nl/slicap/slicap')],
-    'navbar_sidebarrel': True,
-    'navbar_pagenav': True,
-    'navbar_pagenav_name': "Page",
-    'globaltoc_depth': 2,
-    'globaltoc_includehidden': "true",
-    'navbar_class': "navbar navbar-inverse",
-    'navbar_fixed_top': "true",
-    'bootswatch_theme': "cerulean",
-    'bootstrap_version': "3",
-}

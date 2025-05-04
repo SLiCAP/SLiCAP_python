@@ -1,10 +1,11 @@
-==================
-|slicap-h1| report
-==================
+=============
+SLiCAP report
+=============
 
 .. image:: img/colorCode.svg
 
-This is an example of a |slicap| report.
+This is an example of a SLiCAP report.
 
-.. |slicap-h1| image:: img/SLiCAP-h1.svg
-.. |slicap| image:: img/SLiCAP.svg
+.. toctree::
+
+
