@@ -211,7 +211,7 @@ class formatter(_BaseFormatter):
         return self.snippet
                 
     def elementData(self, circuitObject, label="", append2caption="",
-                    position=0):
+                    position=0, color="myyellow"):
         """
         Creates a table with data of expanded netlist elements of *circuitObject*.
 
@@ -227,12 +227,17 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
             self.snippet = Snippet( 
-                elementData2TEX(circuitObject, label, append2caption),
+                elementData2TEX(circuitObject, label, append2caption, 
+                                color=color),
                 self.format)
         elif self.format == 'rst':
             self.snippet = Snippet( 
@@ -242,7 +247,8 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
 
-    def parDefs(self, circuitObject, label="", append2caption="", position=0):
+    def parDefs(self, circuitObject, label="", append2caption="", position=0, 
+                color="myyellow"):
         """
         Creates a table with parameter definitions of *circuitObject*.
 
@@ -258,12 +264,16 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
             self.snippet = Snippet(parDefs2TEX(circuitObject, label, 
-                                                  append2caption), self.format)
+                                                  append2caption, color=color), self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(parDefs2RST(circuitObject, label, 
                                                   append2caption, position), 
@@ -272,7 +282,55 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
 
-    def params(self, circuitObject, label="", append2caption="", position=0):
+    def dictTable(self, dct, head=None, label="", caption="", position=0, 
+                  color="myyellow"):
+        """
+        Creates a table from a dictionary; optionally with a header.
+
+        :param dct: Dictionary with key-value pairs.
+        :type circuitObject: dict
+        
+        :param head: List with names for the key column and the value column, respectively.
+                     List items will be converted to string.
+        :type head: list
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :param caption: Text that will be appended to the default table caption.
+        :type caption: str
+        
+        :param position: Number of spaces to indent (RST only)
+        :type position: int
+        
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPformatter.Snippet
+        
+        :example:
+            
+        >>> import SLiCAP as sl
+        >>> 
+        >>> sl.initProject("Documentation")
+        >>> ltx = sl.formatter("latex")
+        >>> header = ["name", "age"]
+        >>> data   = {"John": 89, Mary: 104}
+        >>> ltx.dictTable(data, head=header, caption="Some of my friends").save("friends")
+        """
+        if self.format == 'latex':
+            self.snippet = Snippet(dict2TEX(dct, head, label, caption, 
+                                            color=color), self.format)
+        elif self.format == 'rst':
+            self.snippet = Snippet(dict2RST(dct, head, label, caption, 
+                                            position), self.format)
+        else:
+            raise NotImplementedError
+        return self.snippet
+    
+    def params(self, circuitObject, label="", append2caption="", position=0, color="myyellow"):
         """
         Creates a table with undefined parameters of *circuitObject*.
 
@@ -288,12 +346,17 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
             self.snippet = Snippet(params2TEX(circuitObject, label, 
-                                                 append2caption), self.format)
+                                                 append2caption, color=color), 
+                                   self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(params2RST(circuitObject, label, 
                                                  append2caption, position),
@@ -302,7 +365,7 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
 
-    def pz(self, resultObject, label="", append2caption=""):
+    def pz(self, resultObject, label="", append2caption="", color="myyellow"):
         """
         Creates a table or tables with results of pole/zero analysis stored in *resultObject*.
 
@@ -318,12 +381,16 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
             self.snippet = Snippet(pz2TEX(resultObject, label, 
-                                             append2caption), self.format)
+                                             append2caption, color=color), self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(pz2RST(resultObject, label, 
                                              append2caption), self.format)
@@ -332,7 +399,7 @@ class formatter(_BaseFormatter):
         return self.snippet
 
     def noiseContribs(self, resultObject, label="", append2caption="", 
-                      position=0):
+                      position=0, color="myyellow"):
         """
         Creates a table with results of noise analysis stored in *resultObject*.
 
@@ -348,12 +415,17 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
             self.snippet = Snippet(noiseContribs2TEX(resultObject, label, 
-                                                        append2caption),
+                                                        append2caption, 
+                                                        color=color),
                                    self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(noiseContribs2RST(resultObject, label, 
@@ -364,7 +436,7 @@ class formatter(_BaseFormatter):
         return self.snippet
 
     def dcvarContribs(self, resultObject, label="", append2caption="",
-                      position=0):
+                      position=0, color="myyellow"):
         """
         Creates a table with results of dcvar analysis stored in *resultObject*.
 
@@ -380,13 +452,19 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
             self.snippet = Snippet(dcvarContribs2TEX(resultObject, label, 
                                                         append2caption,
-                                                        position), self.format)
+                                                        position, 
+                                                        color=color), 
+                                   self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(dcvarContribs2RST(resultObject, label, 
                                                         append2caption,
@@ -395,7 +473,8 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
 
-    def specs(self, specs, specType, label="", caption="", position=0):
+    def specs(self, specs, specType, label="", caption="", position=0, 
+              color="myyellow"):
         """
         Creates a table with specifications of type *specType*.
 
@@ -411,12 +490,20 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 'preambuleSLiCAP.tex'
+        :type color: str
+        
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
             self.snippet = Snippet(specs2TEX(specs, specType, label, 
-                                                caption), self.format)
+                                                caption, color=color), 
+                                   self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(specs2TEX(specs, specType, label, 
                                                 caption, position), 
@@ -502,7 +589,8 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
 
-    def stepArray(self, stepVars, stepArray, label="", caption="", position=0):
+    def stepArray(self, stepVars, stepArray, label="", caption="", position=0, 
+                  color="myyellow"):
         """
         Creates a table with step array values. 
 
@@ -521,12 +609,17 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
             self.snippet = Snippet(stepArray2TEX(stepVars, stepArray, label,
-                                                    caption), self.format)
+                                                    caption, color=color), 
+                                   self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(stepArray2RST(stepVars, stepArray, label,
                                                     caption, position), 
@@ -536,7 +629,7 @@ class formatter(_BaseFormatter):
         return self.snippet
 
     def coeffsTransfer(self, transferCoeffs, label="", append2caption="", 
-                       position=0):
+                       position=0, color="myyellow"):
         """
         Creates tables with coefficients of the numerator and the denominator 
         of a rational expression. 
@@ -557,6 +650,10 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         
@@ -573,8 +670,8 @@ class formatter(_BaseFormatter):
         """
         if self.format == 'latex':
             self.snippet = Snippet(
-            coeffsTransfer2TEX(transferCoeffs, label, append2caption), 
-            self.format)
+            coeffsTransfer2TEX(transferCoeffs, label, append2caption, 
+                               color=color), self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(
             coeffsTransfer2RST(transferCoeffs, label, append2caption,
@@ -583,7 +680,8 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
     
-    def monomialCoeffs(self, monomialCoeffs, label="", caption="", position=0):   
+    def monomialCoeffs(self, monomialCoeffs, label="", caption="", position=0, 
+                       color="myyellow"):   
         """
         Creates and returns a table table with monomials and their coefficients.
                 
@@ -601,13 +699,17 @@ class formatter(_BaseFormatter):
         :param position: Number of spaces to indent (RST only)
         :type position: int
         
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         
         """
         if self.format == 'latex':
             self.snippet = Snippet(
-                monomialCoeffs2TEX(monomialCoeffs, label, caption), 
+                monomialCoeffs2TEX(monomialCoeffs, label, caption, color=color), 
                 self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(

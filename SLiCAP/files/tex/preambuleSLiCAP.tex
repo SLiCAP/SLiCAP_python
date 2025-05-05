@@ -25,17 +25,6 @@
 \definecolor{myblue}{cmyk}{1,0.7,0,0.2}
 \definecolor{myred}{cmyk}{0,1,0.6,0.3}
 
-% Inline substitutions
-%%%%%%%%%%%%%%%%%%%%%%
-% Use only one file with inline substitutions per document
-% Adapt the name of the file with inline substitutions to your needs
-\usepackage{datatool}
-% https://www.ctan.org/pkg/datatool
-\DTLsetseparator{,}
-\DTLloaddb[noheader, keys={thekey,thevalue}]{SLiCAPdata}{SLiCAPdata/TEXsubstitutions.tex}
-\newcommand{\var}[1]{\DTLfetch{SLiCAPdata}{thekey}{#1}{thevalue}}
-% use: \var{<thekey>} for inline substitution of a variable in your text.
-
 % Code listings
 %%%%%%%%%%%%%%%
 \usepackage{listings}

@@ -9,7 +9,6 @@ an RST formatter.
 """
 import SLiCAP.SLiCAPconfigure as ini
 import sympy as sp
-from shutil import copyfile
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric
 
 # Public functions for generating snippets that can be stored as RST files
@@ -146,6 +145,45 @@ def parDefs2RST(circuitObject, label='', append2caption='', position=0):
         RST = "**No parameter definitions in: " +  circuitObject.title + '**\n\n'
     return RST
 
+def dict2RST(dct, head=None, label='', caption='', position=0):
+    """
+    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
+    The table comprises a column with the keys of <dct> and a column with dct[<key>].
+
+    A table caption caption and a label can be given.
+
+    :param dct: Dictionary with data to be displayed in a table.
+    :type dct: dict
+
+    :param head: List with names for the 'key' and the 'value' columns, respectively.
+                 List items will be converted to string.
+    :type head: list
+    
+    :param label: Reference to this table, defaults to ''
+    :type param: str
+
+    :param caption: Test string that will be displayed as table caption; defaults to ''.
+    :type caption: str
+
+    :param position: Number of spaces indention from the left margin, defaults to 0
+    :type position: int
+    
+    :return: LaTeX snippet to be included in a LaTeX document
+    :rtype: str
+    """
+    RST = None
+    if len(dct.keys()) > 0:
+        if type(head) == list and len(head) == 2:
+            headerList = [str(head[0]), str(head[1])]
+        else: 
+            headerList  = ["", ""]
+        linesList   = []
+        for key in dct.keys():
+            line = [key, dct[key]]
+            linesList.append(line)
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, position=position, label=label)
+    return RST    
+    
 def params2RST(circuitObject, label='', append2caption='', position=0):
     """
     Creates and returns an RST table snippet that can be included in a ReStructuredText document.

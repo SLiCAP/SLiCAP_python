@@ -12,6 +12,7 @@ a latex formatter.
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric
+from pathlib import PureWindowsPath
 
 def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
     """
@@ -32,6 +33,8 @@ def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
     :return: LaTeX snippet to be included in a LaTeX document
     :rtype: str
     """
+    
+    netlistFile  = netlistFile.replace("_", "\\_")
     TEX = '\\textbf{Netlist: ' + netlistFile + '}\n\n'
     TEX += '\\lstinputlisting[language=ltspice, numbers=left'
     if lineRange != None:
@@ -41,7 +44,7 @@ def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
     TEX += ']{' + ini.project_path + ini.cir_path + netlistFile + '}\n\n'
     return TEX
 
-def elementData2TEX(circuitObject, label='', append2caption=''):
+def elementData2TEX(circuitObject, label='', append2caption='', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
     The table comprises the data of all elements of the expanded nelist of
@@ -99,10 +102,10 @@ def elementData2TEX(circuitObject, label='', append2caption=''):
     caption = 'Expanded netlist of: ' + circuitObject.title + '. '
     if append2caption != '':
         caption += append2caption
-    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
     return TEX
 
-def parDefs2TEX(circuitObject, label='', append2caption=''):
+def parDefs2TEX(circuitObject, label='', append2caption='', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
     The table comprises the parameter definitions of <circuitObject>.
@@ -137,12 +140,49 @@ def parDefs2TEX(circuitObject, label='', append2caption=''):
                 circuitObject.parDefs[parName],
                 fullSubs(circuitObject.parDefs[parName], circuitObject.parDefs)]
             linesList.append(line)
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
     else:
         TEX = "{\\textbf{No parameter definitions in: " +  circuitObject.title + '}}\n\n'
     return TEX
 
-def params2TEX(circuitObject, label='', append2caption = ''):
+def dict2TEX(dct, head=None, label='', caption='', color="myyellow"):
+    """
+    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
+    The table comprises a column with the keys of <dct> and a column with dct[<key>].
+
+    A table caption caption and a label can be given.
+
+    :param dct: Dictionary with data to be displayed in a table.
+    :type dct: dict
+
+    :param head: List with names for the 'key' and the 'value' columns, respectively.
+                 List items will be converted to string.
+    :type head: list
+    
+    :param label: Reference to this table, defaults to ''
+    :type param: str
+
+    :param caption: Test string that will be displayed as table caption; defaults to ''.
+    :type caption: str
+
+    :return: LaTeX snippet to be included in a LaTeX document
+    :rtype: str
+    """
+    TEX = None
+    if len(dct.keys()) > 0:
+        if type(head) == list and len(head) == 2:
+            headerList = [str(head[0]), str(head[1])]
+        else: 
+            headerList  = ["", ""]
+        linesList   = []
+        alignstring = '[c]{ll}'
+        for key in dct.keys():
+            line = [key, dct[key]]
+            linesList.append(line)
+        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
+    return TEX
+
+def params2TEX(circuitObject, label='', append2caption = '', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
     The table comprises a column with names of undefined parameters of <circuitObject>.
@@ -174,12 +214,12 @@ def params2TEX(circuitObject, label='', append2caption = ''):
         linesList   = []
         for parName in circuitObject.params:
             linesList.append([parName])
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
     else:
         TEX = '{\\textbf{No undefined parameters in: ' +  circuitObject.title + '}}\n\n'
     return TEX
 
-def pz2TEX(resultObject, label='', append2caption=''):
+def pz2TEX(resultObject, label='', append2caption='', color="myyellow"):
     """
     Creates and return a LaTeX table with poles, zeros, or poles and zeros that
     can be included in a LaTeX document. If the data type is 'pz' the zero-
@@ -256,10 +296,10 @@ def pz2TEX(resultObject, label='', append2caption=''):
             caption = 'Poles and zeros of: ' + resultObject.gainType + '; DC value = $' + sp.latex(roundN(resultObject.DCvalue)) + '$.\n'
         if append2caption != '':
             caption += ' ' + append2caption
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
     return TEX
 
-def noiseContribs2TEX(resultObject, label='', append2caption=''):
+def noiseContribs2TEX(resultObject, label='', append2caption='', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
 
@@ -307,12 +347,13 @@ def noiseContribs2TEX(resultObject, label='', append2caption=''):
                 linesList.append(line)
             line = [src + ': Detector-referred', resultObject.onoiseTerms[src], detunits]
             linesList.append(line)
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, caption='Noise contributions. ' + append2caption + '.', label=label)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, 
+                                  caption='Noise contributions. ' + append2caption + '.', label=label, color=color)
     else:
         print('noiseContribs2TEX: Error: wrong data type, or stepped analysis.')
     return TEX
 
-def dcvarContribs2TEX(resultObject, append2caption='', label=''):
+def dcvarContribs2TEX(resultObject, append2caption='', label='', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
 
@@ -360,12 +401,13 @@ def dcvarContribs2TEX(resultObject, append2caption='', label=''):
                 linesList.append(line)
             line = [src + ': Detector-referred', resultObject.ovarTerms[src], detunits]
             linesList.append(line)
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, caption='DC variance contributions ' + append2caption + '.', label=label)
+        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, 
+                                  caption='DC variance contributions ' + append2caption + '.', label=label, color=color)
     else:
         print('dcvarContribs2TEX: Error: wrong data type, or stepped analysis.')
     return TEX
 
-def specs2TEX(specs, specType, label='', caption=''):
+def specs2TEX(specs, specType, label='', caption='', color="myyellow"):
     """
     Creates and returns a LaTeX table with specifications that can be included
     in a LaTeX document.
@@ -395,7 +437,7 @@ def specs2TEX(specs, specType, label='', caption=''):
         if specItem.specType.lower()==specType.lower():
             linesList.append(specItem._specLine())
     if len(linesList) > 0:
-        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=3, caption=caption, label=label) + '\n'
+        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=3, caption=caption, label=label, color=color) + '\n'
     else:
         TEX =  "\\textbf{Found no specifications of type: " + specType + ".}\n\n"
     return TEX
@@ -477,7 +519,7 @@ def matrices2TEX(Iv, M, Dv, label=''):
     TEX += '\\end{equation}\n\n'
     return TEX
 
-def stepArray2TEX(stepVars, stepArray, label='', caption=''):
+def stepArray2TEX(stepVars, stepArray, label='', caption='', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
 
@@ -513,10 +555,10 @@ def stepArray2TEX(stepVars, stepArray, label='', caption=''):
         for j in range(numVars):
             line.append(stepArray[j][i])
         linesList.append(line)
-    TEX = _TEXcreateCSVtable(headerList, linesList, alignString, label=label, caption=caption)
+    TEX = _TEXcreateCSVtable(headerList, linesList, alignString, label=label, caption=caption, color=color)
     return TEX
 
-def coeffsTransfer2TEX(transferCoeffs, label = '', append2caption=''):
+def coeffsTransfer2TEX(transferCoeffs, label = '', append2caption='', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX
     document.
@@ -558,10 +600,10 @@ def coeffsTransfer2TEX(transferCoeffs, label = '', append2caption=''):
         linesList.append([sp.sympify('d_' + str(i)), denomCoeffs[i]])
     caption += '$n_i$ = numerator coefficient of i-th order, $d_i$ = denominator coefficient of i-th order. '
     caption += append2caption
-    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
     return TEX
 
-def monomialCoeffs2TEX(monomialCoeffs, label = '', caption=''):
+def monomialCoeffs2TEX(monomialCoeffs, label = '', caption='', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX
     document.
@@ -592,7 +634,7 @@ def monomialCoeffs2TEX(monomialCoeffs, label = '', caption=''):
     linesList = []
     for key in monomialCoeffs.keys():
         linesList.append([key, monomialCoeffs[key]])
-    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption)
+    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
     return TEX
 
 def file2TEX(fileName, firstNumber=None, lineRange=None, language=None, style=None):
@@ -614,8 +656,10 @@ def file2TEX(fileName, firstNumber=None, lineRange=None, language=None, style=No
     :return: LaTeX snippet to be included in a LaTeX document
     :rtype: str
     """
-    fileName = fileName.replace("_", "\_")
-    TEX = '\\textbf{File: ' + fileName + '}\n\n'
+    short_name = PureWindowsPath(fileName).parts[-1]
+    fileName   = fileName.replace("_", "\\_")
+    short_name = short_name.replace("_", "\\_")
+    TEX = '{\\textbf{File:} ' + short_name + '}\n\n'
     
     if type(language) == str and len(language) > 0:
         TEX += '\\lstinputlisting[language=%s, numbers=left'%(language)
@@ -690,7 +734,7 @@ def eqn2TEXinline(LHS, RHS, units=''):
 
 # Non-public functions for creating table snippets
 
-def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label=''):
+def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label='', color="myyellow"):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
 
@@ -729,7 +773,7 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
     for line in linesList:
         i = 0
         if not j%2:
-            TEX += '\\rowcolor{myyellow}\n'
+            TEX += '\\rowcolor{%s}\n'%(color)
         for field in line:
             if type(field) == str:
                 if field != '':
