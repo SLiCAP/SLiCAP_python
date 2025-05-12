@@ -1580,6 +1580,7 @@ class instruction(object):
                     elif self.dataType == 'dcvar':
                         # need detector
                         self.checkDetector()
+                        self.checkSource(need = False)
                     elif self.dataType == 'dcsolve':
                         # need nothing
                         pass

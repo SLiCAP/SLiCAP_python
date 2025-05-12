@@ -9,7 +9,7 @@ Created on Fri Nov 18 13:24:17 2022
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import _checkExpression, roundN
-from SLiCAP.SLiCAPhtml import _insertHTML, _latex_ENG
+from SLiCAP.SLiCAPhtml import _insertHTML, _latex_ENG, units2TeX
 
 class specItem(object):
     """
@@ -38,7 +38,7 @@ class specItem(object):
         :type value: str, int, float, sympy.Expr, sympy.Symbol
 
         :param units: Units of this specification item
-        :type units: str, sympy.Expr, sympy.Symbol
+        :type units: str
         
         :param specType: Name of the specification type; free to choose.
                          In reports, specification tables will be displayed for
@@ -63,10 +63,6 @@ class specItem(object):
         self.symbol      = sp.Symbol(str(self.symbol))
         if self.value != '':
             self.value = _checkExpression(self.value)
-        try:
-            self.units = sp.sympify(str(self.units)) # TODO a SLiCAP function: checkUnits!
-        except:
-            pass
 
     def _csvLine(self):
         """
@@ -111,16 +107,12 @@ class specItem(object):
         # description
         html     += '<td class="left">' + self.description + '</td>'
         # value
-        if type(self.value) == str:
-            html += '<td></td>'
-        else:
-            #html += '<td class="left">$' + sp.latex(roundN(self.value)) + '$</td>' # value
-            html += '<td class="left">$' + value + '$</td>' # value
+        html += '<td class="left">$' + value + '$</td>' # value
         # units
-        if type(self.units) == str:
-            html += '<td class="left">' + self.units + '</td></tr>\n'
+        if self.units == '':
+            html += '<td></td></tr>\n'
         else:
-            html += '<td class="left">$\\mathrm{' + sp.latex(self.units) + '}$</td></tr>\n'       # Units
+            html += '<td class="left">$\\mathrm{' + units2TeX(self.units) + '}$</td></tr>\n'
         return html
 
     def _specLine(self):
@@ -133,19 +125,19 @@ class specItem(object):
         # symbol
         line     = [self.symbol]
         # description
-        line .append(self.description)
+        line.append(self.description)
 
         # value
         if type(self.value) == str:
-            line .append('')
+            line.append('')
         else:
-            line .append(self.value)
+            line.append(self.value)
 
         # units
-        #if type(self.units) == str:
-        #    line .append('')
-        #else:
-        line .append(self.units)
+        if self.units== '':
+            line.append('')
+        else: 
+            line.append(self.units)
         return line
 
 def specList2dict(specList):

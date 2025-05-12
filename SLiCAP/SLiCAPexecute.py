@@ -1165,8 +1165,9 @@ def _stepFunctions(stepDict, function):
     numSteps = len(stepDict[stepVars[0]])
     functions = []
     for i in range(numSteps):
+        newFunction = function
         for j in range(len(stepVars)):
-            newFunction = function.subs(stepVars[j], stepDict[stepVars[j]][i])
+            newFunction = newFunction.subs(stepVars[j], stepDict[stepVars[j]][i])
         newFunction = sp.sympify(str(sp.N(newFunction)), rational=True)
         functions.append(newFunction)
     return functions

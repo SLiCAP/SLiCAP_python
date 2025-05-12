@@ -11,6 +11,7 @@ from numpy.polynomial import Polynomial
 from scipy.integrate import quad
 from scipy.optimize import fsolve
 from SLiCAP.SLiCAPlex import _replaceScaleFactors
+from pytexit import py2tex
 
 def det(M, method="ME"):
     """
@@ -1843,6 +1844,24 @@ def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
     integratedResult = sum(sp.Mul(key, integratedCoeffs[key], evaluate=doit)
                         for key in integratedCoeffs.keys())
     return integratedResult
+
+def units2TeX(units):
+    """
+    Returns units in LaTeX format, without opening and closing '$'.
+    
+    :param units: String representing an expression with units
+    :type units: str
+    
+    :return: LaTeX code of 'units' without opening or closing tags.
+    :rtype: str
+    """
+    if type(units)==str and units != '':
+        replacements = {}
+        replacements['Ohm'] = 'Omega'
+        for key in replacements.keys():
+            units = units.replace(key, replacements[key])
+        units = py2tex(units, print_latex=False, print_formula=False)[2:-2]
+    return units
 
 if __name__ == "__main__":
     from time import time

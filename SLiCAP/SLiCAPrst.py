@@ -9,7 +9,7 @@ an RST formatter.
 """
 import SLiCAP.SLiCAPconfigure as ini
 import sympy as sp
-from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric
+from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX
 
 # Public functions for generating snippets that can be stored as RST files
 # to be included by other RST files.
@@ -45,14 +45,12 @@ def netlist2RST(netlistFile, lineRange=None, firstNumber=None, position=0):
             RST += spaces + '    :lineno-start: ' + str(firstNumber) + '\n'
     return RST
 
-def elementData2RST(circuitObject, label='', append2caption='', position=0):
+def elementData2RST(circuitObject, label='', caption='', position=0):
     """
     Creates and returns an RST table snippet that can be included in a ReStructuredText document.
     The table comprises the data of all elements of the expanded nelist of <circuitObject>.
 
-    The caption reads 'Expanded netlist of: <circuitObject.title>. <append2caption>.
-
-    A label can be given as reference.
+    A caption can be added and a label can be given as reference.
 
     :param circuitObject: SLiCAP circuit object.
     :type circuitObject: SLiCAP.SLiCAPprotos.circuit
@@ -60,9 +58,9 @@ def elementData2RST(circuitObject, label='', append2caption='', position=0):
     :param label: Reference to this table, defaults to ''
     :type label: str
 
-    :param append2caption: Test string that will be appended to the caption,
+    :param caption: Test string that will be appended to the caption,
                            Defaults to ''
-    :type append2caption: str
+    :type caption: str
 
     :param position: Number of spaces indention from the left margin, defaults to 0
     :type position: int
@@ -70,7 +68,6 @@ def elementData2RST(circuitObject, label='', append2caption='', position=0):
     :return: RST snippet to be included in a ReStructuredText document
     :rtype: str
     """
-    name       = 'Expanded netlist of: ' + circuitObject.title + '. ' + append2caption
     headerList = ["ID", "Nodes", "Refs", "Model", "Param", "Symbolic", "Numeric"]
     linesList   = []
     for key in circuitObject.elements.keys():
@@ -95,25 +92,26 @@ def elementData2RST(circuitObject, label='', append2caption='', position=0):
                 if i == 0:
                     line.append(keys[i])
                     line.append(el.params[keys[i]])
-                    line.append(fullSubs(el.params[keys[i]], circuitObject.parDefs))
+                    line.append(fullSubs(el.params[keys[i]], 
+                                         circuitObject.parDefs))
                     linesList.append(line)
                 else:
                     line = ['','','','']
                     line.append(keys[i])
                     line.append(el.params[keys[i]])
-                    line.append(fullSubs(el.params[keys[i]], circuitObject.parDefs))
-        linesList.append(line)
-    RST = _RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
+                    line.append(fullSubs(el.params[keys[i]], 
+                                         circuitObject.parDefs))
+                    linesList.append(line)
+    RST = _RSTcreateCSVtable(caption, headerList, linesList, 
+                             position=position, label=label)
     return RST
 
-def parDefs2RST(circuitObject, label='', append2caption='', position=0):
+def parDefs2RST(circuitObject, label='', caption='', position=0):
     """
     Creates and returns an RST table snippet that can be included in a ReSturucturedText document.
     The table comprises the parameter definitions of <circuitObject>.
 
-    The caption reads 'Parameter defnitions in: : <circuitObject.title>. <append2caption>.
-
-    A label can be given as reference.
+    A caption can be added and a label can be given as reference.
 
     :param circuitObject: SLiCAP circuit object.
     :type circuitObject: SLiCAP.SLiCAPprotos.circuit
@@ -121,9 +119,9 @@ def parDefs2RST(circuitObject, label='', append2caption='', position=0):
     :param label: Reference to this table, defaults to ''
     :type label: str
 
-    :param append2caption: Test string that will be appended to the caption,
+    :param caption: Test string that will be appended to the caption,
                            Defaults to ''
-    :type append2caption: str
+    :type caption: str
 
     :param position: Number of spaces indention from the left margin, defaults to 0
     :type position: int
@@ -132,7 +130,6 @@ def parDefs2RST(circuitObject, label='', append2caption='', position=0):
     :rtype: str
     """
     if len(circuitObject.parDefs) > 0:
-        name       = 'Parameter defnitions in: ' + circuitObject.title + '. ' + append2caption
         headerList = ["Name", "Symbolic", "Numeric"]
         linesList   = []
         for parName in circuitObject.parDefs.keys():
@@ -140,7 +137,8 @@ def parDefs2RST(circuitObject, label='', append2caption='', position=0):
                 circuitObject.parDefs[parName],
                 fullSubs(circuitObject.parDefs[parName], circuitObject.parDefs)]
             linesList.append(line)
-        RST = _RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
+        RST = _RSTcreateCSVtable(caption, headerList, linesList,
+                                 position=position, label=label)
     else:
         RST = "**No parameter definitions in: " +  circuitObject.title + '**\n\n'
     return RST
@@ -150,7 +148,7 @@ def dict2RST(dct, head=None, label='', caption='', position=0):
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
     The table comprises a column with the keys of <dct> and a column with dct[<key>].
 
-    A table caption caption and a label can be given.
+    A caption can be added and a label can be given as reference.
 
     :param dct: Dictionary with data to be displayed in a table.
     :type dct: dict
@@ -181,17 +179,16 @@ def dict2RST(dct, head=None, label='', caption='', position=0):
         for key in dct.keys():
             line = [key, dct[key]]
             linesList.append(line)
-        RST = _RSTcreateCSVtable(caption, headerList, linesList, position=position, label=label)
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, 
+                                 position=position, label=label)
     return RST    
     
-def params2RST(circuitObject, label='', append2caption='', position=0):
+def params2RST(circuitObject, label='', caption='', position=0):
     """
     Creates and returns an RST table snippet that can be included in a ReStructuredText document.
     The table comprises a column with names of undefined parameters of <circuitObject>.
 
-    The caption reads 'Undefined parameters in: : <circuitObject.title>. <append2caption>.
-
-    A label can be given as reference.
+    A caption can be added and a label can be given as reference.
 
     :param circuitObject: SLiCAP circuit object.
     :type circuitObject: SLiCAP.SLiCAPprotos.circuit
@@ -199,9 +196,9 @@ def params2RST(circuitObject, label='', append2caption='', position=0):
     :param label: Reference to this table, defaults to ''
     :type label: str
 
-    :param append2caption: Test string that will be appended to the caption,
+    :param caption: Test string that will be appended to the caption,
                            Defaults to ''
-    :type append2caption: str
+    :type caption: str
 
     :param position: Number of spaces indention from the left margin, defaults to 0
     :type position: int
@@ -210,36 +207,29 @@ def params2RST(circuitObject, label='', append2caption='', position=0):
     :rtype: str
     """
     if len(circuitObject.params) > 0:
-        name       = 'Undefined parameters in: ' + circuitObject.title + '. ' + append2caption
         headerList = ["Name"]
         linesList   = []
         for parName in circuitObject.params:
             linesList.append([parName])
-        RST = _RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, 
+                                 position=position, label=label)
     else:
         RST = '**No undefined parameters in: ' +  circuitObject.title + '**\n\n'
     return RST
 
-def pz2RST(resultObject, label = '', append2caption='', position=0):
+def pz2RST(resultObject, label = '', caption='', position=0):
     """
     Creates and return an RST table with poles, zeros, or poles and zeros that
-    can be included in a ReStructuredText document. If the data type is 'pz' the zero-
-    frequency value of the gain will be displayed in the caption of the table.
+    can be included in a ReStructuredText document. 
 
-    The caption reads as follows:
-
-    - data type = 'poles': 'Poles of: <resultObject.gainType>. <append2caption>'
-    - data type = 'zeros': 'Zeros of: <resultObject.gainType>. <append2caption>'
-    - data type = 'pz': 'Poles and zeros of: <resultObject.gainType>; DC value = <resultObject,DCvalue>. <append2caption>.'
-
-    A label can be given as reference.
+    A caption can be added and a label can be given as reference.
 
     :param label: Reference to this table, defaults to ''
     :type label: str
 
-    :param append2caption: Test string that will be appended to the caption,
+    :param caption: Test string that will be appended to the caption,
                            Defaults to ''
-    :type append2caption: str
+    :type caption: str
 
     :param position: Number of spaces indention from the left margin, defaults to 0
     :type position: int
@@ -256,13 +246,10 @@ def pz2RST(resultObject, label = '', append2caption='', position=0):
         print("pz2RST: Error: parameter stepping not implemented for 'pz2RST()'.")
     else:
         if resultObject.dataType == 'poles':
-            name = 'Poles of: ' + resultObject.gainType + '. ' + append2caption
             numeric = _checkNumeric(resultObject.poles)
         elif resultObject.dataType == 'zeros':
-            name = 'Zeros of: ' + resultObject.gainType + '. ' + append2caption
             numeric = _checkNumeric(resultObject.zeros)
         elif resultObject.dataType == 'pz':
-            name = 'Poles and zeros of: ' + resultObject.gainType + '. DC gain = :math:`' + sp.latex(roundN(resultObject.DCvalue)) + '`. ' + append2caption
             numeric = _checkNumeric(resultObject.poles) and _checkNumeric(resultObject.zeros)
         if numeric:
             if ini.hz == True:
@@ -287,20 +274,18 @@ def pz2RST(resultObject, label = '', append2caption='', position=0):
             else:
                 linesList += _symRoots2RST(resultObject.zeros, ini.hz, 'z')
 
-        RST += _RSTcreateCSVtable(name, headerList, linesList, position=position, label=label)
+        RST += _RSTcreateCSVtable(caption, headerList, linesList, 
+                                  position=position, label=label)
     return RST
 
-def noiseContribs2RST(resultObject, label='', append2caption='', position=0):
+def noiseContribs2RST(resultObject, label='', caption='', position=0):
     """
     Creates and returns an RST table snippet that can be included in a ReStructuredText document.
 
     The table comprises the values of the noise sources and their contributions
-    to the detector-referred noise and the source-referred noise. The latter
-    only if a signal source has been specified.
+    to the detector-referred noise and the source-referred noise. 
 
-    The caption reads 'Noise contributions. '<append2caption>.
-
-    A label can be given as reference.
+    A caption can be added and a label can be given as reference.
 
     :param resultObject: SLiCAP execution result object.
     :type resultObject: SLiCAP.SLiCAPprotos.allResults
@@ -308,9 +293,9 @@ def noiseContribs2RST(resultObject, label='', append2caption='', position=0):
     :param label: Reference to this table, defaults to ''
     :type label: str
 
-    :param append2caption: Test string that will be appended to the caption,
+    :param caption: Test string that will be appended to the caption,
                            Defaults to ''
-    :type append2caption: str
+    :type caption: str
 
     :param position: Number of spaces indention from the left margin, defaults to 0
     :type position: int
@@ -319,33 +304,36 @@ def noiseContribs2RST(resultObject, label='', append2caption='', position=0):
     :rtype: str
     """
     if resultObject.dataType == 'noise' and resultObject.step == False:
-        detunits = sp.sympify(resultObject.detUnits + '**2/Hz')
+        detunits = resultObject.detUnits + '**2/Hz'
         if resultObject.srcUnits != None:
-            srcunits = sp.sympify(resultObject.srcUnits + '**2/Hz')
+            srcunits = resultObject.srcUnits + '**2/Hz'
         # Add a table with noise contributions
         linesList = []
         headerList = ['', 'Value' , 'Units']
-        name = "Source contributions. " + append2caption
         for src in resultObject.onoiseTerms.keys():
             if src[0].upper() == 'I':
                 units = 'A**2/Hz'
             elif src[0].upper() == 'V':
                 units = 'V**2/Hz'
-            units = sp.sympify(units)
-            line = [src + ': Source value', resultObject.snoiseTerms[src], units]
+            #units = sp.sympify(units)
+            line = [src + ': Source value', resultObject.snoiseTerms[src],
+                    units]
             linesList.append(line)
             if resultObject.srcUnits != None:
-                line = [src + ': Source-referred', resultObject.inoiseTerms[src], srcunits]
+                line = [src + ': Source-referred', 
+                        resultObject.inoiseTerms[src], srcunits]
                 linesList.append(line)
-            line = [src + ': Detector-referred', resultObject.onoiseTerms[src], detunits]
+            line = [src + ': Detector-referred', 
+                    resultObject.onoiseTerms[src], detunits]
             linesList.append(line)
-        RST = _RSTcreateCSVtable(name, headerList, linesList, unitpos=2, label=label)
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, unitpos=2, 
+                                 label=label)
     else:
         RST = ''
         print('noise2RST: Error: wrong data type, or stepped analysis.')
     return RST
 
-def dcvarContribs2RST(resultObject, label='', append2caption='', position=0):
+def dcvarContribs2RST(resultObject, caption='', label='', position=0):
     """
     Creates and returns an RST table snippet that can be included in a ReStructuredText document.
 
@@ -353,9 +341,7 @@ def dcvarContribs2RST(resultObject, label='', append2caption='', position=0):
     to the detector-referred DC variance and the source-referred DC variance. The latter
     only if a signal source has been specified.
 
-    The caption reads 'Source contributions. '<append2caption>.
-
-    A label can be given as reference.
+    A caption can be added and a label can be given as reference.
 
     :param resultObject: SLiCAP execution result object.
     :type resultObject: SLiCAP.SLiCAPprotos.allResults
@@ -363,9 +349,9 @@ def dcvarContribs2RST(resultObject, label='', append2caption='', position=0):
     :param label: Reference to this table, defaults to ''
     :type label: str
 
-    :param append2caption: Test string that will be appended to the caption,
+    :param caption: Test string that will be appended to the caption,
                            Defaults to ''
-    :type append2caption: str
+    :type caption: str
 
     :param position: Number of spaces indention from the left margin, defaults to 0
     :type position: int
@@ -374,27 +360,29 @@ def dcvarContribs2RST(resultObject, label='', append2caption='', position=0):
     :rtype: str
     """
     if resultObject.dataType == 'dcvar' and resultObject.step == False:
-        detunits = sp.sympify(resultObject.detUnits + '**2')
+        detunits = resultObject.detUnits + '**2'
         if resultObject.srcUnits != None:
-            srcunits = sp.sympify(resultObject.srcUnits + '**2')
+            srcunits = resultObject.srcUnits + '**2'
         # Add a table with dcvar contributions
         linesList = []
         headerList = ['', 'Value' , 'Units']
-        name = "Source contributions. " + append2caption
         for src in resultObject.ovarTerms.keys():
             if src[0].upper() == 'I':
                 units = 'A**2'
             elif src[0].upper() == 'V':
                 units = 'V**2'
-            units = sp.sympify(units)
+            #units = sp.sympify(units)
             line = [src + ': Source value', resultObject.svarTerms[src], units]
             linesList.append(line)
             if resultObject.srcUnits != None:
-                line = [src + ': Source-referred', resultObject.ivarTerms[src], srcunits]
+                line = [src + ': Source-referred', resultObject.ivarTerms[src], 
+                        srcunits]
                 linesList.append(line)
-            line = [src + ': Detector-referred', resultObject.ovarTerms[src], detunits]
+            line = [src + ': Detector-referred', resultObject.ovarTerms[src], 
+                    detunits]
             linesList.append(line)
-        RST = _RSTcreateCSVtable(name, headerList, linesList, unitpos=2, label=label)
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, unitpos=2, 
+                                 label=label)
     else:
         RST = ''
         print('dcvar2RST: Error: wrong data type, or stepped analysis.')
@@ -404,6 +392,8 @@ def specs2RST(specs, specType='', label='', caption='', position=0):
     """
     Creates and returns an RST table snippet from a list with specItem objects.
     This table snippet can be included in a ReStructuredText document.
+
+    A caption can be added and a label can be given as reference.
 
     :param specs: List with spec items.
     :type specs:  list
@@ -429,7 +419,8 @@ def specs2RST(specs, specType='', label='', caption='', position=0):
         if specItem.specType.lower()==specType.lower():
             linesList.append(specItem._specLine())
     if len(linesList) > 0:
-        RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, position=position) + '\n'
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, 
+                                 position=position) + '\n'
     else:
         RST =  "**Found no specifications of type: " + specType + ".**\n\n"
     return RST
@@ -463,7 +454,7 @@ def eqn2RST(LHS, RHS, units='', label='', position=0):
         RST += spaces + '    :label: ' + label + '\n'
     RST += '\n'
     try:
-        units = sp.latex(sp.sympify(units))
+        units = units2TeX(units)
     except:
         units = ''
     RST += spaces + '    ' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
@@ -500,12 +491,14 @@ def matrices2RST(Iv, M, Dv, label='', position=0):
     RST += spaces + '    ' + sp.latex(roundN(Iv)) + '=' + sp.latex(roundN(M)) + '\\cdot ' + sp.latex(roundN(Dv)) + '\n\n'
     return RST
 
-def stepArray2rst(stepVars, stepArray, label='', caption='', position=0):
+def stepArray2RST(stepVars, stepArray, label='', caption='', position=0):
     """
     Creates and returns an RST table snippet that can be included in a ReStructuredText document.
 
     The table shows the step variables and their values as defined for array-type
     stepping of instructions.
+
+    A caption can be added and a label can be given as reference.
 
     :param stepVars: List with step variables for array type stepping
                      (SLiCAPinstruction.instruction.stepVars)
@@ -534,12 +527,13 @@ def stepArray2rst(stepVars, stepArray, label='', caption='', position=0):
     for i in range(numRuns):
         line = []
         for j in range(numVars):
-            line.append(stepArray[i][j])
+            line.append(stepArray[j][i])
         linesList.append(line)
-    RST = _RSTcreateCSVtable(caption, headerList, linesList, position=position, label=label) + '\n\n'
+    RST = _RSTcreateCSVtable(caption, headerList, linesList, position=position, 
+                             label=label) + '\n\n'
     return RST
 
-def coeffsTransfer2RST(transferCoeffs, label = '', append2caption='', position=0):
+def coeffsTransfer2RST(transferCoeffs, label = '', caption='', position=0):
     """
     Creates and returns an RST table snippet that can be included in a
     ReStuctrutedText document.
@@ -547,9 +541,7 @@ def coeffsTransfer2RST(transferCoeffs, label = '', append2caption='', position=0
     The table comprises the normalized coefficients of the numerator and
     the denominator as listed in transferCoeffs.
 
-    The normalization factor (Gain) is added to the caption.
-
-    A label can be given as reference.
+    A caption can be added and a label can be given as reference.
 
     :param transferCoeffs: List with:
 
@@ -564,8 +556,8 @@ def coeffsTransfer2RST(transferCoeffs, label = '', append2caption='', position=0
     :param label: Reference lable for this table
     :type label: str
 
-    :param append2caption: String that will be appended to the caption.
-    :type append2caption: str
+    :param caption: String that will be appended to the caption.
+    :type caption: str
 
     :param position: Number of spaces indention from the left margin, defaults to 0
     :type position: int
@@ -574,20 +566,15 @@ def coeffsTransfer2RST(transferCoeffs, label = '', append2caption='', position=0
     :rtype: str
     """
     (gain, numerCoeffs, denomCoeffs) = transferCoeffs
-    caption = ' Gain factor: ' + sp.latex(roundN(gain)) + '. '
     headerList = ['Coeff', 'Value']
     linesList = []
     for i in range(len(numerCoeffs)):
-        linesList.append([sp.sympify('n_' + str(i)), numerCoeffs[i]])
+        linesList.append([sp.sympify('b_' + str(i)), numerCoeffs[i]])
     for i in range(len(denomCoeffs)):
-        linesList.append([sp.sympify('d_' + str(i)), denomCoeffs[i]])
-    caption += ':math:`n_i` = numerator coefficient of i-th order, :math:`d_i` = denominator coefficient of i-th order. '
-    caption += append2caption
-    RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, position=position)
+        linesList.append([sp.sympify('a_' + str(i)), denomCoeffs[i]])
+    RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, 
+                             position=position)
     return RST
-    
-def monomialCoeffs2RST(monomialCoeffs, label = '', caption='', position=0):
-    raise NotImplementedError
 
 def file2RST(fileName, firstNumber=None, lineRange=None, position=0):
     """
@@ -638,7 +625,7 @@ def expr2RST(expr, units='', name=''):
     """
     if type(name) == str and len(name) > 0:
         try:
-            units = sp.latex(sp.sympify(units))
+            units = units2TeX(units)
         except:
             pass
         RST = ':math:`' + sp.latex(roundN(expr))
@@ -646,11 +633,10 @@ def expr2RST(expr, units='', name=''):
             RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
         else:
             RST += '` '
-        f = open(ini.rst_snippets + "substitutions.rst", "a")
-        f.write('.. |' + name + '| replace:: ' + RST + '\n')
-        f.close()
+        RST = '.. |' + name + '| replace:: ' + RST + '\n'
     else:
         raise NameError
+    return RST
         
 def eqn2RSTinline(LHS, RHS, units='', name=None):
     """
@@ -673,7 +659,7 @@ def eqn2RSTinline(LHS, RHS, units='', name=None):
     """
     if type(name) == str and len(name) > 0:
         try:
-            units = sp.latex(sp.sympify(units))
+            units = units2TeX(units)
         except:
             pass
         RST = ':math:`' + sp.latex(roundN(LHS)) + '=' + sp.latex(roundN(RHS))
@@ -681,16 +667,15 @@ def eqn2RSTinline(LHS, RHS, units='', name=None):
             RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
         else:
             RST += '` '
-        
-        f = open(ini.rst_snippets + "substitutions.rst", "a")
-        f.write('.. |' + name + '| replace:: ' + RST + '\n')
-        f.close()
+        RST = '.. |' + name + '| replace:: ' + RST + '\n'
     else:
         raise NameError
+    return RST
 
 # Non-public functions for creating table snippets
 
-def _RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None, label=''):
+def _RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None, 
+                       label=''):
     """
     Creates and returns an RST table snippet that can be included in a
     ReStructuredText document.
@@ -732,10 +717,10 @@ def _RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None, la
         i = 0
         RST += '\n' + spaces + '    '
         for item in line:
-            if type(item) == str:
+            if i == unitpos:
+                RST += ':math:`\\mathrm{' + units2TeX(item) + '}`, '
+            elif type(item) == str:
                 RST += '"' + item + '", '
-            elif i == unitpos:
-                RST += ':math:`\\mathrm{' + sp.latex(item) + '}`, '
             else:
                 RST += ':math:`' + sp.latex(roundN(sp.N(item))) + '`, '
             i += 1
@@ -772,8 +757,8 @@ def _numRoots2RST(roots, Hz, pz):
             realpart = roundN(sp.N(realpart/2/sp.pi))
             imagpart = roundN(sp.N(imagpart/2/sp.pi))
             frequency = roundN(sp.N(frequency/2/sp.pi))
-            if Q <= 0.5:
-                line = [sp.Symbol(pz + '_' + str(i)), realpart, imagpart, frequency, ]
+            if imagpart == 0:
+                line = [sp.Symbol(pz + '_' + str(i)), realpart, imagpart, frequency ]
             else:
                 line = [sp.Symbol(pz + '_' + str(i)), realpart, imagpart, frequency, Q]
         lineList.append(line)
@@ -801,9 +786,9 @@ def _symRoots2RST(roots, Hz, pz):
     for root in roots:
         i += 1
         if Hz == True:
-            line = [sp.Symbol(pz + '_' + str(i)), root/2/sp.pi]
+            line = [sp.Symbol(pz + '_' + str(i)), ':math:`' + sp.latex(roundN(sp.simplify(root/2/sp.pi))) + '`']
         else:
-            line = [sp.Symbol(pz + '_' + str(i)), root]
+            line = [sp.Symbol(pz + '_' + str(i)), ':math:`' + sp.latex(roundN(root)) + '`']
         lineList.append(line)
     return lineList
 

@@ -7,6 +7,7 @@ matplotlib>=3.8.0
 sphinx-rtd-theme>=1.2.0
 svgelements>=1.9.6
 svglib>=1.5.1
+pytexit>=0.4.0
 IPython>=8.19
 windows_tools>=2.4; sys_platform == "win32"
 pywin32>306; sys_platform =="win32"

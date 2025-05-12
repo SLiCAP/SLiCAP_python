@@ -349,8 +349,16 @@ class figure(object):
                         scaleY = 10**eval(_SCALEFACTORS[axesList[i].yScaleFactor])
                     else:
                         scaleY = 1
-                    plt.plot(axesList[i].traces[j].xData/scaleX, axesList[i].traces[j].yData/scaleY, label = axesList[i].traces[j].label, linewidth = axesList[i].traces[j].lineWidth,
-                             color = Color, marker = Marker, markeredgecolor = MarkerColor, markersize = axesList[i].traces[j].markerSize, markeredgewidth = 2, markerfacecolor = axesList[i].traces[j].markerFaceColor, linestyle = axesList[i].traces[j].lineType)
+                    plt.plot(axesList[i].traces[j].xData/scaleX, 
+                             axesList[i].traces[j].yData/scaleY, 
+                             label = axesList[i].traces[j].label, 
+                             linewidth = axesList[i].traces[j].lineWidth,
+                             color = Color, marker = Marker, 
+                             markeredgecolor = MarkerColor, 
+                             markersize = axesList[i].traces[j].markerSize, 
+                             markeredgewidth = 2, 
+                             markerfacecolor = axesList[i].traces[j].markerFaceColor, 
+                             linestyle = axesList[i].traces[j].lineType)
                     #except:
                     #    print("Error in plot data of '{0}'.".format(self.fileName))
                     if axesList[i].text:
@@ -360,6 +368,9 @@ class figure(object):
                     defaultsPlot()
         # Save the figure"
         plt.savefig(ini.img_path + self.fileName)
+        if self.fileType.lower() != "pdf":
+            pdfname = '.'.join(self.fileName.split('.')[:-1]) + ".pdf"
+            plt.savefig(ini.img_path + pdfname)
         if self.show:
             plt.show()
         plt.close(fig)
@@ -400,7 +411,11 @@ def defaultsPlot():
                 pass
     return
 
-def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVar = 'auto', sweepScale = '', xVar = 'auto', xScale = '', xUnits = '', xLim = [], yLim = [], axisType = 'auto', funcType = 'auto', yVar = 'auto', yScale = '', yUnits = '', noiseSources = None, show = False):
+def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, 
+              sweepVar = 'auto', sweepScale = '', xVar = 'auto', xScale = '', 
+              xUnits = '', xLim = [], yLim = [], axisType = 'auto', 
+              funcType = 'auto', yVar = 'auto', yScale = '', yUnits = '',
+              noiseSources = None, show = False):
     """
     Plots a function by sweeping one variable and optionally stepping another.
 
@@ -628,9 +643,13 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
     except:
         xScaleFactor = 1.
     if ax.xScale == 'log' or ax.xScale == 'semilogx' or ax.polar == True:
-        x = np.geomspace(float(_checkNumber(sweepStart))*xScaleFactor, float(_checkNumber(sweepStop))*xScaleFactor, int(_checkNumber(sweepNum)))
+        x = np.geomspace(float(_checkNumber(sweepStart))*xScaleFactor, 
+                         float(_checkNumber(sweepStop))*xScaleFactor, 
+                         int(_checkNumber(sweepNum)))
     elif ax.xScale == 'lin' or ax.xScale == 'semilogy':
-        x = np.linspace(float(_checkNumber(sweepStart))*xScaleFactor, float(_checkNumber(sweepStop))*xScaleFactor, int(_checkNumber(sweepNum)))
+        x = np.linspace(float(_checkNumber(sweepStart))*xScaleFactor, 
+                        float(_checkNumber(sweepStop))*xScaleFactor, 
+                        int(_checkNumber(sweepNum)))
     # Create the plot:
     # Create the plot data for param plots, only one simulation result alowed
     # Other simulation results are simply ignored (plots would become messy).
@@ -641,7 +660,9 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
                 keys = list(xData.keys())
                 for i in range(len(keys)):
                     newTrace = trace([xData[keys[i]], yData[keys[i]]])
-                    newTrace.label = '$%s: %s$ = %8.1e'%(sp.latex(sp.Symbol(yVar[j])), sp.latex(result.stepVar), result.stepList[i])
+                    newTrace.label = '$%s: %s$ = %8.1e'%(sp.latex(sp.Symbol(yVar[j])), 
+                                                         sp.latex(result.stepVar), 
+                                                         result.stepList[i])
                     newTrace.color = ini.default_colors[colNum % numColors]
                     colNum += 1
                     ax.traces.append(newTrace)
@@ -864,7 +885,8 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, sweepVa
     fig.plot()
     return fig
 
-def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax = None, xscale = '', yscale = '', show = False):
+def plotPZ(fileName, title, results, xmin = None, xmax = None, 
+           ymin = None, ymax = None, xscale = '', yscale = '', show = False):
     """
     Creates a pole-zero scatter plot.
 
@@ -953,9 +975,11 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
         if not result.step:
             if result.dataType == 'poles' or result.dataType == 'pz':
                 if ini.hz == True:
-                    polesTrace = trace([np.real(result.poles)/2/np.pi/xScaleFactor, np.imag(result.poles)/2/np.pi/yScaleFactor])
+                    polesTrace = trace([np.real(result.poles)/2/np.pi/xScaleFactor, 
+                                        np.imag(result.poles)/2/np.pi/yScaleFactor])
                 else:
-                    polesTrace = trace([np.real(result.poles)/xScaleFactor, np.imag(result.poles)/yScaleFactor])
+                    polesTrace = trace([np.real(result.poles)/xScaleFactor, 
+                                        np.imag(result.poles)/yScaleFactor])
                 try:
                     polesTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
@@ -971,9 +995,11 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 pzTraces.append(polesTrace)
             if result.dataType == 'zeros' or result.dataType == 'pz':
                 if ini.hz == True:
-                    zerosTrace = trace([np.real(result.zeros)/2/np.pi/xScaleFactor, np.imag(result.zeros)/2/np.pi/yScaleFactor])
+                    zerosTrace = trace([np.real(result.zeros)/2/np.pi/xScaleFactor, 
+                                        np.imag(result.zeros)/2/np.pi/yScaleFactor])
                 else:
-                    zerosTrace = trace([np.real(result.zeros)/xScaleFactor, np.imag(result.zeros)/yScaleFactor])
+                    zerosTrace = trace([np.real(result.zeros)/xScaleFactor, 
+                                        np.imag(result.zeros)/yScaleFactor])
                 zerosTrace.color = ''
                 try:
                     zerosTrace.markerColor = ini.gain_colors[result.gainType]
@@ -996,9 +1022,11 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
             if len(poles) != 0:
                 # start of root locus
                 if ini.hz == True:
-                    polesTrace = trace([np.real(result.poles[0])/2/np.pi/xScaleFactor, np.imag(result.poles[0])/2/np.pi/yScaleFactor])
+                    polesTrace = trace([np.real(result.poles[0])/2/np.pi/xScaleFactor, 
+                                        np.imag(result.poles[0])/2/np.pi/yScaleFactor])
                 else:
-                    polesTrace = trace([np.real(result.poles[0])/xScaleFactor, np.imag(result.poles[0])/yScaleFactor])
+                    polesTrace = trace([np.real(result.poles[0])/xScaleFactor, 
+                                        np.imag(result.poles[0])/yScaleFactor])
                 try:
                     polesTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
@@ -1018,9 +1046,11 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 pzTraces.append(polesTrace)
                 # end of root locus
                 if ini.hz == True:
-                    polesTrace = trace([np.real(result.poles[-1])/2/np.pi/xScaleFactor, np.imag(result.poles[-1])/2/np.pi/yScaleFactor])
+                    polesTrace = trace([np.real(result.poles[-1])/2/np.pi/xScaleFactor, 
+                                        np.imag(result.poles[-1])/2/np.pi/yScaleFactor])
                 else:
-                    polesTrace = trace([np.real(result.poles[-1]/xScaleFactor), np.imag(result.poles[-1])/yScaleFactor])
+                    polesTrace = trace([np.real(result.poles[-1]/xScaleFactor), 
+                                        np.imag(result.poles[-1])/yScaleFactor])
                 try:
                     polesTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
@@ -1044,9 +1074,11 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 for i in range(len(poles)):
                     allPoles = np.concatenate((allPoles, poles[i]), axis = None)
                 if ini.hz == True:
-                    polesTrace = trace([np.real(allPoles)/2/np.pi/xScaleFactor, np.imag(allPoles)/2/np.pi/yScaleFactor])
+                    polesTrace = trace([np.real(allPoles)/2/np.pi/xScaleFactor, 
+                                        np.imag(allPoles)/2/np.pi/yScaleFactor])
                 else:
-                    polesTrace = trace([np.real(allPoles)/xScaleFactor, np.imag(allPoles)/yScaleFactor])
+                    polesTrace = trace([np.real(allPoles)/xScaleFactor, 
+                                        np.imag(allPoles)/yScaleFactor])
                 try:
                     polesTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
@@ -1063,15 +1095,19 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 if result.stepMethod == 'array':
                     polesTrace.label += ', run: 1 ... %s'%(len(poles))
                 else:
-                    polesTrace.label += ', %s = %8.1e ... %8.1e'%(result.stepVar, result.stepList[0], result.stepList[-1])
+                    polesTrace.label += ', %s = %8.1e ... %8.1e'%(result.stepVar, 
+                                                                  result.stepList[0], 
+                                                                  result.stepList[-1])
                 pzTraces.append(polesTrace)
             zeros = result.zeros
             if len(zeros) != 0:
                 # start of zeros locus
                 if ini.hz == True:
-                    zerosTrace = trace([np.real(result.zeros[0])/2/np.pi/xScaleFactor, np.imag(result.zeros[0])/2/np.pi/yScaleFactor])
+                    zerosTrace = trace([np.real(result.zeros[0])/2/np.pi/xScaleFactor, 
+                                        np.imag(result.zeros[0])/2/np.pi/yScaleFactor])
                 else:
-                    zerosTrace = trace([np.real(result.zeros[0])/xScaleFactor, np.imag(result.zeros[0])/yScaleFactor])
+                    zerosTrace = trace([np.real(result.zeros[0])/xScaleFactor, 
+                                        np.imag(result.zeros[0])/yScaleFactor])
                 try:
                     zerosTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
@@ -1092,9 +1128,11 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 pzTraces.append(zerosTrace)
                 # end of zeros locus
                 if ini.hz == True:
-                    zerosTrace = trace([np.real(result.zeros[-1])/2/np.pi/xScaleFactor, np.imag(result.zeros[-1])/2/np.pi/yScaleFactor])
+                    zerosTrace = trace([np.real(result.zeros[-1])/2/np.pi/xScaleFactor, 
+                                        np.imag(result.zeros[-1])/2/np.pi/yScaleFactor])
                 else:
-                    zerosTrace = trace([np.real(result.zeros[-1])/xScaleFactor, np.imag(result.zeros[-1])/yScaleFactor])
+                    zerosTrace = trace([np.real(result.zeros[-1])/xScaleFactor, 
+                                        np.imag(result.zeros[-1])/yScaleFactor])
                 try:
                     zerosTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
@@ -1118,9 +1156,11 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 for i in range(len(zeros)):
                     allZeros = np.concatenate((allZeros, result.zeros[i]), axis = None)
                 if ini.hz == True:
-                    zerosTrace = trace([np.real(allZeros)/2/np.pi/xScaleFactor, np.imag(allZeros)/2/np.pi/yScaleFactor])
+                    zerosTrace = trace([np.real(allZeros)/2/np.pi/xScaleFactor, 
+                                        np.imag(allZeros)/2/np.pi/yScaleFactor])
                 else:
-                    zerosTrace = trace([np.real(allZeros)/xScaleFactor, np.imag(allZeros)/yScaleFactor])
+                    zerosTrace = trace([np.real(allZeros)/xScaleFactor, 
+                                        np.imag(allZeros)/yScaleFactor])
                 try:
                     zerosTrace.markerColor = ini.gain_colors[result.gainType]
                 except:
@@ -1136,7 +1176,9 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
                 if result.stepMethod == 'array':
                     zerosTrace.label += ', run: 1 ... %s'%(len(zeros))
                 else:
-                    zerosTrace.label += ', %s = %8.1e ... %8.1e'%(result.stepVar, result.stepList[0], result.stepList[-1])
+                    zerosTrace.label += ', %s = %8.1e ... %8.1e'%(result.stepVar, 
+                                                                  result.stepList[0], 
+                                                                  result.stepList[-1])
                 pzTraces.append(zerosTrace)
         colNum += 1
     pz.traces = pzTraces
@@ -1144,7 +1186,9 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None, ymin = None, ymax
     fig.plot()
     return fig
 
-def plot(fileName, title, axisType, plotData, xName = '', xScale = '', xUnits = '', yName = '', yScale = '', yUnits = '', xLim = [] , yLim = [], show = False):
+def plot(fileName, title, axisType, plotData, xName = '', xScale = '', 
+         xUnits = '', yName = '', yScale = '', yUnits = '', xLim = [] , 
+         yLim = [], show = False):
     """
     Plots x-y data, or multiple pairs of x-y data.
 
@@ -1309,7 +1353,8 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
         elif results.stepMethod == 'list':
             p = results.stepList
         else:
-            print("Error: dataType 'params' not implemented for stepMethod '", str(results.stepMethod), "'." )
+            print("Error: dataType 'params' not implemented for stepMethod '", 
+                  str(results.stepMethod), "'." )
             errors += 1
     if errors == 0:
         substitutions = {}
@@ -1335,7 +1380,8 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
                         yfunc = sp.lambdify(sp.Symbol(sVar), y, ini.lambdify)
                         yValues[parValue] = yfunc(sweepList)
                     except:
-                        yValues[parValue] = [y.subs(sp.Symbol(sVar), sweepList[i]) for i in range(len(sweepList))]
+                        yValues[parValue] = [y.subs(sp.Symbol(sVar), 
+                                                    sweepList[i]) for i in range(len(sweepList))]
                 else:
                     yValues[parValue] = sweepList
                 if xVar != sVar:
@@ -1344,7 +1390,8 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
                         xfunc = sp.lambdify(sp.Symbol(sVar), x, ini.lambdify)
                         xValues[parValue] = xfunc(sweepList)
                     except:
-                        xValues[parValue] = [x.subs(sp.Symbol(sVar), sweepList[i]) for i in range(len(sweepList))]
+                        xValues[parValue] = [x.subs(sp.Symbol(sVar), 
+                                                    sweepList[i]) for i in range(len(sweepList))]
                 else:
                     xValues[parValue] = sweepList
         else:
@@ -1353,7 +1400,8 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
                     y = sp.lambdify(sp.Symbol(sVar), f, ini.lambdify)
                     yValues = y(sweepList)
                 except:
-                    yValues = [f.subs(sp.Symbol(sVar), sweepList[i]) for i in range(len(sweepList))]
+                    yValues = [f.subs(sp.Symbol(sVar), 
+                                      sweepList[i]) for i in range(len(sweepList))]
             else:
                 yValues = sweepList
             if xVar != sVar:
@@ -1361,7 +1409,8 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
                     x = sp.lambdify(sp.Symbol(sVar), g, ini.lambdify)
                     xValues = x(sweepList)
                 except:
-                    xValues = [g.subs(sp.Symbol(sVar), sweepList[i]) for i in range(len(sweepList))]
+                    xValues = [g.subs(sp.Symbol(sVar), 
+                                      sweepList[i]) for i in range(len(sweepList))]
             else:
                 xValues = sweepList
     return (xValues, yValues)
@@ -1549,7 +1598,8 @@ def csv2traces(csvFile):
     for i in range(len(lines)):
         data = lines[i].split(',')
         if len(data) % 2 != 0:
-            print("Error: expected an even number of columns in csv file:", ini.csv_path + csvFile)
+            print("Error: expected an even number of columns in csv file:", 
+                  ini.csv_path + csvFile)
             return traceDict
         elif i == 0:
             for j in range(int(len(data)/2)):

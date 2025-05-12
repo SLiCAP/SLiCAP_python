@@ -27,6 +27,7 @@ class Snippet:
     """
     def __init__(self, snippet: str = "", format: None | str = None) -> None:
         self._snippet = snippet
+        self.mode     = "w"
         if format is None:
             self._format = "raw"
             self._prefix, self._suffix = _FORMATS[self._format]
@@ -92,13 +93,15 @@ class Snippet:
         if self.snippet != None:
             if not filenameOrPath:
                 raise ValueError("No filename given to save snippet.")
+            if self.mode.lower() not in ["a", "w"]:
+                raise ValueError("Mode must be 'a' or 'w'.")
             if isinstance(filenameOrPath, Path):
                 filenameOrPath = str(filenameOrPath)
             if os.path.isabs(filenameOrPath):
                 filePath = filenameOrPath
             else:
                 filePath = self._prefix + filenameOrPath + self._suffix
-            with open(filePath, "w") as f:
+            with open(filePath, self.mode) as f:
                 f.write(self.snippet)
         
 class _BaseFormatter:
@@ -210,10 +213,12 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
                 
-    def elementData(self, circuitObject, label="", append2caption="",
+    def elementData(self, circuitObject, label="", caption="",
                     position=0, color="myyellow"):
         """
         Creates a table with data of expanded netlist elements of *circuitObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param circuitObject: SLiCAP circuit object that comprises the circuit data to be listed.
         :type circuitObject: SLiCAP.SLiCAPprotos.circuit
@@ -221,8 +226,8 @@ class formatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param append2caption: Text that will be appended to the default table caption.
-        :type append2caption: str
+        :param caption: Text that will used as table caption.
+        :type caption: str
         
         :param position: Number of spaces to indent (RST only)
         :type position: int
@@ -236,21 +241,23 @@ class formatter(_BaseFormatter):
         """
         if self.format == 'latex':
             self.snippet = Snippet( 
-                elementData2TEX(circuitObject, label, append2caption, 
+                elementData2TEX(circuitObject, label, caption, 
                                 color=color),
                 self.format)
         elif self.format == 'rst':
             self.snippet = Snippet( 
-                elementData2RST(circuitObject, label, append2caption, 
+                elementData2RST(circuitObject, label, caption, 
                                    position), self.format)
         else:
             raise NotImplementedError
         return self.snippet
 
-    def parDefs(self, circuitObject, label="", append2caption="", position=0, 
+    def parDefs(self, circuitObject, label="", caption="", position=0, 
                 color="myyellow"):
         """
         Creates a table with parameter definitions of *circuitObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param circuitObject: SLiCAP circuit object that comprises the circuit data to be listed.
         :type circuitObject: SLiCAP.SLiCAPprotos.circuit
@@ -258,8 +265,8 @@ class formatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param append2caption: Text that will be appended to the default table caption.
-        :type append2caption: str
+        :param caption: Text that will used as table caption.
+        :type caption: str
         
         :param position: Number of spaces to indent (RST only)
         :type position: int
@@ -273,10 +280,10 @@ class formatter(_BaseFormatter):
         """
         if self.format == 'latex':
             self.snippet = Snippet(parDefs2TEX(circuitObject, label, 
-                                                  append2caption, color=color), self.format)
+                                                  caption, color=color), self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(parDefs2RST(circuitObject, label, 
-                                                  append2caption, position), 
+                                                  caption, position), 
                                    self.format)
         else:
             raise NotImplementedError
@@ -286,6 +293,8 @@ class formatter(_BaseFormatter):
                   color="myyellow"):
         """
         Creates a table from a dictionary; optionally with a header.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param dct: Dictionary with key-value pairs.
         :type circuitObject: dict
@@ -297,7 +306,7 @@ class formatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param caption: Text that will be appended to the default table caption.
+        :param caption: Text that will used as table caption.
         :type caption: str
         
         :param position: Number of spaces to indent (RST only)
@@ -330,9 +339,11 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
     
-    def params(self, circuitObject, label="", append2caption="", position=0, color="myyellow"):
+    def params(self, circuitObject, label="", caption="", position=0, color="myyellow"):
         """
         Creates a table with undefined parameters of *circuitObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param circuitObject: SLiCAP circuit object that comprises the circuit data to be listed.
         :type circuitObject: SLiCAP.SLiCAPprotos.circuit
@@ -340,8 +351,8 @@ class formatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param append2caption: Text that will be appended to the default table caption.
-        :type append2caption: str
+        :param caption: Text that will used as table caption.
+        :type caption: str
         
         :param position: Number of spaces to indent (RST only)
         :type position: int
@@ -355,19 +366,21 @@ class formatter(_BaseFormatter):
         """
         if self.format == 'latex':
             self.snippet = Snippet(params2TEX(circuitObject, label, 
-                                                 append2caption, color=color), 
+                                                 caption, color=color), 
                                    self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(params2RST(circuitObject, label, 
-                                                 append2caption, position),
+                                                 caption, position),
                                    self.format)
         else:
             raise NotImplementedError
         return self.snippet
 
-    def pz(self, resultObject, label="", append2caption="", color="myyellow"):
+    def pz(self, resultObject, label="", caption="", position=0, color="myyellow"):
         """
         Creates a table or tables with results of pole/zero analysis stored in *resultObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
         :type resultObject: SLiCAP.SLiCAPprotos.allResults
@@ -375,8 +388,8 @@ class formatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param append2caption: Text that will be appended to the default table caption(s).
-        :type append2caption: str
+        :param caption: Text that will used as table caption(s).
+        :type caption: str
         
         :param position: Number of spaces to indent (RST only)
         :type position: int
@@ -390,18 +403,20 @@ class formatter(_BaseFormatter):
         """
         if self.format == 'latex':
             self.snippet = Snippet(pz2TEX(resultObject, label, 
-                                             append2caption, color=color), self.format)
+                                             caption, color=color), self.format)
         elif self.format == 'rst':
-            self.snippet = Snippet(pz2RST(resultObject, label, 
-                                             append2caption), self.format)
+            self.snippet = Snippet(pz2RST(resultObject, label, caption,
+                                          position), self.format)
         else:
             raise NotImplementedError
         return self.snippet
 
-    def noiseContribs(self, resultObject, label="", append2caption="", 
+    def noiseContribs(self, resultObject, label="", caption="", 
                       position=0, color="myyellow"):
         """
         Creates a table with results of noise analysis stored in *resultObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
         :type resultObject: SLiCAP.SLiCAPprotos.allResults
@@ -409,8 +424,8 @@ class formatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param append2caption: Text that will be appended to the default table caption(s).
-        :type append2caption: str
+        :param caption: Text that will used as table caption(s).
+        :type caption: str
         
         :param position: Number of spaces to indent (RST only)
         :type position: int
@@ -424,21 +439,23 @@ class formatter(_BaseFormatter):
         """
         if self.format == 'latex':
             self.snippet = Snippet(noiseContribs2TEX(resultObject, label, 
-                                                        append2caption, 
+                                                        caption, 
                                                         color=color),
                                    self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(noiseContribs2RST(resultObject, label, 
-                                                        append2caption, 
+                                                        caption, 
                                                         position), self.format)
         else:
             raise NotImplementedError
         return self.snippet
 
-    def dcvarContribs(self, resultObject, label="", append2caption="",
+    def dcvarContribs(self, resultObject, label="", caption="",
                       position=0, color="myyellow"):
         """
         Creates a table with results of dcvar analysis stored in *resultObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
         :type resultObject: SLiCAP.SLiCAPprotos.allResults
@@ -446,8 +463,8 @@ class formatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param append2caption: Text that will be appended to the default table caption(s).
-        :type append2caption: str
+        :param caption: Text that will used as table caption(s).
+        :type caption: str
         
         :param position: Number of spaces to indent (RST only)
         :type position: int
@@ -460,14 +477,15 @@ class formatter(_BaseFormatter):
         :rtype: SLiCAP.SLiCAPformatter.Snippet
         """
         if self.format == 'latex':
-            self.snippet = Snippet(dcvarContribs2TEX(resultObject, label, 
-                                                        append2caption,
-                                                        position, 
-                                                        color=color), 
+            self.snippet = Snippet(dcvarContribs2TEX(resultObject, 
+                                                        caption, 
+                                                        label,
+                                                        color), 
                                    self.format)
         elif self.format == 'rst':
-            self.snippet = Snippet(dcvarContribs2RST(resultObject, label, 
-                                                        append2caption,
+            self.snippet = Snippet(dcvarContribs2RST(resultObject, 
+                                                        caption,
+                                                        label,
                                                         position), self.format)
         else:
             raise NotImplementedError
@@ -477,6 +495,8 @@ class formatter(_BaseFormatter):
               color="myyellow"):
         """
         Creates a table with specifications of type *specType*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param specs: List with SLiCAP.SLiCAPdesignData.specItem objects.
         :type specs: list
@@ -505,11 +525,12 @@ class formatter(_BaseFormatter):
                                                 caption, color=color), 
                                    self.format)
         elif self.format == 'rst':
-            self.snippet = Snippet(specs2TEX(specs, specType, label, 
+            self.snippet = Snippet(specs2RST(specs, specType, label, 
                                                 caption, position), 
                                    self.format)
         else:
             raise NotImplementedError
+        return self.snippet
 
     def eqn(self, LHS, RHS, units="", label="", multiline=False, position=0):
         """
@@ -593,6 +614,8 @@ class formatter(_BaseFormatter):
                   color="myyellow"):
         """
         Creates a table with step array values. 
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
         :param stepVars: List with step variables (*str, sympy.Symbol*).
         :type stepVars: list
@@ -628,13 +651,14 @@ class formatter(_BaseFormatter):
             raise NotImplementedError
         return self.snippet
 
-    def coeffsTransfer(self, transferCoeffs, label="", append2caption="", 
+    def coeffsTransfer(self, transferCoeffs, label="", caption="", 
                        position=0, color="myyellow"):
         """
-        Creates tables with coefficients of the numerator and the denominator 
-        of a rational expression. 
+        Creates a tablestable that displays the numerator and denominator 
+        coefficients of a rational expression. 
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
         
-
         :param stepVars: List with step variables (*str, sympy.Symbol*).
         :type stepVars: list
         
@@ -665,66 +689,29 @@ class formatter(_BaseFormatter):
         >>> ltx  = sl.formatter("latex")
         >>> expr = sp.sympify("A_0*(1+s*b_1)/(((1+s*a_1))*((1+s*a_2)))")
         >>> tr_coeffs = sl.coeffsTransfer(expr)
-        >>> ltx.coeffsTransfer(tr_coeffs, label="tab-coeffs").save("coeffs")
+        >>> ltx.coeffsTransfer(tr_coeffs, 
+                               label="tab-coeffs",
+                               caption = "numerator and denominator " +
+                               "coefficients").save("coeffs")
         
         """
         if self.format == 'latex':
             self.snippet = Snippet(
-            coeffsTransfer2TEX(transferCoeffs, label, append2caption, 
+            coeffsTransfer2TEX(transferCoeffs, label, caption, 
                                color=color), self.format)
         elif self.format == 'rst':
             self.snippet = Snippet(
-            coeffsTransfer2RST(transferCoeffs, label, append2caption,
+            coeffsTransfer2RST(transferCoeffs, label, caption,
                                   position), self.format)
-        else:
-            raise NotImplementedError
-        return self.snippet
-    
-    def monomialCoeffs(self, monomialCoeffs, label="", caption="", position=0, 
-                       color="myyellow"):   
-        """
-        Creates and returns a table table with monomials and their coefficients.
-                
-        :param monomialCoeffs: Dictionary with key-value pairs:
-            
-                               - key: monomial (*sympy.Expr*, *sympy.Symbol*)
-                               - value: coefficient of this monomial (*sympy.Expr*, *sympy.Symbol*)
-                               
-        :param label: Reference label for the table. Defaults to an empty string.
-        :type label: str
-        
-        :param caption: Table caption.
-        :type caption: str
-        
-        :param position: Number of spaces to indent (RST only)
-        :type position: int
-        
-        :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
-        :type color: str
-        
-        :return: SLiCAP Snippet object
-        :rtype: SLiCAP.SLiCAPformatter.Snippet
-        
-        """
-        if self.format == 'latex':
-            self.snippet = Snippet(
-                monomialCoeffs2TEX(monomialCoeffs, label, caption, color=color), 
-                self.format)
-        elif self.format == 'rst':
-            self.snippet = Snippet(
-                monomialCoeffs2RST(monomialCoeffs, label, caption,
-                                      position), self.format)
         else:
             raise NotImplementedError
         return self.snippet
 
     def file(
-        self, fileName, lineRange=None, firstNumber=None, firstLine=None, 
-        language=None, style=None, position=0):
+        self, fileName, lineRange=None, firstNumber=None, language=None, 
+        style=None, position=0):
         """
-        Creates a LaTeX `\\input{}` or an RST '.. literalinclude:: '
-        command for literally displaying a file.
+        Creates a LaTeX `\\input{}` command for literally displaying a file.
         
         :param fileName: Name of the file. Path is absolute or relative to the 
                          project directory
@@ -790,7 +777,9 @@ class formatter(_BaseFormatter):
         if self.format == 'latex':
             self.snippet = Snippet(expr2TEX(expr, units), self.format)
         elif self.format == 'rst':
-            self.snippet = Snippet(expr2RST(expr, units, name), self.format)
+            self.snippet = Snippet(expr2RST(expr, units, name) + '\n', 
+                                   self.format)
+            self.snippet.mode = "a"
         else:
             raise NotImplementedError
         return self.snippet
@@ -819,8 +808,9 @@ class formatter(_BaseFormatter):
             self.snippet = Snippet(eqn2TEXinline(LHS, RHS, units), 
                                    self.format)
         elif self.format == 'rst':
-            self.snippet = Snippet(eqn2RSTinline(LHS, RHS, units, name), 
+            self.snippet = Snippet(eqn2RSTinline(LHS, RHS, units, name) + '\n', 
                                    self.format)
+            self.snippet.mode = "a"
         else:
             raise NotImplementedError
         return self.snippet
