@@ -20,7 +20,8 @@ from SLiCAP.SLiCAPdesignData import *
 from SLiCAP.SLiCAPinstruction import instruction
 from SLiCAP.SLiCAPmath import *
 from SLiCAP.SLiCAPplots import *
-from SLiCAP.SLiCAPformatter import formatter
+from SLiCAP.SLiCAPrst import RSTformatter
+from SLiCAP.SLiCAPlatex import LaTeXformatter
 from SLiCAP.SLiCAPngspice import MOS, ngspice2traces
 from SLiCAP.SLiCAPltspice import runLTspice
 from SLiCAP.SLiCAPshell import *

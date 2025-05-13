@@ -13,672 +13,811 @@ import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX
 from pathlib import PureWindowsPath
+from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
 
-def netlist2TEX(netlistFile, lineRange=None, firstNumber=None):
+class LaTeXformatter(_BaseFormatter):
     """
-    Converts a SLiCAP netlist into a LaTeX string that can be included in
-    a LaTeX document and returns this string.
-
-    :param netlistFile: Name of the netlist file that resides in the
-                        ini.project_path + ini.cir_path directory
-    :type netListFile: str
-
-    :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
-                      to None (display all lines)
-    :type lineRange: str
-
-    :param firstNumber: Number of the first line to be displayed
-    :type firstNumber: int, float, str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
+    Latex formatter. The methods return LaTeX snippets.
+        
+    :example:
     
-    netlistFile  = netlistFile.replace("_", "\\_")
-    TEX = '\\textbf{Netlist: ' + netlistFile + '}\n\n'
-    TEX += '\\lstinputlisting[language=ltspice, numbers=left'
-    if lineRange != None:
-        TEX += ', linerange={' + lineRange + '}'
-    if firstNumber != None:
-        TEX += ', firstnumber=' + str(int(firstNumber))
-    TEX += ']{' + ini.project_path + ini.cir_path + netlistFile + '}\n\n'
-    return TEX
-
-def elementData2TEX(circuitObject, label='', caption='', color="myyellow"):
+    >>> import SLiCAP as sl
+    >>> sl.initProject("formatter")
+    >>> ltx = sl.LaTeXformatter()   # Creates an instance of a LaTeX formatter
     """
-    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
-    
-    If no label AND no caption are given this method returns a LaTeX
-    tabular snippet. Else it returns a table snippet.
-    
-    The table element data of the expanded nelist of <circuitObject>.
+    def __init__(self):
+        super().__init__()
+        self.format = "latex"
+        self.snippet = None
 
-    A label can be given as reference.
+    def netlist(self, netlistFile, lineRange=None, firstNumber=None):
+        """
+        Creates a LaTeX `\\input{}` or an RST '.. literalinclude:: '
+        command for including a netlist file.
+        
+        :param netlistFile: Name of the netlist file relative to the project circuit directory
+        :type netlistFile: str
+        
+        :param lineRange: range of lines to be included
+        :type lineRange: str
+        
+        :param firstNumber: start number of the displayed line numbers
+        :type firstNumber: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        
+        :example: latex
+        
+        >>> import SLiCAP as sl
+        >>> ltx = sl.LaTeXformatter() # Creates a LaTeX formatter
+        >>> latex_netlist = ltx.netlist("myFirstRCnetwork.cir")
+        >>> latex_netlist.save("netlist")
+        
+        This will save a file `netlist.tex` in the `sl.ini.tex_snippets` folder 
+        with the following contents:
+        
+        .. code::
+        
+            \\textbf{Netlist: myFirstRCnetwork.cir}
+            \\lstinputlisting[language=ltspice, numbers=left]{<full path to myFirstRCnetwork.cir>}
+        
+        The netlist file is assumed to reside in the folder given by `sl.ini.cir_path`.
+        If you want to include a file from any other location, use: 
+        
+        >>> ltx.file() # See below.
+        """
+        netlistFile  = netlistFile.replace("_", "\\_")
+        TEX = '\\textbf{Netlist: ' + netlistFile + '}\n\n'
+        TEX += '\\lstinputlisting[language=ltspice, numbers=left'
+        if lineRange != None:
+            TEX += ', linerange={' + lineRange + '}'
+        if firstNumber != None:
+            TEX += ', firstnumber=' + str(int(firstNumber))
+        TEX += ']{' + ini.project_path + ini.cir_path + netlistFile + '}\n\n'
+        
+        return Snippet(TEX, self.format)
+                
+    def elementData(self, circuitObject, label="", caption="", 
+                    color="myyellow"):
+        """
+        Creates a table with data of expanded netlist elements of 
+        *circuitObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
-    :param circuitObject: SLiCAP circuit object.
-    :type circuitObject: SLiCAP.SLiCAPprotos.circuit
-
-    :param label: Reference to this table; defaults to ''
-    :type label: str
-
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    headerList = ["ID", "Nodes", "Refs", "Model", "Param", "Symbolic", "Numeric"]
-    alignstring= '[c]{lllllll}'
-    linesList   = []
-    for key in circuitObject.elements.keys():
-        el = circuitObject.elements[key]
-        line = [key]
-        lineItem = ''
-        for node in el.nodes:
-            lineItem += node + ' '
-        line.append(lineItem)
-
-        lineItem = ''
-        for ref in el.refs:
-            lineItem += ref + ' '
-        line.append(lineItem)
-        line.append(el.model)
-        if len(el.params.keys()) == 0:
-            line += ['','','']
-        else:
-            keys = list(el.params.keys())
-            for i in range(len(keys)):
-                if i == 0:
-                    line.append(keys[i])
-                    line.append(el.params[keys[i]])
-                    line.append(fullSubs(el.params[keys[i]], circuitObject.parDefs))
-                    linesList.append(line)
-                else:
-                    line = ['','','','']
-                    line.append(keys[i])
-                    line.append(el.params[keys[i]])
-                    line.append(fullSubs(el.params[keys[i]], circuitObject.parDefs))
-                    linesList.append(line)
-    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
-    return TEX
-
-def parDefs2TEX(circuitObject, label='', caption='', color="myyellow"):
-    """
-    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
-    
-    If no label AND no caption are given this method returns a LaTeX
-    tabular snippet. Else it returns a table snippet.
-    
-    The table shows the parameter definitions of <circuitObject>.
-
-    A label can be given as reference.
-
-    :param circuitObject: SLiCAP circuit object.
-    :type circuitObject: SLiCAP.SLiCAPprotos.circuit
-
-    :param label: Reference to this table; defaults to ''
-    :type label: str
-
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    if len(circuitObject.parDefs) > 0:
-        headerList  = ["Name", "Symbolic", "Numeric"]
+        :param circuitObject: SLiCAP circuit object that comprises the circuit 
+                              data to be listed.
+        :type circuitObject: SLiCAP.SLiCAPprotos.circuit
+        
+        :param label: Reference label for the table. Defaults to an empty 
+                      string.
+        :type label: str
+        
+        :param caption: Text that will used as table caption.
+        :type caption: str
+                
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        headerList = ["ID", "Nodes", "Refs", "Model", "Param", "Symbolic", 
+                      "Numeric"]
+        alignstring= '[c]{lllllll}'
         linesList   = []
-        alignstring = '[c]{llr}'
-        TEX = ''
-        for parName in circuitObject.parDefs.keys():
-            line = [parName,
-                circuitObject.parDefs[parName],
-                fullSubs(circuitObject.parDefs[parName], circuitObject.parDefs)]
-            linesList.append(line)
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
-    else:
-        TEX = "{\\textbf{No parameter definitions in: " +  circuitObject.title + '}}\n\n'
-    return TEX
-
-def dict2TEX(dct, head=None, label='', caption='', color="myyellow"):
-    """
-    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
-    The table comprises a column with the keys of <dct> and a column with dct[<key>].
-
-    A table caption caption and a label can be given.
-
-    :param dct: Dictionary with data to be displayed in a table.
-    :type dct: dict
-
-    :param head: List with names for the 'key' and the 'value' columns, respectively.
-                 List items will be converted to string.
-    :type head: list
+        for key in circuitObject.elements.keys():
+            el = circuitObject.elements[key]
+            line = [key]
+            lineItem = ''
+            for node in el.nodes:
+                lineItem += node + ' '
+            line.append(lineItem)
     
-    :param label: Reference to this table; defaults to ''
-    :type label: str
-
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    TEX = None
-    if len(dct.keys()) > 0:
-        if type(head) == list and len(head) == 2:
-            headerList = [str(head[0]), str(head[1])]
-        else: 
-            headerList  = ["", ""]
-        linesList   = []
-        alignstring = '[c]{ll}'
-        for key in dct.keys():
-            line = [key, dct[key]]
-            linesList.append(line)
-        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
-    return TEX
-
-def params2TEX(circuitObject, label='', caption = '', color="myyellow"):
-    """
-    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
-    The table comprises a column with names of undefined parameters of <circuitObject>.
-
-    The caption reads 'Undefined parameters in: : <circuitObject.title>. <caption>.
-
-    A label can be given as reference.
-
-    :param circuitObject: SLiCAP circuit object.
-    :type circuitObject: SLiCAP.SLiCAPprotos.circuit
-
-    :param label: Reference to this table; defaults to ''
-    :type label: str
-
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    if len(circuitObject.params) > 0:
-        TEX         = '{\\textbf{Undefined parameters in: ' + circuitObject.title + '}}\n\n'
-        headerList  = ["Name"]
-        alignstring = '[c]{l}'
-        linesList   = []
-        for parName in circuitObject.params:
-            linesList.append([parName])
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
-    else:
-        TEX = '{\\textbf{No undefined parameters in: ' +  circuitObject.title + '}}\n\n'
-    return TEX
-
-def pz2TEX(resultObject, label='', caption='', color="myyellow"):
-    """
-    Creates and return a LaTeX table with poles, zeros, or poles and zeros that
-    can be included in a LaTeX document. If the data type is 'pz' the zero-
-    frequency value of the gain will be displayed in the caption of the table.
-
-    A label can be given as reference.
-
-    :param label: Reference to this table; defaults to ''
-    :type label: str
-
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-
-    """
-    if resultObject.errors != 0:
-        print("pz2TEX: Errors found in instruction.")
-        TEX = ''
-    elif resultObject.dataType != 'poles' and resultObject.dataType != 'zeros' and resultObject.dataType != 'pz':
-        print("pz2TEX: Error: 'pz2RST()' expected dataType: 'poles', 'zeros', or 'pz', got: '{0}'.".format(resultObject.dataType))
-        TEX = ''
-    elif resultObject.step == True :
-        print("pz2TEX: Error: parameter stepping not implemented for 'pz2RST()'.")
-        TEX = ''
-    else:
-        TEX = ''
-        if len(resultObject.poles) != 0:
-            numericPoles = _checkNumeric(resultObject.poles)
-        else:
-            numericPoles = True
-        if len(resultObject.zeros) != 0:
-            numericZeros = _checkNumeric(resultObject.zeros)
-        else:
-            numericZeros = True
-        if numericPoles and numericZeros:
-            numeric = True
-        else:
-            numeric = False
-        if numeric:
-            alignstring = '[c]{lrrrrr}'
-            if ini.hz == True:
-                headerList = ['\\#', 'Re [Hz]', 'Im [Hz]', 'f [Hz]', 'Q']
+            lineItem = ''
+            for ref in el.refs:
+                lineItem += ref + ' '
+            line.append(lineItem)
+            line.append(el.model)
+            if len(el.params.keys()) == 0:
+                line += ['','','']
             else:
-                headerList = ['\\#', 'Re [rad/s]', 'Im [rad/s]', '$\\omega$ [rad/s]', 'Q']
-        else:
+                keys = list(el.params.keys())
+                for i in range(len(keys)):
+                    if i == 0:
+                        line.append(keys[i])
+                        line.append(el.params[keys[i]])
+                        line.append(fullSubs(el.params[keys[i]], 
+                                             circuitObject.parDefs))
+                        linesList.append(line)
+                    else:
+                        line = ['','','','']
+                        line.append(keys[i])
+                        line.append(el.params[keys[i]])
+                        line.append(fullSubs(el.params[keys[i]], 
+                                             circuitObject.parDefs))
+                        linesList.append(line)
+        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                 label=label, caption=caption, color=color)
+        return Snippet(TEX, self.format)
+
+    def parDefs(self, circuitObject, label="", caption="", color="myyellow"):
+        """
+        Creates a table with parameter definitions of *circuitObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
+
+        :param circuitObject: SLiCAP circuit object that comprises the circuit
+                              data to be listed.
+        :type circuitObject: SLiCAP.SLiCAPprotos.circuit
+        
+        :param label: Reference label for the table. Defaults to an empty 
+                      string.
+        :type label: str
+        
+        :param caption: Text that will used as table caption.
+        :type caption: str
+        
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        
+        headerList = ["ID", "Nodes", "Refs", "Model", "Param", "Symbolic",
+                      "Numeric"]
+        alignstring= '[c]{lllllll}'
+        linesList   = []
+        for key in circuitObject.elements.keys():
+            el = circuitObject.elements[key]
+            line = [key]
+            lineItem = ''
+            for node in el.nodes:
+                lineItem += node + ' '
+            line.append(lineItem)
+    
+            lineItem = ''
+            for ref in el.refs:
+                lineItem += ref + ' '
+            line.append(lineItem)
+            line.append(el.model)
+            if len(el.params.keys()) == 0:
+                line += ['','','']
+            else:
+                keys = list(el.params.keys())
+                for i in range(len(keys)):
+                    if i == 0:
+                        line.append(keys[i])
+                        line.append(el.params[keys[i]])
+                        line.append(fullSubs(el.params[keys[i]], 
+                                             circuitObject.parDefs))
+                        linesList.append(line)
+                    else:
+                        line = ['','','','']
+                        line.append(keys[i])
+                        line.append(el.params[keys[i]])
+                        line.append(fullSubs(el.params[keys[i]], 
+                                             circuitObject.parDefs))
+                        linesList.append(line)
+        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                 label=label, caption=caption, color=color)
+        return Snippet(TEX, self.format)
+
+    def dictTable(self, dct, head=None, label="", caption="", 
+                  color="myyellow"):
+        """
+        Creates a table from a dictionary; optionally with a header.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
+
+        :param dct: Dictionary with key-value pairs.
+        :type circuitObject: dict
+        
+        :param head: List with names for the key column and the value column, 
+                     respectively. List items will be converted to string.
+        :type head: list
+        
+        :param label: Reference label for the table. Defaults to an empty 
+                      string.
+        :type label: str
+        
+        :param caption: Text that will used as table caption.
+        :type caption: str
+                
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        
+        :example:
+            
+        >>> import SLiCAP as sl
+        >>> 
+        >>> sl.initProject("Documentation")
+        >>> ltx = sl.LaTeXformatter()
+        >>> header = ["name", "age"]
+        >>> data   = {"John": 89, Mary: 104}
+        >>> ltx.dictTable(data, head=header, caption="Some of my friends").save("friends")
+        """
+        TEX = None
+        if len(dct.keys()) > 0:
+            if type(head) == list and len(head) == 2:
+                headerList = [str(head[0]), str(head[1])]
+            else: 
+                headerList  = ["", ""]
+            linesList   = []
             alignstring = '[c]{ll}'
-            if ini.hz == True:
-                headerList = ['\\#', 'f [Hz]']
-            else:
-                headerList = ['\\#', '$\\omega$ [rad/s]']
-        linesList = []
-        if len(resultObject.poles) != 0:
-            if numeric:
-                linesList += _numRoots2TEX(resultObject.poles, ini.hz, 'p')
-            else:
-                linesList = _symRoots2TEX(resultObject.poles, ini.hz, 'p')
-        if len(resultObject.zeros) != 0:
-            if resultObject.dataType == 'pz':
-                linesList += [' ']
-            if numeric:
-                linesList += _numRoots2TEX(resultObject.zeros, ini.hz, 'z')
-            else:
-                linesList = _symRoots2TEX(resultObject.zeros, ini.hz, 'z')
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
-    return TEX
-
-def noiseContribs2TEX(resultObject, label='', caption='', color="myyellow"):
-    """
-    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
-
-    The table comprises the values of the noise sources and their contributions
-    to the detector-referred noise and the source-referred noise. The latter
-    only if a signal source has been specified.
-
-    The caption reads 'Noise contributions. '<caption>.
-
-    A label can be given as reference.
-
-    :param resultObject: SLiCAP execution result object.
-    :type resultObject: SLiCAP.SLiCAPprotos.allResults
-
-    :param label: Reference to this table; defaults to ''
-    :type label: str
+            for key in dct.keys():
+                line = [key, dct[key]]
+                linesList.append(line)
+            TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                     label=label, caption=caption, 
+                                     color=color)
+        return Snippet(TEX, self.format)
     
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
+    def params(self, circuitObject, label="", caption="", color="myyellow"):
+        """
+        Creates a table with undefined parameters of *circuitObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    TEX = ''
-    if resultObject.dataType == 'noise' and resultObject.step == False:
-        detunits = resultObject.detUnits + '**2/Hz'
-        if resultObject.srcUnits != None:
-            srcunits = resultObject.srcUnits + '**2/Hz'
-        # Add a table for source contributions
-        linesList = []
-        alignstring = '[c]{lll}'
-        headerList = ['Name', 'Value' , 'Units']
-        linesList = []
-        for src in resultObject.onoiseTerms.keys():
-            if src[0].upper() == 'I':
-                units = 'A**2/Hz'
-            elif src[0].upper() == 'V':
-                units = 'V**2/Hz'
-            #units = sp.sympify(units)
-            line = [src + ': Value' , resultObject.snoiseTerms[src], units]
-            linesList.append(line)
-            if resultObject.srcUnits != None:
-                line = [src + ': Source-referred', resultObject.inoiseTerms[src], srcunits]
-                linesList.append(line)
-            line = [src + ': Detector-referred', resultObject.onoiseTerms[src], detunits]
-            linesList.append(line)
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, 
-                                  caption=caption, label=label, color=color)
-    else:
-        print('noiseContribs2TEX: Error: wrong data type, or stepped analysis.')
-    return TEX
-
-def dcvarContribs2TEX(resultObject, caption='', label='', color="myyellow"):
-    """
-    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
-
-    The table comprises the values of the dcvar sources and their contributions
-    to the detector-referred dc variance and the source-referred dc variance.
-    The latter only if a signal source has been specified.
-
-    The caption reads 'DC variance contributions '<caption>.
-
-    A label can be given as reference.
-
-    :param resultObject: SLiCAP execution result object.
-    :type resultObject: SLiCAP.SLiCAPprotos.allResults
-
-    :param label: Reference to this table; defaults to ''
-    :type label: str
-
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    TEX = ''
-    if resultObject.dataType == 'dcvar' and resultObject.step == False:
-        detUnits = resultObject.detUnits + '**2'
-        if resultObject.srcUnits != None:
-            srcUnits = resultObject.srcUnits + '**2'
+        :param circuitObject: SLiCAP circuit object that comprises the circuit 
+                              data to be listed.
+        :type circuitObject: SLiCAP.SLiCAPprotos.circuit
+        
+        :param label: Reference label for the table. Defaults to an empty 
+                      string.
+        :type label: str
+        
+        :param caption: Text that will used as table caption.
+        :type caption: str
+        
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        if len(circuitObject.params) > 0:
+            TEX         = '{\\textbf{Undefined parameters in: ' 
+            TEX        += circuitObject.title + '}}\n\n'
+            headerList  = ["Name"]
+            alignstring = '[c]{l}'
+            linesList   = []
+            for parName in circuitObject.params:
+                linesList.append([parName])
+            TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                      label=label, caption=caption, 
+                                      color=color)
         else:
-            srcUnits = ""
-        # Add a table for source contributions
-        linesList = []
-        alignstring = '[c]{lll}'
-        headerList = ['Name', 'Value' , 'Units']
-        linesList = []
-        for src in resultObject.ovarTerms.keys():
-            if src[0].upper() == 'I':
-                units = 'A**2'
-            elif src[0].upper() == 'V':
-                units = 'V**2'
-            #units = sp.sympify(units)
-            line = [src + ': Value' , resultObject.svarTerms[src], units]
-            linesList.append(line)
+            TEX = '{\\textbf{No undefined parameters in: ' 
+            TEX +=  circuitObject.title + '}}\n\n'
+        return Snippet(TEX, self.format)
+
+    def pz(self, resultObject, label="", caption="", color="myyellow"):
+        """
+        Creates a table or tables with results of pole/zero analysis stored in *resultObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
+
+        :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
+        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :param caption: Text that will used as table caption(s).
+        :type caption: str
+        
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        if resultObject.errors != 0:
+            print("pz2TEX: Errors found in instruction.")
+            TEX = ''
+        elif resultObject.dataType != 'poles' and resultObject.dataType != 'zeros' and resultObject.dataType != 'pz':
+            print("pz2TEX: Error: 'pz2RST()' expected dataType: 'poles', 'zeros', or 'pz', got: '{0}'.".format(resultObject.dataType))
+            TEX = ''
+        elif resultObject.step == True :
+            print("pz2TEX: Error: parameter stepping not implemented for 'pz2RST()'.")
+            TEX = ''
+        else:
+            TEX = ''
+            if len(resultObject.poles) != 0:
+                numericPoles = _checkNumeric(resultObject.poles)
+            else:
+                numericPoles = True
+            if len(resultObject.zeros) != 0:
+                numericZeros = _checkNumeric(resultObject.zeros)
+            else:
+                numericZeros = True
+            if numericPoles and numericZeros:
+                numeric = True
+            else:
+                numeric = False
+            if numeric:
+                alignstring = '[c]{lrrrrr}'
+                if ini.hz == True:
+                    headerList = ['\\#', 'Re [Hz]', 'Im [Hz]', 'f [Hz]', 'Q']
+                else:
+                    headerList = ['\\#', 'Re [rad/s]', 'Im [rad/s]', '$\\omega$ [rad/s]', 'Q']
+            else:
+                alignstring = '[c]{ll}'
+                if ini.hz == True:
+                    headerList = ['\\#', 'f [Hz]']
+                else:
+                    headerList = ['\\#', '$\\omega$ [rad/s]']
+            linesList = []
+            if len(resultObject.poles) != 0:
+                if numeric:
+                    linesList += _numRoots2TEX(resultObject.poles, ini.hz, 'p')
+                else:
+                    linesList = _symRoots2TEX(resultObject.poles, ini.hz, 'p')
+            if len(resultObject.zeros) != 0:
+                if resultObject.dataType == 'pz':
+                    linesList += [' ']
+                if numeric:
+                    linesList += _numRoots2TEX(resultObject.zeros, ini.hz, 'z')
+                else:
+                    linesList = _symRoots2TEX(resultObject.zeros, ini.hz, 'z')
+            TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                      label=label, caption=caption, 
+                                      color=color)
+        return Snippet(TEX, self.format)
+
+    def noiseContribs(self, resultObject, label="", caption="", color="myyellow"):
+        """
+        Creates a table with results of noise analysis stored in *resultObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
+
+        :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
+        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :param caption: Text that will used as table caption(s).
+        :type caption: str
+                
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        TEX = ''
+        if resultObject.dataType == 'noise' and resultObject.step == False:
+            detunits = resultObject.detUnits + '**2/Hz'
             if resultObject.srcUnits != None:
-                line = [src + ': Source-referred', resultObject.ivarTerms[src], srcUnits]
+                srcunits = resultObject.srcUnits + '**2/Hz'
+            # Add a table for source contributions
+            linesList = []
+            alignstring = '[c]{lll}'
+            headerList = ['Name', 'Value' , 'Units']
+            linesList = []
+            for src in resultObject.onoiseTerms.keys():
+                if src[0].upper() == 'I':
+                    units = 'A**2/Hz'
+                elif src[0].upper() == 'V':
+                    units = 'V**2/Hz'
+                #units = sp.sympify(units)
+                line = [src + ': Value' , resultObject.snoiseTerms[src], units]
                 linesList.append(line)
-            line = [src + ': Detector-referred', resultObject.ovarTerms[src], detUnits]
-            linesList.append(line)
-        TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=2, 
-                                  caption=caption, label=label, color=color)
-    else:
-        print('dcvarContribs2TEX: Error: wrong data type, or stepped analysis.')
-    return TEX
+                if resultObject.srcUnits != None:
+                    line = [src + ': Source-referred', 
+                            resultObject.inoiseTerms[src], srcunits]
+                    linesList.append(line)
+                line = [src + ': Detector-referred', 
+                        resultObject.onoiseTerms[src], detunits]
+                linesList.append(line)
+            TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                      unitpos=2, caption=caption, 
+                                      label=label, color=color)
+        else:
+            print('noiseContribs2TEX: Error: wrong data type, or stepped analysis.')
+        return Snippet(TEX, self.format)
 
-def specs2TEX(specs, specType, label='', caption='', color="myyellow"):
-    """
-    Creates and returns a LaTeX table with specifications that can be included
-    in a LaTeX document.
+    def dcvarContribs(self, resultObject, label="", caption="", color="myyellow"):
+        """
+        Creates a table with results of dcvar analysis stored in *resultObject*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
-    If a list with specification types is provided, it creates tables
-    for specified types only. By default, tables for all types will be created.
+        :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
+        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :param caption: Text that will used as table caption(s).
+        :type caption: str
+                
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        TEX = ''
+        if resultObject.dataType == 'dcvar' and resultObject.step == False:
+            detUnits = resultObject.detUnits + '**2'
+            if resultObject.srcUnits != None:
+                srcUnits = resultObject.srcUnits + '**2'
+            else:
+                srcUnits = ""
+            # Add a table for source contributions
+            linesList = []
+            alignstring = '[c]{lll}'
+            headerList = ['Name', 'Value' , 'Units']
+            linesList = []
+            for src in resultObject.ovarTerms.keys():
+                if src[0].upper() == 'I':
+                    units = 'A**2'
+                elif src[0].upper() == 'V':
+                    units = 'V**2'
+                #units = sp.sympify(units)
+                line = [src + ': Value' , resultObject.svarTerms[src], units]
+                linesList.append(line)
+                if resultObject.srcUnits != None:
+                    line = [src + ': Source-referred', 
+                            resultObject.ivarTerms[src], srcUnits]
+                    linesList.append(line)
+                line = [src + ': Detector-referred', 
+                        resultObject.ovarTerms[src], detUnits]
+                linesList.append(line)
+            TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                      unitpos=2, caption=caption, label=label, 
+                                      color=color)
+        else:
+            print('dcvarContribs2TEX: Error: wrong data type, or stepped analysis.')
+        return Snippet(TEX, self.format)
 
-    :param specs: List with spec items.
-    :type specs:  list
+    def specs(self, specs, specType, label="", caption="", color="myyellow"):
+        """
+        Creates a table with specifications of type *specType*.
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
-    :param specType: Type of specification.
-    :type specType: str
+        :param specs: List with SLiCAP.SLiCAPdesignData.specItem objects.
+        :type specs: list
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :param caption: Table caption.
+        :type caption: str
+        
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        linesList   = []
+        alignstring = '[c]{llrl}'
+        headerList  = ["name", "description", "value", "units"]
+        for specItem in specs:
+            if specItem.specType.lower() == specType.lower():
+                linesList.append(specItem._specLine())
+        if len(linesList) > 0:
+            TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                     unitpos=3, caption=caption, label=label, 
+                                     color=color) + '\n'
+        else:
+            TEX =  "\\textbf{Found no specifications of type: " 
+            TEX += specType + ".}\n\n"
+        return Snippet(TEX, self.format)
 
-    :param label: Reference to this table; defaults to ''
-    :type label: str
+    def eqn(self, LHS, RHS, units="", label="", multiline=False):
+        """
+        Creates a displayed (numbered) equation.
 
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
+        :param LHS: Left hand side of the equation.
+        :type LHS: str, sympy.Symbol, sympy.Expr
 
-    :return: LaTeX snippet to be included in a LaTeX document.
-    :rtype: str
-    """
-    linesList   = []
-    alignstring = '[c]{llrl}'
-    headerList  = ["name", "description", "value", "units"]
-    for specItem in specs:
-        if specItem.specType.lower() == specType.lower():
-            linesList.append(specItem._specLine())
-    if len(linesList) > 0:
-        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=3, caption=caption, label=label, color=color) + '\n'
-    else:
-        TEX =  "\\textbf{Found no specifications of type: " + specType + ".}\n\n"
-    return TEX
+        :param RHS: Right hand side of the equation.
+        :type RHS: sympy.Symbol, sympy.Expr
 
-def eqn2TEX(LHS, RHS, units='', label='', multiline=0):
-    """
-    Returns a LaTeX snippet of a displayed equation with dimension and reference
-    label.
+        :param units: Units
+        :type units: str
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :param multiline: True breaks the equation over multiple lines
+        :type multiline: Bool
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        
+        :example:
+            
+        >>> import SLiCAP as sl
+        >>> import sympy as sp
+        >>>
+        >>> ltx = sl.LaTeXformatter()
+        >>> lhs = sp.sympify("e^(1j*pi)")
+        >>> rhs = sp.N(-1)
+        >>> ltx.eqn(lhs, rhs, label="nice_eqn").save("nice_eqn")
+        """
+        try:
+            units = units2TeX(units)
+        except:
+            units = ''
+        if type(LHS) == str:
+            LHS = sp.sympify(LHS)
+        if type(RHS) == str:
+            RHS = sp.sympify(RHS)
+        if multiline:
+            TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), 
+                                            terms_per_line=multiline)
+            TEX = TEX.replace('\\\\\n', '\\nonumber \\\\\n')
+            TEX = TEX.replace('{align*}', '{align}')
+            if units != '':
+                units = '\\,\\left[\\mathrm{' + units + '}\\right]'
+                TEX = TEX.replace('\\end{align}', '%s\n\\end{align}'%(units))
+            if label != '':
+                TEX = TEX.replace('\\end{align}', '\\label{%s}\n\\end{align}'%(label))
+            TEX += '\n'
+        else:
+            TEX = '\\begin{equation}'
+            TEX += '\n' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
+            if units != '':
+                TEX += '\\,\\left[\\mathrm{' + units + '}\\right]'
+            TEX += '\n'
+            if label != '':
+                TEX += '\\label{'+ label + '}\n'
+            TEX += '\\end{equation}\n\n'
+        return Snippet(TEX, self.format)
 
-    :param RHS: Right hand side of the equation.
-    :type RHS: str, sympy.Expression, or sympy.Symbol
+    def matrixEqn(self, Iv, M, Dv, label=""):
+        """
+        Creates a displayed matrix equation without evaluating it.
 
-    :param LHS: Left hand side of the equation.
-    :type LHS: str, sympy.Expression, or sympy.Symbol
+        :param Iv: Left hand side of the equation: vector with independent variables
+        :type Iv: sympy.Matrix
 
-    :param units: Dimension
-    :type units: str
+        :param M: Right hand side of the equation: matrix
+        :type M: sympy.Matrix
 
-    :param label: Reference to this equation; defaults to ''
-    :type label: str
-
-    :param multiline: Number of sub-expressions per line, defaults to 0 (single-line equation)
-    :type label: int
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    try:
-        units = units2TeX(units)
-    except:
-        units = ''
-    if type(LHS) == str:
-        LHS = sp.sympify(LHS)
-    if type(RHS) == str:
-        RHS = sp.sympify(RHS)
-    if multiline:
-        TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), terms_per_line=multiline)
-        TEX = TEX.replace('\\\\\n', '\\nonumber \\\\\n')
-        TEX = TEX.replace('{align*}', '{align}')
-        if units != '':
-            units = '\\,\\left[\\mathrm{' + units + '}\\right]'
-            TEX = TEX.replace('\\end{align}', '%s\n\\end{align}'%(units))
-        if label != '':
-            TEX = TEX.replace('\\end{align}', '\\label{%s}\n\\end{align}'%(label))
-        TEX += '\n'
-    else:
-        TEX = '\\begin{equation}'
-        TEX += '\n' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
-        if units != '':
-            TEX += '\\,\\left[\\mathrm{' + units + '}\\right]'
-        TEX += '\n'
+        :param Dv: Righthand side of the equation: vector with dependent variables
+        :type Dv: sympy.Matrix
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        TEX =  '\\begin{equation}\n'
+        TEX += sp.latex(roundN(Iv)) + '=' + sp.latex(roundN(M)) + '\\cdot ' 
+        TEX += sp.latex(roundN(Dv)) + '\n'
         if label != '':
             TEX += '\\label{'+ label + '}\n'
         TEX += '\\end{equation}\n\n'
-    return TEX
+        return Snippet(TEX, self.format)
 
-def matrices2TEX(Iv, M, Dv, label=''):
-    """
-    Returns a LaTeX snippet of the matrix equation Iv = M.Dv,
+    def stepArray(self, stepVars, stepArray, label="", caption="",
+                  color="myyellow"):
+        """
+        Creates a table with step array values. 
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
 
-    A label can be given for reference.
+        :param stepVars: List with step variables (*str, sympy.Symbol*).
+        :type stepVars: list
+        
+        :param stepArray: List with lists with step values for each step variable
+        :type stepArray: List
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :param caption: Table caption.
+        :type caption: str
+        
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        numVars = len(stepVars)
+        numRuns = len(stepArray[0])
+        headerList = [' '] + stepVars
+        alignString = '[c]{l'
+        for i in range(len(stepVars)):
+            alignString += 'l'
+        alignString += '}'
+        linesList = []
+        for i in range(numRuns):
+            line = ['Run ' + str(i+1) + ':']
+            for j in range(numVars):
+                line.append(stepArray[j][i])
+            linesList.append(line)
+        TEX = _TEXcreateCSVtable(headerList, linesList, alignString, 
+                                 label=label, caption=caption, color=color)
+        return Snippet(TEX, self.format)
 
-    :param Iv: (n x 1) matrix with independent variables.
-    :type Iv: sympy.Matrix
+    def coeffsTransfer(self, transferCoeffs, label="", caption="", 
+                       color="myyellow"):
+        """
+        Creates a tablestable that displays the numerator and denominator 
+        coefficients of a rational expression. 
+        If no label AND no caption are given this method returns a LaTeX
+        tabular snippet. Else it returns a table snippet.
+        
+        :param stepVars: List with step variables (*str, sympy.Symbol*).
+        :type stepVars: list
+        
+        :param stepArray: List with lists with step values for each step variable
+        :type stepArray: List
+        
+        :param label: Reference label for the table. Defaults to an empty string.
+        :type label: str
+        
+        :param caption: Table caption.
+        :type caption: str
+        
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+        :type color: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        
+        :example:
+            
+        >>> import SLiCAP as sl
+        >>> import sympy as sp
+        >>>
+        >>> ltx  = sl.LaTeXformatter()
+        >>> expr = sp.sympify("A_0*(1+s*b_1)/(((1+s*a_1))*((1+s*a_2)))")
+        >>> tr_coeffs = sl.coeffsTransfer(expr)
+        >>> ltx.coeffsTransfer(tr_coeffs, 
+                               label="tab-coeffs",
+                               caption = "numerator and denominator " +
+                               "coefficients").save("coeffs")
+        """
+        (gain, numerCoeffs, denomCoeffs) = transferCoeffs
+        num, den = gain.as_numer_denom()
+        for i in range(len(numerCoeffs)):
+            numerCoeffs[i] *= num
+        for i in range(len(denomCoeffs)):
+            denomCoeffs[i] *= den
+        alignstring = '[c]{ll}'
+        headerList = ['Coeff', 'Value']
+        linesList = []
+        for i in range(len(numerCoeffs)):
+            linesList.append([sp.sympify('b_' + str(i)), numerCoeffs[i]])
+        for i in range(len(denomCoeffs)):
+            linesList.append([sp.sympify('a_' + str(i)), denomCoeffs[i]])
+        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                 label=label, caption=caption, color=color)
+        return Snippet(TEX, self.format)
 
-    :param M: (n x n) matrix.
-    :type M: sympy.Matrix
+    def file(
+        self, fileName, lineRange=None, firstNumber=None, language=None, 
+        style=None):
+        """
+        Creates a LaTeX `\\input{}` command for literally displaying a file.
+        
+        :param fileName: Name of the file. Path is absolute or relative to the 
+                         project directory
+        :type fileName: str
+        
+        :param lineRange: range of lines to be included
+        :type lineRange: str
+        
+        :param firstNumber: start number of the displayed line numbers
+        :type firstNumber: str
+        
+        :param language: SLiCAP built-in languages:
+                         
+                         - ltspice
+                         
+        :type language: str
+        
+        :param style: SLiCAP built-in styles:
+                         
+                         - slicap
+                         - latex
+                         
+        :type style: str
+        
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        short_name = PureWindowsPath(fileName).parts[-1]
+        fileName   = fileName.replace("_", "\\_")
+        short_name = short_name.replace("_", "\\_")
+        TEX = '{\\textbf{File:} ' + short_name + '}\n\n'
+        
+        if type(language) == str and len(language) > 0:
+            TEX += '\\lstinputlisting[language=%s, numbers=left'%(language)
+        elif type(style) == str and len(style) > 0:
+            TEX += '\\lstinputlisting[style=%s, numbers=left'%(style)
+        else:
+            TEX += '\\lstinputlisting[numbers=left'
+        if lineRange != None:
+            TEX += ', linerange={' + lineRange + '}'
+        if firstNumber != None:
+            TEX += ', firstnumber=' + str(int(firstNumber))
+        TEX += ']{' + fileName + '}\n\n'
+        return Snippet(TEX, self.format)
 
-    :param Dv: (n x 1) matrix with dependent variables.
-    :type Dv: sympy.Matrix
+    def expr(self, expr, units=""):
+        """
+        Creates in inline expression. If format='rst', this expression is 
+        stored (name = expr) in the file 'substitutions.rst'. 
+        The location of this file is given in the file:
+            
+        SLiCAP.ini -> [projectpaths] -> rst_snippets
+        
+        :param expr: Expression
+        :type expression: sympy.Expr
+        
+        :param units: Units
+        :type units: str
+        """
+        try:
+            units = units2TeX(units)
+        except:
+           units = ''
+        TEX = '$' + sp.latex(roundN(expr))
+        if units == '':
+            TEX += '$ '
+        else:
+            TEX += '\\left[ \\mathrm{' + units + '} \\right] $ '
+        return Snippet(TEX, self.format)
 
-    :return: LaTeX snippet of the matrix equation.
-    :rtype: str
-    """
-    TEX =  '\\begin{equation}\n'
-    TEX += sp.latex(roundN(Iv)) + '=' + sp.latex(roundN(M)) + '\\cdot ' + sp.latex(roundN(Dv)) + '\n'
-    if label != '':
-        TEX += '\\label{'+ label + '}\n'
-    TEX += '\\end{equation}\n\n'
-    return TEX
-
-def stepArray2TEX(stepVars, stepArray, label='', caption='', color="myyellow"):
-    """
-    Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
-
-    The table shows the step variables and their values as defined for array-type
-    stepping of instructions.
-
-    :param stepVars: List with step variables for array type stepping
-                     (SLiCAPinstruction.instruction.stepVars)
-    :type stepVars: List
-
-    :param stepArray: List of lists: (SLiCAPinstruction.instruction.stepArray)
-    :type stepArray: list
-
-    :param label: Reference to this table; defaults to ''
-    :type label: str
-
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
-
-    :return: TEX: LaTeX table snippet.
-    :rtype: str
-    """
-    numVars = len(stepVars)
-    numRuns = len(stepArray[0])
-    headerList = [' '] + stepVars
-    alignString = '[c]{l'
-    for i in range(len(stepVars)):
-        alignString += 'l'
-    alignString += '}'
-    linesList = []
-    for i in range(numRuns):
-        line = ['Run ' + str(i+1) + ':']
-        for j in range(numVars):
-            line.append(stepArray[j][i])
-        linesList.append(line)
-    TEX = _TEXcreateCSVtable(headerList, linesList, alignString, label=label, caption=caption, color=color)
-    return TEX
-
-def coeffsTransfer2TEX(transferCoeffs, label = '', caption='', color="myyellow"):
-    """
-    Creates and returns a LaTeX table snippet that can be included in a LaTeX
-    document.
-
-    The table displays the  numerator and denominator coefficients of a 
-    rational expression.
-
-    The normalization factor (Gain) is added to the caption.
-
-    A label can be given as reference.
-
-    :param transferCoeffs: List with:
-
-                       #. gain
-                       #. list with numerator coefficients
-                       #. list with denominator coefficients
-
-                       Can be obtained with coeffsTransfer()
-
-    :type transferCoeffs: list
-
-    :param label: Reference to this table; defaults to ''
-    :type label: str
-
-    :param caption: String that will used as caption; defaults to ''
-    :type caption: str
-
-    :return: LaTeX snippet to be included in a ReStructuredText document.
-    :rtype: str
-    """
-    (gain, numerCoeffs, denomCoeffs) = transferCoeffs
-    num, den = gain.as_numer_denom()
-    for i in range(len(numerCoeffs)):
-        numerCoeffs[i] *= num
-    for i in range(len(denomCoeffs)):
-        denomCoeffs[i] *= den
-    alignstring = '[c]{ll}'
-    headerList = ['Coeff', 'Value']
-    linesList = []
-    for i in range(len(numerCoeffs)):
-        linesList.append([sp.sympify('b_' + str(i)), numerCoeffs[i]])
-    for i in range(len(denomCoeffs)):
-        linesList.append([sp.sympify('a_' + str(i)), denomCoeffs[i]])
-    TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, label=label, caption=caption, color=color)
-    return TEX
-
-def file2TEX(fileName, firstNumber=None, lineRange=None, language=None, style=None):
-    """
-    Converts a SLiCAP script file into a LaTeX string that can be included in
-    a LaTeX document and returns this string.
-
-    :param scriptFile: Name of the script file that resides in the
-                        ini.project_path directory
-    :type scriptFile: str
-
-    :param lineRange: Range of lines to be displayed; e.g. '1-7,10,12'. Defaults
-                      to None (display all lines)
-    :type lineRange: str
-
-    :param firstNumber: Number of the first line to be displayed
-    :type firstNumber: int, float, str
-
-    :return: LaTeX snippet to be included in a LaTeX document
-    :rtype: str
-    """
-    short_name = PureWindowsPath(fileName).parts[-1]
-    fileName   = fileName.replace("_", "\\_")
-    short_name = short_name.replace("_", "\\_")
-    TEX = '{\\textbf{File:} ' + short_name + '}\n\n'
-    
-    if type(language) == str and len(language) > 0:
-        TEX += '\\lstinputlisting[language=%s, numbers=left'%(language)
-    elif type(style) == str and len(style) > 0:
-        TEX += '\\lstinputlisting[style=%s, numbers=left'%(style)
-    else:
-        TEX += '\\lstinputlisting[numbers=left'
-    if lineRange != None:
-        TEX += ', linerange={' + lineRange + '}'
-    if firstNumber != None:
-        TEX += ', firstnumber=' + str(int(firstNumber))
-    TEX += ']{' + fileName + '}\n\n'
-    return TEX
-
-# Public functions for generating snippets to be put in a dictionary for inline
-# substitutions in a TEX file.
-
-def expr2TEX(expr, units=''):
-    """
-    Returns a LaTeX snippet for inline subsitution of an expression in a LaTeX document.
-
-    :param expr: sympy expression for inline substitution.
-    :type expr: sympy.Expression
-
-    :param units: units or dimension, defaults to ''
-    :type units: str
-
-    :return: LaTeX snippet for inline substitution
-    :rtype: str
-    """
-    try:
-        units = units2TeX(units)
-    except:
-       units = ''
-    TEX = '$' + sp.latex(roundN(expr))
-    if units == '':
-        TEX += '$ '
-    else:
-        TEX += '\\left[ \\mathrm{' + units + '} \\right] $ '
-    return TEX
-
-def eqn2TEXinline(LHS, RHS, units=''):
-    """
-    Returns a LaTeX snippet for inline subsitution of an equation in a LaTeX document.
-
-    :param LHS: Left hand side of the equation.
-    :type LHS: sympy.Expression, str
-
-    :param RHS: Right hand side of the equation.
-    :type RHS: sympy.Expression, str
-
-    :param units: units or dimension, defaults to ''
-    :type units: str
-
-    :return: LaTeX snippet for inline substitution
-    :rtype: str
-    """
-    try:
-        units = units2TeX(units)
-    except:
-        units = ''
-    if type(LHS) == str:
-        LHS = sp.sympify(LHS)
-    if type(RHS) == str:
-        RHS = sp.sympify(RHS)
-    TEX = '$' + sp.latex(roundN(LHS)) + '=' + sp.latex(roundN(RHS))
-    if units == '':
-        TEX += '$ '
-    else:
-        TEX += '\\left[ \\mathrm{' + units + '} \\right]$ '
-    return TEX
+    def eqnInline(self, LHS, RHS, units=""):
+        """
+        Creates in inline equation. If format='rst', this equation is 
+        stored (name = equation) in the file 'substitutions.rst'. 
+        The location of this file is given in the file:
+            
+        SLiCAP.ini -> [projectpaths] -> rst_snippets
+        
+        :param LHS: Left hand side of the equation
+        :type LHS: sympy.Expr, str
+                
+        :param RHS: Right hand side of the equation
+        :type RHS: sympy.Expr
+        
+        :param units: Units
+        :type units: str
+        """
+        try:
+            units = units2TeX(units)
+        except:
+            units = ''
+        if type(LHS) == str:
+            LHS = sp.sympify(LHS)
+        if type(RHS) == str:
+            RHS = sp.sympify(RHS)
+        TEX = '$' + sp.latex(roundN(LHS)) + '=' + sp.latex(roundN(RHS))
+        if units == '':
+            TEX += '$ '
+        else:
+            TEX += '\\left[ \\mathrm{' + units + '} \\right]$ '
+        return Snippet(TEX, self.format)
 
 # Non-public functions for creating table snippets
 
@@ -805,7 +944,7 @@ def _symRoots2TEX(roots, Hz, pz):
         i += 1
         if Hz == True:
             line = [sp.Symbol(pz + '_' + str(i)), 
-                    '$' + sp.latex(roundN(sp.simplify(root/2/sp.pi))) + '$']
+                    '$' + sp.latex(roundN(root/2/sp.pi)) + '$']
         else:
             line = [sp.Symbol(pz + '_' + str(i)), '$' + sp.latex(roundN(root)) + '$']
         lineList.append(line)

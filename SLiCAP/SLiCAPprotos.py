@@ -6,6 +6,8 @@ SLiCAP module with basic SLiCAP classes and functions.
 
 from sympy import N
 import sys
+import os
+from pathlib import Path
 import SLiCAP.SLiCAPconfigure as ini
 from sympy import Symbol
 from collections import namedtuple
@@ -936,3 +938,112 @@ class allResults(object):
         return [str(var) for var in self.Dv]
     
 _MODELS, _DEVICES = _initAll()
+
+# Prefix and suffix for files depending on format
+
+_Entry = namedtuple("_Entry", ["prefix", "suffix"])
+_FORMATS: dict[str, tuple[str, str]] = {
+    "raw"   : _Entry("", ""),
+    "latex" : _Entry(ini.tex_snippets,  ".tex"),
+    "rst"   : _Entry(ini.rst_snippets,  ".rst"),
+    "myst"  : _Entry(ini.myst_snippets, ".md"),
+    "md"    : _Entry(ini.md_snippets,   ".md"),
+    "html"  : _Entry(ini.html_snippets, ".html"),
+}
+
+class Snippet:
+    """
+    Text snippet created by the formatters.
+    """
+    def __init__(self, snippet: str = "", format: None | str = None, mode="w") -> None:
+        self._snippet = snippet
+        self.mode     = mode
+        if format is None:
+            self._format = "raw"
+            self._prefix, self._suffix = _FORMATS[self._format]
+        else:
+            try:
+                self._prefix, self._suffix = _FORMATS[format]
+                self._format = format
+            except KeyError:
+                raise KeyError(f"Unknown formatting: {format}.")
+
+    @property
+    def snippet(self):
+        """
+        Will be set by the formatter method.
+        """
+        return self._snippet
+
+    @property
+    def format(self):
+        """
+        Will be set by the formatter method.
+        """
+        return self._format
+
+    def __str__(self):
+        return self._snippet
+
+    def __repr__(self):
+        return f'Snippet("{self.snippet}", format="{self.format}")'
+
+    def save(self, filenameOrPath: str | Path):
+        """
+        Saves the snippet.
+
+        If the path is absolute, it saves it in that location.
+        Otherwise, the preffix and suffix are added according to format:
+            
+        - latex
+        
+          - prefix: project folder -> SLiCAP.ini -> [projectpaths] -> tex_snippets
+          - suffix: '.tex'
+              
+        - rst
+        
+          - prefix: project folder -> SLiCAP.ini -> [projectpaths] -> rst_snippets
+          - suffix: '.rst'    
+          - expressions and inline equations are appended to the file as:
+            
+            \|<variable name>\| = <expr>\|<inline equation>
+          
+        - myst
+        
+          - prefix: project folder -> SLiCAP.ini -> [projectpaths] -> myst_snippets
+          - suffix: '.md'
+              
+        - html
+        
+          - prefix: project folder -> SLiCAP.ini -> [projectpaths] -> html_snippets
+          - suffix: '.html
+
+        - md
+        
+          - prefix: project folder -> SLiCAP.ini -> [projectpaths] -> md_snippets
+          - suffix: '.md'
+          
+        """
+        if self.snippet != None:
+            if not filenameOrPath:
+                raise ValueError("No filename given to save snippet.")
+            if self.mode.lower() not in ["a", "w"]:
+                raise ValueError("Mode must be 'a' or 'w'.")
+            if isinstance(filenameOrPath, Path):
+                filenameOrPath = str(filenameOrPath)
+            if os.path.isabs(filenameOrPath):
+                filePath = filenameOrPath
+            else:
+                filePath = self._prefix + filenameOrPath + self._suffix
+            with open(filePath, self.mode) as f:
+                f.write(self.snippet)
+        
+class _BaseFormatter:
+    """
+    Formatter base class.
+    Does not implement functionality, but it should define a minimum
+    interface via NotImplementedError that all formatters should support.
+    """
+
+    def __init__(self):
+        pass

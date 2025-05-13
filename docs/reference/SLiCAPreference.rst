@@ -15,12 +15,13 @@ This reference only describes SLiCAP modules with objects and functions that are
    SLiCAP
    SLiCAPconfigure
    SLiCAPdesignData
-   SLiCAPformatter
    SLiCAPhtml
    SLiCAPkicad
+   SLiCAPlatex
    SLiCAPltspice
    SLiCAPmath
    SLiCAPngspice
    SLiCAPplots
    SLiCAPprotos
+   SLiCAPrst
    SLiCAPshell
