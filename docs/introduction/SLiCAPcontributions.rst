@@ -14,7 +14,7 @@ If you would like to contribute to SLiCAP please `Mail us <mailto:anton@montagne
     
 #. Charles White
 
-   Developed the `Frequency Constants Module <../reference/SLiCAPfc.html#module-SLiCAP.SLiCAPfc>`__ and the `State Space Module <../reference/SLiCAPstatespace.html#module-SLiCAP.SLiCAPstatespace>`__.
+   Charles is currently working on new algorithms for the determination of transfer functions in networks.
    
    Charles is the current maintainer of the `SLiCAP_python git repository <https://github.com/SLiCAP/SLiCAP_python>`_
    

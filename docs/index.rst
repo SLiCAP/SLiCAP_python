@@ -5,6 +5,8 @@
 SLiCAP Manual
 =============
 
+SLiCAP is a **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram, intended to set-up and solve Analog circuit design equations, written in Python.
+
 SLiCAP is distributed under the `MIT license <https://opensource.org/license/mit>`_
 
 --------
@@ -16,6 +18,6 @@ Contents
 
    introduction/SLiCAPintroduction
    userguide/SLiCAPuserguide
+   tutorials/SLiCAPtutorials
    syntax/SLiCAPnetlistSyntax
    reference/SLiCAPreference
-   tutorials/SLiCAPtutorials

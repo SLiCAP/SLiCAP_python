@@ -768,7 +768,7 @@ def _checkElementModel(circuitObject):
     elementNames = list(circuitObject.elements.keys())
     for i in range(len(elementNames)):
         elType  = circuitObject.elements[elementNames[i]].type
-        if elType != 'X':
+        if type(circuitObject.elements[elementNames[i]].model) != circuit and elType != 'X':
             circuitObject = _checkElementModelParams(circuitObject, circuitObject.elements[elementNames[i]])
         else:
             circuitObject = _checkSubCircuitElementModelParams(circuitObject, circuitObject.elements[elementNames[i]])

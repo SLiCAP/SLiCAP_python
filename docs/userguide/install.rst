@@ -10,39 +10,31 @@ Requirements
 #. You need to have python 3.12+ installed
 #. Under MSWindows it is strongly advised to install Python under `Anaconda <https://www.anaconda.com/download>`_
 
-SLiCAP requires the Python3 packages listed in `https://github.com/SLiCAP/SLiCAP_python/requirements.txt <https://github.com/SLiCAP/SLiCAP_python/blob/main/requirements.txt>`_.
-
-Download SLiCAP
-===============
-
-- Open a command window or terminal in a folder where you want to store the downloaded files and clone `SLiCAP <https://github.com/SLiCAP/SLiCAP_python <https://github.com/SLiCAP/SLiCAP_python>`_ into that folder:
-
-.. code-block:: bash
-
-   git clone https://github.com/SLiCAP/SLiCAP_python
-
-or 
-
-- Download the zip file from: `SLiCAP <https://github.com/SLiCAP/SLiCAP_python <https://github.com/SLiCAP/SLiCAP_python>`_ and extract it in some folder.
-
 Install SLiCAP
 ==============
 
 - If you work with Anaconca open the *Anaconda Prompt* 
 - If you have Python installed under Windows, open a terminal by running the command *cmd*
 - If you have Python installed under Linux or mac Open a *terminal*
-- Navigate to the folder with the file *setup.py* (usually: *<where_you_downloaded_or_cloned>/SLiCAP_python-master/)* and enter the command:
+- Enter:
 
   .. code-block:: python
 
-     python -m pip install .
+     pip install slicap
 
-  Dont forget the dot '**.**' at the end!
+Upgrade SLiCAP
+==============
 
-  This wil install:
+If you have SLiCAP installed and you want to upgrade to the latest version:
 
-  - Required python packages
-  - SLiCAP module scripts, documentation and libraries in the active Python environment
+- If you work with Anaconca open the *Anaconda Prompt* 
+- If you have Python installed under Windows, open a terminal by running the command *cmd*
+- If you have Python installed under Linux or mac Open a *terminal*
+- Enter:
+
+  .. code-block:: python
+
+     pip install slicap --upgrade
 
 Other packages
 ==============
@@ -61,7 +53,7 @@ SLiCAP also interacts with `NGspice <https://ngspice.sourceforge.io/>`_ for perf
 Completing and testing the installation
 =======================================
 
-After installing or updating SLiCAP, you can use it as any other Python package. On its first import, however, SLiCAP searches for installed software for schematic capture or SPICE simulation, and stres this information in a SLiCAP.ini file in the **user home directory**: ~/SLiCAP.ini. You can edit this file manually or delete it. SLiCAP generates an updated version on the next run.
+After installing or updating SLiCAP, you can use it as any other Python package. On its first import, however, SLiCAP searches for installed software for schematic capture or SPICE simulation, and store this information in a SLiCAP.ini file in the **user home directory**: ~/SLiCAP.ini. You can edit this file manually or delete it. SLiCAP generates an updated version on the next run.
 
 .. admonition:: First import under MSWindows
 
@@ -83,15 +75,13 @@ After installing or updating SLiCAP, you can use it as any other Python package.
         SLiCAP Version matches with the latest release of SLiCAP on github.
         Generating project configuration file: SLiCAP.ini.
 
-        Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.
-
 .. admonition:: First import under Linux or MacOS
 
     .. code-block:: python
 
         >>> import SLiCAP as sl
         
-        Generating main configuration file: ~/SLiCAP/SLiCAP.ini.
+        Generating main configuration file: ~/SLiCAP.ini.
 
         /usr/bin/kicad-cli
         /usr/bin/lepton-cli
@@ -107,18 +97,18 @@ Updating of the main configuration file `~/SLiCAP.ini` is recommended if:
 #. One or more apps listed above are installed or removed
 #. During installation under MS-Windows, searching to the apps listed above timed out
     
-Below an example of the command section for user "USER" under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:\\Users\\USER\\SLiCAP.ini:
+Below an **example** of the command section for user "USER" under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:\\Users\\USER\\SLiCAP.ini
 
 .. code-block:: python
 
     [commands]
     lepton-eda = 
-    kicad = C:\Program Files\KiCad\8.0\bin\kicad-cli.exe
+    kicad = C:\Program Files\KiCad\9.0\bin\kicad-cli.exe
     ltspice = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe
     geda = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe
     ngspice = C:\Users\USER\ngspice\Spice64\bin\ngspice.exe
 
-Below an example of the command section for user "USER" under **Linux** or **MacOS** with default installation of LTspice under *wine*. The main configuration file is located at: ~/SLiCAP.ini:
+Below an **example** of the command section for user "USER" under **Linux** or **MacOS** with default installation of LTspice under *wine*. The main configuration file is located at: ~/SLiCAP.ini:
 
 .. code-block:: python
 
@@ -149,12 +139,12 @@ The python script below (user=USER, python environment=USER, os=LINUX) generates
 .. code-block:: python
 
     # Import the SLiCAP modules in a separate namespace (preferred)
-    # Create (but don't overwrite) SLiCAP.ini in the ~/ folder
+    # Create (but don't override) the main configuration file ``SLiCAP.ini`` in the ~/ folder
     import SLiCAP as sl
     # Create the project folder structure
     # Start an HTML report
     # Compiles the libraries
-    # Create but do not overwrite the project configuration file
+    # Create (but don't override) the project configuration file ``SLiCAP.ini`` in the project folder
     sl.initProject('SLiCAP test')
     # Display the configuration settings:
     sl.ini.dump()
@@ -165,8 +155,8 @@ The python script below (user=USER, python environment=USER, os=LINUX) generates
 
     Compiling library: SLiCAP.lib.
     Compiling library: SLiCAPmodels.lib.
-    ini.install_version = 3.2.4
-    ini.latest_version  = 3.2.4
+    ini.install_version = 3.5.7
+    ini.latest_version  = 3.5.7
     ini.install_path    = /home/USER/USER/lib/python3.12/site-packages/
     ini.home_path       = /home/USER/
     ini.main_lib_path   = /home/USER/USER/lib/python3.12/site-packages/SLiCAP/files/lib/
@@ -201,9 +191,9 @@ The python script below (user=USER, python environment=USER, os=LINUX) generates
     ini.notebook        = False
     ini.scalefactors    = False
     ini.eng_notation    = True
-    ini.last_updated    = 2025-02-27 15:14:01
+    ini.last_updated    = 2025-05-14 15:14:01
     ini.project_title   = SLiCAP test
-    ini.created         = 2025-02-27 15:14:00
+    ini.created         = 2025-05-14 15:14:00
     ini.author          = USER
     ini.laplace         = s
     ini.frequency       = f
@@ -242,18 +232,20 @@ It is strongly advised not to change any settings in the project SLiCAP.ini file
    >>> sl.ini.max_rec_subst   = 20    # set the maximum number of recursive substitutions in expressions to 20
    >>> sl.ini.reduce_circuit  = False # Do NOT eliminate unused independent voltage sources from the circuit
                                       # If True, the size of MNA matrices comprising independent voltage sources will be reduced
-                                      # by eliminating these sources if they are not used as signal source or detector.
+                                      # by eliminating these sources if they are not used as signal source or detector
    >>> sl.ini.reduce_matrix   = False # Do NOT eliminate variables and reduce the matrix size before calculating the determinant
                                       # If True, the size of MNA matrices comprising Laplace expressions will be reduced through
                                       # elimination of variables, until all matrix enties are either zero or Laplace polynomials
                                       # of the first order or higher
    >>> sl.ini.numer           = "BS"  # Use Bareiss division-free determinant calculation method for the numerator
+                                      # Default is ``ME``: recursive expansion of minors
    >>> sl.ini.denom           = "BS"  # Use Bareiss division-free determinant calculation method for the denominator
+                                      # Default is ``ME``: recursive expansion of minors
    
 Find SLiCAP schematic symbols libraries
 ---------------------------------------
 
-Since version 3.3.0 SLiCAP symbol libraries are stored in the package directory.
+From version 3.3.0, SLiCAP symbol libraries are stored in the package directory. You need these locations for configuring your schematic capture program:
 
 .. code-block:: python
 
@@ -266,14 +258,17 @@ Since version 3.3.0 SLiCAP symbol libraries are stored in the package directory.
    
    '/home/USER/USER/lib/python3.12/site-packages/SLiCAP/files/LTspice/'
    
-Jupyter notebooks
-=================
+Run SLiCAP from within Jupyter notebooks
+----------------------------------------
 
-Jupyter Notebooks can also run SLiCAP scripts. For proper rendering of all HTML output to your notebook use the keyword argument ``notebook=True`` with initProject(). 
+Jupyter Notebooks can also run SLiCAP scripts. For proper rendering of all HTML output to your notebook set the keyword argument ``notebook=True`` with initProject(). 
 
-SLiCAP examples
-===============
+.. code-block:: python
 
-SLiCAP examples can be found on `github <https://github.com/SLiCAP/SLiCAPexamples>`_.
-      
-.. image:: /img/colorCode.svg
+    # Import the SLiCAP modules in a separate namespace (preferred)
+    # Create (but don't override) the main configuration file ``SLiCAP.ini`` in the ~/ folder
+    import SLiCAP as sl
+    # Create the project folder structure
+    # Compiles the libraries
+    # Create (but don't override) the project configuration file ``SLiCAP.ini`` in the project folder
+    sl.initProject('SLiCAP test', notebook=True)

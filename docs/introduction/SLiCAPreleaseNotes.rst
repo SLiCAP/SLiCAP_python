@@ -4,11 +4,10 @@ SLiCAP Version 3.5 release notes
 
 .. image:: /img/colorCode.svg
 
-#. SLiCAP version 3.5.1 has an improved interface to LaTeX and Sphinx:
+#. SLiCAP version 3.5 has an improved interface to LaTeX and Sphinx:
 
-   - SLiCAPformatter.py is a multi-format formatter that generates snippets in various formats:
-   
-     Current support is limited to *ReStucturedText* (Sphinx basic format) and *LaTeX*. Future support wil be extended to *HTML*, *myST*, and *markdown*. See: `formatter <../reference/SLiCAPformatter.html#SLiCAP.SLiCAPformatter.formatter>`__.
+   - The `LaTeXformatter <../reference/SLiCAPlatex.html#SLiCAP.SLiCAPlatex.LaTeXformatter>`__ creates LaTeX snippets to be imported in `LaTeX <https://www.latex-project.org/>`_ documents.
+   - The `RSTformatter <../reference/SLiCAPrst.html#SLiCAP.SLiCAPrst.RSTformatter>`__ creates ReStructuredText snippets to be imported in `Sphinx <https://www.sphinx-doc.org/en/master/>`_ generated websites.
 
 SLiCAP Version 3.4 release notes
 ================================
@@ -20,7 +19,7 @@ SLiCAP Version 3.3 release notes
 
 #. SLiCAP Version 3.3 is prepared for PyPi pip install:
 
-   - Examples are no longer part of the package, they can be puleed of downloaded from `github <https://github.com/SLiCAP/SLiCAPexamples>`_.
+   - Examples are no longer part of the package, they can be pulled of downloaded from `github <https://github.com/SLiCAP/SLiCAPexamples>`_.
    - Libraries are no longer placed in the ~/SLiCAP/ folder. Library locations are found in ~/SLiCAP.ini under the section `[installpaths]`. Settings for symbol library locations in schematic editors (KiCAD, LTspice, etc.) need to be adjusted accordingly.
 
 SLiCAP Version 3.2 release notes

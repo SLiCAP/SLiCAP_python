@@ -1793,7 +1793,11 @@ def integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
                  else integral operators will be returned.
     :type doit: bool
     
-    :return: Integration result
+    :return: Dictionary with key-value pairs:
+        
+             - key (sympy.Expr): monomial
+             - value (sympy.Expr): integrated monomial coefficient
+             
     :rtype: sympy.expr, int or float
     """ 
     
