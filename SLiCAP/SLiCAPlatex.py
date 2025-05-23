@@ -14,6 +14,7 @@ import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX
 from pathlib import PureWindowsPath
 from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
+import re
 
 class LaTeXformatter(_BaseFormatter):
     """
@@ -96,9 +97,10 @@ class LaTeXformatter(_BaseFormatter):
         
         :param caption: Text that will used as table caption.
         :type caption: str
-                
+        
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -161,7 +163,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
         
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -229,7 +232,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
                 
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -279,7 +283,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
         
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -317,7 +322,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
         
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -392,7 +398,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
                 
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -446,7 +453,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
                 
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -502,7 +510,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
         
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -632,7 +641,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
         
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -676,7 +686,8 @@ class LaTeXformatter(_BaseFormatter):
         :type caption: str
         
         :param color: Alternate row color name, should be defined in 
-                     'preambuleSLiCAP.tex' defaults to 'myyellow'
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
         :type color: str
         
         :return: SLiCAP Snippet object
@@ -819,6 +830,72 @@ class LaTeXformatter(_BaseFormatter):
             TEX += '\\left[ \\mathrm{' + units + '} \\right]$ '
         return Snippet(TEX, self.format)
 
+    def nestedLists(self, headerList, linesList, unitpos=None, caption='', 
+                    label='', color="myyellow"):
+        """
+        Creates and returns a LaTeX table snippet that can be included in a 
+        LaTeX document. Each list is converted into a table row and
+        must have equal lengths. There can be one column with units. 
+
+        A label can be given as reference and a caption can be added.
+
+        :param headerList: List with column headers.
+        :type headerList: list with strings
+
+        :param linesList: List with lists of table data for each table row
+        :type linesList: list
+
+        :param unitpos: Position of column with units (will be typesetted with mathrm)
+        :type unitpos: int, str
+
+        :param caption: Table caption, defauls to ''
+        :type caption: str
+
+        :param label: Table reference label
+        :type label: str
+
+        :param color: Alternate row color name, should be defined in 
+                     'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                     no background color.
+        :type color: str
+        
+        :return: LaTeX snippet to be included in a LaTeX document
+        :rtype: str
+        """
+        alignstring = "[c]{"
+        for item in headerList:
+            alignstring += "l"
+        alignstring += "}"
+        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
+                                 unitpos, caption, label, color)
+        return Snippet(TEX, self.format)
+
+def sub2rm(textext):
+    """
+    Converts italic fonts LaTeX subscripts into mathrm fonts.
+    
+    :param textext: LaTeX snippet
+    :type textxt: str
+    
+    :return: Modified LaTeX snippet
+    :rtype: str
+    
+    :example:
+        
+    >>> textext = "\\frac{V_{out}}{V_{in}}"
+    >>> print(sub2rm(textext))
+    
+    \\frac{V_{\\mathrm{out}}}{V_{\\mathrm{in}}}
+    """
+    pos = 0
+    out = ''
+    pattern = re.compile(r'_{([a-zA-Z0-9]+)}')
+    for m in re.finditer(pattern, textext):
+        out += textext[pos:m.start()+1]+'{\\mathrm'+textext[m.start()+1: m.end()]+'}'
+        pos = m.end()
+    out += textext[pos:]
+    return out
+        
 # Non-public functions for creating table snippets
 
 def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label='', color="myyellow"):
@@ -845,6 +922,11 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
     :param label: Table reference label
     :type label: str
 
+    :param color: Alternate row color name, should be defined in 
+                 'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
+                 no background color.
+    :type color: str
+        
     :return: LaTeX snippet to be included in a LaTeX document
     :rtype: str
     """
@@ -862,7 +944,7 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
     j = 0
     for line in linesList:
         i = 0
-        if not j%2:
+        if not j%2 and color != None:
             TEX += '\\rowcolor{%s}\n'%(color)
         for field in line:
             if unitpos != None and i == int(unitpos):
@@ -949,3 +1031,4 @@ def _symRoots2TEX(roots, Hz, pz):
             line = [sp.Symbol(pz + '_' + str(i)), '$' + sp.latex(roundN(root)) + '$']
         lineList.append(line)
     return lineList
+

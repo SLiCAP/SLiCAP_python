@@ -715,6 +715,42 @@ class RSTformatter(_BaseFormatter):
         else:
             raise NameError
         return Snippet(RST, self.format, mode="a")
+    
+    def nestedLists(self, headerList, linesList, unitpos=None, caption='', 
+                    label='', position=0):
+        """
+        Creates and returns an RST table snippet that can be included in a 
+        ReStructuredText document. Each list is converted into a table row and
+        must have equal lengths. There can be one column with units. 
+        
+
+        A label can be given as reference and a caption can be added.
+
+        :param name: Table caption, defauls to ''
+        :type name: str
+
+        :param headerList: List with column headers.
+        :type headerList: list with strings
+
+        :param linesList: List with lists of table data for each table row
+        :type linesList: list
+
+        :param unitpos: Position of column with units (will be typesetted with mathrm)
+        :type unitpos: int, str
+        
+        :param label: Table reference label
+        :type label: str
+        
+        :param position: Number of spaces to indent
+        :type position: int
+
+        :return: RST snippet to be included in a ReStructuredText document
+        :rtype: str
+        """
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, position,
+                                 unitpos, label)
+        return Snippet(RST, self.format)
+        
 
 # Non-public functions for creating table snippets
 
@@ -740,6 +776,9 @@ def _RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None,
 
     :param label: Table reference label
     :type label: str
+    
+    :param position: Number of spaces to indent
+    :type position: int
 
     :return: RST snippet to be included in a ReStructuredText document
     :rtype: str

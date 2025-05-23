@@ -1864,8 +1864,10 @@ def units2TeX(units):
         replacements['Ohm'] = 'Omega'
         for key in replacements.keys():
             units = units.replace(key, replacements[key])
-        units = py2tex(units, print_latex=False, print_formula=False)[2:-2]
-    return units
+        tex = ""
+        for unitpart in units.split():
+            tex += py2tex(unitpart, print_latex=False, print_formula=False, simplify_output=False)[2:-2] + " "
+    return tex[:-1]
 
 if __name__ == "__main__":
     from time import time
