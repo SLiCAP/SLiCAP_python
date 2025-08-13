@@ -258,15 +258,32 @@ class figure(object):
         **SLiCAPplots.figure.plot()**. Defaults to [].
         """
 
-        self.fileName = fileName + '.' + self.fileType
+        self.fileName = fileName
         """
-        File name of the figure. Defaults to: fileName + '.' + ini.plot_file_type.
+        File name of the figure.
         """
-
+        
+        self.traceDict = {}
+        """
+        Dictionary with key-value pairs:
+        
+        - key: label of the trace
+        - value: trace object
+        """
+    def updateTracedict(self):
+        """
+        Updates the trace dictionary of the figure.
+        """
+        self.traceDict = {}
+        for ax in self.axes:
+            for axrow in ax:
+                for trc in axrow.traces:
+                    self.traceDict[trc.label] = trc
+                
     def plot(self):
         """
-        Creates the figure, displays it if SLiCAPplots.figure.show == True, and
-        saves it to disk.
+        Creates the figure, and saves it to disck. It displays the figure if 
+        SLiCAPplots.figure.show == True.
         """
         axes = np.array(self.axes)
         try:
@@ -367,12 +384,12 @@ class figure(object):
                     # Set default font sizes and grid
                     defaultsPlot()
         # Save the figure"
-        plt.savefig(ini.img_path + self.fileName)
+        plt.savefig(ini.img_path + self.fileName + "." + self.fileType)
         if self.fileType.lower() != "pdf":
-            pdfname = '.'.join(self.fileName.split('.')[:-1]) + ".pdf"
-            plt.savefig(ini.img_path + pdfname)
+            plt.savefig(ini.img_path + self.fileName + ".pdf")
         if self.show:
             plt.show()
+        self.updateTracedict()
         plt.close(fig)
         return
 
@@ -737,7 +754,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                     if result.label == '':
                         if result.gainType != 'vi':
                             try:
-                                newTrace.color = ini.gain_colors[result.gainType]
+                                newTrace.color = _gain_colors()[result.gainType]
                             except:
                                 newTrace.color = ini.default_colors[colNum % numColors]
                                 colNum += 1
@@ -757,7 +774,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                             yData = sp.N(result.inoise)
                         y = _makeNumData(yData, ini.frequency, x)
                         newTrace = trace([x, y])
-                        newTrace.label = funcType + result.detLabel
+                        newTrace.label = funcType
                         ax.traces.append(newTrace)
                     elif noiseSources == 'all':
                         for srcName in keys:
@@ -769,7 +786,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                             noiseTrace = trace([x, y])
                             noiseTrace.color = ini.default_colors[colNum % numColors]
                             colNum += 1
-                            noiseTrace.label = funcType + ': ' + srcName + result.detLabel
+                            noiseTrace.label = funcType + ': ' + srcName
                             ax.traces.append(noiseTrace)
                     elif noiseSources in keys:
                         if funcType == 'onoise':
@@ -780,7 +797,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                         noiseTrace = trace([x, y])
                         noiseTrace.color = ini.default_colors[colNum % numColors]
                         colNum += 1
-                        noiseTrace.label = funcType + ': ' + noiseSources + result.detLabel
+                        noiseTrace.label = funcType + ': ' + noiseSources
                         ax.traces.append(noiseTrace)
                     elif type(noiseSources) == list:
                         for srcName in noiseSources:
@@ -793,7 +810,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                                 noiseTrace = trace([x, y])
                                 noiseTrace.color = ini.default_colors[colNum % numColors]
                                 colNum += 1
-                                noiseTrace.label = funcType + ': ' + srcName + result.detLabel
+                                noiseTrace.label = funcType + ': ' + srcName
                                 ax.traces.append(noiseTrace)
                     else:
                         print("Error: cannot understand 'sources={0}'.".format(str(noiseSources)))
@@ -944,7 +961,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
     """
     fig = figure(fileName)
     fig.show = show
-    fig.axisHeight = fig.axisWidth
+    fig.axisWidth = fig.axisHeight
     pz = axis(title)
     pz.xScale = 'lin'
     pz.yScale = 'lin'
@@ -981,7 +998,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                     polesTrace = trace([np.real(result.poles)/xScaleFactor, 
                                         np.imag(result.poles)/yScaleFactor])
                 try:
-                    polesTrace.markerColor = ini.gain_colors[result.gainType]
+                    polesTrace.markerColor = _gain_colors()[result.gainType]
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
@@ -1002,7 +1019,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                                         np.imag(result.zeros)/yScaleFactor])
                 zerosTrace.color = ''
                 try:
-                    zerosTrace.markerColor = ini.gain_colors[result.gainType]
+                    zerosTrace.markerColor = _gain_colors()[result.gainType]
                 except:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
@@ -1028,7 +1045,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                     polesTrace = trace([np.real(result.poles[0])/xScaleFactor, 
                                         np.imag(result.poles[0])/yScaleFactor])
                 try:
-                    polesTrace.markerColor = ini.gain_colors[result.gainType]
+                    polesTrace.markerColor = _gain_colors()[result.gainType]
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
@@ -1052,7 +1069,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                     polesTrace = trace([np.real(result.poles[-1]/xScaleFactor), 
                                         np.imag(result.poles[-1])/yScaleFactor])
                 try:
-                    polesTrace.markerColor = ini.gain_colors[result.gainType]
+                    polesTrace.markerColor = _gain_colors()[result.gainType]
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
@@ -1080,7 +1097,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                     polesTrace = trace([np.real(allPoles)/xScaleFactor, 
                                         np.imag(allPoles)/yScaleFactor])
                 try:
-                    polesTrace.markerColor = ini.gain_colors[result.gainType]
+                    polesTrace.markerColor = _gain_colors()[result.gainType]
                 except:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
@@ -1109,7 +1126,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                     zerosTrace = trace([np.real(result.zeros[0])/xScaleFactor, 
                                         np.imag(result.zeros[0])/yScaleFactor])
                 try:
-                    zerosTrace.markerColor = ini.gain_colors[result.gainType]
+                    zerosTrace.markerColor = _gain_colors()[result.gainType]
                 except:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
@@ -1134,7 +1151,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                     zerosTrace = trace([np.real(result.zeros[-1])/xScaleFactor, 
                                         np.imag(result.zeros[-1])/yScaleFactor])
                 try:
-                    zerosTrace.markerColor = ini.gain_colors[result.gainType]
+                    zerosTrace.markerColor = _gain_colors()[result.gainType]
                 except:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
@@ -1162,7 +1179,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                     zerosTrace = trace([np.real(allZeros)/xScaleFactor, 
                                         np.imag(allZeros)/yScaleFactor])
                 try:
-                    zerosTrace.markerColor = ini.gain_colors[result.gainType]
+                    zerosTrace.markerColor = _gain_colors()[result.gainType]
                 except:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
@@ -1274,17 +1291,25 @@ def plot(fileName, title, axisType, plotData, xName = '', xScale = '',
     ax.yLim = yLim
     ax.traces = []
     # Create the axis labels
-    ax.xLabel = xName + ' [' + xScale + xUnits + ']'
-    ax.yLabel = yName + ' [' + yScale + yUnits + ']'
-    for key in list(plotData.keys()):
-        if type(plotData[key]) == trace:
-            newTrace = plotData[key]
-        else:
+    if xScale != "" or xUnits != "":
+        ax.xLabel = xName + ' [' + xScale + xUnits + ']'
+    if yScale != "" or yUnits != "":
+        ax.yLabel = yName + ' [' + yScale + yUnits + ']'
+    for key in plotData.keys():
+        if type(plotData[key]) is list:
             newTrace = trace(plotData[key])
             newTrace.label = key
             newTrace.color = ini.default_colors[colNum % numColors]
             colNum += 1
-        ax.traces.append(newTrace)
+        else:
+            type_str = str(type(plotData[key]))
+            if type_str == "<class 'SLiCAP.SLiCAPplots.trace'>":
+                newTrace = plotData[key]
+            else:
+                raise TypeError("Error: Expected a list with x data and y data, or a trace.")
+                newTrace = False
+        if newTrace:
+            ax.traces.append(newTrace)
     fig.axes = [[ax]]
     fig.plot()
     return fig
@@ -1760,6 +1785,18 @@ def addTraces(figObj, traceDict):
     for key in traceDict.keys():
         figObj.axes[0][0].traces.append(traceDict[key])
     return figObj
+
+def _gain_colors():
+    # Compact notation for plotting
+    gain_colors               = {}
+    gain_colors["ideal"]      = ini.gain_colors_ideal
+    gain_colors["gain"]       = ini.gain_colors_gain
+    gain_colors["asymptotic"] = ini.gain_colors_asymptotic
+    gain_colors["loopgain"]   = ini.gain_colors_loopgain
+    gain_colors["direct"]     = ini.gain_colors_direct
+    gain_colors["servo"]      = ini.gain_colors_servo
+    gain_colors["vi"]         = ini.gain_colors_vi
+    return gain_colors
 
 if __name__=='__main__':
     ini.img_path = ''

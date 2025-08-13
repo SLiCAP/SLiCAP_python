@@ -982,15 +982,16 @@ def fig2html(figureObject, width, label='', caption=''):
     :rtype: str
     """
     label = _addLabel(label, caption=caption, labelType="fig")
-    html = '<figure>%s<img src="img/%s" alt="%s" style="width:%spx">\n'%(label, figureObject.fileName, caption, width)
+    html = '<figure>%s<img src="img/%s" alt="%s" style="width:%spx">\n'%(label, figureObject.fileName + '.' + figureObject.fileType, caption, width)
     if caption != '':
         html+='<figcaption>Figure: %s<br>%s</figcaption>\n'%(figureObject.fileName, caption)
     html += '</figure>\n'
     html = _insertHTML(ini.html_path + ini.html_page, html)
     try:
-        copy2(ini.img_path + figureObject.fileName, ini.html_path + 'img/' + figureObject.fileName)
+        copy2(ini.img_path + figureObject.fileName + '.' + figureObject.fileType, 
+              ini.html_path + 'img/' + figureObject.fileName + '.' + figureObject.fileType)
     except:
-        print("Error: could not copy: '{0}'.".format(ini.img_path + figureObject.fileName))
+        print("Error: could not copy: '{0}'.".format(ini.img_path + figureObject.fileName + '.' + figureObject.fileType))
     return html
 
 def file2html(fileName):

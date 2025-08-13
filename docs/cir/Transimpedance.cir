@@ -1,0 +1,6 @@
+"Transimpedance"
+C1 in 0 C value={C_s} vinit=0
+I1 0 in I value={I_s} noise={2*q*I_D} dc={-I_D} dcvar={sigma_ID^2}
+N1 out 0 in 0 N
+R1 in out R value={R_t} noisetemp={T} noiseflow=0 dcvar={sigma_R^2} dcvarlot=0
+.end

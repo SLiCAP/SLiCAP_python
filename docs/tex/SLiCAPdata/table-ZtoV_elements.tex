@@ -1,0 +1,92 @@
+\begin{table}[H]
+\centering
+\begin{tabular}[c]{lllllll}
+\textbf{ID} & \textbf{Nodes} & \textbf{Refs} & \textbf{Model} & \textbf{Param} & \textbf{Symbolic} & \textbf{Numeric} \\ 
+\rowcolor{myyellow}
+\small{R1} &\small{4 in } & &\small{R} &\small{value} &$R_{s}$ &$50$ \\ 
+ & & & &\small{noisetemp} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\small{R2} &\small{1 0 } & &\small{R} &\small{value} &$R_{a}$ &$R_{a}$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noisetemp} &$0$ &$0$ \\ 
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{R3} &\small{2 1 } & &\small{R} &\small{value} &$R_{a} \left(A_{1} - 1\right)$ &$R_{a} \left(A_{1} - 1\right)$ \\ 
+ & & & &\small{noisetemp} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\small{R4} &\small{in out } & &\small{R} &\small{value} &$R_{f}$ &$R_{f}$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noisetemp} &$0$ &$0$ \\ 
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{R5} &\small{2 3 } & &\small{R} &\small{value} &$R_{b}$ &$R_{b}$ \\ 
+ & & & &\small{noisetemp} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\small{R6} &\small{3 out } & &\small{R} &\small{value} &$A_{2} R_{b}$ &$A_{2} R_{b}$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noisetemp} &$0$ &$0$ \\ 
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{V1} &\small{4 0 } & &\small{V} &\small{value} &$0$ &$0$ \\ 
+ & & & &\small{noise} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dc} &$0$ &$0$ \\ 
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{E\_O1} &\small{2 0 in 1 } & &\small{EZ} &\small{value} &$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$ &$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$ \\ 
+ & & & &\small{zo} &$R_{o}$ &$R_{o}$ \\ 
+\rowcolor{myyellow}
+\small{Gd\_O1} &\small{in 1 in 1 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
+\small{Gc1\_O1} &\small{in 0 in 0 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{Gc2\_O1} &\small{1 0 1 0 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
+\small{Cd\_O1} &\small{in 1 } & &\small{C} &\small{value} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\small{Cc1\_O1} &\small{in 0 } & &\small{C} &\small{value} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\small{Cc2\_O1} &\small{1 0 } & &\small{C} &\small{value} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\small{E\_O2} &\small{out 0 0 3 } & &\small{EZ} &\small{value} &$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$ &$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{zo} &$R_{o}$ &$R_{o}$ \\ 
+\small{Gd\_O2} &\small{0 3 0 3 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{Gc1\_O2} &\small{0 0 0 0 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
+\small{Gc2\_O2} &\small{3 0 3 0 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{Cd\_O2} &\small{0 3 } & &\small{C} &\small{value} &$0$ &$0$ \\ 
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{Cc1\_O2} &\small{0 0 } & &\small{C} &\small{value} &$0$ &$0$ \\ 
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{Cc2\_O2} &\small{3 0 } & &\small{C} &\small{value} &$0$ &$0$ \\ 
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\end{tabular}
+\caption{Expanded netlist element data}
+\end{table}
+

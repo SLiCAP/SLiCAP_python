@@ -1,0 +1,13 @@
+"Low-noise voltage amplifier"
+.param R_s = 50
+.model myOpAmp OV av={A_0/(1+s/(2*pi*p_1))} zo={R_o}
+O1 in 1 2 0 myOpAmp
+O2 0 3 out 0 myOpAmp
+R1 4 in R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2 1 0 R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R3 2 1 R value={(A_1-1)*R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R4 in out R value={R_f} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R5 2 3 R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R6 3 out R value={A_2*R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 4 0 V value=0 noise=0 dc=0 dcvar=0
+.end

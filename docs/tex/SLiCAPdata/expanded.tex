@@ -1,0 +1,39 @@
+\begin{table}[H]
+\centering
+\begin{tabular}[c]{lllllll}
+\textbf{ID} & \textbf{Nodes} & \textbf{Refs} & \textbf{Model} & \textbf{Param} & \textbf{Symbolic} & \textbf{Numeric} \\ 
+\rowcolor{myyellow}
+\small{C1} &\small{0 out } & &\small{C} &\small{value} &$C_{\mathrm{a}}$ &$2.5 \cdot 10^{-8}$ \\ 
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{C2} &\small{out 1 } & &\small{C} &\small{value} &$C_{\mathrm{b}}$ &$2.5 \cdot 10^{-10}$ \\ 
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{L1} &\small{1 out } & &\small{L} &\small{value} &$L$ &$1.0 \cdot 10^{-6}$ \\ 
+ & & & &\small{iinit} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{R1} &\small{1 in } & &\small{R} &\small{value} &$R_{\mathrm{s}}$ &$150$ \\ 
+ & & & &\small{noisetemp} &$T$ &$300$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+ & & & &\small{dcvar} &$\sigma_{\mathrm{R1}}^{2}$ &$0.0004$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\small{R2} &\small{out 0 } & &\small{R} &\small{value} &$R_{\ell}$ &$50$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noisetemp} &$T$ &$300$ \\ 
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvar} &$\sigma_{\mathrm{R2}}^{2}$ &$0.0001$ \\ 
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{V1} &\small{in 0 } & &\small{V} &\small{value} &$\frac{1}{s}$ &$\frac{1}{s}$ \\ 
+ & & & &\small{noise} &$S_{\mathrm{v}}$ &$4.0 \cdot 10^{-18}$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dc} &$V_{\mathrm{DC}}$ &$5$ \\ 
+ & & & &\small{dcvar} &$V_{\mathrm{DC}}^{2} \sigma_{\mathrm{V}}^{2}$ &$0.0625$ \\ 
+\end{tabular}
+\caption{Expanded netlist}
+\label{tab-expanded}
+\end{table}
+

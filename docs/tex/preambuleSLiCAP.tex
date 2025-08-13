@@ -1,0 +1,132 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is a latex preambule file to be used with SLiCAP.SLiCAP.tex %
+% Created: 11 May 2023, Anton Montagne                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amsmath}
+% https://www.ctan.org/pkg/amsmath
+\usepackage{graphicx}
+% https://www.ctan.org/pkg/graphicx
+\usepackage{url}
+% https://www.ctan.org/pkg/url
+\usepackage{float}
+% https://www.ctan.org/pkg/float
+
+% Adapt the page width and margins to your needs.
+\usepackage[a4paper, width=17cm, height=25cm, left=3cm, top=3cm]{geometry}
+% https://www.ctan.org/pkg/geometry
+
+% Adapt the colors to your needs
+\usepackage[table]{xcolor}
+% https://www.ctan.org/pkg/xcolor
+\definecolor{mygreen}{cmyk}{1,0,0.9,0.2}
+\definecolor{mygray}{cmyk}{0,0,0,0.1}
+\definecolor{myyellow}{cmyk}{0,0,0.15,0}
+\definecolor{myblue}{cmyk}{1,0.7,0,0.2}
+\definecolor{myred}{cmyk}{0,1,0.6,0.3}
+\definecolor{white}{cmyk}{0,0,0,0}
+
+% Code listings
+%%%%%%%%%%%%%%%
+\usepackage{listings}
+% https://www.ctan.org/pkg/listings
+
+% slicap style for listings, adapt it to your needs
+\lstdefinestyle{slicap}{
+  backgroundcolor=\color{myyellow},
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=single,
+  framesep=5pt,
+  xrightmargin=5pt,
+  rulecolor=\color{myyellow},
+  xleftmargin=15pt,
+  language=Python,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  otherkeywords={*, __init__, self, True, False},
+  keywordstyle=\color{myblue},
+  commentstyle=\itshape\color{myred},
+  identifierstyle=\color{black},
+  stringstyle=\color{mygreen},
+  morekeywords={as, import, initProject, instruction, params2html, paramDefs2html, %
+  doCDSint, setStepList, step, setCircuit, setDataType, setSimType, setGainType,%
+  setStepVar, setStepNum, setStepMethod, routh, solve, circuit, setStepStart,%
+  setStepStop, depVars, plotSweep, plot, plotPZ, listPZ, funcType, indepVars,%
+  controlled, makeNetlist, params, parDefs, delPar, defPar, defPars, getPar,%
+  initProject, slicap, setSource, setDetector, setLGref, execute, laplace, noise,%
+  expr2html, eqn2html, matrices2html, text2html, htmlPage, noise2html,  head2html,%
+  head3html, stophtml, plotdBmag, plotPhase, fig2html, elementData2html,%
+  netlist2html, simplify, doLaplace, doNumer, doDenom, doImpulse, doStep, doDCvar,%
+  doNoise, doMatrix, doDC, doDCsolve, doSolve,%
+  doCDS, equateCoeffs, findServoBandwidth, coeffsTransfer,%
+  plotPZ, plotMag, stepParams, phaseMargin, double, title, sweepVar,%
+  xVar, xUnits, xScale, yScale, yVar, yUnits, stepOn, stepOff, getParValue, show,%
+  rmsNoise, img2html, expand},
+  sensitive=true,
+  morestring=[b]",
+}
+
+% ltspice language for listings, adapt it to your needs
+\lstdefinelanguage{ltspice}{
+  backgroundcolor=\color{myyellow},
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=single,
+  framesep=5pt,
+  xrightmargin=5pt,
+  rulecolor=\color{myyellow},
+  xleftmargin=15pt,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  morecomment=[l]{;},
+  morecomment=[f]{*},
+  morestring=[b]",
+  morekeywords={ac, dc, pulse, sin, pwl, gauss, inoise, onoise, params},
+  otherkeywords={.op, .dc, .ac, .tran, .noise, .save, .measure, .end, .param, .subckt,%
+  .ends, .include, .lib, .options, .step, .temp, .model, .print, .graph, .meas,%
+  .source, .detector, .lgref, value, dc, dcvar, noise, noisetemp, noiseflow,%
+  dcvarlot, vinit, iinit, FIND, WHEN, AT, CROSS},
+  sensitive=false,
+  keywordstyle=\color{myblue},
+  commentstyle=\itshape\color{mygray},
+  identifierstyle=\color{black},
+  stringstyle=\color{mygreen},
+}
+
+% latex style for listings, adapt to your needs
+\lstdefinestyle{latex}{
+  language=TeX,
+  backgroundcolor=\color{myyellow},
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=single,
+  framesep=5pt,
+  xrightmargin=5pt,
+  rulecolor=\color{myyellow},
+  xleftmargin=15pt,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\color{myblue},
+  commentstyle=\itshape\color{mygray},
+  identifierstyle=\color{black},
+  stringstyle=\color{mygreen},
+  }
+  
+% default style for listings, adapt to your needs
+\lstdefinestyle{default}{
+  backgroundcolor=\color{myyellow},
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=single,
+  framesep=5pt,
+  xrightmargin=5pt,
+  rulecolor=\color{myyellow},
+  xleftmargin=15pt,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\color{myblue},
+  commentstyle=\itshape\color{mygray},
+  identifierstyle=\color{black},
+  stringstyle=\color{mygreen},
+  }

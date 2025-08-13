@@ -5,9 +5,10 @@ SLiCAP instruction class definition.
 """
 import sympy as sp
 import numpy as np
+import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPyacc import _updateCirData, _checkCircuit
 from SLiCAP.SLiCAPexecute import _doInstruction, _addResNoiseSources, _delResNoiseSources
-from SLiCAP.SLiCAPprotos import circuit, allResults
+from SLiCAP.SLiCAPprotos import circuit
 from SLiCAP.SLiCAPmath import _checkNumber
 
 _GAINTYPES = ['vi', 'gain', 'loopgain', 'servo', 'asymptotic', 'direct']
@@ -21,7 +22,167 @@ class instruction(object):
     Prototype Instruction object.
     """
     def __init__(self):
+        
+        # Attributes holding the results of the execution
+        
+        self.DCvalue     = []
+        """
+        Zero-frequency value in case of dataType 'pz'. (sympy.Expr, sympy.Float)
+        """
+        self.poles       = []
+        """
+        Complex frequencies in [rad/s] (list)
+        """
 
+        self.zeros       = []
+        """
+        Complex frequencies in [rad/s] (list)
+        """
+        self.svarTerms   = {}
+        """
+        Dict with source variances
+        
+        Key = (str) name of the dcvar source
+        Value = (sympy.Expr) dcvar value in V^2 or A^2
+        """
+
+        self.ivarTerms   = {}
+        """
+        Dict with lists with contributions to source-referred variance.
+
+        Key = (str) name of the dcvar source
+        Value = (sympy.Expr) contribution to the source-referred variance in 
+        V^2 or A^2
+        """
+
+        self.ovarTerms   = {}
+        """
+        Dict with lists with contributions to detector-referred variance.
+
+        Key = (str) name of the dcvar source
+        Value = (sympy.Expr) contribution to the detector-referred variance in 
+        V^2 or A^2
+        """
+
+        self.ivar        = []
+        """
+        Total source-referred variance in V^2 or A^2 (sympy.Expr)
+        """
+
+        self.ovar        = []
+        """
+        Total detector-referred variance in V^2 or A^2 (sympy.Expr)
+        """
+
+        self.solve       = []
+        """
+        Laplace solution of the network.
+        """
+
+        self.dcSolve     = []
+        """
+        DC solution of the network.
+        """
+
+        self.timeSolve   = []
+        """
+        Time-domain solution of the network.
+        """
+
+        self.snoiseTerms = {}
+        """
+        Dict with source noise spectra.
+        
+        Key = (str) name of the noise source
+        Value = (sympy.Expr) noise spectral density in V^2/Hz or A^2/Hz
+        """
+
+        self.inoiseTerms = {}
+        """
+        Dict with lists with contributions to source-referred noise spectrum
+        
+        Key = (str) name of the noise source
+        Value = (sympy.Expr) contribution of that noise source to the 
+        source-referred noise spectrum in V^2/Hz or A^2/Hz
+        """
+        self.onoiseTerms = {}
+        """
+        Dict with with contributions to detector-referred noise spectrum
+        
+        Key = (str) name of the noise source
+        Value = (sympy.Expr) contribution of that noise source to the 
+        detector-referred noise spectrum in V^2/Hz or A^2/Hz
+        """
+
+        self.inoise      = []
+        """
+        Total source-referred noise spectral density (sympy.Expr) in V^2/Hz or 
+        A^2/Hz.
+        """
+
+        self.onoise      = []
+        """
+        Total detector-referred noise spectrum (sympy.Expr) in V^2/Hz or 
+        A^2/Hz.
+        """
+
+        self.Iv          = None
+        """
+        Vector with independent variables (sympy.Matrix).
+        """
+
+        self.M           = None
+        """
+        MNA matrix (sympy.Matrix).
+        """
+
+        self.A           = None
+        """
+        Base conversion matrix (sympy.Matrix).
+        """
+
+        self.Dv          = None
+        """
+        Vector with dependent variables (sympy.Matrix).
+        """
+
+        self.denom       = []
+        """
+        Laplace poly of denominator (sympy.Expr).
+        """
+
+        self.numer       = []
+        """
+        Laplace poly of numerator (sympy.Expr).
+        """
+
+        self.laplace     = []
+        """
+        Laplace transfer function, or detector current or voltage (sympy.Expr).
+        """
+
+        self.time        = []
+        """
+        Time-domain response of the circuit (ILT) (sympy.Expr).
+        """
+
+        self.impulse     = []
+        """
+        Unit impulse response (ILT) (sympy.Expr).
+        """
+
+        self.stepResp    = []
+        """
+        Unit step response (ILT) (sympy.Expr).
+        """
+
+        self.params      = {}
+        """
+        Results of parameter sweep (dataType = 'param').
+        """
+        
+        # Attributes holding the instruction settings
+        
         self.simType = 'numeric'
         """
         Defines the simulation gain type.
@@ -142,16 +303,16 @@ class instruction(object):
         See **instruction.setDetector(<detector>)** for specification of the detector.
         """
 
-        self.pairExt = ['P', 'N']
+        self.pairExt = ini.pair_ext
         """
         Extensions used to indicate paired nodes or elements.
         Default is: [None, None].
         """
 
-        self.removePairSubName = True
+        self.removePairSubName = ini.remove_param_pair_ext # True
         """
-        If True, the subcircuit ID extension will be removed from parameters in
-        expressions of paired elements in sub circuits. Defaults to True.
+        If True, the subcircuit pair extension will be removed from parameters
+        in expressions of paired elements in sub circuits. Defaults to True.
 
         :note: Warning: this may result in undesired behavior if global parameters
                carry the name of parameters in paired sub circuits.
@@ -247,8 +408,47 @@ class instruction(object):
         """
         Parameter definitions for the instruction. Will be updated by executing
         the instruction.
+        """        
+        self.references = []
         """
+        Referenced elements in the circuit AFTER execution of an 
+        instruction.
+
+        Will be copied from  instruction.circuit.references at the start of
+        the execution of the instruction and possibly modified during the 
+        excution of the instruction.
+        """
+    
+    def clear(self):
         
+        self.DCvalue     = []
+        self.poles       = []
+        self.zeros       = []
+        self.svarTerms   = {}
+        self.ivarTerms   = {}
+        self.ovarTerms   = {}
+        self.ivar        = []
+        self.ovar        = []
+        self.solve       = []
+        self.dcSolve     = []
+        self.timeSolve   = []
+        self.snoiseTerms = {}
+        self.inoiseTerms = {}
+        self.onoiseTerms = {}
+        self.inoise      = []
+        self.onoise      = []
+        self.Iv          = None
+        self.M           = None
+        self.A           = None
+        self.Dv          = None
+        self.denom       = []
+        self.numer       = []
+        self.laplace     = []
+        self.time        = []
+        self.impulse     = []
+        self.stepResp    = []
+        self.params      = {}
+
     def setSimType(self, simType):
         """
         Defines the simulation type for the instruction.
@@ -684,7 +884,7 @@ class instruction(object):
         """
         Checks if the step method is defined correctly.
 
-        Called by **instruction.checkStep** and by **instruction.setStepVMethod(<stepMethod>)**.
+        Called by **instruction.checkStep** and by **instruction.setStepMethod(<stepMethod>)**.
         """
         if self.stepMethod == None:
             self.errors += 1
@@ -1015,6 +1215,14 @@ class instruction(object):
 
         :type need: bool
         """
+        if self.convType == "all":
+            print("Error: Conversion type 'all' cannot automatically convert the source to 'DM' or 'CM'. " +
+                  "Use convtype=None instead.")
+            self.errors += 1
+        if need:
+            if self.source == None:
+                self.errors += 1
+                print("Error: missing source definition.")
         if self.source != None:
             for i in range(len(self.source)):
                 if self.source[i] == None:
@@ -1088,6 +1296,10 @@ class instruction(object):
 
         Called by **instruction.check()** and by **instruction.setDetector(<detector>)**.
         """
+        if self.convType == "all":
+            print("Error: Conversion type 'all' cannot automatically convert the detector to 'DM' or 'CM'. " +
+                  "Use convtype=None instead.")
+            self.errors += 1
         if self.detector != None:
             self.detLabel = ''
             # detector has two nodes or two voltage sources
@@ -1545,6 +1757,10 @@ class instruction(object):
         """
         self.errors = 0
         self.checkCircuit()
+        if self.dataType != "matrix":
+            if self.convType not in [None, "dd", "cc"]:
+                self.errors += 1
+                print("Error: conversion type '%s' can only be combined with doMatrix() (or instruction.dataType='matrix')."%(self.convType))
         if self.dataType == 'noise':
             # Noise sources of resistors add k and T to the circuit parameters
             # These sources should be added before executing the instruction.
@@ -1654,6 +1870,7 @@ class instruction(object):
                 # Check step parameters
                 self.stepDict = {} # Clear the dictionary with step data
                 self.checkStep()
+        self.references = [ref for ref in self.circuit.references]
         return
 
     def execute(self):
@@ -1682,34 +1899,6 @@ class instruction(object):
         >>> print result.laplace
         """
         self.check()
-        if self.errors != 0:
-            r = allResults()
-            print("Errors found. Instruction will not be executed.")
-            return(r)
-        else:
-            return _doInstruction(self)
-
-    def useMatrixConversion(self, method=None):
-        """
-        Converts the basis of the MNA matrices. Execution of the instruction
-        will be performed with this matrix conversion.
-
-        Built-in conversion conversion methods are:
-
-        - None  : No conversion, MNA matrix equation (default)
-        - DM    : Differential-mode transfer
-        - CM    : Common-mode transfer
-        - DMCM  : Differential-mode to common-mode transfer
-        - CMDM  : Common-mode to differential-mode transfer
-
-        :param method: Conversion method can be one of the above.
-        :type method: str
-
-        :return: None
-        :rType: NoneType
-        """
-        METHODS = [None, 'DM', 'CM', 'DMCM', 'CMDM', 'ALL' ]
-        if method in METHODS:
-            self.conversionMethod = method
+        return _doInstruction(self)
 
 

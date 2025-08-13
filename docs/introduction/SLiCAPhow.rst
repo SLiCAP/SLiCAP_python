@@ -4,65 +4,33 @@ How to use SLiCAP
 
 .. image:: /img/colorCode.svg
 
+
+SLiCAP is a tool designed to help you create and solve design equations for analog circuits. It supports both analog design automation and education
+
+A **design equation** represents the value of a specific circuit parameter, such as the value of a component, the operating current of a transistor, or the size of a transistor. These parameters are expressed in terms of circuit requirements like low noise, power consumption, and bandwidth. In contrast, an analysis result indicates how well a circuit performs based on its current parameters
+
+To set up design equations, you need to perform (symbolic) circuit analysis with the parameter(s) of interest and find valid ranges for the parameter(s) by solving the analysis results with given specifications. However, solving equations symbolically can be challenging and is sometimes not feasible. Therefore, it's important to use **circuit models that are both simple and effective**. During each step of the design process, aim to use as few symbolic variables as possible and have clear objectives for performance and cost. This methodology aligns with a systems engineering design approach, as outlined in `Structured Electronic Design <https://analog-electronics.tudelft.nl/>`_.
+
 Workflow
 ========
 
-Working with SLiCAP usually proceeds as follows:
+#. **Initialize a SLiCAP Project:** Begin by setting up a new project in SLiCAP: `Create a SLiCAP project <../userguide/install.html#create-a-slicap-project>`__.
+#. **Create a Circuit Model:** Develop a model that links performance and cost factors to the relevant design parameter(s). Then, create a SLiCAP circuit object from this model: `Create a SLiCAP circuit object <../userguide/circuit.html>`__.
+#. **Import Budgets and Parameters:** Import budgets for performance and cost factors from the design database, along with circuit parameters that were assigned values in earlier design stages: `Work with specifications. See: <../userguide/specifications.html>`__, and `Work with parameters <../userguide/parameters.html>`__.
+#. **Performance/Cost Analysis:** Conduct a mixed symbolic/numeric analysis for the performance or cost factors of interest: `Perform analysis <../userguide/analysis.html>`__.
+#. **Determine Valid Ranges:** Obtain valid ranges for the design parameters of interest as solutions derived from the analysis results, taking into account all relevant specifications. More details can be found here: `Work with analysis results <../userguide/math.html>`__.
+#. **Assign Parameter Values:** Assign values to the circuit parameters within the valid ranges that you’ve determined. For guidance, refer to: `Work with parameters <../userguide/parameters.html>`__.
+#. **Verify performance:** Check if the performance meets the desired criteria: `Perform analysis <../userguide/analysis.html>`__.
+#. **Adjust Budgets if Necessary:** If the performance or costs do not align with your targets, adjust the budgets and then revisit the process starting from step 4. For adjusting budgets see: `Work with specifications <../userguide/specifications.html>`__, and `Work with parameters <../userguide/parameters.html>`__.
+#. **Store Values:** If the performance and costs are satisfactory, store the parameter values in the design database. Refer to: `Work with specifications <../userguide/specifications.html>`__.
+#. **Generate Documentation:** Create snippets for design documents in formats such as LaTeX, ReStructuredText, or HTML. See: `Create Reports <../userguide/reports.html>`__.
+#. **Proceed:** Repeat the process for the next performance aspect(s), cost factor(s), and circuit parameter(s) of interest.
 
-#. **Initialize a SLiCAP project**: this will
+This structured approach helps streamline the design process and ensures that all performance and cost factors are systematically addressed. For more detailed information, check out `Structured Electronic Design <https://analog-electronics.tudelft.nl/>`_.
 
-   - Create the directory structure for your project
-   - Create a configuration file for your project 
-   - Create the main html index page for this project
+Design and documentation
+========================
 
-#. **Create a circuit model** that models the performance aspect(s) and/or cost factor(s) of interest and create netlist from it
-
-   .. admonition:: note
-   
-      The complexity of the model should be as low as possible: the model should have all the information to find the answer to a design question, but not more.
-
-   - SLiCAP supports netlist generation with KiCAD, LTspice, gSchem and lepton-eda
-    
-#. **Import design budgets** for performance and cost factors, as well as circuit parameters determined in earlier design steps to the circuit
-
-   - SLiCAP writes and reads design data to and from a CSV file
-   
-#. **Perform mixed symbolic/numeric circuit analysis** with this model and obtain an expression that writes the performance or costs as a function of the circuit parameters
-
-   SLiCAP has 16 predefined (mixed symbolic/numeric) analysis types grouped in:
-   
-   - DC and DC variance analysis for finding valid ranges for:
-    
-     - resistor tolerances
-     - offset voltages and currents and their temperature dependency
-     - matching and temperature tracking properties of resistors
-   
-   - Noise analysis for finding valid ranges for:
-   
-     - resistor values
-     - equivalent input noise sources of operational amplifiers
-     - geometry and operating current of semiconductor devices
-     
-   - Complex frequency domain analysis (Laplace) for finding
-   
-     - minimum gain-bandwidth product of operational amplifiers
-     - minimum number of stages in a feedback amplifier
-     - budgets for geometry and operating current of semiconductor devices considering bandwidth limitations
-     - component values for filters and frequency compensation elements
-   
-   - Complex frequency domain analysis (Poles and Zeros) for determination of
-   
-     - frequency stability
-     - non-observable or non-controllable states
-     
-   - Time-domain analysis (Inverse Laplace) for finding valid ranges for
-    
-     - component values, geometry and operating current of semiconductor devices, considering settling time requirements
-     
-#. **Obtain valid ranges for circuit parameters** (component values, geometry and operating voltages and currents) and save them in the design database
-
-#. **Assign values to circuit parameters** and save them in the data base
-
-#. **Go to (2)** for the next design aspect or the next hierarchical level
+As described above, the primary focus of SLiCAP is to emphasize the motivations behind each design step, relating them to target specifications such as performance, costs, and operating environment. However, the development of SLiCAP is also based upon the idea of concurrent design and documentation. Throughout the design process, information is stored in a database, while documents present various perspectives on this data. These perspectives may include design motivations, production information, and other relevant aspects. 
 
 .. image:: /img/colorCode.svg

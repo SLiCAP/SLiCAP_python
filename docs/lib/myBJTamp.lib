@@ -1,0 +1,7 @@
+myBJTamp
+.subckt myBJTamp in out ref
+.model myQ QV gm={g_m} go={g_o} gpi={g_m/beta_AC}
+Q1 out in ref ref myQ
+R1 in out R value={R_f} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+.ends
+.end

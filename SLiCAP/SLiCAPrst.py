@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-SLiCAP functions for generating snippets that can be stored as RST files
+SLiCAP formatter for generating snippets that can be stored as RST files
 and included in other RST files.
-
-IMPORTANT: In future versions of SLiCAP, these functions will be replaced with 
-an RST formatter.
 """
 import SLiCAP.SLiCAPconfigure as ini
 import sympy as sp
@@ -33,8 +30,7 @@ class RSTformatter(_BaseFormatter):
         except FileNotFoundError :
             pass
 
-    def netlist(self, netlistFile, lineRange=None, firstNumber=None, 
-                position=0):
+    def netlist(self, netlistFile, lineRange=None, firstNumber=None):
         """
         Creates a LaTeX `\\input{}` or an RST '.. literalinclude:: '
         command for including a netlist file.
@@ -48,9 +44,6 @@ class RSTformatter(_BaseFormatter):
         
         :param firstNumber: start number of the displayed line numbers
         :type firstNumber: str
-        
-        :param position: Number of spaces to indent
-        :type position: int
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -69,17 +62,16 @@ class RSTformatter(_BaseFormatter):
             .. literalinclude:: <full path to myFirstRCnetwork.cir>
                 :linenos:
         """
-        spaces = _makeSpaces(position)
-        RST = spaces + '.. literalinclude:: /' + ini.project_path 
+        RST = '.. literalinclude:: /' + ini.project_path 
         RST += ini.cir_path + netlistFile + '\n'
-        RST += spaces + '    :linenos:\n'
+        RST += '    :linenos:\n'
         if lineRange != None:
-            RST += spaces + '    :lines: ' + lineRange + '\n'
+            RST += '    :lines: ' + lineRange + '\n'
             if firstNumber != None:
-                RST += spaces + '    :lineno-start: ' + str(firstNumber) + '\n'
+                RST += '    :lineno-start: ' + str(firstNumber) + '\n'
         return Snippet(RST, self.format)
                 
-    def elementData(self, circuitObject, label="", caption="", position=0):
+    def elementData(self, circuitObject, label="", caption=""):
         """
         Creates a table with data of expanded netlist elements of *circuitObject*.
         If no label AND no caption are given this method returns a LaTeX
@@ -93,9 +85,6 @@ class RSTformatter(_BaseFormatter):
         
         :param caption: Text that will used as table caption.
         :type caption: str
-        
-        :param position: Number of spaces to indent
-        :type position: int
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -135,11 +124,11 @@ class RSTformatter(_BaseFormatter):
                         line.append(fullSubs(el.params[keys[i]], 
                                              circuitObject.parDefs))
                         linesList.append(line)
-        RST = _RSTcreateCSVtable(caption, headerList, linesList, 
-                                 position=position, label=label)
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, numeric=[6],
+                                 label=label)
         return Snippet(RST, self.format)
 
-    def parDefs(self, circuitObject, label="", caption="", position=0):
+    def parDefs(self, circuitObject, label="", caption=""):
         """
         Creates a table with parameter definitions of *circuitObject*.
         If no label AND no caption are given this method returns a LaTeX
@@ -154,9 +143,6 @@ class RSTformatter(_BaseFormatter):
         :param caption: Text that will used as table caption.
         :type caption: str
         
-        :param position: Number of spaces to indent
-        :type position: int
-        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
@@ -169,14 +155,14 @@ class RSTformatter(_BaseFormatter):
                     fullSubs(circuitObject.parDefs[parName], 
                              circuitObject.parDefs)]
                 linesList.append(line)
-            RST = _RSTcreateCSVtable(caption, headerList, linesList,
-                                     position=position, label=label)
+            RST = _RSTcreateCSVtable(caption, headerList, linesList, 
+                                     numeric=[2], label=label)
         else:
             RST = "**No parameter definitions in: " 
             RST +=  circuitObject.title + '**\n\n'
         return Snippet(RST, self.format)
 
-    def dictTable(self, dct, head=None, label="", caption="", position=0):
+    def dictTable(self, dct, head=None, label="", caption=""):
         """
         Creates a table from a dictionary; optionally with a header.
         If no label AND no caption are given this method returns a LaTeX
@@ -195,21 +181,8 @@ class RSTformatter(_BaseFormatter):
         :param caption: Text that will used as table caption.
         :type caption: str
         
-        :param position: Number of spaces to indent
-        :type position: int
-        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
-        
-        :example:
-            
-        >>> import SLiCAP as sl
-        >>> 
-        >>> sl.initProject("Documentation")
-        >>> rst = sl.RSTformatter()
-        >>> header = ["name", "age"]
-        >>> data   = {"John": 89, Mary: 104}
-        >>> rst.dictTable(data, head=header, caption="Some of my friends").save("friends")
         """
         RST = None
         if len(dct.keys()) > 0:
@@ -219,13 +192,13 @@ class RSTformatter(_BaseFormatter):
                 headerList  = ["", ""]
             linesList   = []
             for key in dct.keys():
-                line = [key, dct[key]]
+                line = [key, ":math:`" + sp.latex(roundN(dct[key])) + "`" ]
                 linesList.append(line)
             RST = _RSTcreateCSVtable(caption, headerList, linesList, 
-                                     position=position, label=label)
+                                     label=label)
         return Snippet(RST, self.format)
     
-    def params(self, circuitObject, label="", caption="", position=0):
+    def params(self, circuitObject, label="", caption=""):
         """
         Creates a table with undefined parameters of *circuitObject*.
         If no label AND no caption are given this method returns a LaTeX
@@ -240,9 +213,6 @@ class RSTformatter(_BaseFormatter):
         :param caption: Text that will used as table caption.
         :type caption: str
         
-        :param position: Number of spaces to indent
-        :type position: int
-        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
@@ -252,12 +222,12 @@ class RSTformatter(_BaseFormatter):
             for parName in circuitObject.params:
                 linesList.append([parName])
             RST = _RSTcreateCSVtable(caption, headerList, linesList, 
-                                     position=position, label=label)
+                                     label=label)
         else:
             RST = '**No undefined parameters in: ' +  circuitObject.title + '**\n\n'
         return Snippet(RST, self.format)
 
-    def pz(self, resultObject, label="", caption="", position=0):
+    def pz(self, resultObject, label="", caption=""):
         """
         Creates a table or tables with results of pole/zero analysis stored in *resultObject*.
         If no label AND no caption are given this method returns a LaTeX
@@ -272,13 +242,13 @@ class RSTformatter(_BaseFormatter):
         :param caption: Text that will used as table caption(s).
         :type caption: str
         
-        :param position: Number of spaces to indent
-        :type position: int
-        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
-        RST = ''
+        if resultObject.dataType == "pz":
+            RST = 'DC value of ' + resultObject.gainType + ': :math:`' + sp.latex(roundN(resultObject.DCvalue)) +'`\n\n'
+        else:
+            RST = ""
         if resultObject.errors != 0:
             print("pz2RST: Errors found in instruction.")
         elif resultObject.dataType != 'poles' and resultObject.dataType != 'zeros' and resultObject.dataType != 'pz':
@@ -296,7 +266,7 @@ class RSTformatter(_BaseFormatter):
                 if ini.hz == True:
                     headerList = ['#', 'Re [Hz]', 'Im [Hz]', ':math:`f` [Hz]', 'Q']
                 else:
-                    headerList = ['#', 'Re [rad/s]', 'Im [rad/s]', ':math:`\\omega` [rad/s]', 'Q']
+                    headerList = ['#', 'Re [rad/s]', 'Im [rad/s]', 'w [rad/s]', 'Q']
             else:
                 if ini.hz == True:
                     headerList = ['#', ':math:`f` [Hz]']
@@ -316,10 +286,10 @@ class RSTformatter(_BaseFormatter):
                     linesList += _symRoots2RST(resultObject.zeros, ini.hz, 'z')
 
             RST += _RSTcreateCSVtable(caption, headerList, linesList, 
-                                      position=position, label=label)
+                                      label=label)
         return Snippet(RST, self.format)
 
-    def noiseContribs(self, resultObject, label="", caption="", position=0):
+    def noiseContribs(self, resultObject, label="", caption=""):
         """
         Creates a table with results of noise analysis stored in *resultObject*.
         If no label AND no caption are given this method returns a LaTeX
@@ -333,9 +303,6 @@ class RSTformatter(_BaseFormatter):
         
         :param caption: Text that will used as table caption(s).
         :type caption: str
-        
-        :param position: Number of spaces to indent
-        :type position: int
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -370,7 +337,7 @@ class RSTformatter(_BaseFormatter):
             print('noise2RST: Error: wrong data type, or stepped analysis.')
         return Snippet(RST, self.format)
 
-    def dcvarContribs(self, resultObject, label="", caption="", position=0):
+    def dcvarContribs(self, resultObject, label="", caption=""):
         """
         Creates a table with results of dcvar analysis stored in *resultObject*.
         If no label AND no caption are given this method returns a LaTeX
@@ -384,9 +351,6 @@ class RSTformatter(_BaseFormatter):
         
         :param caption: Text that will used as table caption(s).
         :type caption: str
-        
-        :param position: Number of spaces to indent
-        :type position: int
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -420,7 +384,7 @@ class RSTformatter(_BaseFormatter):
             print('dcvar2RST: Error: wrong data type, or stepped analysis.')
         return Snippet(RST, self.format)
 
-    def specs(self, specs, specType, label="", caption="", position=0):
+    def specs(self, specs, specType, label="", caption=""):
         """
         Creates a table with specifications of type *specType*.
         If no label AND no caption are given this method returns a LaTeX
@@ -435,9 +399,6 @@ class RSTformatter(_BaseFormatter):
         :param caption: Table caption.
         :type caption: str
         
-        :param position: Number of spaces to indent
-        :type position: int
-        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
@@ -447,13 +408,13 @@ class RSTformatter(_BaseFormatter):
             if specItem.specType.lower()==specType.lower():
                 linesList.append(specItem._specLine())
         if len(linesList) > 0:
-            RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, 
-                                     position=position) + '\n'
+            RST = _RSTcreateCSVtable(caption, headerList, linesList, 
+                                     label=label) + '\n'
         else:
             RST =  "**Found no specifications of type: " + specType + ".**\n\n"
         return Snippet(RST, self.format)
 
-    def eqn(self, LHS, RHS, units="", label="", multiline=False, position=0):
+    def eqn(self, LHS, RHS, units="", label="", multiline=False):
         """
         Creates a displayed (numbered) equation.
 
@@ -469,11 +430,9 @@ class RSTformatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param multiline: True breaks the equation over multiple lines
-        :type multiline: Bool
-        
-        :param position: Number of spaces to indent
-        :type position: int
+        :param multiline: n breaks the equation over multiple lines with n sums
+                          or products per line
+        :type multiline: int, Bool
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -488,21 +447,33 @@ class RSTformatter(_BaseFormatter):
         >>> rhs = sp.N(-1)
         >>> rst.eqn(lhs, rhs, label="nice_eqn").save("nice_eqn")
         """
-        spaces = _makeSpaces(position)
-        RST = spaces + '.. math::\n'
+        RST = '.. math::\n'
         if label != '':
-            RST += spaces + '    :label: ' + label + '\n'
+            RST += '    :label: ' + label + '\n'
         RST += '\n'
         try:
             units = units2TeX(units)
         except:
             units = ''
-        RST += spaces + '    ' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
-        if units != '':
-            RST += '\\,\\,\\left[\\mathrm{' + units + '}\\right]\n\n'
+        
+        if multiline:
+            TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), 
+                                            terms_per_line=multiline)
+            TEX = TEX.replace('\\\\\n', '\\nonumber \\\\\n')
+            TEX = TEX.replace('{align*}', '{align}')
+            if units != '':
+                units = '\\,\\left[\\mathrm{' + units + '}\\right]'
+                TEX = TEX.replace('\\end{align}', '%s\n\\end{align}'%(units))
+            TEX += '\n'
+            TEX = TEX.replace("\n", "\n    ")
+            RST += TEX
+        else:
+            RST += '    ' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
+            if units != '':
+                RST += '\\,\\,\\left[\\mathrm{' + units + '}\\right]\n\n'
         return Snippet(RST, self.format)
 
-    def matrixEqn(self, Iv, M, Dv, label="", position=0):
+    def matrixEqn(self, Iv, M, Dv, label=""):
         """
         Creates a displayed matrix equation without evaluating it.
 
@@ -517,23 +488,19 @@ class RSTformatter(_BaseFormatter):
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
- 
-        :param position: Number of spaces to indent
-        :type position: int
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
-        spaces = _makeSpaces(position)
-        RST = spaces + '.. math::\n'
+        RST = '.. math::\n'
         if label != '':
-            RST += spaces + '    :label: ' + label + '\n'
+            RST += '    :label: ' + label + '\n'
         RST += '\n'
-        RST += spaces + '    ' + sp.latex(roundN(Iv)) + '='
+        RST += '    ' + sp.latex(roundN(Iv)) + '='
         RST += sp.latex(roundN(M)) + '\\cdot ' + sp.latex(roundN(Dv)) + '\n\n'
         return Snippet(RST, self.format)
 
-    def stepArray(self, stepVars, stepArray, label="", caption="", position=0):
+    def stepArray(self, stepVars, stepArray, label="", caption=""):
         """
         Creates a table with step array values. 
         If no label AND no caption are given this method returns a LaTeX
@@ -551,9 +518,6 @@ class RSTformatter(_BaseFormatter):
         :param caption: Table caption.
         :type caption: str
         
-        :param position: Number of spaces to indent
-        :type position: int
-        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
@@ -567,11 +531,11 @@ class RSTformatter(_BaseFormatter):
             for j in range(numVars):
                 line.append(stepArray[j][i])
             linesList.append(line)
-        RST = _RSTcreateCSVtable(caption, headerList, linesList, position=position, 
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, 
                                  label=label) + '\n\n'
         return Snippet(RST, self.format)
 
-    def coeffsTransfer(self, transferCoeffs, label="", caption="", position=0):
+    def coeffsTransfer(self, transferCoeffs, label="", caption=""):
         """
         Creates a tablestable that displays the numerator and denominator 
         coefficients of a rational expression. 
@@ -589,9 +553,6 @@ class RSTformatter(_BaseFormatter):
         
         :param caption: Table caption.
         :type caption: str
-        
-        :param position: Number of spaces to indent
-        :type position: int
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -617,14 +578,14 @@ class RSTformatter(_BaseFormatter):
             linesList.append([sp.sympify('b_' + str(i)), numerCoeffs[i]])
         for i in range(len(denomCoeffs)):
             linesList.append([sp.sympify('a_' + str(i)), denomCoeffs[i]])
-        RST = _RSTcreateCSVtable(caption, headerList, linesList, label=label, 
-                                 position=position)
+        RST = '**Gain factor:**' + ':math:`' + sp.latex(roundN(gain)) +'`\n\n'
+        RST += _RSTcreateCSVtable(caption, headerList, linesList, label=label)
         return Snippet(RST, self.format)
 
     def file(
-        self, fileName, lineRange=None, firstNumber=None, position=0):
+        self, fileName, lineRange=None, firstNumber=None):
         """
-        Creates a LaTeX `\\input{}` command for literally displaying a file.
+        Creates a n RST *.. literalinclude::* command for literally displaying a file.
         
         :param fileName: Name of the file. Path is absolute or relative to the 
                          project directory
@@ -636,19 +597,15 @@ class RSTformatter(_BaseFormatter):
         :param firstNumber: start number of the displayed line numbers
         :type firstNumber: str
         
-        :param position: Number of spaces to indent
-        :type position: int
-        
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
-        spaces = _makeSpaces(position)
-        RST = spaces + '.. literalinclude:: /' + fileName + '\n'
-        RST += spaces + '    :linenos:\n'
+        RST = '.. literalinclude:: ' + fileName + '\n'
+        RST += '    :linenos:\n'
         if lineRange != None:
-            RST += spaces + '    :lines: ' + lineRange + '\n'
+            RST += '    :lines: ' + lineRange + '\n'
             if firstNumber != None:
-                RST += spaces + '    :lineno-start: ' + str(firstNumber) + '\n'
+                RST += '    :lineno-start: ' + str(firstNumber) + '\n'
         return Snippet(RST, self.format)
 
     def expr(self, expr, units="", name=None):
@@ -717,7 +674,7 @@ class RSTformatter(_BaseFormatter):
         return Snippet(RST, self.format, mode="a")
     
     def nestedLists(self, headerList, linesList, unitpos=None, caption='', 
-                    label='', position=0):
+                    label=''):
         """
         Creates and returns an RST table snippet that can be included in a 
         ReStructuredText document. Each list is converted into a table row and
@@ -734,28 +691,21 @@ class RSTformatter(_BaseFormatter):
 
         :param linesList: List with lists of table data for each table row
         :type linesList: list
-
-        :param unitpos: Position of column with units (will be typesetted with mathrm)
-        :type unitpos: int, str
         
         :param label: Table reference label
         :type label: str
-        
-        :param position: Number of spaces to indent
-        :type position: int
 
         :return: RST snippet to be included in a ReStructuredText document
         :rtype: str
         """
-        RST = _RSTcreateCSVtable(caption, headerList, linesList, position,
-                                 unitpos, label)
+        RST = _RSTcreateCSVtable(caption, headerList, linesList, unitpos, label)
         return Snippet(RST, self.format)
         
 
 # Non-public functions for creating table snippets
 
-def _RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None, 
-                       label=''):
+def _RSTcreateCSVtable(name, headerList, linesList, unitpos=None, 
+                       label='', numeric=[]):
     """
     Creates and returns an RST table snippet that can be included in a
     ReStructuredText document.
@@ -771,42 +721,39 @@ def _RSTcreateCSVtable(name, headerList, linesList, position=0, unitpos=None,
     :param linesList: List with lists of table data for each table row
     :type linesList: list
 
-    :param unitpos: Position of column with units (will be typesetted with mathrm)
-    :type unitpos: int, str
-
     :param label: Table reference label
     :type label: str
-    
-    :param position: Number of spaces to indent
-    :type position: int
 
     :return: RST snippet to be included in a ReStructuredText document
     :rtype: str
     """
     RST = ''
-    spaces = _makeSpaces(position)
     if label != '':
-        RST += spaces + '.. _' + label + ':\n'
-    RST += spaces + '.. csv-table:: ' + name + '\n'
-    RST += spaces + '    :header: '
+        RST += '.. _' + label + ':\n'
+    RST += '.. csv-table:: ' + name + '\n'
+    RST += '    :header: '
     for item in headerList:
         if type(item) == str:
             RST += '"' + item + '", '
         else:
             RST += ':math:`' + sp.latex(roundN(item)) + '`, '
     RST = RST[:-2] + '\n'
-    RST +=  spaces + '    :widths: auto\n'
+    RST +=  '    :widths: auto\n'
     for line in linesList:
         i = 0
-        RST += '\n' + spaces + '    '
+        RST += '\n    '
+        j = 0
         for item in line:
             if i == unitpos:
                 RST += ':math:`\\mathrm{' + units2TeX(item) + '}`, '
             elif type(item) == str:
                 RST += '"' + item + '", '
-            else:
+            elif j in numeric:
                 RST += ':math:`' + sp.latex(roundN(sp.N(item))) + '`, '
+            else:
+                RST += ':math:`' + sp.latex(roundN(item)) + '`, '
             i += 1
+            j += 1
         RST = RST[:-2]
     RST += '\n\n'
     return RST
@@ -840,10 +787,10 @@ def _numRoots2RST(roots, Hz, pz):
             realpart = roundN(sp.N(realpart/2/sp.pi))
             imagpart = roundN(sp.N(imagpart/2/sp.pi))
             frequency = roundN(sp.N(frequency/2/sp.pi))
-            if imagpart == 0:
-                line = [sp.Symbol(pz + '_' + str(i)), realpart, imagpart, frequency ]
-            else:
-                line = [sp.Symbol(pz + '_' + str(i)), realpart, imagpart, frequency, Q]
+        if imagpart == 0:
+            line = [sp.Symbol(pz + '_' + str(i)), realpart, imagpart, frequency ]
+        else:
+            line = [sp.Symbol(pz + '_' + str(i)), realpart, imagpart, frequency, Q]
         lineList.append(line)
     return lineList
 
@@ -874,19 +821,3 @@ def _symRoots2RST(roots, Hz, pz):
             line = [sp.Symbol(pz + '_' + str(i)), ':math:`' + sp.latex(roundN(root)) + '`']
         lineList.append(line)
     return lineList
-
-def _makeSpaces(n):
-    """
-    Creates and returns a string with <n> spaces.
-
-    :param n: Number of spaces
-    :type n: int
-
-    :return: String with <n> spaces
-    :rtype: str
-    """
-    spaces = ''
-    if n > 0:
-        for i in range(n):
-            spaces += ' '
-    return spaces

@@ -1,0 +1,28 @@
+* SLiCAP-NGSPICE library
+
+.subckt Nullor outP outN inP inN
+E1 outP outN in outN 1
+E2 outP in inP inN 1
+.ends
+
+.subckt Transformer outP outN inP inN params n=1
+E1 outP 1 inP inN n
+V1 outN 1 0
+F1 inP inN V1 n
+.ends
+
+.subckt Gyrator outP outN inP inN params g=1
+G1 outP outN inP inN g
+G2 inP inN outN outP g
+.ends
+
+*     Node assignments
+*             Non-Inverting Input
+*             |  Inverting Input 
+*             |  |  positive supply
+*             |  |  |  negative supply
+*             |  |  |  |  output
+*             |  |  |  |  | 
+*             |  |  |  |  |
+.subckt OpAmp ni ii vp vn out
+.ends

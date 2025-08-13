@@ -22,8 +22,7 @@ from SLiCAP.SLiCAPmath import *
 from SLiCAP.SLiCAPplots import *
 from SLiCAP.SLiCAPrst import RSTformatter
 from SLiCAP.SLiCAPlatex import LaTeXformatter, sub2rm
-from SLiCAP.SLiCAPngspice import MOS, ngspice2traces
-from SLiCAP.SLiCAPltspice import runLTspice
+from SLiCAP.SLiCAPngspice import MOS, ngspice2traces, selectTraces
 from SLiCAP.SLiCAPshell import *
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
@@ -106,7 +105,6 @@ def initProject(name, notebook=False):
     """
     # Read the project data from the project configuration file
     project_config = ini._read_project_config()
-    
     # Adjust image sizes for notebooks (image font size equals notebook font size)
     ini.notebook        = notebook
     if notebook:
@@ -140,7 +138,6 @@ def initProject(name, notebook=False):
     _makeDir(ini.csv_path)
     _makeDir(ini.img_path)
     _makeDir(ini.sphinx_path)
-    _makeDir(ini.mathml_path)
     _makeDir(ini.cir_path)
     _makeDir(ini.user_lib_path)
     _makeDir(ini.tex_path)

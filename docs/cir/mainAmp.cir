@@ -1,0 +1,8 @@
+mainAmp
+.lib bigAmp.lib
+.param V_s=1 R_s=50 R=50
+R1 1 2 R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2 3 0 R value={R_L} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 1 0 V value={V_s} noise=0 dc=0 dcvar=0
+XA 2 0 3 0 bigAmp A_i={A_i} R_o={R}
+.end

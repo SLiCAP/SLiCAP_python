@@ -1,0 +1,12 @@
+"myPassiveNetwork"
+.source V1
+.detector V_out
+.param R_s=50 R_ell=450 L=1u C_a=25n C_b={1/((2*pi*f_s)^2*L)} f_s=5e6 S_v=4e-18
+.param V_DC = 5 sigma_V=0.05 sigma_R1 = 0.02 sigma_R2=0.01 a={2*pi*1e6}
+C1 0 out C value={C_a} vinit=0
+C2 out 1 C value={C_b} vinit=0
+L1 1 out L value={L} iinit=0
+R1 1 in R value={R_s} noisetemp={T} noiseflow=0 dcvar={sigma_R1^2} dcvarlot=0
+R2 out 0 R value={R_ell} noisetemp={T} noiseflow=0 dcvar={sigma_R2^2} dcvarlot=0
+V1 in 0 V value={a/(a^2+s^2)} noise={S_v} dc={V_DC} dcvar={(sigma_V*V_DC)^2}
+.end

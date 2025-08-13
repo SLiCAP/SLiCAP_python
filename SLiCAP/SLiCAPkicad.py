@@ -7,12 +7,9 @@ import subprocess
 import os
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPsvgTools import _crop_svg
-#try:
-#    import cairosvg
-#except:
-#    print("Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.")
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPDF
+from SLiCAP.SLiCAPprotos import _MODELS, _SPICEMODELS
 
 class _KiCADcomponent(object):
     def __init__(self):
@@ -34,16 +31,17 @@ def _checkTitle(title):
     title = '"' + title + '"'
     return title.replace('""', '"')
 
-def _parseKiCADnetlist(kicad_sch, kicadPath=''):
-    fileName   = '.'.join(kicad_sch.split('.')[0:-1])
+def _parseKiCADnetlist(kicad_sch, kicadPath='', language="SLiCAP"):
+    fileName = '.'.join(kicad_sch.split('.')[0:-1])
+    cirTitle = fileName.split('/')[-1].split('.')[0]
+    cirName  = cirTitle + ".cir"
+    cirFile  = ini.cir_path + cirName
     try:
         subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.cir_path + kicadPath + fileName + ".net", ini.cir_path + kicadPath + fileName + ".kicad_sch"])
         f = open(ini.cir_path + kicadPath + fileName + ".net", "r")
         lines = f.readlines()
         f.close()
-        netlist = _parseKiCADnetlistlines(lines)
-        cirName = fileName.split('/')[-1].split('.')[0] + ".cir"
-        cirFile = ini.cir_path + cirName
+        netlist, subckt, subckt_lib = _parseKiCADnetlistlines(lines, cirTitle, language)
         f = open(cirFile, 'w')
         f.write(netlist)
         f.close()
@@ -51,13 +49,15 @@ def _parseKiCADnetlist(kicad_sch, kicadPath=''):
         print("\nError: could not run Kicad using '{}'.".format(ini.kicad))
     return cirName
     
-def _parseKiCADnetlistlines(lines, cirTitle):
+def _parseKiCADnetlistlines(lines, cirTitle, language):
     reserved   = ["Description", "Footprint", "Datasheet"]
     components = {}
     nodes      = {}
     nodelist   = []
     comps      = False
     title      = False
+    subckt     = False
+    subckt_lib = False
     for line in lines:
         # remove spaces in expression
         try:
@@ -79,7 +79,10 @@ def _parseKiCADnetlistlines(lines, cirTitle):
             components[newComp.refDes] = newComp
             comps = False
         elif fields[0] == "value" and comps:
-            value = fields[fields.index("value")+1][1:-1]
+            if language == "SLiCAP":
+                value = fields[fields.index("value")+1][1:-1]
+            elif language == "SPICE":
+                value = " ".join(fields[fields.index("value")+1:])[1:-1]
             if value != '~':
                 newComp.params["value"] = value
         elif fields[0] == "field" and comps:
@@ -90,9 +93,11 @@ def _parseKiCADnetlistlines(lines, cirTitle):
                     newComp.model = fieldValue
                 elif fieldName[0:-1] == "ref":
                     newComp.refs.append(fieldValue)
+                elif fieldName == "Vsource":
+                    newComp.refs.append(fieldValue)
                 elif fieldName == 'command':
                     newComp.command = ' '.join(fields[3:])[1:-1]
-                elif fieldName not in reserved:
+                else:    
                     newComp.params[fieldName] = fieldValue
             except IndexError:
                 # Field has no value!
@@ -119,10 +124,9 @@ def _parseKiCADnetlistlines(lines, cirTitle):
     for refDes in components.keys():
         for node in components[refDes].nodes.keys():
             components[refDes].nodes[node] = nodes[components[refDes].nodes[node]]
-    if not title:
-        title = cirTitle
-    netlist = title
+    netlist = ""
     for refDes in components.keys():
+        onoff = None
         if refDes[0] != "A":
             netlist += "\n" + refDes
             pinlist = list(components[refDes].nodes.keys())
@@ -131,13 +135,56 @@ def _parseKiCADnetlistlines(lines, cirTitle):
                 netlist += " " + components[refDes].nodes[pin]
             for ref in components[refDes].refs:
                 netlist += " " + ref
-            netlist += " " + components[refDes].model
+            if language == "SLiCAP":
+                netlist += " " + components[refDes].model
             for param in components[refDes].params.keys():
-                netlist += " " + param + "=" + components[refDes].params[param]
+                if language == "SLiCAP":
+                    if refDes[0] != "X":
+                        try:
+                            if param in _MODELS[components[refDes].model].params:
+                                netlist += " " + param + "=" + components[refDes].params[param]
+                        except KeyError:
+                            if param not in reserved:
+                                    netlist += " " + param + "=" + components[refDes].params[param]
+                    elif param not in reserved:
+                            netlist += " " + param + "=" + components[refDes].params[param]
+                elif language == "SPICE":
+                    if param == "onoff":
+                        onoff = components[refDes].params["onoff"]
+                    elif param == "value":
+                        netlist += " " + components[refDes].params["value"]
+                    elif refDes[0] != "X" and param in _SPICEMODELS[components[refDes].model]:
+                        netlist += " " + param + "=" + components[refDes].params[param]
+                    elif param not in reserved:
+                        netlist += " " + param + "=" + components[refDes].params[param]
+            if language == "SPICE" and onoff != None:
+                netlist += " " + onoff  
         else:
-            netlist +='\n' + components[refDes].command
-    netlist += "\n.end"
-    return netlist
+            CMD = components[refDes].command.split()
+            if CMD[0].upper() == ".SUBCKT":
+                subckt = components[refDes].command
+            elif CMD[0].upper() == ".FILE":
+                if len(CMD) < 2:
+                    print("Error: KiCAD netlister: missing library file")
+                else:
+                    subckt_lib = " ".join(CMD[1:]).replace('\\"', '"').replace('" ', '"')
+                    print("LIB", subckt_lib)
+            else:
+                netlist +='\n' + components[refDes].command
+    #if language == "SPICE":
+    #    netlist += "\n.INC %sSLiCAP/files/lib/SPICE.lib"%(ini.install_path)
+    if not title:
+        title = cirTitle
+    if subckt:
+        netlist = subckt + netlist + "\n.ends"
+        subckt = subckt.split()[1]
+        if language == "SLiCAP" and not subckt_lib:
+            netlist = title + "\n" + netlist
+            netlist += "\n.end"
+    else:
+        netlist = title + netlist
+        netlist += "\n.end"
+    return netlist, subckt, subckt_lib
 
 def KiCADsch2svg(fileName):
     """
@@ -159,18 +206,10 @@ def KiCADsch2svg(fileName):
             subprocess.run([ini.kicad, 'sch', 'export', 'svg', '-o', ini.img_path, '-e', '-n', fileName])
             _crop_svg(ini.img_path + cirName + ".svg")
             renderPDF.drawToFile(svg2rlg(ini.img_path + cirName + ".svg"), ini.img_path + cirName + ".pdf")
-            """
-            try:
-                cairosvg.svg2pdf(url=ini.img_path + cirName + ".svg", write_to=ini.img_path + cirName + ".pdf")
-            except:
-                print("Error: cannot convert SVG to PDF using cairosvg. Please convert manually if necessary.")
-            """
         else:
             print("Error: could not open: '{}'.".format(fileName))
     
-def _kicadNetlist(fileName, cirTitle):
-    Kicad = False
-    Inkscape = False
+def _kicadNetlist(fileName, cirTitle, language="SLiCAP"):
     if ini.kicad == "":
         print("Please install Kicad, delete '~/SLiCAP.ini', and run this script again.")
     elif os.path.isfile(fileName):
@@ -180,16 +219,21 @@ def _kicadNetlist(fileName, cirTitle):
         f = open(kicadnetlist, "r")
         lines = f.readlines()
         f.close()
-        netlist = _parseKiCADnetlistlines(lines, cirTitle)
-        cirName = fileName.split('/')[-1].split('.')[0]+ ".cir"
-        cirFile = ini.cir_path + cirName 
-        f = open(cirFile, 'w')
-        f.write(netlist)
-        f.close()
+        netlist, subckt, subckt_lib = _parseKiCADnetlistlines(lines, cirTitle, language=language)
+        if subckt:
+            f = open(ini.user_lib_path + subckt + ".lib", "w")
+            f.write(netlist)
+            f.close()
+        else:
+            cirName = fileName.split('/')[-1].split('.')[0]+ ".cir"
+            cirFile = ini.cir_path + cirName 
+            f = open(cirFile, 'w')
+            f.write(netlist)
+            f.close()
         KiCADsch2svg(fileName)
     else:
         print("Error: could not open: '{}'.".format(fileName))
-    return cirName
+    return netlist, subckt
 
 if __name__=='__main__':
     from SLiCAP import initProject

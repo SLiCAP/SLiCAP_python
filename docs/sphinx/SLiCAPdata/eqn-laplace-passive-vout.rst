@@ -1,0 +1,3 @@
+.. math::
+
+    V_{out} = \frac{R_{\ell} \left(C_{b} L s^{2} + 1\right)}{a \left(R_{\ell} + R_{s}\right) \left(\frac{C_{a} C_{b} L R_{\ell} R_{s} s^{5}}{R_{\ell} a^{2} + R_{s} a^{2}} + \frac{s^{4} \left(C_{a} L R_{\ell} + C_{b} L R_{\ell} + C_{b} L R_{s}\right)}{R_{\ell} a^{2} + R_{s} a^{2}} + \frac{s^{3} \left(C_{a} C_{b} L R_{\ell} R_{s} a^{2} + C_{a} R_{\ell} R_{s} + L\right)}{R_{\ell} a^{2} + R_{s} a^{2}} + \frac{s^{2} \left(C_{a} L R_{\ell} a^{2} + C_{b} L R_{\ell} a^{2} + C_{b} L R_{s} a^{2} + R_{\ell} + R_{s}\right)}{R_{\ell} a^{2} + R_{s} a^{2}} + \frac{s \left(C_{a} R_{\ell} R_{s} + L\right)}{R_{\ell} + R_{s}} + 1\right)}

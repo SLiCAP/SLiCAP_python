@@ -1,0 +1,17 @@
+"Balanced Vamp"
+.model myOpAmp OV cc=2p cd=5p av={A_0/(1+s/(2*pi*f_p1))} zo=1k
+.param R_a=100k R_b=100 R_s=1k R_L=200 f_p1=50
+.source V1P V1N
+.detector V_outP V_outN
+.lgref E_O1P E_O1N
+O1N inN fbN outN 0 myOpAmp
+O1P inP fbP outP 0 myOpAmp
+R1N inN srcN R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R1P srcP inP R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2N fbN outN R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2P outP fbP R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R3 fbP fbN R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R4 outP outN R value={R_L} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1N srcN 0 V value=0 noise=0 dc=0 dcvar=0
+V1P srcP 0 V value=0 noise=0 dc=0 dcvar=0
+.end

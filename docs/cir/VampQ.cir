@@ -1,0 +1,15 @@
+"Two-stage BJT voltage amplifier"
+.source V1
+.detector V_L
+.lgref Gm_Q2
+.model myQ1 QV gm={g_m_1} gpi={g_m_1/beta_AC_1} go={g_o_1} cpi={c_pi_1} cbc={c_mu_1}
+.model myQ2 QV gm={g_m_2} gpi={g_m_2/beta_AC_2} go={g_o_2} cpi={c_pi_2} cbc={c_mu_2}
+C1 L 0 C value={C_L} vinit=0
+Q1 1 in 2 2 myQ1
+Q2 L 1 0 0 myQ2
+R1 3 in R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2 L 2 R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R3 2 0 R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R4 L 0 R value={R_L} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 3 0 V value=0 noise=0 dc=0 dcvar=0
+.end

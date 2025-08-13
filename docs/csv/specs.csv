@@ -1,0 +1,6 @@
+symbol, description, value, units, type
+C_s,Typical value of the source capacitance,1/100000000000,F,Interface
+I_p,Peak-peak input current,1/50000,A,Interface
+V_p,Peak-peak output voltage,4,V,Interface
+B_f,Target value -3dB bandwidth in Hz,50000,Hz,Performance
+V_n,Maximum unweighted RMS output noise voltage,1/100000,V,Performance

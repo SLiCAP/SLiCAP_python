@@ -1,0 +1,3 @@
+.. math::
+
+    P_{Bu} = \left(s^{2} + 0.7654 s + 1\right) \left(s^{2} + 1.848 s + 1\right)

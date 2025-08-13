@@ -20,7 +20,6 @@ of instructions that have been implemented in SLiCAP.
 
 #. Complex frequency domain (Laplace) analysis:
     
-   - doLaplace_vi() : Laplace Transform of the detector voltage or current
    - doLaplace()    : transfer function (Laplace expression)
    - doNumer()      : numerator of a transfer function
    - doDenom()      : denominator of a transfer function
@@ -47,7 +46,6 @@ of instructions that have been implemented in SLiCAP.
    
 #. DC (zero-frequency) analysis:
 
-   - doDC_vi()      : DC detector voltage or current
    - doDC()         : Zero-frequency value of a transfer
    - doDCsolve()    : DC network solution
    - doDCvar()      : detector-referred and source-referred DC variance
@@ -126,8 +124,12 @@ specified with the circuit.
 
 :param convType: - None: No matrix conversion takes place
                  - 'all': Dependent variables and independent variables will be 
-                   grouped in differential-mode and common-mode variables. 
-                   The circuit matrix dimension is not changed.
+                   grouped into differential-mode and common-mode variables. 
+                   The circuit matrix dimension is not changed. Automatic
+                   determination of DM or CM source and detector is not 
+                   possible. Only useful for studying the completely converted
+                   MNA matrix.
+                   
                  - 'dd': After grouping of the vaiables in differential-mode
                    and common-mode variables, only the differential-mode 
                    variables of both dependent and independent variables are 
@@ -136,12 +138,18 @@ specified with the circuit.
                    The matrix equation describes the differential-
                    mode behavior of the circuit.
                    
+                   Source, detector and loop gain reference will be converted
+                   automatically.
+                   
                  - 'cc': After grouping of the vaiables in differential-mode
                    and common-mode variables, only the common-mode variables of 
                    both dependent and independent variables are considered. 
                    
                    The matrix equation describes the common-mode behavior of 
                    the circuit.
+                   
+                   Source, detector and loop gain reference will be converted
+                   automatically.
                    
                  - 'dc': After grouping of the vaiables in differential-mode
                    and common-mode variables, only the differential-mode 
@@ -151,6 +159,9 @@ specified with the circuit.
                    The matrix equation describes the common-mode to 
                    differential-mode conversion of the circuit.
                    
+                   Source, detector and loop gain reference will be converted
+                   automatically.
+                   
                  - 'cd': After grouping of the vaiables in differential-mode
                    and common-mode variables, only the common-mode dependent 
                    variables and the differential-mode independent ariables are c
@@ -158,6 +169,9 @@ specified with the circuit.
                    
                    The matrix equation describes the differential-mode to 
                    common-mode conversion of the circuit.
+                   
+                   Source, detector and loop gain reference will be converted
+                   automatically.
     
                  Defaults to None
     
@@ -218,7 +232,8 @@ specified with the circuit.
                      stepping
                    - values    : (list of int, float, or str) step values for
                      stepmethod: 'list' (list of lists of int, float, or str)
-                     step values for stepmethod: 'array'
+                     step values for stepmethod: 'array'. Each list applies to 
+                     one step variable.
                                  
 ----
 """
@@ -233,24 +248,14 @@ from SLiCAP.SLiCAPltspice import _LTspiceNetlist
 from SLiCAP.SLiCAPgschem import _gNetlist  
 from SLiCAP.SLiCAPmath import _checkExpression
 
-def _makeNetlist(fileName, cirTitle=None):
+def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
     """
     Creates a netlist from a schematic file generated with LTspice or gschem.
-    
-    The file extension selects the netlister
-
-    - '.asc'        : LTspice
-    - '.sch'        : gNetlist
-    - '.kicad_sch'  : Kicad
-
-    :param fileName: Name of the file, absolute, or relative to project path
-    :type fileName: str
-
-    :param cirTitle: Title of the schematic.
-    :type cirTitle: str or NoneType
     """
-    fileName = fileName.replace('\\', '/')   
+    fileName  = fileName.replace('\\', '/')   
     fileParts = fileName.split('/')
+    netlist   = None
+    subckt    = False
     if cirTitle == None:
         nameParts = fileParts[-1].split('.')
         cirTitle = nameParts[0]
@@ -262,15 +267,16 @@ def _makeNetlist(fileName, cirTitle=None):
     elif cirType == "sch":
         _gNetlist(fileName, cirTitle)
     elif cirType == "kicad_sch":
-        _kicadNetlist(fileName, cirTitle)
+        netlist, subckt = _kicadNetlist(fileName, cirTitle, language=language)
     elif cirType == "cir":
         pass
     else:
         print("Cannot determine netlister for file extension: {}"
               .format(cirType))
+    return netlist, subckt
         
-def makeCircuit(fileName, update=True, cirTitle=None, imgWidth=500, 
-                 expansion=True, description=None):
+def makeCircuit(fileName, cirTitle=None, imgWidth=500, 
+                 expansion=True, description=None, language="SLiCAP"):
     """
     #. Creates and returns a circuit object from:
         
@@ -301,13 +307,6 @@ def makeCircuit(fileName, update=True, cirTitle=None, imgWidth=500,
                      should be given with their path relative to the project
                      folder or with their absolute path.
     :type fileName:  str
-    
-    :param udate:   - True: a new netlist and image will be created
-                    - False: existing netlist and image will be used
-                    
-                    Defaults to True
-                    
-    :type update: Bool
                     
     :param cirTitle: Title of the circuit if no title is given for netlist generation:
         
@@ -344,25 +343,25 @@ def makeCircuit(fileName, update=True, cirTitle=None, imgWidth=500,
                         directory (default './txt/')
     :type description: str
     """
-    if update:
-        _makeNetlist(fileName, cirTitle=cirTitle)
-    cirName, ext = fileName.replace('\\', '/').split('/')[-1].split('.')
-    cir = _checkCircuit(cirName + ".cir")
-    htmlPage("Circuit data")
-    if description != None:
-        head2html('Circuit description')
-        file2html(description)
-    if imgWidth != None:
-        head2html("Schematic diagram of {}".format(cirName + '.' + ext))
-        img2html(cirName + ".svg", 
-                 imgWidth, caption = 'Circuit diagram of {}.'.format(cirName), 
-                 label = 'fig_{}'.format(cirName + '.' + ext))
-    netlist2html(cirName + ".cir", label = 'netlist_{}'.format(cirName), 
-                 labelText='Netlist of {}.'.format(cirName + ".cir"))
-    elementData2html(cir, label='elementdata_{}'.format(cirName), 
-                     caption="Expanded netlist of {}.".format(cirName + ".cir"))
-    params2html(cir, label='params_{}'.format(cirName), 
-                caption="Parameter definitions of {}.".format(cirName + ".cir"))
+    cir, subckt = _makeNetlist(fileName, cirTitle=cirTitle, language=language)
+    if language == "SLiCAP" and not subckt:
+        cirName, ext = fileName.replace('\\', '/').split('/')[-1].split('.')
+        cir = _checkCircuit(cirName + ".cir")
+        htmlPage("Circuit data")
+        if description != None:
+            head2html('Circuit description')
+            file2html(description)
+        if imgWidth != None:
+            head2html("Schematic diagram of {}".format(cirName + '.' + ext))
+            img2html(cirName + ".svg", 
+                     imgWidth, caption = 'Circuit diagram of {}.'.format(cirName), 
+                     label = 'fig_{}'.format(cirName + '.' + ext))
+        netlist2html(cirName + ".cir", label = 'netlist_{}'.format(cirName), 
+                     labelText='Netlist of {}.'.format(cirName + ".cir"))
+        elementData2html(cir, label='elementdata_{}'.format(cirName), 
+                         caption="Expanded netlist of {}.".format(cirName + ".cir"))
+        params2html(cir, label='params_{}'.format(cirName), 
+                    caption="Parameter definitions of {}.".format(cirName + ".cir"))
     return cir
 
 def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit', 
@@ -375,7 +374,7 @@ def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -425,7 +424,7 @@ def doLaplace(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -475,7 +474,7 @@ def doDC(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -524,7 +523,7 @@ def doNumer(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -569,7 +568,7 @@ def doDenom(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -619,7 +618,7 @@ def doTime(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -671,7 +670,7 @@ def doImpulse(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -727,7 +726,7 @@ def doStep(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -781,7 +780,7 @@ def doPoles(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -834,7 +833,7 @@ def doZeros(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -891,7 +890,7 @@ def doPZ(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -957,7 +956,7 @@ def doSolve(cir, source=None, detector=None, lgref=None, transfer=None,
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -1009,7 +1008,7 @@ def doDCsolve(cir, source=None, detector=None, lgref=None, transfer=None,
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -1062,7 +1061,7 @@ def doTimeSolve(cir, source=None, detector=None, lgref=None, transfer=None,
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -1123,7 +1122,7 @@ def doNoise(cir, source='circuit', detector='circuit', lgref=None,
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -1188,7 +1187,7 @@ def doDCvar(cir, source='circuit', detector='circuit', lgref='circuit',
     :return: SLiCAP results object of which the following attributes with be
              set as a result of this instruction:
     
-    :rtype: SLiCAP.SLiCAPprotos.allResults object
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
     
     **Return value attributes**
     
@@ -1238,8 +1237,8 @@ def doParams(cir, source='circuit', detector='circuit', lgref='circuit',
             stepdict=None):
     
     """
-    This function can be used in combination with plotSweep(funcType='param')
-    It only needs the circuit object argument and returns the SLiCAP results 
+    This function is used in combination with plotSweep(funcType='param')
+    It only needs the circuit object argument and returns the SLiCAP instruction
     object with the circuit object as attribute. This is used by plotSweep() to
     plot parameters against each other.
     """
@@ -1259,8 +1258,10 @@ def _executeInstruction(cir, transfer=None, source='circuit',
     and returns the result.
 
     """
-    i1             = instruction()
-    i1.circuit     = cir
+    i1         = instruction()
+    i1.circuit = deepcopy(cir) # Changes made to the circuit during execution 
+                               # of the instruction, will not affect the main 
+                               # circuit object
     if detector == 'circuit':
         i1.detector = cir.detector
     elif detector != None:
@@ -1279,7 +1280,10 @@ def _executeInstruction(cir, transfer=None, source='circuit',
         i1.setGainType(transfer)
     i1.dataType    = datatype
     i1.numeric     = numeric
-    i1.convType    = convtype
+    if convtype != None:
+        i1.convType    = convtype.lower()
+    else:
+        i1.convType = None
     if pardefs == None:
         i1.substitute = False
     else:

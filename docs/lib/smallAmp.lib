@@ -1,0 +1,6 @@
+smallAmp
+.subckt smallAmp inP inN outP outN A_v={A} r_o={R}
+E1 1 outN inP inN E value={A_v}
+R1 1 outP R value={r_o} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+.ends
+.end

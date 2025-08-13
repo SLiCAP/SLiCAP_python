@@ -1,0 +1,3 @@
+.. math::
+
+    h_{p}{\left(t \right)} = \frac{R_{b} \left(\frac{\left(R_{a} R_{s} + R_{b} R_{s}\right) \delta\left(t\right)}{R_{a} R_{b} + R_{a} R_{s} + R_{b} R_{s}} + \frac{\left(R_{a}^{2} R_{b} + R_{a} R_{b}^{2}\right) e^{- \frac{t \left(R_{a}^{2} R_{b} + R_{a}^{2} R_{s} + R_{a} R_{b}^{2} + 2 R_{a} R_{b} R_{s} + R_{b}^{2} R_{s}\right)}{C_{c} R_{a}^{2} R_{b}^{2} + 2 C_{c} R_{a}^{2} R_{b} R_{s} + C_{c} R_{a}^{2} R_{s}^{2} + 2 C_{c} R_{a} R_{b}^{2} R_{s} + 2 C_{c} R_{a} R_{b} R_{s}^{2} + C_{c} R_{b}^{2} R_{s}^{2}}}}{C_{c} R_{a}^{2} R_{b}^{2} + 2 C_{c} R_{a}^{2} R_{b} R_{s} + C_{c} R_{a}^{2} R_{s}^{2} + 2 C_{c} R_{a} R_{b}^{2} R_{s} + 2 C_{c} R_{a} R_{b} R_{s}^{2} + C_{c} R_{b}^{2} R_{s}^{2}}\right)}{R_{a} + R_{b}}

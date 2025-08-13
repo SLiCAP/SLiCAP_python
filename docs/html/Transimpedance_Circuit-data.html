@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Schematic diagram of Transimpedance.kicad_sch</h2>
+<figure><a id="fig_Transimpedance.kicad_sch"></a><img src="img/Transimpedance.svg" alt="Circuit diagram of Transimpedance." style="width:350px">
+<figcaption>Figure: Transimpedance.svg<br>Circuit diagram of Transimpedance.</figcaption>
+</figure>
+<h2><a id="netlist_Transimpedance"></a>Netlist: Transimpedance.cir</h2>
+<pre>"Transimpedance"
+C1 in 0 C value={C_s} vinit=0
+I1 0 in I value={I_s} noise={2*q*I_D} dc={-I_D} dcvar={sigma_ID^2}
+N1 out 0 in 0 N
+R1 in out R value={R_t} noisetemp={T} noiseflow=0 dcvar={sigma_R^2} dcvarlot=0
+.end</pre>
+<a id="elementdata_Transimpedance"></a><table>Expanded netlist of Transimpedance.cir.
+<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">C1</td><td class = "left">in 0 </td><td class = "left"></td><td class = "left">C</td>
+<td class="left">value</td><td class="left">$C_{s}$</td><td class="left">$C_{s}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">I1</td><td class = "left">0 in </td><td class = "left"></td><td class = "left">I</td>
+<td class="left">value</td><td class="left">$I_{s}$</td><td class="left">$I_{s}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$2 I_{D} q$</td><td class="left">$3.204 \cdot 10^{-19} I_{D}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$- I_{D}$</td><td class="left">$- I_{D}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{ID}^{2}$</td><td class="left">$\sigma_{ID}^{2}$</td></tr>
+<tr><td class="left">N1</td><td class = "left">out 0 in 0 </td><td class = "left"></td><td class = "left">N</td>
+<td></td><td></td><td></td><tr><tr><td class="left">R1</td><td class = "left">in out </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{t}$</td><td class="left">$R_{t}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$T$</td><td class="left">$300$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R}^{2}$</td><td class="left">$\sigma_{R}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+</table>
+<a id="params_Transimpedance"></a><table>Parameter definitions of Transimpedance.cir.
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$T$</td><td class="left">$300$</td><td class="left">$300$</td></tr>
+<tr><td class="left">$q$</td><td class="left">$160.2\cdot 10^{-21}$</td><td class="left">$160.2\cdot 10^{-21}$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'Transimpedance.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$R_{t}$</td></tr>
+<tr><td class="left">$\sigma_{ID}$</td></tr>
+<tr><td class="left">$I_{s}$</td></tr>
+<tr><td class="left">$I_{D}$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td></tr>
+<tr><td class="left">$C_{s}$</td></tr>
+</table>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="Transimpedance_index.html">Transimpedance_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0 &copy 2009-2025 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2025-08-04 00:17:21</p>
+</div></body></html>

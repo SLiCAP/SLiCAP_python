@@ -1,0 +1,10 @@
+"BJT differential amplifier"
+.lib myBJTamp.lib
+R1N srcN inN R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R1P srcP inP R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2 fbP fbN R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1N srcN 0 V value=0 noise=0 dc=0 dcvar=0
+V1P srcP 0 V value=0 noise=0 dc=0 dcvar=0
+X1N inN outN fbN myBJTamp
+X1P inP outP fbP myBJTamp
+.end

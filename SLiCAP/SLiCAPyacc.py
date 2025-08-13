@@ -161,7 +161,7 @@ def _compileUSERLibrary(fileName):
     f = open(fileName, 'r')
     netlist = f.read()
     f.close()
-    cirName  = '__library__'
+    cirName = netlist.splitlines()[0][0:-1].replace(" ", "_")
     _parseNetlist(netlist, cirName, 'user')
     for model in _USERCIRCUITS[cirName].modelDefs.keys():
         _USERMODELS[model] = _USERCIRCUITS[cirName].modelDefs[model]
@@ -926,6 +926,9 @@ def _doExpand(el, circuitObject):
         newElement = deepcopy(el.model.elements[subElement])
         # Update the refDes
         newElement.refDes = el.model.elements[subElement].refDes + '_' + el.refDes
+        # Update the referenced elements
+        for i in range(len(newElement.refs)):
+            newElement.refs[i] += '_' + el.refDes
         # Update the nodes
         newElement = _updateNodes(newElement, parentNodes, prototypeNodes, parentRefDes)
         # Update the parameters used in element expressions and in parameter definitions
@@ -1191,14 +1194,14 @@ def _updateCirData(circuitObject):
     circuitObject.nodes = []
     circuitObject.dep_vars = []
     circuitObject.indepVars = []
-    
+    circuitObject.references = []
     for elmt in circuitObject.elements.keys():
-        
         circuitObject.nodes += circuitObject.elements[elmt].nodes
         if circuitObject.elements[elmt].type in _INDEPSCRCS:
             circuitObject.indepVars.append(elmt)
         elif circuitObject.elements[elmt].type in _CONTROLLED:
             circuitObject.controlled.append(elmt)
+        circuitObject.references += circuitObject.elements[elmt].refs
         for i in range(len(_MODELS[circuitObject.elements[elmt].model].depVars)):
             depVar = _MODELS[circuitObject.elements[elmt].model].depVars[i]
             circuitObject.dep_vars.append(depVar + '_' + elmt)
@@ -1208,6 +1211,7 @@ def _updateCirData(circuitObject):
                 circuitObject.params += circuitObject.elements[elmt].params[par].atoms(sp.Symbol)
             except:
                 pass
+ 
     # Add parameters used in parDef expressions to circuit.params
     for par in list(circuitObject.parDefs.keys()):
         circuitObject.params.append(par)
@@ -1233,6 +1237,9 @@ def _updateCirData(circuitObject):
     #for key in connections.keys():
     #    if connections[key] < 2:
     #        print("Warning less than two connections at node: '{0}'.".format(key))
+    
+    # Remove duplicate entries in the referenced elements list
+    circuitObject.references = list(set(circuitObject.references))
     # Remove duplicate entries from node list and sort the list."
     circuitObject.nodes = list(set(circuitObject.nodes))
     circuitObject.nodes.sort()

@@ -1,0 +1,26 @@
+\begin{table}[H]
+\centering
+\begin{tabular}[c]{lllllll}
+\textbf{ID} & \textbf{Nodes} & \textbf{Refs} & \textbf{Model} & \textbf{Param} & \textbf{Symbolic} & \textbf{Numeric} \\ 
+\rowcolor{myyellow}
+\small{C1} &\small{out 0 } & &\small{C} &\small{value} &$C_{s}$ &$1.0 \cdot 10^{-11}$ \\ 
+ & & & &\small{vinit} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{I1} &\small{0 out } & &\small{I} &\small{value} &$0$ &$0$ \\ 
+ & & & &\small{noise} &$2 I_{D} q$ &$3.204 \cdot 10^{-19} I_{D}$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dc} &$- I_{D}$ &$- I_{D}$ \\ 
+ & & & &\small{dcvar} &$\sigma_{ID}^{2}$ &$\sigma_{ID}^{2}$ \\ 
+\rowcolor{myyellow}
+\small{R1} &\small{out out } & &\small{R} &\small{value} &$R_{t}$ &$R_{t}$ \\ 
+ & & & &\small{noisetemp} &$T$ &$300$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+ & & & &\small{dcvar} &$\sigma_{R}^{2}$ &$\sigma_{R}^{2}$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\end{tabular}
+\caption{Expanded netlist of the transimpedance circuit.}
+\label{table-elements}
+\end{table}
+

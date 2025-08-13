@@ -164,6 +164,11 @@ class circuit(object):
         Loopgain reference: None if not defined ,or a list with two identifies
         controlled sources or one idenfifier and 'None'.
         """     
+        
+        self.references = []
+        """
+        (*list*) with reference designators (*str*) of referenced elements.
+        """
     def depVars(self):
         """
         Returns the list with valid detectors.
@@ -530,28 +535,31 @@ def _initAll():
     MODELS      = {}                # Dictionary with SLiCAP built-in models
                                     #   key   : model name
                                     #   value : associated model object
+    SPICEMODELS = {}                # Dictionary with SLiCAP built-in models
+                                    #   key   : model name
+                                    #   value : associated model object
     DEVICES     = {}                # Dictionary with SLiCAP built-in devices
                                     #   key   : device name
                                     #   value : associated device object
     # Generate the dictionary with SLiCAP models
-    model    = namedtuple('model', ['name', 'stamp', 'depVars', 'params'])
+    model       = namedtuple('model', ['name', 'stamp', 'depVars', 'params'])
     
     MODELS['C']  = model('C', True, [], {'value': False, 'vinit': False})
     MODELS['D']  = model('D', False, [], {'rs': False, 'cd': False, 'gd': False})
-    MODELS['E']  = model('E', True, ['Io'], {'value': True})
-    MODELS['EZ'] = model('EZ', True, ['Io'], {'value': True, 'zo': True})
-    MODELS['F']  = model('F', True, ['Ii'], {'value': True})
-    MODELS['G']  = model('G', True, ['Io'], {'value': True})
+    MODELS['E']  = model('E', True, ['I'], {'value': True}) # Changed from version 3 to 4
+    MODELS['EZ'] = model('EZ', True, ['I'], {'value': True, 'zo': True}) # Changed from version 3 to 4
+    MODELS['F']  = model('F', True, ['I'], {'value': True}) # Changed from version 3 to 4
+    MODELS['H']  = model('H', True, ['I'], {'value': True})# Changed from version 3 to 4
+    MODELS['HZ'] = model('HZ', True, ['I'], {'value': True, 'zo': True})# Changed from version 3 to 4
+    MODELS['G']  = model('G', True, ['I'], {'value': True}) # Changed from version 3 to 4
     MODELS['g']  = model('g', True, [], {'value': False})
-    MODELS['H']  = model('H', True, ['Io', 'Ii'], {'value': True})
-    MODELS['HZ'] = model('HZ', True, ['Io', 'Ii'], {'value': True, 'zo': True})
     MODELS['I']  = model('I', True, [], {'value': True, 'dc': False, 'dcvar': False, 'noise': False})
     MODELS['J']  = model('J', False, [], {'cgs': False, 'cdg': False, 'gm': False, 'go': False})
     MODELS['K']  = model('K', True, [], {'value': False})
-    MODELS['L']  = model('L', True, ['I'], {'value': False, 'iinit': False})
+    MODELS['L']  = model('L', True, ['I'], {'value': False, 'iinit': False}) # Changed from version 3 to 4
     MODELS['M']  = model('M', False, [], {'cgs': False, 'cdg': False, 'cdb': False, 'csb': False, 'cgb': False, 'gm': False, 'gb': False, 'go': False})
     MODELS['MD'] = model('MD', False, [], {'cgg': False, 'cdg': False, 'cdd': False, 'gm': False, 'go': False})
-    MODELS['N']  = model('N', True, ['Io'], {})
+    MODELS['N']  = model('N', True, ['I'], {}) # Changed from version 3 to 4
     MODELS['OC'] = model('OC', False, [], {'cp': False, 'gp': False, 'cpn': False, 'gpn': False, 'gm': False, 'zt': True, 'zo': True})
     MODELS['OV'] = model('OV', False, [], {'cd': False, 'cc': False, 'gd': False, 'gc': False, 'av': True, 'zo': True})
     MODELS['QL'] = model('QL', False, [], {'cpi': False, 'cbc': False, 'cbx': False, 'cs': False, 'gpi': False, 'gm': False, 'gbc': False, 'go': False, 'rb': False})
@@ -559,9 +567,9 @@ def _initAll():
     MODELS['QD'] = model('QD', False, [], {'cbb': False, 'cbc': False, 'gbb': False, 'gm': False, 'gcc': False, 'gbc': False, 'rb': False})
     MODELS['R']  = model('R', True, [], {'value': False, 'dcvar': False, 'noisetemp': False, 'noiseflow' :False, 'dcvarlot': False})
     MODELS['r']  = model('r', True, ['I'], {'value': False, 'dcvar': False, 'noisetemp': False, 'noiseflow' :False, 'dcvarlot': False})
-    MODELS['T']  = model('T', True, ['Io'], {'value': False})
-    MODELS['V']  = model('V', True, ['I'], {'value': True, 'dc': False, 'dcvar': False, 'noise': False})
-    MODELS['W']  = model('W', True, [], {'value': False})
+    MODELS['T']  = model('T', True, ['I'], {'value': False}) # Changed from version 3 to 4
+    MODELS['V']  = model('V', True, ['I'], {'value': True, 'dc': False, 'dcvar': False, 'noise': False}) # Changed from version 3 to 4
+    MODELS['W']  = model('W', True, [], {'value': False}) # Changed from version 3 to 4
 
     # Generate the dictionary with SLiCAP devices
     device   = namedtuple('device', ['ID', 'nNodes', 'nRefs', 'value', 'models'])
@@ -569,9 +577,9 @@ def _initAll():
     DEVICES['C'] = device('C', 2, 0, True, ['C'])
     DEVICES['D'] = device('D', 2, 0, True, ['D'])
     DEVICES['E'] = device('E', 4, 0, True, ['E', 'EZ'])
-    DEVICES['F'] = device('F', 4, 0, True, ['F'])
+    DEVICES['F'] = device('F', 2, 1, True, ['F']) # Changed from version 3 to 4
+    DEVICES['H'] = device('H', 2, 1, True, ['H', 'HZ']) # Changed from version 3 to 4
     DEVICES['G'] = device('G', 4, 0, True, ['G', 'g'])
-    DEVICES['H'] = device('H', 4, 0, True, ['H', 'HZ'])
     DEVICES['I'] = device('I', 2, 0, True, ['I'])
     DEVICES['J'] = device('J', 3, 0, True, ['J'])
     DEVICES['K'] = device('K', 0, 2, True, ['K'])
@@ -585,359 +593,38 @@ def _initAll():
     DEVICES['V'] = device('V', 2, 0, True, ['V'])
     DEVICES['W'] = device('W', 4, 0, True, ['W'])
     DEVICES['X'] = device('X', -1, 0, None, ['F'])   
-    return MODELS, DEVICES
-
-class allResults(object):
-    """
-    Return  structure for results, has attributes with
-    instruction data and execution results.
-    """
-    def __init__(self):
-        self.DCvalue     = []
-        """
-        Zero-frequency value in case of dataType 'pz'. (sympy.Expr, sympy.Float)
-        """
-        self.poles       = []
-        """
-        Complex frequencies in [rad/s] (list)
-        """
-
-        self.zeros       = []
-        """
-        Complex frequencies in [rad/s] (list)
-        """
-        self.svarTerms   = {}
-        """
-        Dict with source variances
-        
-        Key = (str) name of the dcvar source
-        Value = (sympy.Expr) dcvar value in V^2 or A^2
-        """
-
-        self.ivarTerms   = {}
-        """
-        Dict with lists with contributions to source-referred variance.
-
-        Key = (str) name of the dcvar source
-        Value = (sympy.Expr) contribution to the source-referred variance in 
-        V^2 or A^2
-        """
-
-        self.ovarTerms   = {}
-        """
-        Dict with lists with contributions to detector-referred variance.
-
-        Key = (str) name of the dcvar source
-        Value = (sympy.Expr) contribution to the detector-referred variance in 
-        V^2 or A^2
-        """
-
-        self.ivar        = []
-        """
-        Total source-referred variance in V^2 or A^2 (sympy.Expr)
-        """
-
-        self.ovar        = []
-        """
-        Total detector-referred variance in V^2 or A^2 (sympy.Expr)
-        """
-
-        self.solve       = []
-        """
-        Laplace solution of the network.
-        """
-
-        self.dcSolve     = []
-        """
-        DC solution of the network.
-        """
-
-        self.timeSolve   = []
-        """
-        Time-domain solution of the network.
-        """
-
-        self.snoiseTerms = {}
-        """
-        Dict with source noise spectra.
-        
-        Key = (str) name of the noise source
-        Value = (sympy.Expr) noise spectral density in V^2/Hz or A^2/Hz
-        """
-
-        self.inoiseTerms = {}
-        """
-        Dict with lists with contributions to source-referred noise spectrum
-        
-        Key = (str) name of the noise source
-        Value = (sympy.Expr) contribution of that noise source to the 
-        source-referred noise spectrum in V^2/Hz or A^2/Hz
-        """
-        self.onoiseTerms = {}
-        """
-        Dict with with contributions to detector-referred noise spectrum
-        
-        Key = (str) name of the noise source
-        Value = (sympy.Expr) contribution of that noise source to the 
-        detector-referred noise spectrum in V^2/Hz or A^2/Hz
-        """
-
-        self.inoise      = []
-        """
-        Total source-referred noise spectral density (sympy.Expr) in V^2/Hz or 
-        A^2/Hz.
-        """
-
-        self.onoise      = []
-        """
-        Total detector-referred noise spectrum (sympy.Expr) in V^2/Hz or 
-        A^2/Hz.
-        """
-
-        self.Iv          = None
-        """
-        Vector with independent variables (sympy.Matrix).
-        """
-
-        self.M           = None
-        """
-        MNA matrix (sympy.Matrix).
-        """
-
-        self.A           = None
-        """
-        Base conversion matrix (sympy.Matrix).
-        """
-
-        self.Dv          = None
-        """
-        Vector with dependent variables (sympy.Matrix).
-        """
-
-        self.denom       = []
-        """
-        Laplace poly of denominator (sympy.Expr).
-        """
-
-        self.numer       = []
-        """
-        Laplace poly of numerator (sympy.Expr).
-        """
-
-        self.laplace     = []
-        """
-        Laplace transfer function, or detector current or voltage (sympy.Expr).
-        """
-
-        self.time        = []
-        """
-        Time-domain response of the circuit (ILT) (sympy.Expr).
-        """
-
-        self.impulse     = []
-        """
-        Unit impulse response (ILT) (sympy.Expr).
-        """
-
-        self.stepResp    = []
-        """
-        Unit step response (ILT) (sympy.Expr).
-        """
-
-        self.params      = {}
-        """
-        Results of parameter sweep (dataType = 'param').
-        """
-
-        # Instruction settings
-
-        self.gainType = None
-        """
-        Defines the simulation gain type.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.convType = None
-        """
-        Defines the circuit conversion type.
-
-        Will be copied from the instruction at the start of ts execution.
-        """
-
-        self.dataType = None
-        """
-        Defines the simulation data type.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.step = None
-        """
-        Setting for parameter stepping.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.stepVar = None
-        """
-        Defines the step variable (*str*) for step types 'lin', 'log' and 'list'.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.stepVars = None
-        """
-        Defines the step variables for 'array' type parameter stepping.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.stepMethod = None
-        """
-        Step method for parameter stepping.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.stepStart = None
-        """
-        Start value for stepping methods 'lin' and 'log'.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.stepStop = None
-        """
-        Stop value for stepping methods 'lin' and 'log'.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.stepNum = None
-        """
-        Number of steps for step methods 'lin' and 'log'.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.stepList = []
-        """
-        List with values for step method 'list'.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.stepArray = []
-        """
-        Array (*list of lists*) with values for step method array.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.source = None
-        """
-        Refdes of the signal source (independent v or i source).
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.detector = None
-        """
-        Names of the positive and negative detector.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.lgRef = None
-        """
-        Refdes of the controlled source that is assigned as loop gain reference.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.numeric = None
-        """
-        If True, functions and constants will be evaluated numerically and
-        rational numbers will be converted in sympy.Float 
-        """
-
-        self.substitute = None
-        """
-        If True: parameters from self.circuit will be substituted recursively
-        in element values. 
-        
-        Else: element values defined in the circuit will be used
-        """
-        
-        self.errors = 0
-        """
-        Number of errors found in the definition of this instruction.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.detUnits = None
-        """
-        Detector units 'V' or 'A'.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.srcUnits = None
-        """
-        Source units 'V' or 'A'.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-        self.detLabel = None
-        """
-        Name for the detector quantity to be used in expressions or plots.
-
-        Will be generated by the instruction at the start of its execution.
-        """
-
-        self.label = ''
-        """
-        Label to be used in plots.
-        """
-
-        self.parDefs = None
-        """
-        Parameter definitions for the instruction.
-
-        Will be copied from  the instruction at the start of its execution. 
-        """
-        self.pairedVars   = None
-        """
-        Extension of paired nodes and branches for base transformation of the 
-        circuit.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-        self.pairedCircuits = None
-        """
-        Identifiers of paired subcircuits for base transformation of the 
-        circuit.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-        self.removePairSubName = False
-        """
-        Setting for changing the parameter names of paired subcircuits.
-
-        Will be copied from the instruction at the start of its execution.
-        """
-
-    def depVars(self):
-        """
-        Returns the list of detecors available AFTER execution of an 
-        instruction.
-        """
-        return [str(var) for var in self.Dv]
     
-_MODELS, _DEVICES = _initAll()
+    SPICEMODELS['R']     = ['r', 'ac', 'm', 'scale', 'temp', 'dtemp', 'tc1', 'tc2', 'noisy']                                 
+    SPICEMODELS['RS']    = ['l', 'w', 'ac', 'm', 'temp', 'dtemp', 'noisy']
+    SPICEMODELS['C']     = ['m', 'scale', 'temp', 'dtemp', 'tc1', 'tc2', 'ic'] 
+    SPICEMODELS['CS']    = ['l', 'w', 'm', 'scale', 'temp', 'dtemp', 'ic']   
+    SPICEMODELS['L']     = ['nt', 'm', 'scale', 'temp', 'dtemp', 'tc1', 'tc2', 'ic']  
+    SPICEMODELS['K']     = []  
+    SPICEMODELS['SV']    = ['onoff']  
+    SPICEMODELS['SI']    = ['onoff']  
+    SPICEMODELS['V']     = []  
+    SPICEMODELS['I']     = []  
+    SPICEMODELS['E']     = ['m']  
+    SPICEMODELS['F']     = ['m']  
+    SPICEMODELS['G']     = ['m']  
+    SPICEMODELS['H']     = ['m']  
+    SPICEMODELS['BV']    = ['v', 'temp', 'dtemp', 'tc1', 'tc2'] 
+    SPICEMODELS['BI']    = ['i', 'temp', 'dtemp', 'tc1', 'tc2'] 
+    SPICEMODELS['T']     = ['z0', 'td', 'f', 'nl', 'is']
+    SPICEMODELS['O']     = []
+    SPICEMODELS['U']     = ['l', 'n']
+    SPICEMODELS['Y']     = ['len']
+    SPICEMODELS['P']     = ['len']
+    SPICEMODELS['D']     = ['area', 'm', 'pj', 'ic', 'temp', 'dtemp', 'lm', 'wm', 'lp', 'wp', 'onoff']
+    SPICEMODELS['Q']     = ['area', 'areac', 'areab', 'm', 'ic', 'temp', 'dtemp', 'onoff']
+    SPICEMODELS['J']     = ['area', 'ic', 'temp', 'onoff']
+    SPICEMODELS['Z']     = ['area', 'ic', 'onoff']
+    SPICEMODELS['M']     = ['m', 'l', 'w', 'ad', 'as', 'pd', 'ps', 'nrd', 'nrs', 'ic', 'temp', 'onoff']
+    SPICEMODELS['VDMOS'] = ['m', 'temp', 'dtemp']
+    
+    return MODELS, DEVICES, SPICEMODELS
+    
+_MODELS, _DEVICES, _SPICEMODELS = _initAll()
 
 # Prefix and suffix for files depending on format
 
@@ -1006,7 +693,7 @@ class Snippet:
           - suffix: '.rst'    
           - expressions and inline equations are appended to the file as:
             
-            \|<variable name>\| = <expr>\|<inline equation>
+            \\|<variable name>\\| = <expr>\\|<inline equation>
           
         - myst
         

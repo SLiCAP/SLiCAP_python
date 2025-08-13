@@ -34,31 +34,30 @@ def det(M, method="ME"):
     :return: Determinant of 'M'
     :rtype:  sympy.Expr
     """
-    M = sp.Matrix(M) # Be sure to have an Mutable Matrix
+    M = float2rational(sp.Matrix(M)) # Have a Mutable Matrix with rational numbers
+    factor = 1
     if M.shape[0] != M.shape[1]:
         print("ERROR: Cannot determine determinant of non-square matrix.")
         D = None
-    if ini.reduce_matrix and ini.laplace in M.atoms(sp.Symbol):
+    if method == "ME" and ini.reduce_matrix and len(M.atoms(sp.Symbol)) > 0:
         M, factor = _eliminateVars(M)
-    else:
-        factor = 1
     dim = M.shape[0]
     if M.is_zero_matrix:
-        D = factor
+        D = 0
     elif dim == 1:
-        D = M[0,0]*factor
+        D = M[0,0] * factor
     elif dim == 2:
-        D = sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1])*factor
+        D = sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1]) * factor
     elif method == "ME":
-        D = _detME(M)*factor
+        D = _detME(M) * factor
     elif method == "BS":
-        D = _detBS(M)*factor
+        D = _detBS(M)
     elif method == "LU":
-        D = M.det(method="LU")*factor
+        D = M.det(method="LU")
     elif method == "bareiss":
-        D = M.det(method="bareiss")*factor
+        D = M.det(method="bareiss")
     elif method == "laplace":
-        D = M.det(method="laplace")*factor
+        D = M.det(method="laplace")
     else:
         print("ERROR: Unknown method for det(M).")
         D = None
@@ -66,15 +65,13 @@ def det(M, method="ME"):
 
 def _eliminateVars(M):
     """
-    Reduces the size of a matrix through elimination of variables. The method
-    guarantees a division-free operation for Laplace terms in the matrix.
+    Reduces the size of a matrix through division-free elimination of variables.
+    Returns minimally matrix with dim=1.
     """
-    k, l   = _find_nonLaplaceEntry(M)
-    factor = 1 # Scaling factor for determinant, if no laplace variable is used
-               # factor will equal the determinant
+    k, l   = _find_numeric_entry(M)
+    factor = 1 # Scaling factor for determinant
     dim    = M.shape[0]
-    while k >= 0:
-        dim        = M.shape[0]
+    while k >= 0 and dim > 1:
         M_cpy      = M.copy()
         # exchange row k with row 0 and column l with column 0
         if k != 0:
@@ -87,31 +84,32 @@ def _eliminateVars(M):
             M_cpy[:,0] = col_l
             M_cpy[:,l] = col_0
             factor *= -1
-        factor     = sp.simplify(M_cpy[0,0]*factor)
+        factor = M_cpy[0,0] * factor
         for i in range(1, dim):
             for j in range(1, dim):
                 # Substitute the variable
                 M_cpy[i,j] = sp.expand(M_cpy[i,j] - M_cpy[i,0]*M_cpy[0,j]/M_cpy[0,0])
-        # Remove row 0 and column 0
+        # remove row 0 and column 0
         M     = M_cpy.minor_submatrix(0,0)
-        k, l  = _find_nonLaplaceEntry(M)
-    return M, sp.simplify(factor)
+        k, l  = _find_numeric_entry(M)
+        # reduce dimension
+        dim  -= 1
+    return M, factor
 
-def _find_nonLaplaceEntry(M):
+def _find_numeric_entry(M):
     """
-    Returns the (row, col) position of the first nonzero entry in the matrix
-    which is not a Laplace expression.
+    Returns the (row, col) position of the first numeric entry in the matrix.
     """
     dim   = M.shape[0]
+    r, c = -1, -1
     for i in range(dim):
-        row = M.row(i)
-        # First check variable at pos i = j makes it considerably faster
-        if row[i] !=0 and ini.laplace not in row[i].atoms(sp.Symbol):
-            return i, i
         for j in range(dim):
-            if row[j] != 0 and ini.laplace not in row[j].atoms(sp.Symbol):
-                return i, j
-    return -1, -1
+            if M[i,j].is_number and M[i,j] != 0:
+                r, c = i, j
+                break
+        if r != -1 and c!= -1:
+            break
+    return r, c
 
 def _detME(M):
     dim = M.shape[0]
@@ -330,8 +328,26 @@ def _cancelPZ(poles, zeros):
     newZeros = [zeros[i] for i in range(len(zeros))]
     for j in range(len(zeros)):
         for i in range(len(poles)):
+            cancel = False
             # Check if zero coincides with pole
-            if abs(poles[i] - zeros[j]) <= 10**(-ini.disp)*abs(poles[i] + zeros[j])/2:
+            diff = poles[i]-zeros[j]
+            if not diff:
+                cancel = True
+            else:
+                try:
+                    syms = len(list(diff.atoms(sp.Symbol)))
+                except:
+                    syms = 0
+                if not syms:
+                    ssum = poles[i]+zeros[j]
+                    erel = abs(0.5*diff/ssum)
+                    if erel < 10**(-ini.disp):
+                        cancel = True
+                    else:
+                        cancel = False
+                else:
+                    cancel = False
+            if cancel:
                 # if the pole and the zero exist in newPoles and newZeros, respectively
                 # then remove the pair
                 if poles[i] in newPoles and zeros[j] in newZeros:
@@ -385,17 +401,15 @@ def findServoBandwidth(loopgainRational):
              - mbf: lowest freqency of mbv
     :rtype: dict
     """
-    numer, denom          = loopgainRational.as_numer_denom()
-    poles                 = _numRoots(denom, ini.laplace)
-    zeros                 = _numRoots(numer, ini.laplace)
-    poles, zeros          = _cancelPZ(poles, zeros)
-    numPoles              = len(poles)
-    numZeros              = len(zeros)
-    numCornerFreqs        = numPoles + numZeros
-    gain, coeffsN,coeffsD = coeffsTransfer(loopgainRational)
-    coeffsN               = np.array(coeffsN)
-    coeffsD               = np.array(coeffsD)
-    freqsOrders           = np.zeros((numCornerFreqs, 2), dtype='float64')
+    numer, denom           = loopgainRational.as_numer_denom()
+    poles                  = _numRoots(denom, ini.laplace)
+    zeros                  = _numRoots(numer, ini.laplace)
+    poles, zeros           = _cancelPZ(poles, zeros)
+    numPoles               = len(poles)
+    numZeros               = len(zeros)
+    numCornerFreqs         = numPoles + numZeros
+    gain, coeffsN, coeffsD = coeffsTransfer(loopgainRational)
+    freqsOrders            = np.zeros((numCornerFreqs, 2), dtype='float64')
     for i in range(numZeros):
         freqsOrders[i, 0] = np.abs(zeros[i])
         freqsOrders[i, 1] = 1
@@ -548,7 +562,7 @@ def _checkExpression(expr):
 def fullSubs(valExpr, parDefs):
     """
     Returns 'valExpr' after all parameters of 'parDefs' have been substituted
-    into it recursively until no changes occur or until the maximum number of
+    into it recursively until no changes occur, or until the maximum number of
     substitutions is achieved.
 
     The maximum number opf recursive substitutions is set by ini.maxRexSubst.
@@ -624,7 +638,7 @@ def assumeRealParams(expr, params = 'all'):
 def assumePosParams(expr, params = 'all'):
     """
     Returns the sympy expression 'expr' in which  variables, except the
-    Laplace variable, have been redefined as real.
+    Laplace variable, have been redefined as positive.
 
     :param expr: Sympy expression
     :type expr: sympy.Expr, sympy.Symbol
@@ -976,7 +990,7 @@ def doCDSint(noiseResult, tau, f_min, f_max):
     :return: integral of the spectrum from f_min to f_max after corelated double sampling
     :rtype: sympy.Expr, sympy.Symbol, int or float
     """
-    _phi = sp.Symbol('_phi')
+    _phi = sp.Symbol('_phi', positive=True)
     noiseResult *= ((2*sp.sin(sp.pi*ini.frequency*tau)))**2
     noiseResult = noiseResult.subs(ini.frequency, _phi/tau/sp.pi)
     noiseResultCDSint = sp.integrate(noiseResult/sp.pi/tau, (_phi, f_min*tau*sp.pi, f_max*tau*sp.pi))
@@ -1176,6 +1190,8 @@ def butterworthPoly(n):
     """
     Returns a narmalized Butterworth polynomial of the n-th order of the
     Laplace variable.
+    
+    Zero-frequency value = 1, -3dB frequency (magnitude = 2) is 1 rad/s.
 
     :param n: order
     :type n: int
@@ -1185,22 +1201,24 @@ def butterworthPoly(n):
     """
     s = ini.laplace
     if n%2:
-        B_s = (s+1)
+        P_s = (s+1)
         for i in range(int((n-1)/2)):
             k = i + 1
-            B_s *= (s**2-2*s*sp.cos((2*k+n-1)*sp.pi/2/n)+1)
+            P_s *= (s**2-2*s*sp.cos((2*k+n-1)*sp.pi/2/n)+1)
     else:
-        B_s = 1
+        P_s = 1
         for i in range(int(n/2)):
             k = i + 1
-            B_s *= (s**2-2*s*sp.cos((2*k+n-1)*sp.pi/2/n)+1)
-    B_s = sp.simplify(B_s)
-    return B_s
+            P_s *= (s**2-2*s*sp.cos((2*k+n-1)*sp.pi/2/n)+1)
+    P_s = sp.simplify(P_s)
+    return P_s
 
 def besselPoly(n):
     """
     Returns a normalized Bessel polynomial of the n-th order of the Laplace
     variable.
+    
+    Zero-frequency value = 1, -3dB frequency (magnitude = 2) is 1 rad/s.
 
     :param n: order
     :type n: int
@@ -1209,58 +1227,54 @@ def besselPoly(n):
     :rtype: sympy.Expression
     """
     s = ini.laplace
-    B_s = 0
+    P_s = 0
     for k in range(n+1):
-        B_s += (sp.factorial(2*n-k)/((2**(n-k))*sp.factorial(k)*sp.factorial(n-k)))*s**k
-    B_s = sp.simplify(B_s/B_s.subs(s,0))
-
-    # Find normalized 3 dB frequency
+        P_s += (sp.factorial(2*n-k)/((2**(n-k))*sp.factorial(k)*sp.factorial(n-k)))*s**k
+    P_s = sp.simplify(P_s/P_s.subs(s,0))
+    # Normalize 3 dB frequency
     w = sp.Symbol('w', real=True)
-    B_w = sp.Abs(B_s.subs(s, sp.I*w))**2
+    B_w = sp.Abs(P_s.subs(s, sp.I*w))**2
     func = sp.lambdify(w, B_w - 2)
-    w3dB = float2rational(fsolve(func, 1)[0])
-    B_s = B_s.subs(s, s*w3dB)
-    return B_s
+    w3dB = float2rational(fsolve(func, 10)[0])
+    P_s = P_s.subs(s, s*w3dB)
+    return P_s
 
-def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
+def chebyshev1Poly(n, ripple):
     """
-    Calculates the RMS source-referred noise or detector-referred noise,
-    or the contribution of a specific noise source or a collection od sources
-    to it.
+    Returns a normalized Chebyshev polynomial of the n-th order of the Laplace
+    variable, with a ripple of <ripple> dB
+    
+    Zero-frequency value = 1, -3dB frequency (magnitude = 2) is 1 rad/s.
 
-    :param noiseResult: Results of the execution of an instruction with data
-                        type 'noise'.
-    :type noiseResult: SLiCAPprotos.allResults
+    :param n: order
+    :type n: int
 
-    :param noise: 'inoise' or 'onoise' for source-referred noise or detector-
-                referred noise, respectively.
-    :type noise': str
+    :return: Chebyshev polynomial of the n-th order of the Laplace variable
+    :rtype: sympy.Expression
+    """
+    s       = ini.laplace
+    eps     = np.sqrt(10**(ripple/10)-1)
+    h       = np.tanh((1/n)*np.arcsinh(1/eps))
+    a_i     = lambda i, n, h: np.sqrt(1/(1-h**2) - (np.sin((2*i-1)/n*np.pi/2))**2)
+    b_i     = lambda i, n, h: np.sqrt(1 + 1/(h*np.tan((2*i-1)/n*np.pi/2))**2)/2
+    if n%2:
+        P_s   = s*np.sqrt(1-h**2)/h + 1
+        order = int((n-1)/2)
+    else:
+        P_s   = 1
+        order = int(n/2)
+    for i in range(1, order+1):
+        P_s *= (s/a_i(i,n,h))**2 + s/(a_i(i,n,h)*b_i(i,n,h)) + 1
+    # Normalize 3 dB frequency
+    w    = sp.Symbol('w', real=True)
+    B_w  = sp.Abs(P_s.subs(s, sp.I*w))**2
+    func = sp.lambdify(w, B_w - 2)
+    w3dB = float2rational(fsolve(func,10)[0])
+    P_s  = P_s.subs(s, s*w3dB)
+    return P_s
 
-    :param fmin: Lower limit of the frequency range in Hz.
-    :type fmin: str, int, float, sp.Symbol
-
-    :param fmax: Upper limit of the frequency range in Hz.
-    :type fmax: str, int, float, sp.Symbol
-
-    :param source: refDes (ID) or list with IDs of noise sources
-                of which the contribution to the RMS noise needs to be
-                evaluated. Only IDs of current of voltage sources with a
-                nonzero value for 'noise' are accepted.
-    :type source: str, list
-
-    :param CDS: True if correlated double sampling is required, defaults to False
-                If True parameter 'tau' must be given a nonzero finite value
-                (can be symbolic)
-    :type CDS: Bool
-
-    :param tau: CDS delay time
-    :type tau: str, int, float, sp.Symbol
-
-    :return: RMS noise over the frequency interval.
-
-            - An expression or value if parameter stepping of the instruction is disabled.
-            - A list with expressions or values if parameter stepping of the instruction is enabled.
-    :rtype: int, float, sympy.Expr
+def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
+    """
     """
     errors = 0
     if type(source) != list:
@@ -1317,7 +1331,7 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
             noiseData = noiseResult.onoiseTerms
         elif noise == 'inoise':
             noiseData = noiseResult.inoiseTerms
-    rms = []
+    var = []
     if errors == 0:
         numSteps = 1
         if type(noiseResult.onoise) == list:
@@ -1346,11 +1360,58 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
                             func = assumePosParams(data)
                             var_i += sp.integrate(func, [ini.frequency, fmin, fmax])
             if noiseResult.numeric == True:
-                rms.append(clearAssumptions(sp.N(sp.sqrt(sp.expand(var_i)))))
+                var.append(sp.N(clearAssumptions(sp.expand(var_i))))
             else:
-                rms.append(clearAssumptions(sp.sqrt(var_i)))
-    if len(rms) == 1:
-        rms = rms[0]
+                var.append(clearAssumptions(sp.expand(var_i)))
+    if len(var) == 1:
+        var = var[0]
+    return var
+
+def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
+    """
+    Calculates the RMS source-referred noise or detector-referred noise,
+    or the contribution of a specific noise source or a collection of sources
+    to it.
+
+    :param noiseResult: Results of the execution of an instruction with data
+                        type 'noise'.
+    :type noiseResult: SLiCAPprotos.allResults
+
+    :param noise: 'inoise' or 'onoise' for source-referred noise or detector-
+                referred noise, respectively.
+    :type noise': str
+
+    :param fmin: Lower limit of the frequency range in Hz.
+    :type fmin: str, int, float, sp.Symbol
+
+    :param fmax: Upper limit of the frequency range in Hz.
+    :type fmax: str, int, float, sp.Symbol
+
+    :param source: refDes (ID) or list with IDs of noise sources
+                of which the contribution to the RMS noise needs to be
+                evaluated. Only IDs of current of voltage sources with a
+                nonzero value for 'noise' are accepted.
+    :type source: str, list
+
+    :param CDS: True if correlated double sampling is required, defaults to False
+                If True parameter 'tau' must be given a nonzero finite value
+                (can be symbolic)
+    :type CDS: Bool
+
+    :param tau: CDS delay time
+    :type tau: str, int, float, sp.Symbol
+
+    :return: RMS noise over the frequency interval.
+
+            - An expression or value if parameter stepping of the instruction is disabled.
+            - A list with expressions or values if parameter stepping of the instruction is enabled.
+    :rtype: int, float, sympy.Expr
+    """
+    result = _varNoise(noiseResult, noise, fmin, fmax, source=source, CDS=CDS, tau=tau)
+    if type(result) == list:
+        rms = [sp.sqrt(item) for item in result]
+    else:
+        rms = sp.sqrt(result)
     return rms
 
 def PdBm2V(p, r):
@@ -1472,7 +1533,7 @@ def ilt(expr, s, t, integrate=False):
     :param integrate: True multiplies expr with 1/s, defaults to False
     :type integrate: Bool
 
-    return: Inverse Laplace Transform f(t)
+    :return: Inverse Laplace Transform f(t)
     :rtype: sympy.Expr
     """
     inv_laplace = None
@@ -1678,39 +1739,48 @@ def listPZ(pzResult):
         # Parameter stepping is not supported
         try:
             DCvalue = sp.simplify(pzResult.DCvalue)
-            print('DC value of {:}: {:8.2e}'.format(pzResult.gainType, DCvalue))
+            print('DC value of {:}: {:8.2e}'.format(pzResult.gainType, float(DCvalue)))
         except:
             pass
         if pzResult.dataType == 'poles' or pzResult.dataType == 'pz':
             if len(pzResult.poles) != 0:
                 print('\nPoles of ' + pzResult.gainType + ':\n')
                 poles = pzResult.poles
-                print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
+                if ini.hz:
+                    print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
+                else:
+                    print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real   [rad/s]', 'Imag   [rad/s]', 'Freq.  [rad/s]', '   Q [-]'))
                 print("--  --------------  --------------  --------------  --------")
                 for i in range(len(poles)):
-                    realPart = sp.re(poles[i])/2/np.pi
-                    imagPart = sp.im(poles[i])/2/np.pi
+                    realPart = sp.re(poles[i])
+                    imagPart = sp.im(poles[i])
+                    if ini.hz:
+                        realPart = realPart/2/np.pi
+                        imagPart = imagPart/2/np.pi
                     frequency = sp.sqrt(realPart**2 + imagPart**2)
-
                     if imagPart != 0:
                         Q = np.abs(frequency/2/realPart)
                         print("{:2} {:15.2e} {:15.2e} {:15.2e} {:9.2e}".format(i, float(realPart), float(imagPart), float(frequency), Q))
                     else:
                         print("{:2} {:15.2e} {:15.2e} {:15.2e}".format(i, float(realPart), 0.0, float(frequency)))
-
             else:
                 print('\nFound no poles.')
         if pzResult.dataType == 'zeros' or pzResult.dataType == 'pz':
             if len(pzResult.zeros) != 0:
                 print('\nZeros of ' + pzResult.gainType + ':\n')
                 zeros = pzResult.zeros
-                print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
+                if ini.hz:
+                    print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
+                else:
+                    print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real   [rad/s]', 'Imag   [rad/s]', 'Freq.  [rad/s]', '   Q [-]'))
                 print("--  --------------  --------------  --------------  --------")
                 for i in range(len(zeros)):
                     realPart = sp.re(zeros[i])/2/np.pi
                     imagPart = sp.im(zeros[i])/2/np.pi
+                    if ini.hz:
+                        realPart = realPart/2/np.pi
+                        imagPart = imagPart/2/np.pi
                     frequency = sp.sqrt(realPart**2 + imagPart**2)
-
                     if imagPart != 0:
                         Q = np.abs(frequency/2/realPart)
                         print("{:2} {:15.2e} {:15.2e} {:15.2e} {:9.2e}".format(i, float(realPart), float(imagPart), float(frequency), Q))
@@ -1724,7 +1794,6 @@ def listPZ(pzResult):
     return
 
 def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True):
-    
     results = {}
     terms = zip(poly.coeffs(), poly.monoms())
     for coeff, (exp_1, exp_2) in terms:
@@ -1744,11 +1813,9 @@ def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True):
     return results
 
 def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True):
-
     # Find the highest order terms in the denominator
     numer, denom = func.as_numer_denom()
     poly_denom = sp.Poly(denom, variables[0], variables[1])
-
     max_degree = poly_denom.total_degree()
     for exponents in poly_denom.monoms():
         if sum(exponents) == max_degree:
@@ -1756,7 +1823,7 @@ def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True):
 
     # Change the order to use sp.Poly
     poly =  sp.Poly(sp.simplify(func * variables[0]**var0_order * variables[1]**var1_order), variables[0], variables[1])
-        
+    
     # Integrate the polynomial coefficients numerically
     integratedCoeffs = _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=doit)
     return integratedCoeffs, exponents
@@ -1814,7 +1881,7 @@ def integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
 def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
     """
     Returns expr in which x in coefficients of monomials of 
-    variables is integrated over the range x_lower ... x_upper. If doit=True
+    variables are integrated over the range x_lower ... x_upper. If doit=True
     the integration will be performed, else integral operators will be returned.
     
     :param expr: Sympy expression
@@ -1842,9 +1909,6 @@ def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
     :rtype: sympy.expr, int or float
     """ 
     integratedCoeffs = integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=doit)
-    # Reconstruct the integrated polynomial
-    #integratedResult = sum(coeff * variables[0]**exp[0] * variables[1]**exp[1]
-    #                    for exp, coeff in integratedCoeffs.items())
     integratedResult = sum(sp.Mul(key, integratedCoeffs[key], evaluate=doit)
                         for key in integratedCoeffs.keys())
     return integratedResult
@@ -1868,6 +1932,101 @@ def units2TeX(units):
         for unitpart in units.split():
             tex += py2tex(unitpart, print_latex=False, print_formula=False, simplify_output=False)[2:-2] + " "
     return tex[:-1]
+
+def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
+    """
+    Returns a f_type prototype function based on a f_char polynomial:
+        
+    - f_char = butterworth
+    - f_char = bessel
+    - f_char = chebyshev1 # Chebyshev type 1 (passband ripple)
+    
+    - f_type = lp : low-pass,  requires f_high
+    - f_type = hp : high-pass, requires f_low
+    - f_type = bp : band-pass, requires f_low and f_high
+    - f_type = bs : band-stop, requires f_low and f_high
+    - f_type = ap : all-pass,  requires f_high
+    
+    :param f_char: filter characteristic: Butterworth or Bessel
+    :type f_char:  str
+    
+    :param f_type: filter type: lp, hp, bp, bs, ap
+    :type f_type:  str
+    
+    :param f_order: order of the filter
+    :type f_order:  str, int
+    
+    :param f_low:  low-frequency -3dB corner [Hz]
+    :type f_low:   sympy.Symbol, float, int
+    
+    :param f_high: high-frequency -3dB corner [Hz]
+    :type f_high:  sympy.Symbol, float, int
+    
+    :param ripple: pass-band ripple in [dB]
+    :type ripple: int, float
+    
+    :return: Filter prototype function (Laplace Transform)
+    :rtype: sympy.Expr
+    """
+    f_char = f_char.lower()
+    f_type = f_type.lower()
+    f_order = int(f_order)
+    if f_char== "butterworth":
+        proto = butterworthPoly(f_order)    
+    elif f_char == "bessel":
+        proto = besselPoly(f_order)
+    elif f_char == "chebyshev1":
+        proto = chebyshev1Poly(f_order, ripple)
+    if f_type == "lp":
+        if f_high != None:
+            proto = 1/proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_high))
+        else:
+            print("Error: missing f_high")
+    elif f_type == "hp":
+        if f_low != None:
+            proto = normalizeRational(sp.simplify(1/proto.subs(ini.laplace, 2*sp.pi*f_low/ini.laplace)))
+        else:
+            print("Error: missing f_low")
+    elif f_type == "ap":
+        if f_high != None:
+            proto = proto.subs(ini.laplace, -ini.laplace)/proto
+            proto = proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_high))
+        else:
+            print("Error: missing f_high")
+    else:
+        if f_low != None and f_high != None:
+            B   = f_high - f_low
+            f_c = sp.sqrt(f_low * f_high)
+            Q   = f_c/B
+            if f_type == "bp" and f_c != None:
+                proto = 1/proto.subs(ini.laplace, Q*(ini.laplace+1/ini.laplace))
+                proto = normalizeRational(sp.simplify(proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_c))))
+            elif f_type == "bs" and f_c != None:
+                proto = 1/proto.subs(ini.laplace, 1/(Q*(ini.laplace+1/ini.laplace)))
+                proto = normalizeRational(sp.simplify(proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_c))))
+        elif f_low == None:
+            print("Error: missing f_low")
+        else:
+            print("Error: missing f_high")
+    return proto
+
+def DIN_A(f_0 = 1000):
+    """
+    Returns DIN_A frequency weighting function (audio), normalized at f=f_0
+    
+    See WiKi R_A(f): https://en.wikipedia.org/wiki/A-weighting
+    
+    :param f_0: Normalization frequency (frequency at which the weighting = 1),
+                defaults to 1kHz
+    :type f_0: float, int, sympy.Symbol
+    
+    :return: R_A(f): Weighting function, argument = ini.frequency
+    :rtype: sympy.Expr
+    """
+    f = ini.frequency
+    DIN_A = 12194**2*f**4/((f**2+20.6**2)*(f**2+12194**2)*sp.sqrt((f**2+107.7**2)*(f**2+737.9**2)))
+    # normalized the weighting function w.r.t. 1kHz
+    return float2rational(DIN_A /DIN_A.subs(f, f_0))
 
 if __name__ == "__main__":
     from time import time

@@ -1,0 +1,14 @@
+"Balanced Network"
+C2 0 2 C value={C_a} vinit=0
+I1 0 1 I value={I_s} noise=0 dc=0 dcvar=0
+K1 L1P L1N K value={k_c}
+L1N LN 2 L value={L_a} iinit=0
+L1P LP 2 L value={L_a} iinit=0
+R1N inN outN R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R1P inP outP R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2N outN LN R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2P outP LP R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R3 2 0 R value={R_c} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1N inN 1 V value={V_b} noise=0 dc=0 dcvar=0
+V1P inP 1 V value={V_a} noise=0 dc=0 dcvar=0
+.end

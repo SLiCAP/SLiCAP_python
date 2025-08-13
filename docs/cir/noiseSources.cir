@@ -1,0 +1,7 @@
+noiseSources
+C1 out 0 C value={C_a} vinit=0
+I1 0 out I value=0 noise={S_i} dc=0 dcvar=0
+L1 1 out L value={L_a} iinit=0
+R1 1 2 R value={R_a} noisetemp={T} noiseflow={f_ell} dcvar=0 dcvarlot=0
+V1 2 0 V value=0 noise={S_v} dc=0 dcvar=0
+.end

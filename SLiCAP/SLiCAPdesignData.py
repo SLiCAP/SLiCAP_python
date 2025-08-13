@@ -140,7 +140,7 @@ class specItem(object):
             line.append(self.units)
         return line
 
-def specList2dict(specList):
+def specs2dict(specList):
     """
     Creates a dictionary with spec items. the parameter name is used as key.
     Also checks for unique parameter names.
@@ -175,7 +175,7 @@ def specs2csv(specList, fileName):
     :rtype: NoneType
 
     """
-    dictWithSpecs = specList2dict(specList)
+    dictWithSpecs = specs2dict(specList)
     f = open(ini.csv_path + fileName, 'w')
     f.write("symbol, description, value, units, type\n")
     for spec in list(dictWithSpecs.keys()):
@@ -263,7 +263,7 @@ def specs2html(specs, types=[]):
     :return: HTML code that will be placed on the page
     :rtype: str
     """
-    dictWithSpecs = specList2dict(specs)
+    dictWithSpecs = specs2dict(specs)
     keys = sorted(list(dictWithSpecs.keys()))
     # Create an HTML dict with a key for each spec type
     html = {}

@@ -1,0 +1,3 @@
+.. math::
+
+    A_{vdd} = \frac{8 R_{a} R_{f X1} g_{m X1} g_{o X1} + 8 R_{a} \beta_{AC X1} g_{m X1} + 8 R_{a} \beta_{AC X1} g_{o X1} + 8 R_{a} g_{m X1} - 16 R_{f X1} \beta_{AC X1} g_{m X1} + 16 \beta_{AC X1}}{8 R_{a} R_{f X1} g_{m X1} g_{o X1} + 8 R_{a} \beta_{AC X1} g_{m X1} + 8 R_{a} \beta_{AC X1} g_{o X1} + 8 R_{a} g_{m X1} + 16 R_{f X1} R_{s} g_{m X1} g_{o X1} + 16 R_{f X1} \beta_{AC X1} g_{o X1} + 16 R_{s} \beta_{AC X1} g_{m X1} + 16 R_{s} \beta_{AC X1} g_{o X1} + 16 R_{s} g_{m X1} + 16 \beta_{AC X1}}

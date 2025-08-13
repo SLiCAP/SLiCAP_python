@@ -1,0 +1,13 @@
+"Voltage amplifier with OpAmp"
+.source V1
+.detector V_L
+.lgref E_O1
+.model myOpAmp OV av={A_0/(1-s/(2*pi*p_1))} cc={c_c} cd={c_d} zo={R_o}
+C1 L 0 C value={C_L} vinit=0
+O1 in 1 L 0 myOpAmp
+R1 2 in R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2 L 1 R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R3 1 0 R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R4 L 0 R value={R_L} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 2 0 V value=0 noise=0 dc=0 dcvar=0
+.end

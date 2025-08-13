@@ -26,7 +26,6 @@ if platform.system() == 'Windows':
     import windows_tools.installed_software as wi
 
 TIMEOUT = 120
-#INSTALLVERSION = "3.3.2"
 
 def _check_version():
     """
@@ -259,7 +258,6 @@ def _generate_project_config():
                      "csv"           : 'csv/',
                      "txt"           : 'txt/',
                      "img"           : 'img/',
-                     "mathml"        : 'mathml/',
                      "sphinx"        : 'sphinx/',
                      "tex"           : 'tex/',
                      "tex_snippets"  : 'tex/SLiCAPdata/',
@@ -270,41 +268,45 @@ def _generate_project_config():
                      "project"       : os.path.abspath('.') + '/'
                     }
     SLiCAPconfig = configparser.ConfigParser()
-    SLiCAPconfig['math']         = {"laplace"        : "s",
-                                    "frequency"      : "f",
-                                    "numer"          : "ME",
-                                    "denom"          : "ME",
-                                    "lambdify"       : "numpy",
-                                    "stepfunction"   : True,
-                                    "factor"         : True,
-                                    "maxrecsubst"    : 15,
-                                    "reducematrix"   : True,
-                                    "reducecircuit"  : True
+    SLiCAPconfig['math']         = {"laplace"               : "s",
+                                    "frequency"             : "f",
+                                    "numer"                 : "ME",
+                                    "denom"                 : "ME",
+                                    "lambdify"              : "numpy",
+                                    "stepfunction"          : True,
+                                    "factor"                : True,
+                                    "maxrecsubst"           : 15,
+                                    "reducematrix"          : True,
+                                    "reducecircuit"         : True
                                     }
-    SLiCAPconfig['plot']         = {"axisheight"     : 5,
-                                    "axiswidth"      : 7,
-                                    "defaultcolors"  : "r,b,g,c,m,y,k",
-                                    "defaultmarkers" : "",
-                                    "legendloc"      : "best",
-                                    "plotfontsize"   : 12,
-                                    "plotfiletype"   : "svg",
-                                    "linewidth"      : 2,
-                                    "markersize"     : 7,
-                                    "linetype"       : "-",
-                                    "svgmargin"      : 1
+    SLiCAPconfig['balancing']    = {"update_srcnames"       : True,
+                                    "pair_ext"              : "P,N",
+                                    "remove_param_pair_ext" : True}
+    SLiCAPconfig['plot']         = {"axisheight"            : 5,
+                                    "axiswidth"             : 7,
+                                    "defaultcolors"         : "r,b,g,c,m,y,k",
+                                    "defaultmarkers"        : "",
+                                    "legendloc"             : "best",
+                                    "plotfontsize"          : 12,
+                                    "plotfiletype"          : "svg",
+                                    "linewidth"             : 2,
+                                    "markersize"            : 7,
+                                    "linetype"              : "-",
+                                    "svgmargin"             : 1
                                     }                            
-    SLiCAPconfig['gaincolors']   = {"asymptotic"     : "r",
-                                    "gain"           : "b",
-                                    "loopgain"       : "k",
-                                    "servo"          : "m",
-                                    "direct"         : "g",
-                                    "vi"             : "c"
+    SLiCAPconfig['gaincolors']   = {"asymptotic"            : "r",
+                                    "gain"                  : "b",
+                                    "loopgain"              : "k",
+                                    "servo"                 : "m",
+                                    "direct"                : "g",
+                                    "ideal"                 : "c",
+                                    "vi"                    : "c"
                                     }
-    SLiCAPconfig['display']      = {'Hz'             : True,
-                                    'Digits'         : 4,
-                                    'notebook'       : False,
-                                    'scalefactors'   : False,
-                                    'engnotation'    : True}
+    SLiCAPconfig['display']      = {'Hz'                    : True,
+                                    'Digits'                : 4,
+                                    'notebook'              : False,
+                                    'scalefactors'          : False,
+                                    'engnotation'           : True}
     try: 
         _author = os.getlogin()
     except:
@@ -333,8 +335,9 @@ def _generate_main_config():
     install_paths = {"install"     : install_path,
                      "user"        : home_path,
                      "docs"        : os.path.join(install_path, 'SLiCAP/docs/html/'),
-                     "libs"        : os.path.join(install_path, 'SLiCAP/files/lib/'),
+                     "mainlibs"    : os.path.join(install_path, 'SLiCAP/files/lib/'),
                      "kicadsyms"   : os.path.join(install_path, 'SLiCAP/files/kicad/SLiCAP.kicad_sym'),
+                     "ngspicesyms" : os.path.join(install_path, 'SLiCAP/files/kicad/SPICE.kicad_sym'),
                      "gedasyms"    : os.path.join(install_path, 'SLiCAP/files/gSchem/'),
                      "leptonsyms"  : os.path.join(install_path, 'SLiCAP/files/lepton-eda/'),
                      "ltspicesyms" : os.path.join(install_path, 'SLiCAP/files/LTspice/'),
@@ -359,8 +362,9 @@ def _generate_default_config():
                       'installpaths':{"install"      : '',
                                        "user"        : '',
                                        "docs"        : '',
-                                       "libs"        : '',
+                                       "mainlibs"    : '',
                                        "kicadsyms"   : '',
+                                       "ngspicesyms" : '',
                                        "gedasyms"    : '',
                                        "leptonsyms"  : '',
                                        "ltspicesyms" : '',
@@ -380,7 +384,7 @@ def _get_home_path():
     
 def _read_project_config():
     try:
-        if  os.path.isfile("./SLiCAP.ini"):
+        if os.path.isfile("./SLiCAP.ini"):
             config_dict = configparser.ConfigParser()
             with open("SLiCAP.ini") as f:
                 config_dict.read_file(f)
@@ -436,18 +440,19 @@ def _update_ini_files():
     for default_key in default_keys:
         if default_key not in main_keys:
             generate = True
-        else:
-            sub_keys      = default_config[default_key].keys()
-            main_sub_keys = main_config[default_key].keys()
-            for sub_key in sub_keys:
-                if sub_key not in main_sub_keys:
-                    generate is True
+            break
+        sub_keys      = default_config[default_key].keys()
+        main_sub_keys = main_config[default_key].keys()
+        for sub_key in sub_keys:
+            if sub_key not in main_sub_keys:
+                generate = True
+                break
+        if generate:
+            break
     if generate:
         print("Updating main configuration file; this may take a while.")
         main_config = _generate_main_config()
         _write_main_config(main_config)
-    
-    # Update the project data from the project configuration file
     project_config = _read_project_config()
     proj_keys = project_config.keys()
     default_config = _generate_project_config()
@@ -462,11 +467,26 @@ def _update_ini_files():
                 project_config[main_key][sub_key] = default_config[main_key][sub_key]
     _write_project_config(project_config)
     
-    return main_config, project_config
-         
-def dump():
+    return main_config, project_config    
+
+def dump(section="all"):
     """
     Prints the global SLiCAP settings.
+    
+    :param sections: "all", or name of section to be printed:
+                     - VERSION
+                     - INSTALL
+                     - COMMANDS
+                     - PROJECT
+                     - PATHS
+                     - HTML
+                     - DSIPLAY
+                     - MATH
+                     - PLOT
+                     - BALANCING
+                     
+                     
+    :type section: str, list
     
     :return None:
     :rtype NoneType:
@@ -476,153 +496,226 @@ def dump():
     >>> import SLiCAP as sl
     >>> sl.ini.dump()
     """
-    main_config     = _read_main_config()
-    # Global variables from main configuration file
-    print('ini.install_version =', main_config['version']['install_version'])
-    print('ini.latest_version  =', main_config['version']['latest_version'])
-    print('ini.install_path    =', main_config['installpaths']['install'])
-    print('ini.home_path       =', main_config['installpaths']['user'])
-    print('ini.main_lib_path   =', main_config['installpaths']['libs'])
-    print('ini.doc_path        =', main_config['installpaths']['docs'])
-    print('ini.ltspice         =', main_config['commands']['ltspice'])
-    print('ini.gnetlist        =', main_config['commands']['geda'])
-    print('ini.kicad           =', main_config['commands']['kicad'])
-    print('ini.ngspice         =', main_config['commands']['ngspice'])
-    print('ini.lepton_eda      =', main_config['commands']['lepton-eda'])
-    print('ini.ltspice_syms    =', main_config['installpaths']['ltspicesyms'])
-    print('ini.gnetlist_syms   =', main_config['installpaths']['gedasyms'])
-    print('ini.kicad_syms      =', main_config['installpaths']['kicadsyms'])
-    print('ini.lepton_eda_syms =', main_config['installpaths']['leptonsyms'])
-    print('ini.latex_files     =', main_config['installpaths']['latexfiles'])
-    print('ini.sphinx_files    =', main_config['installpaths']['sphinxfiles'])
+    section = section.upper()
+    if section == 'ALL' or section == "VERSION":
+        print("\nVERSION")
+        print("-------")
+        print('ini.install_version        =', install_version)
+        print('ini.latest_version         =', latest_version)
+    if section == 'ALL' or section == "INSTALL":
+        print("\nINSTALL")
+        print("-------")
+        print('ini.install_path           =', install_path)
+        print('ini.home_path              =', home_path)
+        print('ini.main_lib_path          =', main_lib_path)
+        print('ini.doc_path               =', doc_path)
+        print('ini.kicad_syms             =', kicad_syms)
+        print('ini.ngspice_syms           =', ngspice_syms)
+        print('ini.ltspice_syms           =', ltspice_syms)
+        print('ini.gnetlist_syms          =', gnetlist_syms)
+        print('ini.lepton_eda_syms        =', lepton_eda_syms)
+        print('ini.latex_files            =', latex_files)
+        print('ini.sphinx_files           =', sphinx_files)
+    if section == 'ALL' or section == "COMMANDS":    
+        print("\nCOMMANDS")
+        print("--------")
+        print('ini.kicad                  =', kicad)
+        print('ini.ltspice                =', ltspice)
+        print('ini.gnetlist               =', gnetlist)
+        print('ini.lepton_eda             =', lepton_eda)
+        print('ini.ngspice                =', ngspice)
+    if section == 'ALL' or section == "PROJECT":    
+        print("\nPROJECT")
+        print("-------")
+        print('ini.project_title          =', project_title)
+        print('ini.author                 =', author)
+        print('ini.created                =', created)
+        print('ini.last_updated           =', last_updated)
+    if section == 'ALL' or section == "PATHS":    
+        print("\nPATHS")
+        print("-----")
+        print('ini.project_path           =', project_path)
+        print('ini.html_path              =', html_path)
+        print('ini.cir_path               =', cir_path)
+        print('ini.img_path               =', img_path)
+        print('ini.csv_path               =', csv_path)
+        print('ini.txt_path               =', txt_path)
+        print('ini.tex_path               =', tex_path)
+        print('ini.user_lib_path          =', user_lib_path)
+        print('ini.sphinx_path            =', sphinx_path)
+        print('ini.tex_snippets           =', tex_snippets)
+        print('ini.html_snippets          =', html_snippets)
+        print('ini.rst_snippets           =', rst_snippets)
+        print('ini.myst_snippets          =', myst_snippets)
+        print('ini.md_snippets            =', md_snippets)
+    if section == 'ALL' or section == "HTML":    
+        print("\nHTML")
+        print("----")
+        print('ini.html_prefix            =', html_prefix)
+        print('ini.html_index             =', html_index )
+        print('ini.html_page              =', html_page)
+        print('ini.html_pages')
+        for page in html_pages:
+            print("\t", page)
+        
+        print('ini.html_labels')
+        for label in html_labels.keys():
+            print("label :", label)
+            print("\ttype        :", html_labels[label][0])
+            print("\thref        :", html_labels[label][1])
+            print("\tdescription :", html_labels[label][2])
+    if section == 'ALL' or section == "DISPLAY":       
+        print("\nDISPLAY")
+        print("-------")
+        print('ini.hz                     =', hz)
+        print('ini.disp                   =', disp)
+        print('ini.scalefactors           =', scalefactors)
+        print('ini.eng_notation           =', eng_notation)
+    if section == 'ALL' or section == "MATH":
+        print("\nMATH")
+        print("----")
+        print('ini.laplace                =', laplace)
+        print('ini.frequency              =', frequency)
+        print('ini.numer                  =', numer)
+        print('ini.denom                  =', denom)
+        print('ini.lambdify               =', lambdify)
+        print('ini.step_function          =', step_function)
+        print('ini.factor                 =', factor)
+        print('ini.max_rec_subst          =', max_rec_subst)
+        print('ini.reduce_matrix          =', reduce_matrix)
+        print('ini.reduce_circuit         =', reduce_circuit)
+    if section == 'ALL' or section == "PLOT":        
+        print("\nPLOT")
+        print("----")
+        print('ini.gain_colors_gain       =', gain_colors_gain)
+        print('ini.gain_colors_loopgain   =', gain_colors_loopgain)
+        print('ini.gain_colors_asymptotic =', gain_colors_asymptotic)
+        print('ini.gain_colors_servo      =', gain_colors_servo)
+        print('ini.gain_colors_direct     =', gain_colors_direct)
+        print('ini.gain_colors_vi         =', gain_colors_vi)   
+        print('ini.gain_colors_ideal      =', gain_colors_ideal)   
+        print('ini.axis_height            =', axis_height)
+        print('ini.axis_width             =', axis_width)
+        print('ini.line_width             =', line_width)
+        print('ini.line_type              =', line_type)
+        print('ini.plot_fontsize          =', plot_fontsize)
+        print('ini.marker_size            =', marker_size)
+        print('ini.legend_loc             =', legend_loc)
+        print('ini.default_colors         =', default_colors)
+        print('ini.default_markers        =', default_markers)
+        print('ini.plot_file_type         =', plot_file_type)
+        print('ini.svg_margin             =', svg_margin)
+    if section == 'ALL' or section == "BALANCING":    
+        print("\nBALANCING")
+        print("---------")
+        print('ini.pair_ext               =', pair_ext)
+        print('ini.update_srcnames        =', update_srcnames)
+        print('ini.remove_param_pair_ext  =', remove_param_pair_ext)
     
-    project_config = _read_project_config()
-    # Global variables from main configuration file
-    print('ini.html_path       =', project_config['projectpaths']['html'])
-    print('ini.cir_path        =', project_config['projectpaths']['cir'])
-    print('ini.img_path        =', project_config['projectpaths']['img'])
-    print('ini.csv_path        =', project_config['projectpaths']['csv'])
-    print('ini.txt_path        =', project_config['projectpaths']['txt'])
-    print('ini.tex_path        =', project_config['projectpaths']['tex'])
-    print('ini.user_lib_path   =', project_config['projectpaths']['lib'])
-    print('ini.project_path    =', project_config['projectpaths']['project'])
-    print('ini.mathml_path     =', project_config['projectpaths']['mathml'])
-    print('ini.sphinx_path     =', project_config['projectpaths']['sphinx'])
-    print('ini.tex_snippets    =', project_config['projectpaths']['tex_snippets'])
-    print('ini.html_snippets   =', project_config['projectpaths']['html_snippets'])
-    print('ini.rst_snippets    =', project_config['projectpaths']['rst_snippets'])
-    print('ini.myst_snippets   =', project_config['projectpaths']['myst_snippets'])
-    print('ini.md_snippets     =', project_config['projectpaths']['md_snippets'])
-    print('ini.html_prefix     =', project_config['html']['prefix'])
-    print('ini.html_index      =', project_config['html']['current_index'])
-    print('ini.html_page       =', project_config['html']['current_page'])
-    print('ini.html_pages      =', project_config['html']['pages'].split(','))
-    print('ini.html_labels     =', project_config['labels'])
-    print('ini.disp            =', eval(project_config['display']['digits']))
-    print('ini.hz              =', eval(project_config['display']['Hz']))
-    print('ini.notebook        =', eval(project_config['display']['notebook']))
-    print('ini.scalefactors    =', eval(project_config['display']['scalefactors']))
-    print('ini.eng_notation    =', eval(project_config['display']['engnotation']))
-    print('ini.last_updated    =', project_config['project']['last_updated'])
-    print('ini.project_title   =', project_config['project']['title'])
-    print('ini.created         =', project_config['project']['created'])
-    print('ini.author          =', project_config['project']['author'])
-    print('ini.laplace         =', Symbol(project_config['math']['laplace']))
-    print('ini.frequency       =', Symbol(project_config['math']['frequency']))
-    print('ini.numer           =', project_config['math']['numer'])
-    print('ini.denom           =', project_config['math']['denom'])
-    print('ini.lambdify        =', project_config['math']['lambdify'])
-    print('ini.step_function   =', eval(project_config['math']['stepfunction']))
-    print('ini.factor          =', eval(project_config['math']['factor']))
-    print('ini.max_rec_subst   =', eval(project_config['math']['maxrecsubst']))
-    print('ini.reduce_matrix   =', eval(project_config['math']['reducematrix']))
-    print('ini.reduce_circuit  =', eval(project_config['math']['reducecircuit']))
-    print('ini.gain_colors     =', dict(project_config['gaincolors']))
-    print('ini.plot_fontsize   =', eval(project_config['plot']['plotfontsize']))
-    print('ini.axis_height     =', eval(project_config['plot']['axisheight']))
-    print('ini.axis_width      =', eval(project_config['plot']['axiswidth']))
-    print('ini.line_width      =', eval(project_config['plot']['linewidth']))
-    print('ini.marker_size     =', eval(project_config['plot']['markersize']))
-    print('ini.line_type       =', project_config['plot']['linetype'])
-    print('ini.legend_loc      =', project_config['plot']['legendloc'])
-    print('ini.default_colors  =', project_config['plot']['defaultcolors'].split(','))
-    print('ini.default_markers =', project_config['plot']['defaultmarkers'].split(','))
-    print('ini.plot_fontsize   =', project_config['plot']['plotfontsize'])
-    print('ini.plot_file_type  =', project_config['plot']['plotfiletype'])
-    print('ini.svg_margin      =', eval(project_config['plot']['svgmargin']))
-    
-
 # Define global variables from ini files
 
 main_config, project_config = _update_ini_files()
 
-install_version = main_config['version']['install_version']
-latest_version  = main_config['version']['latest_version']
-install_path    = main_config['installpaths']['install']
-home_path       = main_config['installpaths']['user']
-main_lib_path   = main_config['installpaths']['libs']
-doc_path        = main_config['installpaths']['docs']
-ltspice_syms    = main_config['installpaths']['ltspicesyms']
-netlist_syms    = main_config['installpaths']['gedasyms']
-kicad_syms      = main_config['installpaths']['kicadsyms']
-lepton_eda_syms = main_config['installpaths']['leptonsyms']
-latex_files     = main_config['installpaths']['latexfiles']
-sphinx_files    = main_config['installpaths']['sphinxfiles']
-ltspice         = main_config['commands']['ltspice']
-gnetlist        = main_config['commands']['geda']
-kicad           = main_config['commands']['kicad']
-ngspice         = main_config['commands']['ngspice']
-lepton_eda      = main_config['commands']['lepton-eda']
-project_path    = project_config['projectpaths']['project']
-html_path       = project_config['projectpaths']['html']
-cir_path        = project_config['projectpaths']['cir']
-img_path        = project_config['projectpaths']['img']
-csv_path        = project_config['projectpaths']['csv']
-txt_path        = project_config['projectpaths']['txt']
-tex_path        = project_config['projectpaths']['tex']
-user_lib_path   = project_config['projectpaths']['lib']
-mathml_path     = project_config['projectpaths']['mathml']
-sphinx_path     = project_config['projectpaths']['sphinx']
-tex_snippets    = project_config['projectpaths']['tex_snippets']
-html_snippets   = project_config['projectpaths']['html_snippets']
-rst_snippets    = project_config['projectpaths']['rst_snippets']
-myst_snippets   = project_config['projectpaths']['myst_snippets']
-md_snippets     = project_config['projectpaths']['md_snippets']
-html_prefix     = project_config['html']['prefix']
-html_index      = project_config['html']['current_index']
-html_page       = project_config['html']['current_page']
-html_pages      = project_config['html']['pages'].split(',')
-html_labels     = project_config['labels']
-disp            = eval(project_config['display']['digits'])
-scalefactors    = eval(project_config['display']['scalefactors'])
-eng_notation    = eval(project_config['display']['engnotation'])
-last_updated    = project_config['project']['last_updated']
-project_title   = project_config['project']['title']
-created         = project_config['project']['created']
-author          = project_config['project']['author']
-laplace         = Symbol(project_config['math']['laplace'])
-frequency       = Symbol(project_config['math']['frequency'])
-numer           = project_config['math']['numer']
-denom           = project_config['math']['denom']
-lambdify        = project_config['math']['lambdify']
-step_function   = eval(project_config['math']['stepfunction'])
-factor          = eval(project_config['math']['factor'])
-max_rec_subst   = eval(project_config['math']['maxrecsubst'])
-reduce_matrix   = eval(project_config['math']['reducematrix'])
-reduce_circuit  = eval(project_config['math']['reducecircuit'])
-hz              = eval(project_config['display']['Hz'])
-gain_colors     = project_config['gaincolors']
-plot_fontsize   = eval(project_config['plot']['plotfontsize'])
-axis_height     = eval(project_config['plot']['axisheight'])
-axis_width      = eval(project_config['plot']['axiswidth'])
-line_width      = eval(project_config['plot']['linewidth'])
-marker_size     = eval(project_config['plot']['markersize'])
-svg_margin      = eval(project_config['plot']['svgmargin'])
-line_type       = project_config['plot']['linetype']
-legend_loc      = project_config['plot']['legendloc']
-default_colors  = project_config['plot']['defaultcolors'].split(',')
-default_markers = project_config['plot']['defaultmarkers'].split(',')
-plot_file_type  = project_config['plot']['plotfiletype']
-notebook        = False
+install_version       = main_config['version']['install_version']
+latest_version        = main_config['version']['latest_version']
 
-SLiCAPPARAMS    = {} # Entries will be generated during circuit check
+install_path          = main_config['installpaths']['install']
+home_path             = main_config['installpaths']['user']
+main_lib_path         = main_config['installpaths']['mainlibs']
+doc_path              = main_config['installpaths']['docs']
+kicad_syms            = main_config['installpaths']['kicadsyms']
+ngspice_syms          = main_config['installpaths']['ngspicesyms']
+ltspice_syms          = main_config['installpaths']['ltspicesyms']
+gnetlist_syms         = main_config['installpaths']['gedasyms']
+lepton_eda_syms       = main_config['installpaths']['leptonsyms']
+latex_files           = main_config['installpaths']['latexfiles']
+sphinx_files          = main_config['installpaths']['sphinxfiles']
+
+kicad                 = main_config['commands']['kicad']
+ltspice               = main_config['commands']['ltspice']
+gnetlist              = main_config['commands']['geda']
+lepton_eda            = main_config['commands']['lepton-eda']
+ngspice               = main_config['commands']['ngspice']
+
+project_title         = project_config['project']['title']
+author                = project_config['project']['author']
+created               = project_config['project']['created']
+last_updated          = project_config['project']['last_updated']
+
+project_path          = project_config['projectpaths']['project']
+html_path             = project_config['projectpaths']['html']
+cir_path              = project_config['projectpaths']['cir']
+img_path              = project_config['projectpaths']['img']
+csv_path              = project_config['projectpaths']['csv']
+txt_path              = project_config['projectpaths']['txt']
+tex_path              = project_config['projectpaths']['tex']
+user_lib_path         = project_config['projectpaths']['lib']
+sphinx_path           = project_config['projectpaths']['sphinx']
+tex_snippets          = project_config['projectpaths']['tex_snippets']
+html_snippets         = project_config['projectpaths']['html_snippets']
+rst_snippets          = project_config['projectpaths']['rst_snippets']
+myst_snippets         = project_config['projectpaths']['myst_snippets']
+md_snippets           = project_config['projectpaths']['md_snippets']
+
+html_prefix           = project_config['html']['prefix']
+html_index            = project_config['html']['current_index']
+html_page             = project_config['html']['current_page']
+html_pages            = project_config['html']['pages'].split(',')
+html_pages            = [page.strip() for page in html_pages]
+
+html_labels           = project_config['labels']
+new_labels = {}
+for key in html_labels.keys():
+    label = html_labels[key]
+    label = html_labels[key][1:-1].split(',')
+    label = [item.strip()[1:-1] for item in label]
+    new_labels[key] = label
+html_labels = new_labels
+    
+hz                    = eval(project_config['display']['Hz'])
+disp                  = eval(project_config['display']['digits'])
+scalefactors          = eval(project_config['display']['scalefactors'])
+eng_notation          = eval(project_config['display']['engnotation'])
+
+laplace               = Symbol(project_config['math']['laplace'])
+frequency             = Symbol(project_config['math']['frequency'])
+numer                 = project_config['math']['numer']
+denom                 = project_config['math']['denom']
+lambdify              = project_config['math']['lambdify']
+step_function         = eval(project_config['math']['stepfunction'])
+factor                = eval(project_config['math']['factor'])
+max_rec_subst         = eval(project_config['math']['maxrecsubst'])
+reduce_matrix         = eval(project_config['math']['reducematrix'])
+reduce_circuit        = eval(project_config['math']['reducecircuit'])
+
+gain_colors_gain      = project_config['gaincolors']['gain']
+gain_colors_asymptotic= project_config['gaincolors']['asymptotic']
+gain_colors_loopgain  = project_config['gaincolors']['loopgain']
+gain_colors_direct    = project_config['gaincolors']['direct']
+gain_colors_servo     = project_config['gaincolors']['servo']
+gain_colors_ideal     = project_config['gaincolors']['ideal']
+gain_colors_vi        = project_config['gaincolors']['vi']
+
+
+axis_height           = eval(project_config['plot']['axisheight'])
+axis_width            = eval(project_config['plot']['axiswidth'])
+line_width            = eval(project_config['plot']['linewidth'])
+line_type             = project_config['plot']['linetype']
+plot_fontsize         = eval(project_config['plot']['plotfontsize'])
+marker_size           = eval(project_config['plot']['markersize'])
+legend_loc            = project_config['plot']['legendloc']
+default_colors        = project_config['plot']['defaultcolors'].split(',')
+default_colors        = [col.strip() for col in default_colors]
+default_markers       = project_config['plot']['defaultmarkers'].split(',')
+default_markers       = [mark.strip() for mark in default_markers]
+plot_file_type        = project_config['plot']['plotfiletype']
+svg_margin            = eval(project_config['plot']['svgmargin'])
+
+pair_ext              = project_config['balancing']['pair_ext'].split(',') 
+pair_ext              = [ext.strip() for ext in pair_ext]
+update_srcnames       = eval(project_config['balancing']['update_srcnames'])
+remove_param_pair_ext = eval(project_config['balancing']['remove_param_pair_ext'])
+
+notebook              = False
+
+SLiCAPPARAMS          = {} # Entries will be generated during circuit check

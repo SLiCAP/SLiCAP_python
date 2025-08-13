@@ -7,175 +7,150 @@ import sympy as sp
 from copy import deepcopy
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPyacc import _updateCirData
-from SLiCAP.SLiCAPprotos import element, allResults
+from SLiCAP.SLiCAPprotos import element
 from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector, _reduceCircuit
 from SLiCAP.SLiCAPmath import float2rational, normalizeRational, det, _Roots 
 from SLiCAP.SLiCAPmath import _cancelPZ, _zeroValue, ilt, assumeRealParams
 from SLiCAP.SLiCAPmath import  clearAssumptions, fullSubs
 
-def _createResultObject(instr):
-    """
-    Returns an instance of the *allResults* object with the instruction data copied to it.
-
-    :param instr: SLiCAP instruction object.
-    :type instr: SLiCAPinstruction.instruction
-
-    :return: result
-    :rtype: SLiCAPprotos.allResults object
-    """
-    result = allResults()
-    result.gainType       = instr.gainType
-    result.convType       = instr.convType
-    result.dataType       = instr.dataType
-    result.step           = instr.step
-    result.stepVar        = instr.stepVar
-    result.stepVars       = instr.stepVars
-    if type(instr.stepVars) == list:
-        # Make a deep copy of the list
-        result.stepVars = [var for var in instr.stepVars]
-    result.stepMethod     = instr.stepMethod
-    result.stepStart      = instr.stepStart
-    result.stepStop       = instr.stepStop
-    result.stepNum        = instr.stepNum
-    result.stepList       = []
-    # Make a deep copy of the list
-    result.stepList = [num for num in instr.stepList]
-    result.stepArray      = []
-    # Make a deep copy of the array
-    for row in instr.stepArray:
-        if type(row) == list:
-            rowCopy = [num for num in row]
-            result.stepArray.append(rowCopy)
-    result.source         = instr.source
-    if type(instr.detector) == list:
-        # Make a deep copy of the detector list
-        result.detector       = [detector for detector in instr.detector]
-    else:
-        result.detector = instr.detector
-    result.lgRef          = instr.lgRef
-    result.circuit        = instr.circuit
-    result.errors         = instr.errors
-    result.detUnits       = instr.detUnits
-    result.detLabel       = instr.detLabel
-    result.srcUnits       = instr.srcUnits
-    result.numeric        = instr.numeric
-    result.substitute     = instr.substitute
-    result.label          = instr.label
-    result.parDefs        = None
-    if not instr.ignoreCircuitParams:
-        result.parDefs = deepcopy(instr.circuit.parDefs)
-    return result
-
 def _doInstruction(instr):
     """
-    Executes the instruction and returns the result.
+    Executes the instruction and returns the instr.
     
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: Result of the execution of the instruction.
-    :rtype: SLiCAPprotos.allResults()
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
+    instr = deepcopy(instr) # For compatibility with SLiCAP V3
     if instr.errors == 0:
         instr = _makeInstrParDict(instr)
-        result = _createResultObject(instr)
+        instr.clear()
         if instr.lgRef != None:
             oldLGrefElements = []
+            oldVsources      = []
+            inNodes          = []
             for i in range(len(instr.lgRef)):
                 if instr.lgRef[i] != None:
                     if instr.gainType == 'asymptotic':
+                        refType = instr.lgRef[i][0].upper()
+                        if refType == "F" or refType == "H":
+                            srcName = instr.circuit.elements[instr.lgRef[i]].refs[0]
+                            # Check if the current through this source is used as reference in other F or H elements
+                            # If so: delete "F" source, or replace "H" source with independent voltage source
+                            deletions = []
+                            for el in instr.circuit.elements.keys():
+                                if el != instr.lgRef[i] and srcName in instr.circuit.elements[el].refs:
+                                    oldLGrefElements.append(instr.circuit.elements[el])
+                                    deletions.append(instr.circuit.elements[el].refDes)
+                                    if instr.circuit.elements[el].type.upper() == "H":
+                                        newElement = element()
+                                        newElement.refDes = instr.circuit.elements[el].refDes
+                                        newElement.nodes = instr.circuit.elements[el].nodes
+                                        newElement.params["value"] = 0
+                                        newElement.model = 'V'
+                                        newElement.type = 'V'
+                                        instr.circuit.elements[instr.circuit.elements[el].refDes] = newElement
+                                    elif instr.circuit.elements[el].type.upper() != "F":
+                                        print("ERROR: unexpected error when modifying the circuit for asymptotic-gain calculations.")
+                                        instr.error += 1
+                            oldVsources.append(instr.circuit.elements[srcName])
+                            inNodes = instr.circuit.elements[srcName].nodes
+                            deletions.append(srcName)
+                            for el in deletions:
+                                del instr.circuit.elements[el]
                         oldLGrefElements.append(instr.circuit.elements[instr.lgRef[i]])
                         newLGrefElement = element()
-                        newLGrefElement.nodes = oldLGrefElements[-1].nodes
+                        newLGrefElement.nodes = instr.circuit.elements[instr.lgRef[i]].nodes + inNodes
                         newLGrefElement.model = 'N'
                         newLGrefElement.type = 'N'
-                        newLGrefElement.refDes = oldLGrefElements[-1].refDes
+                        newLGrefElement.refDes = instr.circuit.elements[instr.lgRef[i]].refDes
                         instr.circuit.elements[instr.lgRef[i]] = newLGrefElement
-                        instr.circuit = _updateCirData(instr.circuit)
                     elif instr.gainType == 'loopgain' or instr.gainType == 'servo' or instr.gainType == 'direct':
+                        # Store the value of the loop gain reference
                         instr.lgValue[i] = instr.circuit.elements[instr.lgRef[i]].params['value']
                         if instr.gainType == 'direct':
                             instr.circuit.elements[instr.lgRef[i]].params['value'] = sp.N(0)
                         else:
                             instr.circuit.elements[instr.lgRef[i]].params['value'] = sp.Symbol("_LGREF_" + str(i+1))
-        if instr.dataType == 'numer':
-            result = _doNumer(instr, result)
-        elif instr.dataType == 'denom':
-            result = _doDenom(instr, result)
-        elif result.dataType == 'laplace':
-            result = _doLaplace(instr, result)            
-        elif instr.dataType == 'poles':
-            result = _doPoles(instr, result)
-        elif instr.dataType == 'zeros':
-            result = _doZeros(instr, result)
-        elif instr.dataType == 'pz':
-            result = _doPZ(instr, result)
-        elif instr.dataType == 'noise':
-            result = _doNoise(instr, result)
-        elif instr.dataType == 'dcvar':
-            result = _doDCvar(instr, result)
-        elif instr.dataType == 'dc':
-            result = _doDC(instr, result)
-        elif instr.dataType == 'impulse':
-            result = _doImpulse(instr, result)
-        elif instr.dataType == 'step':
-            result = _doStep(instr, result)
-        elif instr.dataType == 'time':
-            result = _doTime(instr, result)
-        elif instr.dataType == 'solve':
-            result = _doSolve(instr, result)
-        elif instr.dataType == 'dcsolve':
-            result = _doDCsolve(instr, result)
-        elif instr.dataType == 'timesolve':
-            result = _doTimeSolve(instr, result)
-        elif instr.dataType == 'matrix':
-            result = _doMatrix(instr, result)
-        elif instr.dataType == 'params':
-            pass
-        else:
-            print('Error: unknown dataType:', instr.dataType)
+                    instr.circuit = _updateCirData(instr.circuit)
+        if instr.errors == 0:
+            if instr.dataType == 'numer':
+                instr = _doNumer(instr)
+            elif instr.dataType == 'denom':
+                instr = _doDenom(instr)
+            elif instr.dataType == 'laplace':
+                instr = _doLaplace(instr)            
+            elif instr.dataType == 'poles':
+                instr = _doPoles(instr)
+            elif instr.dataType == 'zeros':
+                instr = _doZeros(instr)
+            elif instr.dataType == 'pz':
+                instr = _doPZ(instr)
+            elif instr.dataType == 'noise':
+                instr = _doNoise(instr)
+            elif instr.dataType == 'dcvar':
+                instr = _doDCvar(instr)
+            elif instr.dataType == 'dc':
+                instr = _doDC(instr)
+            elif instr.dataType == 'impulse':
+                instr = _doImpulse(instr)
+            elif instr.dataType == 'step':
+                instr = _doStep(instr)
+            elif instr.dataType == 'time':
+                instr = _doTime(instr)
+            elif instr.dataType == 'solve':
+                instr = _doSolve(instr)
+            elif instr.dataType == 'dcsolve':
+                instr = _doDCsolve(instr)
+            elif instr.dataType == 'timesolve':
+                instr = _doTimeSolve(instr)
+            elif instr.dataType == 'matrix':
+                instr = _doMatrix(instr)
+            elif instr.dataType == 'params':
+                pass
+            else:
+                print('Error: unknown dataType:', instr.dataType)
+        # Restore the circuit data for compatibility with SLiCAP V3
         if instr.gainType == 'asymptotic' and instr.lgRef != None:
-            # Restore the original loop gain reference element
-            for i in range(len(instr.lgRef)):
-                if instr.lgRef[i] != None:
-                    instr.circuit.elements[instr.lgRef[i]] = oldLGrefElements[i]
+            # Restore the original loop gain reference
+            for i in range(len(oldLGrefElements)):
+                instr.circuit.elements[oldLGrefElements[i].refDes] = oldLGrefElements[i]
+            for vsrc in oldVsources:
+                instr.circuit.elements[vsrc.refDes] = vsrc
             instr.circuit = _updateCirData(instr.circuit)
         elif instr.gainType == 'direct' or instr.gainType == 'loopgain' or instr.gainType == 'servo':
+            # Restore the value of the loop gain reference
             for i in range(len(instr.lgRef)):
                 if instr.lgRef[i] != None:
-                    instr.circuit.elements[instr.lgRef[i]].params['value'] = instr.lgValue[i]
-    return result
+                    instr.circuit.elements[instr.lgRef[i]].params['value'] = instr.lgValue[i]           
+    return instr
 
-def _doNumer(instr, result):
+def _doNumer(instr):
     """
     Returns the numerator of a transfer function, or of the Laplace Transform
     of a detector voltage or current.
 
-    The result will be stored in the **.numer** attribute of the resturn object. In
+    The instr will be stored in the **.numer** attribute of the return object. In
     cases of parameter stepping, this attribute is a list with numerators.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: Result of the execution of the instruction.
-    :rtype: SLiCAPprotos.allResults()
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     if instr.step:
         if ini.step_function:
             if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                result = _makeAllMatrices(instr, result)
-                result = _doPyLoopGainServo(instr, result)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyLoopGainServo(instr)
             else:
-                result = _makeAllMatrices(instr, result)
-                result = _doPyNumer(instr,result)
-            numer  = result.numer[0]
-            result.numer = _stepFunctions(instr.stepDict, numer)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyNumer(instr,instr)
+            numer  = instr.numer[0]
+            instr.numer = _stepFunctions(instr.stepDict, numer)
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
@@ -183,50 +158,47 @@ def _doNumer(instr, result):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
                 if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                    result = _makeAllMatrices(instr, result)
-                    result = _doPyLoopGainServo(instr, result)
+                    instr = _makeAllMatrices(instr)
+                    instr = _doPyLoopGainServo(instr)
                 else:
-                    result = _makeAllMatrices(instr, result)
-                    result = _doPyNumer(instr, result)
-                result.numer[-1] = result.numer[-1]
+                    instr = _makeAllMatrices(instr)
+                    instr = _doPyNumer(instr)
+                instr.numer[-1] = instr.numer[-1]
     else:
         if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-            result = _makeAllMatrices(instr, result)
-            result = _doPyLoopGainServo(instr, result)
+            instr = _makeAllMatrices(instr)
+            instr = _doPyLoopGainServo(instr)
         else:
-            result = _makeAllMatrices(instr, result)
-            result = _doPyNumer(instr, result)
-        result.numer = result.numer[0]
-    result = _correctDMcurrentResult(instr, result)
-    return result
+            instr = _makeAllMatrices(instr)
+            instr = _doPyNumer(instr)
+        instr.numer = instr.numer[0]
+    instr = _correctDMcurrentinstr(instr)
+    return instr
 
-def _doDenom(instr, result):
+def _doDenom(instr):
     """
     Returns the denominator of a transfer function, or of the Laplace Transform
     of a detector voltage or current.
 
-    The result will be stored in the **.denom** attribute of the resturn object. In
+    The instr will be stored in the **.denom** attribute of the resturn object. In
     cases of parameter stepping, this attribute is a list with numerators.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: Result of the execution of the instruction.
-    :rtype: SLiCAPprotos.allResults()
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     if instr.step:
         if ini.step_function:
             if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                result = _makeAllMatrices(instr, result)
-                result = _doPyLoopGainServo(instr, result)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyLoopGainServo(instr)
             else:
-                result = _makeAllMatrices(instr, result)
-                result = _doPyDenom(result)
-            denom = result.denom[0]
-            result.denom = _stepFunctions(instr.stepDict, denom)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyDenom(instr)
+            denom = instr.denom[0]
+            instr.denom = _stepFunctions(instr.stepDict, denom)
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
@@ -234,53 +206,50 @@ def _doDenom(instr, result):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
                 if instr.gainType == 'loopgain' or instr.dataType == 'servo':
-                    result = _makeAllMatrices(instr, result)
-                    result = _doPyLoopGainServo(instr, result)
+                    instr = _makeAllMatrices(instr)
+                    instr = _doPyLoopGainServo(instr)
                 else:
-                    result = _makeAllMatrices(instr, result)
-                    result = _doPyDenom(result)
-                result.denom[-1] = result.denom[-1]
+                    instr = _makeAllMatrices(instr)
+                    instr = _doPyDenom(instr)
+                instr.denom[-1] = instr.denom[-1]
     else:
         if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-            result = _makeAllMatrices(instr, result)
-            result = _doPyLoopGainServo(instr, result)
-            result.denom[-1] = result.denom[-1]
+            instr = _makeAllMatrices(instr)
+            instr = _doPyLoopGainServo(instr)
+            instr.denom[-1] = instr.denom[-1]
         else:
-            result = _makeAllMatrices(instr, result)
-            result = _doPyDenom(result)
-        result.denom = result.denom[0]
-    return result
+            instr = _makeAllMatrices(instr)
+            instr = _doPyDenom(instr)
+        instr.denom = instr.denom[0]
+    return instr
 
-def _doLaplace(instr, result):
+def _doLaplace(instr):
     """
     Returns a transfer function, or the Laplace Transform of a detector voltage or current.
 
-    The result will be stored in the **.laplace** attribute of the resturn object. In
+    The instr will be stored in the **.laplace** attribute of the resturn object. In
     cases of parameter stepping, this attribute is a list with numerators.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: Result of the execution of the instruction.
-    :rtype: SLiCAPprotos.allResults()
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     if instr.step:
         if ini.step_function:
             if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                result = _makeAllMatrices(instr, result)
-                result = _doPyLoopGainServo(instr, result)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyLoopGainServo(instr)
             else:
-                result = _makeAllMatrices(instr, result)
-                result = _doPyLaplace(instr, result)
-            laplaceFunc = result.laplace[0]
-            result.laplace = _stepFunctions(instr.stepDict, laplaceFunc)
-            numerFunc = result.numer[0]
-            result.numer = _stepFunctions(instr.stepDict, numerFunc)
-            denomFunc = result.denom[0]
-            result.denom = _stepFunctions(instr.stepDict, denomFunc)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyLaplace(instr)
+            laplaceFunc = instr.laplace[0]
+            instr.laplace = _stepFunctions(instr.stepDict, laplaceFunc)
+            numerFunc = instr.numer[0]
+            instr.numer = _stepFunctions(instr.stepDict, numerFunc)
+            denomFunc = instr.denom[0]
+            instr.denom = _stepFunctions(instr.stepDict, denomFunc)
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
@@ -288,274 +257,413 @@ def _doLaplace(instr, result):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
                 if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                    result = _makeAllMatrices(instr, result)
-                    result = _doPyLoopGainServo(instr, result)
+                    instr = _makeAllMatrices(instr)
+                    instr = _doPyLoopGainServo(instr)
                 else:
-                    result = _makeAllMatrices(instr, result)
-                    result = _doPyLaplace(instr, result)
-                result.laplace[-1] = result.laplace[-1]
+                    instr = _makeAllMatrices(instr)
+                    instr = _doPyLaplace(instr)
+                instr.laplace[-1] = instr.laplace[-1]
     else:
         if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-            result = _makeAllMatrices(instr, result)
-            result = _doPyLoopGainServo(instr, result)
+            instr = _makeAllMatrices(instr)
+            instr = _doPyLoopGainServo(instr)
         else:
-            result = _makeAllMatrices(instr, result)
-            result = _doPyLaplace(instr, result)
-        result.laplace = result.laplace[0]
-        result.numer = result.numer[0]
-        result.denom = result.denom[0]
-    result = _correctDMcurrentResult(instr, result)
-    return result
+            instr = _makeAllMatrices(instr)
+            instr = _doPyLaplace(instr)
+        instr.laplace = instr.laplace[0]
+        instr.numer = instr.numer[0]
+        instr.denom = instr.denom[0]
+    instr = _correctDMcurrentinstr(instr)
+    return instr
 
-def _doPoles(instr, result):
+def _doPoles(instr):
     """
-    Adds the result of a poles analysis to result.
+    Adds the instr of a poles analysis to instr.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     instr.dataType = "denom"
-    result.dataType = "denom"
-    result = _doDenom(instr, result)
+    instr.dataType = "denom"
+    instr = _doDenom(instr)
     if instr.step:
-        for poly in result.denom:
-            result.poles.append(_Roots(poly, ini.laplace))
+        for poly in instr.denom:
+            instr.poles.append(_Roots(poly, ini.laplace))
     else:
-        result.poles = _Roots(result.denom, ini.laplace)
+        instr.poles = _Roots(instr.denom, ini.laplace)
     instr.dataType = "poles"
-    result.dataType = "poles"
-    return result
+    instr.dataType = "poles"
+    return instr
 
-def _doZeros(instr, result):
+def _doZeros(instr):
     """
-    Adds the result of a zeros analysis to result.
+    Adds the instr of a zeros analysis to instr.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     instr.dataType = "numer"
-    result.dataType = "numer"
-    result = _doNumer(instr, result)
+    instr.dataType = "numer"
+    instr = _doNumer(instr)
     if instr.step:
-        for poly in result.numer:
-            result.zeros.append(_Roots(poly, ini.laplace))
+        for poly in instr.numer:
+            instr.zeros.append(_Roots(poly, ini.laplace))
     else:
-        result.zeros = _Roots(result.numer, ini.laplace)
+        instr.zeros = _Roots(instr.numer, ini.laplace)
     instr.dataType = "zeros"
-    result.dataType = "zeros"
-    return result
+    instr.dataType = "zeros"
+    return instr
 
-def _doPZ(instr, result):
+def _doPZ(instr):
     """
-    Adds the result of a pole-zero analysis to result.
+    Adds the instr of a pole-zero analysis to instr.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     instr.dataType = "laplace"
-    result.dataType = "laplace"
-    result = _doLaplace(instr, result)
+    instr.dataType = "laplace"
+    instr = _doLaplace(instr)
     if instr.step:
-        for poly in result.numer:
-            result.zeros.append(_Roots(poly, ini.laplace))
-        for poly in result.denom:
-            result.poles.append(_Roots(poly, ini.laplace))        
-        for i in range(len(result.denom)):
+        for poly in instr.numer:
+            instr.zeros.append(_Roots(poly, ini.laplace))
+        for poly in instr.denom:
+            instr.poles.append(_Roots(poly, ini.laplace))        
+        for i in range(len(instr.denom)):
             try:
-                result.poles[i], result.zeros[i] = _cancelPZ(result.poles[i], result.zeros[i])
+                instr.poles[i], instr.zeros[i] = _cancelPZ(instr.poles[i], instr.zeros[i])
             except:
                 pass
-            result.DCvalue.append(_zeroValue(result.numer[i], result.denom[i], ini.laplace))
+            instr.DCvalue.append(_zeroValue(instr.numer[i], instr.denom[i], ini.laplace))
     else:
-        result.zeros = _Roots(result.numer, ini.laplace)
-        result.poles = _Roots(result.denom, ini.laplace)
+        instr.zeros = _Roots(instr.numer, ini.laplace)
+        instr.poles = _Roots(instr.denom, ini.laplace)
         try:
-            result.poles, result.zeros = _cancelPZ(result.poles, result.zeros)
+            instr.poles, instr.zeros = _cancelPZ(instr.poles, instr.zeros)
         except:
             pass
-        result.DCvalue = _zeroValue(result.numer, result.denom, ini.laplace)
+        instr.DCvalue = _zeroValue(instr.numer, instr.denom, ini.laplace)
     instr.dataType = 'pz'
-    result.dataType = 'pz'
-    return result
+    instr.dataType = 'pz'
+    return instr
 
-def _doNoise(instr, result):
+def _doNoise(instr):
     """
-    Adds the result of a noise analysis to result.
+    Adds the instr of a noise analysis to instr.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     if instr.step:
         if ini.step_function:
-            noiseResult = _doPyNoise(instr, result)
-            result.onoise = _stepFunctions(instr.stepDict, noiseResult.onoise[0])
-            result.inoise = _stepFunctions(instr.stepDict, noiseResult.inoise[0])
-            for srcName in list(noiseResult.onoiseTerms.keys()):
-                result.onoiseTerms[srcName] = _stepFunctions(instr.stepDict, noiseResult.onoiseTerms[srcName][0])
-                result.inoiseTerms[srcName] = _stepFunctions(instr.stepDict, noiseResult.inoiseTerms[srcName][0])
+            noiseinstr = _doPyNoise(instr)
+            instr.onoise = _stepFunctions(instr.stepDict, noiseinstr.onoise[0])
+            instr.inoise = _stepFunctions(instr.stepDict, noiseinstr.inoise[0])
+            for srcName in list(noiseinstr.onoiseTerms.keys()):
+                instr.onoiseTerms[srcName] = _stepFunctions(instr.stepDict, noiseinstr.onoiseTerms[srcName][0])
+                instr.inoiseTerms[srcName] = _stepFunctions(instr.stepDict, noiseinstr.inoiseTerms[srcName][0])
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
             for i in range(numSteps):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]]=instr.stepDict[stepVars[j]][i]
-                result = _doPyNoise(instr, result)
+                instr = _doPyNoise(instr)
     else:
-        result = _doPyNoise(instr, result)
-        result.onoise = result.onoise[0]
-        result.inoise = result.inoise[0]
-        for key in list(result.onoiseTerms.keys()):
-            if type(result.onoiseTerms[key]) == list and len(result.onoiseTerms[key]) != 0 :
-                result.onoiseTerms[key] = result.onoiseTerms[key][0]
+        instr = _doPyNoise(instr)
+        instr.onoise = instr.onoise[0]
+        instr.inoise = instr.inoise[0]
+        for key in list(instr.onoiseTerms.keys()):
+            if type(instr.onoiseTerms[key]) == list and len(instr.onoiseTerms[key]) != 0 :
+                instr.onoiseTerms[key] = instr.onoiseTerms[key][0]
                 if instr.source != [None, None] and instr.source != None:
-                    result.inoiseTerms[key] = result.inoiseTerms[key][0]
+                    instr.inoiseTerms[key] = instr.inoiseTerms[key][0]
             else:
-                del(result.onoiseTerms[key])
+                del(instr.onoiseTerms[key])
                 if instr.source != [None, None] and instr.source != None:
-                    del(result.inoiseTerms[key])
-    result = _correctDMcurrentResult(instr, result)
-    return result
+                    del(instr.inoiseTerms[key])
+    instr = _correctDMcurrentinstr(instr)
+    instr = _updateSRCnames(instr)
+    return instr
 
-def _doDCvar(instr, result):
+def _doDCvar(instr):
     """
-    Adds the result of a dcvar analysis to result.
+    Adds the instr of a dcvar analysis to instr.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
+    conv_type = instr.convType
     if instr.step:
         print("Warning: parameter stepping not (yet) tested for 'dcvar' analysis!")
         if ini.step_function:
-            result = _makeAllMatrices(instr, result, reduce=False)
+            instr.convType = None
+            instr = _makeAllMatrices(instr, reduce=False)
             instr.dataType = 'dcsolve'
-            result.dataType = 'dcsolve'
-            result = _doDCsolve(instr, result)
+            instr = _doDCsolve(instr)
+            M, Iv, Dv = instr.M, instr.Iv, instr.Dv
             instr.dataType = 'dcvar'
-            result.dataType = 'dcvar'
-            _addDCvarSources(instr, result.dcSolve[0])
-            result = _makeAllMatrices(instr, result, reduce=False)
-            varResult = _doPyDCvar(instr, result)
-            result.ovar = _stepFunctions(instr.stepDict, varResult.ovar[0])
-            result.ivar = _stepFunctions(instr.stepDict, varResult.ivar[0])
-            for srcName in list(varResult.ovarTerms.keys()):
-                result.ovarTerms[srcName] = _stepFunctions(instr.stepDict, varResult.ovarTerms[srcName][0])
-                result.ivarTerms[srcName] = _stepFunctions(instr.stepDict, varResult.ivarTerms[srcName][0])
+            _addDCvarSources(instr, instr.dcSolve[0])
+            instr.convType = conv_type
+            varinstr = _doPyDCvar(instr)
+            instr.ovar = _stepFunctions(instr.stepDict, varinstr.ovar[0])
+            instr.ivar = _stepFunctions(instr.stepDict, varinstr.ivar[0])
+            for srcName in list(varinstr.ovarTerms.keys()):
+                instr.ovarTerms[srcName] = _stepFunctions(instr.stepDict, varinstr.ovarTerms[srcName][0])
+                instr.ivarTerms[srcName] = _stepFunctions(instr.stepDict, varinstr.ivarTerms[srcName][0])
             _delDCvarSources(instr)
+            if instr.convType != None:
+                # Restore DC solution matrices
+                instr.M  = M
+                instr.Iv = Iv
+                instr.Dv = Dv
+                instr = _convertDCsolve(instr)
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
+            M  = []
+            Iv = []
+            Dv = []
             for i in range(numSteps):
+                instr.convType = None
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]]=instr.stepDict[stepVars[j]][i]
                 instr.dataType = 'dcsolve'
-                result.dataType = 'dcsolve'
-                result = _doDCsolve(instr, result)
-                _addDCvarSources(instr, result.dcSolve[-1])
+                instr = _doDCsolve(instr)
+                M.append(instr.M)
+                Iv.append(instr.Iv)
+                Dv.append(instr.Dv)
+                _addDCvarSources(instr, instr.dcSolve[-1])
+                instr.convType = conv_type
                 instr.dataType = 'dcvar'
-                result.dataType = 'dcvar'
-                result = _doPyDCvar(instr, result)
+                instr = _doPyDCvar(instr)
                 _delDCvarSources(instr)
+                if instr.convType != None:
+                    raise NotImplementedError("DC solution not converted to CM and DM variables with ini.stepFunction=False.")
     else:
-        result = _makeAllMatrices(instr, result, reduce=False)
+        instr.convType = None
+        #instr = _makeAllMatrices(instr, reduce=False)
         instr.dataType = 'dcsolve'
-        result.dataType = 'dcsolve'
-        result = _doDCsolve(instr, result)
-        _addDCvarSources(instr, result.dcSolve)
+        instr = _doDCsolve(instr)
+        M, Iv, Dv = instr.M, instr.Iv, instr.Dv
+        _addDCvarSources(instr, instr.dcSolve)
         instr.dataType = 'dcvar'
-        result.dataType = 'dcvar'
-        result = _doPyDCvar(instr, result)
-        result.ovar = result.ovar[0]
-        result.ivar = result.ivar[0]
-        for key in list(result.ovarTerms.keys()):
-            if len(result.ovarTerms[key]) > 0:
-                result.ovarTerms[key] = result.ovarTerms[key][0]
+        instr.convType = conv_type
+        instr = _doPyDCvar(instr)
+        instr.ovar = instr.ovar[0]
+        instr.ivar = instr.ivar[0]
+        for key in list(instr.ovarTerms.keys()):
+            if len(instr.ovarTerms[key]) > 0:
+                instr.ovarTerms[key] = instr.ovarTerms[key][0]
                 if instr.source != [None, None] and instr.source != None:
-                    result.ivarTerms[key] = result.ivarTerms[key][0]
+                    instr.ivarTerms[key] = instr.ivarTerms[key][0]
             else:
-                del(result.ovarTerms[key])
+                del(instr.ovarTerms[key])
                 if instr.source != [None, None] and instr.source != None:
-                    del(result.ivarTerms[key])
+                    del(instr.ivarTerms[key])
         _delDCvarSources(instr)
-    result = _correctDMcurrentResult(instr, result)
-    return result
+        if instr.convType != None:
+            # Restore DC solution matrices
+            instr.M  = M
+            instr.Iv = Iv
+            instr.Dv = Dv
+            instr = _convertDCsolve(instr)
+    instr = _correctDMcurrentinstr(instr)
+    instr = _updateSRCnames(instr)
+    return instr
 
-def _correctDMcurrentResult(instr, result):
+def _convertDCsolve(instr):
     """
-    In cases of a differential-mode current detector the numerator of the
-    differential output current, or its associated transfer must be divided by
-    two I_diff = (I_P - I_N)/2
-
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
-
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
+    At the start of a dc variance analysis, the DC solution is calculated from 
+    the original (unconverted) network. This function coverts the results of
+    this dc solve instruction to the desired conversion type.
     """
-    if instr.convType == None and instr.gainType != 'loopgain' and instr.gainType != 'servo' and instr.detector[0] != None and instr.detector[1] != None:
+    if instr.convType != None: 
+        if isinstance(instr.dcSolve, sp.Basic):
+            instr = _convertMatrices(instr)
+            instr.dcSolve = instr.A**(-1)*instr.dcSolve
+            if instr.convType == "dd" or instr.convType=="cd":
+                instr.dcSolve = sp.Matrix([instr.dcSolve[i] for i in range(len(instr.Dv))])
+            elif instr.convType == "dc" or instr.convType=="cc":
+                instr.dcSolve = sp.Matrix([instr.dcSolve[i - len(instr.Dv)] for i in range(len(instr.Dv))])
+        else:
+            print("The DC solution is not converted into CM or DM variables!")
+    return instr
+
+def _correctDMcurrentinstr(instr):
+    """
+    In cases of a differential-mode current detector (conversion type=None), 
+    the numerator of the differential output current, or its associated
+    transfer must be divided by two: I_diff = (I_P - I_N)/2
+
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
+
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
+    """
+    if instr.convType == None and instr.gainType != 'loopgain' and instr.gainType != 'servo' and instr.detector != None and instr.detector[0] != None and instr.detector[1] != None:
         if instr.detector[0][0] == 'I':
             if instr.step == False:
                 if instr.dataType == 'dcvar':
-                    result.ovar = result.ovar/4
-                    for term in result.ovarTerms:
-                        result.ovarTerms[term] = result.ovarTerms[term]/4
+                    instr.ovar = instr.ovar/4
+                    for term in instr.ovarTerms:
+                        instr.ovarTerms[term] = instr.ovarTerms[term]/4
                 elif instr.dataType == 'noise':
-                    result.onoise = result.onoise/4
-                    for term in result.onoiseTerms:
-                        result.onoiseTerms[term] = result.onoiseTerms[term]/4
+                    instr.onoise = instr.onoise/4
+                    for term in instr.onoiseTerms:
+                        instr.onoiseTerms[term] = instr.onoiseTerms[term]/4
                 elif instr.dataType == 'laplace' or instr.dataType == 'dc':
-                    result.laplace = result.laplace/2
-                    result.numer = result.numer/2
+                    instr.laplace = instr.laplace/2
+                    instr.numer = instr.numer/2
                 elif instr.dataType == 'numer':
-                    result.numer = result.numer/2
+                    instr.numer = instr.numer/2
             else:
                 if instr.dataType == 'dcvar':
-                    for i in range(len(result.ovar)):
-                        result.ovar[i] = result[i].ovar/4
-                        for term in result.ovarTerms:
-                            result.ovarTerms[term][i] = result.ovarTerms[term][i]/4
+                    for i in range(len(instr.ovar)):
+                        instr.ovar[i] = instr[i].ovar/4
+                        for term in instr.ovarTerms:
+                            instr.ovarTerms[term][i] = instr.ovarTerms[term][i]/4
                 elif instr.dataType == 'noise':
-                    for i in range(len(result.onoise)):
-                        result.onoise[i] = result.onoise[i]/4
-                        for term in result.onoiseTerms:
-                            result.onoiseTerms[term][i] = result.onoiseTerms[term][i]/4
+                    for i in range(len(instr.onoise)):
+                        instr.onoise[i] = instr.onoise[i]/4
+                        for term in instr.onoiseTerms:
+                            instr.onoiseTerms[term][i] = instr.onoiseTerms[term][i]/4
                 elif instr.dataType == 'laplace' or instr.dataType == 'dc':
-                    for i in range(len(result.laplace)):
-                        result.laplace[i] = result.laplace[i]/2
-                        result.numer[i] = result.numer[i]/2
+                    for i in range(len(instr.laplace)):
+                        instr.laplace[i] = instr.laplace[i]/2
+                        instr.numer[i] = instr.numer[i]/2
                 elif instr.dataType == 'numer':
-                    for i in range(len(result.numer)):
-                        result.numer[i] = result.numer[i]/2
-    return result
+                    for i in range(len(instr.numer)):
+                        instr.numer[i] = instr.numer[i]/2
+    return instr
+
+def _updateSRCnames(instr):
+    """
+    If instr.convType == "dd" or "cc" and ini.update_srcnames == True, this 
+    function updates the names and values of noise and dcvar sources after a 
+    doNoise() or doDcvar() instruction, respectively.
+    It replaces the pair extensions with "_D", or "_C" for conversion types "dd"
+    and "cc", respectively.
+    These source names are the keys of the dictionaries:
+    - instr.snoiseTerms
+    - instr.inoiseTerms
+    - instr.onoiseTerms
+    - instr.svarTerms
+    - instr.ivarTerms
+    - instr.ovarTerms
+    
+    The values are the summ of the paired sources.
+    
+    :param instr: SLiCAP.SLiCAP.intruction object that hold the instruction
+                  data and its results
+    :type instr: SLiCAP.SLiCAP.intruction object
+    
+    :return: instruction with updated names in the above result dictionaries
+    :rtype: SLiCAP.SLiCAP.intruction object
+    """
+    if ini.update_srcnames and (instr.convType == 'dd' or instr.convType == 'cc') and (instr.dataType == "noise" or instr.dataType == "dcvar"):
+        if instr.dataType == 'noise':
+            sTerms = instr.snoiseTerms
+            iTerms = instr.inoiseTerms
+            oTerms = instr.onoiseTerms
+        elif instr.dataType=="dcvar":
+            sTerms = instr.svarTerms
+            iTerms = instr.ivarTerms
+            oTerms = instr.ovarTerms
+        srcNames = sTerms.keys()
+        newSterms = {}
+        newOterms = {}
+        newIterms = {}
+        for srcName in srcNames:
+            baseName = srcName[:-1]
+            if (srcName[-1] == instr.pairExt[0] and baseName + instr.pairExt[1] in srcNames) or (srcName[-1] == instr.pairExt[1] and baseName + instr.pairExt[0] in srcNames):
+                if type(sTerms[srcName]) == list:
+                    nsteps = len(sTerms[srcName])
+                else:
+                    nsteps = 0
+                if instr.convType == "dd":
+                    ext = "D"
+                elif instr.convType == "cc":
+                    ext = "C"
+                vi = srcName[0].upper()
+                if baseName[-1] == "_":
+                    newName = baseName + ext
+                else:
+                    newName = baseName + "_" + ext
+                if newName not in newSterms.keys():
+                    if vi == "V":
+                        if ext == "D":
+                            if nsteps:
+                                newSterms[newName] = [sTerms[baseName + instr.pairExt[0]][i] + sTerms[baseName + instr.pairExt[1]][i] for i in range(nsteps)]
+                            else:
+                                newSterms[newName] = sTerms[baseName + instr.pairExt[0]] + sTerms[baseName + instr.pairExt[1]]
+                        elif ext == "C":
+                            if nsteps:
+                                newSterms[newName] = [sTerms[baseName + instr.pairExt[0]][i]/4 + sTerms[baseName + instr.pairExt[1]][i]/4 for i in range(nsteps)]
+                            else:
+                                newSterms[newName] = sTerms[baseName + instr.pairExt[0]]/4 + sTerms[baseName + instr.pairExt[1]]/4
+                    elif vi == "I":
+                        if ext == "D":
+                            if nsteps:
+                                newSterms[newName] = [sTerms[baseName + instr.pairExt[0]][i]/4 + sTerms[baseName + instr.pairExt[1]][i]/4 for i in range(nsteps)]
+                            else:
+                                newSterms[newName] = sTerms[baseName + instr.pairExt[0]]/4 + sTerms[baseName + instr.pairExt[1]]/4
+                        elif ext == "C":
+                            if nsteps:
+                                newSterms[newName] = [sTerms[baseName + instr.pairExt[0]][i] + sTerms[baseName + instr.pairExt[1]][i] for i in range(nsteps)]
+                            else:
+                                newSterms[newName] = sTerms[baseName + instr.pairExt[0]] + sTerms[baseName + instr.pairExt[1]]
+                    if nsteps:
+                        newIterms[newName] = [iTerms[baseName + instr.pairExt[0]][i] + iTerms[baseName + instr.pairExt[1]][i] for i in range(nsteps)]
+                        newOterms[newName] = [oTerms[baseName + instr.pairExt[0]][i] + oTerms[baseName + instr.pairExt[1]][i] for i in range(nsteps)]
+                    else:
+                        newIterms[newName] = iTerms[baseName + instr.pairExt[0]] + iTerms[baseName + instr.pairExt[1]]
+                        newOterms[newName] = oTerms[baseName + instr.pairExt[0]] + oTerms[baseName + instr.pairExt[1]]
+            elif instr.convType == "cc":
+                # Add unpaired sources as common-mode sources
+                newSterms[srcName] = sTerms[srcName]
+                newIterms[srcName] = iTerms[srcName]
+                newOterms[srcName] = oTerms[srcName]
+        if instr.dataType == "noise":
+            instr.snoiseTerms = newSterms
+            instr.inoiseTerms = newIterms
+            instr.onoiseTerms = newOterms
+        else:
+            instr.svarTerms = newSterms
+            instr.ivarTerms = newIterms
+            instr.ovarTerms = newOterms
+    return instr
 
 def _addDCvarSources(instr, dcSolution):
     """
     Adds the dcvar sources of resistors to instr.circuit for dataType: 'dcvar'.
-
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
 
     :param dcSolution: DC solution of the network obtained from execution of
                        this instruction with dataType: 'dcsolve'
 
     :type dcSolution: sympy.Matrix
 
-    :return: updated instruction object
-    :rtype: :class`SLiCAPinstruction.instruction`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
+
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     newElements = {}
     for el in instr.circuit.elements.keys():
@@ -632,11 +740,11 @@ def _delDCvarSources(instr):
     Deletes the dcVar sources from instr.circuit, added by executing this
     instruction with dataType: 'dcvar'.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :return: updated instruction object
-    :rtype: :class`SLiCAPinstruction.instruction`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     names = []
     prefixes = ['I_dcvar_', 'G_dcvar_', 'V_dcvar_']
@@ -654,11 +762,11 @@ def _addResNoiseSources(instr):
     """
     Adds the noise sources of resistors to instr.circuit for dataType: 'noise'.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :return: updated instruction object
-    :rtype: :class:`SLiCAPinstruction.instruction`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     for el in list(instr.circuit.elements.keys()):
         if instr.circuit.elements[el].model.upper() == 'R':
@@ -692,12 +800,12 @@ def _delResNoiseSources(instr):
     """
     Deletes the noise sources from instr.circuit, added by executing this
     instruction with dataType: 'noise'.
+    
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
-
-    :return: updated instruction object
-    :rtype: :class:`SLiCAPinstruction.instruction`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     names = []
     for i in range(len(instr.circuit.indepVars)):
@@ -711,37 +819,34 @@ def _delResNoiseSources(instr):
         instr.circuit.indepVars.remove(name)
     return instr
 
-def _doDC(instr, result):
+def _doDC(instr):
     """
     Calculates the DC response at the detector using the parameter 'dc' of
     independent sources as input.
 
-    The result will be stored in the .dc attribute of the result object.
+    The instr will be stored in the .dc attribute of the instr object.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: updated result object
-    :rtype: class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     if instr.step:
         if ini.step_function:
             if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                result = _makeAllMatrices(instr, result, inductors=True)
-                result.Iv = result.Iv.subs(ini.laplace, 0)
-                result.M = result.M.subs(ini.laplace, 0)
-                result = _doPyLoopGainServo(instr, result)
-                dcFunc = result.laplace[0]
+                instr = _makeAllMatrices(instr, inductors=True)
+                instr.Iv = instr.Iv.subs(ini.laplace, 0)
+                instr.M = instr.M.subs(ini.laplace, 0)
+                instr = _doPyLoopGainServo(instr)
+                dcFunc = instr.laplace[0]
             else:
-                result = _makeAllMatrices(instr, result, inductors=True)
-                result.Iv = result.Iv.subs(ini.laplace, 0)
-                result.M = result.M.subs(ini.laplace, 0)
-                result = _doPyLaplace(instr, result)
-                dcFunc = result.laplace[0]
-            result.laplace = _stepFunctions(instr.stepDict, dcFunc)
+                instr = _makeAllMatrices(instr, inductors=True)
+                instr.Iv = instr.Iv.subs(ini.laplace, 0)
+                instr.M = instr.M.subs(ini.laplace, 0)
+                instr = _doPyLaplace(instr)
+                dcFunc = instr.laplace[0]
+            instr.laplace = _stepFunctions(instr.stepDict, dcFunc)
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
@@ -749,33 +854,33 @@ def _doDC(instr, result):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
                 if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                    result = _makeAllMatrices(instr, result, inductors=True)
-                    result.Iv = result.Iv.subs(ini.laplace, 0)
-                    result.M = result.M.subs(ini.laplace, 0)
-                    result = _doPyLoopGainServo(instr, result)
+                    instr = _makeAllMatrices(instr, inductors=True)
+                    instr.Iv = instr.Iv.subs(ini.laplace, 0)
+                    instr.M = instr.M.subs(ini.laplace, 0)
+                    instr = _doPyLoopGainServo(instr)
                 else:
-                    result = _makeAllMatrices(instr, result, inductors=True)
-                    result.Iv = result.Iv.subs(ini.laplace, 0)
-                    result.M = result.M.subs(ini.laplace, 0)
-                    result = _doPyLaplace(instr, result)
+                    instr = _makeAllMatrices(instr, inductors=True)
+                    instr.Iv = instr.Iv.subs(ini.laplace, 0)
+                    instr.M = instr.M.subs(ini.laplace, 0)
+                    instr = _doPyLaplace(instr)
     else:
         if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-            result = _makeAllMatrices(instr, result, inductors=True)
-            result.Iv = result.Iv.subs(ini.laplace, 0)
-            result.M = result.M.subs(ini.laplace, 0)
-            result = _doPyLoopGainServo(instr, result)
+            instr = _makeAllMatrices(instr, inductors=True)
+            instr.Iv = instr.Iv.subs(ini.laplace, 0)
+            instr.M = instr.M.subs(ini.laplace, 0)
+            instr = _doPyLoopGainServo(instr)
         else:
-            result = _makeAllMatrices(instr, result, inductors=True)
-            result.Iv = result.Iv.subs(ini.laplace, 0)
-            result.M = result.M.subs(ini.laplace, 0)
-            result = _doPyLaplace(instr, result)
-        result.laplace = result.laplace[0]
-        result.numer = result.numer[0]
-        result.denom = result.denom[0]
-    result = _correctDMcurrentResult(instr, result)
-    return result
+            instr = _makeAllMatrices(instr, inductors=True)
+            instr.Iv = instr.Iv.subs(ini.laplace, 0)
+            instr.M = instr.M.subs(ini.laplace, 0)
+            instr = _doPyLaplace(instr)
+        instr.laplace = instr.laplace[0]
+        instr.numer = instr.numer[0]
+        instr.denom = instr.denom[0]
+    instr = _correctDMcurrentinstr(instr)
+    return instr
 
-def _doImpulse(instr, result):
+def _doImpulse(instr):
     """
     Calculates the inverse Laplace transform of the source-detector transfer.
 
@@ -783,33 +888,28 @@ def _doImpulse(instr, result):
     and subsequently the inverse Laplace Transform.
 
     The Laplace Transform of the source-detector transfer will be stored in the
-    .laplace attribute of the result object.
+    .laplace attribute of the instr object.
 
-    The result will be stored in the .impulse attribute of the result object.
+    The instr will be stored in the .impulse attribute of the instr object.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: updated result object
-    :rtype: class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     instr.dataType = 'laplace'
-    result.dataType = 'laplace'
-    result = _doLaplace(instr, result)
+    instr = _doLaplace(instr)
     if instr.step:
-        result.impulse = []
-        for laplaceResult in result.laplace:
-            result.impulse.append(ilt(laplaceResult, ini.laplace, sp.Symbol('t')))
+        instr.impulse = []
+        for laplaceinstr in instr.laplace:
+            instr.impulse.append(ilt(laplaceinstr, ini.laplace, sp.Symbol('t')))
     else:
-        result.impulse = ilt(result.laplace, ini.laplace, sp.Symbol('t'))
+        instr.impulse = ilt(instr.laplace, ini.laplace, sp.Symbol('t'))
     instr.dataType = 'impulse'
-    result.dataType = 'impulse'
-    return result
+    return instr
 
-def _doStep(instr, result):
+def _doStep(instr):
     """
     Calculates the unit step response of the circuit. This is the inverse
     Laplace transform of the source-detector transfer divided by the Laplace
@@ -819,169 +919,151 @@ def _doStep(instr, result):
     and subsequently the inverse Laplace Transform.
 
     The Laplace Transform of the source-detector transfer will be stored in the
-    .laplace attribute of the result object.
+    .laplace attribute of the instr object.
 
     The unit step response will be stored in the .stepResp  attribute of the
-    result object.
+    instr object.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: updated result object
-    :rtype: class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     instr.dataType = 'laplace'
-    result.dataType = 'laplace'
-    result = _doLaplace(instr, result)
+    instr = _doLaplace(instr)
     if instr.step:
-        result.stepResp = []
-        for laplaceResult in result.laplace:
-            result.stepResp.append(ilt(laplaceResult, ini.laplace, sp.Symbol('t'), integrate=True))
+        instr.stepResp = []
+        for laplaceinstr in instr.laplace:
+            instr.stepResp.append(ilt(laplaceinstr, ini.laplace, sp.Symbol('t'), integrate=True))
     else:
-        result.stepResp = ilt(result.laplace, ini.laplace, sp.Symbol('t'), integrate=True)
+        instr.stepResp = ilt(instr.laplace, ini.laplace, sp.Symbol('t'), integrate=True)
     instr.dataType = 'step'
-    result.dataType = 'step'
-    return result
+    return instr
 
-def _doTime(instr, result):
+def _doTime(instr):
     """
     Calculates the inverse Laplace transform of the detector voltage or current.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: updated result object
-    :rtype: class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     instr.dataType = 'laplace'
-    result.dataType = 'laplace'
-    result = _doLaplace(instr, result)
+    instr = _doLaplace(instr)
     if instr.step:
-        result.time = []
-        for laplaceResult in result.laplace:
-            laplaceResult = laplaceResult, ini.laplace
-            result.time.append(ilt(laplaceResult, ini.laplace, sp.Symbol('t')))
+        instr.time = []
+        for laplaceinstr in instr.laplace:
+            laplaceinstr = laplaceinstr, ini.laplace
+            instr.time.append(ilt(laplaceinstr, ini.laplace, sp.Symbol('t')))
     else:
-        laplaceResult = result.laplace
-        result.time = ilt(laplaceResult, ini.laplace, sp.Symbol('t'))
+        laplaceinstr = instr.laplace
+        instr.time = ilt(laplaceinstr, ini.laplace, sp.Symbol('t'))
     instr.dataType = 'time'
-    result.dataType = 'time'
-    return result
+    instr.dataType = 'time'
+    return instr
 
-def _doSolve(instr, result):
+def _doSolve(instr):
     """
     Solves the network: calculates the Laplace transform of all dependent
     variables.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: updated result object
-    :rtype: class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     if instr.step:
         if ini.step_function:
-            result = _makeAllMatrices(instr, result, reduce=False)
-            sol = _doPySolve(instr, result).solve[0]
-            result.solve = _stepFunctions(instr.stepDict, sol)
+            instr = _makeAllMatrices(instr, reduce=False)
+            sol = _doPySolve(instr).solve[0]
+            instr.solve = _stepFunctions(instr.stepDict, sol)
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
             for i in range(numSteps):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]]=instr.stepDict[stepVars[j]][i]
-                result = _makeAllMatrices(instr, result, reduce=False)
-                result = _doPySolve(instr, result)
+                instr = _makeAllMatrices(instr, reduce=False)
+                instr = _doPySolve(instr)
     else:
-        result = _makeAllMatrices(instr, result, reduce=False)
-        result.solve = _doPySolve(instr, result).solve[0]
-    return result
+        instr = _makeAllMatrices(instr, reduce=False)
+        instr.solve = _doPySolve(instr).solve[0]
+    return instr
 
-def _doDCsolve(instr, result):
+def _doDCsolve(instr):
     """
     Finds the DC solution of the network using the .dc attribute of independent
     sources as inputs.
 
-    The DC solution will be stored in the .dcSolve attribute of the result
+    The DC solution will be stored in the .dcSolve attribute of the instr
     object.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: updated result object
-    :rtype: class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     if instr.step:
         if ini.step_function:
-            result = _makeAllMatrices(instr, result, reduce=False)
-            result.M = result.M.subs(ini.laplace, 0)
-            result.Iv = result.Iv.subs(ini.laplace, 0)
-            result = _doPySolve(instr, result)
-            sol = sp.simplify(result.solve[-1])
-            result.dcSolve = _stepFunctions(instr.stepDict, sol)
+            instr = _makeAllMatrices(instr, reduce=False)
+            instr.M = instr.M.subs(ini.laplace, 0)
+            instr.Iv = instr.Iv.subs(ini.laplace, 0)
+            instr = _doPySolve(instr)
+            sol = sp.simplify(instr.solve[-1])
+            instr.dcSolve = _stepFunctions(instr.stepDict, sol)
         else:
             stepVars = list(instr.stepDict.keys())
             numSteps = len(instr.stepDict[stepVars[0]])
             for i in range(numSteps):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]]=instr.stepDict[stepVars[j]][i]
-                result = _makeAllMatrices(instr, result, reduce=False)
-                result.M = result.M.subs(ini.laplace, 0)
-                result.Iv = result.Iv.subs(ini.laplace, 0)
-                result = _doPySolve(instr, result)
-                result.dcSolve.append(sp.simplify(result.solve[-1]))
+                instr = _makeAllMatrices(instr, reduce=False)
+                instr.M = instr.M.subs(ini.laplace, 0)
+                instr.Iv = instr.Iv.subs(ini.laplace, 0)
+                instr = _doPySolve(instr)
+                instr.dcSolve.append(sp.simplify(instr.solve[-1]))
     else:
-        result = _makeAllMatrices(instr, result, reduce=False)
-        result.M = result.M.subs(ini.laplace, 0)
-        result.Iv = result.Iv.subs(ini.laplace, 0)
-        result = _doPySolve(instr, result)
-        result.dcSolve = sp.simplify(result.solve[0])
-    return result
+        instr = _makeAllMatrices(instr, reduce=False)
+        instr.M = instr.M.subs(ini.laplace, 0)
+        instr.Iv = instr.Iv.subs(ini.laplace, 0)
+        instr = _doPySolve(instr)
+        instr.dcSolve = sp.simplify(instr.solve[0])
+    return instr
 
-def _doTimeSolve(instr, result):
+def _doTimeSolve(instr):
     """
     Calculates the time-domain solution of the circuit.
 
-    The result will be stored in the .timeSolve attribute of the result object.
+    The instr will be stored in the .timeSolve attribute of the instr object.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: updated result object
-    :rtype: class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
-    result = _doSolve(instr, result)
+    instr = _doSolve(instr)
     if instr.step:
-        for solution in result.solve:
+        for solution in instr.solve:
             timeSolution = sp.zeros(len(solution), 1)
             for i in range(len(solution)):
-                laplaceResult = solution[i]
-                timeSolution[i] = ilt(laplaceResult, ini.laplace, sp.Symbol('t'))
-            result.timeSolve.append(timeSolution)
+                laplaceinstr = solution[i]
+                timeSolution[i] = ilt(laplaceinstr, ini.laplace, sp.Symbol('t'))
+            instr.timeSolve.append(timeSolution)
     else:
-        timeSolution = sp.zeros(len(result.solve), 1)
-        for i in range(len(result.solve)):
-            laplaceResult = result.solve[i]
-            timeSolution[i] = ilt(laplaceResult, ini.laplace, sp.Symbol('t'))
-        result.timeSolve = timeSolution
-    return result
+        timeSolution = sp.zeros(len(instr.solve), 1)
+        for i in range(len(instr.solve)):
+            laplaceinstr = instr.solve[i]
+            timeSolution[i] = ilt(laplaceinstr, ini.laplace, sp.Symbol('t'))
+        instr.timeSolve = timeSolution
+    return instr
 
-def _doMatrix(instr, result):
+def _doMatrix(instr):
     """
     Calculates the MNA matrix and the vector with dependent and independent
     variables, based on the conversion type:
@@ -996,28 +1078,25 @@ def _doMatrix(instr, result):
     - instr.convType == 'dc': The common-mode to differential-mode conversion
       reprsentation
 
-    The results are stored in the following attributes of the result object:
+    The instrs are stored in the following attributes of the instr object:
 
     - .Iv: Vector with independent variables (independent voltage and current
       sources)
     - .Dv: Vector with dependent variables (nodal voltages and branch currents)
     - .M: Matrix: Iv=M*Dv
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: updated result object
-    :rtype: class:`allResult()`
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
-    result = _makeAllMatrices(instr, result)
-    return result
+    instr = _makeAllMatrices(instr)
+    return instr
 
-def _makeAllMatrices(instr, result, reduce=True, inductors=False):
+def _makeAllMatrices(instr, reduce=True, inductors=False):
     """
-    Returns an allResults() object of which the following attributes have been
+    Returns the instrs() object of which the following attributes have been
     updated:
 
         - M  = MNA matrix
@@ -1026,31 +1105,28 @@ def _makeAllMatrices(instr, result, reduce=True, inductors=False):
         - Dv = Vector with dependent variables (unknown nodal voltages and
           branch currents)
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
 
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: result object with updated attributes Iv, M, and Dv:
-    :rtype: SLiCAPprotos.allResults
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
     """
     # Create the MNA matrix
-    result.M, result.Dv = _makeMatrices(instr)
+    instr.M, instr.Dv = _makeMatrices(instr)
     # Create vecor with independent variables
     # Iv = [0 for i in range(len(instr.depVars()))]
-    Iv = [0 for i in range(result.M.shape[0])]
-    result.Iv = sp.Matrix(Iv)
+    Iv = [0 for i in range(instr.M.shape[0])]
+    instr.Iv = sp.Matrix(Iv)
     transferTypes = ['gain', 'asymptotic', 'direct']
     
     # Create the source vector for the instruction
     if instr.gainType == 'vi':
         if instr.dataType == "noise" or instr.dataType == "dcvar":
-            result.Iv = _makeSrcVector(instr.circuit, instr.parDefs, 'all', value = 'id', numeric = instr.numeric, substitute=instr.substitute)
+            instr.Iv = _makeSrcVector(instr.circuit, instr.parDefs, 'all', value = 'id', numeric = instr.numeric, substitute=instr.substitute)
         elif instr.dataType == "dc" or instr.dataType == "dcsolve":
-            result.Iv = _makeSrcVector(instr.circuit, instr.parDefs, 'all', value = 'dc', numeric = instr.numeric, substitute=instr.substitute)
+            instr.Iv = _makeSrcVector(instr.circuit, instr.parDefs, 'all', value = 'dc', numeric = instr.numeric, substitute=instr.substitute)
         else:
-            result.Iv = _makeSrcVector(instr.circuit, instr.parDefs, 'all', value = 'value', numeric = instr.numeric, substitute=instr.substitute)
+            instr.Iv = _makeSrcVector(instr.circuit, instr.parDefs, 'all', value = 'value', numeric = instr.numeric, substitute=instr.substitute)
     elif instr.gainType in transferTypes and instr.source != None:
         if instr.source != [None, None]:
             if instr.source[0] == None or instr.source[1] == None:
@@ -1065,45 +1141,46 @@ def _makeAllMatrices(instr, result, reduce=True, inductors=False):
                         pos = instr.depVars().index('V_' + nodeP)
 
                         if instr.convType == 'cc' or instr.convType == 'cd':
-                            result.Iv[pos] -= 1/ns
+                            instr.Iv[pos] -= 1/ns
                         else:
                             # differential input
-                            result.Iv[pos] -= (-1)**i
+                            instr.Iv[pos] -= (-1)**i
                     if nodeN != '0':
                         pos = instr.depVars().index('V_' + nodeN)
 
                         if instr.convType == 'cc' or instr.convType == 'cd':
-                            result.Iv[pos] += 1/ns
+                            instr.Iv[pos] += 1/ns
                         else:
                             # differential input
-                            result.Iv[pos] += (-1)**i
+                            instr.Iv[pos] += (-1)**i
                 elif instr.source[i][0].upper() == 'V':
                     pos = instr.depVars().index('I_' + instr.source[i])
 
                     if instr.convType == 'cc' or instr.convType == 'cd':
-                        result.Iv[pos] = 1
+                        instr.Iv[pos] = 1
                     else:
                         # differential input
-                        result.Iv[pos] = ((-1)**i)/ns
+                        instr.Iv[pos] = ((-1)**i)/ns
     # Apply conversion type
     if instr.convType != None:
         # Adapt instr.ParDefs for balancing
         if instr.removePairSubName:
             instr = _pairParDefs(instr)
+            instr = _pairParams(instr)
         # Convert the matrices
-        result = _convertMatrices(instr, result)
-    result.Iv = float2rational(result.Iv)
+        instr = _convertMatrices(instr)
+    instr.Iv = float2rational(instr.Iv)
     # If a detector is required, check it
     nodetGainTypes = ['loopgain', 'servo']
-    nodetDataTypes = ['poles', 'denom', 'matrix', 'solve', 'dcsolve', 'timesolve']
+    nodetDataTypes = ['poles', 'denom', 'solve', 'dcsolve', 'timesolve']
     if instr.gainType not in nodetGainTypes or instr.dataType not in nodetDataTypes:
-        detector, errors = _checkDetector(result.detector, list(result.Dv.transpose()))
-        result.detector = detector
+        detector, errors = _checkDetector(instr.detector, list(instr.Dv.transpose()))
+        instr.detector = detector
         instr.circuit.errors += errors
     # Reduce the circuit
-    if ini.reduce_circuit and reduce:
-        result.M, result.Iv, result.Dv = _reduceCircuit(result, inductors=inductors)
-    return result
+    if ini.reduce_circuit and reduce and instr.gainType != 'vi':
+        instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, instr.source, instr.detector, instr.references, inductors=inductors)
+    return instr
     
 def _checkDetector(detector, detectors):
     """
@@ -1121,12 +1198,6 @@ def _makeInstrParDict(instr):
     """
     Creates a substitution dictionary that does not contain the step parameters
     for the instruction.
-
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
-
-    :return: Updated instruction object
-    :rtype: :class`SLiCAPinstruction.instruction)`
     """
     if instr.substitute and ini.step_function and instr.step:
         parDefs = {}
@@ -1147,19 +1218,6 @@ def _stepFunctions(stepDict, function):
     """
     Substitutes values for step parameters in *function* and returns a list
     of functions with these substitutions.
-
-    :param stepDict: Dictionary with key-value pair:
-                     key: step parameter name (*sympy.Symbol*)
-                     value: list with step values for this parameter.
-    :type stepDict:  Dictionary
-    :param function: Function in which the parameters need to be substituted
-    :type function: sympy.Expr
-
-    :return: List with functions (*sympy.Expr*). The number of
-             functions equals the number of steps. Function i equals
-             the input function in which the step variable has been
-             replaced with its i-th step value.
-    :return type: list
     """
     stepVars = list(stepDict.keys())
     numSteps = len(stepDict[stepVars[0]])
@@ -1179,17 +1237,11 @@ def _pairParDefs(instr):
     """
     Removes the pair extension from paired parameters in both keys and values in
     instr.parDefs.
-
-    :param instr: instruction with circuit and pairing extensions
-    :type instr: SLiCAPinstruction.instruction)
-
-    :return: instr
-    :rtupe: SLiCAPinstruction.instruction)
     """
     lenExt  = len(instr.pairExt[0])
     substDict = {}
     newParDefs = {}
-    # remove subcircuit extension of paired circuits from parameter names
+    # remove pair extension of paired circuits from parameter names
     for key in list(instr.parDefs.keys()):
         parName = str(key)
         if len(parName) > lenExt and parName[-lenExt:] in instr.pairExt:
@@ -1212,11 +1264,44 @@ def _pairParDefs(instr):
         # In parameter names
         newParDefs[param] = newParDefs[param].subs(substDict)
     instr.parDefs = newParDefs
+    instr.circuit.parDefs = newParDefs
     return instr
 
-def _convertMatrices(instr, result):
+def _pairParams(instr):
     """
-    Converts the result attributes M, Iv and Dv into those of equivalent
+    Removes the pair extension from paired parameters in instr.circuit.params.
+    """
+    lenExt  = len(instr.pairExt[0])
+    newParams = []
+    # remove pair extension of paired circuits from parameter names
+    for param in instr.circuit.params:
+        parName = str(param)
+        if len(parName) > lenExt and parName[-lenExt:] in instr.pairExt:
+            newParams.append(sp.Symbol(parName[:-lenExt]))
+        else:
+            newParams.append(param)
+    instr.circuit.params = list(set(newParams))
+    return instr
+
+def _pairReferences(refs, pairExt, convType):
+    """
+    Removes the pair extension from the list with referenced circuit elements.
+    """
+    lenExt  = len(pairExt[0])
+    for i in range(len(refs)):
+        if len(refs[i]) > lenExt and refs[i][-lenExt:] in pairExt:
+            ref = refs[i][:-lenExt]
+            if convType == 'dd' or convType == 'dc':
+                ref += '_D'
+            elif convType == 'cc'or convType == 'cd':
+                ref += '_C'
+            refs[i] = ref
+    refs = list(set(refs))
+    return refs
+    
+def _convertMatrices(instr):
+    """
+    Converts the instr attributes M, Iv and Dv into those of equivalent
     common-mode or differential mode circuits.
 
     If instruction.removePairSubName == True, it also removes the pair extensions
@@ -1231,51 +1316,38 @@ def _convertMatrices(instr, result):
         - 'all' The complete vectors with redefined and re-arranged common-mode
           and differential-mode quantities.
 
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
-
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
     """
     pairs, unPaired, dmVars, cmVars, A = _createConversionMatrices(instr)
     if instr.removePairSubName:
         lenExt  = len(instr.pairExt[0])
-        params = list(set(list(result.M.atoms(sp.Symbol)) + list(result.Iv.atoms(sp.Symbol))))
+        params = list(set(list(instr.M.atoms(sp.Symbol)) + list(instr.Iv.atoms(sp.Symbol))))
         substDict = {}
         for param in params:
             parName = str(param)
             if len(parName) > lenExt:
                 if parName[-lenExt:] in instr.pairExt:# and nameParts[-1][:-lenExt] in baseIDs:
                     substDict[param] = sp.Symbol(parName[:-lenExt])
-        result.M = result.M.subs(substDict)
+        instr.M = instr.M.subs(substDict)
+        
         if instr.dataType != 'noise' and instr.dataType != 'dcvar':
-            result.Iv = result.Iv.subs(substDict)
-    result.Dv = sp.Matrix(dmVars + cmVars)
-    result.M  = A*result.M*A.transpose()
-    result.Iv = A*result.Iv
+            instr.Iv = instr.Iv.subs(substDict)
+        
+    instr.Dv = sp.Matrix(dmVars + cmVars)
+    instr.M  = A.transpose() * instr.M * A
+    instr.Iv = A.transpose() * instr.Iv
+    instr.A  = A
     dimDm = len(pairs)
     dimCm = dimDm + len(unPaired)
-    result = _getSubMatrices(result, dimDm, dimCm, instr.convType)
-    result.detector = instr.detector
-    return result
+    instr = _getSubMatrices(instr, dimDm, dimCm, instr.convType)
+    #instr.detector = instr.detector
+    instr.detector = _makeNewDetector(instr, pairs, dmVars, cmVars)
+    instr.references = _pairReferences(instr.circuit.references, instr.pairExt, instr.convType)
+    return instr
 
 def _createConversionMatrices(instr):
     """
     Creates the matrax for a base transformation from nodal voltages and branches
     currents to common-mode and differential-mode equivalents.
-
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
-
-    :return: pairs, unPaired, dmVars, cmVars, A
-
-             - pairs: a list with tuples with paired variables
-             - unPaired: a list with unpaired variables
-             - dmVars: a list with differential-mode variables
-             - cmVars: a list with common mode variables
-             - A: the base transformation matrix
-
-    :rtype: tuple
     """
     pairs, unPaired, dmVars, cmVars = _pairVariables(instr)
     depVars = [var for var in instr.depVars()]
@@ -1286,24 +1358,24 @@ def _createConversionMatrices(instr):
     # Create conversion matrix: express nodal voltages and branch currents in
     # corresponding differential-mode and common-mode quantities.
     for i in range(n):
-        col0 = depVars.index(pairs[i][0]) # nodal voltage or branch current
-        col1 = depVars.index(pairs[i][1]) # nodal voltage or branch current
+        row0 = depVars.index(pairs[i][0]) # nodal voltage or branch current
+        row1 = depVars.index(pairs[i][1]) # nodal voltage or branch current
         if pairs[i][0][0] == 'V':
-            # transform pair of node voltages into DM and CM node voltage
-            A[i, col0] = 1/2
-            A[i, col1]  = -1/2
-            A[i+n, col0] = 1
-            A[i+n, col1] = 1
+            # transform pair DM and CM voltages into node voltages
+            A[row0, i] = 1/2
+            A[row1, i]  = -1/2
+            A[row0, i+n] = 1
+            A[row1, i+n] = 1
         elif pairs[i][0][0] == 'I':
-            # transform pair of branch currents into DM and CM branch current
-            A[i, col0] = 1
-            A[i, col1]  = -1
-            A[i+n, col0] = 1/2
-            A[i+n, col1] = 1/2
+            # transform pair of DM and CM currents into branch currents
+            A[row0, i] = 1
+            A[row1, i]  = -1
+            A[row0, i+n] = 1/2
+            A[row1, i+n] = 1/2
     for i in range(m):
         # Unpaired variable, no transformation
-        col = depVars.index(unPaired[i])
-        row = 2*n  + i
+        row = depVars.index(unPaired[i])
+        col = 2*n  + i
         A[row, col] = 1
     return pairs, unPaired, dmVars, cmVars, A
 
@@ -1313,18 +1385,6 @@ def _pairVariables(instr):
     can be resolved in common-mode, and differential-mode variables.
 
     Pairing is defined by the instr.pairedVars and instr.pairedCircuits.
-
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
-
-    :return: pairs, unPaired, dmVars, cmVars
-
-             - pairs: a list with tuples with paired variables
-             - unPaired: a list with unpaired variables
-             - dmVars: a list with differential-mode variables
-             - cmVars: a list with common mode variables
-
-    :rtype: tuple
     """
     depVars = [var for var in instr.circuit.dep_vars]
     paired = []
@@ -1359,96 +1419,82 @@ def _pairVariables(instr):
                         baseName += '_'
                     dmVars.append(baseName + 'D')
                     cmVars.append(baseName + 'C')
-                    _makeNewDetector(instr, [pairedVar, var], baseName)
+                    #_makeNewDetector(instr, [pairedVar, var], baseName)
                 else:
                     unPaired.append(var)
                     depVars.remove(var)
             else:
                 depVars.remove(var)
         cmVars += unPaired
-    """
-    if instr.convType == 'dd' or instr.convType == 'dc':
-        instr.circuit.depVars = dmVars
-    elif instr.convType == 'cd' or instr.convType == 'cc':
-        instr.circuit.depVars = cmVars
-    """
     return pairs, unPaired, dmVars, cmVars
 
-def _makeNewDetector(instr, pair, baseName):
-    if pair[0] in instr.detector and pair[1] in instr.detector:
-        if instr.convType == 'dd' or instr.convType == 'dc':
-            instr.detector = baseName + "D"
-            print("Detector changed to:", instr.detector)
-        elif instr.convType == 'cd' or instr.convType == 'cc':
-            instr.detector = baseName + "C"
-            print("Detector changed to:", instr.detector)
-
-def _getSubMatrices(result, dimDm, dimCm, convType):
+def _makeNewDetector(instr, pairs, dmVars, cmVars):
+    old_detector = instr.detector
+    new_detector = False
+    if type(old_detector) == list:
+        if len(old_detector) == 2:
+            if old_detector[0] != None and old_detector[1] != None:
+                extLen = len(instr.pairExt[0])
+                base_P = old_detector[0][0:-extLen]
+                base_N = old_detector[0][0:-extLen]
+                if base_P == base_N:
+                    baseName = base_P + "_"
+                    if instr.convType == 'dd' or instr.convType=='cd':
+                        if baseName + "D" in dmVars:
+                            instr.detector = baseName + "D"
+                            print("Detector changed to:", instr.detector)
+                            new_detector = True
+                    elif instr.convType == 'cc' or instr.convType=='dc':
+                        if baseName + "C" in cmVars:
+                            instr.detector = baseName + "C"
+                            print("Detector changed to:", instr.detector)
+                            new_detector = True
+            elif old_detector[1] == None:
+                # Check if detector was already modified
+                if instr.convType == 'dd' or instr.convType=='cd' and old_detector[0] in dmVars:
+                        new_detector = True
+                elif instr.convType == 'dc' or instr.convType=='cc' and old_detector[0] in cmVars:
+                        new_detector = True
+    if not new_detector and instr.convType != "all" and old_detector != None:
+        print("Warning: cannot create a new detector for conversion type: %s."%(instr.convType))
+    return instr.detector
+        
+def _getSubMatrices(instr, dimDm, dimCm, convType):
     """
-    Updates the attributes M, Iv, and Dv of result according to the conversion
+    Updates the attributes M, Iv, and Dv of instr according to the conversion
     type: convType.
-
-    :param result: instruction results of which the matrix attributes M, Iv,
-                   and Dv have been set.
-
-    :param dimDm: Number of differential-mode variables
-    :type dimDm: str
-
-    :param dimCm: Number of common-mode variables
-    :type dimCm: str
-
-    :param convType: Conversion type, can be 'dd', 'dc', 'cd', 'cc' and 'all'.
-    :type convType: str
-
-    :result: updated instruction result
-    :rtype: :class: SLiCAP.allResults()
     """
     convType = convType.lower()
     if convType == 'dd':
-        result.M  = result.M.extract([i for i in range(0, dimDm)],[i for i in range(0, dimDm)])
-        result.Iv = sp.Matrix(result.Iv[0:dimDm])
-        result.Dv = sp.Matrix(result.Dv[0:dimDm])
+        instr.M  = instr.M.extract([i for i in range(0, dimDm)],[i for i in range(0, dimDm)])
+        instr.Iv = sp.Matrix(instr.Iv[0: dimDm])
+        instr.Dv = sp.Matrix(instr.Dv[0: dimDm])
     elif convType == 'dc':
-        result.M  = result.M.extract([i for i in range(0,dimDm)],[i for i in range(dimDm, dimDm+dimCm)])
-        result.Iv = sp.Matrix(result.Iv[0:dimDm])
-        result.Dv = sp.Matrix(result.Dv[dimDm:dimDm+dimCm])
+        instr.M  = instr.M.extract([i for i in range(0, dimDm)],[i for i in range(dimDm, dimDm + dimCm)])
+        instr.Iv = sp.Matrix(instr.Iv[0: dimDm])
+        instr.Dv = sp.Matrix(instr.Dv[dimDm: dimDm + dimCm])
     elif convType == 'cd':
-        result.M  = result.M.extract([i for i in range(dimDm, dimDm+dimCm)], [i for i in range(0,dimDm)])
-        result.Iv = sp.Matrix(result.Iv[dimDm:dimDm+dimCm])
-        result.Dv = sp.Matrix(result.Dv[0:dimDm])
+        instr.M  = instr.M.extract([i for i in range(dimDm, dimDm+dimCm)], [i for i in range(0, dimDm)])
+        instr.Iv = sp.Matrix(instr.Iv[dimDm: dimDm + dimCm])
+        instr.Dv = sp.Matrix(instr.Dv[0: dimDm])
     elif convType == 'cc':
-        result.M  = result.M.extract([i for i in range(dimDm, dimDm+dimCm)], [i for i in range(dimDm, dimDm+dimCm)])
-        result.Iv = sp.Matrix(result.Iv[dimDm:dimDm+dimCm])
-        result.Dv = sp.Matrix(result.Dv[dimDm:dimDm+dimCm])
+        instr.M  = instr.M.extract([i for i in range(dimDm, dimDm+dimCm)], [i for i in range(dimDm, dimDm + dimCm)])
+        instr.Iv = sp.Matrix(instr.Iv[dimDm: dimDm + dimCm])
+        instr.Dv = sp.Matrix(instr.Dv[dimDm: dimDm + dimCm])
     elif convType == 'all':
         pass
     else:
         print("Warning: unknown conversion type: %s, assuming: 'all'."%(convType))
-    return result
+    return instr
 
 #################################################################################
 
-def _makeDetPos(result):
+def _makeDetPos(instr):
     """
-    Returns the index of the detector colum(s) for calculation of Cramer's rule.
-
-    :param instr: **instruction)** object that holds instruction data.
-    :type instr: :class:`instruction)`
-
-    :param result: **allResults()** object that holds instruction results
-    :type result: :class:`allResult()`
-
-    :return: tuple: (detP, detN):
-
-    - detP (int or None, int or None): number of the row of the vector with 
-      dependent variables that corresponds with the positive detector
-    - detN (int or None, int or None): number of the row of the vector with 
-      dependent variables that corresponds with the negative detector
-
-    :return type: tuple
+    Returns the index of the detector colum(s) for application of Cramer's rule.
     """
-    detectors = [str(var) for var in list(result.Dv)]
-    detP, detN = result.detector
+    detectors = [str(var) for var in list(instr.Dv)]
+    detP, detN = instr.detector
     if detP != None:
         try:
             detP = detectors.index(detP)
@@ -1461,10 +1507,10 @@ def _makeDetPos(result):
             print("Error: unknown detector:", detN)
     return detP, detN
 
-def _doPyDenom(result):
-    denom = det(result.M, method=ini.denom)
-    result.denom.append(denom)
-    return result
+def _doPyDenom(instr):
+    denom = det(instr.M, method=ini.denom)
+    instr.denom.append(denom)
+    return instr
 
 def _doCramer(M, rowVector, rowNumber):
     newMatrix = sp.zeros(M.rows)
@@ -1476,31 +1522,34 @@ def _doCramer(M, rowVector, rowNumber):
     num = sp.collect(num, ini.laplace)
     return num
 
-def _doPyNumer(instr, result):
-    detP, detN = _makeDetPos(result)
-    num = 0
-    if detP != None:
-        num += _doCramer(result.M, result.Iv, detP)
-    if detN != None:
-        num -= _doCramer(result.M, result.Iv, detN)
-    num = sp.collect(num, ini.laplace)
-    result.numer.append(num)
-    return result
+def _doPyNumer(instr):
+    if instr.Iv.is_zero_matrix:
+        instr.numer.append(sp.N(0))
+    else:
+        detP, detN = _makeDetPos(instr)
+        num = 0
+        if detP != None:
+            num += _doCramer(instr.M, instr.Iv, detP)
+        if detN != None:
+            num -= _doCramer(instr.M, instr.Iv, detN)
+        num = sp.collect(num, ini.laplace)
+        instr.numer.append(num)
+    return instr
 
-def _doPyLaplace(instr, result):
-    result = _doPyNumer(instr, result)
-    result = _doPyDenom(result)
-    laplaceRational = result.numer[-1]/result.denom[-1]
+def _doPyLaplace(instr):
+    instr = _doPyNumer(instr)
+    instr = _doPyDenom(instr)
+    laplaceRational = instr.numer[-1]/instr.denom[-1]
     laplaceRational = normalizeRational(laplaceRational, ini.laplace)
-    result.laplace.append(laplaceRational)
-    result.numer[-1], result.denom[-1] = laplaceRational.as_numer_denom()
-    return result
+    instr.laplace.append(laplaceRational)
+    instr.numer[-1], instr.denom[-1] = laplaceRational.as_numer_denom()
+    return instr
 
-def _doPySolve(instr, result):
-    result.solve.append(result.M.LUsolve(result.Iv))
-    return result
+def _doPySolve(instr):
+    instr.solve.append(instr.M.LUsolve(instr.Iv))
+    return instr
 
-def _doPyLoopGainServo(instr, result):
+def _doPyLoopGainServo(instr):
     if instr.lgValue[0] != None:
         lg1 = instr.lgValue[0]
     else:
@@ -1527,8 +1576,8 @@ def _doPyLoopGainServo(instr, result):
         lg1 = float2rational(sp.N(lg1))
         lg2 = float2rational(sp.N(lg2))
     _LGREF_1, _LGREF_2 = sp.symbols('_LGREF_1, _LGREF_2')
-    MD = result.M
-    M0 = result.M.subs({_LGREF_1: 0, _LGREF_2: 0})
+    MD = instr.M
+    M0 = instr.M.subs({_LGREF_1: 0, _LGREF_2: 0})
     DM = det(MD, method=ini.denom)
     D0 = det(M0, method=ini.denom)
     LG = (D0-DM)/D0
@@ -1540,22 +1589,18 @@ def _doPyLoopGainServo(instr, result):
     LG = sp.simplify(num/den).subs({_LGREF_1: lg1, _LGREF_2: lg2})
     num, den = LG.as_numer_denom()
     if instr.gainType == 'loopgain':
-        result.laplace.append(LG)
+        instr.laplace.append(LG)
     elif instr.gainType == 'servo':
         SVnum = - num
         SVden = sp.expand(den - num)
         num, den = SVnum, SVden
         SV = num/den
-        result.laplace.append(SV)
-    result.numer.append(num)
-    result.denom.append(den)
-    return result
+        instr.laplace.append(SV)
+    instr.numer.append(num)
+    instr.denom.append(den)
+    return instr
 
-def _doPyNoise(instr, result):
-    """
-    Optimization of the matrix has been implemented. This speeds up with
-    multiple independent voltage noise sources.
-    """
+def _doPyNoise(instr):
     s2f = 2*sp.pi*sp.I*sp.Symbol('f', positive=True)
     if instr.numeric == True:
         s2f = float2rational(sp.N(s2f))
@@ -1566,77 +1611,69 @@ def _doPyNoise(instr, result):
                 value = fullSubs(value, instr.parDefs)
             if instr.numeric == True:
                 value = float2rational(sp.N(value))
-            result.snoiseTerms[name] = value
-    result = _makeAllMatrices(instr, result, reduce=True, inductors=False)
-    den = _doPyDenom(result)
+            instr.snoiseTerms[name] = value
+    instr.gainType = 'gain'
+    instr = _makeAllMatrices(instr, reduce=True, inductors=False)
+    den = _doPyDenom(instr)
     den = assumeRealParams(den.denom[0].subs(ini.laplace, s2f))
     den_sq = sp.Abs(den * sp.conjugate(den))
-    if instr.source != [None, None] and instr.source != None:
-        instr.gainType = 'gain'
-        result.gainType = 'gain'
-        result = _makeAllMatrices(instr, result, reduce=True, inductors=False)     
-        result = _doPyNumer(instr, result)
-        num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
+    if instr.source != [None, None] and instr.source != None:   
+        instr = _doPyNumer(instr)
+        num = assumeRealParams(instr.numer[-1].subs(ini.laplace, s2f))
         if num != None:
             sl_num_sq = sp.Abs(num * sp.conjugate(num))
     instr.gainType = 'vi'
-    result.gainType = 'vi'
     instr.dataType = 'noise'
-    result = _makeAllMatrices(instr, result, reduce=False, inductors=False)
+    instr = _makeAllMatrices(instr, reduce=False, inductors=False)
     # Save full matrices
-    M_noise = result.M
-    Iv_noise = result.Iv
-    Dv_noise = result.Dv
+    M_noise = instr.M
+    Iv_noise = instr.Iv
+    Dv_noise = instr.Dv
     onoise = 0
-    inoise = 0
-    for src in result.snoiseTerms.keys():
-        if src not in result.onoiseTerms.keys():
-            result.onoiseTerms[src] = []
-            result.inoiseTerms[src] = []
+    inoise = 0   
+    for src in instr.snoiseTerms.keys():
+        if src not in instr.onoiseTerms.keys():
+            instr.onoiseTerms[src] = []
+            instr.inoiseTerms[src] = []
         Iv = Iv_noise
-        for el in result.snoiseTerms.keys():
+        for el in instr.snoiseTerms.keys():
             name = sp.Symbol(el)
             if el == src:
                 Iv = Iv.subs(name, 1)
             else:
                 Iv = Iv.subs(name, 0)
         # Modify source and source vector (reduce to single input)
-        result.Iv = Iv
-        result.source = [src]
+        instr.Iv = Iv
         # Remove unused independent voltage sources
         if ini.reduce_circuit:
-            result.M, result.Iv, result.Dv = _reduceCircuit(result, inductors=False)
-        result = _doPyNumer(instr, result)
-        num = assumeRealParams(result.numer[-1].subs(ini.laplace, s2f))
+            instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, [src], instr.detector, instr.references, inductors=False)
+        instr = _doPyNumer(instr)
+        num = assumeRealParams(instr.numer[-1].subs(ini.laplace, s2f))
         if num != None:
             num_sq = sp.Abs(num * sp.conjugate(num))
             gain_sq = num_sq/den_sq
-            onoiseTerm = result.snoiseTerms[src]*gain_sq
+            onoiseTerm = instr.snoiseTerms[src]*gain_sq
             if ini.factor:
                 onoiseTerm = sp.factor(onoiseTerm)
-            result.onoiseTerms[src].append(clearAssumptions(onoiseTerm))
-            onoise += result.onoiseTerms[src][-1]
+            instr.onoiseTerms[src].append(clearAssumptions(onoiseTerm))
+            onoise += instr.onoiseTerms[src][-1]
             if instr.source != [None, None] and instr.source != None:
-                inoiseTerm = clearAssumptions(result.snoiseTerms[src]*num_sq/sl_num_sq)
+                inoiseTerm = clearAssumptions(instr.snoiseTerms[src]*num_sq/sl_num_sq)
                 if ini.factor:
                     inoiseTerm = sp.factor(inoiseTerm)
-                result.inoiseTerms[src].append(inoiseTerm)
-                inoise += result.inoiseTerms[src][-1]
+                instr.inoiseTerms[src].append(inoiseTerm)
+                inoise += instr.inoiseTerms[src][-1]
         # Restore full matrices
-        result.M = M_noise
-        result.Iv = Iv_noise
-        result.Dv = Dv_noise
-    result.onoise.append(onoise)
+        instr.M  = M_noise
+        instr.Iv = Iv_noise
+        instr.Dv = Dv_noise
+    instr.onoise.append(onoise)
     if inoise == 0:
         inoise = None
-    result.inoise.append(inoise)
-    return result
+    instr.inoise.append(inoise)
+    return instr
 
-def _doPyDCvar(instr, result):
-    """
-    """
-    instr.dataType='dcvar'
-    result.dataType='dcvar'
+def _doPyDCvar(instr):
     for name in instr.circuit.indepVars:
         if 'dcvar' in list(instr.circuit.elements[name].params.keys()):
             value = instr.circuit.elements[name].params['dcvar']
@@ -1644,66 +1681,61 @@ def _doPyDCvar(instr, result):
                 value = fullSubs(value, instr.parDefs)
             if instr.numeric == True:
                 value = float2rational(sp.N(value))
-            result.svarTerms[name] = value
-    result = _makeAllMatrices(instr, result, inductors=True)
-    result.M = result.M.subs(ini.laplace, 0)
-    den = _doPyDenom(result).denom[0]
+            instr.svarTerms[name] = value 
+    instr.gainType = 'gain'
+    instr = _makeAllMatrices(instr, inductors=True)
+    instr.M = instr.M.subs(ini.laplace, 0)
+    den = _doPyDenom(instr).denom[0]
     den_sq = den**2
     if instr.source != [None, None] and instr.source != None:
-        instr.gainType = 'gain'
-        result.gainType = 'gain'
-        result = _makeAllMatrices(instr, result, inductors=True)
-        Iv_gain = result.Iv.subs(ini.laplace, 0)
-        result.M = result.M.subs(ini.laplace, 0)
-        result.Iv = Iv_gain
-        result = _doPyNumer(instr, result)
-        num = result.numer[-1]
+        instr = _doPyNumer(instr)
+        num = instr.numer[-1].subs(ini.laplace, 0)
         if num != None:
             sl_num_sq = num**2
     instr.gainType  = 'vi'
-    result.gainType = 'vi'
-    result.dataType = 'dcvar'
-    result = _makeAllMatrices(instr, result, reduce=False)
-    M_var = result.M.subs(ini.laplace, 0)
-    Iv_var = result.Iv.subs(ini.laplace, 0)
-    Dv_var = result.Dv
+    instr = _makeAllMatrices(instr, reduce=False)
+    M_var = instr.M.subs(ini.laplace, 0)
+    Iv_var = instr.Iv.subs(ini.laplace, 0)
+    Dv_var = instr.Dv
     ovar = 0
     ivar = 0
-    for src in result.svarTerms.keys():
-        if src not in result.ovarTerms.keys():
-            result.ovarTerms[src] = []
-            result.ivarTerms[src] = []
+    for src in instr.svarTerms.keys():
+        if src not in instr.ovarTerms.keys():
+            instr.ovarTerms[src] = []
+            instr.ivarTerms[src] = []
         Iv = Iv_var
-        for el in result.svarTerms.keys():
+        for el in instr.svarTerms.keys():
             name = sp.Symbol(el)
             if el == src:
                 Iv = Iv.subs(name, 1)
             else:
                 Iv = Iv.subs(name, 0)
-        result.Iv = Iv
-        result.source = [src]
-        result.M, result.Iv, result.Dv = _reduceCircuit(result)
-        result = _doPyNumer(instr, result)
-        num = result.numer[-1]
+        # Modify source and source vector (reduce to single input)
+        instr.Iv = Iv
+        # Remove unused independent voltage sources
+        instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, [src], instr.detector, instr.references, inductors=True)
+        instr = _doPyNumer(instr)
+        num = instr.numer[-1]
         if num != None:
             num_sq = num**2
             gain_sq = num_sq/den_sq
-            ovarTerm = result.svarTerms[src]*gain_sq
+            ovarTerm = instr.svarTerms[src]*gain_sq
             if ini.factor:
                 ovarTerm = sp.factor(ovarTerm)
-            result.ovarTerms[src].append(ovarTerm)
-            ovar += result.ovarTerms[src][-1]
+            instr.ovarTerms[src].append(ovarTerm)
+            ovar += instr.ovarTerms[src][-1]
             if instr.source != [None, None] and instr.source != None:
-                ivarTerm = result.svarTerms[src]*num_sq/sl_num_sq
+                ivarTerm = instr.svarTerms[src]*num_sq/sl_num_sq
                 if ini.factor:
                     ivarTerm = sp.factor(ivarTerm)
-                result.ivarTerms[src].append(ivarTerm)
-                ivar += result.ivarTerms[src][-1]
-        result.M = M_var
-        result.Iv = Iv_var
-        result.Dv = Dv_var
-    result.ovar.append(ovar)
+                instr.ivarTerms[src].append(ivarTerm)
+                ivar += instr.ivarTerms[src][-1]
+        # Restore full matrices
+        instr.M = M_var
+        instr.Iv = Iv_var
+        instr.Dv = Dv_var
+    instr.ovar.append(ovar)
     if ivar == 0:
         ivar = None
-    result.ivar.append(ivar)
-    return result
+    instr.ivar.append(ivar)
+    return instr

@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Schematic diagram of pzNetwork.kicad_sch</h2>
+<figure><a id="fig_pzNetwork.kicad_sch"></a><img src="img/pzNetwork.svg" alt="Circuit diagram of pzNetwork." style="width:500px">
+<figcaption>Figure: pzNetwork.svg<br>Circuit diagram of pzNetwork.</figcaption>
+</figure>
+<h2><a id="netlist_pzNetwork"></a>Netlist: pzNetwork.cir</h2>
+<pre>"myPassiveNetwork"
+.param R_a=10 G_0=1m R_b=100 R_c=2k R_d=50 L=1m C_a=1u R_b=100 C_b=1n tau=10u
+.detector V_1 V_2
+.source V1
+C1 4 1 C value={C_a} vinit=0
+C2 2 0 C value={C_b} vinit=0
+G1 3 0 6 5 G value={G_0/(1+s*tau)}
+L1 6 1 L value={L} iinit=0
+R1 6 5 R value={R_a} noisetemp={T} noiseflow=0 dcvar={sigma_R1^2} dcvarlot=0
+R2 0 2 R value={R_b} noisetemp={T} noiseflow=0 dcvar={sigma_R1^2} dcvarlot=0
+R3 0 3 R value={R_c} noisetemp={T} noiseflow=0 dcvar={sigma_R1^2} dcvarlot=0
+R4 0 4 R value={R_d} noisetemp={T} noiseflow=0 dcvar={sigma_R1^2} dcvarlot=0
+V1 5 0 V value=0 noise={S_v} dc={V_DC} dcvar={(sigma_V*V_DC)^2}
+.end</pre>
+<a id="elementdata_pzNetwork"></a><table>Expanded netlist of pzNetwork.cir.
+<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">C1</td><td class = "left">4 1 </td><td class = "left"></td><td class = "left">C</td>
+<td class="left">value</td><td class="left">$C_{a}$</td><td class="left">$999.9\cdot 10^{-9}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">C2</td><td class = "left">2 0 </td><td class = "left"></td><td class = "left">C</td>
+<td class="left">value</td><td class="left">$C_{b}$</td><td class="left">$1000\cdot 10^{-12}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">G1</td><td class = "left">3 0 6 5 </td><td class = "left"></td><td class = "left">G</td>
+<td class="left">value</td><td class="left">$\frac{G_{0}}{s \tau + 1}$</td><td class="left">$\frac{0.001}{1.0 \cdot 10^{-5} s + 1}$</td></tr>
+<tr><td class="left">L1</td><td class = "left">6 1 </td><td class = "left"></td><td class = "left">L</td>
+<td class="left">value</td><td class="left">$L$</td><td class="left">$1000\cdot 10^{-6}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">iinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R1</td><td class = "left">6 5 </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$10$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$T$</td><td class="left">$300$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R1}^{2}$</td><td class="left">$\sigma_{R1}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R2</td><td class = "left">0 2 </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$100$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$T$</td><td class="left">$300$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R1}^{2}$</td><td class="left">$\sigma_{R1}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R3</td><td class = "left">0 3 </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{c}$</td><td class="left">$2\cdot 10^{3}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$T$</td><td class="left">$300$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R1}^{2}$</td><td class="left">$\sigma_{R1}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R4</td><td class = "left">0 4 </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{d}$</td><td class="left">$50$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$T$</td><td class="left">$300$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R1}^{2}$</td><td class="left">$\sigma_{R1}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">V1</td><td class = "left">5 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$S_{v}$</td><td class="left">$S_{v}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$V_{DC}$</td><td class="left">$V_{DC}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$V_{DC}^{2} \sigma_{V}^{2}$</td><td class="left">$V_{DC}^{2} \sigma_{V}^{2}$</td></tr>
+</table>
+<a id="params_pzNetwork"></a><table>Parameter definitions of pzNetwork.cir.
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$C_{a}$</td><td class="left">$999.9\cdot 10^{-9}$</td><td class="left">$999.9\cdot 10^{-9}$</td></tr>
+<tr><td class="left">$C_{b}$</td><td class="left">$1000\cdot 10^{-12}$</td><td class="left">$1000\cdot 10^{-12}$</td></tr>
+<tr><td class="left">$G_{0}$</td><td class="left">$1000\cdot 10^{-6}$</td><td class="left">$1000\cdot 10^{-6}$</td></tr>
+<tr><td class="left">$L$</td><td class="left">$1000\cdot 10^{-6}$</td><td class="left">$1000\cdot 10^{-6}$</td></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$10$</td><td class="left">$10$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$100$</td><td class="left">$100$</td></tr>
+<tr><td class="left">$R_{c}$</td><td class="left">$2\cdot 10^{3}$</td><td class="left">$2\cdot 10^{3}$</td></tr>
+<tr><td class="left">$R_{d}$</td><td class="left">$50$</td><td class="left">$50$</td></tr>
+<tr><td class="left">$T$</td><td class="left">$300$</td><td class="left">$300$</td></tr>
+<tr><td class="left">$\tau$</td><td class="left">$10\cdot 10^{-6}$</td><td class="left">$10\cdot 10^{-6}$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'myPassiveNetwork.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$S_{v}$</td></tr>
+<tr><td class="left">$\sigma_{V}$</td></tr>
+<tr><td class="left">$V_{DC}$</td></tr>
+<tr><td class="left">$\sigma_{R1}$</td></tr>
+</table>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="myPassiveNetwork_index.html">myPassiveNetwork_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0 &copy 2009-2025 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2025-08-04 00:17:21</p>
+</div></body></html>

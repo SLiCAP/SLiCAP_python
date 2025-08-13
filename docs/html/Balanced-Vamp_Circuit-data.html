@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Schematic diagram of balancedAmpDCvar.kicad_sch</h2>
+<figure><a id="fig_balancedAmpDCvar.kicad_sch"></a><img src="img/balancedAmpDCvar.svg" alt="Circuit diagram of balancedAmpDCvar." style="width:500px">
+<figcaption>Figure: balancedAmpDCvar.svg<br>Circuit diagram of balancedAmpDCvar.</figcaption>
+</figure>
+<h2><a id="netlist_balancedAmpDCvar"></a>Netlist: balancedAmpDCvar.cir</h2>
+<pre>"Balanced Vamp"
+.param R_a=100k R_b=100 R_s=1k R_L=200
+.source V1P V1N
+.detector V_outP V_outN
+.param Lot_1={sigma_L^2}
+E1 comm 1 outP 0 E value=0.5
+E2 1 0 outN 0 E value=0.5
+R1N inN srcN R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R1P srcP inP R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2N fbN outN R value={R_a} noisetemp=0 noiseflow=0 dcvar={sigma_R^2} dcvarlot={Lot_1}
+R2P outP fbP R value={R_a} noisetemp=0 noiseflow=0 dcvar={sigma_R^2} dcvarlot={Lot_1}
+R3 fbP fbN R value={R_b} noisetemp=0 noiseflow=0 dcvar={sigma_R^2} dcvarlot=0
+R4 outP outN R value={R_L} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1N srcN 0 V value=0 noise=0 dc=0 dcvar=0
+V1P srcP 0 V value=0 noise=0 dc=0 dcvar=0
+X1N inN fbN outN 0 O_dcvar svo={sigma_vo} sio={sigma_io} sib={sigma_ib} iib={I_b}
+X1P inP fbP outP 0 O_dcvar svo={sigma_vo} sio={sigma_io} sib={sigma_ib} iib={I_b}
+.end</pre>
+<a id="elementdata_balancedAmpDCvar"></a><table>Expanded netlist of balancedAmpDCvar.cir.
+<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">E1</td><td class = "left">comm 1 outP 0 </td><td class = "left"></td><td class = "left">E</td>
+<td class="left">value</td><td class="left">$0.5$</td><td class="left">$0.5$</td></tr>
+<tr><td class="left">E2</td><td class = "left">1 0 outN 0 </td><td class = "left"></td><td class = "left">E</td>
+<td class="left">value</td><td class="left">$0.5$</td><td class="left">$0.5$</td></tr>
+<tr><td class="left">F1_X1N</td><td class = "left">fbN 0 </td><td class = "left">Vm_X1N </td><td class = "left">F</td>
+<td class="left">value</td><td class="left">$1$</td><td class="left">$1$</td></tr>
+<tr><td class="left">F1_X1P</td><td class = "left">fbP 0 </td><td class = "left">Vm_X1P </td><td class = "left">F</td>
+<td class="left">value</td><td class="left">$1$</td><td class="left">$1$</td></tr>
+<tr><td class="left">Ib_X1N</td><td class = "left">inN 5_X1N </td><td class = "left"></td><td class = "left">I</td>
+<td class="left">dc</td><td class="left">$I_{b}$</td><td class="left">$I_{b}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{ib}^{2}$</td><td class="left">$\sigma_{ib}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">Ib_X1P</td><td class = "left">inP 5_X1P </td><td class = "left"></td><td class = "left">I</td>
+<td class="left">dc</td><td class="left">$I_{b}$</td><td class="left">$I_{b}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{ib}^{2}$</td><td class="left">$\sigma_{ib}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">Io_X1N</td><td class = "left">inN fbN </td><td class = "left"></td><td class = "left">I</td>
+<td class="left">dcvar</td><td class="left">$\sigma_{io}^{2}$</td><td class="left">$\sigma_{io}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">Io_X1P</td><td class = "left">inP fbP </td><td class = "left"></td><td class = "left">I</td>
+<td class="left">dcvar</td><td class="left">$\sigma_{io}^{2}$</td><td class="left">$\sigma_{io}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">N1_X1N</td><td class = "left">outN 0 3_X1N fbN </td><td class = "left"></td><td class = "left">N</td>
+<td></td><td></td><td></td><tr><tr><td class="left">N1_X1P</td><td class = "left">outP 0 3_X1P fbP </td><td class = "left"></td><td class = "left">N</td>
+<td></td><td></td><td></td><tr><tr><td class="left">R1N</td><td class = "left">inN srcN </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{s}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R1P</td><td class = "left">srcP inP </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{s}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R2N</td><td class = "left">fbN outN </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R}^{2}$</td><td class="left">$\sigma_{R}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$Lot_{1}$</td><td class="left">$\sigma_{L}^{2}$</td></tr>
+<tr><td class="left">R2P</td><td class = "left">outP fbP </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R}^{2}$</td><td class="left">$\sigma_{R}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$Lot_{1}$</td><td class="left">$\sigma_{L}^{2}$</td></tr>
+<tr><td class="left">R3</td><td class = "left">fbP fbN </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$100$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R}^{2}$</td><td class="left">$\sigma_{R}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R4</td><td class = "left">outP outN </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{L}$</td><td class="left">$200$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">V1N</td><td class = "left">srcN 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">V1P</td><td class = "left">srcP 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">Vm_X1N</td><td class = "left">5_X1N 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">Vm_X1P</td><td class = "left">5_X1P 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">Vo_X1N</td><td class = "left">inN 3_X1N </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">dcvar</td><td class="left">$\sigma_{vo}^{2}$</td><td class="left">$\sigma_{vo}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">Vo_X1P</td><td class = "left">inP 3_X1P </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">dcvar</td><td class="left">$\sigma_{vo}^{2}$</td><td class="left">$\sigma_{vo}^{2}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+</table>
+<a id="params_balancedAmpDCvar"></a><table>Parameter definitions of balancedAmpDCvar.cir.
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$Lot_{1}$</td><td class="left">$\sigma_{L}^{2}$</td><td class="left">$\sigma_{L}^{2}$</td></tr>
+<tr><td class="left">$R_{L}$</td><td class="left">$200$</td><td class="left">$200$</td></tr>
+<tr><td class="left">$R_{a}$</td><td class="left">$100\cdot 10^{3}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
+<tr><td class="left">$R_{b}$</td><td class="left">$100$</td><td class="left">$100$</td></tr>
+<tr><td class="left">$R_{s}$</td><td class="left">$1\cdot 10^{3}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'Balanced Vamp.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$\sigma_{io}$</td></tr>
+<tr><td class="left">$I_{b}$</td></tr>
+<tr><td class="left">$\sigma_{L}$</td></tr>
+<tr><td class="left">$\sigma_{vo}$</td></tr>
+<tr><td class="left">$\sigma_{R}$</td></tr>
+<tr><td class="left">$\sigma_{ib}$</td></tr>
+</table>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="Balanced-Vamp_index.html">Balanced-Vamp_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0 &copy 2009-2025 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2025-08-04 00:17:36</p>
+</div></body></html>

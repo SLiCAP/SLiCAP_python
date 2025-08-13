@@ -173,7 +173,7 @@ def _makeMatrices(instr):
             M[dVarPos, pos1] -= 1
             M[dVarPos, dVarPos] -= value
         elif elmt.model == 'E':
-            dVarPos = varIndex['Io_' + elmt.refDes]
+            dVarPos = varIndex['I_' + elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
@@ -187,7 +187,7 @@ def _makeMatrices(instr):
             M[dVarPos, pos2] -= numer
             M[dVarPos, pos3] += numer
         elif elmt.model == 'EZ':
-            dVarPos = varIndex['Io_' + elmt.refDes]
+            dVarPos = varIndex['I_' + elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
@@ -203,19 +203,16 @@ def _makeMatrices(instr):
             M[dVarPos, pos3] += numer * zoD
             M[dVarPos, dVarPos] -= zoN * denom
         elif elmt.model == 'F':
-            dVarPos = varIndex['Ii_' + elmt.refDes]
+            dVarPosO = varIndex['I_' + elmt.refDes]
+            dVarPosI = varIndex['I_' + elmt.refs[0]]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            pos2 = varIndex[elmt.nodes[2]]
-            pos3 = varIndex[elmt.nodes[3]]
+            M[pos0, dVarPosO] += 1
+            M[pos1, dVarPosO] -= 1
             (numer, denom) = _getValues(
                 elmt, 'value', numeric, parDefs, substitute)
-            M[pos0, dVarPos] += numer
-            M[pos1, dVarPos] -= numer
-            M[pos2, dVarPos] += denom
-            M[pos3, dVarPos] -= denom
-            M[dVarPos, pos2] += 1
-            M[dVarPos, pos3] -= 1
+            M[dVarPosO, dVarPosI] -= numer
+            M[dVarPosO, dVarPosO] = denom
         elif elmt.model == 'g':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
@@ -227,7 +224,7 @@ def _makeMatrices(instr):
             M[pos1, pos2] -= value
             M[pos1, pos3] += value
         elif elmt.model == 'G':
-            dVarPos = varIndex['Io_' + elmt.refDes]
+            dVarPos = varIndex['I_' + elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
@@ -240,45 +237,33 @@ def _makeMatrices(instr):
             M[dVarPos, pos3] -= numer
             M[dVarPos, dVarPos] -= denom
         elif elmt.model == 'H':
-            dVarPosO = varIndex['Io_' + elmt.refDes]
-            dVarPosI = varIndex['Ii_' + elmt.refDes]
+            dVarPosO = varIndex['I_' + elmt.refDes]
+            dVarPosI = varIndex['I_' + elmt.refs[0]]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            pos2 = varIndex[elmt.nodes[2]]
-            pos3 = varIndex[elmt.nodes[3]]
-            (numer, denom) = _getValues(
-                elmt, 'value', numeric, parDefs, substitute)
             M[pos0, dVarPosO] += 1
             M[pos1, dVarPosO] -= 1
-            M[pos2, dVarPosI] += 1
-            M[pos3, dVarPosI] -= 1
-            M[dVarPosI, pos2] += 1
-            M[dVarPosI, pos3] -= 1
+            (numer, denom) = _getValues(
+                elmt, 'value', numeric, parDefs, substitute)
             M[dVarPosO, pos0] += denom
             M[dVarPosO, pos1] -= denom
             M[dVarPosO, dVarPosI] -= numer
         elif elmt.model == 'HZ':
-            dVarPosO = varIndex['Io_' + elmt.refDes]
-            dVarPosI = varIndex['Ii_' + elmt.refDes]
+            dVarPosO = varIndex['I_' + elmt.refDes]
+            dVarPosI = varIndex['I_' + elmt.refs[0]]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
-            pos2 = varIndex[elmt.nodes[2]]
-            pos3 = varIndex[elmt.nodes[3]]
+            M[pos0, dVarPosO] += 1
+            M[pos1, dVarPosO] -= 1
             (numer, denom) = _getValues(
                 elmt, 'value', numeric, parDefs, substitute)
             (zoN, zoD) = _getValues(elmt, 'zo', numeric, parDefs, substitute)
-            M[pos0, dVarPosO] += 1
-            M[pos1, dVarPosO] -= 1
-            M[pos2, dVarPosI] += 1
-            M[pos3, dVarPosI] -= 1
-            M[dVarPosI, pos2] += 1
-            M[dVarPosI, pos3] -= 1
             M[dVarPosO, pos0] += denom * zoD
             M[dVarPosO, pos1] -= denom * zoD
             M[dVarPosO, dVarPosI] -= numer * zoD
             M[dVarPosO, dVarPosO] -= zoN * denom
         elif elmt.model == 'N':
-            dVarPos = varIndex['Io_' + elmt.refDes]
+            dVarPos = varIndex['I_' + elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
@@ -288,7 +273,7 @@ def _makeMatrices(instr):
             M[dVarPos, pos2] += 1
             M[dVarPos, pos3] -= 1
         elif elmt.model == 'T':
-            dVarPos = varIndex['Io_' + elmt.refDes]
+            dVarPos = varIndex['I_' + elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
             pos2 = varIndex[elmt.nodes[2]]
@@ -310,15 +295,6 @@ def _makeMatrices(instr):
             M[pos1, dVarPos] -= 1
             M[dVarPos, pos0] += 1
             M[dVarPos, pos1] -= 1
-        elif elmt.model == 'VZ':
-            (zoN, zoD) = _getValues(elmt, 'zo', numeric, parDefs, substitute)
-            pos1 = varIndex[elmt.nodes[1]]
-            pos0 = varIndex[elmt.nodes[0]]
-            M[pos0, dVarPos] += 1
-            M[pos1, dVarPos] -= 1
-            M[dVarPos, pos0] += zoD
-            M[dVarPos, pos1] -= zoD
-            M[dVarPos, dVarPos] -= zoN
         elif elmt.model == 'W':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
@@ -429,15 +405,14 @@ def _makeSrcVector(cir, parDefs, elid, value='id', numeric=True, substitute=True
     Iv.row_del(gndPos)
     return Iv
 
-def _reduceCircuit(result, inductors=False):
-    connections, deletions = _defineReductions(result, inductors=inductors)
-    return _applyReductions(result, connections, deletions) 
+def _reduceCircuit(M, Iv, Dv, source, detector, references, inductors):
+    connections, deletions = _defineReductions(M, Iv, Dv, source, detector, references, inductors)
+    M, Iv, Dv = _applyReductions(M, Iv, Dv, connections, deletions) 
+    return M, Iv, Dv
 
-def _defineReductions(result, inductors=False):
-    source = result.source
+def _defineReductions(M, Iv, Dv, source, detector, references, inductors):
     if source == None:
         source = [None, None]
-    detector = result.detector
     if detector == None:
         detector = [None, None]
     # Create a substitution dictionary with key-value pairs:
@@ -450,7 +425,7 @@ def _defineReductions(result, inductors=False):
     # Independent voltage sources that are not used as signal source or 
     # detector and inductors not used as current detector will be removed. 
     # Each removed component reduces the matrix size with two.
-    for var in result.Dv:
+    for var in Dv:
         name = str(var)
         name_parts = name.split("_")
         vi = name_parts[0]
@@ -459,46 +434,47 @@ def _defineReductions(result, inductors=False):
         # (current) detector, or inductor not used as current detector.
         # Its associated dependent variable is "I_<Vname>", or "I_<Lname>". 
         # "Vname" or L<name>: refdes of voltage source or inductor, respectively.
-        if (vi == "I" and (vi == "V" or (inductors and elID[0] == "L"))) and elID not in source and str(name) not in detector:
-            pos = list(result.Dv).index(var)
-            row = list(result.M.row(pos))
-            # Find the element's node columns
-            try:
-                # col position of the positive node of the V source or inductor
-                colP = row.index(1)
-            except ValueError:
-                # positive node of the element is connected to ground
-                colP = None
-            try:
-                # col position of the negative node of the V source or inductor
-                colN = row.index(-1)
-            except ValueError:
-                # negative node of the element is connected to ground
-                colN = None
-            if colP != None and colN != None:
-                # Floating voltage source or inductor
-                if str(result.Dv[colP]) and str(result.Dv[colN]) in detector:
-                    # Both nodes are detector voltage:
-                    # leave it in the circuit
-                    pass
-                elif str(result.Dv[colP]) in detector:
-                    # Negative node will be replaced with detector node.
-                    connections = _connect(connections, colN, colP)
-                    deletions.append(colN)
+        if elID not in source and str(name) not in detector and elID not in references:
+            pos = list(Dv).index(var)
+            col = list(M.col(pos))  
+            if (vi == "I" and elID[0] == "V") or (vi == "I" and inductors and elID[0] == "L"):
+                # Find the element's node columns
+                try:
+                    # col position of the positive node of the V source or inductor
+                    colP = col.index(1)
+                except ValueError:
+                    # positive node of the element is connected to ground
+                    colP = None
+                try:
+                    # col position of the negative node of the V source or inductor
+                    colN = col.index(-1)
+                except ValueError:
+                    # negative node of the element is connected to ground
+                    colN = None
+                if colP != None and colN != None:
+                    # Floating voltage source or inductor
+                    if str(Dv[colP]) and str(Dv[colN]) in detector:
+                        # Both nodes are detector voltage:
+                        # leave it in the circuit
+                        pass
+                    elif str(Dv[colP]) in detector:
+                        # Negative node will be replaced with detector node.
+                        connections = _connect(connections, colN, colP)
+                        deletions.append(colN)
+                        deletions.append(pos)
+                    else:   
+                        # Positive node will be replaced with detector node.
+                        connections = _connect(connections, colP, colN)
+                        deletions.append(colP)
+                        deletions.append(pos)
+                if colN != None and colP == None and str(Dv[colN]) not in detector:  
+                    # Negative node also needs to be connected to ground.
+                    grounded.append(colN)
                     deletions.append(pos)
-                else:   
-                    # Positive node will be replaced with detector node.
-                    connections = _connect(connections, colP, colN)
-                    deletions.append(colP)
+                elif colP != None and colN == None and str(Dv[colP]) not in detector: 
+                    # Positive node also needs to be connected to ground.
+                    grounded.append(colP)
                     deletions.append(pos)
-            if colN != None and colP == None and str(result.Dv[colN]) not in detector:  
-                # Negative node also needs to be connected to ground.
-                grounded.append(colN)
-                deletions.append(pos)
-            elif colP != None and colN == None and str(result.Dv[colP]) not in detector: 
-                # Positive node also needs to be connected to ground.
-                grounded.append(colP)
-                deletions.append(pos)
     # Append row and column numbers corresponding with grounded nodes to deletions.
     for col in grounded:
         if col in connections.keys():
@@ -509,12 +485,12 @@ def _defineReductions(result, inductors=False):
     deletions = list(set(deletions))
     return connections, deletions
 
-def _applyReductions(result, connections, deletions):
+def _applyReductions(M, Iv, Dv, connections, deletions):
     # Perform connections:
     # First create a copy of the original matrix
-    M   = result.M.copy()
-    Iv  = result.Iv.copy()
-    Dv  = result.Dv.copy()
+    M   = M.copy()
+    Iv  = Iv.copy()
+    Dv  = Dv.copy()
     dim = M.shape[0]
     # Then perform row and column additions:
     # The substituted row or column is added to the substituting row or column,

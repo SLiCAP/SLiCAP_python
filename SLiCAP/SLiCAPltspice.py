@@ -50,36 +50,3 @@ def _LTspiceNetlist(fileName, cirTitle):
             except FileNotFoundError:
                 print("\nError: could not open: '{}'.\nUnable to create netlist with LTspice.".format(baseFileName + '.net'))
     return
-
-def runLTspice(fileName):
-    """
-    Runs LTspice netlist (.cir) file.
-
-    :param fileName: Name of the circuit (.cir) file, absolute path, or 
-                     relative the the project directory
-    
-    :type fileName: str
-
-    :return: None
-    :rtype: Nonetype
-    """
-    if ini.ltspice == "":
-        print("Please install LTspice, delete '~/SLiCAP.ini' and run this script again.")
-    else:
-        if not os.path.isfile(fileName):
-            print("Error: could not open: '{}'.".format(fileName))
-            return
-        else:
-            fileNameParts = fileName.split('.')
-            fileType = fileNameParts[-1].lower()
-            if fileType == 'cir':
-                try:
-                    if platform.system() == 'Windows':
-                        fileName = fileName.replace('\\','\\\\')
-                        subprocess.run([ini.ltspice, '-b', fileName])
-                    else:
-                        subprocess.run(['wine', ini.ltspice, '-b', '-wine', fileName], 
-                                       stdout=subprocess.DEVNULL, 
-                                       stderr=subprocess.STDOUT)
-                except FileNotFoundError:
-                    print("\nError: Could not run LTspice using: '{}'.".format(ini.ltspice))

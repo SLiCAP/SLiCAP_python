@@ -1,0 +1,8 @@
+bigAmp
+.subckt bigAmp inP inN outP outN A_i=30 R_o=30
+.lib smallAmp.lib
+R1 inP inN R value={R_i} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+X1 inP inN 1 0 smallAmp A_v={A_i} r_o=40
+X2 1 0 outP outN smallAmp A_v=10 r_o={R_o}
+.ends
+.end

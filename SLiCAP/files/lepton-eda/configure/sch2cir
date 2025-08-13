@@ -1,0 +1,7 @@
+#!/bin/sh
+basefile=$1
+schfile=${basefile}.sch
+cirfile=${basefile}.cir
+svgfile=${basefile}.svg
+lepton-netlist -g spice-noqsi -o $cirfile $schfile
+lepton-cli export -o $svgfile -f svg $schfile

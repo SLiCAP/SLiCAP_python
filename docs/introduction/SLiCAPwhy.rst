@@ -5,7 +5,7 @@ Why should you use SLiCAP
 .. image:: /img/colorCode.svg
 
 - SLiCAP facilitates stepwise, hierachically-structured, analog circuit design 
-- SLiCAP lets you relate circuit component and device geometry requirements to system performance requirements
+- SLiCAP lets you relate circuit component and device geometry requirements to circuit performance requirements
 - SLiCAP makes complex symbolic circuit analysis doable
 - SLiCAP speeds up the circuit design process
 - SLiCAP integrates documentation and design ("one-click" update of HTML or PDF design reports)
@@ -14,13 +14,13 @@ Why should you use SLiCAP
 Features
 ========
 
-- Accepts SPICE-like netlists with unlimited hierarchy
-- Provides schematic symbols for Kicad, LTspice, gSchem, and Lepton-eda
-- Performs mixed numeric and symbolic circuit analysis with Python Sympy as underlying Computer Algebra System and Python Numpy for fast numeric computations
-- 18 different analysis types for designing the dynamic response, the frequency stability, the noise performance, the DC operating point variance and temperature stability, the PCB or chip area, and the power dissipation
-- Automatic conversion of balanced circuits into differential-mode and common-mode equivalent circuits
-- Single-click updating of HTML and PDF design reports, with text, images, graphs, tables, equations, etc.
-- Minimized instruction set, only a few Python instructions provide useful analysis results:
+- SLiCAP accepts SPICE-like netlists with unlimited hierarchy
+- SLiCAP provides schematic symbols for Kicad, LTspice, gSchem, and Lepton-eda
+- SLiCAP performs mixed numeric and symbolic circuit analysis with Python Sympy as underlying Computer Algebra System and Python Numpy for fast numeric computations
+- SLiCAP has 16 different analysis types for designing the dynamic response, the frequency stability, the noise performance, the DC operating point variance and temperature stability, the PCB or chip area, and the power dissipation
+- SLiCAP automatically converts balanced circuits into differential-mode and common-mode equivalent circuits
+- SLiCAP automatically updates HTML and PDF design reports, with text, images, graphs, tables, equations, etc.
+- SLiCAP has a minimized instruction set, only a few Python instructions provide useful analysis results:
 
 .. code-block:: python
 
@@ -36,13 +36,13 @@ Features
 Capabilities
 ============
 
-- Conversion of hierarchically structured SPICE netlist into a mixed symbolic/numeric matrix equation
+- Conversion of hierarchically structured SPICE-like netlist into a mixed symbolic/numeric matrix equation
 - Symbolic and numeric noise analysis
 - Symbolic and numeric noise integration over frequency
 - Symbolic and numeric determination of transfer functions and polynomial coefficients of transfer functions
 - Symbolic and numeric Inverse Laplace Transform
 - Symbolic and numeric determination of network solutions for DC, Laplace, and time-domain
-- Symbolic and numeric pole-zero analysis (symbolic pole-zero analysis for low-order systems only)
+- Symbolic and numeric pole-zero analysis
 - Symbolic and numeric Routh array
 - Order estimation of feedback circuits (numeric only)
 - Root-locus analysis with an arbitrarily selected circuit parameter as root locus variable

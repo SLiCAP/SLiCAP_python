@@ -115,17 +115,14 @@ The title definitions differs from SPICE:
 .. code-block:: text
 
     * myCircuit         ; a comment, not interpreted as title.
-    * Lines with elements or directives
 
 .. code-block:: text
 
     myCircuit           ; a title without spaces
-    * Lines with elements or directives
 
 .. code-block:: text
 
     "My first circuit"  ; a tittle including spaces
-    * Lines with elements or directives
 		
 .lib line
 ---------
@@ -135,7 +132,7 @@ Library files containing model definitions and/or sub circuit definitions need t
 The syntax for library files slightly differs from SPICE: 
 
 - The first line is consideres as tile
-- The last lane should be ``.end``
+- The last line should be ``.end``
 
 In fact, SLiCAP library files have the same syntax as SLiCAP netlist files.
 

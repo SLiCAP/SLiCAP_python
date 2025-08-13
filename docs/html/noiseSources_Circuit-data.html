@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Schematic diagram of noiseSources.kicad_sch</h2>
+<figure><a id="fig_noiseSources.kicad_sch"></a><img src="img/noiseSources.svg" alt="Circuit diagram of noiseSources." style="width:500px">
+<figcaption>Figure: noiseSources.svg<br>Circuit diagram of noiseSources.</figcaption>
+</figure>
+<h2><a id="netlist_noiseSources"></a>Netlist: noiseSources.cir</h2>
+<pre>noiseSources
+C1 out 0 C value={C_a} vinit=0
+I1 0 out I value=0 noise={S_i} dc=0 dcvar=0
+L1 1 out L value={L_a} iinit=0
+R1 1 2 R value={R_a} noisetemp={T} noiseflow={f_ell} dcvar=0 dcvarlot=0
+V1 2 0 V value=0 noise={S_v} dc=0 dcvar=0
+.end</pre>
+<a id="elementdata_noiseSources"></a><table>Expanded netlist of noiseSources.cir.
+<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">C1</td><td class = "left">out 0 </td><td class = "left"></td><td class = "left">C</td>
+<td class="left">value</td><td class="left">$C_{a}$</td><td class="left">$C_{a}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">I1</td><td class = "left">0 out </td><td class = "left"></td><td class = "left">I</td>
+<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$S_{i}$</td><td class="left">$S_{i}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">L1</td><td class = "left">1 out </td><td class = "left"></td><td class = "left">L</td>
+<td class="left">value</td><td class="left">$L_{a}$</td><td class="left">$L_{a}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">iinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R1</td><td class = "left">1 2 </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$R_{a}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$T$</td><td class="left">$300$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$f_{\ell}$</td><td class="left">$f_{\ell}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">V1</td><td class = "left">2 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$S_{v}$</td><td class="left">$S_{v}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+</table>
+<a id="params_noiseSources"></a><table>Parameter definitions of noiseSources.cir.
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$T$</td><td class="left">$300$</td><td class="left">$300$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'noiseSources.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$S_{v}$</td></tr>
+<tr><td class="left">$f_{\ell}$</td></tr>
+<tr><td class="left">$R_{a}$</td></tr>
+<tr><td class="left">$S_{i}$</td></tr>
+<tr><td class="left">$C_{a}$</td></tr>
+<tr><td class="left">$L_{a}$</td></tr>
+</table>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="noiseSources_index.html">noiseSources_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0 &copy 2009-2025 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2025-08-04 00:17:21</p>
+</div></body></html>

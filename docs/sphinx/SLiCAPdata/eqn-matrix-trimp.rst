@@ -1,0 +1,4 @@
+.. math::
+
+    \left[\begin{matrix}0\\I_{s}\\0\end{matrix}\right]=\left[\begin{matrix}0 & 1 & 0\\0 & C_{s} s + \frac{1}{R_{t}} & - \frac{1}{R_{t}}\\1 & - \frac{1}{R_{t}} & \frac{1}{R_{t}}\end{matrix}\right]\cdot \left[\begin{matrix}I_{N1}\\V_{in}\\V_{out}\end{matrix}\right]
+

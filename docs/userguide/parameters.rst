@@ -4,39 +4,58 @@ Work with parameters
 
 .. image:: /img/colorCode.svg
 
+*Parameters* are symbolic variables used in circuit element expressions. There are five ways of assigning values or expressions to these parameters:
 
-*Circuit parameters* are symbolic variables used in element expressions. There are four ways of assigning values or expressions to these parameters:
+#. Using built-in parameter definitions
+#. In the netlist using the SPICE '.PARAM' directive
+#. In python using the ``circuit.defPar()`` method
+#. In python using the ``pardefs`` argument in an instruction
+#. In python using the ``specs2circuit()`` function
 
-#. In the netlist using the SPICE '.PARAM' directives
-#. In python using the circuit.defPar() method
-#. In python using the 'pardefs' argument in an instruction
-#. In python using the specs2circuit() function
-
-Get all circuit parameters
+SLiCAP built-in parameters
 ==========================
 
-A list with all circuit parameters can be obtained as follows:
+SLiCAP has a number of predefined parameters. These parameters include default CMOS18 EKV model parameters.
 
-.. code-block:: python
+.. admonition:: SLiCAP library files
+   :class: warning
+    
+    Notice, a SLiCAP library it like a circuit definition. The first line after any line starting with ``*`` is considered the title of the library. The last line must read ``.end``
 
-    import SLiCAP as sl
-    sl.initProject('My first RC network') # Initialize a SLiCAP project
-    # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.cir')
-    # Print the contents of the dictionary with circuit parameter definitions:
-    if len(cir.parDefs.keys()):
-        print("\nParameters with definitions:\n")
-        for key in cir.parDefs.keys():
-            print(key, cir.parDefs[key])
-    else: 
-        print("\nFound no parameter definitions")
-    # Print the contents of the list with parameters that have no definition:
-    if len(cir.params):
-        print("\nParameters that have no definition:\n")
-        for param in cir.params:
-            print(param)
-    else:
-        print("\nFound no parameters without definition")
+.. literalinclude:: //home/anton/anton/lib/python3.12/site-packages/SLiCAP/files/lib/SLiCAPmodels.lib
+    :linenos:
+    :lines: 1-68
+    :lineno-start: 1
+
+Circuit parameters
+==================
+
+SLiCAP output displayed on this manual page, is generated with the script: ``parameters.py``, imported by ``Manual.py``.
+
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 1-11
+    :lineno-start: 1
+    
+We will use a simple RC network to demonstrate how to use parameters.
+
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 13-14
+    :lineno-start: 13
+
+.. image:: ../img/myFirstRCnetwork.svg
+    :width: 350px
+    
+Get all circuit parameters
+--------------------------
+
+A listing of all circuit parameters can be obtained as follows:
+
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 16-30
+    :lineno-start: 16
         
 This yields:
 
@@ -48,24 +67,19 @@ This yields:
     C 1/(2*pi*R*f_c)
     f_c 1000
 
-    Found no parameters without definition
+    Parameters that have no definition:
+
+    V_s
 
 Assign a value or an expression to a parameter
 ==============================================
 
 The method `circuit.defPar() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.defPar>`__ can be used to assign a value or an expression to a parameter.
 
-.. code-block:: python
-
-    import SLiCAP as sl
-    sl.initProject('My first RC network') # Initialize a SLiCAP project
-    # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.cir')
-    #
-    cir.defPar('R', 'tau/C') # Define R = tau/C
-    cir.defPar('C', '10n')   # Define C = 10 nF
-    cir.defPar('tau', '1u')  # Define tau = 1 us
-    print(cir.parDefs)
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 32-36
+    :lineno-start: 32
     
 This yields:
 
@@ -78,53 +92,26 @@ Assign values or expressions to multiple parameters
 
 The method `circuit.defPars() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.defPars>`__ can be used to assign definitions to multiple parameters.
 
-.. code-block:: python
-
-    import SLiCAP as sl
-    sl.initProject('My first RC network') # Initialize a SLiCAP project
-    # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.cir')
-    #
-    cir.defPars({'R': 'tau/C', 'C': '10n', 'tau': '1u'})
-    print(cir.parDefs)
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 38-40
+    :lineno-start: 38
     
-This yields the same as above:
+This yields:
 
 .. code-block:: python
 
-    {R: tau/C, C: 1/100000000, f_c: 1000, tau: 1/1000000}
+    {R: tau/C, C: 1/100000000, f_c: 1000, tau: 1/f_c}
 
 Delete a parameter definition
 =============================
 
-You can delete a parameter definition using the method `circuit.delPar() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.delPar>`__ . This method does not delete the circuit parameter itself, it only clears its definition so that it can be used as a symbolic variable.
+You can delete a **parameter definition** using the method `circuit.delPar() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.delPar>`__ . This method does not delete the circuit parameter itself, it only clears its definition so that it can be used as a symbolic variable.
 
-.. code-block:: python
-
-    import SLiCAP as sl
-    sl.initProject('My first RC network') # Initialize a SLiCAP project
-    # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.cir')
-    #
-    cir.defPar('R', 'tau/C')    # Define the value of R
-    cir.defPar('C', '10n')      # Define the value of C
-    cir.defPar('tau', '1/f_c')  # Define the value of tau
-    cir.delPar('f_c')           # Delete the definition of f_c
-    #
-    # Print the contents of the dictionary with circuit parameter definitions:
-    if len(cir.parDefs.keys()):
-        print("\nParameters with definitions:\n")
-        for key in cir.parDefs.keys():
-            print(key, cir.parDefs[key])
-    else: 
-        print("\nFound no parameter definitions")
-    # Print the contents of the list with parameters that have no definition:
-    if len(cir.params):
-        print("\nParameters that have no definition:\n")
-        for param in cir.params:
-            print(param)
-    else:
-        print("\nFound no parameters without definition")
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 42-59
+    :lineno-start: 42
 
 This yields:
 
@@ -139,38 +126,21 @@ This yields:
     Parameters that have no definition:
 
     f_c
+    V_s
 
-Get the definition or value of a specific parameter
-===================================================
+Obtain the value of a parameter
+===============================
 
 The method `circuit.getParValue() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValue>`__  returns the definition or the evaluated value of a parameter.
 
-If the keyword argument 'substitute' is True (default), all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see `fullSubs <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs>`__)
+If the keyword argument ``substitute`` is True (default), all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see `fullSubs <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs>`__)
 
-If the keyword argument 'numeric' is True (default is False), functions and constants are numerically evaluated in floating poit numbers.
+If the keyword argument ``numeric`` is True (default is False), functions and constants are numerically evaluated in floating point numbers.
 
-.. code-block:: python
-
-    import SLiCAP as sl
-
-    sl.initProject('My first RC network') # Initialize a SLiCAP project
-    # Create a circuit object from an existing netlist:
-    cir = sl.makeCircuit(sl.ini.example_path + 'myFirstRCnetwork/cir/myFirstRCnetwork.asc')
-    #
-
-    cir.defPar('R', '1/2/pi/f_c/C')    # Define the value of R
-    cir.defPar('C', '10n')             # Define the value of C
-    cir.defPar('f_c', '1M')            # Define the value of tau
-
-    R_defined           = cir.getParValue('R', substitute=False, numeric=False)
-    R_evaluated         = cir.getParValue('R', substitute=True,  numeric=False)
-    R_defined_numeric   = cir.getParValue('R', substitute=False, numeric=True)
-    R_evaluated_numeric = cir.getParValue('R', substitute=True,  numeric=True)
-
-    print('\nR_defined            :', R_defined)
-    print('R_evaluated          :', R_evaluated)
-    print('R_defined_numeric    :', R_defined_numeric)
-    print('R_evaluated_numeric  :', R_evaluated_numeric)
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 61-74
+    :lineno-start: 61
 
 This yields:
 
@@ -181,14 +151,47 @@ This yields:
     R_defined_numeric    : 0.159154943091895/(C*f_c)
     R_evaluated_numeric  : 15.9154943091895
 
-Get the definitions or evaluated values of multiple parameters
-==============================================================
+Obtain the values of multiple parameters
+========================================
 
-The method `circuit.getParValue() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValue>`__  returns a dictionary with key-value pairs. The keys are the names of the parameters and the values their defenition or evaluation of it. 
+With a list of parameter names as argument, the method `circuit.getParValue() <../reference/SLiCAPprotos.html#SLiCAP.SLiCAPprotos.circuit.getParValue>`__  returns a dictionary with key-value pairs. The keys are the names of the parameters and the values their defenition or evaluation of it. 
 
-If the keyword argument 'substitute' is True (default), for each parameter, all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see `fullSubs <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs>`__)
+If the keyword argument ``substitute`` is True (default), for each parameter, all circuit parameter definitions are recursively substituted until a final value or expression is obtained (see `fullSubs <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.fullSubs>`__)
 
-If the keyword argument 'numeric' is True (default is False), functions and constants are numerically evaluated in floating point numbers.
+If the keyword argument ``numeric`` is True (default is False), functions and constants are numerically evaluated in floating point numbers.
+
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 76-80
+    :lineno-start: 76
+
+This yields: 
+
+.. code-block:: text
+
+    {R: 1/(2*pi*C*f_c), C: 1/100000000}
+    {R: 0.159154943091895/(C*f_c), C: 1.00000000000000e-8}
+    {R: 50/pi, C: 1/100000000}
+    {R: 15.9154943091895, C: 1.00000000000000e-8}  
     
 .. image:: /img/colorCode.svg
 
+Display tables with parameters on HTML pages or in LaTeX documents
+==================================================================
+
+With the aid of the report module `Create reports <reports.html>`_, tables with circuit parameter definitions and tables with undefined circuit parameters can be displayed on HTML pages or in LaTeX documents.
+
+Below the script for generating table rst snippets for this help file.
+
+.. literalinclude:: ../parameters.py
+    :linenos:
+    :lines: 82-88
+    :lineno-start: 82
+    
+Below, both tables for the RC circuit.
+
+.. include:: ../sphinx/SLiCAPdata/table-RC_pardefs.rst
+
+.. include:: ../sphinx/SLiCAPdata/table-RC_params.rst
+
+.. image:: /img/colorCode.svg

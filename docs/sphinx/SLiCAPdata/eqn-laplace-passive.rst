@@ -1,0 +1,3 @@
+.. math::
+
+    \frac{V_{out}}{V_{V1}} = \frac{R_{\ell} \left(C_{b} L s^{2} + 1\right)}{\left(R_{\ell} + R_{s}\right) \left(\frac{C_{a} C_{b} L R_{\ell} R_{s} s^{3}}{R_{\ell} + R_{s}} + \frac{s^{2} \left(C_{a} L R_{\ell} + C_{b} L R_{\ell} + C_{b} L R_{s}\right)}{R_{\ell} + R_{s}} + \frac{s \left(C_{a} R_{\ell} R_{s} + L\right)}{R_{\ell} + R_{s}} + 1\right)}

@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Schematic diagram of myFirstRCnetwork.kicad_sch</h2>
+<figure><a id="fig_myFirstRCnetwork.kicad_sch"></a><img src="img/myFirstRCnetwork.svg" alt="Circuit diagram of myFirstRCnetwork." style="width:500px">
+<figcaption>Figure: myFirstRCnetwork.svg<br>Circuit diagram of myFirstRCnetwork.</figcaption>
+</figure>
+<h2><a id="netlist_myFirstRCnetwork"></a>Netlist: myFirstRCnetwork.cir</h2>
+<pre>"myFirstRCnetwork"
+.param R=1k C={1/(2*pi*R*f_c)} f_c=1k
+.source V1
+.detector V_out
+C1 0 out C value={C} vinit=0
+R1 out in R value={R} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 in 0 V value={V_s} noise=0 dc=0 dcvar=0
+.end</pre>
+<a id="elementdata_myFirstRCnetwork"></a><table>Expanded netlist of myFirstRCnetwork.cir.
+<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">C1</td><td class = "left">0 out </td><td class = "left"></td><td class = "left">C</td>
+<td class="left">value</td><td class="left">$C$</td><td class="left">$159.1\cdot 10^{-9}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">R1</td><td class = "left">out in </td><td class = "left"></td><td class = "left">R</td>
+<td class="left">value</td><td class="left">$R$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td class="left">V1</td><td class = "left">in 0 </td><td class = "left"></td><td class = "left">V</td>
+<td class="left">value</td><td class="left">$V_{s}$</td><td class="left">$V_{s}$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
+</table>
+<a id="params_myFirstRCnetwork"></a><table>Parameter definitions of myFirstRCnetwork.cir.
+<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
+<tr><td class="left">$C$</td><td class="left">$\frac{0.5}{\pi R f_{c}}$</td><td class="left">$159.1\cdot 10^{-9}$</td></tr>
+<tr><td class="left">$R$</td><td class="left">$1\cdot 10^{3}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+<tr><td class="left">$f_{c}$</td><td class="left">$1\cdot 10^{3}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+</table>
+<table><caption>Table: Parameters without definition in 'myFirstRCnetwork.</caption>
+
+<tr><th class="left">Name</th></tr>
+<tr><td class="left">$V_{s}$</td></tr>
+</table>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="myFirstRCnetwork_index.html">myFirstRCnetwork_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0 &copy 2009-2025 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2025-08-04 00:17:21</p>
+</div></body></html>

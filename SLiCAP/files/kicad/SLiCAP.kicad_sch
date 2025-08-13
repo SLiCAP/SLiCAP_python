@@ -1,7 +1,7 @@
 (kicad_sch
-	(version 20231120)
+	(version 20250114)
 	(generator "eeschema")
-	(generator_version "8.0")
+	(generator_version "9.0")
 	(uuid "6b41754a-da17-41c1-9041-09a8f3e32bb9")
 	(paper "A4")
 	(title_block
@@ -9,9 +9,13 @@
 	)
 	(lib_symbols
 		(symbol "SLiCAP:C"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 1.016) hide)
+				(offset 1.016)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -95,18 +99,6 @@
 			(symbol "C_0_1"
 				(polyline
 					(pts
-						(xy -1.524 -0.508) (xy 1.524 -0.508)
-					)
-					(stroke
-						(width 0.381)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy -1.524 0.508) (xy 1.524 0.508)
 					)
 					(stroke
@@ -119,7 +111,19 @@
 				)
 				(polyline
 					(pts
-						(xy 0 -2.54) (xy 0 -0.508)
+						(xy -1.524 -0.508) (xy 1.524 -0.508)
+					)
+					(stroke
+						(width 0.381)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy 0 0.508)
 					)
 					(stroke
 						(width 0)
@@ -131,7 +135,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy 0 0.508)
+						(xy 0 -2.54) (xy 0 -0.508)
 					)
 					(stroke
 						(width 0)
@@ -180,11 +184,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:Command"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -228,8 +237,8 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "SLiCAP command (.lib, .param}"
-				(at 15.24 -4.064 0)
+			(property "Description" "SLiCAP command (.lib, .param, .model. subckt}"
+				(at 23.114 -4.064 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -261,11 +270,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:D"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 1.016) hide)
+				(offset 1.016)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -340,18 +354,6 @@
 				)
 				(polyline
 					(pts
-						(xy 0 -2.54) (xy 0 -0.508)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy 0 2.54) (xy 0 0.762) (xy 0 1.016)
 					)
 					(stroke
@@ -372,6 +374,18 @@
 					)
 					(fill
 						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -2.54) (xy 0 -0.508)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
 					)
 				)
 			)
@@ -413,11 +427,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:E"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -489,16 +508,16 @@
 						)
 					)
 				)
-				(text "+"
-					(at -1.27 3.81 0)
+				(text "-"
+					(at -6.35 -3.81 0)
 					(effects
 						(font
 							(size 1.27 1.27)
 						)
 					)
 				)
-				(text "-"
-					(at -6.35 -3.81 0)
+				(text "+"
+					(at -1.27 3.81 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -624,11 +643,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:EZ"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -710,22 +734,6 @@
 						)
 					)
 				)
-				(text "+"
-					(at -1.27 3.81 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "+"
-					(at 6.35 5.08 900)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
 				(text "-"
 					(at -6.35 -3.81 0)
 					(effects
@@ -734,8 +742,24 @@
 						)
 					)
 				)
+				(text "+"
+					(at -1.27 3.81 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
 				(text "-"
 					(at -1.27 -3.81 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "+"
+					(at 6.35 5.08 900)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -771,24 +795,6 @@
 			)
 			(symbol "EZ_1_0"
 				(pin power_out line
-					(at 10.16 5.08 180)
-					(length 2.54)
-					(name "outP"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_out line
 					(at 0 -5.08 90)
 					(length 2.54)
 					(name "outN"
@@ -799,6 +805,24 @@
 						)
 					)
 					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 10.16 5.08 180)
+					(length 2.54)
+					(name "outP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -876,16 +900,21 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:F"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
 			(property "Reference" "F?"
-				(at 3.175 1.27 0)
+				(at 3.048 2.032 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -894,7 +923,7 @@
 				)
 			)
 			(property "Value" "?"
-				(at 3.175 -1.27 0)
+				(at 3.302 -2.032 0)
 				(show_name)
 				(effects
 					(font
@@ -924,16 +953,17 @@
 				)
 			)
 			(property "Description" "Current-controlled current source"
-				(at 19.812 -5.842 0)
+				(at 3.302 -4.064 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
+					(justify left)
 					(hide yes)
 				)
 			)
 			(property "model" "F"
-				(at 3.048 -3.556 0)
+				(at 3.302 -5.842 0)
 				(show_name)
 				(effects
 					(font
@@ -943,31 +973,17 @@
 					(hide yes)
 				)
 			)
+			(property "Vsource" "?"
+				(at 3.302 0 0)
+				(show_name)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
 			(symbol "F_0_1"
-				(polyline
-					(pts
-						(xy -5.08 0) (xy -5.08 5.08)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.08 5.08) (xy -5.08 -5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
 				(polyline
 					(pts
 						(xy -3.175 -2.54) (xy -3.175 2.54)
@@ -982,30 +998,6 @@
 				)
 				(polyline
 					(pts
-						(xy -2.54 0) (xy 2.54 0)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.08 0) (xy -5.334 0.762) (xy -4.826 0.762) (xy -5.08 0)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
 						(xy -3.175 -2.54) (xy -3.429 -1.778) (xy -2.921 -1.778) (xy -3.175 -2.54)
 					)
 					(stroke
@@ -1014,6 +1006,18 @@
 					)
 					(fill
 						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 0) (xy 2.54 0)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
 					)
 				)
 			)
@@ -1068,56 +1072,17 @@
 						(type background)
 					)
 				)
-				(text "Iin"
-					(at -6.985 0.635 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(pin input line
-					(at -7.62 5.08 0)
-					(length 2.54)
-					(name "inp"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -7.62 -5.08 0)
-					(length 2.54)
-					(name "inN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:G"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -1231,18 +1196,6 @@
 				)
 				(polyline
 					(pts
-						(xy 2.54 0) (xy -2.54 0)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy -3.175 -2.54) (xy -3.429 -1.778) (xy -2.921 -1.778) (xy -3.175 -2.54)
 					)
 					(stroke
@@ -1251,6 +1204,18 @@
 					)
 					(fill
 						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 0) (xy -2.54 0)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
 					)
 				)
 			)
@@ -1332,16 +1297,21 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:GND"
 			(power)
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
-			(property "Reference" "#GND"
+			(property "Reference" "#0"
 				(at 0 -5.08 0)
 				(effects
 					(font
@@ -1350,7 +1320,7 @@
 					(hide yes)
 				)
 			)
-			(property "Value" "GND"
+			(property "Value" "0"
 				(at 0 -2.54 0)
 				(do_not_autoplace)
 				(effects
@@ -1429,16 +1399,21 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:H"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
 			(property "Reference" "H?"
-				(at 3.175 1.27 0)
+				(at 3.556 2.286 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1447,7 +1422,7 @@
 				)
 			)
 			(property "Value" "?"
-				(at 3.175 -1.27 0)
+				(at 3.81 -2.032 0)
 				(show_name)
 				(effects
 					(font
@@ -1477,16 +1452,17 @@
 				)
 			)
 			(property "Description" "Current-controlled voltage source"
-				(at 20.066 -6.35 0)
+				(at 3.556 -4.064 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
+					(justify left)
 					(hide yes)
 				)
 			)
 			(property "model" "H"
-				(at 3.175 -3.81 0)
+				(at 3.556 -6.096 0)
 				(show_name)
 				(effects
 					(font
@@ -1494,6 +1470,16 @@
 					)
 					(justify left)
 					(hide yes)
+				)
+			)
+			(property "Vsource" "?"
+				(at 3.81 0 0)
+				(show_name)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
 				)
 			)
 			(symbol "H_0_0"
@@ -1517,30 +1503,6 @@
 			(symbol "H_0_1"
 				(polyline
 					(pts
-						(xy -5.08 0) (xy -5.08 -5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.08 0) (xy -5.08 5.08)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy 0 2.54) (xy 0 -2.54)
 					)
 					(stroke
@@ -1549,18 +1511,6 @@
 					)
 					(fill
 						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.08 0) (xy -5.334 0.762) (xy -4.826 0.762) (xy -5.08 0)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
 					)
 				)
 			)
@@ -1615,56 +1565,17 @@
 						(type background)
 					)
 				)
-				(text "Iin"
-					(at -6.985 0.635 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(pin input line
-					(at -7.62 5.08 0)
-					(length 2.54)
-					(name "inp"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -7.62 -5.08 0)
-					(length 2.54)
-					(name "inN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:HZ"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -1678,7 +1589,7 @@
 				)
 			)
 			(property "Value" "?"
-				(at 3.175 -1.27 0)
+				(at 3.302 -2.794 0)
 				(show_name)
 				(effects
 					(font
@@ -1708,16 +1619,17 @@
 				)
 			)
 			(property "Description" "Current-controlled voltage source with output impedance"
-				(at 31.496 -7.366 0)
+				(at 3.302 -7.112 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
+					(justify left)
 					(hide yes)
 				)
 			)
 			(property "model" "HZ"
-				(at 3.175 -5.08 0)
+				(at 3.302 -9.144 0)
 				(show_name)
 				(effects
 					(font
@@ -1728,7 +1640,17 @@
 				)
 			)
 			(property "zo" "?"
-				(at 3.175 -3.175 0)
+				(at 3.556 -4.826 0)
+				(show_name)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Vsource" "?"
+				(at 3.302 -0.762 0)
 				(show_name)
 				(effects
 					(font
@@ -1746,14 +1668,6 @@
 						)
 					)
 				)
-				(text "+"
-					(at 6.35 5.08 900)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
 				(text "-"
 					(at -1.27 -3.81 0)
 					(effects
@@ -1762,32 +1676,16 @@
 						)
 					)
 				)
+				(text "+"
+					(at 6.35 5.08 900)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
 			)
 			(symbol "HZ_0_1"
-				(polyline
-					(pts
-						(xy -5.08 0) (xy -5.08 -5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.08 0) (xy -5.08 5.08)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
 				(polyline
 					(pts
 						(xy 0 2.54) (xy 0 -2.54)
@@ -1812,38 +1710,8 @@
 						(type none)
 					)
 				)
-				(polyline
-					(pts
-						(xy -5.08 0) (xy -5.334 0.762) (xy -4.826 0.762) (xy -5.08 0)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
 			)
 			(symbol "HZ_1_0"
-				(pin power_out line
-					(at 10.16 5.08 180)
-					(length 2.54)
-					(name "outP"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
 				(pin power_out line
 					(at 0 -5.08 90)
 					(length 2.54)
@@ -1855,6 +1723,24 @@
 						)
 					)
 					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 10.16 5.08 180)
+					(length 2.54)
+					(name "outP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1887,56 +1773,17 @@
 						(type background)
 					)
 				)
-				(text "Iin"
-					(at -6.985 0.635 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(pin input line
-					(at -7.62 5.08 0)
-					(length 2.54)
-					(name "inp"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -7.62 -5.08 0)
-					(length 2.54)
-					(name "inN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:I"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2044,18 +1891,6 @@
 				)
 				(polyline
 					(pts
-						(xy -2.54 0) (xy 2.54 0)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy -3.556 2.54) (xy -3.81 1.778) (xy -3.302 1.778) (xy -3.556 2.54)
 					)
 					(stroke
@@ -2064,6 +1899,18 @@
 					)
 					(fill
 						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 0) (xy 2.54 0)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
 					)
 				)
 			)
@@ -2077,24 +1924,6 @@
 					)
 					(fill
 						(type background)
-					)
-				)
-				(pin power_out line
-					(at 0 -5.08 90)
-					(length 2.54)
-					(name "n"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
 					)
 				)
 				(pin power_out line
@@ -2115,12 +1944,35 @@
 						)
 					)
 				)
+				(pin power_out line
+					(at 0 -5.08 90)
+					(length 2.54)
+					(name "n"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:J"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2208,24 +2060,6 @@
 			)
 			(symbol "J_1_0"
 				(pin unspecified line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at -5.08 -2.54 0)
 					(length 2.54)
 					(name "G"
@@ -2236,6 +2070,24 @@
 						)
 					)
 					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 0 5.08 270)
+					(length 2.54)
+					(name "D"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -2277,7 +2129,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 -2.54) (xy -2.54 -2.54)
+						(xy 0 2.54) (xy -2.54 2.54)
 					)
 					(stroke
 						(width 0)
@@ -2289,7 +2141,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy -2.54 2.54)
+						(xy 0 -2.54) (xy -2.54 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -2300,11 +2152,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:J_noise"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2346,8 +2203,8 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Input-referred noise sources of a JFET (N or P channel)"
-				(at 32.512 -3.81 0)
+			(property "Description" "Input-referred noise sources of a JFET (N or P channel, parameters ID and IG)"
+				(at 40.894 -3.81 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -2386,18 +2243,6 @@
 			(symbol "J_noise_0_0"
 				(polyline
 					(pts
-						(xy 0 -1.27) (xy 0 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy 0 5.08) (xy 0 1.27)
 					)
 					(stroke
@@ -2411,6 +2256,18 @@
 				(polyline
 					(pts
 						(xy 0 5.08) (xy 5.08 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -1.27) (xy 0 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -2478,16 +2335,16 @@
 						(type background)
 					)
 				)
-				(text "in"
-					(at 2.54 0 0)
+				(text "vn"
+					(at 2.54 7.62 0)
 					(effects
 						(font
 							(size 1.27 1.27)
 						)
 					)
 				)
-				(text "vn"
-					(at 2.54 7.62 0)
+				(text "in"
+					(at 2.54 0 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -2531,11 +2388,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:K"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2630,6 +2492,30 @@
 						(type outline)
 					)
 				)
+				(arc
+					(start -3.81 0.635)
+					(mid -2.6941 3.3291)
+					(end 0 4.445)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 0 4.445)
+					(mid 2.6941 3.3291)
+					(end 3.81 0.635)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 				(polyline
 					(pts
 						(xy 3.81 0) (xy 3.175 0.635) (xy 4.445 0.635) (xy 3.81 0)
@@ -2642,36 +2528,17 @@
 						(type outline)
 					)
 				)
-				(arc
-					(start 0 4.445)
-					(mid -2.6941 3.3291)
-					(end -3.81 0.635)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start 3.81 0.635)
-					(mid 2.6941 3.3291)
-					(end 0 4.445)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:L"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 1.016) hide)
+				(offset 1.016)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2753,8 +2620,20 @@
 			)
 			(symbol "L_0_1"
 				(arc
-					(start 0 -2.286)
-					(mid 0.759 -1.524)
+					(start 0 2.286)
+					(mid 0.759 1.524)
+					(end 0 0.762)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 0 0.762)
+					(mid 0.759 0)
 					(end 0 -0.762)
 					(stroke
 						(width 0)
@@ -2766,20 +2645,8 @@
 				)
 				(arc
 					(start 0 -0.762)
-					(mid 0.759 0)
-					(end 0 0.762)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -2.54) (xy 0 -2.286)
-					)
+					(mid 0.759 -1.524)
+					(end 0 -2.286)
 					(stroke
 						(width 0)
 						(type solid)
@@ -2800,10 +2667,10 @@
 						(type none)
 					)
 				)
-				(arc
-					(start 0 0.762)
-					(mid 0.759 1.524)
-					(end 0 2.286)
+				(polyline
+					(pts
+						(xy 0 -2.54) (xy 0 -2.286)
+					)
 					(stroke
 						(width 0)
 						(type solid)
@@ -2851,11 +2718,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:M"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2955,24 +2827,6 @@
 			)
 			(symbol "M_1_0"
 				(pin unspecified line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at -6.35 -2.54 0)
 					(length 2.54)
 					(name "G"
@@ -2991,16 +2845,16 @@
 					)
 				)
 				(pin unspecified line
-					(at 0 -5.08 90)
+					(at 0 5.08 270)
 					(length 2.54)
-					(name "S"
+					(name "D"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "3"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3026,11 +2880,29 @@
 						)
 					)
 				)
+				(pin unspecified line
+					(at 0 -5.08 90)
+					(length 2.54)
+					(name "S"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 			(symbol "M_1_1"
 				(polyline
 					(pts
-						(xy -2.54 -2.54) (xy -2.54 -1.27)
+						(xy -2.54 1.27) (xy -2.54 2.54)
 					)
 					(stroke
 						(width 0.5)
@@ -3054,23 +2926,11 @@
 				)
 				(polyline
 					(pts
-						(xy -2.54 1.27) (xy -2.54 2.54)
+						(xy -2.54 -2.54) (xy -2.54 -1.27)
 					)
 					(stroke
 						(width 0.5)
 						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -2.54) (xy -2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
 					)
 					(fill
 						(type none)
@@ -3088,12 +2948,29 @@
 						(type none)
 					)
 				)
+				(polyline
+					(pts
+						(xy 0 -2.54) (xy -2.54 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:M_noise"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -3135,7 +3012,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Input-referred noise sources of a MOSFET (N or P channel)"
+			(property "Description" "Input-referred noise sources of a MOSFET (N or P channel, parameters W, L, ID, and IG)"
 				(at 28.194 11.684 0)
 				(effects
 					(font
@@ -3193,18 +3070,6 @@
 			(symbol "M_noise_0_0"
 				(polyline
 					(pts
-						(xy -2.54 -1.27) (xy -2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy -2.54 5.08) (xy -2.54 1.27)
 					)
 					(stroke
@@ -3218,6 +3083,18 @@
 				(polyline
 					(pts
 						(xy -2.54 5.08) (xy 2.54 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 -1.27) (xy -2.54 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -3285,16 +3162,16 @@
 						(type background)
 					)
 				)
-				(text "in"
-					(at 0 0 0)
+				(text "vn"
+					(at 0 7.62 0)
 					(effects
 						(font
 							(size 1.27 1.27)
 						)
 					)
 				)
-				(text "vn"
-					(at 0 7.62 0)
+				(text "in"
+					(at 0 0 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -3338,11 +3215,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:N"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -3406,9 +3288,21 @@
 				)
 			)
 			(symbol "N_0_1"
+				(polyline
+					(pts
+						(xy -7.62 1.27) (xy -7.62 -1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 				(arc
-					(start -7.62 -1.27)
-					(mid -7.248 -2.168)
+					(start -5.08 -1.27)
+					(mid -5.452 -2.168)
 					(end -6.35 -2.54)
 					(stroke
 						(width 0)
@@ -3419,21 +3313,9 @@
 					)
 				)
 				(arc
-					(start -6.35 -2.54)
-					(mid -5.452 -2.168)
-					(end -5.08 -1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
 					(start -6.3499 2.5401)
-					(mid -7.2479 2.1681)
-					(end -7.6199 1.2701)
+					(mid -5.4519 2.1681)
+					(end -5.0799 1.2701)
 					(stroke
 						(width 0)
 						(type default)
@@ -3443,9 +3325,9 @@
 					)
 				)
 				(arc
-					(start -5.0799 1.2701)
-					(mid -5.4519 2.1681)
-					(end -6.3499 2.5401)
+					(start -6.35 -2.54)
+					(mid -7.248 -2.168)
+					(end -7.62 -1.27)
 					(stroke
 						(width 0)
 						(type default)
@@ -3454,10 +3336,10 @@
 						(type none)
 					)
 				)
-				(polyline
-					(pts
-						(xy -7.62 1.27) (xy -7.62 -1.27)
-					)
+				(arc
+					(start -7.6199 1.2701)
+					(mid -7.2479 2.1681)
+					(end -6.3499 2.5401)
 					(stroke
 						(width 0)
 						(type default)
@@ -3506,17 +3388,6 @@
 				)
 			)
 			(symbol "N_1_1"
-				(circle
-					(center 0 -1.27)
-					(radius 1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
 				(polyline
 					(pts
 						(xy -5.08 1.27) (xy -5.08 -1.27)
@@ -3531,6 +3402,17 @@
 				)
 				(circle
 					(center 0 1.27)
+					(radius 1.27)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(circle
+					(center 0 -1.27)
 					(radius 1.27)
 					(stroke
 						(width 0)
@@ -3577,11 +3459,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:N_dcvar"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -3623,7 +3510,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Nullor with input-referred DC offset voltage, offset current and bias current"
+			(property "Description" "Nullor with dcvar parameters for the input-referred DC offset voltage and offset current, and for the bias current"
 				(at 40.64 -6.35 0)
 				(effects
 					(font
@@ -3681,7 +3568,7 @@
 			(symbol "N_dcvar_0_0"
 				(polyline
 					(pts
-						(xy -8.89 -6.35) (xy -8.89 -8.89)
+						(xy -8.89 11.43) (xy -8.89 8.89)
 					)
 					(stroke
 						(width 0)
@@ -3693,7 +3580,7 @@
 				)
 				(polyline
 					(pts
-						(xy -8.89 11.43) (xy -8.89 8.89)
+						(xy -8.89 -6.35) (xy -8.89 -8.89)
 					)
 					(stroke
 						(width 0)
@@ -3705,46 +3592,10 @@
 				)
 			)
 			(symbol "N_dcvar_0_1"
-				(arc
-					(start -6.985 -1.27)
-					(mid -6.613 -2.168)
-					(end -5.715 -2.54)
-					(stroke
-						(width 0)
-						(type default)
+				(polyline
+					(pts
+						(xy -13.97 5.08) (xy -13.97 10.16) (xy -10.16 10.16)
 					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -5.715 -2.54)
-					(mid -4.817 -2.168)
-					(end -4.445 -1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -5.7149 2.5401)
-					(mid -6.6129 2.1681)
-					(end -6.9849 1.2701)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -4.4449 1.2701)
-					(mid -4.8169 2.1681)
-					(end -5.7149 2.5401)
 					(stroke
 						(width 0)
 						(type default)
@@ -3756,6 +3607,30 @@
 				(polyline
 					(pts
 						(xy -13.97 0) (xy -11.43 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -13.97 -5.08) (xy -13.97 -7.62) (xy -10.16 -7.62)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -12.7 -1.27) (xy -12.7 -5.08) (xy -5.715 -5.08) (xy -5.715 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -3779,6 +3654,18 @@
 				)
 				(polyline
 					(pts
+						(xy -8.255 -9.525) (xy -9.017 -9.271) (xy -9.017 -9.779) (xy -8.255 -9.525)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
 						(xy -7.62 12.065) (xy -10.16 12.065)
 					)
 					(stroke
@@ -3791,8 +3678,80 @@
 				)
 				(polyline
 					(pts
+						(xy -7.62 12.065) (xy -8.382 12.319) (xy -8.382 11.811) (xy -7.62 12.065)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
 						(xy -6.985 1.27) (xy -6.985 -1.27)
 					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -4.445 -1.27)
+					(mid -4.817 -2.168)
+					(end -5.715 -2.54)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.715 2.54) (xy -5.715 5.08) (xy -12.7 5.08) (xy -12.7 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -5.7149 2.5401)
+					(mid -4.8169 2.1681)
+					(end -4.4449 1.2701)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -5.715 -2.54)
+					(mid -6.613 -2.168)
+					(end -6.985 -1.27)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -6.9849 1.2701)
+					(mid -6.6129 2.1681)
+					(end -5.7149 2.5401)
 					(stroke
 						(width 0)
 						(type default)
@@ -3827,79 +3786,7 @@
 				)
 				(polyline
 					(pts
-						(xy -13.97 -5.08) (xy -13.97 -7.62) (xy -10.16 -7.62)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -13.97 5.08) (xy -13.97 10.16) (xy -10.16 10.16)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy -2.54 -7.62) (xy -2.54 10.16) (xy -7.62 10.16)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -12.7 -1.27) (xy -12.7 -5.08) (xy -5.715 -5.08) (xy -5.715 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -8.255 -9.525) (xy -9.017 -9.271) (xy -9.017 -9.779) (xy -8.255 -9.525)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy -7.62 12.065) (xy -8.382 12.319) (xy -8.382 11.811) (xy -7.62 12.065)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.715 2.54) (xy -5.715 5.08) (xy -12.7 5.08) (xy -12.7 1.27)
 					)
 					(stroke
 						(width 0)
@@ -3911,6 +3798,24 @@
 				)
 			)
 			(symbol "N_dcvar_1_0"
+				(pin power_out line
+					(at -2.54 -10.16 90)
+					(length 2.54)
+					(name "bias"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 				(pin power_out line
 					(at 0 5.08 270)
 					(length 2.54)
@@ -3947,50 +3852,10 @@
 						)
 					)
 				)
-				(pin power_out line
-					(at -2.54 -10.16 90)
-					(length 2.54)
-					(name "bias"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
 			)
 			(symbol "N_dcvar_1_1"
 				(circle
 					(center -12.7 0)
-					(radius 1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(circle
-					(center -8.89 -7.62)
-					(radius 1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(circle
-					(center -8.89 5.08)
 					(radius 1.27)
 					(stroke
 						(width 0)
@@ -4012,7 +3877,18 @@
 					)
 				)
 				(circle
-					(center 0 -1.27)
+					(center -8.89 5.08)
+					(radius 1.27)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(circle
+					(center -8.89 -7.62)
 					(radius 1.27)
 					(stroke
 						(width 0)
@@ -4033,8 +3909,27 @@
 						(type background)
 					)
 				)
-				(text "+"
-					(at -1.27 3.81 0)
+				(circle
+					(center 0 -1.27)
+					(radius 1.27)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(text "io"
+					(at -10.16 0 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "vo"
+					(at -8.89 7.62 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -4057,16 +3952,8 @@
 						)
 					)
 				)
-				(text "io"
-					(at -10.16 0 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "vo"
-					(at -8.89 7.62 0)
+				(text "+"
+					(at -1.27 3.81 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -4110,11 +3997,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:N_noise"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -4157,12 +4049,13 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Nullor with input-referred noise sources"
-				(at 21.844 -3.81 0)
+			(property "Description" "Nullor with parameters for the input-referred noise voltage and current sources in V^2/Hz and A^2/Hz, respectively"
+				(at 2.286 -3.556 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
+					(justify left)
 					(hide yes)
 				)
 			)
@@ -4197,81 +4090,9 @@
 				)
 			)
 			(symbol "N_noise_0_1"
-				(arc
-					(start -6.985 -1.27)
-					(mid -6.613 -2.168)
-					(end -5.715 -2.54)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -5.715 -2.54)
-					(mid -4.817 -2.168)
-					(end -4.445 -1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -5.7149 2.5401)
-					(mid -6.6129 2.1681)
-					(end -6.9849 1.2701)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -4.4449 1.2701)
-					(mid -4.8169 2.1681)
-					(end -5.7149 2.5401)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
 				(polyline
 					(pts
 						(xy -13.97 0) (xy -11.43 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -6.985 1.27) (xy -6.985 -1.27)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -4.445 1.27) (xy -4.445 -1.27)
 					)
 					(stroke
 						(width 0)
@@ -4295,7 +4116,79 @@
 				)
 				(polyline
 					(pts
+						(xy -6.985 1.27) (xy -6.985 -1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -4.445 -1.27)
+					(mid -4.817 -2.168)
+					(end -5.715 -2.54)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
 						(xy -5.715 2.54) (xy -5.715 5.08) (xy -12.7 5.08) (xy -12.7 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -5.7149 2.5401)
+					(mid -4.8169 2.1681)
+					(end -4.4449 1.2701)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -5.715 -2.54)
+					(mid -6.613 -2.168)
+					(end -6.985 -1.27)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -6.9849 1.2701)
+					(mid -6.6129 2.1681)
+					(end -5.7149 2.5401)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.445 1.27) (xy -4.445 -1.27)
 					)
 					(stroke
 						(width 0)
@@ -4368,17 +4261,6 @@
 					)
 				)
 				(circle
-					(center 0 -1.27)
-					(radius 1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(circle
 					(center 0 1.27)
 					(radius 1.27)
 					(stroke
@@ -4389,16 +4271,27 @@
 						(type background)
 					)
 				)
-				(text "in"
-					(at -10.16 0 0)
+				(circle
+					(center 0 -1.27)
+					(radius 1.27)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(text "vn"
+					(at -10.16 7.62 0)
 					(effects
 						(font
 							(size 1.27 1.27)
 						)
 					)
 				)
-				(text "vn"
-					(at -10.16 7.62 0)
+				(text "in"
+					(at -10.16 0 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -4442,11 +4335,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:O"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -4536,24 +4434,6 @@
 			)
 			(symbol "O_1_0"
 				(pin power_out line
-					(at 10.16 0 180)
-					(length 2.54)
-					(name "outP"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_out line
 					(at -1.27 -7.62 90)
 					(length 2.54)
 					(name "outN"
@@ -4564,6 +4444,24 @@
 						)
 					)
 					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 10.16 0 180)
+					(length 2.54)
+					(name "outP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -4638,11 +4536,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:O_dcvar"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -4685,7 +4588,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "OpAmp (nullor) with input-referred DC offset voltage, offset current and bias current"
+			(property "Description" "OpAmp (nullor) with dcvar parameters for the  input-referred DC offset voltage and offset current and for the bias current"
 				(at 45.72 -13.97 0)
 				(effects
 					(font
@@ -4763,11 +4666,11 @@
 				)
 				(polyline
 					(pts
-						(xy -5.715 -4.445) (xy -7.62 -4.445)
+						(xy -11.43 -1.27) (xy -11.43 -5.08) (xy -5.08 -5.08)
 					)
 					(stroke
 						(width 0)
-						(type solid)
+						(type default)
 					)
 					(fill
 						(type none)
@@ -4783,6 +4686,42 @@
 					)
 					(fill
 						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.715 4.445) (xy -6.477 4.699) (xy -6.477 4.191) (xy -5.715 4.445)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.715 -4.445) (xy -7.62 -4.445)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.715 -4.445) (xy -6.477 -4.191) (xy -6.477 -4.699) (xy -5.715 -4.445)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type outline)
 					)
 				)
 				(polyline
@@ -4809,62 +4748,8 @@
 						(type none)
 					)
 				)
-				(polyline
-					(pts
-						(xy -11.43 -1.27) (xy -11.43 -5.08) (xy -5.08 -5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.715 -4.445) (xy -6.477 -4.191) (xy -6.477 -4.699) (xy -5.715 -4.445)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.715 4.445) (xy -6.477 4.699) (xy -6.477 4.191) (xy -5.715 4.445)
-					)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
 			)
 			(symbol "O_dcvar_1_0"
-				(pin power_out line
-					(at 10.16 0 180)
-					(length 2.54)
-					(name "outP"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
 				(pin power_out line
 					(at -1.27 -7.62 90)
 					(length 2.54)
@@ -4883,8 +4768,38 @@
 						)
 					)
 				)
+				(pin power_out line
+					(at 10.16 0 180)
+					(length 2.54)
+					(name "outP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 			(symbol "O_dcvar_1_1"
+				(polyline
+					(pts
+						(xy -11.43 1.27) (xy -11.43 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 				(circle
 					(center -11.43 0)
 					(radius 1.27)
@@ -4894,6 +4809,18 @@
 					)
 					(fill
 						(type background)
+					)
+				)
+				(polyline
+					(pts
+						(xy -10.16 5.08) (xy -5.08 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
 					)
 				)
 				(circle
@@ -4909,30 +4836,6 @@
 				)
 				(polyline
 					(pts
-						(xy -11.43 1.27) (xy -11.43 5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -10.16 5.08) (xy -5.08 5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
 					)
 					(stroke
@@ -4943,32 +4846,8 @@
 						(type background)
 					)
 				)
-				(text "+"
-					(at -3.81 5.08 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "-"
-					(at -3.81 -5.08 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "ib"
-					(at -6.985 -3.175 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "ib"
-					(at -6.985 3.175 0)
+				(text "vo"
+					(at -9.525 7.62 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -4983,8 +4862,32 @@
 						)
 					)
 				)
-				(text "vo"
-					(at -9.525 7.62 0)
+				(text "ib"
+					(at -6.985 3.175 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "ib"
+					(at -6.985 -3.175 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "+"
+					(at -3.81 5.08 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "-"
+					(at -3.81 -5.08 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -5028,11 +4931,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:O_noise"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -5152,24 +5060,6 @@
 			)
 			(symbol "O_noise_1_0"
 				(pin power_out line
-					(at 10.16 0 180)
-					(length 2.54)
-					(name "outP"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_out line
 					(at -1.27 -7.62 90)
 					(length 2.54)
 					(name "outN"
@@ -5187,8 +5077,50 @@
 						)
 					)
 				)
+				(pin power_out line
+					(at 10.16 0 180)
+					(length 2.54)
+					(name "outP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 			(symbol "O_noise_1_1"
+				(polyline
+					(pts
+						(xy -10.16 5.08) (xy -5.08 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -10.16 1.27) (xy -10.16 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 				(circle
 					(center -10.16 0)
 					(radius 1.27)
@@ -5198,6 +5130,18 @@
 					)
 					(fill
 						(type background)
+					)
+				)
+				(polyline
+					(pts
+						(xy -10.16 -1.27) (xy -10.16 -5.08) (xy -5.08 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
 					)
 				)
 				(circle
@@ -5213,42 +5157,6 @@
 				)
 				(polyline
 					(pts
-						(xy -10.16 1.27) (xy -10.16 5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -10.16 5.08) (xy -5.08 5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -10.16 -1.27) (xy -10.16 -5.08) (xy -5.08 -5.08)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
 					)
 					(stroke
@@ -5259,16 +5167,8 @@
 						(type background)
 					)
 				)
-				(text "+"
-					(at -3.81 5.08 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "-"
-					(at -3.81 -5.08 0)
+				(text "vn"
+					(at -7.62 7.62 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -5283,8 +5183,16 @@
 						)
 					)
 				)
-				(text "vn"
-					(at -7.62 7.62 0)
+				(text "+"
+					(at -3.81 5.08 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "-"
+					(at -3.81 -5.08 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -5328,11 +5236,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:Q"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -5409,24 +5322,6 @@
 			)
 			(symbol "Q_1_0"
 				(pin unspecified line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "C"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at -5.08 0 0)
 					(length 2.54)
 					(name "B"
@@ -5437,6 +5332,24 @@
 						)
 					)
 					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 0 5.08 270)
+					(length 2.54)
+					(name "C"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -5496,7 +5409,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 -2.54) (xy -2.54 0)
+						(xy 0 2.54) (xy -2.54 0) (xy -2.54 0)
 					)
 					(stroke
 						(width 0)
@@ -5508,7 +5421,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy -2.54 0) (xy -2.54 0)
+						(xy 0 -2.54) (xy -2.54 0)
 					)
 					(stroke
 						(width 0)
@@ -5519,11 +5432,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:Q_noise"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -5608,18 +5526,6 @@
 			(symbol "Q_noise_0_0"
 				(polyline
 					(pts
-						(xy 0 -1.27) (xy 0 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy 0 5.08) (xy 0 1.27)
 					)
 					(stroke
@@ -5633,6 +5539,18 @@
 				(polyline
 					(pts
 						(xy 0 5.08) (xy 5.08 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -1.27) (xy 0 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -5700,16 +5618,16 @@
 						(type background)
 					)
 				)
-				(text "in"
-					(at 2.54 0 0)
+				(text "vn"
+					(at 2.54 7.62 0)
 					(effects
 						(font
 							(size 1.27 1.27)
 						)
 					)
 				)
-				(text "vn"
-					(at 2.54 7.62 0)
+				(text "in"
+					(at 2.54 0 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -5753,11 +5671,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:R"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 1.016) hide)
+				(offset 1.016)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -5919,11 +5842,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:T"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -6015,6 +5943,15 @@
 				)
 			)
 			(symbol "T_1_0"
+				(text "1:value"
+					(at -5.334 4.318 0)
+					(effects
+						(font
+							(size 0.75 0.75)
+						)
+						(justify left)
+					)
+				)
 				(text "+"
 					(at -5.08 2.54 0)
 					(effects
@@ -6029,15 +5966,6 @@
 						(font
 							(size 1.27 1.27)
 						)
-					)
-				)
-				(text "1:value"
-					(at -5.334 4.318 0)
-					(effects
-						(font
-							(size 0.75 0.75)
-						)
-						(justify left)
 					)
 				)
 				(pin bidirectional line
@@ -6115,11 +6043,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:V"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -6293,11 +6226,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:W"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -6361,58 +6299,58 @@
 				)
 			)
 			(symbol "W_0_0"
-				(arc
-					(start -5.7011 -1.9189)
-					(mid -4.3581 -1.3569)
-					(end -3.7961 -0.0139)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -3.7962 0.0138)
-					(mid -4.3582 1.3568)
-					(end -5.7012 1.9188)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -2.5539 -0.0139)
-					(mid -1.9919 -1.3569)
-					(end -0.6489 -1.9189)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start -0.6488 1.9188)
-					(mid -1.9918 1.3568)
-					(end -2.5538 0.0138)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
 				(polyline
 					(pts
 						(xy -6.35 2.54) (xy -5.715 2.54) (xy -5.715 -2.54) (xy -6.35 -2.54)
 					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -5.7012 1.9188)
+					(mid -4.3582 1.3568)
+					(end -3.7962 0.0138)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -3.7961 -0.0139)
+					(mid -4.3581 -1.3569)
+					(end -5.7011 -1.9189)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -0.6489 -1.9189)
+					(mid -1.9919 -1.3569)
+					(end -2.5539 -0.0139)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -2.5538 0.0138)
+					(mid -1.9918 1.3568)
+					(end -0.6488 1.9188)
 					(stroke
 						(width 0)
 						(type default)
@@ -6526,11 +6464,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:XJ"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -6571,7 +6514,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Junction FET (small-signal model, N or P channel with ID)"
+			(property "Description" "Junction FET (small-signal model, N or P channel with parameter ID)"
 				(at 29.464 -6.096 0)
 				(effects
 					(font
@@ -6629,24 +6572,6 @@
 			)
 			(symbol "XJ_1_0"
 				(pin unspecified line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at -5.08 -2.54 0)
 					(length 2.54)
 					(name "G"
@@ -6657,6 +6582,24 @@
 						)
 					)
 					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 0 5.08 270)
+					(length 2.54)
+					(name "D"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -6698,7 +6641,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 -2.54) (xy -2.54 -2.54)
+						(xy 0 2.54) (xy -2.54 2.54)
 					)
 					(stroke
 						(width 0)
@@ -6710,7 +6653,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy -2.54 2.54)
+						(xy 0 -2.54) (xy -2.54 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -6721,11 +6664,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:XM"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -6766,7 +6714,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
+			(property "Description" "MOSFET (small-signal N or P channel subcircuit with parameters W,  L, and ID)"
 				(at 35.052 -7.112 0)
 				(effects
 					(font
@@ -6858,24 +6806,6 @@
 			)
 			(symbol "XM_1_0"
 				(pin unspecified line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at -6.35 -2.54 0)
 					(length 2.54)
 					(name "G"
@@ -6894,16 +6824,16 @@
 					)
 				)
 				(pin unspecified line
-					(at 0 -5.08 90)
+					(at 0 5.08 270)
 					(length 2.54)
-					(name "S"
+					(name "D"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "3"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -6929,11 +6859,29 @@
 						)
 					)
 				)
+				(pin unspecified line
+					(at 0 -5.08 90)
+					(length 2.54)
+					(name "S"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 			(symbol "XM_1_1"
 				(polyline
 					(pts
-						(xy -2.54 -2.54) (xy -2.54 -1.27)
+						(xy -2.54 1.27) (xy -2.54 2.54)
 					)
 					(stroke
 						(width 0.5)
@@ -6957,23 +6905,11 @@
 				)
 				(polyline
 					(pts
-						(xy -2.54 1.27) (xy -2.54 2.54)
+						(xy -2.54 -2.54) (xy -2.54 -1.27)
 					)
 					(stroke
 						(width 0.5)
 						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -2.54) (xy -2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
 					)
 					(fill
 						(type none)
@@ -6991,12 +6927,29 @@
 						(type none)
 					)
 				)
+				(polyline
+					(pts
+						(xy 0 -2.54) (xy -2.54 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:XMD"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -7037,7 +6990,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
+			(property "Description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with parameters W,  L, and ID)"
 				(at 26.924 -6.096 0)
 				(effects
 					(font
@@ -7093,18 +7046,6 @@
 				(polyline
 					(pts
 						(xy -3.81 -2.54) (xy -3.81 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 13.97 -2.54) (xy 13.97 2.54)
 					)
 					(stroke
 						(width 0)
@@ -7174,8 +7115,38 @@
 						(type outline)
 					)
 				)
+				(polyline
+					(pts
+						(xy 13.97 -2.54) (xy 13.97 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 			)
 			(symbol "XMD_1_0"
+				(pin unspecified line
+					(at -6.35 -2.54 0)
+					(length 2.54)
+					(name "G1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 				(pin unspecified line
 					(at 0 5.08 270)
 					(length 2.54)
@@ -7213,24 +7184,6 @@
 					)
 				)
 				(pin unspecified line
-					(at -6.35 -2.54 0)
-					(length 2.54)
-					(name "G1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at 16.51 -2.54 180)
 					(length 2.54)
 					(name "G2"
@@ -7252,7 +7205,7 @@
 			(symbol "XMD_1_1"
 				(polyline
 					(pts
-						(xy -2.54 -2.54) (xy -2.54 -1.27)
+						(xy -2.54 1.27) (xy -2.54 2.54)
 					)
 					(stroke
 						(width 0.5)
@@ -7276,23 +7229,11 @@
 				)
 				(polyline
 					(pts
-						(xy -2.54 1.27) (xy -2.54 2.54)
+						(xy -2.54 -2.54) (xy -2.54 -1.27)
 					)
 					(stroke
 						(width 0.5)
 						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -2.54) (xy -2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
 					)
 					(fill
 						(type none)
@@ -7312,7 +7253,7 @@
 				)
 				(polyline
 					(pts
-						(xy 10.16 -2.54) (xy 12.7 -2.54)
+						(xy 0 -2.54) (xy -2.54 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -7336,7 +7277,19 @@
 				)
 				(polyline
 					(pts
-						(xy 12.7 -2.54) (xy 12.7 -1.27)
+						(xy 10.16 -2.54) (xy 12.7 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 12.7 1.27) (xy 12.7 2.54)
 					)
 					(stroke
 						(width 0.5)
@@ -7360,7 +7313,7 @@
 				)
 				(polyline
 					(pts
-						(xy 12.7 1.27) (xy 12.7 2.54)
+						(xy 12.7 -2.54) (xy 12.7 -1.27)
 					)
 					(stroke
 						(width 0.5)
@@ -7371,11 +7324,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:XMPN"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -7416,7 +7374,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "MOSFET (push-pull stage, small-signal channel subcircuit with W_N,  L_N,  ID_N, W_P,  L_P,  and ID_P)"
+			(property "Description" "MOSFET (push-pull stage, small-signal channel subcircuit with parameters W_N,  L_N,  ID_N, W_P,  L_P,  and ID_P)"
 				(at 52.832 -7.112 0)
 				(effects
 					(font
@@ -7541,24 +7499,6 @@
 			)
 			(symbol "XMPN_1_0"
 				(pin unspecified line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at -6.35 -2.54 0)
 					(length 2.54)
 					(name "G"
@@ -7577,16 +7517,16 @@
 					)
 				)
 				(pin unspecified line
-					(at 0 -5.08 90)
+					(at 0 5.08 270)
 					(length 2.54)
-					(name "S"
+					(name "D"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "3"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -7612,11 +7552,29 @@
 						)
 					)
 				)
+				(pin unspecified line
+					(at 0 -5.08 90)
+					(length 2.54)
+					(name "S"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 			(symbol "XMPN_1_1"
 				(polyline
 					(pts
-						(xy -2.54 -2.54) (xy -2.54 -1.27)
+						(xy -2.54 1.27) (xy -2.54 2.54)
 					)
 					(stroke
 						(width 0.5)
@@ -7640,23 +7598,11 @@
 				)
 				(polyline
 					(pts
-						(xy -2.54 1.27) (xy -2.54 2.54)
+						(xy -2.54 -2.54) (xy -2.54 -1.27)
 					)
 					(stroke
 						(width 0.5)
 						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -2.54) (xy -2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
 					)
 					(fill
 						(type none)
@@ -7674,12 +7620,29 @@
 						(type none)
 					)
 				)
+				(polyline
+					(pts
+						(xy 0 -2.54) (xy -2.54 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:XMV"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -7720,8 +7683,8 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "MOSFET (small-signal N or P channel subcircuit with W. L, and VG, VD, and VS, relative to bulk voltage)"
-				(at 53.086 -6.858 0)
+			(property "Description" "MOSFET (small-signal N or P channel subcircuit with parameters W, L, and VG, VD, and VS, relative to bulk voltage)"
+				(at 58.928 -7.112 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -7834,24 +7797,6 @@
 			)
 			(symbol "XMV_1_0"
 				(pin unspecified line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at -6.35 -2.54 0)
 					(length 2.54)
 					(name "G"
@@ -7870,16 +7815,16 @@
 					)
 				)
 				(pin unspecified line
-					(at 0 -5.08 90)
+					(at 0 5.08 270)
 					(length 2.54)
-					(name "S"
+					(name "D"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "3"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -7905,11 +7850,29 @@
 						)
 					)
 				)
+				(pin unspecified line
+					(at 0 -5.08 90)
+					(length 2.54)
+					(name "S"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 			(symbol "XMV_1_1"
 				(polyline
 					(pts
-						(xy -2.54 -2.54) (xy -2.54 -1.27)
+						(xy -2.54 1.27) (xy -2.54 2.54)
 					)
 					(stroke
 						(width 0.5)
@@ -7933,23 +7896,11 @@
 				)
 				(polyline
 					(pts
-						(xy -2.54 1.27) (xy -2.54 2.54)
+						(xy -2.54 -2.54) (xy -2.54 -1.27)
 					)
 					(stroke
 						(width 0.5)
 						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -2.54) (xy -2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
 					)
 					(fill
 						(type none)
@@ -7967,12 +7918,29 @@
 						(type none)
 					)
 				)
+				(polyline
+					(pts
+						(xy 0 -2.54) (xy -2.54 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:XQ"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -8013,8 +7981,8 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-				(at 49.53 -6.858 0)
+			(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with parameters IC and VCE)"
+				(at 55.118 -7.112 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -8071,24 +8039,6 @@
 			)
 			(symbol "XQ_1_0"
 				(pin unspecified line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name "C"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
 					(at -5.08 0 0)
 					(length 2.54)
 					(name "B"
@@ -8099,6 +8049,24 @@
 						)
 					)
 					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 0 5.08 270)
+					(length 2.54)
+					(name "C"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -8158,7 +8126,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 -2.54) (xy -2.54 0)
+						(xy 0 2.54) (xy -2.54 0) (xy -2.54 0)
 					)
 					(stroke
 						(width 0)
@@ -8170,7 +8138,7 @@
 				)
 				(polyline
 					(pts
-						(xy 0 2.54) (xy -2.54 0) (xy -2.54 0)
+						(xy 0 -2.54) (xy -2.54 0)
 					)
 					(stroke
 						(width 0)
@@ -8181,11 +8149,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:XQD"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -8226,8 +8199,8 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-				(at 42.418 -5.334 0)
+			(property "Description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model wit parameters IC and VCE)"
+				(at 47.244 -6.096 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -8270,18 +8243,6 @@
 			(symbol "XQD_0_1"
 				(polyline
 					(pts
-						(xy 0 -2.54) (xy 0 -3.81) (xy 10.16 -3.81) (xy 10.16 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
 						(xy -1.27 -1.27) (xy -1.27 -1.27) (xy -1.27 -1.905) (xy -0.635 -1.905) (xy -0.635 -1.27) (xy -0.635 -1.27)
 						(xy -1.27 -1.27)
 					)
@@ -8291,6 +8252,18 @@
 					)
 					(fill
 						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -2.54) (xy 0 -3.81) (xy 10.16 -3.81) (xy 10.16 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
 					)
 				)
 				(polyline
@@ -8308,6 +8281,24 @@
 				)
 			)
 			(symbol "XQD_1_0"
+				(pin unspecified line
+					(at -5.08 0 0)
+					(length 2.54)
+					(name "B1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 				(pin unspecified line
 					(at 0 5.08 270)
 					(length 2.54)
@@ -8337,24 +8328,6 @@
 						)
 					)
 					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin unspecified line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "B1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -8396,7 +8369,31 @@
 				)
 				(polyline
 					(pts
+						(xy 0 2.54) (xy -2.54 0) (xy -2.54 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
 						(xy 0 -2.54) (xy -2.54 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 10.16 2.54) (xy 12.7 0) (xy 12.7 0)
 					)
 					(stroke
 						(width 0)
@@ -8430,36 +8427,17 @@
 						(type none)
 					)
 				)
-				(polyline
-					(pts
-						(xy 0 2.54) (xy -2.54 0) (xy -2.54 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 10.16 2.54) (xy 12.7 0) (xy 12.7 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:Xamp3"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -8523,24 +8501,6 @@
 			)
 			(symbol "Xamp3_1_0"
 				(pin power_out line
-					(at 8.89 0 180)
-					(length 2.54)
-					(name "out"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_out line
 					(at -1.27 -7.62 90)
 					(length 2.54)
 					(name "REF"
@@ -8551,6 +8511,24 @@
 						)
 					)
 					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 8.89 0 180)
+					(length 2.54)
+					(name "out"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -8591,11 +8569,233 @@
 					)
 				)
 			)
+			(embedded_fonts no)
+		)
+		(symbol "SLiCAP:Xamp4"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "X?"
+				(at -4.826 12.319 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" ""
+				(at -2.921 10.414 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Footprint" ""
+				(at 2.54 -1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 2.54 -1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Description" "4-terminal amplifier sub circuit"
+				(at 3.302 -10.16 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "model" "?"
+				(at -4.826 10.414 0)
+				(show_name)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(symbol "Xamp4_0_1"
+				(polyline
+					(pts
+						(xy 5.08 5.08) (xy 2.54 5.08) (xy 2.54 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 5.08 -5.08) (xy 2.54 -5.08) (xy 2.54 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "Xamp4_1_0"
+				(pin power_out line
+					(at 7.62 5.08 180)
+					(length 2.54)
+					(name "outP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 7.62 -5.08 180)
+					(length 2.54)
+					(name "outN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "Xamp4_1_1"
+				(polyline
+					(pts
+						(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(text "+"
+					(at -4.064 5.08 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "-"
+					(at -4.064 -4.826 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "+"
+					(at 2.54 1.27 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "-"
+					(at 2.54 -1.27 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 5.08 0)
+					(length 2.54)
+					(name "inP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 -5.08 0)
+					(length 2.54)
+					(name "inN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:Xamp5"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -8660,7 +8860,7 @@
 			(symbol "Xamp5_0_1"
 				(polyline
 					(pts
-						(xy 5.08 -5.08) (xy 2.54 -5.08) (xy 2.54 -2.54)
+						(xy 5.08 5.08) (xy 2.54 5.08) (xy 2.54 2.54)
 					)
 					(stroke
 						(width 0)
@@ -8672,7 +8872,7 @@
 				)
 				(polyline
 					(pts
-						(xy 5.08 5.08) (xy 2.54 5.08) (xy 2.54 2.54)
+						(xy 5.08 -5.08) (xy 2.54 -5.08) (xy 2.54 -2.54)
 					)
 					(stroke
 						(width 0)
@@ -8684,6 +8884,24 @@
 				)
 			)
 			(symbol "Xamp5_1_0"
+				(pin power_out line
+					(at -1.27 -7.62 90)
+					(length 2.54)
+					(name "REF"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 				(pin power_out line
 					(at 7.62 5.08 180)
 					(length 2.54)
@@ -8720,24 +8938,6 @@
 						)
 					)
 				)
-				(pin power_out line
-					(at -1.27 -7.62 90)
-					(length 2.54)
-					(name "REF"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
 			)
 			(symbol "Xamp5_1_1"
 				(polyline
@@ -8761,16 +8961,16 @@
 						)
 					)
 				)
-				(text "+"
-					(at 2.54 1.27 0)
+				(text "-"
+					(at -4.064 -4.826 0)
 					(effects
 						(font
 							(size 1.27 1.27)
 						)
 					)
 				)
-				(text "-"
-					(at -4.064 -4.826 0)
+				(text "+"
+					(at 2.54 1.27 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -8822,11 +9022,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:Xio3"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -8890,24 +9095,6 @@
 			)
 			(symbol "Xio3_1_0"
 				(pin power_out line
-					(at 7.62 0 180)
-					(length 2.54)
-					(name "out"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_out line
 					(at 0 -8.89 90)
 					(length 2.54)
 					(name "REF"
@@ -8918,6 +9105,24 @@
 						)
 					)
 					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name "out"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -8946,16 +9151,16 @@
 						)
 					)
 				)
-				(text "out"
-					(at 2.794 0 0)
+				(text "REF"
+					(at 0 -4.826 0)
 					(effects
 						(font
 							(size 1.27 1.27)
 						)
 					)
 				)
-				(text "REF"
-					(at 0 -4.826 0)
+				(text "out"
+					(at 2.794 0 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -8981,11 +9186,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:Xio4"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -9105,24 +9315,8 @@
 						)
 					)
 				)
-				(text "+"
-					(at 3.81 5.08 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
 				(text "-"
 					(at -3.81 -4.826 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "-"
-					(at 3.81 -4.826 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -9139,6 +9333,22 @@
 				)
 				(text "out"
 					(at 2.794 0 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "+"
+					(at 3.81 5.08 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "-"
+					(at 3.81 -4.826 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -9182,11 +9392,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:Xio5"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0) hide)
+				(offset 0)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -9250,6 +9465,24 @@
 			)
 			(symbol "Xio5_1_0"
 				(pin power_out line
+					(at 0 -8.89 90)
+					(length 2.54)
+					(name "REF"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
 					(at 7.62 5.08 180)
 					(length 2.54)
 					(name "outP"
@@ -9285,24 +9518,6 @@
 						)
 					)
 				)
-				(pin power_out line
-					(at 0 -8.89 90)
-					(length 2.54)
-					(name "REF"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
 			)
 			(symbol "Xio5_1_1"
 				(rectangle
@@ -9324,24 +9539,8 @@
 						)
 					)
 				)
-				(text "+"
-					(at 3.81 5.08 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
 				(text "-"
 					(at -3.81 -4.826 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "-"
-					(at 3.81 -4.826 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -9356,6 +9555,14 @@
 						)
 					)
 				)
+				(text "REF"
+					(at 0 -4.826 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
 				(text "out"
 					(at 2.794 0 0)
 					(effects
@@ -9364,8 +9571,16 @@
 						)
 					)
 				)
-				(text "REF"
-					(at 0 -4.826 0)
+				(text "+"
+					(at 3.81 5.08 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(text "-"
+					(at 3.81 -4.826 0)
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -9409,11 +9624,16 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
 		(symbol "SLiCAP:r"
-			(pin_numbers hide)
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 1.016) hide)
+				(offset 1.016)
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -9574,223 +9794,442 @@
 					)
 				)
 			)
+			(embedded_fonts no)
 		)
-		(symbol "Xamp4_1"
-			(pin_numbers hide)
-			(pin_names
-				(offset 0) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "X?"
-				(at -4.826 12.319 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" ""
-				(at -2.921 10.414 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Footprint" ""
-				(at 2.54 -1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 2.54 -1.27 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Description" "4-terminal amplifier sub circuit"
-				(at 3.302 -10.16 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "model" "?"
-				(at -4.826 10.414 0)
-				(show_name)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(symbol "Xamp4_1_0_1"
-				(polyline
-					(pts
-						(xy 5.08 -5.08) (xy 2.54 -5.08) (xy 2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 5.08 5.08) (xy 2.54 5.08) (xy 2.54 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "Xamp4_1_1_0"
-				(pin power_out line
-					(at 7.62 5.08 180)
-					(length 2.54)
-					(name "outP"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_out line
-					(at 7.62 -5.08 180)
-					(length 2.54)
-					(name "outN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(symbol "Xamp4_1_1_1"
-				(polyline
-					(pts
-						(xy 6.35 0) (xy -5.08 7.62) (xy -5.08 -7.62) (xy 6.35 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(text "+"
-					(at -4.064 5.08 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "+"
-					(at 2.54 1.27 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "-"
-					(at -4.064 -4.826 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(text "-"
-					(at 2.54 -1.27 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(pin input line
-					(at -7.62 5.08 0)
-					(length 2.54)
-					(name "inP"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -7.62 -5.08 0)
-					(length 2.54)
-					(name "inN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
+	)
+	(text "O_dcvar"
+		(exclude_from_sim no)
+		(at 246.888 48.26 0)
+		(effects
+			(font
+				(size 1.27 1.27)
 			)
 		)
+		(uuid "0a424b6e-fa31-4b7f-9f6e-b0c7e4515f1b")
+	)
+	(text "XMD"
+		(exclude_from_sim no)
+		(at 85.344 110.236 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "0cc05db5-f690-4dae-8b51-c99f3c07549b")
+	)
+	(text "GND"
+		(exclude_from_sim no)
+		(at 134.112 135.382 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "0ef76673-54f4-4386-b8e5-7dac9648ab6c")
+	)
+	(text "Q_noise"
+		(exclude_from_sim no)
+		(at 49.784 81.788 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "14dcc1d5-5971-4e67-9ebc-7e00728d8644")
+	)
+	(text "Command"
+		(exclude_from_sim no)
+		(at 102.87 134.874 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "151e3255-3836-475a-a9e1-a323e6a8fa2c")
+	)
+	(text "Xamp5"
+		(exclude_from_sim no)
+		(at 252.73 80.518 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "28d792c8-2794-458b-8c6c-6a2dbcc1b1a7")
+	)
+	(text "V"
+		(exclude_from_sim no)
+		(at 144.78 81.28 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "35cd087e-7500-4fa9-9c7e-14a20f5e872d")
+	)
+	(text "C"
+		(exclude_from_sim no)
+		(at 28.194 22.606 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "364614dc-331c-4524-a4f1-3ca5eb1ac0e2")
+	)
+	(text "XQD"
+		(exclude_from_sim no)
+		(at 58.42 135.382 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "37804e8d-954c-4160-b06b-f5306411e5b3")
+	)
+	(text "W"
+		(exclude_from_sim no)
+		(at 166.878 81.026 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "429905d0-46e2-486f-884e-7f24d41440a2")
+	)
+	(text "Xamp3"
+		(exclude_from_sim no)
+		(at 195.326 81.28 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "4b18758f-5d8d-49ab-a918-4796d51a59ce")
+	)
+	(text "D"
+		(exclude_from_sim no)
+		(at 43.434 22.606 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "4d8f2b4f-c9ef-46c5-ad82-f412b0cc92cd")
+	)
+	(text "E"
+		(exclude_from_sim no)
+		(at 59.944 22.86 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "4fd81088-18f8-4375-b784-cd8b73ee1d67")
+	)
+	(text "XJ"
+		(exclude_from_sim no)
+		(at 35.56 109.728 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "53ed7a4c-08e4-463a-98c3-97815c03e1b5")
+	)
+	(text "N_dcvar"
+		(exclude_from_sim no)
+		(at 115.57 48.768 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "541a9247-308d-460e-a7e2-f955f85ec208")
+	)
+	(text "G"
+		(exclude_from_sim no)
+		(at 127 23.368 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "5de0e289-9e27-4d15-b22d-80b62646f896")
+	)
+	(text "O_noise"
+		(exclude_from_sim no)
+		(at 201.676 48.514 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "5f16593b-c6a6-4a37-926c-a19d3a49de44")
+	)
+	(text "XM"
+		(exclude_from_sim no)
+		(at 57.658 109.728 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "61b87b20-20c9-4e3e-985d-57495b2d40e6")
+	)
+	(text "F"
+		(exclude_from_sim no)
+		(at 100.33 23.114 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "667f6ae3-8fc2-4369-8556-ebdeb3e4559b")
+	)
+	(text "HZ"
+		(exclude_from_sim no)
+		(at 165.1 22.86 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "6dd70e13-bde5-4be0-914d-ae38ea3bf4d8")
+	)
+	(text "XQ"
+		(exclude_from_sim no)
+		(at 34.544 135.128 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "73004d27-835c-48d6-a247-4774afc54508")
+	)
+	(text "K"
+		(exclude_from_sim no)
+		(at 247.904 22.606 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "7abf24ff-9536-43e8-88f8-f9818e2be653")
+	)
+	(text "J"
+		(exclude_from_sim no)
+		(at 213.36 22.86 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "7afcadbf-b0c2-4b0c-b44d-a5f56323579e")
+	)
+	(text "L"
+		(exclude_from_sim no)
+		(at 264.16 22.606 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "7c443bfa-e3fe-433f-bc58-e51f9efad3a0")
+	)
+	(text "N"
+		(exclude_from_sim no)
+		(at 77.978 47.752 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "7eaa2daf-18c1-47ff-a323-f3eecb03979b")
+	)
+	(text "M-noise"
+		(exclude_from_sim no)
+		(at 57.912 48.006 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "83cdabb4-d341-43dd-8829-bec43e60791d")
+	)
+	(text "Xamp4"
+		(exclude_from_sim no)
+		(at 223.52 81.026 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "9a3e4f24-130b-45d2-805e-4abfb30d3dca")
+	)
+	(text "Xio4"
+		(exclude_from_sim no)
+		(at 226.314 114.3 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "9a6d842e-3a99-447a-9a63-579c5b23e8f4")
+	)
+	(text "Xio3"
+		(exclude_from_sim no)
+		(at 195.58 114.808 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "9e0f416c-6f0e-4f30-b5b7-2bfee69ef0ef")
+	)
+	(text "O"
+		(exclude_from_sim no)
+		(at 171.958 48.26 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "a25bdc1f-1cad-4360-8aae-cc9f2afa6d21")
+	)
+	(text "EZ"
+		(exclude_from_sim no)
+		(at 81.28 23.114 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "a4b85ce9-cda3-4dc3-a014-27452d5da278")
+	)
+	(text "I"
+		(exclude_from_sim no)
+		(at 188.214 22.606 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "a4f7159e-a0b4-416c-9cad-08e0618084ae")
+	)
+	(text "M"
+		(exclude_from_sim no)
+		(at 35.306 48.26 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "a7ecce9e-07f4-45f8-b640-98eec6b6778b")
+	)
+	(text "R"
+		(exclude_from_sim no)
+		(at 76.454 81.788 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ab48eb27-c57d-4af7-abb5-6471b903e4a7")
+	)
+	(text "XMPN"
+		(exclude_from_sim no)
+		(at 111.76 109.982 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "c193b804-6847-4352-99ba-12e192493a87")
+	)
+	(text "J_noise"
+		(exclude_from_sim no)
+		(at 226.822 22.606 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "c62c6dc9-66d8-40a8-962f-ec6093708f08")
+	)
+	(text "H"
+		(exclude_from_sim no)
+		(at 144.78 23.114 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "c904d70b-69c0-459f-89c1-04389e301af6")
+	)
+	(text "Q"
+		(exclude_from_sim no)
+		(at 35.052 81.788 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ceb8ce48-7c3c-4305-9521-75afa81fbad3")
+	)
+	(text "XMV"
+		(exclude_from_sim no)
+		(at 148.336 109.728 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "cefc7f3c-0b4c-4f2f-b19e-666a5d1a6693")
+	)
+	(text "T"
+		(exclude_from_sim no)
+		(at 125.222 81.28 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "e4eba774-8fe2-449a-989b-ff008c7300d8")
+	)
+	(text "N_noise"
+		(exclude_from_sim no)
+		(at 141.986 48.768 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ef258e0f-766a-4f73-939f-200e87deacdd")
+	)
+	(text "r"
+		(exclude_from_sim no)
+		(at 101.346 81.534 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "f7d9663e-f570-4b00-a8bf-73604b2758ab")
+	)
+	(text "Xio5"
+		(exclude_from_sim no)
+		(at 255.016 113.792 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ffa2f536-2fb6-4b06-81bd-1679d8237a0d")
 	)
 	(symbol
 		(lib_id "SLiCAP:M")
-		(at 238.76 31.75 0)
+		(at 35.56 60.96 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9799,7 +10238,7 @@
 		(fields_autoplaced yes)
 		(uuid "0eb7cbc5-bdea-4ecb-8cd4-7faba312f10f")
 		(property "Reference" "M?"
-			(at 245.11 27.559 0)
+			(at 41.91 56.769 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9807,7 +10246,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 239.395 29.21 0)
+			(at 36.195 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9817,7 +10256,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 238.76 33.02 0)
+			(at 35.56 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9826,7 +10265,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 238.76 33.02 0)
+			(at 35.56 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9835,7 +10274,7 @@
 			)
 		)
 		(property "Description" "MOSFET (small-signal N or P channel)"
-			(at 258.572 36.068 0)
+			(at 55.372 65.278 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9844,7 +10283,7 @@
 			)
 		)
 		(property "model" "M"
-			(at 245.11 30.099 0)
+			(at 41.91 59.309 0)
 			(show_name yes)
 			(effects
 				(font
@@ -9875,7 +10314,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:N_noise")
-		(at 95.25 50.8 0)
+		(at 146.05 60.96 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9884,7 +10323,7 @@
 		(fields_autoplaced yes)
 		(uuid "12b5ea63-8893-4fc6-baf5-93b914394efd")
 		(property "Reference" "X?"
-			(at 97.79 45.2091 0)
+			(at 148.59 55.3691 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9893,7 +10332,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 97.155 52.07 0)
+			(at 147.955 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9903,7 +10342,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 95.25 52.07 0)
+			(at 146.05 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9913,7 +10352,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 95.25 52.07 0)
+			(at 146.05 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9922,8 +10361,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Nullor with input-referred noise sources"
-			(at 117.094 54.61 0)
+		(property "Description" "Nullor with parameters for the input-referred noise voltage and current sources in V^2/Hz and A^2/Hz, respectively"
+			(at 167.894 64.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9932,7 +10371,7 @@
 			)
 		)
 		(property "sv" "{S_v}"
-			(at 97.79 47.7491 0)
+			(at 148.59 57.9091 0)
 			(show_name yes)
 			(effects
 				(font
@@ -9942,7 +10381,7 @@
 			)
 		)
 		(property "si" "{S_i}"
-			(at 97.79 50.2891 0)
+			(at 148.59 60.4491 0)
 			(show_name yes)
 			(effects
 				(font
@@ -9952,7 +10391,7 @@
 			)
 		)
 		(property "model" "N_noise"
-			(at 97.79 52.8291 0)
+			(at 148.59 62.9891 0)
 			(show_name yes)
 			(effects
 				(font
@@ -9984,7 +10423,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:XJ")
-		(at 215.9 69.85 0)
+		(at 35.56 120.65 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9993,7 +10432,7 @@
 		(fields_autoplaced yes)
 		(uuid "147cccba-6e70-406c-9b35-712f0b060f9c")
 		(property "Reference" "X?"
-			(at 217.17 68.7724 0)
+			(at 36.83 119.5724 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10002,7 +10441,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 219.71 67.31 0)
+			(at 39.37 118.11 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10012,7 +10451,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 215.9 71.12 0)
+			(at 35.56 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10021,7 +10460,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 215.9 71.12 0)
+			(at 35.56 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10029,8 +10468,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Junction FET (small-signal model, N or P channel with ID)"
-			(at 245.364 75.946 0)
+		(property "Description" "Junction FET (small-signal model, N or P channel with parameter ID)"
+			(at 65.024 126.746 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10039,7 +10478,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 217.17 71.3124 0)
+			(at 36.83 122.1124 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10049,7 +10488,7 @@
 			)
 		)
 		(property "ID" "{ID}"
-			(at 216.535 73.66 0)
+			(at 36.195 124.46 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -10079,7 +10518,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:J_noise")
-		(at 176.53 31.75 0)
+		(at 226.06 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10087,7 +10526,7 @@
 		(dnp no)
 		(uuid "16faf4a8-3ae7-4087-b8a5-97f460202aa7")
 		(property "Reference" "X?"
-			(at 181.61 22.225 0)
+			(at 230.632 29.464 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10096,7 +10535,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 181.61 24.13 0)
+			(at 231.14 24.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10105,7 +10544,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 179.07 33.02 0)
+			(at 228.6 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10115,7 +10554,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 179.07 33.02 0)
+			(at 228.6 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10124,8 +10563,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Input-referred noise sources of a JFET (N or P channel)"
-			(at 209.042 35.56 0)
+		(property "Description" "Input-referred noise sources of a JFET (N or P channel, parameters ID and IG)"
+			(at 258.572 35.56 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10134,7 +10573,7 @@
 			)
 		)
 		(property "ID" "{ID}"
-			(at 184.785 30.48 0)
+			(at 234.188 34.29 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10143,7 +10582,7 @@
 			)
 		)
 		(property "IG" "{IG}"
-			(at 184.785 33.02 0)
+			(at 234.188 36.83 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10152,7 +10591,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 181.61 24.13 0)
+			(at 230.632 31.496 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10181,16 +10620,15 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:G")
-		(at 102.87 31.75 0)
+		(at 127 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "17952396-4615-4851-8010-ebd85cd4e950")
 		(property "Reference" "G?"
-			(at 106.68 30.4799 0)
+			(at 130.81 30.4799 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10199,7 +10637,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 106.68 33.0199 0)
+			(at 130.81 33.0199 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10209,7 +10647,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 102.87 33.02 0)
+			(at 127 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10219,7 +10657,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 102.87 33.02 0)
+			(at 127 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10229,7 +10667,7 @@
 			)
 		)
 		(property "Description" "Voltage-controlled current source"
-			(at 122.936 37.846 0)
+			(at 147.066 37.846 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10238,7 +10676,7 @@
 			)
 		)
 		(property "model" "G"
-			(at 105.918 35.306 0)
+			(at 123.444 22.352 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10271,16 +10709,15 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:F")
-		(at 80.01 31.75 0)
+		(at 100.33 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "1b83b143-000d-4d30-9651-735e081b8200")
 		(property "Reference" "F?"
-			(at 83.82 30.4799 0)
+			(at 104.394 29.4639 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10289,7 +10726,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 83.82 33.0199 0)
+			(at 104.394 34.036 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10299,7 +10736,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 80.01 33.02 0)
+			(at 100.33 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10309,7 +10746,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 80.01 33.02 0)
+			(at 100.33 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10319,7 +10756,7 @@
 			)
 		)
 		(property "Description" "Current-controlled current source"
-			(at 99.822 37.592 0)
+			(at 120.142 37.592 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10328,7 +10765,7 @@
 			)
 		)
 		(property "model" "F"
-			(at 83.058 35.306 0)
+			(at 97.79 22.098 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10338,17 +10775,21 @@
 				(hide yes)
 			)
 		)
+		(property "Vsource" "?"
+			(at 104.394 31.75 0)
+			(show_name yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
 		(pin "2"
 			(uuid "f165c7ae-c9dc-425c-b4ba-bf2e5ec117f2")
 		)
 		(pin "1"
 			(uuid "9b1fe9f9-ae72-43d0-aed9-c25293589ff7")
-		)
-		(pin "3"
-			(uuid "69161c83-7397-44e6-9494-96aba469cd8c")
-		)
-		(pin "4"
-			(uuid "0c6bb3c5-72ba-4117-a3da-a372144d6078")
 		)
 		(instances
 			(project "SLiCAP"
@@ -10361,7 +10802,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:XQD")
-		(at 254 69.85 0)
+		(at 58.42 144.78 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10369,7 +10810,7 @@
 		(dnp no)
 		(uuid "284ae384-3beb-4fd3-9f15-47c0486200a2")
 		(property "Reference" "X?"
-			(at 255.27 68.58 0)
+			(at 59.69 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10378,7 +10819,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 257.81 67.31 0)
+			(at 62.23 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10388,7 +10829,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 254 71.12 0)
+			(at 58.42 146.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10397,7 +10838,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 254 71.12 0)
+			(at 58.42 146.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10405,8 +10846,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-			(at 296.418 75.184 0)
+		(property "Description" "Differential-pair vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model wit parameters IC and VCE)"
+			(at 100.838 150.114 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10415,7 +10856,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 255.27 71.12 0)
+			(at 59.69 146.05 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10425,7 +10866,7 @@
 			)
 		)
 		(property "IC" "{IC}"
-			(at 267.97 64.77 0)
+			(at 72.39 139.7 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -10436,7 +10877,7 @@
 			)
 		)
 		(property "VCE" "{VCE}"
-			(at 267.97 67.31 0)
+			(at 72.39 142.24 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -10469,7 +10910,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:V")
-		(at 242.57 50.8 0)
+		(at 144.78 92.71 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10478,7 +10919,7 @@
 		(fields_autoplaced yes)
 		(uuid "4c6edf33-c867-464a-8a51-32042f5fd75f")
 		(property "Reference" "V?"
-			(at 246.38 45.5929 0)
+			(at 148.59 87.5029 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10487,7 +10928,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 246.38 48.1329 0)
+			(at 148.59 90.0429 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10497,7 +10938,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 242.57 52.07 0)
+			(at 144.78 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10507,7 +10948,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 242.57 52.07 0)
+			(at 144.78 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10517,7 +10958,7 @@
 			)
 		)
 		(property "Description" "Independent voltage source"
-			(at 259.08 57.912 0)
+			(at 161.29 99.822 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10526,7 +10967,7 @@
 			)
 		)
 		(property "noise" "0"
-			(at 246.38 50.6729 0)
+			(at 148.59 92.5829 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10536,7 +10977,7 @@
 			)
 		)
 		(property "dc" "0"
-			(at 246.38 53.2129 0)
+			(at 148.59 95.1229 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10546,7 +10987,7 @@
 			)
 		)
 		(property "dcvar" "0"
-			(at 246.38 55.7529 0)
+			(at 148.59 97.6629 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10556,7 +10997,7 @@
 			)
 		)
 		(property "model" "V"
-			(at 245.745 55.88 0)
+			(at 147.955 97.79 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10583,7 +11024,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:W")
-		(at 266.7 50.8 0)
+		(at 170.18 92.71 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10592,7 +11033,7 @@
 		(fields_autoplaced yes)
 		(uuid "50a37822-0f42-4d41-b343-8c2945101aa9")
 		(property "Reference" "W?"
-			(at 267.97 48.7016 0)
+			(at 171.45 90.6116 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10601,7 +11042,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 267.97 51.2416 0)
+			(at 171.45 93.1516 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10611,7 +11052,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 266.7 52.07 0)
+			(at 170.18 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10621,7 +11062,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 266.7 52.07 0)
+			(at 170.18 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10631,7 +11072,7 @@
 			)
 		)
 		(property "Description" "Gyrator"
-			(at 271.018 56.134 0)
+			(at 174.498 98.044 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10640,7 +11081,7 @@
 			)
 		)
 		(property "model" "W"
-			(at 267.335 53.975 0)
+			(at 170.815 95.885 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10673,7 +11114,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:Command")
-		(at 27.94 71.12 0)
+		(at 97.79 144.78 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10682,7 +11123,7 @@
 		(fields_autoplaced yes)
 		(uuid "5385d441-ea30-4f89-8325-50b694855d48")
 		(property "Reference" "A?"
-			(at 27.94 69.85 0)
+			(at 97.79 143.51 0)
 			(do_not_autoplace yes)
 			(effects
 				(font
@@ -10692,7 +11133,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 27.94 71.755 0)
+			(at 97.79 145.415 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10702,7 +11143,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 27.94 72.39 0)
+			(at 97.79 146.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10712,7 +11153,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 27.94 72.39 0)
+			(at 97.79 146.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10721,8 +11162,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "SLiCAP command (.lib, .param}"
-			(at 43.18 75.184 0)
+		(property "Description" "SLiCAP command (.lib, .param, .model. subckt}"
+			(at 113.03 148.844 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10731,7 +11172,7 @@
 			)
 		)
 		(property "command" "?"
-			(at 27.94 73.025 0)
+			(at 97.79 146.685 0)
 			(do_not_autoplace yes)
 			(effects
 				(font
@@ -10751,7 +11192,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:Q")
-		(at 144.78 50.8 0)
+		(at 36.83 92.71 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10759,7 +11200,7 @@
 		(dnp no)
 		(uuid "57be1684-2217-4d5a-be46-4260aadb7b50")
 		(property "Reference" "Q?"
-			(at 145.415 48.895 0)
+			(at 37.465 90.805 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10768,7 +11209,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 148.59 48.26 0)
+			(at 40.64 90.17 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10778,7 +11219,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 144.78 52.07 0)
+			(at 36.83 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10787,7 +11228,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 144.78 52.07 0)
+			(at 36.83 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10796,7 +11237,7 @@
 			)
 		)
 		(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model)"
-			(at 185.42 54.864 0)
+			(at 77.47 96.774 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10805,7 +11246,7 @@
 			)
 		)
 		(property "model" "Q"
-			(at 145.415 52.705 0)
+			(at 37.465 94.615 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10837,7 +11278,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:T")
-		(at 227.33 50.8 0)
+		(at 128.27 92.71 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10846,7 +11287,7 @@
 		(fields_autoplaced yes)
 		(uuid "59801a1a-60a2-435e-8c11-a4e5dd0ebfb9")
 		(property "Reference" "T?"
-			(at 228.6 48.3392 0)
+			(at 129.54 90.2492 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10855,7 +11296,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 228.6 50.8792 0)
+			(at 129.54 92.7892 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10865,7 +11306,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 227.33 52.07 0)
+			(at 128.27 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10875,7 +11316,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 227.33 52.07 0)
+			(at 128.27 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10885,7 +11326,7 @@
 			)
 		)
 		(property "Description" "Transformer"
-			(at 234.442 55.88 0)
+			(at 135.382 97.79 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10894,7 +11335,7 @@
 			)
 		)
 		(property "model" "T"
-			(at 228.6 53.975 0)
+			(at 129.54 95.885 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10927,7 +11368,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:XMD")
-		(at 114.3 69.85 0)
+		(at 80.01 121.92 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10935,7 +11376,7 @@
 		(dnp no)
 		(uuid "5bf321b3-502b-4de1-836f-a2584d2eda70")
 		(property "Reference" "X?"
-			(at 116.205 68.58 0)
+			(at 81.915 120.65 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10944,7 +11385,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 114.935 67.31 0)
+			(at 80.645 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10954,7 +11395,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 114.3 71.12 0)
+			(at 80.01 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10963,7 +11404,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 114.3 71.12 0)
+			(at 80.01 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10971,8 +11412,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
-			(at 141.224 75.946 0)
+		(property "Description" "Differential-pair MOSFET (small-signal N or P channel subcircuit with parameters W,  L, and ID)"
+			(at 106.934 128.016 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10981,7 +11422,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 116.078 70.866 0)
+			(at 81.788 122.936 0)
 			(show_name yes)
 			(effects
 				(font
@@ -10991,7 +11432,7 @@
 			)
 		)
 		(property "W" "{W}"
-			(at 129.54 67.945 0)
+			(at 95.25 120.015 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11002,7 +11443,7 @@
 			)
 		)
 		(property "L" "{L}"
-			(at 129.54 70.485 0)
+			(at 95.25 122.555 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11013,7 +11454,7 @@
 			)
 		)
 		(property "ID" "{ID}"
-			(at 129.54 65.405 0)
+			(at 95.25 117.475 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11046,7 +11487,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:XMPN")
-		(at 148.59 69.85 0)
+		(at 111.76 121.92 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11054,7 +11495,7 @@
 		(dnp no)
 		(uuid "6181c995-eace-48e0-832d-bd6e7e794946")
 		(property "Reference" "X?"
-			(at 149.86 62.865 0)
+			(at 113.03 114.935 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11063,7 +11504,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 149.225 67.945 0)
+			(at 112.395 120.015 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11073,7 +11514,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 148.59 71.12 0)
+			(at 111.76 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11082,7 +11523,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 148.59 71.12 0)
+			(at 111.76 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11090,8 +11531,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "MOSFET (push-pull stage, small-signal channel subcircuit with W_N,  L_N,  ID_N, W_P,  L_P,  and ID_P)"
-			(at 201.422 76.962 0)
+		(property "Description" "MOSFET (push-pull stage, small-signal channel subcircuit with parameters W_N,  L_N,  ID_N, W_P,  L_P,  and ID_P)"
+			(at 164.592 129.032 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11100,7 +11541,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 149.86 64.77 0)
+			(at 113.03 116.84 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11110,7 +11551,7 @@
 			)
 		)
 		(property "W_N" "{W_N}"
-			(at 149.86 71.755 0)
+			(at 113.03 123.825 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11121,7 +11562,7 @@
 			)
 		)
 		(property "L_N" "{L_N}"
-			(at 149.86 74.295 0)
+			(at 113.03 126.365 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11132,7 +11573,7 @@
 			)
 		)
 		(property "ID_N" "{ID_N}"
-			(at 149.86 67.31 0)
+			(at 113.03 119.38 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11143,7 +11584,7 @@
 			)
 		)
 		(property "W_P" "{W_P}"
-			(at 162.56 71.755 0)
+			(at 125.73 123.825 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11154,7 +11595,7 @@
 			)
 		)
 		(property "L_P" "{L_P}"
-			(at 162.56 74.295 0)
+			(at 125.73 126.365 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11165,7 +11606,7 @@
 			)
 		)
 		(property "ID_P" "{ID_P}"
-			(at 162.56 67.31 0)
+			(at 125.73 119.38 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11204,7 +11645,6 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "62fe9b1e-219a-4223-9c7a-d4cddd05f858")
 		(property "Reference" "D?"
 			(at 45.72 30.4799 0)
@@ -11253,13 +11693,14 @@
 			)
 		)
 		(property "model" "D"
-			(at 45.72 33.0199 0)
+			(at 41.656 21.844 0)
 			(show_name yes)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
 			)
 		)
 		(pin "1"
@@ -11285,7 +11726,6 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "6ae8c25d-2453-485f-af2a-98349e433dcb")
 		(property "Reference" "C?"
 			(at 30.48 29.1436 0)
@@ -11334,7 +11774,7 @@
 			)
 		)
 		(property "model" "C"
-			(at 30.48 35.56 0)
+			(at 25.908 21.59 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11371,7 +11811,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:Xamp3")
-		(at 205.74 97.79 0)
+		(at 195.58 97.79 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11380,7 +11820,7 @@
 		(fields_autoplaced yes)
 		(uuid "6e2d768f-dc90-4a6a-a5cf-a7eefdb6d56b")
 		(property "Reference" "X3"
-			(at 206.375 85.09 0)
+			(at 196.215 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11388,7 +11828,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 202.819 87.376 0)
+			(at 192.659 87.376 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11398,7 +11838,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 208.28 99.06 0)
+			(at 198.12 99.06 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11408,7 +11848,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 208.28 99.06 0)
+			(at 198.12 99.06 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11418,7 +11858,7 @@
 			)
 		)
 		(property "Description" "3-terminal amp sub circuit"
-			(at 209.042 107.95 0)
+			(at 198.882 107.95 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11427,7 +11867,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 206.375 87.63 0)
+			(at 196.215 87.63 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11455,7 +11895,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:GND")
-		(at 179.07 88.9 0)
+		(at 134.62 144.78 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11464,7 +11904,7 @@
 		(fields_autoplaced yes)
 		(uuid "76dcf8cf-b8c5-4b5e-979a-7d13176000b6")
 		(property "Reference" "#GND01"
-			(at 179.07 93.98 0)
+			(at 134.62 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11473,7 +11913,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 179.07 91.44 0)
+			(at 134.62 147.32 0)
 			(do_not_autoplace yes)
 			(effects
 				(font
@@ -11482,7 +11922,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 179.07 88.9 0)
+			(at 134.62 144.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11491,7 +11931,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 179.07 99.06 0)
+			(at 134.62 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11500,7 +11940,7 @@
 			)
 		)
 		(property "Description" "0V reference potential"
-			(at 179.07 96.52 0)
+			(at 134.62 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11522,7 +11962,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:XQ")
-		(at 236.22 69.85 0)
+		(at 34.29 144.78 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11530,7 +11970,7 @@
 		(dnp no)
 		(uuid "77cafa02-5629-4282-9ffc-202a7da7ee2a")
 		(property "Reference" "X?"
-			(at 237.49 66.04 0)
+			(at 35.56 140.97 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11539,7 +11979,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 240.03 67.31 0)
+			(at 38.1 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11549,7 +11989,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 236.22 71.12 0)
+			(at 34.29 146.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11558,7 +11998,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 236.22 71.12 0)
+			(at 34.29 146.05 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11566,8 +12006,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with IC and VCE)"
-			(at 285.75 76.708 0)
+		(property "Description" "Vertical or lateral Bipolar Junction Transistor (NPN or PNP, small-signal model with parameters IC and VCE)"
+			(at 83.82 151.638 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11576,7 +12016,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 237.49 67.945 0)
+			(at 35.56 142.875 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11586,7 +12026,7 @@
 			)
 		)
 		(property "IC" "{IC}"
-			(at 237.49 71.755 0)
+			(at 35.56 146.685 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11597,7 +12037,7 @@
 			)
 		)
 		(property "VCE" "{VCE}"
-			(at 237.49 74.295 0)
+			(at 35.56 149.225 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -11630,7 +12070,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:K")
-		(at 195.58 33.02 0)
+		(at 247.65 33.02 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11639,7 +12079,7 @@
 		(fields_autoplaced yes)
 		(uuid "785cbf76-3e58-4161-bab0-16e4d5aee11f")
 		(property "Reference" "K?"
-			(at 200.66 26.9874 0)
+			(at 252.73 26.9874 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11648,7 +12088,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 200.66 29.5274 0)
+			(at 252.73 29.5274 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11658,7 +12098,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 195.58 34.29 0)
+			(at 247.65 34.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11668,7 +12108,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 195.58 34.29 0)
+			(at 247.65 34.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11678,7 +12118,7 @@
 			)
 		)
 		(property "Description" "Coupling factor"
-			(at 198.374 23.368 0)
+			(at 250.444 23.368 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11687,7 +12127,7 @@
 			)
 		)
 		(property "ref1" "L?"
-			(at 200.66 32.0674 0)
+			(at 252.73 32.0674 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11697,7 +12137,7 @@
 			)
 		)
 		(property "ref2" "L?"
-			(at 200.66 34.6074 0)
+			(at 252.73 34.6074 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11707,7 +12147,7 @@
 			)
 		)
 		(property "model" "K"
-			(at 195.58 34.29 0)
+			(at 247.65 34.29 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11727,7 +12167,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:R")
-		(at 180.34 50.8 0)
+		(at 76.2 92.71 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11736,7 +12176,7 @@
 		(fields_autoplaced yes)
 		(uuid "7a27e97a-d088-46bd-bcad-ecd1d83b33ce")
 		(property "Reference" "R?"
-			(at 182.88 44.4499 0)
+			(at 78.74 86.3599 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11745,7 +12185,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 182.88 46.9899 0)
+			(at 78.74 88.8999 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11755,7 +12195,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 180.975 53.975 0)
+			(at 76.835 95.885 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11764,7 +12204,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 180.975 53.975 0)
+			(at 76.835 95.885 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11773,7 +12213,7 @@
 			)
 		)
 		(property "Description" "Resistor (cannot have zero resistance)"
-			(at 201.422 56.642 0)
+			(at 97.282 98.552 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11782,7 +12222,7 @@
 			)
 		)
 		(property "model" "R"
-			(at 182.245 54.61 0)
+			(at 78.105 96.52 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11793,7 +12233,7 @@
 			)
 		)
 		(property "noisetemp" "0"
-			(at 182.88 49.5299 0)
+			(at 78.74 91.4399 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11803,7 +12243,7 @@
 			)
 		)
 		(property "noiseflow" "0"
-			(at 182.88 52.0699 0)
+			(at 78.74 93.9799 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11813,7 +12253,7 @@
 			)
 		)
 		(property "dcvar" "0"
-			(at 182.88 54.6099 0)
+			(at 78.74 96.5199 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11823,7 +12263,7 @@
 			)
 		)
 		(property "dcvarlot" "0"
-			(at 182.88 57.1499 0)
+			(at 78.74 99.0599 0)
 			(show_name yes)
 			(effects
 				(font
@@ -11939,7 +12379,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:Xio4")
-		(at 231.14 124.46 0)
+		(at 227.33 129.54 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11948,7 +12388,7 @@
 		(fields_autoplaced yes)
 		(uuid "95d090c3-1c9d-48ab-bca1-2357d01f4f25")
 		(property "Reference" "X8"
-			(at 231.14 113.03 0)
+			(at 227.33 118.11 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11956,7 +12396,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 228.219 116.586 0)
+			(at 224.409 121.666 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11966,7 +12406,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 233.68 125.73 0)
+			(at 229.87 130.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11976,7 +12416,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 233.68 125.73 0)
+			(at 229.87 130.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11986,7 +12426,7 @@
 			)
 		)
 		(property "Description" "4-terminal i-o sub circuit"
-			(at 234.442 134.62 0)
+			(at 230.632 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11995,7 +12435,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 231.14 115.57 0)
+			(at 227.33 120.65 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12026,7 +12466,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:HZ")
-		(at 132.08 85.09 0)
+		(at 165.1 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12034,7 +12474,7 @@
 		(dnp no)
 		(uuid "977bec4e-e58e-492e-a69d-d08d7e7a9c6b")
 		(property "Reference" "H?"
-			(at 135.255 83.82 0)
+			(at 168.402 29.972 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12043,7 +12483,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 135.255 86.36 0)
+			(at 168.402 35.56 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12053,7 +12493,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 132.08 86.36 0)
+			(at 165.1 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12063,7 +12503,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 132.08 86.36 0)
+			(at 165.1 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12073,7 +12513,7 @@
 			)
 		)
 		(property "Description" "Current-controlled voltage source with output impedance"
-			(at 163.576 92.456 0)
+			(at 196.596 39.116 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12082,7 +12522,7 @@
 			)
 		)
 		(property "model" "HZ"
-			(at 135.255 90.17 0)
+			(at 165.1 22.606 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12093,7 +12533,7 @@
 			)
 		)
 		(property "zo" "?"
-			(at 135.255 88.265 0)
+			(at 168.656 37.846 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12102,11 +12542,15 @@
 				(justify left)
 			)
 		)
-		(pin "4"
-			(uuid "efef7fd3-3852-4fca-af6d-e5fdbf9519e1")
-		)
-		(pin "3"
-			(uuid "000c8a22-c2e0-4cf9-a03a-239857b32954")
+		(property "Vsource" "?"
+			(at 168.402 32.766 0)
+			(show_name yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
 		)
 		(pin "2"
 			(uuid "c8bf03c9-bcc8-4429-9c11-7426e12ac23e")
@@ -12125,7 +12569,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:r")
-		(at 201.93 50.8 0)
+		(at 101.6 92.71 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12134,7 +12578,7 @@
 		(fields_autoplaced yes)
 		(uuid "983216ea-8e90-44e7-870c-9b5d65aca735")
 		(property "Reference" "R?"
-			(at 204.47 44.4499 0)
+			(at 104.14 86.3599 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12143,7 +12587,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 204.47 46.9899 0)
+			(at 104.14 88.8999 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12153,7 +12597,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 201.93 50.8 0)
+			(at 101.6 92.71 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12162,7 +12606,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 201.93 50.8 0)
+			(at 101.6 92.71 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12171,7 +12615,7 @@
 			)
 		)
 		(property "Description" "Resistor (can have zero resistance)"
-			(at 221.996 56.642 0)
+			(at 121.666 98.552 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12180,7 +12624,7 @@
 			)
 		)
 		(property "model" "r"
-			(at 204.47 54.61 0)
+			(at 104.14 96.52 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12191,7 +12635,7 @@
 			)
 		)
 		(property "noisetemp" "0"
-			(at 204.47 49.5299 0)
+			(at 104.14 91.4399 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12201,7 +12645,7 @@
 			)
 		)
 		(property "noiseflow" "0"
-			(at 204.47 52.0699 0)
+			(at 104.14 93.9799 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12211,7 +12655,7 @@
 			)
 		)
 		(property "dcvar" "0"
-			(at 204.47 54.6099 0)
+			(at 104.14 96.5199 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12221,7 +12665,7 @@
 			)
 		)
 		(property "dcvarlot" "0"
-			(at 204.47 57.1499 0)
+			(at 104.14 99.0599 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12247,7 +12691,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:N")
-		(at 34.29 48.26 0)
+		(at 82.55 60.96 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12256,7 +12700,7 @@
 		(fields_autoplaced yes)
 		(uuid "98c99973-c50e-4f63-ac1e-f40538a07a66")
 		(property "Reference" "N?"
-			(at 36.83 48.2598 0)
+			(at 85.09 60.9598 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12265,7 +12709,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 40.64 48.895 0)
+			(at 88.9 61.595 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12275,7 +12719,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 34.29 49.53 0)
+			(at 82.55 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12285,7 +12729,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 34.29 49.53 0)
+			(at 82.55 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12295,7 +12739,7 @@
 			)
 		)
 		(property "Description" "Nullor"
-			(at 39.37 52.324 0)
+			(at 87.63 65.024 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12304,7 +12748,7 @@
 			)
 		)
 		(property "model" "N"
-			(at 36.195 50.165 0)
+			(at 84.455 62.865 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12337,16 +12781,15 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:N_dcvar")
-		(at 58.42 53.34 0)
+		(at 107.95 60.96 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "a7d5a871-5ce1-4f34-b8f1-767aaf25e63b")
 		(property "Reference" "X?"
-			(at 60.96 46.0374 0)
+			(at 111.252 54.61 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12355,7 +12798,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 42.545 39.37 0)
+			(at 92.075 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12364,7 +12807,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 58.42 54.61 0)
+			(at 107.95 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12374,7 +12817,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 58.42 54.61 0)
+			(at 107.95 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12383,8 +12826,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Nullor with input-referred DC offset voltage, offset current and bias current"
-			(at 99.06 59.69 0)
+		(property "Description" "Nullor with dcvar parameters for the input-referred DC offset voltage and offset current, and for the bias current"
+			(at 148.59 67.31 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12393,7 +12836,7 @@
 			)
 		)
 		(property "svo" "{sigma_vo}"
-			(at 60.96 48.5774 0)
+			(at 111.252 57.15 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12403,7 +12846,7 @@
 			)
 		)
 		(property "sib" "{sigma_ib}"
-			(at 60.96 51.1174 0)
+			(at 111.252 59.69 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12413,7 +12856,7 @@
 			)
 		)
 		(property "sio" "{sigma_io}"
-			(at 60.96 53.6574 0)
+			(at 111.252 62.23 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12423,7 +12866,7 @@
 			)
 		)
 		(property "iib" "{I_b}"
-			(at 60.96 56.1974 0)
+			(at 111.252 64.77 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12433,7 +12876,7 @@
 			)
 		)
 		(property "model" "N_dcvar"
-			(at 60.96 58.7374 0)
+			(at 111.252 67.31 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12468,7 +12911,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:XMV")
-		(at 186.69 69.85 0)
+		(at 149.86 121.92 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12476,7 +12919,7 @@
 		(dnp no)
 		(uuid "a88b0829-e396-4baa-ab9d-1b700059562c")
 		(property "Reference" "X?"
-			(at 187.96 64.77 0)
+			(at 151.13 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12485,7 +12928,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 187.325 67.31 0)
+			(at 150.495 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12495,7 +12938,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 186.69 71.12 0)
+			(at 149.86 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12504,7 +12947,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 186.69 71.12 0)
+			(at 149.86 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12512,8 +12955,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "MOSFET (small-signal N or P channel subcircuit with W. L, and VG, VD, and VS, relative to bulk voltage)"
-			(at 239.776 76.708 0)
+		(property "Description" "MOSFET (small-signal N or P channel subcircuit with parameters W, L, and VG, VD, and VS, relative to bulk voltage)"
+			(at 202.946 128.778 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12522,7 +12965,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 187.96 66.675 0)
+			(at 151.13 118.745 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12532,7 +12975,7 @@
 			)
 		)
 		(property "W" "{W}"
-			(at 187.96 71.755 0)
+			(at 151.13 123.825 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12543,7 +12986,7 @@
 			)
 		)
 		(property "L" "{L}"
-			(at 187.96 74.295 0)
+			(at 151.13 126.365 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12554,7 +12997,7 @@
 			)
 		)
 		(property "VG" "{VG}"
-			(at 196.85 71.755 0)
+			(at 160.02 123.825 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12565,7 +13008,7 @@
 			)
 		)
 		(property "VD" "{VD}"
-			(at 196.85 69.215 0)
+			(at 160.02 121.285 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12576,7 +13019,7 @@
 			)
 		)
 		(property "VS" "{VS}"
-			(at 196.85 74.295 0)
+			(at 160.02 126.365 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12609,7 +13052,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:O_dcvar")
-		(at 68.58 77.47 0)
+		(at 250.19 60.96 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12617,7 +13060,7 @@
 		(dnp no)
 		(uuid "b2ae5015-db6f-4b82-8e72-4419e2fa8c16")
 		(property "Reference" "X?"
-			(at 69.85 70.485 0)
+			(at 251.46 53.975 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12626,7 +13069,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 71.12 72.39 0)
+			(at 252.73 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12636,7 +13079,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 71.12 78.74 0)
+			(at 252.73 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12646,7 +13089,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 71.12 78.74 0)
+			(at 252.73 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12655,8 +13098,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "OpAmp (nullor) with input-referred DC offset voltage, offset current and bias current"
-			(at 114.3 91.44 0)
+		(property "Description" "OpAmp (nullor) with dcvar parameters for the  input-referred DC offset voltage and offset current and for the bias current"
+			(at 295.91 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12665,7 +13108,7 @@
 			)
 		)
 		(property "svo" "{sigma_vo}"
-			(at 72.39 81.28 0)
+			(at 254 64.77 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12676,7 +13119,7 @@
 			)
 		)
 		(property "sio" "{sigma_io}"
-			(at 72.39 83.82 0)
+			(at 254 67.31 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12687,7 +13130,7 @@
 			)
 		)
 		(property "model" "O_dcvar"
-			(at 69.85 72.39 0)
+			(at 251.46 55.88 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12697,7 +13140,7 @@
 			)
 		)
 		(property "sib" "{sigma_ib}"
-			(at 72.39 86.36 0)
+			(at 254 69.85 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12708,7 +13151,7 @@
 			)
 		)
 		(property "iib" "{I_b}"
-			(at 72.39 88.9 0)
+			(at 254 72.39 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -12741,7 +13184,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:L")
-		(at 214.63 31.75 0)
+		(at 264.16 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12750,7 +13193,7 @@
 		(fields_autoplaced yes)
 		(uuid "b4780f90-31c9-4394-aee8-d7b9ff9b152f")
 		(property "Reference" "L?"
-			(at 218.44 28.3816 0)
+			(at 267.97 28.3816 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12759,7 +13202,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 218.44 30.9216 0)
+			(at 267.97 30.9216 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12769,7 +13212,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 217.805 34.925 0)
+			(at 267.335 34.925 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12778,7 +13221,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 217.805 34.925 0)
+			(at 267.335 34.925 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12787,7 +13230,7 @@
 			)
 		)
 		(property "Description" "Inductor"
-			(at 220.98 37.084 0)
+			(at 270.51 37.084 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12796,7 +13239,7 @@
 			)
 		)
 		(property "model" "L"
-			(at 216.916 35.052 0)
+			(at 266.446 35.052 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12807,7 +13250,7 @@
 			)
 		)
 		(property "iinit" "0"
-			(at 218.44 33.4616 0)
+			(at 267.97 33.4616 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12833,16 +13276,15 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:H")
-		(at 124.46 31.75 0)
+		(at 144.78 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "bc52f9cd-f929-415a-b2dc-fb5aac26075a")
 		(property "Reference" "H?"
-			(at 128.27 30.4799 0)
+			(at 148.59 29.7179 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12851,7 +13293,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 128.27 33.0199 0)
+			(at 148.59 33.782 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12861,7 +13303,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 124.46 33.02 0)
+			(at 144.78 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12871,7 +13313,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 124.46 33.02 0)
+			(at 144.78 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12881,7 +13323,7 @@
 			)
 		)
 		(property "Description" "Current-controlled voltage source"
-			(at 144.526 38.1 0)
+			(at 164.846 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12890,7 +13332,7 @@
 			)
 		)
 		(property "model" "H"
-			(at 127.635 35.56 0)
+			(at 143.256 22.606 0)
 			(show_name yes)
 			(effects
 				(font
@@ -12900,11 +13342,15 @@
 				(hide yes)
 			)
 		)
-		(pin "3"
-			(uuid "2cfe4345-af5c-4d34-a456-fd3dbbf018d9")
-		)
-		(pin "4"
-			(uuid "fa93da3d-c621-405f-b41a-4f677a48d62e")
+		(property "Vsource" "?"
+			(at 148.59 31.75 0)
+			(show_name yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
 		)
 		(pin "2"
 			(uuid "a50b5aa9-7507-4460-9ccf-d9fbe0d8d5c9")
@@ -12923,7 +13369,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:Xio3")
-		(at 205.74 121.92 0)
+		(at 195.58 127 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12932,7 +13378,7 @@
 		(fields_autoplaced yes)
 		(uuid "c09e4e5f-c51e-41b0-a70a-702482b868e9")
 		(property "Reference" "X7"
-			(at 205.74 114.3 0)
+			(at 195.58 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12940,7 +13386,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 202.565 117.348 0)
+			(at 192.405 122.428 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12950,7 +13396,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 208.28 123.19 0)
+			(at 198.12 128.27 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12960,7 +13406,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 208.28 123.19 0)
+			(at 198.12 128.27 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12970,7 +13416,7 @@
 			)
 		)
 		(property "Description" "3-terminal i-o sub circuit"
-			(at 209.042 132.08 0)
+			(at 198.882 137.16 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12979,7 +13425,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 205.74 116.84 0)
+			(at 195.58 121.92 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13007,7 +13453,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:Q_noise")
-		(at 157.48 50.8 0)
+		(at 52.07 92.71 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13015,7 +13461,7 @@
 		(dnp no)
 		(uuid "c8926495-aef9-43b4-af95-1a61c98e605b")
 		(property "Reference" "X?"
-			(at 163.195 41.275 0)
+			(at 57.785 83.185 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13024,7 +13470,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 163.195 43.18 0)
+			(at 57.785 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13034,7 +13480,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 157.48 52.07 0)
+			(at 52.07 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13044,7 +13490,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 157.48 52.07 0)
+			(at 52.07 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13054,7 +13500,7 @@
 			)
 		)
 		(property "Description" "Input-referred noise sources of a BJT (with IC and VCE as parameters)"
-			(at 197.104 54.356 0)
+			(at 91.694 96.266 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13063,7 +13509,7 @@
 			)
 		)
 		(property "IC" "{IC}"
-			(at 161.925 49.53 0)
+			(at 56.515 91.44 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13073,7 +13519,7 @@
 			)
 		)
 		(property "VCE" "{VCE}"
-			(at 161.925 52.07 0)
+			(at 56.515 93.98 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13083,7 +13529,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 163.195 43.18 0)
+			(at 57.785 85.09 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13111,86 +13557,8 @@
 		)
 	)
 	(symbol
-		(lib_id "SLiCAP:Command")
-		(at 27.94 78.74 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "cc931d2f-cc3b-4a8c-b1f3-772bdded83d6")
-		(property "Reference" "A?"
-			(at 27.94 77.47 0)
-			(do_not_autoplace yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "~"
-			(at 27.94 79.375 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Footprint" ""
-			(at 27.94 80.01 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 27.94 80.01 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "SLiCAP command (.lib, .param}"
-			(at 43.18 82.804 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "command" "?"
-			(at 27.94 80.645 0)
-			(do_not_autoplace yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(instances
-			(project "SLiCAP"
-				(path "/6b41754a-da17-41c1-9041-09a8f3e32bb9"
-					(reference "A?")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "SLiCAP:M_noise")
-		(at 254 31.75 0)
+		(at 58.42 60.96 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13198,7 +13566,7 @@
 		(dnp no)
 		(uuid "d019dfba-17dc-410d-8ef3-830614f640c0")
 		(property "Reference" "X?"
-			(at 256.54 22.225 0)
+			(at 60.96 51.435 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13207,7 +13575,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 256.54 24.13 0)
+			(at 60.96 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13216,7 +13584,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 254 33.02 0)
+			(at 58.42 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13226,7 +13594,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 254 33.02 0)
+			(at 58.42 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13235,8 +13603,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Input-referred noise sources of a MOSFET (N or P channel)"
-			(at 282.194 20.066 0)
+		(property "Description" "Input-referred noise sources of a MOSFET (N or P channel, parameters W, L, ID, and IG)"
+			(at 86.614 49.276 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13245,7 +13613,7 @@
 			)
 		)
 		(property "ID" "{ID}"
-			(at 260.35 29.21 0)
+			(at 64.77 58.42 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13254,7 +13622,7 @@
 			)
 		)
 		(property "IG" "{IG}"
-			(at 260.35 31.75 0)
+			(at 64.77 60.96 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13263,7 +13631,7 @@
 			)
 		)
 		(property "W" "{W}"
-			(at 260.35 34.29 0)
+			(at 64.77 63.5 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13272,7 +13640,7 @@
 			)
 		)
 		(property "L" "{L}"
-			(at 260.35 36.83 0)
+			(at 64.77 66.04 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13281,7 +13649,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 256.54 24.13 0)
+			(at 60.96 53.34 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13310,7 +13678,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:Xio5")
-		(at 256.54 124.46 0)
+		(at 256.54 129.54 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13319,7 +13687,7 @@
 		(fields_autoplaced yes)
 		(uuid "d3473349-4626-497e-a3c1-a1ce2bd4219f")
 		(property "Reference" "X2"
-			(at 256.54 113.03 0)
+			(at 256.54 118.11 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13327,7 +13695,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 253.619 116.332 0)
+			(at 253.619 121.412 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13337,7 +13705,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 259.08 125.73 0)
+			(at 259.08 130.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13347,7 +13715,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 259.08 125.73 0)
+			(at 259.08 130.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13357,7 +13725,7 @@
 			)
 		)
 		(property "Description" "5-terminal i-o sub circuit"
-			(at 259.842 134.62 0)
+			(at 259.842 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13366,7 +13734,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 256.54 115.57 0)
+			(at 256.54 120.65 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13400,7 +13768,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:O_noise")
-		(at 127 50.8 0)
+		(at 210.82 60.96 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13408,7 +13776,7 @@
 		(dnp no)
 		(uuid "d9a7f3ab-1adf-46d5-a39a-9922587b9a3c")
 		(property "Reference" "X1"
-			(at 128.27 38.1 0)
+			(at 208.788 51.308 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13417,7 +13785,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 129.54 45.72 0)
+			(at 213.36 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13427,7 +13795,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 129.54 52.07 0)
+			(at 213.36 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13437,7 +13805,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 129.54 52.07 0)
+			(at 213.36 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13447,7 +13815,7 @@
 			)
 		)
 		(property "Description" "Operational amplifier (nullor) with input-referred noise sources"
-			(at 161.544 59.69 0)
+			(at 245.364 69.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13456,7 +13824,7 @@
 			)
 		)
 		(property "sv" "{S_v}"
-			(at 128.27 40.64 0)
+			(at 212.09 50.8 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13466,7 +13834,7 @@
 			)
 		)
 		(property "si" "{S_i}"
-			(at 128.27 43.18 0)
+			(at 212.09 53.34 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13476,7 +13844,7 @@
 			)
 		)
 		(property "model" "O_noise"
-			(at 128.27 45.72 0)
+			(at 212.09 55.88 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13508,7 +13876,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:J")
-		(at 163.83 31.75 0)
+		(at 213.36 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13517,7 +13885,7 @@
 		(fields_autoplaced yes)
 		(uuid "db0d280b-d09e-4cf9-a1b8-74cfe8f50cb3")
 		(property "Reference" "J?"
-			(at 165.1 30.6724 0)
+			(at 214.63 30.6724 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13526,7 +13894,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 166.37 27.94 0)
+			(at 215.9 27.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13536,7 +13904,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 163.83 33.02 0)
+			(at 213.36 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13545,7 +13913,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 163.83 33.02 0)
+			(at 213.36 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13554,7 +13922,7 @@
 			)
 		)
 		(property "Description" "Junction FET (small-signal model, N or P channel)"
-			(at 190.5 35.56 0)
+			(at 240.03 35.56 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13563,7 +13931,7 @@
 			)
 		)
 		(property "model" "J"
-			(at 165.1 33.2124 0)
+			(at 214.63 33.2124 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13591,9 +13959,8 @@
 		)
 	)
 	(symbol
-		(lib_name "Xamp4_1")
 		(lib_id "SLiCAP:Xamp4")
-		(at 231.14 97.79 0)
+		(at 227.33 97.79 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13602,7 +13969,7 @@
 		(fields_autoplaced yes)
 		(uuid "dd1983e2-2533-437b-b28f-66d20f074eb4")
 		(property "Reference" "X5"
-			(at 231.775 85.09 0)
+			(at 227.965 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13610,7 +13977,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 228.219 87.376 0)
+			(at 224.409 87.376 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13620,7 +13987,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 233.68 99.06 0)
+			(at 229.87 99.06 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13630,7 +13997,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 233.68 99.06 0)
+			(at 229.87 99.06 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13640,7 +14007,7 @@
 			)
 		)
 		(property "Description" "4-terminal amplifier sub circuit"
-			(at 234.442 107.95 0)
+			(at 230.632 107.95 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13649,7 +14016,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 231.775 87.63 0)
+			(at 227.965 87.63 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13680,7 +14047,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:EZ")
-		(at 107.95 85.09 0)
+		(at 81.28 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13688,7 +14055,7 @@
 		(dnp no)
 		(uuid "e85badd1-d305-4d79-9749-686cd43deded")
 		(property "Reference" "E?"
-			(at 111.125 83.82 0)
+			(at 84.455 30.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13697,7 +14064,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 111.125 86.36 0)
+			(at 84.455 33.02 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13707,7 +14074,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 107.95 86.36 0)
+			(at 81.28 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13717,7 +14084,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 107.95 86.36 0)
+			(at 81.28 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13727,7 +14094,7 @@
 			)
 		)
 		(property "Description" "Voltage-controlled voltage source with output impedance"
-			(at 139.7 92.71 0)
+			(at 113.03 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13736,7 +14103,7 @@
 			)
 		)
 		(property "model" "EZ"
-			(at 111.125 90.17 0)
+			(at 83.566 22.098 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13747,7 +14114,7 @@
 			)
 		)
 		(property "zo" "?"
-			(at 111.125 88.265 0)
+			(at 84.455 34.925 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13779,16 +14146,15 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:E")
-		(at 57.15 31.75 0)
+		(at 59.69 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "e9d2da8e-a738-4051-9c8d-774cbebc78f5")
 		(property "Reference" "E?"
-			(at 60.96 30.4799 0)
+			(at 63.5 30.4799 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13797,7 +14163,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 60.96 33.0199 0)
+			(at 63.5 33.0199 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13807,7 +14173,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 57.15 33.02 0)
+			(at 59.69 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13817,7 +14183,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 57.15 33.02 0)
+			(at 59.69 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13827,7 +14193,7 @@
 			)
 		)
 		(property "Description" "Voltage-controlled voltage source"
-			(at 77.216 37.846 0)
+			(at 79.756 37.846 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13836,7 +14202,7 @@
 			)
 		)
 		(property "model" "E"
-			(at 60.198 35.306 0)
+			(at 54.61 21.844 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13869,7 +14235,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:O")
-		(at 154.94 88.9 0)
+		(at 177.8 60.96 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13877,7 +14243,7 @@
 		(dnp no)
 		(uuid "ec0aae96-98a9-420b-930c-2bf3ec9facf9")
 		(property "Reference" "O1"
-			(at 155.956 79.756 0)
+			(at 180.34 65.786 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13886,7 +14252,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 157.48 83.82 0)
+			(at 180.34 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13896,7 +14262,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 157.48 90.17 0)
+			(at 180.34 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13906,7 +14272,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 157.48 90.17 0)
+			(at 180.34 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13916,7 +14282,7 @@
 			)
 		)
 		(property "Description" "Operational amplifier"
-			(at 165.862 94.996 0)
+			(at 188.722 67.056 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13925,7 +14291,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 155.956 82.296 0)
+			(at 180.34 68.326 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13957,7 +14323,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:I")
-		(at 142.24 31.75 0)
+		(at 187.96 31.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13966,7 +14332,7 @@
 		(fields_autoplaced yes)
 		(uuid "f5993959-fc0a-4ef9-873a-dd69fc96ebaa")
 		(property "Reference" "I?"
-			(at 146.05 26.6699 0)
+			(at 191.77 26.6699 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13975,7 +14341,7 @@
 			)
 		)
 		(property "Value" "?"
-			(at 146.05 29.2099 0)
+			(at 191.77 29.2099 0)
 			(show_name yes)
 			(effects
 				(font
@@ -13985,7 +14351,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 142.24 33.02 0)
+			(at 187.96 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13995,7 +14361,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 142.24 33.02 0)
+			(at 187.96 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14005,7 +14371,7 @@
 			)
 		)
 		(property "Description" "Independent current source"
-			(at 159.512 39.116 0)
+			(at 205.232 39.116 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14014,7 +14380,7 @@
 			)
 		)
 		(property "noise" "0"
-			(at 146.05 31.7499 0)
+			(at 191.77 31.7499 0)
 			(show_name yes)
 			(effects
 				(font
@@ -14024,7 +14390,7 @@
 			)
 		)
 		(property "dc" "0"
-			(at 146.05 34.2899 0)
+			(at 191.77 34.2899 0)
 			(show_name yes)
 			(effects
 				(font
@@ -14034,7 +14400,7 @@
 			)
 		)
 		(property "dcvar" "0"
-			(at 146.05 36.8299 0)
+			(at 191.77 36.8299 0)
 			(show_name yes)
 			(effects
 				(font
@@ -14044,7 +14410,7 @@
 			)
 		)
 		(property "model" "I"
-			(at 146.05 36.83 0)
+			(at 191.77 36.83 0)
 			(show_name yes)
 			(effects
 				(font
@@ -14071,7 +14437,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:XM")
-		(at 93.98 69.85 0)
+		(at 58.42 120.65 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -14079,7 +14445,7 @@
 		(dnp no)
 		(uuid "f7b29f27-a1b2-47f3-8205-ce632c6da9b4")
 		(property "Reference" "X?"
-			(at 95.25 62.865 0)
+			(at 59.69 113.665 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14088,7 +14454,7 @@
 			)
 		)
 		(property "Value" "~"
-			(at 94.615 67.945 0)
+			(at 59.055 118.745 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14098,7 +14464,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 93.98 71.12 0)
+			(at 58.42 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14107,7 +14473,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 93.98 71.12 0)
+			(at 58.42 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14115,8 +14481,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "MOSFET (small-signal N or P channel subcircuit with W,  L, and ID)"
-			(at 129.032 76.962 0)
+		(property "Description" "MOSFET (small-signal N or P channel subcircuit with parameters W,  L, and ID)"
+			(at 93.472 127.762 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14125,7 +14491,7 @@
 			)
 		)
 		(property "model" "?"
-			(at 95.25 64.77 0)
+			(at 59.69 115.57 0)
 			(show_name yes)
 			(effects
 				(font
@@ -14135,7 +14501,7 @@
 			)
 		)
 		(property "W" "{W}"
-			(at 95.25 71.755 0)
+			(at 59.69 122.555 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -14146,7 +14512,7 @@
 			)
 		)
 		(property "L" "{L}"
-			(at 95.25 74.295 0)
+			(at 59.69 125.095 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -14157,7 +14523,7 @@
 			)
 		)
 		(property "ID" "{ID}"
-			(at 95.25 67.31 0)
+			(at 59.69 118.11 0)
 			(show_name yes)
 			(do_not_autoplace yes)
 			(effects
@@ -14193,4 +14559,5 @@
 			(page "1")
 		)
 	)
+	(embedded_fonts no)
 )

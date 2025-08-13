@@ -2,12 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 
-SLiCAP functions for generating snippets that can be stored as LaTeX files
+SLiCAP formatterfor generating snippets that can be stored as LaTeX files
 and included in other LaTeX files.
-
-IMPORTANT: In future versions of SLiCAP, these functions will be replaced with 
-a latex formatter.
-
 """
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
@@ -66,7 +62,7 @@ class LaTeXformatter(_BaseFormatter):
         The netlist file is assumed to reside in the folder given by `sl.ini.cir_path`.
         If you want to include a file from any other location, use: 
         
-        >>> ltx.file() # See below.
+        >>> ltx.file()
         """
         netlistFile  = netlistFile.replace("_", "\\_")
         TEX = '\\textbf{Netlist: ' + netlistFile + '}\n\n'
@@ -548,8 +544,9 @@ class LaTeXformatter(_BaseFormatter):
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
         
-        :param multiline: True breaks the equation over multiple lines
-        :type multiline: Bool
+        :param multiline: n breaks the equation over multiple lines with n sums
+                          or products per line
+        :type multiline: int, Bool
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -577,12 +574,9 @@ class LaTeXformatter(_BaseFormatter):
                                             terms_per_line=multiline)
             TEX = TEX.replace('\\\\\n', '\\nonumber \\\\\n')
             TEX = TEX.replace('{align*}', '{align}')
-            if units != '':
-                units = '\\,\\left[\\mathrm{' + units + '}\\right]'
-                TEX = TEX.replace('\\end{align}', '%s\n\\end{align}'%(units))
             if label != '':
                 TEX = TEX.replace('\\end{align}', '\\label{%s}\n\\end{align}'%(label))
-            TEX += '\n'
+            TEX += '\\,\\left[\\mathrm{' + units + '}\\right]\n'
         else:
             TEX = '\\begin{equation}'
             TEX += '\n' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
@@ -884,7 +878,6 @@ def sub2rm(textext):
         
     >>> textext = "\\frac{V_{out}}{V_{in}}"
     >>> print(sub2rm(textext))
-    
     \\frac{V_{\\mathrm{out}}}{V_{\\mathrm{in}}}
     """
     pos = 0
@@ -1031,4 +1024,3 @@ def _symRoots2TEX(roots, Hz, pz):
             line = [sp.Symbol(pz + '_' + str(i)), '$' + sp.latex(roundN(root)) + '$']
         lineList.append(line)
     return lineList
-

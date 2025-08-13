@@ -1,16 +1,16 @@
 ==================
-SLiCAP Version 3.5
+SLiCAP Version 4.0
 ==================
 
 .. image:: /img/colorCode.svg
 
 - SLiCAP is an acronym for: **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram
 - SliCAP is a tool for **algorithmic analog design automation**
-- SLiCAP is intended for setting up and solving **design equations** of electronic circuits
+- SLiCAP is intended for setting up and solving **design equations** of electronic circuits and **integrating design and documentation**
 - SLiCAP is a an **open source** application written in Python, originally created by `Anton J.M. Montagne <https://montagne.nl>`_
 - SLiCAP is part of the tool set for teaching `Structured Electronic Design <https://analog-electronics.tudelft.nl>`_ at the Delft University of Technology
 
-SLiCAP Version 3.5 is distributed under the `MIT license <https://opensource.org/license/mit>`_
+SLiCAP Version 4.0 is distributed under the `MIT license <https://opensource.org/license/mit>`_
 
 .. image:: /img/colorCode.svg
 
@@ -20,7 +20,7 @@ SLiCAP Version 3.5 is distributed under the `MIT license <https://opensource.org
 
 **The question** pops up how these design decisions have been made and in which way the selected topology, component values, geometries and operating conditions link to the original requirements. Moreover, can we be sure that the requirements can be met with the selected topology and with the components and their assigned geometries and operating conditions? 
 
-**Experienced designers** find their way intuitively, often resorting to familiar topologies and manual calculations with overly simplified models. The use of a straightforward design method with a supporting design tool and adequate models, however, will largely improve the motivation, the quality, and the tracebility of design decisions. As a matter of fact, such a tool is indispensible for first-time-right design. In addition, it will speed up knowledge building within companies thereby quickly turning novices into analog design experts.
+**Experienced designers** find their way intuitively, often resorting to familiar topologies and manual calculations with overly simplified models. The use of a straightforward design method with a supporting design tool and adequate models, however, will largely improve the motivation, the quality, and the tracebility of design decisions. As a matter of fact, such a tool is indispensible for first-time-right design. In addition, it will speed up knowledge building quickly turning novices into analog design experts.
 
 **Structured Electronics Design**, as taught at the `TU Delft <https://analog-electronics.tudelft.nl>`_, presents a design method based on systems engineering, device physics, signal processing, control theory and last but not least: on network theory. It presents a top-down hierarchical design method that accounts for bottom-up show-stoppers.
 

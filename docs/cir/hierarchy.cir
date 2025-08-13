@@ -1,0 +1,22 @@
+hierarchy
+
+V1 1 0     V      value={V_s}
+R1 1 2     R      value={R_s}
+R2 4 0     R      value={R_L}
+XA 2 0 4 0 bigAmp A_i={A_i} R_o={R}
+
+.param V_s=1 R_s=50  R=50
+
+.subckt bigAmp inP inN ouP outN A_i=30 R_o=30
+R1 inP inN           R        value={R_i}
+X1 inP inN 3    0    smallAmp A_v={A_i} R_o=40
+X2 3   0   outP outN smallAmp A_v=10 R_o={R_o}
+
+.subckt smallAmp inP inN outP outN A_v={A} R_o=10
+E1 1 outN inP inN E value={A_v}
+R1 1 outP         R value={R_o}
+.ends ; smallAmp
+
+.ends ; bigAmp
+
+.end
