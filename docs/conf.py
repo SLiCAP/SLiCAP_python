@@ -11,7 +11,9 @@
 # -- General configuration ------------------------------------------------
 
 import os
-import SLiCAP 
+import sys
+sys.path.append("..") # Location of the SLiCAP parent directory
+import SLiCAP #desired SLiCAP as long as all other versions have been uninstalled
 _VERSION = SLiCAP.__version__
 # Uncomment the next line for updating the manual
 #os.system("python Manual.py") # Execute scripts that generate RST snippets 
