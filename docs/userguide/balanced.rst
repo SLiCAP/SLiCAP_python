@@ -160,7 +160,7 @@ The matrix equation for ``convtype='all'`` is:
 
     \mathbf{I_{d,c}} = \mathbf{M^{\prime} \cdot D_{d,c}}
 
-where \mathbf{I_{d,c}} is the vector with independent differential-mode and common-mode voltage and current sources, :math:`\mathbf{D_{d,c}}` the vector with unknown differential-mode and common-mode voltages and currents, and \mathbf{M^{\prime}} the converted MNA matrix.
+where :math:`\mathbf{I_{d,c}}` is the vector with independent differential-mode and common-mode voltage and current sources, :math:`\mathbf{D_{d,c}}` the vector with unknown differential-mode and common-mode voltages and currents, and math:`\mathbf{M^{\prime}}` the converted MNA matrix.
 
 The converted matrices are obtained as:
 
@@ -281,15 +281,6 @@ The default value of ``ini.remove_param_pair_ext`` is ``True``:
 
 .. literalinclude:: ../balanced.py  
     :linenos:
-    :lines: 52-54
-    :lineno-start: 52 
-  
-Typesetted result:
-
-.. include:: ../sphinx/SLiCAPdata/eqn-BJTampAllMT.rst
-
-.. literalinclude:: ../balanced.py  
-    :linenos:
     :lines: 51-59
     :lineno-start: 51
     
@@ -301,6 +292,10 @@ This yields:
     {}
     [g_m_X1, R_s, R_a, g_o_X1, R_f_X1, beta_AC_X1]
     {}
+
+Typesetted result:
+
+.. include:: ../sphinx/SLiCAPdata/eqn-BJTampAllMT.rst
 
 Auto-rename detector
 --------------------
