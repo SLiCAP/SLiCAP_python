@@ -4,7 +4,7 @@ Interface with NGspice
 
 .. image:: ../img/colorCode.svg
 
-SLiCAP offers a simple interface to NGspice to run basic SPICE simulations and plot graphs from within your SLiCAP application. It requires installation of:
+SLiCAP offers a simple interface for running basic NGspice simulations and plot graphs from within your SLiCAP application. It requires installation of:
 
 #. NGspice for circuit simulation
 
@@ -61,6 +61,8 @@ The SLiCAP output displayed on this manual page, is generated with the script: `
 
 Schematic capture and netlist generation
 ----------------------------------------
+
+`makeCircuit() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__ with keyword argument ``language=SPICE`` creates and returns a NGspice compatible netlist of a KiCAD schematic file:
 
 .. literalinclude:: ../ngspice.py
     :linenos:

@@ -527,10 +527,10 @@ def doNumer(cir, source='circuit', detector='circuit', lgref='circuit',
     
     **Return value attributes**
     
-    - doLaplace(<circuit>).M: MNA matrix (sympy.Matrix)
-    - doLaplace(<circuit>.Iv: Vector with independent variables (sympy.Matrix)
-    - doLaplace(<circuit>).Dv: Vector with dependent variables (sympy.Matrix)
-    - doLaplace(<circuit>).numer: Numerator of the voltage transfer from V1 to
+    - doNumer(<circuit>).M: MNA matrix (sympy.Matrix)
+    - doNumer(<circuit>.Iv: Vector with independent variables (sympy.Matrix)
+    - doNumer(<circuit>).Dv: Vector with dependent variables (sympy.Matrix)
+    - doNumer(<circuit>).numer: Numerator of the voltage transfer from V1 to
       V_out (sympy.Expr)
       
     If parameter stepping is applied, all above attributes are lists of values
@@ -572,9 +572,9 @@ def doDenom(cir, source='circuit', detector='circuit', lgref='circuit',
     
     **Return value attributes**
     
-    - doLaplace(<circuit>).M: MNA matrix (sympy.Matrix)
-    - doLaplace(<circuit>).Dv: Vector with dependent variables (sympy.Matrix)
-    - doLaplace(<circuit>).denom: Denominator of the voltage transfer from V1 
+    - doDenom(<circuit>).M: MNA matrix (sympy.Matrix)
+    - doDenom(<circuit>).Dv: Vector with dependent variables (sympy.Matrix)
+    - doDenom(<circuit>).denom: Denominator of the voltage transfer from V1 
       to V_out (sympy.Expr)
       
     If parameter stepping is applied, all above attributes are lists of values
