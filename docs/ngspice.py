@@ -110,7 +110,9 @@ names   = {"V_c1": "V(c1)",
            "V_b1": "V(b1)",
            "V_e1": "V(e1)",
            "V_c2": "V(c2)",
-           "V_e2": "V(e2)"}
+           "V_e2": "V(e2)", 
+           "I_V2": "I(V2)"}
+
 OPinfo  = sl.ngspice2traces("cir/" + fileName, simCmd, names, stepCmd=None)
 
 for name in OPinfo.keys():
@@ -119,3 +121,6 @@ for name in OPinfo.keys():
 rst = sl.RSTformatter()
 head = ["Name", "Value"]
 rst.dictTable(OPinfo, head=head ,caption="Bias voltages").save("table-VampQ-opinfo")
+
+sl.backAnnotateSchematic("kicad/" + fileName + "/" + fileName + ".kicad_sch", 
+                         OPinfo)

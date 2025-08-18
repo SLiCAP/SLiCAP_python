@@ -662,12 +662,12 @@ def _makeACtraces(lines, traceType):
         elif traceType == 'magPhase':
             reMagDict[key] = trace((freq, sqrt(real**2+imag**2)))
             reMagDict[key].label = key
-            imPhsDict[key] = trace((freq, unwrap(arctan(imag/real)*180/pi, 90)))
+            imPhsDict[key] = trace((freq, unwrap(arctan(imag/real), discont=pi/4, period=pi/2)*180/pi))
             imPhsDict[key].label = key
         elif traceType == 'dBmagPhase':
             reMagDict[key] = trace((freq, 10*log10(real**2+imag**2)))
             reMagDict[key].label = key
-            imPhsDict[key] = trace((freq, unwrap(arctan(imag/real)*180/pi, 90)))
+            imPhsDict[key] = trace((freq, unwrap(arctan(imag/real), discont=pi/4, period=pi/2)*180/pi))
             imPhsDict[key].label = key
     if xVar == "frequency":
         xUnits = "Hz"

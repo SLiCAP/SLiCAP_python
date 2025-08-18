@@ -29,6 +29,7 @@ let V_b1 = V(b1)
 let V_e1 = V(e1)
 let V_c2 = V(c2)
 let V_e2 = V(e2)
-wrdata cir/VampQspice.csv V_c1 V_b1 V_e1 V_c2 V_e2
+let I_V2 = I(V2)
+wrdata cir/VampQspice.csv V_c1 V_b1 V_e1 V_c2 V_e2 I_V2
 .endc
 .end

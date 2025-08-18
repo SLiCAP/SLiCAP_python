@@ -996,17 +996,77 @@
 			(embedded_fonts no)
 		)
 	)
+	(text "V_c2:4.295726"
+		(exclude_from_sim no)
+		(at 170.688 51.308 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "36658ef9-8727-4fe7-b972-9ae2a4e2ac86")
+	)
+	(text "V_e2:1.812594"
+		(exclude_from_sim no)
+		(at 172.72 77.978 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "56b7f08b-2ea3-4a45-a5fa-ffce0e6e43b8")
+	)
+	(text "V_e1:1.156794"
+		(exclude_from_sim no)
+		(at 132.842 53.594 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "94da4e8c-7655-436f-9de0-f19159acf773")
+	)
+	(text "V_c1:2.491855"
+		(exclude_from_sim no)
+		(at 132.588 50.546 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "9dc2dbc3-09d4-4ab0-8b0f-ae606782ac05")
+	)
+	(text "I_V2:-0.002969"
+		(exclude_from_sim no)
+		(at 187.706 44.8311 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "c59b14a2-0910-4c7f-82dc-78f469023665")
+	)
+	(text "V_b1:1.763679"
+		(exclude_from_sim no)
+		(at 132.588 47.752 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "dd62f329-a07a-4b28-badf-d52f52348401")
+	)
 	(junction
 		(at 184.15 53.34)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "0a919fc3-a055-42c7-b94c-36726180c8c5")
-	)
-	(junction
-		(at 171.45 82.55)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "0af3d258-ce1f-46af-86cb-db8dd16feda7")
 	)
 	(junction
 		(at 151.13 58.42)
@@ -1019,6 +1079,18 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "2a905ec1-2053-4972-871c-a586fc9c38e3")
+	)
+	(junction
+		(at 171.45 81.28)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "3919d5f1-a50f-4b32-88c3-bcb4e45805cc")
+	)
+	(junction
+		(at 146.05 64.77)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "418719d7-4501-42d3-ad4f-b46b4fb79098")
 	)
 	(junction
 		(at 151.13 77.47)
@@ -1043,12 +1115,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "8c9f7351-3102-4968-9ef4-7cb3ea2f3865")
-	)
-	(junction
-		(at 144.78 64.77)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "dd030873-2346-4d83-ae5b-00355f8b214e")
 	)
 	(junction
 		(at 171.45 36.83)
@@ -1088,7 +1154,7 @@
 	)
 	(wire
 		(pts
-			(xy 181.61 82.55) (xy 181.61 83.82)
+			(xy 181.61 81.28) (xy 181.61 83.82)
 		)
 		(stroke
 			(width 0)
@@ -1118,6 +1184,16 @@
 	)
 	(wire
 		(pts
+			(xy 171.45 81.28) (xy 171.45 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1bff3f1b-5327-4d6b-9521-135d09be511d")
+	)
+	(wire
+		(pts
 			(xy 172.72 53.34) (xy 171.45 53.34)
 		)
 		(stroke
@@ -1135,6 +1211,26 @@
 			(type default)
 		)
 		(uuid "232497da-30cf-4c89-ac6a-4071b0679ee9")
+	)
+	(wire
+		(pts
+			(xy 146.05 64.77) (xy 144.78 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2933dbe0-040a-439d-b706-62091f65bbde")
+	)
+	(wire
+		(pts
+			(xy 151.13 46.99) (xy 151.13 58.42)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3237aa92-344f-412d-87e2-b85f380ff40d")
 	)
 	(wire
 		(pts
@@ -1168,7 +1264,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 63.5) (xy 171.45 82.55)
+			(xy 171.45 63.5) (xy 171.45 81.28)
 		)
 		(stroke
 			(width 0)
@@ -1178,7 +1274,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 82.55) (xy 181.61 82.55)
+			(xy 171.45 81.28) (xy 181.61 81.28)
 		)
 		(stroke
 			(width 0)
@@ -1188,17 +1284,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 82.55) (xy 171.45 83.82)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "55316f72-24c9-4202-8093-9aae07798041")
-	)
-	(wire
-		(pts
-			(xy 144.78 64.77) (xy 144.78 82.55)
+			(xy 146.05 64.77) (xy 146.05 81.28)
 		)
 		(stroke
 			(width 0)
@@ -1208,7 +1294,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 36.83) (xy 193.04 36.83)
+			(xy 171.45 36.83) (xy 184.15 36.83)
 		)
 		(stroke
 			(width 0)
@@ -1238,7 +1324,7 @@
 	)
 	(wire
 		(pts
-			(xy 193.04 46.99) (xy 193.04 48.26)
+			(xy 184.15 46.99) (xy 184.15 48.26)
 		)
 		(stroke
 			(width 0)
@@ -1248,17 +1334,7 @@
 	)
 	(wire
 		(pts
-			(xy 144.78 64.77) (xy 146.05 64.77)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "940e61a9-38cd-49b2-8f27-25a45b542b5e")
-	)
-	(wire
-		(pts
-			(xy 133.35 64.77) (xy 133.35 72.39)
+			(xy 133.35 64.77) (xy 133.35 66.04)
 		)
 		(stroke
 			(width 0)
@@ -1288,7 +1364,7 @@
 	)
 	(wire
 		(pts
-			(xy 133.35 82.55) (xy 133.35 83.82)
+			(xy 133.35 76.2) (xy 133.35 83.82)
 		)
 		(stroke
 			(width 0)
@@ -1308,7 +1384,7 @@
 	)
 	(wire
 		(pts
-			(xy 166.37 82.55) (xy 171.45 82.55)
+			(xy 166.37 81.28) (xy 171.45 81.28)
 		)
 		(stroke
 			(width 0)
@@ -1338,7 +1414,7 @@
 	)
 	(wire
 		(pts
-			(xy 144.78 82.55) (xy 156.21 82.55)
+			(xy 146.05 81.28) (xy 156.21 81.28)
 		)
 		(stroke
 			(width 0)
@@ -1355,16 +1431,6 @@
 			(type default)
 		)
 		(uuid "d44ed8c5-e12d-419a-b399-5f81b21dab96")
-	)
-	(wire
-		(pts
-			(xy 151.13 46.99) (xy 151.13 58.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "df1a4bcc-08af-41bb-bc27-b39f4dbed3ad")
 	)
 	(wire
 		(pts
@@ -1427,17 +1493,17 @@
 		(uuid "05fe8677-2088-4e78-bd70-e2f296db0b4e")
 	)
 	(label "b1"
-		(at 144.78 72.39 0)
+		(at 146.05 68.58 180)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right bottom)
 		)
 		(uuid "1993f3c9-0599-4499-8124-017aa87f9e1d")
 	)
 	(label "cc"
-		(at 179.07 36.83 0)
+		(at 180.34 36.83 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1447,7 +1513,7 @@
 		(uuid "2162720e-4895-493e-87f3-d8c11aaa580f")
 	)
 	(label "c2"
-		(at 165.1 53.34 0)
+		(at 171.45 52.07 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1457,7 +1523,7 @@
 		(uuid "283dcbd0-0fd1-4049-a1c0-aa998e6c38bc")
 	)
 	(label "c1"
-		(at 151.13 53.34 0)
+		(at 151.13 57.15 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1477,7 +1543,7 @@
 		(uuid "5c93fcea-f62b-43fb-8132-6140562e0ae9")
 	)
 	(label "e2"
-		(at 175.26 82.55 0)
+		(at 172.72 81.28 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1817,7 +1883,7 @@
 	)
 	(symbol
 		(lib_id "SLiCAP:GND")
-		(at 193.04 48.26 0)
+		(at 184.15 48.26 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -1826,7 +1892,7 @@
 		(fields_autoplaced yes)
 		(uuid "23e3c735-7fde-4e2e-b0c6-2a84e69e1c2f")
 		(property "Reference" "#07"
-			(at 193.04 53.34 0)
+			(at 184.15 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1835,7 +1901,7 @@
 			)
 		)
 		(property "Value" "0"
-			(at 193.04 50.8 0)
+			(at 184.15 50.8 0)
 			(do_not_autoplace yes)
 			(effects
 				(font
@@ -1844,7 +1910,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 193.04 48.26 0)
+			(at 184.15 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1853,7 +1919,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 193.04 58.42 0)
+			(at 184.15 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1862,7 +1928,7 @@
 			)
 		)
 		(property "Description" "0V reference potential"
-			(at 193.04 55.88 0)
+			(at 184.15 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2151,16 +2217,15 @@
 	)
 	(symbol
 		(lib_id "SPICE:V")
-		(at 193.04 41.91 0)
+		(at 184.15 41.91 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "5e62529a-7ef0-4361-81f2-1241f65ca64c")
 		(property "Reference" "V2"
-			(at 196.85 40.5129 0)
+			(at 187.706 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2169,7 +2234,7 @@
 			)
 		)
 		(property "Value" "DC 12"
-			(at 196.85 43.0529 0)
+			(at 187.706 41.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2178,7 +2243,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 193.04 43.18 0)
+			(at 184.15 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2188,7 +2253,7 @@
 			)
 		)
 		(property "Datasheet" "https://ngspice.sourceforge.io/docs/ngspice-html-manual/manual.xhtml#magicparlabel-4204"
-			(at 196.088 46.99 0)
+			(at 187.198 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2198,7 +2263,7 @@
 			)
 		)
 		(property "Description" "Independent voltage source (SPICE)"
-			(at 196.088 44.704 0)
+			(at 187.198 44.704 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2208,7 +2273,7 @@
 			)
 		)
 		(property "model" "V"
-			(at 196.088 42.672 0)
+			(at 187.198 42.672 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2867,7 +2932,7 @@
 	)
 	(symbol
 		(lib_id "SPICE:R")
-		(at 161.29 82.55 90)
+		(at 161.29 81.28 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2875,7 +2940,7 @@
 		(dnp no)
 		(uuid "851f7eb6-29c0-487d-942d-0c939c9f6b0f")
 		(property "Reference" "R4"
-			(at 159.258 86.868 90)
+			(at 159.258 85.598 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2884,7 +2949,7 @@
 			)
 		)
 		(property "Value" "100k"
-			(at 159.004 88.9 90)
+			(at 159.004 87.63 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2893,7 +2958,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 164.465 81.915 0)
+			(at 164.465 80.645 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2902,7 +2967,7 @@
 			)
 		)
 		(property "Datasheet" "https://ngspice.sourceforge.io/docs/ngspice-html-manual/manual.xhtml#magicparlabel-2570"
-			(at 175.26 80.518 0)
+			(at 175.26 79.248 0)
 			(show_name yes)
 			(effects
 				(font
@@ -2913,7 +2978,7 @@
 			)
 		)
 		(property "Description" "Resistor (SPICE)"
-			(at 173.228 80.518 0)
+			(at 173.228 79.248 0)
 			(show_name yes)
 			(effects
 				(font
@@ -2924,7 +2989,7 @@
 			)
 		)
 		(property "model" "R"
-			(at 161.036 80.518 0)
+			(at 161.036 79.248 0)
 			(show_name yes)
 			(effects
 				(font
@@ -2935,7 +3000,7 @@
 			)
 		)
 		(property "r" ""
-			(at 162.814 80.518 0)
+			(at 162.814 79.248 0)
 			(show_name yes)
 			(effects
 				(font
@@ -2946,7 +3011,7 @@
 			)
 		)
 		(property "ac" ""
-			(at 164.846 80.518 0)
+			(at 164.846 79.248 0)
 			(show_name yes)
 			(effects
 				(font
@@ -2957,7 +3022,7 @@
 			)
 		)
 		(property "m" ""
-			(at 168.91 80.518 0)
+			(at 168.91 79.248 0)
 			(show_name yes)
 			(effects
 				(font
@@ -2968,7 +3033,7 @@
 			)
 		)
 		(property "scale" ""
-			(at 166.878 80.518 0)
+			(at 166.878 79.248 0)
 			(show_name yes)
 			(effects
 				(font
@@ -2979,7 +3044,7 @@
 			)
 		)
 		(property "temp" ""
-			(at 163.068 71.882 0)
+			(at 163.068 70.612 0)
 			(show_name yes)
 			(effects
 				(font
@@ -2990,7 +3055,7 @@
 			)
 		)
 		(property "dtemp" ""
-			(at 165.1 72.136 0)
+			(at 165.1 70.866 0)
 			(show_name yes)
 			(effects
 				(font
@@ -3001,7 +3066,7 @@
 			)
 		)
 		(property "tc1" ""
-			(at 167.132 71.628 0)
+			(at 167.132 70.358 0)
 			(show_name yes)
 			(effects
 				(font
@@ -3012,7 +3077,7 @@
 			)
 		)
 		(property "tc2" ""
-			(at 169.164 71.628 0)
+			(at 169.164 70.358 0)
 			(show_name yes)
 			(effects
 				(font
@@ -3023,7 +3088,7 @@
 			)
 		)
 		(property "noisy" "1"
-			(at 170.942 80.518 0)
+			(at 170.942 79.248 0)
 			(show_name yes)
 			(effects
 				(font
@@ -3750,7 +3815,7 @@
 	)
 	(symbol
 		(lib_id "SPICE:R")
-		(at 133.35 77.47 0)
+		(at 133.35 71.12 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3759,7 +3824,7 @@
 		(fields_autoplaced yes)
 		(uuid "d67bf6c4-b1ae-4147-97d2-b33c75b28f93")
 		(property "Reference" "R8"
-			(at 135.89 76.1999 0)
+			(at 135.89 69.8499 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3768,7 +3833,7 @@
 			)
 		)
 		(property "Value" "2k"
-			(at 135.89 78.7399 0)
+			(at 135.89 72.3899 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3777,7 +3842,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 133.985 80.645 0)
+			(at 133.985 74.295 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3786,61 +3851,6 @@
 			)
 		)
 		(property "Datasheet" "https://ngspice.sourceforge.io/docs/ngspice-html-manual/manual.xhtml#magicparlabel-2570"
-			(at 135.382 91.44 0)
-			(show_name yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor (SPICE)"
-			(at 135.382 89.408 0)
-			(show_name yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "model" "R"
-			(at 135.382 77.216 0)
-			(show_name yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "r" ""
-			(at 135.382 78.994 0)
-			(show_name yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "ac" ""
-			(at 135.382 81.026 0)
-			(show_name yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "m" ""
 			(at 135.382 85.09 0)
 			(show_name yes)
 			(effects
@@ -3851,7 +3861,7 @@
 				(hide yes)
 			)
 		)
-		(property "scale" ""
+		(property "Description" "Resistor (SPICE)"
 			(at 135.382 83.058 0)
 			(show_name yes)
 			(effects
@@ -3862,8 +3872,63 @@
 				(hide yes)
 			)
 		)
+		(property "model" "R"
+			(at 135.382 70.866 0)
+			(show_name yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "r" ""
+			(at 135.382 72.644 0)
+			(show_name yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "ac" ""
+			(at 135.382 74.676 0)
+			(show_name yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "m" ""
+			(at 135.382 78.74 0)
+			(show_name yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "scale" ""
+			(at 135.382 76.708 0)
+			(show_name yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
 		(property "temp" ""
-			(at 144.018 79.248 0)
+			(at 144.018 72.898 0)
 			(show_name yes)
 			(effects
 				(font
@@ -3874,7 +3939,7 @@
 			)
 		)
 		(property "dtemp" ""
-			(at 143.764 81.28 0)
+			(at 143.764 74.93 0)
 			(show_name yes)
 			(effects
 				(font
@@ -3885,7 +3950,7 @@
 			)
 		)
 		(property "tc1" ""
-			(at 144.272 83.312 0)
+			(at 144.272 76.962 0)
 			(show_name yes)
 			(effects
 				(font
@@ -3896,7 +3961,7 @@
 			)
 		)
 		(property "tc2" ""
-			(at 144.272 85.344 0)
+			(at 144.272 78.994 0)
 			(show_name yes)
 			(effects
 				(font
@@ -3907,7 +3972,7 @@
 			)
 		)
 		(property "noisy" "1"
-			(at 135.382 87.122 0)
+			(at 135.382 80.772 0)
 			(show_name yes)
 			(effects
 				(font

@@ -10,6 +10,7 @@ from SLiCAP.SLiCAPsvgTools import _crop_svg
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPDF
 from SLiCAP.SLiCAPprotos import _MODELS, _SPICEMODELS
+import re
 
 class _KiCADcomponent(object):
     def __init__(self):
@@ -235,9 +236,42 @@ def _kicadNetlist(fileName, cirTitle, language="SLiCAP"):
         print("Error: could not open: '{}'.".format(fileName))
     return netlist, subckt
 
+def backAnnotateSchematic(sch, opinfo):
+    """
+    #. Replaces text labels <label> on a KiCAD schematic with <label>:<opinfo[label]>
+    #. Creates drawing-size ``svg`` and ``pdf`` images of the annotated schematic
+    #. Saves the annotated schematic
+    
+    :param sch: File of the KiCAD schematic with annotation text labels;
+                location relative to project directory
+    :type sch: str
+    
+    :param opinfo: Dictionary with key-value pairs:
+         
+                   - key: label text
+                   - value: text to be appended to the label
+    :return: None
+    :rtype: NoneType
+    """
+    f = open(sch, "r")
+    schematic = f.read()
+    f.close()
+    replacements = {}
+    for name in opinfo.keys():
+        m = re.search(rf'(\(text "{name})(\:[+-]?\d+\.?\d*)?([eE][+-]?\d+)?"', schematic)
+        if m != None:
+            replacements[m.group(0)] = m.group(1) + ':{:f}"' .format(opinfo[name])
+    for replacement in replacements.keys():
+        schematic = schematic.replace(replacement, replacements[replacement])
+    f = open(sch, "w")
+    f.write(schematic)
+    f.close()
+    KiCADsch2svg(sch)  
+    
 if __name__=='__main__':
     from SLiCAP import initProject
     prj=initProject('kicad')
     fileName    = "SLiCAP.kicad_sch"
     print(_parseKiCADnetlist(fileName))
     KiCADsch2svg(fileName)
+ 

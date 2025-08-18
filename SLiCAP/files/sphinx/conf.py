@@ -5,7 +5,12 @@ html_title = u'SLiCAP Sphinx web reports'
 html_short_title = u'SLiCAP'
 copyright = u'2024-2025, Anton Montagne'
 author = u'Anton Montagne'
-extensions = ['sphinx.ext.mathjax', 'sphinx_panels', 'sphinxcontrib.bibtex', 'sphinx.ext.autosectionlabel', "sphinx_togglebutton", "sphinx_tabs.tabs"]
+extensions = ['sphinx.ext.mathjax', 
+              'sphinx_panels', 
+              'sphinxcontrib.bibtex', 
+              'sphinx.ext.autosectionlabel', 
+              'sphinx_togglebutton', 
+              'sphinx_tabs.tabs']
 autosectionlabel_prefix_document = False
 autosectionlabel_maxdepth = None
 bibtex_bibfiles = []

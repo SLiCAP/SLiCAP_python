@@ -22,7 +22,7 @@ _VERSION = SLiCAP.__version__
 extensions = ['sphinx.ext.mathjax', 'sphinx.ext.autodoc', 
               'sphinx.ext.autosummary']
 math_number_all = False
-
+numfig = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

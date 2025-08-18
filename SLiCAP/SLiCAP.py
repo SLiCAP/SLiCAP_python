@@ -26,6 +26,7 @@ from SLiCAP.SLiCAPngspice import MOS, ngspice2traces, selectTraces
 from SLiCAP.SLiCAPshell import *
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
+from SLiCAP.SLiCAPkicad import backAnnotateSchematic
 
 # Increase width for display of numpy arrays:
 np.set_printoptions(edgeitems=30, linewidth=1000,

@@ -1,5 +1,6 @@
 (sym_lib_table
-  (version 7)
+  (version 9)
   (lib (name "SLiCAP")(type "KiCad")(uri "${KIPRJMOD}/SLiCAP.kicad_sym")(options "")(descr ""))
   (lib (name "SPICE")(type "KiCad")(uri "${KIPRJMOD}/SPICE.kicad_sym")(options "")(descr ""))
+  (lib (name "SPICEdevices")(type "KiCad")(uri "${KIPRJMOD}/SPICEdevices.kicad_sym")(options "")(descr ""))
 )

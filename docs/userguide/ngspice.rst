@@ -69,8 +69,13 @@ Schematic capture and netlist generation
     :lines: 9-12
     :lineno-start: 9
 
-.. image:: /img/VampQspice.svg
+.. _fig-VampQspice:
+
+.. Figure:: /img/VampQspice.svg
     :width: 450px
+    :alt: KiCAD NGspice schematic 
+    
+    KiCAD NGspice schematic with SLiCAP SPICE symbols and automatically updated operating point information.
     
 Please notice:
 
@@ -214,7 +219,7 @@ Without parameter stepping an ``OP`` instruction returns a dictionary with name-
 
 .. literalinclude:: ../ngspice.py
     :linenos:
-    :lines: 107-117
+    :lines: 107-119
     :lineno-start: 107
     
 This yields:
@@ -226,12 +231,23 @@ This yields:
     V_e1 : 1.15679378
     V_c2 : 4.29572571
     V_e2 : 1.81259412 
+    I_V2 : -0.00296938791
     
 Typesetted:
 
 .. literalinclude:: ../ngspice.py
     :linenos:
-    :lines: 119-121
-    :lineno-start: 119
+    :lines: 121-123
+    :lineno-start: 121
 
 .. include:: ../sphinx/SLiCAPdata/table-VampQ-opinfo.rst
+
+Display operating point information in KiCAD schematic
+------------------------------------------------------
+
+The SLiCAP function `backAnnotateSchematic() <../reference/SLiCAPkicad.html#SLiCAP.SLiCAPkicad.backAnnotateSchematic>`__ can be used to display parameter values and operating point information in a KiCAD schematic file and its ``svg`` and ``pdf`` image files. To this end, text fields with the keys from the ``OPinfo`` dictionary must be placed on the schematic. ``backAnnotateSchematic`` replaces these text fields with ``<name>:<OPinfo[name]>``. The result is shown in :numref:`fig-VampQspice`. Please notice that the keys of the ``OPinfo`` dictionary equal those of the ``names`` dictionary. 
+
+.. literalinclude:: ../ngspice.py
+    :linenos:
+    :lines: 125-126
+    :lineno-start: 125
