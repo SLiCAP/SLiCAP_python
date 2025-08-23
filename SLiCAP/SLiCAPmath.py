@@ -13,6 +13,7 @@ from scipy.optimize import fsolve
 from SLiCAP.SLiCAPlex import _replaceScaleFactors
 from pytexit import py2tex
 
+
 def det(M, method="ME"):
     """
     Returns the determinant of a square matrix 'M' calculated using recursive
@@ -34,7 +35,8 @@ def det(M, method="ME"):
     :return: Determinant of 'M'
     :rtype:  sympy.Expr
     """
-    M = float2rational(sp.Matrix(M)) # Have a Mutable Matrix with rational numbers
+    M = float2rational(
+        sp.Matrix(M))  # Have a Mutable Matrix with rational numbers
     factor = 1
     if M.shape[0] != M.shape[1]:
         print("ERROR: Cannot determine determinant of non-square matrix.")
@@ -45,9 +47,9 @@ def det(M, method="ME"):
     if M.is_zero_matrix:
         D = 0
     elif dim == 1:
-        D = M[0,0] * factor
+        D = M[0, 0] * factor
     elif dim == 2:
-        D = sp.expand(M[0,0]*M[1,1]-M[1,0]*M[0,1]) * factor
+        D = sp.expand(M[0, 0]*M[1, 1]-M[1, 0]*M[0, 1]) * factor
     elif method == "ME":
         D = _detME(M) * factor
     elif method == "BS":
@@ -63,88 +65,108 @@ def det(M, method="ME"):
         D = None
     return D
 
+
 def _eliminateVars(M):
     """
     Reduces the size of a matrix through division-free elimination of variables.
-    Returns minimally matrix with dim=1.
+    Returns matrix with dim >= 1.
+
+    :param M: sympy matrix
+    :type M: sympy.Matrix()
+
+    :return: (M, factor)
+    
+             - The returned matrix M is either a 1x1 matrix, a matrix of which 
+               its entries are either zero or contain at least one symbol.
+             - The returned factor is a nonzero (numeric) multiplication factor 
+               for the determinant of the returned matrix to equal the 
+               determinant of the original matrix.
+               
+    :rtype: tuple
+
+    The returned factor 
     """
-    k, l   = _find_numeric_entry(M)
-    factor = 1 # Scaling factor for determinant
-    dim    = M.shape[0]
+    k, l = _find_numeric_entry(M)
+    factor = 1  # Scaling factor for determinant
+    dim = M.shape[0]
     while k >= 0 and dim > 1:
-        M_cpy      = M.copy()
-        # exchange row k with row 0 and column l with column 0
-        if k != 0:
-            M_cpy[0,:] = M.row(k)
-            M_cpy[k,:] = M.row(0)
+        factor *= M[k, l]
+        if (k+l) % 2:
             factor *= -1
-        if l != 0:
-            col_0      = M_cpy.col(0)
-            col_l      = M_cpy.col(l)
-            M_cpy[:,0] = col_l
-            M_cpy[:,l] = col_0
-            factor *= -1
-        factor = M_cpy[0,0] * factor
-        for i in range(1, dim):
-            for j in range(1, dim):
-                # Substitute the variable
-                M_cpy[i,j] = sp.expand(M_cpy[i,j] - M_cpy[i,0]*M_cpy[0,j]/M_cpy[0,0])
-        # remove row 0 and column 0
-        M     = M_cpy.minor_submatrix(0,0)
-        k, l  = _find_numeric_entry(M)
+        for i in range(dim):
+            if M[i, l] != 0 and i != k:  # Test on zero increases speed
+                for j in range(dim):
+                    if M[k, j] != 0 and j != l:  # Test on zero increases speed
+                        M[i, j] = sp.expand(M[i, j] - M[i, l]*M[k, j]/M[k, l])
+        # remove row k and column l
+        M = M.minor_submatrix(k, l)
         # reduce dimension
-        dim  -= 1
+        dim = 1
+        k, l = _find_numeric_entry(M)
     return M, factor
+
 
 def _find_numeric_entry(M):
     """
     Returns the (row, col) position of the first numeric entry in the matrix.
+
+    :param M: sympy matrix
+    :type M: sympy.Matrix()
+    
+    :return: (row, col)
+    
+             - row (int): row number of first numeric entry (-1 if not found)
+             - col (int): column number of first numeric entry (-1 if not found)
+    :rtype: tuple         
     """
-    dim   = M.shape[0]
+    dim = M.shape[0]
     r, c = -1, -1
     for i in range(dim):
         for j in range(dim):
-            if M[i,j].is_number and M[i,j] != 0:
-                r, c = i, j
-                break
-        if r != -1 and c!= -1:
-            break
+            if M[i, j] != 0 and M[i, j].is_number:
+                return i, j
     return r, c
+
 
 def _detME(M):
     dim = M.shape[0]
     if dim == 2:
-        D = M[0,0]*M[1,1] - M[1,0]*M[0,1]
+        D = M[0, 0]*M[1, 1] - M[1, 0]*M[0, 1]
     else:
         D = 0
         for row in range(dim):
-            if M[row,0] != 0:
+            if M[row, 0] != 0:
                 minor = _detME(M.minor_submatrix(row, 0))
                 if minor != 0:
-                    D += M[row,0] * (-1)**row * minor
+                    if row % 2:
+                        D += -M[row, 0] * minor
+                    else:
+                        D += M[row, 0] * minor
     return sp.expand(D)
+
 
 def _detBS(M):
     newM = M.copy()
     sign = 1
-    dim  = newM.shape[0]
+    dim = newM.shape[0]
     for k in range(dim-1):
-        if newM[k,k] == 0:
+        if newM[k, k] == 0:
             for m in range(k+1, dim):
-                if newM[m,k] !=0:
+                if newM[m, k] != 0:
                     row_m = newM.row(m)
-                    newM[m,:] = newM.row(k)
-                    newM[k,:] = row_m
+                    newM[m, :] = newM.row(k)
+                    newM[k, :] = row_m
                     sign = -sign
             if m == dim:
                 return sp.S(0)
         for i in range(k+1, dim):
             for j in range(k+1, dim):
-                newM[i,j] = newM[k,k] * newM[i,j] - newM[i,k] * newM[k,j]
+                newM[i, j] = newM[k, k] * newM[i, j] - newM[i, k] * newM[k, j]
                 if k:
-                    newM[i,j] = sp.factor(newM[i,j] / newM[k-1, k-1])
+                    newM[i, j] = sp.factor(newM[i, j] / newM[k-1, k-1])
     D = sign * newM[dim-1, dim-1]
     return sp.simplify(D)
+
 
 def _Roots(expr, var):
     if isinstance(expr, sp.Basic) and isinstance(var, sp.Symbol):
@@ -163,6 +185,7 @@ def _Roots(expr, var):
         rts = None
     return rts
 
+
 def _symRoots(expr, var):
     expr = assumeRealParams(expr)
     polyExpr = sp.poly(expr, var)
@@ -172,6 +195,7 @@ def _symRoots(expr, var):
         for i in range(rootDict[rt]):
             rts.append(clearAssumptions(rt))
     return rts
+
 
 def _numRoots(expr, var):
     """
@@ -208,6 +232,7 @@ def _numRoots(expr, var):
         print('\n', value)
         print("Error: cannot determine the roots of:", str(p))
     return rts
+
 
 def coeffsTransfer(rational, var=ini.laplace, method='lowest'):
     """
@@ -254,11 +279,13 @@ def coeffsTransfer(rational, var=ini.laplace, method='lowest'):
             elif method == 'highest':
                 gainNum = sp.Poly.LC(numPoly)
                 gainDen = sp.Poly.LC(denPoly)
-            numCoeffs=numPoly.all_coeffs()
-            denCoeffs=denPoly.all_coeffs()
-            gain=sp.simplify(gainNum/gainDen)
-            numCoeffs = list(reversed([sp.simplify(numCoeffs[i]/gainNum) for i in range(len(numCoeffs))]))
-            denCoeffs = list(reversed([sp.simplify(denCoeffs[i]/gainDen) for i in range(len(denCoeffs))]))
+            numCoeffs = numPoly.all_coeffs()
+            denCoeffs = denPoly.all_coeffs()
+            gain = sp.simplify(gainNum/gainDen)
+            numCoeffs = list(
+                reversed([sp.simplify(numCoeffs[i]/gainNum) for i in range(len(numCoeffs))]))
+            denCoeffs = list(
+                reversed([sp.simplify(denCoeffs[i]/gainDen) for i in range(len(denCoeffs))]))
         except sp.PolynomialError:
             gain = sp.simplify(rational)
             numCoeffs = []
@@ -268,6 +295,7 @@ def coeffsTransfer(rational, var=ini.laplace, method='lowest'):
         numCoeffs = [0]
         denCoeffs = [1]
     return (gain, numCoeffs, denCoeffs)
+
 
 def normalizeRational(rational, var=ini.laplace, method='lowest'):
     """
@@ -295,7 +323,8 @@ def normalizeRational(rational, var=ini.laplace, method='lowest'):
     :return:  Normalized rational function of the variable.
     :rtype: sympy.Expr
     """
-    gain, numCoeffs, denCoeffs = coeffsTransfer(rational, var=var, method=method)
+    gain, numCoeffs, denCoeffs = coeffsTransfer(
+        rational, var=var, method=method)
     if len(numCoeffs) and len(denCoeffs):
         numCoeffs = list(reversed(numCoeffs))
         denCoeffs = list(reversed(denCoeffs))
@@ -303,6 +332,7 @@ def normalizeRational(rational, var=ini.laplace, method='lowest'):
         den = sp.Poly(denCoeffs, var).as_expr()
         rational = gain*num/den
     return rational
+
 
 def _cancelPZ(poles, zeros):
     """
@@ -353,7 +383,8 @@ def _cancelPZ(poles, zeros):
                 if poles[i] in newPoles and zeros[j] in newZeros:
                     newPoles.remove(poles[i])
                     newZeros.remove(zeros[j])
-    return(newPoles, newZeros)
+    return (newPoles, newZeros)
+
 
 def _zeroValue(numer, denom, var):
     """
@@ -368,8 +399,8 @@ def _zeroValue(numer, denom, var):
     :return:      zero frequency (s=0) value of numer/denom.
     :rtype:       sympy.Expr
     """
-    #numer = sp.simplify(numer)
-    #denom = sp.simplify(denom)
+    # numer = sp.simplify(numer)
+    # denom = sp.simplify(denom)
     numerValue = numer.subs(var, 0)
     denomValue = denom.subs(var, 0)
     if numerValue == 0 and denomValue == 0:
@@ -381,6 +412,7 @@ def _zeroValue(numer, denom, var):
     else:
         gain = sp.simplify(numerValue/denomValue)
     return gain
+
 
 def findServoBandwidth(loopgainRational):
     """
@@ -401,15 +433,15 @@ def findServoBandwidth(loopgainRational):
              - mbf: lowest freqency of mbv
     :rtype: dict
     """
-    numer, denom           = loopgainRational.as_numer_denom()
-    poles                  = _numRoots(denom, ini.laplace)
-    zeros                  = _numRoots(numer, ini.laplace)
-    poles, zeros           = _cancelPZ(poles, zeros)
-    numPoles               = len(poles)
-    numZeros               = len(zeros)
-    numCornerFreqs         = numPoles + numZeros
+    numer, denom = loopgainRational.as_numer_denom()
+    poles = _numRoots(denom, ini.laplace)
+    zeros = _numRoots(numer, ini.laplace)
+    poles, zeros = _cancelPZ(poles, zeros)
+    numPoles = len(poles)
+    numZeros = len(zeros)
+    numCornerFreqs = numPoles + numZeros
     gain, coeffsN, coeffsD = coeffsTransfer(loopgainRational)
-    freqsOrders            = np.zeros((numCornerFreqs, 2), dtype='float64')
+    freqsOrders = np.zeros((numCornerFreqs, 2), dtype='float64')
     for i in range(numZeros):
         freqsOrders[i, 0] = np.abs(zeros[i])
         freqsOrders[i, 1] = 1
@@ -417,25 +449,25 @@ def findServoBandwidth(loopgainRational):
         freqsOrders[numZeros + i, 0] = np.abs(poles[i])
         freqsOrders[numZeros + i, 1] = -1
     # sort the rows with increasing corner frequencies
-    freqsOrders = freqsOrders[freqsOrders[:,0].argsort()]
+    freqsOrders = freqsOrders[freqsOrders[:, 0].argsort()]
     for i in range(numCornerFreqs):
         if i == 0:
             # Initialize variables
-            value   = np.abs(float(gain))
+            value = np.abs(float(gain))
             fcorner = float(freqsOrders[i, 0])
-            order   = int(freqsOrders[i, 1])
-            result  = _initServoResults(fcorner, order, value)
+            order = int(freqsOrders[i, 1])
+            result = _initServoResults(fcorner, order, value)
         elif freqsOrders[i, 0] == 0:
             # Update corner frequency and order
             fcorner = float(freqsOrders[i, 0])
-            order   += int(freqsOrders[i, 1])
+            order += int(freqsOrders[i, 1])
         else:
-            new_fcorner  = float(freqsOrders[i, 0])
-            new_order    = int(order + freqsOrders[i, 1])
+            new_fcorner = float(freqsOrders[i, 0])
+            new_order = int(order + freqsOrders[i, 1])
             # Determine new value at corner frequency
             if order == 0:
                 new_value = value
-            elif fcorner == 0: # first pole or zero in origin
+            elif fcorner == 0:  # first pole or zero in origin
                 new_value = value * new_fcorner ** order
             else:
                 new_value = value * (new_fcorner / fcorner) ** order
@@ -453,9 +485,9 @@ def findServoBandwidth(loopgainRational):
                 result['mbv'] = new_value
                 result['mbf'] = new_fcorner
             # Update value, corner frequency, and order
-            value    = new_value
-            order    = new_order
-            fcorner  = new_fcorner
+            value = new_value
+            order = new_order
+            fcorner = new_fcorner
     for key in result.keys():
         try:
             result[key] = float(result[key])
@@ -469,6 +501,7 @@ def findServoBandwidth(loopgainRational):
         if result['mbf'] != None:
             result['mbf'] = result['mbf']/np.pi/2
     return result
+
 
 def _initServoResults(fcorner, order, value):
     result = {}
@@ -488,14 +521,15 @@ def _initServoResults(fcorner, order, value):
             result['hpf'] = value**(-1/order)
             result['hpo'] = order
     elif value > 1 and order < 0:
-            result['mbv'] = value
-            result['mbf'] = 0
-            result['lpf'] = fcorner * value**(-1/order)
-            result['lpo'] = order
+        result['mbv'] = value
+        result['mbf'] = 0
+        result['lpf'] = fcorner * value**(-1/order)
+        result['lpo'] = order
     elif value < 1 and order > 0:
-            result['hpf'] = fcorner * value**(-1/order)
-            result['hpo'] = order
+        result['hpf'] = fcorner * value**(-1/order)
+        result['hpo'] = order
     return result
+
 
 def _checkNumber(var):
     """
@@ -517,6 +551,7 @@ def _checkNumber(var):
         var = None
     return var
 
+
 def _checkNumeric(exprList):
     """
     Returns True is all entries in the list 'exprList' are numeric.
@@ -534,6 +569,7 @@ def _checkNumeric(exprList):
             numeric = False
             break
     return numeric
+
 
 def _checkExpression(expr):
     """
@@ -559,6 +595,7 @@ def _checkExpression(expr):
         expr = None
     return expr
 
+
 def fullSubs(valExpr, parDefs):
     """
     Returns 'valExpr' after all parameters of 'parDefs' have been substituted
@@ -583,7 +620,7 @@ def fullSubs(valExpr, parDefs):
     strValExpr = str(valExpr)
     i = 0
     newvalExpr = 0
-    while valExpr != newvalExpr and i < ini.max_rec_subst  and isinstance(valExpr, sp.Basic):
+    while valExpr != newvalExpr and i < ini.max_rec_subst and isinstance(valExpr, sp.Basic):
         # create a substitution dictionary with the smallest number of entries (this speeds up the substitution)
         substDict = {}
         params = valExpr.atoms(sp.Symbol)
@@ -593,16 +630,19 @@ def fullSubs(valExpr, parDefs):
                     substDict[param] = float2rational(parDefs[param])
                 else:
                     # In case of floats, integers or strings:
-                    substDict[param] = sp.sympify(str(parDefs[param]), rational=True)
+                    substDict[param] = sp.sympify(
+                        str(parDefs[param]), rational=True)
         # perform the substitution
         newvalExpr = valExpr
         valExpr = newvalExpr.xreplace(substDict)
         i += 1
-    if i == ini.max_rec_subst :
-        print("Warning: reached maximum number of substitutions for expression '{0}'".format(strValExpr))
+    if i == ini.max_rec_subst:
+        print("Warning: reached maximum number of substitutions for expression '{0}'".format(
+            strValExpr))
     return valExpr
 
-def assumeRealParams(expr, params = 'all'):
+
+def assumeRealParams(expr, params='all'):
     """
     Returns the sympy expression 'expr' in which variables, except the
     Laplace variable, have been redefined as real.
@@ -619,7 +659,8 @@ def assumeRealParams(expr, params = 'all'):
 
     if type(params) == list:
         for i in range(len(params)):
-            expr = expr.xreplace({sp.Symbol(params[i]): sp.Symbol(params[i], real = True)})
+            expr = expr.xreplace(
+                {sp.Symbol(params[i]): sp.Symbol(params[i], real=True)})
     elif type(params) == str:
         if params == 'all':
             params = expr.atoms(sp.Symbol)
@@ -628,14 +669,18 @@ def assumeRealParams(expr, params = 'all'):
             except BaseException:
                 pass
             for param in params:
-                expr = expr.xreplace({sp.Symbol(str(param)): sp.Symbol(str(param), real = True)})
+                expr = expr.xreplace(
+                    {sp.Symbol(str(param)): sp.Symbol(str(param), real=True)})
         else:
-            expr = expr.xreplace({sp.Symbol(params): sp.Symbol(params, real = True)})
+            expr = expr.xreplace(
+                {sp.Symbol(params): sp.Symbol(params, real=True)})
     else:
-        print("Error: expected type 'str' or 'lst', got '{0}'.".format(type(params)))
+        print("Error: expected type 'str' or 'lst', got '{0}'.".format(
+            type(params)))
     return expr
 
-def assumePosParams(expr, params = 'all'):
+
+def assumePosParams(expr, params='all'):
     """
     Returns the sympy expression 'expr' in which  variables, except the
     Laplace variable, have been redefined as positive.
@@ -654,7 +699,8 @@ def assumePosParams(expr, params = 'all'):
         for i in range(len(params)):
             if params[i] == 't':
                 expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
-            expr = expr.xreplace({sp.Symbol(params[i]): sp.Symbol(params[i], positive = True)})
+            expr = expr.xreplace(
+                {sp.Symbol(params[i]): sp.Symbol(params[i], positive=True)})
     elif type(params) == str:
         if params == 'all':
             params = list(expr.atoms(sp.Symbol))
@@ -667,19 +713,23 @@ def assumePosParams(expr, params = 'all'):
             except BaseException:
                 pass
             for param in params:
-                #param = sp.Symbol(str(param))
+                # param = sp.Symbol(str(param))
                 if param == sp.Symbol('t'):
                     expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
-                expr = expr.xreplace({param: sp.Symbol(str(param), positive = True)})
+                expr = expr.xreplace(
+                    {param: sp.Symbol(str(param), positive=True)})
         else:
             if params == 't':
                 expr = expr.replace(sp.Heaviside(sp.Symbol('t')), 1)
-            expr = expr.xreplace({sp.Symbol(params): sp.Symbol(params, positive = True)})
+            expr = expr.xreplace(
+                {sp.Symbol(params): sp.Symbol(params, positive=True)})
     else:
-        print("Error: expected type 'str' or 'lst', got '{0}'.".format(type(params)))
+        print("Error: expected type 'str' or 'lst', got '{0}'.".format(
+            type(params)))
     return expr
 
-def clearAssumptions(expr, params = 'all'):
+
+def clearAssumptions(expr, params='all'):
     """
     Returns the sympy expression 'expr' in which  the assumtions 'Real' and
     'Positive' have been deleted.
@@ -696,8 +746,10 @@ def clearAssumptions(expr, params = 'all'):
 
     if type(params) == list:
         for i in range(len(params)):
-            expr = expr.xreplace({sp.Symbol(params[i], positive = True): sp.Symbol(params[i])})
-            expr = expr.xreplace({sp.Symbol(params[i], real = True): sp.Symbol(params[i])})
+            expr = expr.xreplace(
+                {sp.Symbol(params[i], positive=True): sp.Symbol(params[i])})
+            expr = expr.xreplace(
+                {sp.Symbol(params[i], real=True): sp.Symbol(params[i])})
     elif type(params) == str:
         if params == 'all':
             params = expr.atoms(sp.Symbol)
@@ -706,14 +758,20 @@ def clearAssumptions(expr, params = 'all'):
             except BaseException:
                 pass
             for param in params:
-                expr = expr.xreplace({sp.Symbol(str(param), positive = True): sp.Symbol(str(param))})
-                expr = expr.xreplace({sp.Symbol(str(param), real = True): sp.Symbol(str(param))})
+                expr = expr.xreplace(
+                    {sp.Symbol(str(param), positive=True): sp.Symbol(str(param))})
+                expr = expr.xreplace(
+                    {sp.Symbol(str(param), real=True): sp.Symbol(str(param))})
         else:
-            expr = expr.xreplace({sp.Symbol(params, positive = True): sp.Symbol(params)})
-            expr = expr.xreplace({sp.Symbol(params, real = True): sp.Symbol(params)})
+            expr = expr.xreplace(
+                {sp.Symbol(params, positive=True): sp.Symbol(params)})
+            expr = expr.xreplace(
+                {sp.Symbol(params, real=True): sp.Symbol(params)})
     else:
-        print("Error: expected type 'str' or 'lst', got '{0}'.".format(type(params)))
+        print("Error: expected type 'str' or 'lst', got '{0}'.".format(
+            type(params)))
     return expr
+
 
 def phaseMargin(LaplaceExpr):
     """
@@ -751,7 +809,7 @@ def phaseMargin(LaplaceExpr):
         func = sp.lambdify(ini.frequency, sp.Abs(data)-1, ini.lambdify)
         guess = findServoBandwidth(expr)['lpf']
         try:
-            #freq = newton(func, guess, tol = 10**(-ini.disp), maxiter = 50)
+            # freq = newton(func, guess, tol = 10**(-ini.disp), maxiter = 50)
             freq = float(fsolve(func, guess)[0])
             mrgn = float(_phaseFunc_f(expr, freq))
         except BaseException:
@@ -766,6 +824,7 @@ def phaseMargin(LaplaceExpr):
         mrgns = mrgns[0]
         freqs = freqs[0]
     return (mrgns, freqs)
+
 
 def _makeNumData(yFunc, xVar, x, normalize=True):
     """
@@ -801,6 +860,7 @@ def _makeNumData(yFunc, xVar, x, normalize=True):
         y = [sp.N(yFunc) for i in range(len(x))]
     return y
 
+
 def _magFunc_f(LaplaceExpr, f):
     """
     Calculates the magnitude at the real frequency f (Fourier) from the
@@ -835,6 +895,7 @@ def _magFunc_f(LaplaceExpr, f):
     result = _makeNumData(sp.Abs(data), ini.frequency, f, normalize=False)
     return result
 
+
 def _dB_magFunc_f(LaplaceExpr, f):
     """
     Calculates the dB magnitude at the real frequency f (Fourier) from the
@@ -864,8 +925,10 @@ def _dB_magFunc_f(LaplaceExpr, f):
         data = LaplaceExpr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
     else:
         data = LaplaceExpr.xreplace({ini.laplace: sp.I*ini.frequency})
-    result = _makeNumData(20*sp.log(sp.Abs(sp.N(data)), 10), ini.frequency, f, normalize=False)
+    result = _makeNumData(20*sp.log(sp.Abs(sp.N(data)), 10),
+                          ini.frequency, f, normalize=False)
     return result
+
 
 def _phaseFunc_f(LaplaceExpr, f):
     """
@@ -920,6 +983,7 @@ def _phaseFunc_f(LaplaceExpr, f):
         phase = phase * 180/np.pi
     return phase
 
+
 def _delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
     """
     Calculates the group delay at the real frequency f (Fourier) from the
@@ -956,19 +1020,22 @@ def _delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
             angle1 = np.angle(func(f))
             angle2 = np.angle(func(f*(1+delta)))
         except BaseException:
-            angle1 = np.array([np.angle(data.subs(ini.frequency, f[i])) for i in range(len(f))])
-            angle2 = np.array([np.angle(data.subs(ini.frequency, f[i]*(1+delta))) for i in range(len(f))])
+            angle1 = np.array([np.angle(data.subs(ini.frequency, f[i]))
+                              for i in range(len(f))])
+            angle2 = np.array(
+                [np.angle(data.subs(ini.frequency, f[i]*(1+delta))) for i in range(len(f))])
         try:
             angle1 = np.unwrap(angle1)
             angle2 = np.unwrap(angle2)
         except BaseException:
             pass
-        delay  = (angle1 - angle2)/delta/f
+        delay = (angle1 - angle2)/delta/f
         if ini.hz == True:
             delay = delay/2/np.pi
     else:
         delay = [0 for i in range(len(f))]
     return delay
+
 
 def doCDSint(noiseResult, tau, f_min, f_max):
     """
@@ -993,8 +1060,10 @@ def doCDSint(noiseResult, tau, f_min, f_max):
     _phi = sp.Symbol('_phi', positive=True)
     noiseResult *= ((2*sp.sin(sp.pi*ini.frequency*tau)))**2
     noiseResult = noiseResult.subs(ini.frequency, _phi/tau/sp.pi)
-    noiseResultCDSint = sp.integrate(noiseResult/sp.pi/tau, (_phi, f_min*tau*sp.pi, f_max*tau*sp.pi))
+    noiseResultCDSint = sp.integrate(
+        noiseResult/sp.pi/tau, (_phi, f_min*tau*sp.pi, f_max*tau*sp.pi))
     return sp.simplify(noiseResultCDSint)
+
 
 def doCDS(noiseResult, tau):
     """
@@ -1010,6 +1079,7 @@ def doCDS(noiseResult, tau):
     :rtype: sympy.Expr, sympy.Symbol, int or float
     """
     return noiseResult*((2*sp.sin(sp.pi*ini.frequency*tau)))**2
+
 
 def routh(charPoly, eps=sp.Symbol('epsilon')):
     """
@@ -1038,36 +1108,38 @@ def routh(charPoly, eps=sp.Symbol('epsilon')):
     coeffs = sp.Poly(charPoly, ini.laplace).all_coeffs()
     orders = len(coeffs)
     dim = int(np.ceil(orders/2))
-    M  = [[0 for i in range(dim)] for i in range(orders)]
+    M = [[0 for i in range(dim)] for i in range(orders)]
     M = sp.Matrix(M)
     # Fill the first two rows of the matrix
     for i in range(dim):
         # First row with even orders
-        M[0,i] = coeffs[2*i]
+        M[0, i] = coeffs[2*i]
         # Second row with odd orders
         # Zero at the last position if the highest order is even
         if 2*i+1 < orders:
-            M[1,i] = coeffs[2*i+1]
+            M[1, i] = coeffs[2*i+1]
         else:
-            M[1,i] = 0
+            M[1, i] = 0
     # Calculate all other coefficients of the matrix
     for i in range(2, orders):
-        #print(M.row(i-1))
+        # print(M.row(i-1))
         if M.row(i-1) == sp.Matrix(sp.zeros(1, dim)):
             # Calculate the auxiliary polynomial
             for j in range(dim):
-                M[i-1, j] = M[i-2,j]*(orders-i+1-2*j)
+                M[i-1, j] = M[i-2, j]*(orders-i+1-2*j)
         for j in range(dim):
-            if M[i-1,0] == 0:
+            if M[i-1, 0] == 0:
                 M[i-1, 0] = eps
             if j + 1 >= dim:
-                subMatrix = sp.Matrix([[M[i-2,0], 0],[M[i-1, 0], 0]])
+                subMatrix = sp.Matrix([[M[i-2, 0], 0], [M[i-1, 0], 0]])
             else:
-                subMatrix = sp.Matrix([[M[i-2,0], M[i-2, j+1]],[M[i-1, 0], M[i-1, j+1]]])
-            M[i,j] = sp.simplify(-1/M[i-1,0]*subMatrix.det())
+                subMatrix = sp.Matrix(
+                    [[M[i-2, 0], M[i-2, j+1]], [M[i-1, 0], M[i-1, j+1]]])
+            M[i, j] = sp.simplify(-1/M[i-1, 0]*subMatrix.det())
     return M
 
-def equateCoeffs(protoType, transfer, noSolve = [], numeric=True):
+
+def equateCoeffs(protoType, transfer, noSolve=[], numeric=True):
     """
     Returns the solutions of the equation transferFunction = protoTypeFunction.
 
@@ -1105,7 +1177,8 @@ def equateCoeffs(protoType, transfer, noSolve = [], numeric=True):
     :rtype: dict
     """
     values = {}
-    pars = list(set(list(protoType.atoms(sp.Symbol)) + list(transfer.atoms(sp.Symbol))))
+    pars = list(set(list(protoType.atoms(sp.Symbol)) +
+                list(transfer.atoms(sp.Symbol))))
     for i in range(len(noSolve)):
         noSolve[i] = sp.Symbol(str(noSolve[i]))
     params = []
@@ -1147,6 +1220,7 @@ def equateCoeffs(protoType, transfer, noSolve = [], numeric=True):
         print('Error: equateCoeffs(): could not solve equations.')
     return values
 
+
 def step2PeriodicPulse(ft, t_pulse, t_period, n_periods):
     """
     Converts a step response in a periodic pulse response. Works with symbolic
@@ -1186,11 +1260,12 @@ def step2PeriodicPulse(ft, t_pulse, t_period, n_periods):
         print("Error: expected a time function f(t).")
     return ft_out
 
+
 def butterworthPoly(n):
     """
     Returns a narmalized Butterworth polynomial of the n-th order of the
     Laplace variable.
-    
+
     Zero-frequency value = 1, -3dB frequency (magnitude = 2) is 1 rad/s.
 
     :param n: order
@@ -1200,7 +1275,7 @@ def butterworthPoly(n):
     :rtype: sympy.Expression
     """
     s = ini.laplace
-    if n%2:
+    if n % 2:
         P_s = (s+1)
         for i in range(int((n-1)/2)):
             k = i + 1
@@ -1213,11 +1288,12 @@ def butterworthPoly(n):
     P_s = sp.simplify(P_s)
     return P_s
 
+
 def besselPoly(n):
     """
     Returns a normalized Bessel polynomial of the n-th order of the Laplace
     variable.
-    
+
     Zero-frequency value = 1, -3dB frequency (magnitude = 2) is 1 rad/s.
 
     :param n: order
@@ -1229,8 +1305,9 @@ def besselPoly(n):
     s = ini.laplace
     P_s = 0
     for k in range(n+1):
-        P_s += (sp.factorial(2*n-k)/((2**(n-k))*sp.factorial(k)*sp.factorial(n-k)))*s**k
-    P_s = sp.simplify(P_s/P_s.subs(s,0))
+        P_s += (sp.factorial(2*n-k)/((2**(n-k)) *
+                sp.factorial(k)*sp.factorial(n-k)))*s**k
+    P_s = sp.simplify(P_s/P_s.subs(s, 0))
     # Normalize 3 dB frequency
     w = sp.Symbol('w', real=True)
     B_w = sp.Abs(P_s.subs(s, sp.I*w))**2
@@ -1239,11 +1316,12 @@ def besselPoly(n):
     P_s = P_s.subs(s, s*w3dB)
     return P_s
 
+
 def chebyshev1Poly(n, ripple):
     """
     Returns a normalized Chebyshev polynomial of the n-th order of the Laplace
     variable, with a ripple of <ripple> dB
-    
+
     Zero-frequency value = 1, -3dB frequency (magnitude = 2) is 1 rad/s.
 
     :param n: order
@@ -1252,26 +1330,29 @@ def chebyshev1Poly(n, ripple):
     :return: Chebyshev polynomial of the n-th order of the Laplace variable
     :rtype: sympy.Expression
     """
-    s       = ini.laplace
-    eps     = np.sqrt(10**(ripple/10)-1)
-    h       = np.tanh((1/n)*np.arcsinh(1/eps))
-    a_i     = lambda i, n, h: np.sqrt(1/(1-h**2) - (np.sin((2*i-1)/n*np.pi/2))**2)
-    b_i     = lambda i, n, h: np.sqrt(1 + 1/(h*np.tan((2*i-1)/n*np.pi/2))**2)/2
-    if n%2:
-        P_s   = s*np.sqrt(1-h**2)/h + 1
+    s = ini.laplace
+    eps = np.sqrt(10**(ripple/10)-1)
+    h = np.tanh((1/n)*np.arcsinh(1/eps))
+    def a_i(i, n, h): return np.sqrt(
+        1/(1-h**2) - (np.sin((2*i-1)/n*np.pi/2))**2)
+
+    def b_i(i, n, h): return np.sqrt(1 + 1/(h*np.tan((2*i-1)/n*np.pi/2))**2)/2
+    if n % 2:
+        P_s = s*np.sqrt(1-h**2)/h + 1
         order = int((n-1)/2)
     else:
-        P_s   = 1
+        P_s = 1
         order = int(n/2)
     for i in range(1, order+1):
-        P_s *= (s/a_i(i,n,h))**2 + s/(a_i(i,n,h)*b_i(i,n,h)) + 1
+        P_s *= (s/a_i(i, n, h))**2 + s/(a_i(i, n, h)*b_i(i, n, h)) + 1
     # Normalize 3 dB frequency
-    w    = sp.Symbol('w', real=True)
-    B_w  = sp.Abs(P_s.subs(s, sp.I*w))**2
+    w = sp.Symbol('w', real=True)
+    B_w = sp.Abs(P_s.subs(s, sp.I*w))**2
     func = sp.lambdify(w, B_w - 2)
-    w3dB = float2rational(fsolve(func,10)[0])
-    P_s  = P_s.subs(s, s*w3dB)
+    w3dB = float2rational(fsolve(func, 10)[0])
+    P_s = P_s.subs(s, s*w3dB)
     return P_s
+
 
 def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
     """
@@ -1287,7 +1368,8 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
         errors += 1
     if CDS:
         if tau == None:
-            print("Error: rmsNoise() with CDS=True requires a nonzero finite value for 'tau'.")
+            print(
+                "Error: rmsNoise() with CDS=True requires a nonzero finite value for 'tau'.")
             errors += 1
         else:
             try:
@@ -1312,7 +1394,8 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
             # Numeric values for fmin and fmax and fmax >= fmin
             numlimits = True
     elif noiseResult.dataType != 'noise':
-        print("Error: expected dataType noise, got: '{0}'.".format(noiseResult.dataType))
+        print("Error: expected dataType noise, got: '{0}'.".format(
+            noiseResult.dataType))
         errors += 1
     if errors == 0:
         names = noiseResult.snoiseTerms.keys()
@@ -1353,12 +1436,14 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
                             var_i += data * (fmax - fmin)
                         elif len(params) == 1 and ini.frequency in params and numlimits:
                             # Numeric frequency-dependent spectrum, use numeric integration
-                            noise_spectrum = sp.lambdify(ini.frequency, sp.N(data))
+                            noise_spectrum = sp.lambdify(
+                                ini.frequency, sp.N(data))
                             var_i += quad(noise_spectrum, fmin, fmax)[0]
                         else:
                             # Try sympy integration
                             func = assumePosParams(data)
-                            var_i += sp.integrate(func, [ini.frequency, fmin, fmax])
+                            var_i += sp.integrate(func,
+                                                  [ini.frequency, fmin, fmax])
             if noiseResult.numeric == True:
                 var.append(sp.N(clearAssumptions(sp.expand(var_i))))
             else:
@@ -1366,6 +1451,7 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
     if len(var) == 1:
         var = var[0]
     return var
+
 
 def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
     """
@@ -1407,12 +1493,14 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
             - A list with expressions or values if parameter stepping of the instruction is enabled.
     :rtype: int, float, sympy.Expr
     """
-    result = _varNoise(noiseResult, noise, fmin, fmax, source=source, CDS=CDS, tau=tau)
+    result = _varNoise(noiseResult, noise, fmin, fmax,
+                       source=source, CDS=CDS, tau=tau)
     if type(result) == list:
         rms = [sp.sqrt(item) for item in result]
     else:
         rms = sp.sqrt(result)
     return rms
+
 
 def PdBm2V(p, r):
     """
@@ -1431,6 +1519,7 @@ def PdBm2V(p, r):
     voltage = sp.sqrt(r * 0.001*10**(p/10))
     return voltage
 
+
 def float2rational(expr):
     """
     Converts floats in expr into rational numbers.
@@ -1448,10 +1537,12 @@ def float2rational(expr):
         expr = sp.Rational(expr)
     else:
         try:
-            expr = expr.xreplace({n: sp.Rational(str(n)) for n in expr.atoms(sp.Float)})
+            expr = expr.xreplace({n: sp.Rational(str(n))
+                                 for n in expr.atoms(sp.Float)})
         except AttributeError:
             pass
     return expr
+
 
 def rational2float(expr):
     """
@@ -1471,6 +1562,7 @@ def rational2float(expr):
     except AttributeError:
         pass
     return expr
+
 
 def roundN(expr, numeric=False):
     """
@@ -1500,7 +1592,8 @@ def roundN(expr, numeric=False):
     # Clean-up the expression
     try:
         # Round floats to display accuracy
-        expr = expr.xreplace({n : sp.Float(n, ini.disp) for n in expr.atoms(sp.Float)})
+        expr = expr.xreplace({n: sp.Float(n, ini.disp)
+                             for n in expr.atoms(sp.Float)})
         # Convert floats to int if they can be displayed as such
         maxInt = 10**ini.disp
         floats = expr.atoms(sp.Float)
@@ -1516,6 +1609,7 @@ def roundN(expr, numeric=False):
     except AttributeError:
         pass
     return expr
+
 
 def ilt(expr, s, t, integrate=False):
     """
@@ -1579,7 +1673,8 @@ def ilt(expr, s, t, integrate=False):
                 if n == 1:
                     inv_laplace += fs.subs(s, root)
                 else:
-                    inv_laplace += (1/sp.factorial(n-1))*sp.diff(fs, (s, n-1)).subs(s, root)
+                    inv_laplace += (1/sp.factorial(n-1)) * \
+                        sp.diff(fs, (s, n-1)).subs(s, root)
 
             inv_laplace = assumeRealParams(inv_laplace)
             inv_laplace = inv_laplace.as_real_imag()[0]
@@ -1595,6 +1690,7 @@ def ilt(expr, s, t, integrate=False):
         # use the sympy inverse_laplace_transform() method
         inv_laplace = _symilt(expr, s, t, integrate=integrate)
     return inv_laplace
+
 
 def _symilt(expr, s, t, integrate=False):
     """
@@ -1621,88 +1717,90 @@ def _symilt(expr, s, t, integrate=False):
     # Remove the Heaviside function; positive time only
     return inv_laplace.replace(sp.Heaviside(t), 1)
 
+
 def nonPolyCoeffs(expr, var):
-        """
-        Returns a dictionary with coefficients of negative and positive powers
-        of var.
+    """
+    Returns a dictionary with coefficients of negative and positive powers
+    of var.
 
-        :param var: Variable of which the coefficients will be returned
-        :type var: sympy.Symbol
+    :param var: Variable of which the coefficients will be returned
+    :type var: sympy.Symbol
 
-        :return: Dict with key-value pairs:
+    :return: Dict with key-value pairs:
 
-                 - key: order of the variable
-                 - value: coefficient of that order
-        """
-        error = True
-        i=0
-        while error:
-            try:
-                p=sp.Poly(expr*var**i, var)
-                error=False
-            except sp.PolynomialError:
-                i += 1
-        coeffDict = {}
-        coeffs = p.all_coeffs()
-        coeffs.reverse()
-        for j in range(len(coeffs)):
-            coeffDict[j-i] = coeffs[j]
-        return(coeffDict)
-    
+             - key: order of the variable
+             - value: coefficient of that order
+    """
+    error = True
+    i = 0
+    while error:
+        try:
+            p = sp.Poly(expr*var**i, var)
+            error = False
+        except sp.PolynomialError:
+            i += 1
+    coeffDict = {}
+    coeffs = p.all_coeffs()
+    coeffs.reverse()
+    for j in range(len(coeffs)):
+        coeffDict[j-i] = coeffs[j]
+    return (coeffDict)
+
+
 def ENG(number, scaleFactors=False):
     """
     Converts a number into a tuple with a number and exponent as power of 3 or 
     as scale factor.
-    
+
     :param number: Anything representing a number
     :type mumber: str, int, float, sympy.Expr, sympy.Float
-    
+
     :param scaleFactors: if 'True', scale factors 'y', 'z', 'a', 'f', 'p', 'n', 
                          'u', 'm', 'k', 'M', 'G', 'T', and 'P' will be returned
                          instead of exponents -24, -21, -18, -15, -12, -9, -6, 
                          -3, 3, 6, 9, 12, and 15, respectively.
     :type scaleFactors: Bool
-                         
+
     :return: number, exp
     :rtype: tuple:
-        
+
             - number: int, float, or input type if conversion failed
             - exp: int, str (in case of scaleFactors == True), or None, 
               if conversion failed
-            
+
     Example:
-        
+
     >>> import SLiCAP as sl
     >>> import sympy as sp
-    
+
     >>> sl.ini.disp # number of significant digits to be diplayed
         4
-        
+
     >>> sl.ENG(sp.sqrt(sp.pi))
         (1.772, 0)
-        
+
     >>> sl.ENG(1234567890)
         (1.234, 9)
-        
+
     >>> sl.ENG(1234567890, scaleFactors=True)
         (1.234, 'G')
-        
+
     >>> sl.ENG(1.234567890E-4)
         (123.4, -6)
-        
+
     >>> sl.ENG(1.234567890E-4, scaleFactors=True)
         (123.4, 'u')
-        
+
     """
-    SCALEFACTORS = {-24:'y', -21:'z', -18:'a', -15:'f', -12:'p', -9:'n', 
-                    -6:'u',  -3:'m', +3:'k', +6:'M', +9:'G', +12:'T', +15:'P'}
+    SCALEFACTORS = {-24: 'y', -21: 'z', -18: 'a', -15: 'f', -12: 'p', -9: 'n',
+                    -6: 'u',  -3: 'm', +3: 'k', +6: 'M', +9: 'G', +12: 'T', +15: 'P'}
     exp = None
     try:
-        number   = float(number)
-        sgn      = np.sign(number)
+        number = float(number)
+        sgn = np.sign(number)
         absValue = np.abs(number)
         if absValue != 0:
-            exp      = int(np.log10(absValue)/3)*3
+            exp = int(np.log10(absValue)/3)*3
             if sgn == 0:
                 sign = "-"
             else:
@@ -1725,6 +1823,7 @@ def ENG(number, scaleFactors=False):
         exp = None
     return number, exp
 
+
 def listPZ(pzResult):
     """
     Prints lists with poles and zeros.
@@ -1739,7 +1838,8 @@ def listPZ(pzResult):
         # Parameter stepping is not supported
         try:
             DCvalue = sp.simplify(pzResult.DCvalue)
-            print('DC value of {:}: {:8.2e}'.format(pzResult.gainType, float(DCvalue)))
+            print('DC value of {:}: {:8.2e}'.format(
+                pzResult.gainType, float(DCvalue)))
         except:
             pass
         if pzResult.dataType == 'poles' or pzResult.dataType == 'pz':
@@ -1747,9 +1847,11 @@ def listPZ(pzResult):
                 print('\nPoles of ' + pzResult.gainType + ':\n')
                 poles = pzResult.poles
                 if ini.hz:
-                    print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
+                    print(" {:2} {:15} {:15} {:15} {:9}".format(
+                        'n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
                 else:
-                    print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real   [rad/s]', 'Imag   [rad/s]', 'Freq.  [rad/s]', '   Q [-]'))
+                    print(" {:2} {:15} {:15} {:15} {:9}".format(
+                        'n', 'Real   [rad/s]', 'Imag   [rad/s]', 'Freq.  [rad/s]', '   Q [-]'))
                 print("--  --------------  --------------  --------------  --------")
                 for i in range(len(poles)):
                     realPart = sp.re(poles[i])
@@ -1760,9 +1862,11 @@ def listPZ(pzResult):
                     frequency = sp.sqrt(realPart**2 + imagPart**2)
                     if imagPart != 0:
                         Q = np.abs(frequency/2/realPart)
-                        print("{:2} {:15.2e} {:15.2e} {:15.2e} {:9.2e}".format(i, float(realPart), float(imagPart), float(frequency), Q))
+                        print("{:2} {:15.2e} {:15.2e} {:15.2e} {:9.2e}".format(
+                            i, float(realPart), float(imagPart), float(frequency), Q))
                     else:
-                        print("{:2} {:15.2e} {:15.2e} {:15.2e}".format(i, float(realPart), 0.0, float(frequency)))
+                        print("{:2} {:15.2e} {:15.2e} {:15.2e}".format(
+                            i, float(realPart), 0.0, float(frequency)))
             else:
                 print('\nFound no poles.')
         if pzResult.dataType == 'zeros' or pzResult.dataType == 'pz':
@@ -1770,9 +1874,11 @@ def listPZ(pzResult):
                 print('\nZeros of ' + pzResult.gainType + ':\n')
                 zeros = pzResult.zeros
                 if ini.hz:
-                    print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
+                    print(" {:2} {:15} {:15} {:15} {:9}".format(
+                        'n', 'Real part [Hz]', 'Imag part [Hz]', 'Frequency [Hz]', '   Q [-]'))
                 else:
-                    print(" {:2} {:15} {:15} {:15} {:9}".format('n', 'Real   [rad/s]', 'Imag   [rad/s]', 'Freq.  [rad/s]', '   Q [-]'))
+                    print(" {:2} {:15} {:15} {:15} {:9}".format(
+                        'n', 'Real   [rad/s]', 'Imag   [rad/s]', 'Freq.  [rad/s]', '   Q [-]'))
                 print("--  --------------  --------------  --------------  --------")
                 for i in range(len(zeros)):
                     realPart = sp.re(zeros[i])/2/np.pi
@@ -1783,15 +1889,18 @@ def listPZ(pzResult):
                     frequency = sp.sqrt(realPart**2 + imagPart**2)
                     if imagPart != 0:
                         Q = np.abs(frequency/2/realPart)
-                        print("{:2} {:15.2e} {:15.2e} {:15.2e} {:9.2e}".format(i, float(realPart), float(imagPart), float(frequency), Q))
+                        print("{:2} {:15.2e} {:15.2e} {:15.2e} {:9.2e}".format(
+                            i, float(realPart), float(imagPart), float(frequency), Q))
                     else:
-                        print("{:2} {:15.2e} {:15.2e} {:15.2e}".format(i, float(realPart), 0.0, float(frequency)))
+                        print("{:2} {:15.2e} {:15.2e} {:15.2e}".format(
+                            i, float(realPart), 0.0, float(frequency)))
             else:
                 print('\nFound no zeros.')
     else:
         print('\nlistPZ() does not support parameter stepping.')
     print('\n')
     return
+
 
 def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True):
     results = {}
@@ -1805,12 +1914,13 @@ def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True):
             try:
                 if doit:
                     integral = sp.integrate(coeff, (x, x_lower, x_upper))
-                else: 
+                else:
                     integral = sp.Integral(coeff, (x, x_lower, x_upper))
             except:
                 raise NotImplementedError()
         results[(exp_1, exp_2)] = integral
     return results
+
 
 def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True):
     # Find the highest order terms in the denominator
@@ -1822,157 +1932,168 @@ def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True):
             var0_order, var1_order = exponents
 
     # Change the order to use sp.Poly
-    poly =  sp.Poly(sp.simplify(func * variables[0]**var0_order * variables[1]**var1_order), variables[0], variables[1])
-    
+    poly = sp.Poly(sp.simplify(
+        func * variables[0]**var0_order * variables[1]**var1_order), variables[0], variables[1])
+
     # Integrate the polynomial coefficients numerically
-    integratedCoeffs = _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=doit)
+    integratedCoeffs = _integrate_all_coeffs(
+        poly, x, x_lower, x_upper, doit=doit)
     return integratedCoeffs, exponents
-    
+
+
 def integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
     """
     Returns a dictionary with key-value pairs:
-    
+
     - key: monomial of variables
     - coefficient of this monomial with x integrated over the range 
       x_lower ... x_upper. 
-      
+
     If doit=True the integration will be performed, else integral operators 
     will be returned.
-    
+
     :param expr: Sympy expression
     :type param: sympy.expr
-    
+
     :param variables: List or tuple with variables  
                       (currently only two variables accepted)
-                      
+
     :type variables: list with sympy.Symbol objects
 
     :param x: integration variable
     :type x: sympy.Symbol
-    
+
     :param x_lower: start value integration
     :type x_lower: sympy.Symbol, int or float
-    
+
     :param x_upper: end value integration
     :type x_upper: sympy.Symbol, int or float
-    
+
     :param doit: True/False; If True, the integration will be performed, 
                  else integral operators will be returned.
     :type doit: bool
-    
+
     :return: Dictionary with key-value pairs:
-        
+
              - key (sympy.Expr): monomial
              - value (sympy.Expr): integrated monomial coefficient
-             
+
     :rtype: sympy.expr, int or float
-    """ 
-    
+    """
+
     if len(variables) == 2:
-        integrated_coeffs, orders = _integrateCoeffs2(expr, variables, x, x_lower, x_upper, doit=doit)
+        integrated_coeffs, orders = _integrateCoeffs2(
+            expr, variables, x, x_lower, x_upper, doit=doit)
     else:
-        raise NotImplementedError("Only two-variable monomials are implemented.") 
+        raise NotImplementedError(
+            "Only two-variable monomials are implemented.")
     new_coeffs = {}
     for key in integrated_coeffs.keys():
-        newkey = variables[0]**(key[0]-orders[0]) * variables[1]**(key[1]-orders[1])
+        newkey = variables[0]**(key[0]-orders[0]) * \
+            variables[1]**(key[1]-orders[1])
         new_coeffs[newkey] = integrated_coeffs[key]
     return new_coeffs
+
 
 def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
     """
     Returns expr in which x in coefficients of monomials of 
     variables are integrated over the range x_lower ... x_upper. If doit=True
     the integration will be performed, else integral operators will be returned.
-    
+
     :param expr: Sympy expression
     :type param: sympy.expr
-    
+
     :param variables: List or tuple with variables
                       (currently only two variables accepted)
-                      
+
     :type variables: list with sympy.Symbol objects
 
     :param x: integration variable
     :type x: sympy.Symbol
-    
+
     :param x_lower: start value integration
     :type x_lower: sympy.Symbol, int or float
-    
+
     :param x_upper: end value integration
     :type x_upper: sympy.Symbol, int or float
-    
+
     :param doit: True/False; If True, the integration will be performed, 
                  else integral operators will be returned.
     :type doit: bool
-    
+
     :return: Integration result
     :rtype: sympy.expr, int or float
-    """ 
-    integratedCoeffs = integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=doit)
+    """
+    integratedCoeffs = integrated_monomial_coeffs(
+        expr, variables, x, x_lower, x_upper, doit=doit)
     integratedResult = sum(sp.Mul(key, integratedCoeffs[key], evaluate=doit)
-                        for key in integratedCoeffs.keys())
+                           for key in integratedCoeffs.keys())
     return integratedResult
+
 
 def units2TeX(units):
     """
     Returns units in LaTeX format, without opening and closing '$'.
-    
+
     :param units: String representing an expression with units
     :type units: str
-    
+
     :return: LaTeX code of 'units' without opening or closing tags.
     :rtype: str
     """
-    if type(units)==str and units != '':
+    if type(units) == str and units != '':
         replacements = {}
         replacements['Ohm'] = 'Omega'
         for key in replacements.keys():
             units = units.replace(key, replacements[key])
         tex = ""
         for unitpart in units.split():
-            tex += py2tex(unitpart, print_latex=False, print_formula=False, simplify_output=False)[2:-2] + " "
+            tex += py2tex(unitpart, print_latex=False,
+                          print_formula=False, simplify_output=False)[2:-2] + " "
     return tex[:-1]
+
 
 def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
     """
     Returns a f_type prototype function based on a f_char polynomial:
-        
+
     - f_char = butterworth
     - f_char = bessel
     - f_char = chebyshev1 # Chebyshev type 1 (passband ripple)
-    
+
     - f_type = lp : low-pass,  requires f_high
     - f_type = hp : high-pass, requires f_low
     - f_type = bp : band-pass, requires f_low and f_high
     - f_type = bs : band-stop, requires f_low and f_high
     - f_type = ap : all-pass,  requires f_high
-    
+
     :param f_char: filter characteristic: Butterworth or Bessel
     :type f_char:  str
-    
+
     :param f_type: filter type: lp, hp, bp, bs, ap
     :type f_type:  str
-    
+
     :param f_order: order of the filter
     :type f_order:  str, int
-    
+
     :param f_low:  low-frequency -3dB corner [Hz]
     :type f_low:   sympy.Symbol, float, int
-    
+
     :param f_high: high-frequency -3dB corner [Hz]
     :type f_high:  sympy.Symbol, float, int
-    
+
     :param ripple: pass-band ripple in [dB]
     :type ripple: int, float
-    
+
     :return: Filter prototype function (Laplace Transform)
     :rtype: sympy.Expr
     """
     f_char = f_char.lower()
     f_type = f_type.lower()
     f_order = int(f_order)
-    if f_char== "butterworth":
-        proto = butterworthPoly(f_order)    
+    if f_char == "butterworth":
+        proto = butterworthPoly(f_order)
     elif f_char == "bessel":
         proto = besselPoly(f_order)
     elif f_char == "chebyshev1":
@@ -1984,7 +2105,8 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
             print("Error: missing f_high")
     elif f_type == "hp":
         if f_low != None:
-            proto = normalizeRational(sp.simplify(1/proto.subs(ini.laplace, 2*sp.pi*f_low/ini.laplace)))
+            proto = normalizeRational(sp.simplify(
+                1/proto.subs(ini.laplace, 2*sp.pi*f_low/ini.laplace)))
         else:
             print("Error: missing f_low")
     elif f_type == "ap":
@@ -1995,42 +2117,49 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
             print("Error: missing f_high")
     else:
         if f_low != None and f_high != None:
-            B   = f_high - f_low
+            B = f_high - f_low
             f_c = sp.sqrt(f_low * f_high)
-            Q   = f_c/B
+            Q = f_c/B
             if f_type == "bp" and f_c != None:
-                proto = 1/proto.subs(ini.laplace, Q*(ini.laplace+1/ini.laplace))
-                proto = normalizeRational(sp.simplify(proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_c))))
+                proto = 1/proto.subs(ini.laplace, Q *
+                                     (ini.laplace+1/ini.laplace))
+                proto = normalizeRational(sp.simplify(
+                    proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_c))))
             elif f_type == "bs" and f_c != None:
-                proto = 1/proto.subs(ini.laplace, 1/(Q*(ini.laplace+1/ini.laplace)))
-                proto = normalizeRational(sp.simplify(proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_c))))
+                proto = 1/proto.subs(ini.laplace, 1 /
+                                     (Q*(ini.laplace+1/ini.laplace)))
+                proto = normalizeRational(sp.simplify(
+                    proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_c))))
         elif f_low == None:
             print("Error: missing f_low")
         else:
             print("Error: missing f_high")
     return proto
 
-def DIN_A(f_0 = 1000):
+
+def DIN_A(f_0=1000):
     """
     Returns DIN_A frequency weighting function (audio), normalized at f=f_0
-    
+
     See WiKi R_A(f): https://en.wikipedia.org/wiki/A-weighting
-    
+
     :param f_0: Normalization frequency (frequency at which the weighting = 1),
                 defaults to 1kHz
     :type f_0: float, int, sympy.Symbol
-    
+
     :return: R_A(f): Weighting function, argument = ini.frequency
     :rtype: sympy.Expr
     """
     f = ini.frequency
-    DIN_A = 12194**2*f**4/((f**2+20.6**2)*(f**2+12194**2)*sp.sqrt((f**2+107.7**2)*(f**2+737.9**2)))
+    DIN_A = 12194**2*f**4/((f**2+20.6**2)*(f**2+12194**2)
+                           * sp.sqrt((f**2+107.7**2)*(f**2+737.9**2)))
     # normalized the weighting function w.r.t. 1kHz
-    return float2rational(DIN_A /DIN_A.subs(f, f_0))
+    return float2rational(DIN_A / DIN_A.subs(f, f_0))
+
 
 if __name__ == "__main__":
     from time import time
-    ini.hz=True
+    ini.hz = True
     """
     t = sp.Symbol('t')
     s = sp.Symbol('s')
@@ -2123,9 +2252,12 @@ if __name__ == "__main__":
     loopgain         = sp.sympify('100/(1+s/1000/2/pi)')
     print(findServoBandwidth(loopgain))
     """
-    expr= sp.sympify("4*Gamma*T*k*n*(C_i + C_s + c_iss)**2/(C_i**2*g_m) + K_F*(C_i + C_s)**2/(C_OX*C_i**2*c_iss*f**A_F)")
-    g_m, c_iss =  sp.symbols("g_m, c_iss")
+    expr = sp.sympify(
+        "4*Gamma*T*k*n*(C_i + C_s + c_iss)**2/(C_i**2*g_m) + K_F*(C_i + C_s)**2/(C_OX*C_i**2*c_iss*f**A_F)")
+    g_m, c_iss = sp.symbols("g_m, c_iss")
     variables = (g_m, c_iss)
     f, f_min, f_max = sp.symbols("f, f_min, f_max")
-    integratedCoeffs = integrated_monomial_coeffs(expr, variables, f, f_min, f_max, doit=False)
-    result = integrate_monomial_coeffs(expr, variables, f, f_min, f_max, doit=False)
+    integratedCoeffs = integrated_monomial_coeffs(
+        expr, variables, f, f_min, f_max, doit=False)
+    result = integrate_monomial_coeffs(
+        expr, variables, f, f_min, f_max, doit=False)
