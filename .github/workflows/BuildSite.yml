@@ -100,8 +100,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: "cloudflare_html"
-          path: "SLiCAP/docs/html"   
-      - uses: actions/checkout@v4
+          path: "SLiCAP/docs/html" 
       - name: Deploy
         id: deployment
         uses: cloudflare/wrangler-action@v3
