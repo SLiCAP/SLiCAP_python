@@ -68,7 +68,12 @@ jobs:
           name: "allDocs"
           path: "SLiCAP/docs"
           retention-days: "1"
-
+      - name: Upload Cloudflare artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "cloudflare_html"
+          path: "SLiCAP/docs/html"
+          retention-days: "1"
   # Deploy Documentationenv_var
   deploy:
     needs: build
@@ -91,6 +96,11 @@ jobs:
       contents: read
       deployments: write
     steps:
+      - name: Download directory artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: "cloudflare_html"
+          path: "SLiCAP/docs/html"   
       - uses: actions/checkout@v4
       - name: Deploy
         id: deployment
@@ -98,4 +108,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy ../docs/html --project-name=slicap-cloudflare
+          command: pages deploy SLiCAP/docs/html --project-name=slicap-cloudflare
