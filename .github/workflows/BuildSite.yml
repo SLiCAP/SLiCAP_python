@@ -82,5 +82,19 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           artifact_name: "onlyHTML"
-
-
+  # Deploy to cloudflare
+  deploy2cloudflare:
+    runs-on: ubuntu-latest
+    name: Deploy
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        id: deployment
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy SLiCAP/docs/html --project-name=slicap-cloudflare
