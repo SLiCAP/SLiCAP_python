@@ -84,6 +84,7 @@ jobs:
           artifact_name: "onlyHTML"
   # Deploy to cloudflare
   deploy2cloudflare:
+    needs: build
     runs-on: ubuntu-latest
     name: Deploy
     permissions:
