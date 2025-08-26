@@ -102,7 +102,7 @@ jobs:
           name: "cloudflare_html"
           path: "SLiCAP/docs/html" 
       - name: Deploy
-        id: deployment
+        id: cloudflare_deployment
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
