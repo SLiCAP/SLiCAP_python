@@ -3,6 +3,6 @@
     :widths: auto
 
     :math:`A_{i}`
-    :math:`R_{L}`
     :math:`R_{i XA}`
+    :math:`R_{L}`
 

@@ -540,7 +540,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
     #remove('simFile.sp')
     #remove('simFile.log')
     #remove('temp.txt')
-    copy2(cirFile + '.csv', ini.csv_path + title + '.csv')
+    fileName = cirFile.split('/')[-1]
+    copy2(cirFile + '.csv', ini.csv_path + fileName + '.csv')
     traceDict = _processNGspiceResult(cirFile, analysisType, traceType)
     return traceDict
 
