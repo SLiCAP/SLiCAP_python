@@ -9,13 +9,13 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  deployments: write
 
 jobs:
     # Build and Package
   BuildSite:
     permissions:
       deployments: write
+      contents: read
     uses: ./.github/workflows/BuildSite.yml
 
   # Build and Package
