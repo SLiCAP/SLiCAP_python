@@ -83,7 +83,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
         with:
           artifact_name: "onlyHTML"
@@ -91,7 +90,7 @@ jobs:
   deploy2cloudflare:
     needs: build
     runs-on: ubuntu-latest
-    name: Deploy
+    name: Deploy Cloudflare
     permissions:
       contents: read
       deployments: write
@@ -101,8 +100,7 @@ jobs:
         with:
           name: "cloudflare_html"
           path: "SLiCAP/docs/html" 
-      - name: Deploy
-        id: cloudflare_deployment
+      - name: Deploy Action
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
