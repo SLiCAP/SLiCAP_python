@@ -18,6 +18,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
+    secrets: inherit
     uses: ./.github/workflows/BuildSite.yml
 
   # Build and Package
