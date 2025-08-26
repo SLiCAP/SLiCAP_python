@@ -16,6 +16,8 @@ jobs:
     permissions:
       deployments: write
       contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/BuildSite.yml
 
   # Build and Package
