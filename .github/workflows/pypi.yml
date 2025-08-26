@@ -18,6 +18,8 @@ jobs:
   # Build and Package
   BuildPackage:
     needs: BuildSite
+    permissions:
+      deployments: write
     uses: ./.github/workflows/BuildPackage.yml
 
   publish-to-pypi:
