@@ -48,6 +48,8 @@ SLiCAP Version 4.0 release notes
       
       The results of an operating point information (without parameter stepping) can be displayed on the KiCAD schematic and its ``svg`` and ``pdf`` image files.
       
+#. Clean-up code and minor bug fixes.
+      
 SLiCAP Version 3.5 release notes
 ================================
 

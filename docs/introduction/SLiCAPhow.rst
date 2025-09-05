@@ -7,7 +7,7 @@ How to use SLiCAP
 
 SLiCAP is a tool designed to help you create and solve design equations for analog circuits. It supports both analog design automation and education
 
-A **design equation** represents the value of a specific circuit parameter, such as the value of a component, the operating current of a transistor, or the size of a transistor. These parameters are expressed in terms of circuit requirements like low noise, power consumption, and bandwidth. In contrast, an analysis result indicates how well a circuit performs based on its current parameters
+A **design equation** expresses the value of a specific circuit parameter, such as the value of a component, the operating current of a transistor, or the size of a transistor in terms of the circuit's requirements like low noise, power consumption, and bandwidth. It is the inverse of an analysis result that writes the performance in terms of circuit parameters.
 
 To set up design equations, you need to perform (symbolic) circuit analysis with the parameter(s) of interest and find valid ranges for the parameter(s) by solving the analysis results with given specifications. However, solving equations symbolically can be challenging and is sometimes not feasible. Therefore, it's important to use **circuit models that are both simple and effective**. During each step of the design process, aim to use as few symbolic variables as possible and have clear objectives for performance and cost. This methodology aligns with a systems engineering design approach, as outlined in `Structured Electronic Design <https://analog-electronics.tudelft.nl/>`_.
 

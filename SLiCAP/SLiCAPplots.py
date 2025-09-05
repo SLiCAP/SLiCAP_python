@@ -690,6 +690,11 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                 colNum += 1
                 ax.traces.append(newTrace)
     else:
+        same_types = False
+        if len(results) > 1:
+            gain_types = list(set([result.gainType for result in results]))
+            if len(gain_types) == 1:
+                same_types = True 
         for result in results:
             if not result.step:
                 if result.dataType == 'numer':
@@ -752,7 +757,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                         else:
                             yLabel = result.gainType
                     if result.label == '':
-                        if result.gainType != 'vi':
+                        if result.gainType != 'vi' and same_types == False:
                             try:
                                 newTrace.color = _gain_colors()[result.gainType]
                             except:
@@ -988,6 +993,11 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
         results = [results]
     colNum = 0
     numColors = len(ini.default_colors)
+    same_types = False
+    if len(results) > 1:
+        gain_types = list(set([result.gainType for result in results]))
+        if len(gain_types) == 1:
+            same_types = True
     for result in results:
         if not result.step:
             if result.dataType == 'poles' or result.dataType == 'pz':
@@ -997,11 +1007,15 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                 else:
                     polesTrace = trace([np.real(result.poles)/xScaleFactor, 
                                         np.imag(result.poles)/yScaleFactor])
-                try:
-                    polesTrace.markerColor = _gain_colors()[result.gainType]
-                except:
+                if not same_types:
+                    try:
+                        polesTrace.markerColor = _gain_colors()[result.gainType]
+                    except:
+                        polesTrace.markerColor = ini.default_colors[colNum % numColors]
+                        colNum += 1
+                else:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
-                    colNum += 1
+                    colNum += 1                    
                 polesTrace.color = ''
                 polesTrace.marker = 'x'
                 polesTrace.lineWidth = '0'
@@ -1018,11 +1032,15 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                     zerosTrace = trace([np.real(result.zeros)/xScaleFactor, 
                                         np.imag(result.zeros)/yScaleFactor])
                 zerosTrace.color = ''
-                try:
-                    zerosTrace.markerColor = _gain_colors()[result.gainType]
-                except:
+                if not same_types:
+                    try:
+                        zerosTrace.markerColor = _gain_colors()[result.gainType]
+                    except:
+                        zerosTrace.markerColor = ini.default_colors[colNum % numColors]
+                        colNum += 1
+                else:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
-                    colNum += 1
+                    colNum += 1                    
                 zerosTrace.color = ''
                 zerosTrace.marker = 'o'
                 zerosTrace.lineWidth = '0'
@@ -1068,9 +1086,13 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                 else:
                     polesTrace = trace([np.real(result.poles[-1]/xScaleFactor), 
                                         np.imag(result.poles[-1])/yScaleFactor])
-                try:
-                    polesTrace.markerColor = _gain_colors()[result.gainType]
-                except:
+                if not same_types:
+                    try:
+                        polesTrace.markerColor = _gain_colors()[result.gainType]
+                    except:
+                        polesTrace.markerColor = ini.default_colors[colNum % numColors]
+                        colNum += 1
+                else:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 polesTrace.color = ''
@@ -1096,11 +1118,15 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                 else:
                     polesTrace = trace([np.real(allPoles)/xScaleFactor, 
                                         np.imag(allPoles)/yScaleFactor])
-                try:
-                    polesTrace.markerColor = _gain_colors()[result.gainType]
-                except:
+                if not same_types:
+                    try:
+                        polesTrace.markerColor = _gain_colors()[result.gainType]
+                    except:
+                        polesTrace.markerColor = ini.default_colors[colNum % numColors]
+                        colNum += 1
+                else:
                     polesTrace.markerColor = ini.default_colors[colNum % numColors]
-                    colNum += 1
+                    colNum += 1    
                 polesTrace.color = ''
                 polesTrace.marker = '.'
                 polesTrace.lineWidth = '0'
@@ -1125,9 +1151,13 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                 else:
                     zerosTrace = trace([np.real(result.zeros[0])/xScaleFactor, 
                                         np.imag(result.zeros[0])/yScaleFactor])
-                try:
-                    zerosTrace.markerColor = _gain_colors()[result.gainType]
-                except:
+                if not same_types:
+                    try:
+                        zerosTrace.markerColor = _gain_colors()[result.gainType]
+                    except:
+                        zerosTrace.markerColor = ini.default_colors[colNum % numColors]
+                        colNum += 1
+                else:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 zerosTrace.color = ''
@@ -1150,11 +1180,16 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                 else:
                     zerosTrace = trace([np.real(result.zeros[-1])/xScaleFactor, 
                                         np.imag(result.zeros[-1])/yScaleFactor])
-                try:
-                    zerosTrace.markerColor = _gain_colors()[result.gainType]
-                except:
+                if not same_types:
+                    try:
+                        zerosTrace.markerColor = _gain_colors()[result.gainType]
+                    except:
+                        zerosTrace.markerColor = ini.default_colors[colNum % numColors]
+                        colNum += 1
+                else:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
+                    
                 zerosTrace.color = ''
                 zerosTrace.marker = 's'
                 zerosTrace.lineWidth = '0'
@@ -1178,9 +1213,13 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
                 else:
                     zerosTrace = trace([np.real(allZeros)/xScaleFactor, 
                                         np.imag(allZeros)/yScaleFactor])
-                try:
-                    zerosTrace.markerColor = _gain_colors()[result.gainType]
-                except:
+                if not same_types:
+                    try:
+                        zerosTrace.markerColor = _gain_colors()[result.gainType]
+                    except:
+                        zerosTrace.markerColor = ini.default_colors[colNum % numColors]
+                        colNum += 1
+                else:
                     zerosTrace.markerColor = ini.default_colors[colNum % numColors]
                     colNum += 1
                 zerosTrace.marker = '.'
@@ -1291,9 +1330,9 @@ def plot(fileName, title, axisType, plotData, xName = '', xScale = '',
     ax.yLim = yLim
     ax.traces = []
     # Create the axis labels
-    if xScale != "" or xUnits != "":
+    if xName !="" or xScale != "" or xUnits != "":
         ax.xLabel = xName + ' [' + xScale + xUnits + ']'
-    if yScale != "" or yUnits != "":
+    if yName != "" or yScale != "" or yUnits != "":
         ax.yLabel = yName + ' [' + yScale + yUnits + ']'
     for key in plotData.keys():
         if type(plotData[key]) is list:

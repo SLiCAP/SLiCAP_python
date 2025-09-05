@@ -778,15 +778,14 @@ def _numRoots2RST(roots, Hz, pz):
     lineList = []
     i = 0
     for root in roots:
-        i += 1
-        realpart  = sp.re(root)
-        imagpart  = sp.im(root)
-        frequency = sp.Abs(root)
-        Q = roundN(sp.N(frequency/(2*sp.Abs(realpart))))
-        if Hz == True:
-            realpart = roundN(sp.N(realpart/2/sp.pi))
-            imagpart = roundN(sp.N(imagpart/2/sp.pi))
-            frequency = roundN(sp.N(frequency/2/sp.pi))
+        if Hz:
+            root  = sp.N(root/2/sp.pi)
+        else:
+            root  = sp.N(root)
+        realpart  = roundN(sp.re(root))
+        imagpart  = roundN(sp.im(root))
+        frequency = roundN(sp.Abs(root))
+        Q = roundN(frequency/(2*sp.Abs(realpart)))
         if imagpart == 0:
             line = [sp.Symbol(pz + '_' + str(i)), realpart, imagpart, frequency ]
         else:

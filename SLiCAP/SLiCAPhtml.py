@@ -680,28 +680,24 @@ def pz2html(instObj, label = '', labelText = ''):
         if _checkNumeric(poles):
             html += '<table><tr><th>pole</th><th>' + unitsR + '</th><th>' + unitsI + '</th><th>' + unitsM + '</th><th>Q</th></tr>\n'
             for i in range(len(poles)):
-                p = poles[i]
-                if ini.hz == True:
-                    p  = p/2/sp.pi
-                Re = sp.re(p)
-                Im = sp.im(p)
-                F  = sp.sqrt(Re**2+Im**2)
-                if Im != 0:
-                    #Q = str(sp.N(F/2/abs(Re), ini.disp))
-                    Q = "$" + _latex_ENG(sp.N(F/2/abs(Re), ini.disp)) + "$"
+                if ini.hz:
+                    root  = sp.N(poles[i]/2/sp.pi)
                 else:
-                    Q = ''
-                #F  = str(sp.N(F, ini.disp))
-                F  = "$" +_latex_ENG(sp.N(F, ini.disp)) + "$"
-                #Re = str(sp.N(Re, ini.disp))
-                Re = "$" +_latex_ENG(sp.N(Re, ini.disp)) + "$"
-                if Im != 0.:
-                    #Im = str(sp.N(Im, ini.disp))
-                    Im = "$" +_latex_ENG(sp.N(Im, ini.disp)) + "$"
+                    root  = sp.N(poles[i])
+                realpart  = sp.re(root)
+                imagpart  = sp.im(root)
+                frequency = sp.Abs(root)
+                Q         = frequency/(2*sp.Abs(realpart))
+                if imagpart != 0:
+                    Q        = "$" + _latex_ENG(sp.N(frequency/2/abs(realpart), ini.disp)) + "$"
+                    imagpart = "$" + _latex_ENG(sp.N(imagpart, ini.disp)) + "$"
                 else:
-                    Im = ''
+                    Q        = ''
+                    imagpart = ''
+                frequency  = "$" + _latex_ENG(sp.N(frequency, ini.disp)) + "$"
+                realpart   = "$" + _latex_ENG(sp.N(realpart, ini.disp)) + "$"
                 name = 'p<sub>' + str(i + 1) + '</sub>'
-                html += '<tr><td>' + name + '</td><td>' + Re + '</td><td>' + Im + '</td><td>' + F + '</td><td>' + Q +'</td></tr>\n'
+                html += '<tr><td>' + name + '</td><td>' + realpart + '</td><td>' + imagpart + '</td><td>' + frequency + '</td><td>' + Q +'</td></tr>\n'
             html += '</table>\n'
         else:
             html += '<table><tr><th>pole</th><th>value ' + unitsS + '</th></tr>'
@@ -717,28 +713,24 @@ def pz2html(instObj, label = '', labelText = ''):
         if _checkNumeric(zeros):
             html += '<table><tr><th>zero</th><th>' + unitsR + '</th><th>' + unitsI + '</th><th>' + unitsM + '</th><th>Q</th></tr>\n'
             for i in range(len(zeros)):
-                z = zeros[i]
-                if ini.hz == True:
-                    z = z/2/sp.pi
-                Re = sp.re(z)
-                Im = sp.im(z)
-                F  = sp.sqrt(Re**2+Im**2)
-                if Im != 0:
-                    #Q = str(sp.N(F/2/abs(Re), ini.disp))
-                    Q = "$" + _latex_ENG(sp.N(F/2/abs(Re), ini.disp)) + "$"
+                if ini.hz:
+                    root  = sp.N(zeros[i]/2/sp.pi)
                 else:
-                    Q = ''
-                #F  = str(sp.N(F, ini.disp))
-                F  = "$" + _latex_ENG(sp.N(F, ini.disp)) + "$"
-                #Re = str(sp.N(Re, ini.disp))
-                Re = "$" + _latex_ENG(sp.N(Re, ini.disp)) + "$"
-                if Im != 0.:
-                    #Im = str(sp.N(Im, ini.disp))
-                    Im = "$" + _latex_ENG(sp.N(Im, ini.disp)) + "$"
+                    root  = sp.N(zeros[i])
+                realpart  = sp.re(root)
+                imagpart  = sp.im(root)
+                frequency = sp.Abs(root)
+                Q         = frequency/(2*sp.Abs(realpart))
+                if imagpart != 0:
+                    Q        = "$" + _latex_ENG(sp.N(frequency/2/abs(realpart), ini.disp)) + "$"
+                    imagpart = "$" + _latex_ENG(sp.N(imagpart, ini.disp)) + "$"
                 else:
-                    Im = ''
-                name = 'z<sub>' + str(i + 1) + '</sub>'
-                html += '<tr><td>' + name + '</td><td>' + Re + '</td><td>' + Im + '</td><td>' + F + '</td><td>' + Q +'</td></tr>\n'
+                    Q        = ''
+                    imagpart = ''
+                frequency  = "$" + _latex_ENG(sp.N(frequency, ini.disp)) + "$"
+                realpart   = "$" + _latex_ENG(sp.N(realpart, ini.disp)) + "$"
+                name = 'p<sub>' + str(i + 1) + '</sub>'
+                html += '<tr><td>' + name + '</td><td>' + realpart + '</td><td>' + imagpart + '</td><td>' + frequency + '</td><td>' + Q +'</td></tr>\n'
             html += '</table>\n'
         else:
             html += '<table><tr><th>zero</th><th>value ' + unitsS + '</th></tr>'
