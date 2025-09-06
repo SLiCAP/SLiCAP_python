@@ -25,106 +25,10 @@ R5 2 3 R value={R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
 R6 3 out R value={A_2*R_b} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
 V1 4 0 V value=0 noise=0 dc=0 dcvar=0
 .end</pre>
-<a id="elementdata_ZtoV"></a><table>Expanded netlist of ZtoV.cir.
-<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
-<tr><td class="left">Cc1_O1</td><td class = "left">in 0 </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Cc1_O2</td><td class = "left">0 0 </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Cc2_O1</td><td class = "left">1 0 </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Cc2_O2</td><td class = "left">3 0 </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Cd_O1</td><td class = "left">in 1 </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Cd_O2</td><td class = "left">0 3 </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">E_O1</td><td class = "left">2 0 in 1 </td><td class = "left"></td><td class = "left">EZ</td>
-<td class="left">value</td><td class="left">$\frac{A_{0}}{1 + \frac{0.5 s}{\pi p_{1}}}$</td><td class="left">$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">zo</td><td class="left">$R_{o}$</td><td class="left">$R_{o}$</td></tr>
-<tr><td class="left">E_O2</td><td class = "left">out 0 0 3 </td><td class = "left"></td><td class = "left">EZ</td>
-<td class="left">value</td><td class="left">$\frac{A_{0}}{1 + \frac{0.5 s}{\pi p_{1}}}$</td><td class="left">$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">zo</td><td class="left">$R_{o}$</td><td class="left">$R_{o}$</td></tr>
-<tr><td class="left">Gc1_O1</td><td class = "left">in 0 in 0 </td><td class = "left"></td><td class = "left">g</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Gc1_O2</td><td class = "left">0 0 0 0 </td><td class = "left"></td><td class = "left">g</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Gc2_O1</td><td class = "left">1 0 1 0 </td><td class = "left"></td><td class = "left">g</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Gc2_O2</td><td class = "left">3 0 3 0 </td><td class = "left"></td><td class = "left">g</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Gd_O1</td><td class = "left">in 1 in 1 </td><td class = "left"></td><td class = "left">g</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">Gd_O2</td><td class = "left">0 3 0 3 </td><td class = "left"></td><td class = "left">g</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R1</td><td class = "left">4 in </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{s}$</td><td class="left">$50$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R2</td><td class = "left">1 0 </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$R_{a}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R3</td><td class = "left">2 1 </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{a} \left(A_{1} - 1\right)$</td><td class="left">$R_{a} \left(A_{1} - 1\right)$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R4</td><td class = "left">in out </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{f}$</td><td class="left">$R_{f}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R5</td><td class = "left">2 3 </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$R_{b}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R6</td><td class = "left">3 out </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$A_{2} R_{b}$</td><td class="left">$A_{2} R_{b}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">V1</td><td class = "left">4 0 </td><td class = "left"></td><td class = "left">V</td>
-<td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-</table>
-<a id="params_ZtoV"></a><table>Parameter definitions of ZtoV.cir.
-<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
-<tr><td class="left">$R_{s}$</td><td class="left">$50$</td><td class="left">$50$</td></tr>
-</table>
-<table><caption>Table: Parameters without definition in 'Low-noise voltage amplifier.</caption>
-
-<tr><th class="left">Name</th></tr>
-<tr><td class="left">$R_{f}$</td></tr>
-<tr><td class="left">$A_{1}$</td></tr>
-<tr><td class="left">$R_{b}$</td></tr>
-<tr><td class="left">$A_{0}$</td></tr>
-<tr><td class="left">$p_{1}$</td></tr>
-<tr><td class="left">$R_{o}$</td></tr>
-<tr><td class="left">$R_{a}$</td></tr>
-<tr><td class="left">$A_{2}$</td></tr>
-</table>
 <!-- INSERT -->
 <div id="footnote">
 <p>Go to <a href="Low-noise-voltage-amplifier_index.html">Low-noise-voltage-amplifier_index</a></p>
-<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0.2 &copy 2009-2025 SLiCAP development team</p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0.4 &copy 2009-2025 SLiCAP development team</p>
 <p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
-<p>Last project update: 2025-09-05 14:21:24</p>
+<p>Last project update: 2025-09-06 12:31:52</p>
 </div></body></html>

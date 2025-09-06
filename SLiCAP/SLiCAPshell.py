@@ -239,6 +239,7 @@ specified with the circuit.
 """
 import sympy as sp
 from copy import deepcopy
+import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPhtml import htmlPage, img2html, head2html, elementData2html 
 from SLiCAP.SLiCAPhtml import params2html, file2html, netlist2html
 from SLiCAP.SLiCAPinstruction import instruction
@@ -344,9 +345,15 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
     :type description: str
     """
     cir, subckt = _makeNetlist(fileName, cirTitle=cirTitle, language=language)
-    if language == "SLiCAP" and not subckt:
+    if not subckt:
+        language = language.upper()
         cirName, ext = fileName.replace('\\', '/').split('/')[-1].split('.')
-        cir = _checkCircuit(cirName + ".cir")
+        if language == "SLICAP":
+            cir = _checkCircuit(cirName + ".cir")
+        elif language == "SPICE":
+            ini.html_prefix = ('-'.join(cirName.split()) + '_')
+            ini.html_index = 'index.html'
+            htmlPage(cirName, index = True)
         htmlPage("Circuit data")
         if description != None:
             head2html('Circuit description')
@@ -358,10 +365,11 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
                      label = 'fig_{}'.format(cirName + '.' + ext))
         netlist2html(cirName + ".cir", label = 'netlist_{}'.format(cirName), 
                      labelText='Netlist of {}.'.format(cirName + ".cir"))
-        elementData2html(cir, label='elementdata_{}'.format(cirName), 
-                         caption="Expanded netlist of {}.".format(cirName + ".cir"))
-        params2html(cir, label='params_{}'.format(cirName), 
-                    caption="Parameter definitions of {}.".format(cirName + ".cir"))
+        if language == "SLiCAP":
+            elementData2html(cir, label='elementdata_{}'.format(cirName), 
+                             caption="Expanded netlist of {}.".format(cirName + ".cir"))
+            params2html(cir, label='params_{}'.format(cirName), 
+                        caption="Parameter definitions of {}.".format(cirName + ".cir"))
     return cir
 
 def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit', 

@@ -24,55 +24,10 @@ R1 1 in R value={R_s} noisetemp={T} noiseflow=0 dcvar={sigma_R1^2} dcvarlot=0
 R2 out 0 R value={R_ell} noisetemp={T} noiseflow=0 dcvar={sigma_R2^2} dcvarlot=0
 V1 in 0 V value={a/(a^2+s^2)} noise={S_v} dc={V_DC} dcvar={(sigma_V*V_DC)^2}
 .end</pre>
-<a id="elementdata_myPassiveNetwork"></a><table>Expanded netlist of myPassiveNetwork.cir.
-<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
-<tr><td class="left">C1</td><td class = "left">0 out </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$C_{a}$</td><td class="left">$25\cdot 10^{-9}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">C2</td><td class = "left">out 1 </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$C_{b}$</td><td class="left">$1.013\cdot 10^{-9}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">L1</td><td class = "left">1 out </td><td class = "left"></td><td class = "left">L</td>
-<td class="left">value</td><td class="left">$L$</td><td class="left">$1000\cdot 10^{-9}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">iinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R1</td><td class = "left">1 in </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{s}$</td><td class="left">$50$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$T$</td><td class="left">$300$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R1}^{2}$</td><td class="left">$400\cdot 10^{-6}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R2</td><td class = "left">out 0 </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{\ell}$</td><td class="left">$450$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$T$</td><td class="left">$300$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$\sigma_{R2}^{2}$</td><td class="left">$100\cdot 10^{-6}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">V1</td><td class = "left">in 0 </td><td class = "left"></td><td class = "left">V</td>
-<td class="left">value</td><td class="left">$\frac{a}{a^{2} + s^{2}}$</td><td class="left">$\frac{6.283 \cdot 10^{6}}{s^{2} + 3.948 \cdot 10^{13}}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$S_{v}$</td><td class="left">$4\cdot 10^{-18}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$V_{DC}$</td><td class="left">$5$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$V_{DC}^{2} \sigma_{V}^{2}$</td><td class="left">$0.0625$</td></tr>
-</table>
-<a id="params_myPassiveNetwork"></a><table>Parameter definitions of myPassiveNetwork.cir.
-<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
-<tr><td class="left">$C_{a}$</td><td class="left">$25\cdot 10^{-9}$</td><td class="left">$25\cdot 10^{-9}$</td></tr>
-<tr><td class="left">$C_{b}$</td><td class="left">$\frac{0.25}{\pi^{2} L f_{s}^{2}}$</td><td class="left">$1.013\cdot 10^{-9}$</td></tr>
-<tr><td class="left">$L$</td><td class="left">$1000\cdot 10^{-9}$</td><td class="left">$1000\cdot 10^{-9}$</td></tr>
-<tr><td class="left">$R_{\ell}$</td><td class="left">$450$</td><td class="left">$450$</td></tr>
-<tr><td class="left">$R_{s}$</td><td class="left">$50$</td><td class="left">$50$</td></tr>
-<tr><td class="left">$S_{v}$</td><td class="left">$4\cdot 10^{-18}$</td><td class="left">$4\cdot 10^{-18}$</td></tr>
-<tr><td class="left">$T$</td><td class="left">$300$</td><td class="left">$300$</td></tr>
-<tr><td class="left">$V_{DC}$</td><td class="left">$5$</td><td class="left">$5$</td></tr>
-<tr><td class="left">$a$</td><td class="left">$6.283\cdot 10^{6}$</td><td class="left">$6.283\cdot 10^{6}$</td></tr>
-<tr><td class="left">$f_{s}$</td><td class="left">$5\cdot 10^{6}$</td><td class="left">$5\cdot 10^{6}$</td></tr>
-<tr><td class="left">$\sigma_{R1}$</td><td class="left">$0.02$</td><td class="left">$0.02$</td></tr>
-<tr><td class="left">$\sigma_{R2}$</td><td class="left">$0.01$</td><td class="left">$0.01$</td></tr>
-<tr><td class="left">$\sigma_{V}$</td><td class="left">$0.05$</td><td class="left">$0.05$</td></tr>
-</table>
 <!-- INSERT -->
 <div id="footnote">
 <p>Go to <a href="myPassiveNetwork_index.html">myPassiveNetwork_index</a></p>
-<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0.2 &copy 2009-2025 SLiCAP development team</p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0.4 &copy 2009-2025 SLiCAP development team</p>
 <p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
-<p>Last project update: 2025-09-05 14:28:25</p>
+<p>Last project update: 2025-09-06 12:38:43</p>
 </div></body></html>

@@ -32,7 +32,7 @@ def _checkTitle(title):
     title = '"' + title + '"'
     return title.replace('""', '"')
 
-def _parseKiCADnetlist(kicad_sch, kicadPath='', language="SLiCAP"):
+def _parseKiCADnetlist(kicad_sch, kicadPath='', language="SLICAP"):
     fileName = '.'.join(kicad_sch.split('.')[0:-1])
     cirTitle = fileName.split('/')[-1].split('.')[0]
     cirName  = cirTitle + ".cir"
@@ -189,17 +189,17 @@ def _parseKiCADnetlistlines(lines, cirTitle, language):
 
 def KiCADsch2svg(fileName):
     """
-    Creates drawing-size images in .SVG and .PDF format from Kicad schematics.
+    Creates drawing-size images in .SVG and .PDF format from KiCad schematics.
     The image files will be placed in the img subdirectory in the project fodler.
     The names of the image files equal that of the schematic file, but the 
     file extensions differ (.svg and .pdf).
     
-    :param fileName: Name of the Kicad schematic file,  relative to project
+    :param fileName: Name of the KiCad schematic file,  relative to project
                      folder or absolute
     :type fileName: str
     """
     if ini.kicad == "":
-        print("Please install Kicad, delete '~/SLiCAP.ini', and run this script again.")
+        print("Please install KiCad, delete '~/SLiCAP.ini', and run this script again.")
     else:
         cirName = fileName.split('/')[-1].split('.')[0]
         if os.path.isfile(fileName):
@@ -212,7 +212,7 @@ def KiCADsch2svg(fileName):
     
 def _kicadNetlist(fileName, cirTitle, language="SLiCAP"):
     if ini.kicad == "":
-        print("Please install Kicad, delete '~/SLiCAP.ini', and run this script again.")
+        print("Please install KiCad, delete '~/SLiCAP.ini', and run this script again.")
     elif os.path.isfile(fileName):
         print("Creating netlist of {} using KiCAD".format(fileName))
         kicadnetlist  = fileName.split('.')[0] + '.net'        

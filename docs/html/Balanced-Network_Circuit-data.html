@@ -26,85 +26,10 @@ R3 2 0 R value={R_c} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
 V1N inN 1 V value={V_b} noise=0 dc=0 dcvar=0
 V1P inP 1 V value={V_a} noise=0 dc=0 dcvar=0
 .end</pre>
-<a id="elementdata_balancedNetwork"></a><table>Expanded netlist of balancedNetwork.cir.
-<tr><th class="left">RefDes</th><th class="left">Nodes</th><th class="left">Refs</th><th class="left">Model</th><th class="left">Param</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
-<tr><td class="left">C2</td><td class = "left">0 2 </td><td class = "left"></td><td class = "left">C</td>
-<td class="left">value</td><td class="left">$C_{a}$</td><td class="left">$C_{a}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">I1</td><td class = "left">0 1 </td><td class = "left"></td><td class = "left">I</td>
-<td class="left">value</td><td class="left">$I_{s}$</td><td class="left">$I_{s}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">K1</td><td class = "left"></td><td class = "left">L1P L1N </td><td class = "left">K</td>
-<td class="left">value</td><td class="left">$k_{c}$</td><td class="left">$k_{c}$</td></tr>
-<tr><td class="left">L1N</td><td class = "left">LN 2 </td><td class = "left"></td><td class = "left">L</td>
-<td class="left">value</td><td class="left">$L_{a}$</td><td class="left">$L_{a}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">iinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">L1P</td><td class = "left">LP 2 </td><td class = "left"></td><td class = "left">L</td>
-<td class="left">value</td><td class="left">$L_{a}$</td><td class="left">$L_{a}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">iinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R1N</td><td class = "left">inN outN </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$R_{a}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R1P</td><td class = "left">inP outP </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$R_{a}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R2N</td><td class = "left">outN LN </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$R_{b}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R2P</td><td class = "left">outP LP </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$R_{b}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">R3</td><td class = "left">2 0 </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{c}$</td><td class="left">$R_{c}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">V1N</td><td class = "left">inN 1 </td><td class = "left"></td><td class = "left">V</td>
-<td class="left">value</td><td class="left">$V_{b}$</td><td class="left">$V_{b}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td class="left">V1P</td><td class = "left">inP 1 </td><td class = "left"></td><td class = "left">V</td>
-<td class="left">value</td><td class="left">$V_{a}$</td><td class="left">$V_{a}$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">noise</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dc</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-<tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
-</table>
-<a id="params_balancedNetwork"></a><table>Parameter definitions of balancedNetwork.cir.
-<tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
-</table>
-<table><caption>Table: Parameters without definition in 'Balanced Network.</caption>
-
-<tr><th class="left">Name</th></tr>
-<tr><td class="left">$R_{c}$</td></tr>
-<tr><td class="left">$R_{b}$</td></tr>
-<tr><td class="left">$V_{a}$</td></tr>
-<tr><td class="left">$k_{c}$</td></tr>
-<tr><td class="left">$C_{a}$</td></tr>
-<tr><td class="left">$V_{b}$</td></tr>
-<tr><td class="left">$R_{a}$</td></tr>
-<tr><td class="left">$L_{a}$</td></tr>
-<tr><td class="left">$I_{s}$</td></tr>
-</table>
 <!-- INSERT -->
 <div id="footnote">
 <p>Go to <a href="Balanced-Network_index.html">Balanced-Network_index</a></p>
-<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0.2 &copy 2009-2025 SLiCAP development team</p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 4.0.4 &copy 2009-2025 SLiCAP development team</p>
 <p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
-<p>Last project update: 2025-09-05 14:28:25</p>
+<p>Last project update: 2025-09-06 12:38:43</p>
 </div></body></html>

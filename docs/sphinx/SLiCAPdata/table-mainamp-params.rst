@@ -2,7 +2,7 @@
     :header: "Name"
     :widths: auto
 
-    :math:`R_{i XA}`
     :math:`R_{L}`
     :math:`A_{i}`
+    :math:`R_{i XA}`
 
