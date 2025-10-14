@@ -200,7 +200,6 @@ class circuit(object):
         if parName in self.parUnits.keys():
             self.parUnits.pop(Symbol(str(parName)), None)
         self.updateParams()
-        return
 
     def defPar(self, parName, parValue, units = None):
         """
@@ -238,7 +237,6 @@ class circuit(object):
             else:
                 self.parUnits[parName] = ''
             self.updateParams()
-        return
 
     def defPars(self, parDict):
         """
@@ -278,7 +276,6 @@ class circuit(object):
         else:
             print("Error: expected a dict type argument.")
         self.updateParams()
-        return
 
     def getParValue(self, parNames, substitute=True, numeric=False):
         """
@@ -377,7 +374,6 @@ class circuit(object):
             if par != ini.laplace and par != ini.hz and par not in list(self.parDefs.keys()):
                 undefined.append(par)
         self.params = undefined
-        return
 
     def getElementValue(self, elementID, param='value', substitute=True, numeric=False):
         """

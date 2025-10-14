@@ -76,7 +76,6 @@ def _startHTML(projectName):
     _writeFile(ini.html_path + ini.html_index, html)
     ini.html_page = ini.html_index
     ini.html_pages.append(ini.html_page)
-    return
 
 def _HTMLhead(pageTitle):
     """
@@ -174,7 +173,6 @@ def _writeFile(fileName, txt):
     # with next import of SLiCAP in the same project; it is only reset with
     # initProject()
     ini._update_project_config()
-    return
 
 ### User Functions ###########################################################
 
@@ -225,7 +223,6 @@ def htmlPage(pageTitle, index = False, label = ''):
         # Make this page the active HTML page
         ini.html_page = fileName
         ini.html_pages.append(fileName)
-    return
 
 def head2html(headText, label=''):
     """
@@ -571,7 +568,7 @@ def eqn2html(arg1, arg2, units='', label='', labelText=''):
     :rtype: str
     """
     if arg1 == None or arg2 == None:
-        return
+        return ''
     arg1 = sp.sympify(str(arg1))
     arg2 = sp.sympify(str(arg2))
     if units != '':
