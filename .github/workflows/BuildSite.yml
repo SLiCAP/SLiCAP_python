@@ -42,6 +42,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+      - name: Install system dependencies for cairo newest version o
+        run: sudo apt-get update && sudo apt-get install -y libcairo2-dev pkg-config python3-dev
       - name: Install SLiCAP documentation dependencies
         run: |
           python -m pip install --upgrade pip
