@@ -32,6 +32,7 @@ from SLiCAP.SLiCAPkicad import backAnnotateSchematic
 np.set_printoptions(edgeitems=30, linewidth=1000,
     formatter=dict(float=lambda x: "%11.4e" % x))
 
+
 def Help():
     """
     Opens the SLiCAP HTML documentation in the default browser.
@@ -43,7 +44,7 @@ def Help():
     >>> sl.Help()
     """
     webbrowser.open_new(ini.doc_path + 'index.html')
-    return
+
 
 def _copyNotOverwrite(src, dest):
     """
@@ -57,7 +58,7 @@ def _copyNotOverwrite(src, dest):
     """
     if not os.path.exists(dest):
         copy2(src, dest)
-    return
+
 
 def _makeDir(dirName):
     """
@@ -69,7 +70,7 @@ def _makeDir(dirName):
 
     if not os.path.exists(dirName):
         os.makedirs(dirName)
-    return
+
 
 def initProject(name, notebook=False):
     """
