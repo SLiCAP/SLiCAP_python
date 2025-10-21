@@ -54,13 +54,13 @@ SYMATTR Prefix X
 SYMATTR Description Nullor with equivalent-input noise sources
 PIN -128 16 NONE 0
 PINATTR PinName NC+
-PINATTR SpiceOrder 1
+PINATTR SpiceOrder 3
 PIN -128 96 NONE 0
 PINATTR PinName NC-
-PINATTR SpiceOrder 2
+PINATTR SpiceOrder 4
 PIN 64 16 NONE 0
 PINATTR PinName +
-PINATTR SpiceOrder 3
+PINATTR SpiceOrder 1
 PIN 64 96 NONE 0
 PINATTR PinName -
-PINATTR SpiceOrder 4
+PINATTR SpiceOrder 2

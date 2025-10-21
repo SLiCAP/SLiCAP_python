@@ -314,7 +314,16 @@ SLiCAP global parameters
 
 .. literalinclude:: ../../SLiCAP/files/lib/SLiCAPmodels.lib
     :linenos:
-    :lines: 1-68
+    :lines: 1-19
+
+.. admonition:: CMOS18 EKV model parameters
+    :class: note
+        
+    Built-in CMOS18 EKV model parameter definitions are included in ``SLiCAP.lib`` in the folder given by ``ini.main_lib_path``.
+    
+.. literalinclude:: ../../SLiCAP/files/lib/SLiCAP.lib
+    :linenos:
+    :lines: 132-179
         
 Display schematics on html pages and in LaTeX reports
 =====================================================

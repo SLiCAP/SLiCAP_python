@@ -32,12 +32,20 @@ def t_PARDEF(t):
     # replace scale factors in t.value[1]
     if t.value[1][0] == '{' and t.value[1][-1] == '}':
         # Do this for an expression
+        try:
+            sym_in = sp.sympify(t.value[1][1:-1]).atoms(sp.Symbol)
+        except:
+            sym_in = []
         pos = 1
         out = ''
         for m in re.finditer(r'\d+\.?\d*[yzafpnumkMGTP]', t.value[1]):
             out += t.value[1][pos: m.end()-1] + 'e' + _SCALEFACTORS[m.group(0)[-1]]
             pos = m.end()
         out += t.value[1][pos:-1]
+        sym_out = sp.sympify(out).atoms(sp.Symbol)
+        for item in sym_in:
+            if item not in sym_out:
+                _printError("Error in parameter name %s"%(str(item)), t)
         t.value[1] = out
     else:
         # Do this for a numeric value: last character is scale factor
@@ -314,8 +322,7 @@ def _get_input_line(token):
 lexer = lex.lex()
 
 if __name__ == '__main__':
-
-    fi = '/mnt/DATA/SLiCAP/SLiCAP_python_tests/balancedTramp/cir/balancedMOStrampCMF.cir'
+    fi = '/home/anton/Desktop/Haoyuan/cir/negativeCapacitanceCurrentTransistorinv.cir'
     print(fi)
     f = open(fi, 'r')
     netlist = f.read()

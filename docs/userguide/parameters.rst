@@ -12,20 +12,42 @@ Work with parameters
 #. In python using the ``pardefs`` argument in an instruction
 #. In python using the ``specs2circuit()`` function
 
+.. admonition:: Important
+    :class: warning
+    
+    Do NOT use parameter names of which parts can be interpreted as expressions or numbers!
+    
+    - ``"C_100p"``
+    - ``"R_sin(x)"``
+
 SLiCAP built-in parameters
 ==========================
 
-SLiCAP has a number of predefined parameters. These parameters include default CMOS18 EKV model parameters.
-
-.. admonition:: SLiCAP library files
-   :class: warning
+.. admonition:: Global Parameters
+    :class: note
     
-    Notice, a SLiCAP library it like a circuit definition. The first line after any line starting with ``*`` is considered the title of the library. The last line must read ``.end``
+    Global parameters are defined in the file ``SLiCAPmodels.lib`` in the folder given by ``ini.main_lib_path``. If global parameters are found in circuit element expressions or in circuit parameter definitions, SLiCAP automatically adds their global definition to the circuit parameter definitions.
 
-.. literalinclude:: //home/anton/anton/lib/python3.12/site-packages/SLiCAP/files/lib/SLiCAPmodels.lib
+.. literalinclude:: ../../SLiCAP/files/lib/SLiCAPmodels.lib
     :linenos:
-    :lines: 1-68
-    :lineno-start: 1
+    :lines: 1-19
+
+.. admonition:: CMOS18 EKV model parameters
+    :class: note
+        
+    Built-in CMOS18 EKV model parameter definitions are included in ``SLiCAP.lib`` in the folder given by ``ini.main_lib_path``.
+    
+.. literalinclude:: ../../SLiCAP/files/lib/SLiCAP.lib
+    :linenos:
+    :lines: 132-179
+    
+.. admonition:: SLiCAP Library files    
+    :class: warning
+    
+    Notice, a SLiCAP library is like a SLiCAP circuit file:
+    
+    #. The first line after any line starting with ``*`` is considered the title of the library. 
+    #. The last line must read ``.end``
 
 Circuit parameters
 ==================

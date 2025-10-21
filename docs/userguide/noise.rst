@@ -193,20 +193,24 @@ Built-in subcircuits
 
 Below an overview of subcircuits and symbols for noise analysis. Subcircuits are defined in the library ``SLiCAP.lib`` in the folder indicated by ``ini.main_lib_path``.
 
-================= ======================================================= ============= ============== ================== ===============
-subcircuit name   description                                             parameters    KiCAD          gschem/Lepton-EDA  LTspice
-================= ======================================================= ============= ============== ================== ===============
-N_noise           Nullor with equivalent-input noise sources              si, sv        N_noise        N_noise            SLN_noise
-O_noise           Nullor with equivalent-input noise sources              si, sv        O_noise        O_noise            SLO_noise
-NM18_noise        NMOS 180nm equivalent-input noise EKV model             ID, IG, W, L  M_noise        M_noise            SLM_noise
-PM18_noise        PMOS 180nm equivalent-input noise EKV model             ID, IG, W, L  M_noise        M_noise            SLM_noise
-NM18_noisyNullor  Nullor with NMOS 180nm equivalent-input noise EKV model ID, IG, W, L  XM_noisyNullor XM_noisyNullor     SLM_noisyNullor
-PM18_noisyNullor  Nullor with PMOS 180nm equivalent-input noise EKV model ID, IG, W, L  XM_noisyNullor XM_noisyNullor     SLM_noisyNullor
-J_noise           MOS/JFET equivalent-input noise sources                 ID, IG, W, L  J_noise        M_noise            SLM_noise        
-Q_noise           BJT equivalent-input noise sources, r_b=0               IC, VCE       Q_noise        Q_noise            SLQ_noise
-================= ======================================================= ============= ============== ================== ===============
+======================== ======================================================= ============= ============== ================== ===============
+subcircuit name          description                                             parameters    KiCAD          gschem/Lepton-EDA  LTspice
+======================== ======================================================= ============= ============== ================== ===============
+N_noise                  Nullor with equivalent-input noise sources              si, sv        N_noise        N_noise            SLN_noise
+O_noise                  Nullor with equivalent-input noise sources              si, sv        O_noise        O_noise            SLO_noise
+MN18_noise               NMOS 180nm equivalent-input noise EKV model             ID, IG, W, L  M_noise        M_noise            SLM_noise
+MP18_noise               PMOS 180nm equivalent-input noise EKV model             ID, IG, W, L  M_noise        M_noise            SLM_noise
+MN18_noisyNullor         Nullor with NMOS 180nm equivalent-input noise EKV model ID, IG, W, L  XM_noisyNullor XM_noisyNullor     SLM_noisyNullor
+MP18_noisyNullor         Nullor with PMOS 180nm equivalent-input noise EKV model ID, IG, W, L  XM_noisyNullor XM_noisyNullor     SLM_noisyNullor
+MN18_noisyNullor_simple  Nullor with NMOS 180nm equivalent-input noise EKV model ID, IG, W, L  XM_noisyNullor XM_noisyNullor     SLM_noisyNullor
+MP18_noisyNullor_simple  Nullor with PMOS 180nm equivalent-input noise EKV model ID, IG, W, L  XM_noisyNullor XM_noisyNullor     SLM_noisyNullor
+J_noise                  MOS/JFET equivalent-input noise sources                 ID, IG, W, L  J_noise        M_noise            SLM_noise        
+Q_noise                  BJT equivalent-input noise sources, r_b=0               IC, VCE       Q_noise        Q_noise            SLQ_noise
+======================== ======================================================= ============= ============== ================== ===============
 
 Wide table: slide below the table!
+
+The subcircuits ``MN18_noisyNullor_simple`` and ``MP18_noisyNullor_simple`` have their noise parameters ``KF`` and ``Gamma``, as well as their input capacitance ``c_iss`` modeled independent of the inversion coefficient.
 
 Create noise elements
 ---------------------

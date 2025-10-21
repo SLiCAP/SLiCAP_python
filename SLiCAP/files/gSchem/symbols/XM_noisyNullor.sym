@@ -2,30 +2,30 @@ v 20220529 2
 P -300 200 -100 200 1 0 0
 {
 T -750 300 5 6 0 0 0 0 1
-pinseq=2
+pinseq=4
 T -750 400 5 6 0 0 0 0 1
-pinnumber=2
+pinnumber=4
 }
 P -300 1000 -100 1000 1 0 0
 {
 T -450 750 5 6 0 0 0 0 1
-pinseq=1
+pinseq=3
 T -450 850 5 6 0 0 0 0 1
-pinnumber=1
+pinnumber=3
 }
 P 1200 200 1000 200 1 0 0
 {
 T 1200 300 5 6 0 0 0 0 1
-pinseq=4
+pinseq=2
 T 1195 395 5 6 0 0 0 0 1
-pinnumber=4
+pinnumber=2
 }
 P 1200 1000 1000 1000 1 0 0
 {
 T 1200 750 5 6 0 0 0 0 1
-pinseq=3
+pinseq=1
 T 1200 850 5 6 0 0 0 0 1
-pinnumber=3
+pinnumber=1
 }
 T -450 1900 5 6 0 0 0 0 1
 device=Noisy nullor with MOS input nouse sources

@@ -563,19 +563,27 @@ def _checkExpression(expr):
     :return: sympy expression
     :rtype: int, float
     """
-    input_expr = expr
+    sym_in = []
     if type(expr) == str:
-        expr = _replaceScaleFactors(expr)
+        try:
+            sym_in = sp.sympify(expr).atoms(sp.Symbol)
+        except sp.SympifyError:
+            pass
+        out = _replaceScaleFactors(expr)
     else:
-        expr = str(expr)
+        out = str(expr)
     try:
-        expr = sp.sympify(expr, rational=True)
+        out = sp.sympify(out, rational=True)
+        sym_out = out.atoms(sp.Symbol)
+        for item in sym_in:
+            if item not in sym_out:
+                print("Error in symbol name: %s."%(item))
     except sp.SympifyError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)
-        print("Error in expression:", input_expr)
-        expr = None
-    return expr
+        print("Error in expression:", expr)
+        out = None
+    return out
 
 def fullSubs(valExpr, parDefs):
     """
