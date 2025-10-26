@@ -1846,7 +1846,6 @@ def listPZ(pzResult):
     else:
         print('\nlistPZ() does not support parameter stepping.')
     print('\n')
-    return
 
 def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True):
     results = {}
