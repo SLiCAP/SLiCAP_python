@@ -129,102 +129,73 @@ Vo 1 3 V dcvar={svo^2}
 N1 4 COMMON 3 2
 .ends 
 
+* Semiconductor subcircuit models EKV
+*************************************
+
 * CMOS18 technology parameters for EKV models (SI units)
-* Manual fit to "nch" and "pch" devices in BSIM 3.2 log018.l
-* Good match on gm(ID) fT(ID) and noise 
-* over a wide current range and geometry range
+* DEFAULT EQUATIONS AND PARAMETERS taken from Binkley:
+* "Tradeoffs and Optimization in Analog CMOS Design"
+* Table 3.2
+* Overlap capacitances set to typical values
+* Early voltage per unit of length set to typical value
 ********************************************************
 
 .param
-+ TOX_N18        = 4.2n  ; oxide thickness [m]
-+ Vth_N18        = 0.43  ; threshold voltage [V]
-+ N_s_N18        = 1.4   ; substrate factor [-]
-+ Theta_N18      = 0.39 ; vertical field mobility reduction coefficient [1/V]
-+ E_CRIT_N18     = 9.5M ; lateral field strength for velocity saturation [V/m]
-+ u_0_N18       = 68m   ; zero field carrier mobility [m^2/V/s]
-+ CGBO_N18       = 1p    ; gate-bulk overlap capacitance [F/m]
-+ CGSO_N18       = 330p  ; gate-source and gate-drain overlap capacitance [F/m]
-+ CJB0_N18       = 1m    ; source/bulk drain/bulk capacitance [F/m^2]
-+ LDS_N18        = 180n  ; length of drain and source [m]
-+ KF_N18         = 1e-26 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
-+ AF_N18         = 0.82  ; flicker noise exponent [-]
-*+ I_0_N18        = 970n  ; technology current, numeric value [A]
-+ V_KF_N18       = 2     ; flicker noise voltage dependency factor [V]
-+ VAL_N18        = 70M   ; Early voltage per unit of length [V/m]
-+ DVTDIBL_N18    = -0.026; dVth/dVDS
-+ DVTIDBLEXP_N18 = 0.8   ; exponent of dVth/dVDS
-+ L_min_N18      = 180n  ; minimum channel length
++ TOX_N18        = 4.1n    ; oxide thickness [m]
++ Vth_N18        = 0.42    ; threshold voltage [V]
++ N_s_N18        = 1.35    ; substrate factor [-]
++ Theta_N18      = 0.28    ; vertical field mobility reduction coefficient [1/V]
++ E_CRIT_N18     = 5.6M    ; lateral field strength for velocity saturation [V/m]
++ u_0_N18        = 42.2m   ; zero field carrier mobility [m^2/V/s]
++ CGBO_N18       = 1p      ; gate-bulk overlap capacitance [F/m]
++ CGSO_N18       = 300p    ; gate-source and gate-drain overlap capacitance [F/m]
++ CJB0_N18       = 1m      ; source/bulk drain/bulk capacitance [F/m^2]
++ LDS_N18        = 180n    ; length of drain and source [m]
++ KF_N18         = 3.2e-27 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C/m^2]
++ AF_N18         = 0.85    ; flicker noise exponent [-]
++ V_KF_N18       = 1       ; flicker noise voltage dependency factor [V]
++ VAL_N18        = 20M     ; Early voltage per unit of length [V/m]
++ DVTDIBL_N18    = -0.008  ; dVth/dVDS
++ DVTIDBLEXP_N18 = 3       ; exponent of dVth/dVDS
++ beta_N18       = 0.8     ; Short channel effect exponent
++ L_min_N18      = 180n    ; minimum channel length
 + C_OX_N18       = {epsilon_0 * epsilon_SiO2 / TOX_N18}; oxide capacitance per unit of area [F/m^2]
-+ I_0_N18       = {2*N_s_N18*u_0_N18*C_OX_N18*U_T^2}  ; technology current [A]
++ I_0_N18        = {2*N_s_N18*u_0_N18*C_OX_N18*U_T^2}  ; technology current [A]
 
 .param
-+ TOX_P18        = 4n      ; oxide thickness [m]
-+ Vth_P18        = -0.425  ; threshold voltage [V]
-+ N_s_P18        = 1.37    ; substrate factor [-]
-+ Theta_P18      = 0.55    ; vertical field mobility reduction factor [1/V]
-+ E_CRIT_P18     = 1G      ; lateral field strength for velocity saturation [V/m]
-+ u_0_P18        = 11m     ; zero field carrier mobility [m^2/V/s]
++ TOX_P18        = 4.1n    ; oxide thickness [m]
++ Vth_P18        = -0.42   ; threshold voltage [V]
++ N_s_P18        = 1.35    ; substrate factor [-]
++ Theta_P18      = 0.35    ; vertical field mobility reduction factor [1/V]
++ E_CRIT_P18     = 14M     ; lateral field strength for velocity saturation [V/m]
++ u_0_P18        = 8.92m   ; zero field carrier mobility [m^2/V/s]
 + CGBO_P18       = 1p      ; gate-bulk overlap capacitance [F/m]
-+ CGSO_P18       = 350p    ; gate-source and gate-drain overlap capacitance [F/m]
++ CGSO_P18       = 300p    ; gate-source and gate-drain overlap capacitance [F/m]
 + CJB0_P18       = 1m      ; source/bulk drain/bulk capacitance [F/m^2]
 + LDS_P18        = 180n    ; length of drain and source [m]
-+ KF_P18         = 3.2e-28 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C^2/m^2]
-+ AF_P18         = 1.25    ; flicker noise exponent [-]
-+ V_KF_P18       = 0.2     ; flicker noise voltage dependency factor [V]
-+ VAL_P18        = 12.5M   ; Early voltage per unit of length [V/m]
-+ DVTDIBL_P18    = -0.026  ; dVth/dVDS
-+ DVTIDBLEXP_P18 = 0.8     ; exponent of dVth/dVDS
++ KF_P18         = 2.4e-27 ; flicker noise (1/f noise) coefficient, zero for f_ell=0 [C^2/m^2]
++ AF_P18         = 1.05    ; flicker noise exponent [-]
++ V_KF_P18       = 0.25    ; flicker noise voltage dependency factor [V]
++ VAL_P18        = 20M     ; Early voltage per unit of length [V/m]
++ DVTDIBL_P18    = 0.01    ; dVth/dVDS
++ DVTIDBLEXP_P18 = 3       ; exponent of dVth/dVDS
++ beta_P18       = 0.9     ; Short channel effect exponent
 + L_min_P18      = 180n    ; minimum channel length
 + C_OX_P18       = {epsilon_0 * epsilon_SiO2 / TOX_P18}; oxide capacitance per unit of area [F/m^2]
 + I_0_P18        = {2*N_s_P18*u_0_P18*C_OX_P18*U_T^2} ; technology current [A]
 
-
-* Semiconductor subcircuit models EKV
-*************************************
-.subckt CMOS18N drain gate source bulk W={W} L={L} ID={ID}
-* EKV model of transistor without bulk resistances
-* Voltage dependency of bulk capacitances not modeled
-* Operating in forward saturation region
-* 
-M1 drain gate source bulk CMOS18N
-
-.model CMOS18N M 
-+ gm      = {g_m} 
-+ go      = {g_o} 
-+ gb      = {g_b}
-+ cgs     = {c_gs}
-+ cdg     = {c_dg}
-+ cgb     = {c_gb}
-+ cdb     = {c_db}
-+ csb     = {c_sb}
-.param
-* device equations EKV model
-* See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
-+ IC_CRIT = {1/(4*(N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
-+ g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {g_CLM + g_DIBL}
-+ g_CLM   = {ID/(VAL_N18*L*sqrt(L/L_min_N18))} ; 
-+ g_DIBL  = {-g_m*DVTDIBL_N18*(L_min_N18/L)^DVTIDBLEXP_N18}
-+ g_b     = {(N_s_N18-1)*g_m}
-+ c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W} 
-+ c_dg    = {CGSO_N18*W}
-+ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
-+ c_db    = {CJB0_N18*W*LDS_N18}
-+ c_sb    = {CJB0_N18*W*LDS_N18}
-+ IC_i    = {ID*L/W/I_0_N18}                ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*(1+3*(IC_i/IC_CRIT))**(1/3)} ; Correction for short-channel effects
-+ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/IC_CRIT)))-1) + Vth_N18}
-+ f_T     = {g_m/2/pi/c_iss}
-+ c_iss   = {c_gs+c_dg+c_gb}
-+ x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
-.ends
+*********************************************************************************************************
+* Voltage-controlled MOS models
+*********************************************************************************************************
 
 .subckt CMOS18N_V drain gate source bulk W={W} L={L} VD={VD} VG={VG} VS={VS}
 * EKV model of transistor without bulk resistances
+* Voltage-controlled model
 * Voltage dependency of bulk capacitances not modeled
 * Operating voltages with respect to the bulk
-* Assumes forward operation: VDS > 0
-* 
+* Assumes forward operation: VDS > 0 for correct value of g_o
+* No DIBL modeled in g_o
+
 M1 drain gate source bulk CMOS18N_V
 
 .model CMOS18N_V M
@@ -238,8 +209,8 @@ M1 drain gate source bulk CMOS18N_V
 + csb     = {c_sb}
 .param
 * device equations EKV model
-* See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 * See EKV2.6 model manual
+* See Binkley: "Tradeoffs and Optimization in Analog CMOS Design for g_m expressions"
 + V_A     = {VAL_N18*L}
 + C_gso   = {CGSO_N18*W}
 + C_gdo   = {CGSO_N18*W}
@@ -259,7 +230,7 @@ M1 drain gate source bulk CMOS18N_V
 + g_mF    = {I_DSF/(N_s_N18*U_T*sqrt(IC_F*(1+IC_F/IC_CRIT)+0.5*sqrt(IC_F*(1+IC_F/IC_CRIT))+1))}
 + g_mR    = {I_DSR/(N_s_N18*U_T*sqrt(IC_R*(1+IC_R/IC_CRIT)+0.5*sqrt(IC_R*(1+IC_R/IC_CRIT))+1))}
 + g_m     = {g_mF-g_mR}
-+ g_o     = {I_DSF/(V_A+VD-VS)+g_mR} ; Only forward region
++ g_o     = {I_DSF/(V_A+VD-VS)+g_mR} ; Only forward region, no DIBL
 + g_b     = {(N_s_N18-1)*g_m}
 + c_gsi   = {2/3*(1-(x_r^2+x_r+0.5*x_f)/(x_f+x_r)^2)*C_OX_N18*W*L} 
 + c_dgi   = {2/3*(1-(x_f^2+x_f+0.5*x_r)/(x_f+x_r)^2)*C_OX_N18*W*L}
@@ -273,82 +244,17 @@ M1 drain gate source bulk CMOS18N_V
 + V_GS    = {VG-VS}
 .ends
 
-.subckt CMOS18ND drain1 drain2 gate1 gate2 W={W} L={L} ID={ID}
-* EKV model of differential pair without bulk resistances
-* Voltage dependency of bulk capacitances not modeled
-* Operating in forward saturation region, fully differential!
-* This means: no net current to bulk!
-* ID is operating current of single transistor: diff-pair
-* tail current is 2*ID
-M1 drain1 drain2 gate1 gate2 CMOS18ND
-
-.model CMOS18ND MD
-+ cgg     = {c_gs/2+c_gb/2} 
-+ gm      = {g_m/2} 
-+ go      = {g_o/2} 
-+ cdg     = {c_dg}
-+ cdd     = {c_db/2}
-.param
-* device equations EKV model
-* See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
-+ IC_CRIT = {1/(4*(N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
-+ g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {g_CLM + g_DIBL}
-+ g_CLM   = {ID/(VAL_N18*L*sqrt(L/L_min_N18))} ; 
-+ g_DIBL  = {-g_m*DVTDIBL_N18*(L_min_N18/L)^DVTIDBLEXP_N18}
-+ g_b     = {(N_s_N18-1)*g_m}
-+ c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W} 
-+ c_dg    = {CGSO_N18*W}
-+ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
-+ c_db    = {CJB0_N18*W*LDS_N18}
-+ IC_i    = {ID*L/W/I_0_N18}                ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*(1+3*(IC_i/IC_CRIT))**(1/3)} ; Correction for short-channel effects
-+ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/IC_CRIT)))-1) + Vth_N18}
-+ f_T     = {g_m/2/pi/c_iss}
-+ c_iss   = {c_gs+c_dg+c_gb}
-+ x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
-.ends
-
-.subckt CMOS18P drain gate source bulk W={W} L={L} ID={ID}
-* EKV model of transistor without bulk resistances
-* Voltage dependency of bulk capacitances not modeled
-* Operating in forward saturation region
-M1 drain gate source bulk CMOS18P
-
-.model CMOS18P M
-+ gm      = {g_m} 
-+ go      = {g_o} 
-+ gb      = {g_b}
-+ cgs     = {c_gs}
-+ cdg     = {c_dg}
-+ cgb     = {c_gb}
-+ cdb     = {c_db}
-+ csb     = {c_sb}
-.param
-* device equations EKV model
-* See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
-+ IC_CRIT = {1/(4*(N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
-+ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {-ID/(VAL_P18*L)}
-+ g_b     = {(N_s_P18-1)*g_m}
-+ c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W} 
-+ c_dg    = {CGSO_P18*W}
-+ c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
-+ c_db    = {CJB0_P18*W*LDS_P18}
-+ c_sb    = {CJB0_P18*W*LDS_P18}
-+ IC      = {-ID*L/W/I_0_P18} ; Inversion coefficient
-+ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18} ; Better fit with BSIM, whatever it's worth
-+ f_T     = {g_m/2/pi/c_iss}
-+ c_iss   = {c_gs+c_dg+c_gb}
-+ x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
-.ends
+*********************************************************************************************************
 
 .subckt CMOS18P_V drain gate source bulk W={W} L={L} VD={-VD} VG={-VG} VS={-VS}
 * EKV model of transistor without bulk resistances
+* Voltage-controlled model
 * Voltage dependency of bulk capacitances not modeled
 * Operating voltages with respect to the bulk
-* Assumes forward operation: VDS < 0
 * All voltages should have negavtive values
+* Assumes forward operation: VDS < 0 for correct value of g_o
+* No DIBL modeled in g_o
+
 M1 drain gate source bulk CMOS18P_V
 .model CMOS18P_V M
 + gm      = {g_m} 
@@ -396,6 +302,127 @@ M1 drain gate source bulk CMOS18P_V
 + f_T     = {g_m/2/pi/c_iss}
 .ends
 
+*********************************************************************************************************
+* Current-controlled MOS models
+*********************************************************************************************************
+
+.subckt CMOS18N drain gate source bulk W={W} L={L} ID={ID}
+* EKV model of transistor without bulk resistances
+* Voltage dependency of bulk capacitances not modeled
+* Operating in forward saturation region
+* 
+M1 drain gate source bulk CMOS18N
+
+.model CMOS18N M 
++ gm      = {g_m} 
++ go      = {g_o} 
++ gb      = {g_b}
++ cgs     = {c_gs}
++ cdg     = {c_dg}
++ cgb     = {c_gb}
++ cdb     = {c_db}
++ csb     = {c_sb}
+.param
+* device equations EKV model
+* See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
++ IC_CRIT = {1/((4*N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
++ g_m     = {ID/(N_s_N18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
++ g_o     = {g_CLM + g_DIBL}
++ g_CLM   = {ID/(VAL_N18*(L+2*L_min_N18))} ; 
++ g_DIBL  = {-g_m*DVTDIBL_N18*(L_min_N18/L)^DVTIDBLEXP_N18}
++ g_b     = {(N_s_N18-1)*g_m}
++ c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W} 
++ c_dg    = {CGSO_N18*W}
++ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
++ c_db    = {CJB0_N18*W*LDS_N18}
++ c_sb    = {CJB0_N18*W*LDS_N18}
++ IC      = {ID*L/W/I_0_N18}   
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_N18)^(1/beta_N18)}
++ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_v))-1) + Vth_N18}
++ f_T     = {g_m/2/pi/c_iss}
++ c_iss   = {c_gs+c_dg+c_gb}
++ x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
+.ends
+
+*********************************************************************************************************
+.subckt CMOS18ND drain1 drain2 gate1 gate2 W={W} L={L} ID={ID}
+* EKV model of differential pair without bulk resistances
+* Voltage dependency of bulk capacitances not modeled
+* Operating in forward saturation region, fully differential!
+* This means: no net current to bulk!
+* ID is operating current of single transistor: diff-pair
+* tail current is 2*ID
+M1 drain1 drain2 gate1 gate2 CMOS18ND
+
+.model CMOS18ND MD
++ cgg     = {c_gs/2+c_gb/2} 
++ gm      = {g_m/2} 
++ go      = {g_o/2} 
++ cdg     = {c_dg}
++ cdd     = {c_db/2}
+.param
+* device equations EKV model
+* See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
++ IC_CRIT = {1/(4*(N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
++ g_m     = {ID/(N_s_N18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
++ g_o     = {g_CLM + g_DIBL}
++ g_CLM   = {ID/(VAL_N18*L*sqrt(L/L_min_N18))} ; 
++ g_DIBL  = {-g_m*DVTDIBL_N18*(L_min_N18/L)^DVTIDBLEXP_N18}
++ g_b     = {(N_s_N18-1)*g_m}
++ c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W} 
++ c_dg    = {CGSO_N18*W}
++ c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L}
++ c_db    = {CJB0_N18*W*LDS_N18}
++ IC      = {ID*L/W/I_0_N18}   
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_N18)^(1/beta_N18)}
++ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_v))-1) + Vth_N18}
++ f_T     = {g_m/2/pi/c_iss}
++ c_iss   = {c_gs+c_dg+c_gb}
++ x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
+.ends
+
+*********************************************************************************************************
+.subckt CMOS18P drain gate source bulk W={W} L={L} ID={ID}
+* EKV model of transistor without bulk resistances
+* Voltage dependency of bulk capacitances not modeled
+* Operating in forward saturation region
+M1 drain gate source bulk CMOS18P
+
+.model CMOS18P M
++ gm      = {g_m} 
++ go      = {g_o} 
++ gb      = {g_b}
++ cgs     = {c_gs}
++ cdg     = {c_dg}
++ cgb     = {c_gb}
++ cdb     = {c_db}
++ csb     = {c_sb}
+.param
+* device equations EKV model
+* See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
++ IC_CRIT = {1/(4*(N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
++ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
++ g_o     = {g_CLM+g_DIBL}
++ g_CLM   = {-ID/(VAL_P18*L)} ; 
++ g_DIBL  = {g_m*DVTDIBL_P18*(L_min_P18/L)^DVTIDBLEXP_P18}
++ g_b     = {(N_s_P18-1)*g_m}
++ c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W} 
++ c_dg    = {CGSO_P18*W}
++ c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
++ c_db    = {CJB0_P18*W*LDS_P18}
++ c_sb    = {CJB0_P18*W*LDS_P18}
++ IC      = {-ID*L/W/I_0_P18}
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_P18)^(1/beta_P18)}
++ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC_v))-1) + Vth_P18}
++ f_T     = {g_m/2/pi/c_iss}
++ c_iss   = {c_gs+c_dg+c_gb}
++ x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
+.ends
+
+*********************************************************************************************************
 .subckt CMOS18PD drain gate source bulk W={W} L={L} ID={ID}
 * EKV model of differential pair without bulk resistances
 * Voltage dependency of bulk capacitances not modeled
@@ -416,17 +443,22 @@ M1 drain gate source bulk CMOS18PD
 * device equations EKV model
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 + IC_CRIT = {1/(4*(N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
-+ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
-+ g_o     = {g_m*N_s_P18*U_T/(VAL_P18*L)}
++ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
++ g_o     = {g_CLM+g_DIBL}
++ g_CLM   = {-ID/(VAL_P18*L)} ; 
++ g_DIBL  = {g_m*DVTDIBL_P18*(L_min_P18/L)^DVTIDBLEXP_P18}
 + c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W} 
 + c_dg    = {CGSO_P18*W}
 + c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L}
 + c_db    = {CJB0_P18*W*LDS_P18}
-+ IC      = {-ID*L/W/I_0_P18} ; Inversion coefficient
-+ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18}
++ IC      = {-ID*L/W/I_0_P18}
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_P18)^(1/beta_P18)}
++ V_GS    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC_v))-1)+Vth_P18}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
+*********************************************************************************************************
 .subckt CMOS18PN drain gate source bulk W_N={W_N} L_N={L_N} ID_N={ID_N} W_P={W_P} L_P={L_P} ID_P={ID_P}
 * EKV model of push-pull-stage (complementary-parallel-stage) without bulk resistances
 * Voltage dependency of bulk capacitances not modeled
@@ -447,27 +479,35 @@ M1 drain gate source bulk CMOS18PN
 * See Binkley: "Tradeoffs and Optimization in Analog CMOS Design"
 + IC_CRIT_N = {1/(4*(N_s_N18*U_T)*(Theta_N18+1/L_N/E_CRIT_N18))^2}
 + IC_CRIT_P = {1/(4*(N_s_P18*U_T)*(Theta_P18+1/L_P/E_CRIT_P18))^2}
-+ g_m_N     = {ID_N/(N_s_N18*U_T*sqrt(IC_N*(1+IC_N/IC_CRIT_N)+0.5*sqrt(IC_N*(1+IC_N/IC_CRIT_N))+1))}
-+ g_m_P     = {-ID_P/(N_s_P18*U_T*sqrt(IC_P*(1+IC_P/IC_CRIT_P)+0.5*sqrt(IC_P*(1+IC_P/IC_CRIT_P))+1))}
++ g_m_N     = {ID_N/(N_s_N18*U_T*sqrt(IC_gP+0.5*sqrt(IC_gP)+1))}
++ g_m_P     = {-ID_P/(N_s_P18*U_T*sqrt(IC_gN+0.5*sqrt(IC_gN)+1))}
 + g_m       = {g_m_N + g_m_P}
 + g_b       = {g_m_N*(N_s_N18-1) + g_m_P*(N_s_P18-1)}
-+ g_o       = {g_m_N*N_s_N18*U_T/(VAL_N18*L)+g_m_P*N_s_P18*U_T/(VAL_P18*L)}
++ g_o       = {g_CLM_N + g_DIBL_N + g_CLM_P + g_DIBL_P}
++ g_CLM_N   = {ID_N/(VAL_N18*(L+2*L_min_N18))} ; 
++ g_DIBL_N  = {-g_m_N*DVTDIBL_N18*(L_min_N18/L_N)^DVTIDBLEXP_N18}
++ g_CLM_P   = {ID_P/(VAL_P18*(L+2*L_min_P18))} ; 
++ g_DIBL    = {g_m_P*DVTDIBL_P18*(L_min_P18/L_P)^DVTIDBLEXP_P18}
 + c_gs      = {(2-x_N)/3*W_N*L_N*C_OX_N18 + CGSO_N18*N_P + (2-x_P)/3*W_P*L_P*C_OX_P18 + CGSO_P18*W_P} 
 + c_dg      = {CGSO_N18*W_N+CGSO_P18*W_P}
 + c_gb      = {W_N*L_N*C_OX_N18*(1+x_N)/3*(N_s_N18-1)/N_s_N18+CGBO_N18*2*L_N + W_P*L_P*C_OX_P18*(1+x_P)/3*(N_s_P18-1)/N_s_P18+CGBO_P18*2*L_P}
 + c_db      = {CJB0_N18*W_N*LDS_N18 + CJB0_P18*W_P*LDS_P18}
 + c_sb      = {CJB0_N18*W_N*LDS_N18 + CJB0_P18*W_P*LDS_P18}
-+ IC_iN     = {ID_N*L_N/W_N/I_0_N18}            ; Initial estimate of inversion coefficient
-+ IC_N      = {IC_iN*sqrt(1+2*IC_iN/IC_CRIT_N)} ; Better fit with BSIM, whatever it's worth
-+ IC_P      = {-ID_P*L_P/W_P/I_0_P18} ; Initial estimate of inversion coefficient
++ IC_N      = {ID_N*L_N/W_N/I_0_N18} 
++ IC_gN     = {IC_N*(1+(IC_N/IC_CRIT_N))}           
++ IC_vN     = {IC_N*(1+(IC_N/4/IC_CRIT_N)^beta_N18)^(1/beta_N18)}
++ V_GS_N    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_vN))-1) + Vth_N18}
++ IC_P      = {-ID_P*L_P/W_P/I_0_P18}
++ IC_gP     = {IC_P*(1+(IC_P/IC_CRIT_P))}           
++ IC_vP     = {IC_P*(1+(IC_P/4/IC_CRIT_P)^beta_P18)^(1/beta_P18)}
++ V_GS_P    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC_vP))-1)+Vth_P18}
 + c_iss     = {c_gs+c_dg+c_gb}
 + f_T_PN    = {g_m/2/pi/c_iss}
 + x_N       = {(sqrt(IC_N + 0.25) + 1.5)/(sqrt(IC_N + 0.25) + 0.5)^2}
 + x_P       = {(sqrt(IC_P + 0.25) + 1.5)/(sqrt(IC_P + 0.25) + 0.5)^2}
-+ V_GS_N    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_iN*(1+IC_iN/IC_CRIT_N)))-1) + Vth_N18}
-+ V_GS_P    = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18}
 .ends
 
+*********************************************************************************************************
 .subckt MN18_noise ext comm int ID={ID} IG={IG} W={W} L={L}
 * intrinsic noise sources, gate resistance should be added externally
 * CMOS18 N device: copy and modify this model for other devices
@@ -479,21 +519,23 @@ I1 ext comm I value=0 noise={2*q*IG}                     ; gate shot noise
 * device equations MKV model saturated region
 + Gamma   = {(1/2 + 2/3*IC)/(1+IC)}
 + IC_CRIT = {1/((4*N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
-+ g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
++ g_m     = {ID/(N_s_N18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
 + c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W}
 + c_dg    = {CGSO_N18*W}
 + c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18 + CGBO_N18*2*L}
 + c_db    = {CJB0_N18*W*LDS_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
-+ IC_i    = {ID*L/W/I_0_N18}                ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*(1+3*(IC_i/IC_CRIT))**(1/3)} ; Better fit with BSIM, whatever it's worth
-+ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/IC_CRIT)))-1) + Vth_N18}
++ IC      = {ID*L/W/I_0_N18} 
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_N18)^(1/beta_N18)}
++ V_GS    = {2*N_s_N18*U_T*ln(exp(sqrt(IC_v))-1) + Vth_N18}
 + K_F     = {KF_N18*(1+2*N_s_N18*U_T*sqrt(IC)/V_KF_N18)^2}
 + f_ell   = {(f_T*2*pi*K_F*((2-x)/3+(1+x)/3*(N_s_N18-1)/N_s_N18 )/(N_s_N18*Gamma*4*k*T*C_OX_N18))**(1/AF_N18)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
+*********************************************************************************************************
 .subckt MP18_noise ext comm int ID={ID} IG={IG} W={W} L={L}
 * intrinsic noise sources, gate resistance should be added externally
 * CMOS18 N device: copy and modify this model for other devices
@@ -505,26 +547,28 @@ I1 ext comm I value=0 noise={2*q*IG}                     ; gate shot noise
 * device equations MKV model saturated region
 + Gamma   = {(1/2 + 2/3*IC)/(1+IC)}
 + IC_CRIT = {1/((4*N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
-+ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
++ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
 + c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W}
 + c_dg    = {CGSO_P18*W}
 + c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18 + CGBO_P18*2*L}
 + c_db    = {CJB0_P18*W*LDS_P18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
-+ IC      = {-ID*L/W/I_0_P18}            ; Initial estimate of inversion coefficient
-+ VGS     = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18} ; Better fit with BSIM, whatever it's worth
++ IC      = {-ID*L/W/I_0_P18} ; Inversion coefficient
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_P18)^(1/beta_P18)}
++ VGS     = {-2*N_s_P18*U_T*ln(exp(sqrt(IC_v))-1)+Vth_P18} ; Better fit with BSIM, whatever it's worth
 + K_F     = {KF_P18*(1+2*N_s_P18*U_T*sqrt(IC)/V_KF_P18)^2}
 + f_ell   = {(f_T*2*pi*K_F*((2-x)/3+(1+x)/3*(N_s_P18-1)/N_s_P18 )/(N_s_P18*Gamma*4*k*T*C_OX_P18))**(1/AF_P18)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
 .ends
 
+*********************************************************************************************************
 .subckt MN18_noisyNullor outP outN inP inN ID={ID} IG={IG} W={W} L={L}
 * Nullor with input noise sources
 * NMOS intrinsic noise sources, gate resistance should be added externally
-* CMOS18 N device noise sources: copy and modify this model for other devices
 N1 outP outN int inN N
-V1 inP 1 V value=0 noise={K_F/(C_OX_N18^2*W*L*f^AF_N18)} ; flicker noise
+V1 inP 1 V value=0 noise={chi*K_F/(C_OX_N18*c_iss*f^AF_N18)} ; flicker noise
 V2 1 int V value=0 noise={4*k*T*N_s_N18*Gamma/g_m}       ; channel noise
 G1 int inN 1 int G value={s*c_iss}                       ; gate-induced channel noise
 I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
@@ -532,27 +576,29 @@ I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
 * device equations MKV model saturated region
 + Gamma   = {(1/2 + 2/3*IC)/(1+IC)}
 + IC_CRIT = {1/((4*N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
-+ g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
++ g_m     = {ID/(N_s_N18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
 + c_gs    = {(2-x)/3*W*L*C_OX_N18 + CGSO_N18*W}
 + c_dg    = {CGSO_N18*W}
 + c_gb    = {W*L*C_OX_N18*(1+x)/3*(N_s_N18-1)/N_s_N18 + CGBO_N18*2*L}
 + c_db    = {CJB0_N18*W*LDS_N18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
-+ IC_i    = {ID*L/W/I_0_N18}                ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*sqrt(1+2*(IC_i/IC_CRIT))} ; Better fit with BSIM, whatever it's worth
-+ VGS     = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/IC_CRIT)))-1) + Vth_N18}
++ IC      = {ID*L/W/I_0_N18}
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_N18)^(1/beta_N18)}
++ VGS     = {2*N_s_N18*U_T*ln(exp(sqrt(IC_v))-1) + Vth_N18}
 + K_F     = {KF_N18*(1+2*N_s_N18*U_T*sqrt(IC)/V_KF_N18)^2}
 + f_ell   = {(f_T*2*pi*K_F*((2-x)/3+(1+x)/3*(N_s_N18-1)/N_s_N18 )/(N_s_N18*Gamma*4*k*T*C_OX_N18))**(1/AF_N18)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
++ chi     = {(2-x)/3+(1+x)*(N_s_N18-1)/N_s_N18/3}
 .ends
 
+*********************************************************************************************************
 .subckt MP18_noisyNullor outP outN inP inN ID={ID} IG={IG} W={W} L={L}
 * Nullor with input noise sources 
 * PMOS intrinsic noise sources, gate resistance should be added externally
-* CMOS18 P device noise sources: copy and modify this model for other devices
 N1 outP outN int inN N
-V1 inP 1 V value=0 noise={K_F/(C_OX_P18^2*W*L*f^AF_P18)} ; flicker noise
+V1 inP 1 V value=0 noise={chi*K_F/(C_OX_P18*c_iss*f^AF_P18)} ; flicker noise
 V2 1 int V value=0 noise={4*k*T*N_s_P18*Gamma/g_m}       ; channel noise
 G1 int inN 1 int G value={s*c_iss}                       ; gate-induced channel noise
 I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
@@ -560,24 +606,28 @@ I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
 * device equations MKV model saturated region
 + Gamma   = {(1/2 + 2/3*IC)/(1+IC)}
 + IC_CRIT = {1/((4*N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
-+ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
++ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
 + c_gs    = {(2-x)/3*W*L*C_OX_P18 + CGSO_P18*W}
 + c_dg    = {CGSO_P18*W}
 + c_gb    = {W*L*C_OX_P18*(1+x)/3*(N_s_P18-1)/N_s_P18 + CGBO_P18*2*L}
 + c_db    = {CJB0_P18*W*LDS_P18}
 + f_T     = {g_m/2/pi/c_iss}
 + c_iss   = {c_gs+c_dg+c_gb}
-+ IC      = {-ID*L/W/I_0_P18}            ; Initial estimate of inversion coefficient
-+ VGS     = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+0.5*IC/IC_CRIT)))-1)+Vth_P18} 
++ IC      = {-ID*L/W/I_0_P18}
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_P18)^(1/beta_P18)}
++ VGS     = {-2*N_s_P18*U_T*ln(exp(sqrt(IC_v))-1)+Vth_P18} 
 + K_F     = {KF_P18*(1+2*N_s_P18*U_T*sqrt(IC)/V_KF_P18)^2}
 + f_ell   = {(f_T*2*pi*K_F*((2-x)/3+(1+x)/3*(N_s_P18-1)/N_s_P18 )/(N_s_P18*Gamma*4*k*T*C_OX_P18))**(1/AF_P18)}
 + x       = {(sqrt(IC + 0.25) + 1.5)/(sqrt(IC + 0.25) + 0.5)^2}
++ chi     = {(2-x)/3+(1+x)*(N_s_P18-1)/N_s_P18/3}
 .ends
 
+
+*********************************************************************************************************
 .subckt MN18_noisyNullor_simple outP outN inP inN ID={ID} IG={IG} W={W} L={L}
 * Nullor with input noise sources; fixed Gamma, KF and c_iss
 * NMOS intrinsic noise sources, gate resistance should be added externally
-* CMOS18 N device noise sources: copy and modify this model for other devices
 N1 outP outN int inN N
 V1 inP 1 V value=0 noise={K_F/(C_OX_N18^2*W*L*f^AF_N18)} ; flicker noise
 V2 1 int V value=0 noise={4*k*T*N_s_N18*Gamma/g_m}       ; channel noise
@@ -587,22 +637,23 @@ I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
 * device equations MKV model saturated region
 + Gamma   = {2/3}
 + IC_CRIT = {1/((4*N_s_N18*U_T)*(Theta_N18+1/L/E_CRIT_N18))^2}
-+ g_m     = {ID/(N_s_N18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
++ g_m     = {ID/(N_s_N18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
 + c_gs    = {2/3*W*L*C_OX_N18 + CGSO_N18*W}
 + c_dg    = {CGSO_N18*W}
 + c_gb    = {W*L*C_OX_N18*(N_s_N18-1)/N_s_N18/3 + CGBO_N18*2*L}
-+ c_iss   = {c_gs+c_dg+c_gb}
++ c_iss   = {c_gs + c_dg + c_gb}
 + f_T     = {g_m/2/pi/c_iss}
-+ IC_i    = {ID*L/W/I_0_N18}                ; Initial estimate of inversion coefficient
-+ IC      = {IC_i*sqrt(1+2*(IC_i/IC_CRIT))} ; Better fit with BSIM, whatever it's worth
-+ VGS     = {2*N_s_N18*U_T*ln(exp(sqrt(IC_i*(1+IC_i/IC_CRIT)))-1) + Vth_N18}
++ IC      = {ID*L/W/I_0_N18}
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_N18)^(1/beta_N18)}
++ VGS     = {2*N_s_N18*U_T*ln(exp(sqrt(IC_v))-1) + Vth_N18}
 + K_F     = {KF_N18}
 .ends
 
+*********************************************************************************************************
 .subckt MP18_noisyNullor_simple outP outN inP inN ID={ID} IG={IG} W={W} L={L}
 * Nullor with input noise sources; fixed Gamma, KF and c_iss
-* NMOS intrinsic noise sources, gate resistance should be added externally
-* CMOS18 N device noise sources: copy and modify this model for other devices
+* PMOS intrinsic noise sources, gate resistance should be added externally
 N1 outP outN int inN N
 V1 inP 1 V value=0 noise={K_F/(C_OX_P18^2*W*L*f^AF_P18)} ; flicker noise
 V2 1 int V value=0 noise={4*k*T*N_s_P18*Gamma/g_m}       ; channel noise
@@ -612,14 +663,16 @@ I1 inP inN I value=0 noise={2*q*IG}                      ; gate shot noise
 * device equations MKV model saturated region
 + Gamma   = {2/3}
 + IC_CRIT = {1/((4*N_s_P18*U_T)*(Theta_P18+1/L/E_CRIT_P18))^2}
-+ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC*(1+IC/IC_CRIT)+0.5*sqrt(IC*(1+IC/IC_CRIT))+1))}
++ g_m     = {-ID/(N_s_P18*U_T*sqrt(IC_g+0.5*sqrt(IC_g)+1))}
 + c_gs    = {2/3*W*L*C_OX_P18 + CGSO_P18*W}
 + c_dg    = {CGSO_P18*W}
 + c_gb    = {W*L*C_OX_P18*(N_s_P18-1)/N_s_P18/3 + CGBO_P18*2*L}
-+ c_iss   = {c_gs+c_dg+c_gb}
++ c_iss   = {c_gs + c_dg + c_gb}
 + f_T     = {g_m/2/pi/c_iss}
-+ IC      = {-ID*L/W/I_0_P18}                ; Inversion coefficient
-+ VGS     = {-2*N_s_P18*U_T*ln(exp(sqrt(IC*(1+IC/IC_CRIT)))-1) + Vth_P18}
++ IC      = {-ID*L/W/I_0_P18} ; Inversion coefficient
++ IC_g    = {IC*(1+(IC/IC_CRIT))}           
++ IC_v    = {IC*(1+(IC/4/IC_CRIT)^beta_P18)^(1/beta_P18)}
++ VGS     = {-2*N_s_P18*U_T*ln(exp(sqrt(IC_v))-1) + Vth_P18}
 + K_F     = {KF_P18}
 .ends
 

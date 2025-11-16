@@ -14,8 +14,8 @@ Although SLiCAP is intended to be used for relatively small circuits, it support
    
      .. literalinclude:: ../../SLiCAP/files/lib/SLiCAPmodels.lib
          :linenos:
-         :lines: 88-98
-         :lineno-start: 88
+         :lines: 38-48
+         :lineno-start: 38
          
 #. The circuit consists of a number of building blocks that comprise multiple parameters with complex expressions
 
@@ -25,8 +25,8 @@ Although SLiCAP is intended to be used for relatively small circuits, it support
      
      .. literalinclude:: ../../SLiCAP/files/lib/SLiCAP.lib
          :linenos:
-         :lines: 134-170
-         :lineno-start: 134
+         :lines: 309-346
+         :lineno-start: 346
 
 #. The circuit consists of an anti-series connection of two identical circuits.
 

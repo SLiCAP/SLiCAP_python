@@ -258,9 +258,9 @@ def backAnnotateSchematic(sch, opinfo):
     f.close()
     replacements = {}
     for name in opinfo.keys():
-        m = re.search(rf'(\(text "{name})(\:[+-]?\d+\.?\d*)?([eE][+-]?\d+)?"', schematic)
+        m = re.search(rf'(\(text "{name})(\:\s?[+-]?\d+\.?\d*)?([eE][+-]?\d+)?"', schematic)
         if m != None:
-            replacements[m.group(0)] = m.group(1) + ':{:f}"' .format(opinfo[name])
+            replacements[m.group(0)] = m.group(1) + ': {:8.2e}"' .format(opinfo[name])
     for replacement in replacements.keys():
         schematic = schematic.replace(replacement, replacements[replacement])
     f = open(sch, "w")

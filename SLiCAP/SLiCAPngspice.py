@@ -107,7 +107,7 @@ class MOS(object):
         # MOS with voltage feedback loop for creating the gate-source voltage
         txt += 'M1_OP d1 g1 s1 b1 %s W={W} L={L} M={M}\n'%(self.dev)
         # LOOP and DC voltages
-        txt += 'V5 s1 0 {VS}\nV6 b1 0 {VB}\nV7 d1 1 {VD}\nE1 g1 d1 1 0 1k\nI1 0 1 {ID}\n'
+        txt += 'V5 s1 0 {VS}\nV6 b1 0 {VB}\nV7 d1 1 {VD}\nE1 g1 d1 1 0 100\nI1 0 1 {ID}\n'
         # MOS for parameter measurement
         txt += 'M1 d2 g2 s2 b2 %s W={W} L={L} M={M}\n'%(self.dev)
         # VGS copy
@@ -301,7 +301,7 @@ class MOS(object):
         f.close()
         simCmd = 'noise V(d) V2 dec %s %s %s'%( str(numDec), str(fmin), str(fmax))
         namesDict = {'inoise': 'inoise_spectrum'}
-        output = ngspice2traces('MOS_noise', simCmd, namesDict, stepCmd=None, traceType='onoise')
+        output = ngspice2traces('MOS_noise', simCmd, namesDict, stepCmd=None, traceType='onoise', squaredNoise=True)
         remove('MOS_noise.cir')
         remove('MOS_noise.csv')
         return output

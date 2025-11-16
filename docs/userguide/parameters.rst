@@ -39,7 +39,7 @@ SLiCAP built-in parameters
     
 .. literalinclude:: ../../SLiCAP/files/lib/SLiCAP.lib
     :linenos:
-    :lines: 132-179
+    :lines: 135-185
     
 .. admonition:: SLiCAP Library files    
     :class: warning
