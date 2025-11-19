@@ -334,7 +334,6 @@ The python script below (user=USR, python environment=ENV, os=LINUX) generates/u
     ini.factor                 = True
     ini.max_rec_subst          = 15
     ini.reduce_matrix          = True
-    ini.reduce_circuit         = True
 
     PLOT
     ----

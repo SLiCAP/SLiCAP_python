@@ -405,6 +405,7 @@ def _makeSrcVector(cir, parDefs, elid, value='id', numeric=True, substitute=True
     Iv.row_del(gndPos)
     return Iv
 
+"""
 def _reduceCircuit(M, Iv, Dv, source, detector, references, inductors):
     connections, deletions = _defineReductions(M, Iv, Dv, source, detector, references, inductors)
     M, Iv, Dv = _applyReductions(M, Iv, Dv, connections, deletions) 
@@ -518,3 +519,4 @@ def _connect(connections, key, value):
     else:
         connections[key] = connections[value]
     return connections
+"""

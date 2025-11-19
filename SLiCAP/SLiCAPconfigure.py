@@ -277,7 +277,7 @@ def _generate_project_config():
                                     "factor"                : True,
                                     "maxrecsubst"           : 15,
                                     "reducematrix"          : True,
-                                    "reducecircuit"         : True
+    #                                "reducecircuit"         : True
                                     }
     SLiCAPconfig['balancing']    = {"update_srcnames"       : True,
                                     "pair_ext"              : "P,N",
@@ -583,7 +583,7 @@ def dump(section="all"):
         print('ini.factor                 =', factor)
         print('ini.max_rec_subst          =', max_rec_subst)
         print('ini.reduce_matrix          =', reduce_matrix)
-        print('ini.reduce_circuit         =', reduce_circuit)
+        #print('ini.reduce_circuit         =', reduce_circuit)
     if section == 'ALL' or section == "PLOT":        
         print("\nPLOT")
         print("----")
@@ -686,7 +686,7 @@ step_function         = eval(project_config['math']['stepfunction'])
 factor                = eval(project_config['math']['factor'])
 max_rec_subst         = eval(project_config['math']['maxrecsubst'])
 reduce_matrix         = eval(project_config['math']['reducematrix'])
-reduce_circuit        = eval(project_config['math']['reducecircuit'])
+#reduce_circuit        = eval(project_config['math']['reducecircuit'])
 
 gain_colors_gain      = project_config['gaincolors']['gain']
 gain_colors_asymptotic= project_config['gaincolors']['asymptotic']

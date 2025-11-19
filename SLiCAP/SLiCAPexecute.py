@@ -8,7 +8,7 @@ from copy import deepcopy
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPyacc import _updateCirData
 from SLiCAP.SLiCAPprotos import element
-from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector, _reduceCircuit
+from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector#, _reduceCircuit
 from SLiCAP.SLiCAPmath import float2rational, normalizeRational, det, _Roots 
 from SLiCAP.SLiCAPmath import _cancelPZ, _zeroValue, ilt, assumeRealParams
 from SLiCAP.SLiCAPmath import  clearAssumptions, fullSubs
@@ -1178,8 +1178,8 @@ def _makeAllMatrices(instr, reduce=True, inductors=False):
         instr.detector = detector
         instr.circuit.errors += errors
     # Reduce the circuit
-    if ini.reduce_circuit and reduce and instr.gainType != 'vi':
-        instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, instr.source, instr.detector, instr.references, inductors=inductors)
+    #if ini.reduce_circuit and reduce and instr.gainType != 'vi':
+    #    instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, instr.source, instr.detector, instr.references, inductors=inductors)
     return instr
     
 def _checkDetector(detector, detectors):
@@ -1645,8 +1645,8 @@ def _doPyNoise(instr):
         # Modify source and source vector (reduce to single input)
         instr.Iv = Iv
         # Remove unused independent voltage sources
-        if ini.reduce_circuit:
-            instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, [src], instr.detector, instr.references, inductors=False)
+        #if ini.reduce_circuit:
+        #    instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, [src], instr.detector, instr.references, inductors=False)
         instr = _doPyNumer(instr)
         num = assumeRealParams(instr.numer[-1].subs(ini.laplace, s2f))
         if num != None:
@@ -1713,7 +1713,7 @@ def _doPyDCvar(instr):
         # Modify source and source vector (reduce to single input)
         instr.Iv = Iv
         # Remove unused independent voltage sources
-        instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, [src], instr.detector, instr.references, inductors=True)
+        #instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, [src], instr.detector, instr.references, inductors=True)
         instr = _doPyNumer(instr)
         num = instr.numer[-1]
         if num != None:

@@ -23,8 +23,8 @@ SLiCAP Version 4.0 release notes
        
        VERSION
        -------
-       ini.install_version        = 4.0
-       ini.latest_version         = 4.0
+       ini.install_version        = 4.0.8
+       ini.latest_version         = 4.0.8
     
 #. The execution of the ``reduce_circuit`` and the ``reduce_matrix`` options have been improved. ``reduce_matrix`` now also works for matrices that do not include Laplace expressions and it only performs multiplication and addition on symbolic expressions.
 #. ``listPZ`` displays frequencies in rad/s if ``ini.hz=False``
@@ -49,6 +49,7 @@ SLiCAP Version 4.0 release notes
       The results of an operating point information (without parameter stepping) can be displayed on the KiCAD schematic and its ``svg`` and ``pdf`` image files.
 
 #. Library files have been updated; some names of subcircuits modeling the noise behavior of CMOS devices have been modified. See     `Subcircuits with noise <../userguide/noise.html#subcircuits-with-noise>`__.  
+#. The function ``_reduce_circuit`` and its associated ini setting ``ini.reduce_circuit`` have been removed. The improved matrix reduction algorithm made it obsolete. 
 #. Clean-up code and minor bug fixes.
       
 SLiCAP Version 3.5 release notes
