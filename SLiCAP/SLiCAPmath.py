@@ -388,8 +388,8 @@ def _zeroValue(numer, denom, var):
     """
     # numer = sp.simplify(numer)
     # denom = sp.simplify(denom)
-    numerValue = numer.subs(var, 0)
-    denomValue = denom.subs(var, 0)
+    numerValue = numer.xreplace({var: 0})
+    denomValue = denom.xreplace({var: 0})
     if numerValue == 0 and denomValue == 0:
         gain = sp.sympify("undefined")
     elif numerValue == 0:
@@ -821,7 +821,7 @@ def _makeNumData(yFunc, xVar, x, normalize=True):
     if xVar in yFunc.atoms(sp.Symbol):
         # Check for Heaviside functions (not implemented in sp.lambdify)
         if len(yFunc.atoms(sp.Heaviside)) != 0:
-            y = [sp.N(yFunc.subs(xVar, x[i])).doit() for i in range(len(x))]
+            y = [sp.N(yFunc.xreplace({xVar: x[i]})).doit() for i in range(len(x))]
         else:
             func = sp.lambdify(xVar, yFunc, ini.lambdify)
             y = func(x)
@@ -934,7 +934,7 @@ def _phaseFunc_f(LaplaceExpr, f):
             phase = []
             for i in range(len(f)):
                 try:
-                    phase.append(np.angle(data.subs(ini.frequency, f[i])))
+                    phase.append(np.angle(data.xreplace({ini.frequency: f[i]})))
                 except BaseException:
                     phase.append(0)
     elif data >= 0:
@@ -984,10 +984,10 @@ def _delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
             angle1 = np.angle(func(f))
             angle2 = np.angle(func(f*(1+delta)))
         except BaseException:
-            angle1 = np.array([np.angle(data.subs(ini.frequency, f[i]))
+            angle1 = np.array([np.angle(data.xreplace({ini.frequency: f[i]}))
                               for i in range(len(f))])
             angle2 = np.array(
-                [np.angle(data.subs(ini.frequency, f[i]*(1+delta))) for i in range(len(f))])
+                [np.angle(data.xreplace({ini.frequency: f[i]*(1+delta)})) for i in range(len(f))])
         try:
             angle1 = np.unwrap(angle1)
             angle2 = np.unwrap(angle2)
@@ -1022,7 +1022,7 @@ def doCDSint(noiseResult, tau, f_min, f_max):
     """
     _phi = sp.Symbol('_phi', positive=True)
     noiseResult *= ((2*sp.sin(sp.pi*ini.frequency*tau)))**2
-    noiseResult = noiseResult.subs(ini.frequency, _phi/tau/sp.pi)
+    noiseResult = noiseResult.xreplace({ini.frequency: _phi/tau/sp.pi})
     noiseResultCDSint = sp.integrate(
         noiseResult/sp.pi/tau, (_phi, f_min*tau*sp.pi, f_max*tau*sp.pi))
     return sp.simplify(noiseResultCDSint)
@@ -1212,10 +1212,10 @@ def step2PeriodicPulse(ft, t_pulse, t_period, n_periods):
         for i in range(n_edges):
             if i % 2 == 0:
                 t_delay += t_pulse
-                ft_out -= ft.subs(t, sp.UnevaluatedExpr(t - t_delay))
+                ft_out -= ft.xreplace({t: sp.UnevaluatedExpr(t - t_delay)})
             else:
                 t_delay += t_period - t_pulse
-                ft_out += ft.subs(t, sp.UnevaluatedExpr(t - t_delay))
+                ft_out += ft.xreplace({t: sp.UnevaluatedExpr(t - t_delay)})
     else:
         print("Error: expected a time function f(t).")
     return ft_out
@@ -1265,13 +1265,13 @@ def besselPoly(n):
     for k in range(n+1):
         P_s += (sp.factorial(2*n-k)/((2**(n-k)) *
                 sp.factorial(k)*sp.factorial(n-k)))*s**k
-    P_s = sp.simplify(P_s/P_s.subs(s, 0))
+    P_s = sp.simplify(P_s/P_s.xreplace({s: 0}))
     # Normalize 3 dB frequency
     w = sp.Symbol('w', real=True)
-    B_w = sp.Abs(P_s.subs(s, sp.I*w))**2
+    B_w = sp.Abs(P_s.xreplace({s: sp.I*w}))**2
     func = sp.lambdify(w, B_w - 2)
     w3dB = float2rational(fsolve(func, 10)[0])
-    P_s = P_s.subs(s, s*w3dB)
+    P_s = P_s.xreplace({s: s*w3dB})
     return P_s
 
 def chebyshev1Poly(n, ripple):
@@ -1304,10 +1304,10 @@ def chebyshev1Poly(n, ripple):
         P_s *= (s/a_i(i, n, h))**2 + s/(a_i(i, n, h)*b_i(i, n, h)) + 1
     # Normalize 3 dB frequency
     w = sp.Symbol('w', real=True)
-    B_w = sp.Abs(P_s.subs(s, sp.I*w))**2
+    B_w = sp.Abs(P_s.xreplace({s: sp.I*w}))**2
     func = sp.lambdify(w, B_w - 2)
     w3dB = float2rational(fsolve(func, 10)[0])
-    P_s = P_s.subs(s, s*w3dB)
+    P_s = P_s.xreplace({s: s*w3dB})
     return P_s
 
 def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
@@ -1383,6 +1383,11 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
                 else:
                     data = float2rational(sp.simplify(noiseData[src][i]))
                 if data != 0:
+                    # Normalize rational to prevent numeric overflow
+                    try:
+                        data = normalizeRational(data, ini.frequency)
+                    except:
+                        pass
                     if CDS:
                         var_i += doCDSint(data, tau, fmin, fmax)
                     else:
@@ -1394,7 +1399,8 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
                             # Numeric frequency-dependent spectrum, use numeric integration
                             noise_spectrum = sp.lambdify(
                                 ini.frequency, sp.N(data))
-                            var_i += quad(noise_spectrum, fmin, fmax)[0]
+                            term = quad(noise_spectrum, fmin, fmax)[0]
+                            var_i += term
                         else:
                             # Try sympy integration
                             func = assumePosParams(data)
@@ -1621,10 +1627,10 @@ def ilt(expr, s, t, integrate=False):
                         fs /= (s-rt)**rootDict[rt]
                 # calculate residue
                 if n == 1:
-                    inv_laplace += fs.subs(s, root)
+                    inv_laplace += fs.xreplace({s: root})
                 else:
                     inv_laplace += (1/sp.factorial(n-1)) * \
-                        sp.diff(fs, (s, n-1)).subs(s, root)
+                        sp.diff(fs, (s, n-1)).xreplace({s: root})
 
             inv_laplace = assumeRealParams(inv_laplace)
             inv_laplace = inv_laplace.as_real_imag()[0]
@@ -1745,14 +1751,9 @@ def ENG(number, scaleFactors=False):
     try:
         if type(number) != float:
             number = float(number)
-        sgn = np.sign(number)
         absValue = np.abs(number)
         if absValue != 0:
             exp = int(np.log10(absValue)/3)*3
-            if sgn == 0:
-                sign = "-"
-            else:
-                sign = "+"
             if exp < 0:
                 exp -= 3
             number = number/(10**exp)
@@ -2041,19 +2042,19 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
         proto = chebyshev1Poly(f_order, ripple)
     if f_type == "lp":
         if f_high != None:
-            proto = 1/proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_high))
+            proto = 1/proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_high)})
         else:
             print("Error: missing f_high")
     elif f_type == "hp":
         if f_low != None:
             proto = normalizeRational(sp.simplify(
-                1/proto.subs(ini.laplace, 2*sp.pi*f_low/ini.laplace)))
+                1/proto.xreplace({ini.laplace: 2*sp.pi*f_low/ini.laplace})))
         else:
             print("Error: missing f_low")
     elif f_type == "ap":
         if f_high != None:
-            proto = proto.subs(ini.laplace, -ini.laplace)/proto
-            proto = proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_high))
+            proto = proto.xreplace({ini.laplace: -ini.laplace})/proto
+            proto = proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_high)})
         else:
             print("Error: missing f_high")
     else:
@@ -2062,15 +2063,15 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
             f_c = sp.sqrt(f_low * f_high)
             Q = f_c/B
             if f_type == "bp" and f_c != None:
-                proto = 1/proto.subs(ini.laplace, Q *
-                                     (ini.laplace+1/ini.laplace))
+                proto = 1/proto.xreplace({ini.laplace: Q *
+                                     (ini.laplace+1/ini.laplace)})
                 proto = normalizeRational(sp.simplify(
-                    proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_c))))
+                    proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_c)})))
             elif f_type == "bs" and f_c != None:
-                proto = 1/proto.subs(ini.laplace, 1 /
-                                     (Q*(ini.laplace+1/ini.laplace)))
+                proto = 1/proto.xreplace({ini.laplace: 1 /
+                                     (Q*(ini.laplace+1/ini.laplace))})
                 proto = normalizeRational(sp.simplify(
-                    proto.subs(ini.laplace, ini.laplace/(2*sp.pi*f_c))))
+                    proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_c)})))
         elif f_low == None:
             print("Error: missing f_low")
         else:
@@ -2094,7 +2095,7 @@ def DIN_A(f_0=1000):
     DIN_A = 12194**2*f**4/((f**2+20.6**2)*(f**2+12194**2)
                            * sp.sqrt((f**2+107.7**2)*(f**2+737.9**2)))
     # normalized the weighting function w.r.t. 1kHz
-    return float2rational(DIN_A / DIN_A.subs(f, f_0))
+    return float2rational(DIN_A / DIN_A.xreplace({f: f_0}))
 
 if __name__ == "__main__":
     from time import time

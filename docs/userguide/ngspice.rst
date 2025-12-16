@@ -143,7 +143,7 @@ AC analysis
 
 .. literalinclude:: ../ngspice.py
     :linenos:
-    :lines: 23-29
+    :lines: 23-37
     :lineno-start: 23
     
 .. image:: /img/VampQspiceM.svg

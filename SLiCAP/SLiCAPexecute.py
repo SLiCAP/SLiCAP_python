@@ -836,14 +836,14 @@ def _doDC(instr):
         if ini.step_function:
             if instr.gainType == 'loopgain' or instr.gainType == 'servo':
                 instr = _makeAllMatrices(instr, inductors=True)
-                instr.Iv = instr.Iv.subs(ini.laplace, 0)
-                instr.M = instr.M.subs(ini.laplace, 0)
+                instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+                instr.M = instr.M.xreplace({ini.laplace: 0})
                 instr = _doPyLoopGainServo(instr)
                 dcFunc = instr.laplace[0]
             else:
                 instr = _makeAllMatrices(instr, inductors=True)
-                instr.Iv = instr.Iv.subs(ini.laplace, 0)
-                instr.M = instr.M.subs(ini.laplace, 0)
+                instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+                instr.M = instr.M.xreplace({ini.laplace: 0})
                 instr = _doPyLaplace(instr)
                 dcFunc = instr.laplace[0]
             instr.laplace = _stepFunctions(instr.stepDict, dcFunc)
@@ -855,24 +855,24 @@ def _doDC(instr):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
                 if instr.gainType == 'loopgain' or instr.gainType == 'servo':
                     instr = _makeAllMatrices(instr, inductors=True)
-                    instr.Iv = instr.Iv.subs(ini.laplace, 0)
-                    instr.M = instr.M.subs(ini.laplace, 0)
+                    instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+                    instr.M = instr.M.xreplace({ini.laplace: 0})
                     instr = _doPyLoopGainServo(instr)
                 else:
                     instr = _makeAllMatrices(instr, inductors=True)
-                    instr.Iv = instr.Iv.subs(ini.laplace, 0)
-                    instr.M = instr.M.subs(ini.laplace, 0)
+                    instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+                    instr.M = instr.M.xreplace({ini.laplace: 0})
                     instr = _doPyLaplace(instr)
     else:
         if instr.gainType == 'loopgain' or instr.gainType == 'servo':
             instr = _makeAllMatrices(instr, inductors=True)
-            instr.Iv = instr.Iv.subs(ini.laplace, 0)
-            instr.M = instr.M.subs(ini.laplace, 0)
+            instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+            instr.M = instr.M.xreplace({ini.laplace: 0})
             instr = _doPyLoopGainServo(instr)
         else:
             instr = _makeAllMatrices(instr, inductors=True)
-            instr.Iv = instr.Iv.subs(ini.laplace, 0)
-            instr.M = instr.M.subs(ini.laplace, 0)
+            instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+            instr.M = instr.M.xreplace({ini.laplace: 0})
             instr = _doPyLaplace(instr)
         instr.laplace = instr.laplace[0]
         instr.numer = instr.numer[0]
@@ -1011,8 +1011,8 @@ def _doDCsolve(instr):
     if instr.step:
         if ini.step_function:
             instr = _makeAllMatrices(instr, reduce=False)
-            instr.M = instr.M.subs(ini.laplace, 0)
-            instr.Iv = instr.Iv.subs(ini.laplace, 0)
+            instr.M = instr.M.xreplace({ini.laplace: 0})
+            instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
             instr = _doPySolve(instr)
             sol = sp.simplify(instr.solve[-1])
             instr.dcSolve = _stepFunctions(instr.stepDict, sol)
@@ -1023,14 +1023,14 @@ def _doDCsolve(instr):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]]=instr.stepDict[stepVars[j]][i]
                 instr = _makeAllMatrices(instr, reduce=False)
-                instr.M = instr.M.subs(ini.laplace, 0)
-                instr.Iv = instr.Iv.subs(ini.laplace, 0)
+                instr.M = instr.M.xreplace({ini.laplace: 0})
+                instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
                 instr = _doPySolve(instr)
                 instr.dcSolve.append(sp.simplify(instr.solve[-1]))
     else:
         instr = _makeAllMatrices(instr, reduce=False)
-        instr.M = instr.M.subs(ini.laplace, 0)
-        instr.Iv = instr.Iv.subs(ini.laplace, 0)
+        instr.M = instr.M.xreplace({ini.laplace: 0})
+        instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
         instr = _doPySolve(instr)
         instr.dcSolve = sp.simplify(instr.solve[0])
     return instr
@@ -1225,7 +1225,7 @@ def _stepFunctions(stepDict, function):
     for i in range(numSteps):
         newFunction = function
         for j in range(len(stepVars)):
-            newFunction = newFunction.subs(stepVars[j], stepDict[stepVars[j]][i])
+            newFunction = newFunction.xreplace({stepVars[j]: stepDict[stepVars[j]][i]})
         newFunction = sp.sympify(str(sp.N(newFunction)), rational=True)
         functions.append(newFunction)
     return functions
@@ -1254,7 +1254,7 @@ def _pairParDefs(instr):
                 if len(newName) > lenExt:
                     if newName[-lenExt:] in instr.pairExt:
                         valueSubs[param] = sp.Symbol(newName[:-lenExt])
-            value = value.subs(valueSubs)
+            value = value.xreplace(valueSubs)
             newParDefs[sp.Symbol(parName[:-lenExt])] = value
 
         else:
@@ -1262,7 +1262,7 @@ def _pairParDefs(instr):
     # perform substitutions
     for param in list(newParDefs.keys()):
         # In parameter names
-        newParDefs[param] = newParDefs[param].subs(substDict)
+        newParDefs[param] = newParDefs[param].xreplace(substDict)
     instr.parDefs = newParDefs
     instr.circuit.parDefs = newParDefs
     return instr
@@ -1327,10 +1327,10 @@ def _convertMatrices(instr):
             if len(parName) > lenExt:
                 if parName[-lenExt:] in instr.pairExt:# and nameParts[-1][:-lenExt] in baseIDs:
                     substDict[param] = sp.Symbol(parName[:-lenExt])
-        instr.M = instr.M.subs(substDict)
+        instr.M = instr.M.xreplace(substDict)
         
         if instr.dataType != 'noise' and instr.dataType != 'dcvar':
-            instr.Iv = instr.Iv.subs(substDict)
+            instr.Iv = instr.Iv.xreplace(substDict)
         
     instr.Dv = sp.Matrix(dmVars + cmVars)
     instr.M  = A.transpose() * instr.M * A
@@ -1567,8 +1567,8 @@ def _doPyLoopGainServo(instr):
             if len(parName) > lenExt:
                 if parName[-lenExt:] in instr.pairExt:
                     substDict[param] = sp.Symbol(parName[:-lenExt])
-        lg1 = lg1.subs(substDict)
-        lg2 = lg2.subs(substDict)
+        lg1 = lg1.xreplace(substDict)
+        lg2 = lg2.xreplace(substDict)
     if instr.substitute:
         lg1 = fullSubs(lg1, instr.parDefs)
         lg2 = fullSubs(lg2, instr.parDefs)
@@ -1577,7 +1577,7 @@ def _doPyLoopGainServo(instr):
         lg2 = float2rational(sp.N(lg2))
     _LGREF_1, _LGREF_2 = sp.symbols('_LGREF_1, _LGREF_2')
     MD = instr.M
-    M0 = instr.M.subs({_LGREF_1: 0, _LGREF_2: 0})
+    M0 = instr.M.xreplace({_LGREF_1: 0, _LGREF_2: 0})
     DM = det(MD, method=ini.denom)
     D0 = det(M0, method=ini.denom)
     LG = (D0-DM)/D0
@@ -1586,7 +1586,7 @@ def _doPyLoopGainServo(instr):
     if instr.numeric:
         LG = float2rational(sp.N(LG))
     num, den = LG.as_numer_denom()
-    LG = sp.simplify(num/den).subs({_LGREF_1: lg1, _LGREF_2: lg2})
+    LG = sp.simplify(num/den).xreplace({_LGREF_1: lg1, _LGREF_2: lg2})
     num, den = LG.as_numer_denom()
     if instr.gainType == 'loopgain':
         instr.laplace.append(LG)
@@ -1615,11 +1615,11 @@ def _doPyNoise(instr):
     instr.gainType = 'gain'
     instr = _makeAllMatrices(instr, reduce=True, inductors=False)
     den = _doPyDenom(instr)
-    den = assumeRealParams(den.denom[0].subs(ini.laplace, s2f))
+    den = assumeRealParams(den.denom[0].xreplace({ini.laplace: s2f}))
     den_sq = sp.Abs(den * sp.conjugate(den))
     if instr.source != [None, None] and instr.source != None:   
         instr = _doPyNumer(instr)
-        num = assumeRealParams(instr.numer[-1].subs(ini.laplace, s2f))
+        num = assumeRealParams(instr.numer[-1].xreplace({ini.laplace: s2f}))
         if num != None:
             sl_num_sq = sp.Abs(num * sp.conjugate(num))
     instr.gainType = 'vi'
@@ -1639,16 +1639,13 @@ def _doPyNoise(instr):
         for el in instr.snoiseTerms.keys():
             name = sp.Symbol(el)
             if el == src:
-                Iv = Iv.subs(name, 1)
+                Iv = Iv.xreplace({name: 1})
             else:
-                Iv = Iv.subs(name, 0)
+                Iv = Iv.xreplace({name: 0})
         # Modify source and source vector (reduce to single input)
         instr.Iv = Iv
-        # Remove unused independent voltage sources
-        #if ini.reduce_circuit:
-        #    instr.M, instr.Iv, instr.Dv = _reduceCircuit(instr.M, instr.Iv, instr.Dv, [src], instr.detector, instr.references, inductors=False)
         instr = _doPyNumer(instr)
-        num = assumeRealParams(instr.numer[-1].subs(ini.laplace, s2f))
+        num = assumeRealParams(instr.numer[-1].xreplace({ini.laplace: s2f}))
         if num != None:
             num_sq = sp.Abs(num * sp.conjugate(num))
             gain_sq = num_sq/den_sq
@@ -1684,18 +1681,18 @@ def _doPyDCvar(instr):
             instr.svarTerms[name] = value 
     instr.gainType = 'gain'
     instr = _makeAllMatrices(instr, inductors=True)
-    instr.M = instr.M.subs(ini.laplace, 0)
+    instr.M = instr.M.xreplace({ini.laplace: 0})
     den = _doPyDenom(instr).denom[0]
     den_sq = den**2
     if instr.source != [None, None] and instr.source != None:
         instr = _doPyNumer(instr)
-        num = instr.numer[-1].subs(ini.laplace, 0)
+        num = instr.numer[-1].xreplace({ini.laplace: 0})
         if num != None:
             sl_num_sq = num**2
     instr.gainType  = 'vi'
     instr = _makeAllMatrices(instr, reduce=False)
-    M_var = instr.M.subs(ini.laplace, 0)
-    Iv_var = instr.Iv.subs(ini.laplace, 0)
+    M_var = instr.M.xreplace({ini.laplace: 0})
+    Iv_var = instr.Iv.xreplace({ini.laplace: 0})
     Dv_var = instr.Dv
     ovar = 0
     ivar = 0
@@ -1707,9 +1704,9 @@ def _doPyDCvar(instr):
         for el in instr.svarTerms.keys():
             name = sp.Symbol(el)
             if el == src:
-                Iv = Iv.subs(name, 1)
+                Iv = Iv.xreplace({name: 1})
             else:
-                Iv = Iv.subs(name, 0)
+                Iv = Iv.xreplace({name: 0})
         # Modify source and source vector (reduce to single input)
         instr.Iv = Iv
         # Remove unused independent voltage sources

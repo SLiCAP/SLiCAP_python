@@ -23,8 +23,8 @@ SLiCAP Version 4.0 release notes
        
        VERSION
        -------
-       ini.install_version        = 4.0.8
-       ini.latest_version         = 4.0.8
+       ini.install_version        = 4.0.9
+       ini.latest_version         = 4.0.9
     
 #. The execution of the ``reduce_circuit`` and the ``reduce_matrix`` options have been improved. ``reduce_matrix`` now also works for matrices that do not include Laplace expressions and it only performs multiplication and addition on symbolic expressions.
 #. ``listPZ`` displays frequencies in rad/s if ``ini.hz=False``

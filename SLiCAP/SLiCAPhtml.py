@@ -729,7 +729,7 @@ def pz2html(instObj, label = '', labelText = ''):
                     imagpart = ''
                 frequency  = "$" + _latex_ENG(sp.N(frequency, ini.disp)) + "$"
                 realpart   = "$" + _latex_ENG(sp.N(realpart, ini.disp)) + "$"
-                name = 'p<sub>' + str(i + 1) + '</sub>'
+                name = 'z<sub>' + str(i + 1) + '</sub>'
                 html += '<tr><td>' + name + '</td><td>' + realpart + '</td><td>' + imagpart + '</td><td>' + frequency + '</td><td>' + Q +'</td></tr>\n'
             html += '</table>\n'
         else:

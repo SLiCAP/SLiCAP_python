@@ -201,7 +201,7 @@ L        Linear inductor                                                        
 M        Small-signal model of a four-terminal MOS transistor                    M
 MD-H     Small-signal model of a MOS differential pair, horizontal               MD
 MD-V     Small-signal model of a MOS differential pair, vertical                 MD
-M_noise  Equivalent-input noise sources of intrinsic MOS, EKV model                     NM18_noise, PM18_noise, J_noise
+M_noise  Equivalent-input noise sources of intrinsic MOS, EKV model                     MN18_noise, MP18_noise, J_noise
 N        Nullor                                                                  N
 N_noise  Nullor with input noise sources                                                N_noise
 N_dcvar  Nullor with input bias and offset sources (separate ground)                    N_dcvar
