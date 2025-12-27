@@ -307,7 +307,8 @@ class MOS(object):
         return output
 
 def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None, 
-                   traceType='magPhase', squaredNoise=False):
+                   traceType='magPhase', squaredNoise=False, postProc=None, 
+                   saveLog=True, optDict=None):
     """
     Creates a dictionary with values or traces from an ngspice run.
 
@@ -343,13 +344,13 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                       
     :type namesDict: dict
 
-    :param traceType: Type of traces for AC analysis or noise analysis:
+    :param traceType: Type of traces for AC, noise, and FFT analysis:
 
-                      - realImag
-                      - magPhase
-                      - dBmagPhase
-                      - onoise
-                      - inoise
+                      - realImag: real and imaginary parts
+                      - magPhase: magnitude and phse
+                      - dBmagPhase: dB(magnitude) and phase
+                      - onoise: output referred noise
+                      - inoise: input referred noise
                       
     :type traceType: str
     
@@ -374,6 +375,38 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                          
     :type squaredNoise: Bool
     
+    :param postProc: Post processing fuction for transient analysis:
+        
+                     - None
+                     
+                       No post processing is performed
+        
+                     - FFT <vector> (<vector> ...) 
+                     
+                       Returns the Fast Fourier Transform of one or more vectors
+                       obtained from a transient analysis. Curently only Hanning
+                       windowing has been implemented.
+                       
+                     - FOURIER <vector> (<vector> ...) 
+                     
+                       Lists the values of the first ten harmonics of one or 
+                       more vectors obtained from a transient analysis in the 
+                       simulation log file.
+                       
+    :type postProc: str, NoneType
+    
+    :param saveLog: True | False, defaults to True. The log file is saved in the
+                    txt folder in the project directory. The name is the circuit
+                    file name with '.log' file extension.
+                    
+    :type saveLog: Bool
+    
+    :param optDict: None (default) or a dictionary with NGspice options, The
+                    keys are the NGspice option names and the values are 'None'
+                    if the option requires no value, or the option value.
+    
+    :type optDict: NoneType, dict
+    
     :return: - In case of an "OP" instruction without parameter stepping: 
              
                A dictionary with key-value pairs:
@@ -393,10 +426,6 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
              
     :rtype: tuple: dict, (dict, str, str)
     """
-    try:
-        remove(cirFile + '.csv')
-    except:
-        pass
     labels = {}
     simType = simCmd.split()[0].lower()
     f = open(cirFile + '.cir', 'r')
@@ -445,6 +474,9 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
         for i in range(len(stepList)):
             cmdsection = ""
             traceNames = []
+            if optDict != None:
+                for opt in optDict.keys():
+                    cmdsection += '\n.option ' + opt + ' = ' + str(optDict[opt])
             if stepPar.lower() == "temp":
                 cmdsection += '\n.option ' + stepPar + ' = ' + str(stepList[i])
             else:
@@ -479,6 +511,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                         traceNames.append(traceName)
             if i > 0:
                 cmdsection += "\nset appendwrite"
+            if postProc != None:
+                netlist += postProc + '\n'
             cmdsection += '\nwrdata ' + cirFile  + '.csv'
             for name in traceNames:
                 cmdsection += ' ' + name
@@ -490,6 +524,11 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             f.close()
             system(ini.ngspice + ' -b simFile.sp -o simFile.log > temp.txt')
     else:
+        if optDict != None:
+            for opt in optDict.keys():
+                netlist += '\n.option ' + opt
+                if optDict[opt] != None:
+                    netlist += ' = ' + str(optDict[opt])
         netlist += '\n.control\nset wr_vecnames\nset wr_singlescale\n'
         if simType == 'noise' and squaredNoise:
             netlist += '\nset sqrnoise\n'
@@ -507,6 +546,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             for key in  list(namesDict.keys()):
                 if namesDict[key].lower().split("_")[-1] == "total":
                     netlist += 'let ' + key + ' = ' + namesDict[key] + '\n' 
+        if postProc != None:
+            netlist += postProc + '\n'
         netlist += 'wrdata ' + cirFile + '.csv'
         for key in list(namesDict.keys()):
             netlist += ' ' + key
@@ -537,28 +578,39 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
     f = open(cirFile + '.csv', 'w')
     f.write(txt)
     f.close()
-    #remove('simFile.sp')
-    #remove('simFile.log')
-    #remove('temp.txt')
+    remove('simFile.sp')
+    if saveLog:
+        file_name = cirFile.replace("\\", "/").split("/")[-1]
+        copy2('simFile.log', ini.txt_path + file_name + ".log") 
+    remove('temp.txt')
     fileName = cirFile.split('/')[-1]
     copy2(cirFile + '.csv', ini.csv_path + fileName + '.csv')
-    traceDict = _processNGspiceResult(cirFile, analysisType, traceType)
+    traceDict = _processNGspiceResult(cirFile, analysisType, traceType, postProc)
     return traceDict
 
-def _processNGspiceResult(cirFile, analysisType, traceType):
+def _processNGspiceResult(cirFile, analysisType, traceType, postProc):
     # Read the CSV file
-    f = open(cirFile + '.csv', 'r')
-    lines = f.readlines()
-    f.close()
-    analysisType = analysisType.upper()
-    if analysisType == 'DC' or analysisType == 'TRAN' or analysisType == 'NOISE':
-        traceDict = _makeDCTRNStraces(lines)
-    elif analysisType.upper() == 'AC':
-        traceDict = _makeACtraces(lines, traceType)
-    elif analysisType == "OP":
-        traceDict = _makeOPtraces(lines)
-    else:
-        raise NotImplementedError()
+    traceDict = None
+    try:
+        f = open(cirFile + '.csv', 'r')
+        lines = f.readlines()
+        f.close()
+        analysisType = analysisType.upper()
+        if analysisType == 'DC' or analysisType == 'NOISE' or (analysisType == 'TRAN' and  (postProc == None or postProc.split()[0].upper() == "FOURIER")):
+            traceDict = _makeDCTRNStraces(lines)
+        elif analysisType.upper() == 'AC' or analysisType == 'TRAN':
+            traceDict = _makeACtraces(lines, traceType)
+        elif analysisType == "OP":
+            traceDict = _makeOPtraces(lines)
+        else:
+            raise NotImplementedError()
+    except FileNotFoundError:
+        try:
+             f = open('simFile.log')
+             for line in f.readlines():
+                 print(line)
+        except FileNotFoundError:
+            print("NGspice didn't start: please check if it is installed and can be called from a command terminal with: '{}'.".format(ini.ngspice))
     return traceDict
 
 def _makeOPtraces(lines):
