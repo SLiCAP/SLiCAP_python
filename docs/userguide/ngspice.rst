@@ -23,7 +23,7 @@ The function `ngspice2traces() <../reference/SLiCAPngspice.html#SLiCAP.SLiCAPngs
 #. OP: operating point analysis
 #. DC: DC sweep
 #. AC: small-signal frequency-domain analysis
-#. TRAN: Time-domain analysis
+#. TRAN: Time-domain analysis, with FFT or FOURIER post processing
 #. DC TEMP: Temperature sweep
 #. NOISE: small-signal frequency-domain noise analysis
 
@@ -60,7 +60,7 @@ The SLiCAP output displayed on this manual page, is generated with the script: `
 .. image:: /img/colorCode.svg
 
 Schematic capture and netlist generation
-----------------------------------------
+========================================
 
 `makeCircuit() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__ with keyword argument ``language=SPICE`` creates and returns a NGspice compatible netlist of a KiCAD schematic file:
 
@@ -87,25 +87,30 @@ Please notice:
 #. The netlist created from the KiCAD schematics is stored in the ``cir/`` folder in the project directory
 
 Netlist
-~~~~~~~
+-------
     
 .. literalinclude:: ../cir/VampQspice.cir
     
 Library
-~~~~~~~
+-------
     
 .. literalinclude:: ../lib/BC847.lib
     :linenos:
 
-Create traces
--------------
+Run NGspice from SLiCAP
+=======================
 
-The function `ngspice2traces <../reference/SLiCAPngspice.html#SLiCAP.SLiCAPngspice.ngspice2traces>`__ returns a dictionarys with `traces <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.trace>`__, the swept variable name, and the swept variable units.
+The function `ngspice2traces <../reference/SLiCAPngspice.html#SLiCAP.SLiCAPngspice.ngspice2traces>`__ returns 
 
-In case of an AC analysis the function returns two dictionaries with traces instead of one.
+#. A dictionary with `traces <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.trace>`__, the swept variable name, and the swept variable units.
+
+   In case of an AC or FFT analysis the function returns two dictionaries with traces instead of one.
+   
+#. A dictionary with operating point information
+
 
 DC sweep
---------
+========
 
 Simulation command:
 
@@ -139,7 +144,7 @@ In case of a DC sweep, the *x-units* are empty. They can be defined with the plo
     :width: 500px
         
 AC analysis
------------
+===========
 
 .. literalinclude:: ../ngspice.py
     :linenos:
@@ -153,7 +158,7 @@ AC analysis
     :width: 500px
     
 Transient analysis
-------------------
+==================
 
 .. literalinclude:: ../ngspice.py
     :linenos:
@@ -183,7 +188,7 @@ Change the netlist
     :width: 500px
        
 DC TEMP sweep
--------------
+=============
 
 .. literalinclude:: ../ngspice.py
     :linenos:
@@ -194,7 +199,7 @@ DC TEMP sweep
     :width: 500px
     
 NOISE analysis
---------------
+==============
 
 .. literalinclude:: ../ngspice.py
     :linenos:
@@ -213,7 +218,7 @@ NOISE analysis
     :width: 500px  
     
 Operating point information
----------------------------
+===========================
 
 Without parameter stepping an ``OP`` instruction returns a dictionary with name-value pairs. With parameter stepping, it returns a dictionary with traces that can be plotted with `SLiCAPplots.plot() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.plot>`__.
 
@@ -251,3 +256,43 @@ The SLiCAP function `backAnnotateSchematic() <../reference/SLiCAPkicad.html#SLiC
     :linenos:
     :lines: 125-126
     :lineno-start: 125
+    
+Fourier and FFT post processing functions
+=========================================
+
+Transient analysis with parameter substitution
+----------------------------------------------
+
+.. literalinclude:: ../ngspice.py
+    :linenos:
+    :lines: 128-134
+    :lineno-start: 128
+    
+.. image:: /img/VampQspiceSIN.svg
+    :width: 500px
+    
+FFT
+---
+
+.. literalinclude:: ../ngspice.py
+    :linenos:
+    :lines: 136-148
+    :lineno-start: 136
+    
+.. image:: /img/VampQspiceFFT.svg
+    :width: 500px
+    
+FOURIER analysis
+----------------
+
+.. literalinclude:: ../ngspice.py
+    :linenos:
+    :lines: 150-158
+    :lineno-start: 150
+    
+The output of the Fourier analysis is found in the simulation log file. This file is stored in the ``txt/`` subfolder in the project directory:
+
+.. literalinclude:: ../txt/VampQspice.log
+    :linenos:
+    :lines: 30-44
+    :lineno-start: 30

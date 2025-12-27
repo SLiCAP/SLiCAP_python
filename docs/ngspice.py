@@ -120,7 +120,39 @@ for name in OPinfo.keys():
     
 rst = sl.RSTformatter()
 head = ["Name", "Value"]
-rst.dictTable(OPinfo, head=head ,caption="Bias voltages").save("table-VampQ-opinfo")
+rst.dictTable(OPinfo, head=head, caption="Bias voltages").save("table-VampQ-opinfo")
 
 sl.backAnnotateSchematic("kicad/" + fileName + "/" + fileName + ".kicad_sch", 
                          OPinfo)
+
+# TRAN with parameter substitution
+simCmd   = "TRAN 0.1u 20u"
+params   = [("V_p", 0.5)]
+names    = {"V_out": "V(out)"}
+tran, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, names, parList=params)
+sl.plot("VampQspiceSIN", "$V_{out}$", "lin", tran , xName=x_name, xUnits=x_units,
+        yUnits="V")
+
+# FFT
+simCmd   = "TRAN 1u 512u 64u 10n"
+params   = [("V_p", 0.5)]
+# Eliminate DC component from output
+names    = {"V_AC_rms": "V(c2)-{}".format(str(OPinfo['V_c2']))}
+postProc = "FFT V_AC_rms"
+options  = {"RELTOL": 1e-6}
+mag, phase, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, names, 
+                                                 postProc=postProc, saveLog=True, 
+                                                 traceType='magPhase', 
+                                                 parList=params, optDict=options)
+sl.plot("VampQspiceFFT", "$V_{out}$", "log", mag , xName=x_name, xUnits=x_units, 
+        yUnits="V", xLim=[10e3, 1e6], yLim=[2e-7, 2])
+
+# FOURIER
+simCmd   = "TRAN 1u 512u 64u 10n"
+params   = [("V_p", 0.5)]
+# Eliminate DC component from output
+names    = {"V_AC": "V(c2)-{}".format(str(OPinfo['V_c2']))}
+postProc = "FOURIER 100k V_AC"
+options  = {"RELTOL": 1e-6}
+results  = sl.ngspice2traces("cir/" + fileName, simCmd, names, optDict=options, 
+                             postProc=postProc, saveLog=True, parList=params)

@@ -996,7 +996,7 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "V_c2:4.295726"
+	(text "V_c2: 4.30e+00"
 		(exclude_from_sim no)
 		(at 170.688 51.308 0)
 		(effects
@@ -1007,7 +1007,7 @@
 		)
 		(uuid "36658ef9-8727-4fe7-b972-9ae2a4e2ac86")
 	)
-	(text "V_e2:1.812594"
+	(text "V_e2: 1.81e+00"
 		(exclude_from_sim no)
 		(at 172.72 77.978 0)
 		(effects
@@ -1018,7 +1018,7 @@
 		)
 		(uuid "56b7f08b-2ea3-4a45-a5fa-ffce0e6e43b8")
 	)
-	(text "V_e1:1.156794"
+	(text "V_e1: 1.16e+00"
 		(exclude_from_sim no)
 		(at 132.842 53.594 0)
 		(effects
@@ -1029,7 +1029,7 @@
 		)
 		(uuid "94da4e8c-7655-436f-9de0-f19159acf773")
 	)
-	(text "V_c1:2.491855"
+	(text "V_c1: 2.49e+00"
 		(exclude_from_sim no)
 		(at 132.588 50.546 0)
 		(effects
@@ -1040,7 +1040,7 @@
 		)
 		(uuid "9dc2dbc3-09d4-4ab0-8b0f-ae606782ac05")
 	)
-	(text "I_V2:-0.002969"
+	(text "I_V2: -2.97e-03"
 		(exclude_from_sim no)
 		(at 187.706 44.8311 0)
 		(effects
@@ -1051,7 +1051,7 @@
 		)
 		(uuid "c59b14a2-0910-4c7f-82dc-78f469023665")
 	)
-	(text "V_b1:1.763679"
+	(text "V_b1: 1.76e+00"
 		(exclude_from_sim no)
 		(at 132.588 47.752 0)
 		(effects
