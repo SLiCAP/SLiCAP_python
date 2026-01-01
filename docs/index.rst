@@ -12,6 +12,13 @@ SLiCAP is written in Python.
 
 SLiCAP is distributed under the `MIT license <https://opensource.org/license/mit>`_
 
+.. admonition:: Video Presentation SLiCAP KiCON Europe 2025
+    :class: note
+    
+    #. `SLiCAP KiCON Europe 2025 <https://www.youtube.com/watch?v=Ve3a5WGAXAQ>`_
+    #. `Source files <https://montagne.nl/downloads/SLiCAP_KiCON.zip>`_
+    
+
 What you can find in this manual
 ================================
 
