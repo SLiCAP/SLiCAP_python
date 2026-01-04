@@ -138,7 +138,11 @@ simCmd   = "TRAN 1u 512u 64u 10n"
 params   = [("V_p", 0.5)]
 # Eliminate DC component from output
 names    = {"V_AC_rms": "V(c2)-{}".format(str(OPinfo['V_c2']))}
-postProc = "FFT V_AC_rms"
+postProc = """
+set specwindow=gaussian
+set specwindoworder=8
+FFT V_AC_rms
+"""
 options  = {"RELTOL": 1e-6}
 mag, phase, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, names, 
                                                  postProc=postProc, saveLog=True, 

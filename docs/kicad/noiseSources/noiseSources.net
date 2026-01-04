@@ -1,7 +1,7 @@
 (export (version "E")
   (design
     (source "/home/anton/DATA/SLiCAP/SLiCAP_github/SLiCAP_python/docs/kicad/noiseSources/noiseSources.kicad_sch")
-    (date "2025-12-27T16:01:05+0100")
+    (date "2026-01-04T16:38:11+0100")
     (tool "Eeschema 9.0.6-9.0.6~ubuntu24.04.1")
     (sheet (number "1") (name "/") (tstamps "/")
       (title_block

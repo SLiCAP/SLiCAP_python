@@ -276,7 +276,7 @@ FFT
 
 .. literalinclude:: ../ngspice.py
     :linenos:
-    :lines: 136-148
+    :lines: 136-152
     :lineno-start: 136
     
 .. image:: /img/VampQspiceFFT.svg
@@ -287,8 +287,8 @@ FOURIER analysis
 
 .. literalinclude:: ../ngspice.py
     :linenos:
-    :lines: 150-158
-    :lineno-start: 150
+    :lines: 154-162
+    :lineno-start: 154
     
 The output of the Fourier analysis is found in the simulation log file. This file is stored in the ``txt/`` subfolder in the project directory:
 
