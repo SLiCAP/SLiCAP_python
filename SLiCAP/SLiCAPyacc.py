@@ -275,7 +275,6 @@ def _parseNetlist(netlist, name, cirType):
         _addErrors(name, cirType, errors)
         if name != 'main':
             print("Error: something wring with circuit hierachy, probably missing '.ends'. in a subcircuit definition.")
-    return
 
 def _createCircuit(name, cirType):
     newCircuit = circuit()

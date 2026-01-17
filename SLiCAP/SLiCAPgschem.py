@@ -61,4 +61,3 @@ def _gNetlist(fileName, cirTitle):
                       + "manually!\n")
         else:
             print("Error: could not open: '{}'.".format(fileName))
-    return
