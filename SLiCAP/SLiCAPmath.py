@@ -11,7 +11,7 @@ np.seterr(all = 'ignore')
 
 import SLiCAP.SLiCAPconfigure as ini
 from numpy.polynomial import Polynomial
-from numpy import trapz
+from numpy import trapezoid
 from scipy.integrate import quad
 from scipy.optimize import fsolve
 from SLiCAP.SLiCAPlex import _replaceScaleFactors
@@ -1030,13 +1030,13 @@ def _doCDSint(noiseResult, tau, fmin, fmax, method, points=0):
                    - "auto": automatic selection of integration method
                    - "symbolic": forces symbolic integration 
                    - "scipy": numeric integration using scipy.integrate.quad
-                   - "log": numeric integration using numpy.trapz with a
+                   - "log": numeric integration using numpy.trapezoid with a
                             logarithmic frequency sweep from f_min to f_max 
                             and the number of points set by points
-                   - "lin": numeric integration using numpy.trapz with a
+                   - "lin": numeric integration using numpy.trapezoid with a
                             linear frequency sweep from fmin to fmax 
                             and dx=(fmax-fmin)/points
-                   - "list": numeric integration using numpy.trapz with frequency
+                   - "list": numeric integration using numpy.trapezoid with frequency
                              points taken from points.
                      
                    Defaults to 'auto'
@@ -1082,22 +1082,22 @@ def _doCDSint(noiseResult, tau, fmin, fmax, method, points=0):
         elif method == "lin":
             while i * np.pi < lim_u:
                 x = np.linspace(start, i*np.pi, points)
-                noiseResultCDSint += trapz(noise_spectrum(x), x)
+                noiseResultCDSint += trapezoid(noise_spectrum(x), x)
                 i += 1
                 start += np.pi
             x = np.linspace(start, lim_u, points)
-            noiseResultCDSint += trapz(noise_spectrum(x), x)
+            noiseResultCDSint += trapezoid(noise_spectrum(x), x)
         elif method== "log":
             x = np.geomspace(start, i*np.pi, points)
             while i * np.pi < lim_u:
-                noiseResultCDSint += trapz(noise_spectrum(x), x)
+                noiseResultCDSint += trapezoid(noise_spectrum(x), x)
                 i += 1
                 start += np.pi
                 x = np.linspace(start, i*np.pi, points)
             x = np.linspace(start, lim_u, points)
-            noiseResultCDSint += trapz(noise_spectrum(x), x)
+            noiseResultCDSint += trapezoid(noise_spectrum(x), x)
         elif method == "list":
-            noiseResultCDSint += trapz(noise_spectrum(points), points)
+            noiseResultCDSint += trapezoid(noise_spectrum(points), points)
     return noiseResultCDSint
 
 def doCDS(result, tau):
@@ -1423,13 +1423,13 @@ def _doVarNoiseData(noiseData, numeric, method, CDS, tau, fmin, fmax, points, wf
                    - "symbolic": forces symbolic integration 
                    - "scipy": numeric integration using scipy.integrate.quad
                               CDS will use integration per section f=1/tau
-                   - "log": numeric integration using numpy.trapz with a
+                   - "log": numeric integration using numpy.trapezoid with a
                             logarithmic frequency sweep from f_min to f_max 
                             and the number of points (CDS: per section) set by points
-                   - "lin": numeric integration using numpy.trapz with a
+                   - "lin": numeric integration using numpy.trapezoid with a
                             linear frequency sweep from fmin to fmax 
                             and the number of points (CDS: per section) set by points
-                   - "list": numeric integration using numpy.trapz with frequency
+                   - "list": numeric integration using numpy.trapezoid with frequency
                              points taken from points (CDS: switches method to 'scipy').
                      
                    Defaults to 'auto'
@@ -1559,14 +1559,14 @@ def _doVarNoiseData(noiseData, numeric, method, CDS, tau, fmin, fmax, points, wf
                             var_i += term
                         elif int_method == "lin":
                             x = np.linspace(fmin, fmax, points)
-                            term = trapz(noise_spectrum(x), x=x)
+                            term = trapezoid(noise_spectrum(x), x=x)
                             var_i += term
                         elif int_method == "list":
-                            term = trapz(noise_spectrum(points), x=points)
+                            term = trapezoid(noise_spectrum(points), x=points)
                             var_i += term
                         elif int_method == "log":
                             x = np.geomspace(fmin, fmax, points)
-                            term = trapz(noise_spectrum(x), x=x)
+                            term = trapezoid(noise_spectrum(x), x=x)
                             var_i += term
         if numeric == True:
             var.append(sp.N(clearAssumptions(sp.expand(var_i))))
@@ -1739,13 +1739,13 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None,
                    - "symbolic": forces symbolic integration 
                    - "scipy": numeric integration using scipy.integrate.quad.
                               CDS will use integration per section f=1/tau
-                   - "log": numeric integration using numpy.trapz with a
+                   - "log": numeric integration using numpy.trapezoid with a
                             logarithmic frequency sweep from f_min to f_max 
                             and the number of points (CDS: per section  f=1/tau) set by points
-                   - "lin": numeric integration using numpy.trapz with a
+                   - "lin": numeric integration using numpy.trapezoid with a
                             linear frequency sweep from fmin to fmax 
                             and the number of points (CDS: per section  f=1/tau) set by points
-                   - "list": numeric integration using numpy.trapz with frequency
+                   - "list": numeric integration using numpy.trapezoid with frequency
                              points taken from points (CDS: switches method to 'scipy').
                      
                    Defaults to 'auto'
@@ -2315,13 +2315,13 @@ def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True,
                    - "symbolic": forces symbolic integration 
                    - "scipy": numeric integration using scipy.integrate.quad
                               CDS will use integration per section f=1/tau
-                   - "log": numeric integration using numpy.trapz with a
+                   - "log": numeric integration using numpy.trapezoid with a
                             logarithmic frequency sweep from f_min to f_max 
                             and the number of points (CDS: per section) set by points
-                   - "lin": numeric integration using numpy.trapz with a
+                   - "lin": numeric integration using numpy.trapezoid with a
                             linear frequency sweep from fmin to fmax 
                             and the number of points (CDS: per section) set by points
-                   - "list": numeric integration using numpy.trapz with frequency
+                   - "list": numeric integration using numpy.trapezoid with frequency
                              points taken from points (CDS: switches method to 'scipy').
                      
                    Defaults to 'auto'
