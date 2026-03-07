@@ -234,7 +234,7 @@ class RSTformatter(_BaseFormatter):
         tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
-        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
@@ -296,7 +296,7 @@ class RSTformatter(_BaseFormatter):
         tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
-        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
@@ -344,7 +344,7 @@ class RSTformatter(_BaseFormatter):
         tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
-        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str

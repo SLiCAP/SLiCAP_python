@@ -357,7 +357,6 @@ class figure(object):
                         MarkerColor = axesList[i].traces[j].markerColor
                     else:
                         MarkerColor = ini.default_colors[j % len(ini.default_colors)]
-                    #try:
                     if axesList[i].xScaleFactor in list(_SCALEFACTORS.keys()):
                         scaleX = 10**eval(_SCALEFACTORS[axesList[i].xScaleFactor])
                     else:
@@ -376,8 +375,6 @@ class figure(object):
                              markeredgewidth = 2, 
                              markerfacecolor = axesList[i].traces[j].markerFaceColor, 
                              linestyle = axesList[i].traces[j].lineType)
-                    #except:
-                    #    print("Error in plot data of '{0}'.".format(self.fileName))
                     if axesList[i].text:
                         X, Y, txt = axesList[i].text
                         plt.text(X, Y, txt, fontsize = ini.plot_fontsize)
@@ -468,8 +465,8 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
     :type title: str
 
     :param results: Results of the execution of an instruction, or a list with
-                    SLiCAPprotos.allResults objects.
-    :type results: list, SLiCAPprotos.allResults
+                    SLiCAPinstruction.instruction objects.
+    :type results: list, SLiCAPinstruction.instruction
 
     :param sweepStart: Start value of the sweep parameter
     :type sweepStart: float, int, str
@@ -936,9 +933,9 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
     :type title: str
 
     :param results: Results of the execution of an instruction, or a list with
-                    SLiCAPprotos.allResults objects. The data type of these
+                    SLiCAPinstruction.instruction objects. The data type of these
                     instructions should be 'poles', 'zeros' or 'pz'.
-    :type results: list, SLiCAPprotos.allResults
+    :type results: list, SLiCAPinstruction.instruction
 
     :param xmin: Minimum value of the x axis; defaults to None.
     :type xmin: int, float, str
@@ -1370,7 +1367,7 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
         #. [yVal[i] for i in range(len(sweepValues))]
 
     :param results: Results of the execution of an instruction with data type 'params'.
-    :type results: SLiCAPprotos.allResults
+    :type results: SLiCAPinstruction.instruction
 
     :param xVar: Name of the parameter to be plotted along the x axis
     :type xvar: str

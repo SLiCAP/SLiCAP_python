@@ -309,7 +309,7 @@ class LaTeXformatter(_BaseFormatter):
         tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
-        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
@@ -385,7 +385,7 @@ class LaTeXformatter(_BaseFormatter):
         tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
-        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
@@ -440,7 +440,7 @@ class LaTeXformatter(_BaseFormatter):
         tabular snippet. Else it returns a table snippet.
 
         :param resultObject: SLiCAP circuit object that comprises the circuit data to be listed.
-        :type resultObject: SLiCAP.SLiCAPprotos.allResults
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
@@ -924,7 +924,7 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
     :rtype: str
     """
     if caption != '' or label != '':
-        TEX =  '\\begin{table}[H]\n\\centering\n'
+        TEX =  '\\begin{table}[h]\n\\centering\n'
     else:
         TEX = ''
     TEX += '\\begin{tabular}' + alignstring + '\n'

@@ -308,7 +308,7 @@ class MOS(object):
 
 def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None, 
                    traceType='magPhase', squaredNoise=False, postProc=None, 
-                   saveLog=True, optDict=None):
+                   saveLog=True, optDict=None, mode=None):
     """
     Creates a dictionary with values or traces from an ngspice run.
 
@@ -407,6 +407,8 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
     
     :type optDict: NoneType, dict
     
+    :param mode: NGspice simulation mode, defaults to 'ltpsa'
+     
     :return: - In case of an "OP" instruction without parameter stepping: 
              
                A dictionary with key-value pairs:
@@ -426,191 +428,198 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
              
     :rtype: tuple: dict, (dict, str, str)
     """
-    labels = {}
-    simType = simCmd.split()[0].lower()
-    f = open(cirFile + '.cir', 'r')
-    netlistlines = f.readlines()
-    f.close()
-    title = netlistlines[0].strip()
-    netlist = ""
-    for line in netlistlines:
-        if line.strip().upper() != ".END":
-            netlist += line   
-    netlist += "** Python input section **"
-    if parList != None:
-        for pardef in parList:
-            if pardef != None and len(pardef) == 2:
-                netlist += "\n.param " + str(pardef[0]) + "=" + str(pardef[1])
-    if stepCmd != None:
-        stepFields = stepCmd.split()
-        stepPar = stepFields[0]
-        stepMethod = stepFields[1].lower()
-        if stepMethod == 'list':
-            try:
-                stepList = eval(re.findall(r'\[[\s,.+-eE0-9]*\]', stepCmd)[0])
-            except:
-                print('Error in step list.')
-                return
+    if ini.ngspice != "":
+        if mode == None:
+            mode = ''
         else:
-            try:
-                stepStart  = float(_checkExpression(stepFields[2]))
-            except:
-                print('Error: missing or error in stepstart value.')
-                return
-            try:
-                stepStop  = float(_checkExpression(stepFields[3]))
-            except:
-                print('Error: missing or error in stepCmd stop value.')
-                return
-            try:
-                stepNum  = int(_checkExpression(stepFields[4]))
-            except:
-                print('Error: missing or error in step number.')
-                return
-        if stepMethod == 'lin':
-            stepList = linspace(stepStart, stepStop, stepNum)
-        elif stepMethod == 'log':
-            stepList = geomspace(stepStart, stepStop, stepNum)
-        for i in range(len(stepList)):
-            cmdsection = ""
-            traceNames = []
-            if optDict != None:
-                for opt in optDict.keys():
-                    cmdsection += '\n.option ' + opt + ' = ' + str(optDict[opt])
-            if stepPar.lower() == "temp":
-                cmdsection += '\n.option ' + stepPar + ' = ' + str(stepList[i])
+            mode = mode.lower()
+        labels = {}
+        simType = simCmd.split()[0].lower()
+        f = open(cirFile + '.cir', 'r')
+        netlistlines = f.readlines()
+        f.close()
+        netlist = ""
+        for line in netlistlines:
+            if line.strip().upper() != ".END":
+                netlist += line   
+        netlist += "** Python input section **"
+        if parList != None:
+            for pardef in parList:
+                if pardef != None and len(pardef) == 2:
+                    netlist += "\n.param " + str(pardef[0]) + "=" + str(pardef[1])
+        if stepCmd != None:
+            stepFields = stepCmd.split()
+            stepPar = stepFields[0]
+            stepMethod = stepFields[1].lower()
+            if stepMethod == 'list':
+                try:
+                    stepList = eval(re.findall(r'\[[\s,.+-eE0-9]*\]', stepCmd)[0])
+                except:
+                    print('Error in step list.')
+                    return
             else:
-                cmdsection += '\n.param ' + stepPar + ' = ' + str(stepList[i])
-            cmdsection += '\n.control\n'
-            if simType == 'noise' and squaredNoise:
-                cmdsection += '\nset sqrnoise\n'
-            cmdsection += simCmd + '\n'
-            cmdsection += '\nset wr_vecnames\nset wr_singlescale\n'
-            if simType == 'noise':
-                totalNoise = False
-                cmdsection += '\nsetplot noise1\n'
-            for key in list(namesDict.keys()):
-                if namesDict[key].lower().split("_")[-1] != "total":
-                    traceName = key + '_' + str(i)
-                    labels[traceName] = key + ':' + stepPar + '=' + '{0: 8.2e}'.format(stepList[i])
-                    # remove whitespace (compact label)
-                    labels[traceName] = ''.join(labels[traceName].split())
-                    cmdsection += 'let ' + traceName + ' = ' + namesDict[key] + '\n'
-                    traceNames.append(traceName)
+                try:
+                    stepStart  = float(_checkExpression(stepFields[2]))
+                except:
+                    print('Error: missing or error in stepstart value.')
+                    return
+                try:
+                    stepStop  = float(_checkExpression(stepFields[3]))
+                except:
+                    print('Error: missing or error in stepCmd stop value.')
+                    return
+                try:
+                    stepNum  = int(_checkExpression(stepFields[4]))
+                except:
+                    print('Error: missing or error in step number.')
+                    return
+            if stepMethod == 'lin':
+                stepList = linspace(stepStart, stepStop, stepNum)
+            elif stepMethod == 'log':
+                stepList = geomspace(stepStart, stepStop, stepNum)
+            for i in range(len(stepList)):
+                cmdsection = ""
+                traceNames = []
+                if optDict != None:
+                    for opt in optDict.keys():
+                        cmdsection += '\n.option ' + opt + ' = ' + str(optDict[opt])
+                if stepPar.lower() == "temp":
+                    cmdsection += '\n.option ' + stepPar + ' = ' + str(stepList[i])
                 else:
-                    totalNoise = True
-            if simType == 'noise' and totalNoise:
-                cmdsection += '\nsetplot noise2\n'
+                    cmdsection += '\n.param ' + stepPar + ' = ' + str(stepList[i])
+                cmdsection += '\n.control\n'
+                if simType == 'noise' and squaredNoise:
+                    cmdsection += '\nset sqrnoise\n'
+                cmdsection += simCmd + '\n'
+                cmdsection += '\nset wr_vecnames\nset wr_singlescale\n'
+                if simType == 'noise':
+                    totalNoise = False
+                    cmdsection += '\nsetplot noise1\n'
                 for key in list(namesDict.keys()):
-                    if namesDict[key].lower().split("_")[-1] == "total":
+                    if namesDict[key].lower().split("_")[-1] != "total":
                         traceName = key + '_' + str(i)
                         labels[traceName] = key + ':' + stepPar + '=' + '{0: 8.2e}'.format(stepList[i])
                         # remove whitespace (compact label)
                         labels[traceName] = ''.join(labels[traceName].split())
                         cmdsection += 'let ' + traceName + ' = ' + namesDict[key] + '\n'
                         traceNames.append(traceName)
-            if i > 0:
-                cmdsection += "\nset appendwrite"
+                    else:
+                        totalNoise = True
+                if simType == 'noise' and totalNoise:
+                    cmdsection += '\nsetplot noise2\n'
+                    for key in list(namesDict.keys()):
+                        if namesDict[key].lower().split("_")[-1] == "total":
+                            traceName = key + '_' + str(i)
+                            labels[traceName] = key + ':' + stepPar + '=' + '{0: 8.2e}'.format(stepList[i])
+                            # remove whitespace (compact label)
+                            labels[traceName] = ''.join(labels[traceName].split())
+                            cmdsection += 'let ' + traceName + ' = ' + namesDict[key] + '\n'
+                            traceNames.append(traceName)
+                if i > 0:
+                    cmdsection += "\nset appendwrite"
+                if postProc != None:
+                    cmdsection += postProc + '\n'
+                cmdsection += '\nwrdata ' + cirFile  + '.csv'
+                for name in traceNames:
+                    cmdsection += ' ' + name
+                cmdsection += '\n.endc\n'
+                if i == 0: 
+                    netlist += '\n.end'
+                f = open('simFile.sp', 'w')
+                f.write(netlist + cmdsection)
+                f.close()
+                system(ini.ngspice + ' -b simFile.sp -D ngbehavior={} -o simFile.log > temp.txt'.format(mode))
+        else:
+            cmdsection = ""
+            if optDict != None:
+                for opt in optDict.keys():
+                    netlist += '\n.option ' + opt
+                    if optDict[opt] != None:
+                        netlist += ' = ' + str(optDict[opt])
+            netlist += '\n.control\nset wr_vecnames\nset wr_singlescale\n'
+            if simType == 'noise' and squaredNoise:
+                netlist += '\nset sqrnoise\n'
+            netlist += simCmd + '\n'
+            if simType == 'noise':
+                totalNoise = False
+                netlist += '\nsetplot noise1\n'
+            for key in list(namesDict.keys()):
+                if namesDict[key].lower().split("_")[-1] != "total":
+                    netlist += 'let ' + key + ' = ' + namesDict[key] + '\n'
+                else:
+                    totalNoise = True
+            if simType == 'noise' and totalNoise:
+                netlist += '\nsetplot noise2\n'
+                for key in  list(namesDict.keys()):
+                    if namesDict[key].lower().split("_")[-1] == "total":
+                        netlist += 'let ' + key + ' = ' + namesDict[key] + '\n' 
             if postProc != None:
                 netlist += postProc + '\n'
-            cmdsection += '\nwrdata ' + cirFile  + '.csv'
-            for name in traceNames:
-                cmdsection += ' ' + name
-            cmdsection += '\n.endc\n'
-            if i == 0: 
-                netlist += '\n.end'
-            f = open('simFile.sp', 'w')
-            f.write(netlist + cmdsection)
+            netlist += 'wrdata ' + cirFile + '.csv'
+            for key in list(namesDict.keys()):
+                netlist += ' ' + key
+            netlist += '\n.endc'
+            netlist += '\n.end'
+            f = open('simFile.sp' , 'w')
+            f.write(netlist)
             f.close()
-            system(ini.ngspice + ' -b simFile.sp -o simFile.log > temp.txt')
+            system(ini.ngspice + ' -b simFile.sp -D ngbehavior={} -o simFile.log > temp.txt'.format(mode))
+        try:
+            f = open(cirFile + '.csv', 'r')
+            txt = f.read()
+            f.close()
+            analysisType = simCmd.split()[0].upper()
+            if analysisType == 'DC':
+                lines = txt.splitlines()
+                xVar = lines[0].split()[0]
+                labels[xVar] = simCmd.split()[1]
+            if analysisType == 'NOISE' and totalNoise:
+                lines = txt.splitlines()
+                xVar = lines[0].split()[0]
+                #print("X:", xVar)
+                labels[xVar] = simCmd.split()[1]
+                analysisType = "OP"
+            if labels != None:
+                for key in labels:
+                    txt = txt.replace(key + ' ', labels[key] + ' ')
+            f = open(cirFile + '.csv', 'w')
+            f.write(txt)
+            f.close()
+            if saveLog:
+                file_name = cirFile.replace("\\", "/").split("/")[-1]
+                copy2('simFile.log', ini.txt_path + file_name + ".log") 
+            remove('temp.txt')
+            fileName = cirFile.split('/')[-1]
+            copy2(cirFile + '.csv', ini.csv_path + fileName + '.csv')
+            traceDict = _processNGspiceResult(cirFile, analysisType, traceType, postProc)
+            return traceDict
+        except FileNotFoundError:
+            try:
+                 f = open('simFile.log')
+                 for line in f.readlines():
+                     print(line)
+            except FileNotFoundError:
+                print("ERROR: NGspice cannot be executed with: '{}'.".format(ini.ngspice))
+        #remove('simFile.sp')
     else:
-        if optDict != None:
-            for opt in optDict.keys():
-                netlist += '\n.option ' + opt
-                if optDict[opt] != None:
-                    netlist += ' = ' + str(optDict[opt])
-        netlist += '\n.control\nset wr_vecnames\nset wr_singlescale\n'
-        if simType == 'noise' and squaredNoise:
-            netlist += '\nset sqrnoise\n'
-        netlist += simCmd + '\n'
-        if simType == 'noise':
-            totalNoise = False
-            netlist += '\nsetplot noise1\n'
-        for key in list(namesDict.keys()):
-            if namesDict[key].lower().split("_")[-1] != "total":
-                netlist += 'let ' + key + ' = ' + namesDict[key] + '\n'
-            else:
-                totalNoise = True
-        if simType == 'noise' and totalNoise:
-            netlist += '\nsetplot noise2\n'
-            for key in  list(namesDict.keys()):
-                if namesDict[key].lower().split("_")[-1] == "total":
-                    netlist += 'let ' + key + ' = ' + namesDict[key] + '\n' 
-        if postProc != None:
-            netlist += postProc + '\n'
-        netlist += 'wrdata ' + cirFile + '.csv'
-        for key in list(namesDict.keys()):
-            netlist += ' ' + key
-        netlist += '\n.endc'
-        netlist += '\n.end'
-        f = open('simFile.sp' , 'w')
-        f.write(netlist)
-        f.close()
-        system(ini.ngspice + ' -b simFile.sp -o simFile.log > temp.txt')
-    ##
-    f = open(cirFile + '.csv', 'r')
-    txt = f.read()
-    f.close()
-    analysisType = simCmd.split()[0].upper()
-    if analysisType == 'DC':
-        lines = txt.splitlines()
-        xVar = lines[0].split()[0]
-        labels[xVar] = simCmd.split()[1]
-    if analysisType == 'NOISE' and totalNoise:
-        lines = txt.splitlines()
-        xVar = lines[0].split()[0]
-        #print("X:", xVar)
-        labels[xVar] = simCmd.split()[1]
-        analysisType = "OP"
-    if labels != None:
-        for key in labels:
-            txt = txt.replace(key + ' ', labels[key] + ' ')
-    f = open(cirFile + '.csv', 'w')
-    f.write(txt)
-    f.close()
-    remove('simFile.sp')
-    if saveLog:
-        file_name = cirFile.replace("\\", "/").split("/")[-1]
-        copy2('simFile.log', ini.txt_path + file_name + ".log") 
-    remove('temp.txt')
-    fileName = cirFile.split('/')[-1]
-    copy2(cirFile + '.csv', ini.csv_path + fileName + '.csv')
-    traceDict = _processNGspiceResult(cirFile, analysisType, traceType, postProc)
-    return traceDict
+        print("NGspice command not found in the [command] section of '{}'.".format(ini.home_path + "SLiCAP.ini"))
 
 def _processNGspiceResult(cirFile, analysisType, traceType, postProc):
     # Read the CSV file
     traceDict = None
-    try:
-        f = open(cirFile + '.csv', 'r')
-        lines = f.readlines()
-        f.close()
-        analysisType = analysisType.upper()
-        if analysisType == 'DC' or analysisType == 'NOISE' or (analysisType == 'TRAN' and  (postProc == None or postProc.split()[0].upper() == "FOURIER")):
-            traceDict = _makeDCTRNStraces(lines)
-        elif analysisType.upper() == 'AC' or analysisType == 'TRAN':
-            traceDict = _makeACtraces(lines, traceType)
-        elif analysisType == "OP":
-            traceDict = _makeOPtraces(lines)
-        else:
-            raise NotImplementedError()
-    except FileNotFoundError:
-        try:
-             f = open('simFile.log')
-             for line in f.readlines():
-                 print(line)
-        except FileNotFoundError:
-            print("NGspice didn't start: please check if it is installed and can be called from a command terminal with: '{}'.".format(ini.ngspice))
+    f = open(cirFile + '.csv', 'r')
+    lines = f.readlines()
+    f.close()
+    analysisType = analysisType.upper()
+    if analysisType == 'DC' or analysisType == 'NOISE' or (analysisType == 'TRAN' and  (postProc == None or postProc.split()[0].upper() == "FOURIER")):
+        traceDict = _makeDCTRNStraces(lines)
+    elif analysisType.upper() == 'AC' or analysisType == 'TRAN':
+        traceDict = _makeACtraces(lines, traceType)
+    elif analysisType == "OP":
+        traceDict = _makeOPtraces(lines)
+    else:
+        raise NotImplementedError()
+    remove(cirFile + '.csv')
     return traceDict
 
 def _makeOPtraces(lines):

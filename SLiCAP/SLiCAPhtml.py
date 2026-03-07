@@ -589,7 +589,7 @@ def matrices2html(results, label='', labelText=''):
     Displays the MNA equation on the active HTML page.
 
     :param instrObj: Results of instruction with data type matrix.
-    :type instrObj: SLiCAPprotos.allResults
+    :type instrObj: SLiCAPinstruction.instruction
     
     :param label: ID of the label assigned to this equation; defaults to ''.
     :type label: str
