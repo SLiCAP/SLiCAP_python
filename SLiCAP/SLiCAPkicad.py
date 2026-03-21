@@ -268,9 +268,6 @@ def backAnnotateSchematic(sch, opinfo):
     f.write(schematic)
     f.close()
     KiCADsch2svg(sch)  
-<<<<<<< HEAD
-      
-=======
     
 def _poly_s_circuit(sourceType, element, nodes, ref, expr, pardefs):
     srcTypes = ["E", "F", "G", "H"]

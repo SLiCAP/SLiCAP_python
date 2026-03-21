@@ -1,4 +1,4 @@
-docutils>=0.18,<0.21
+docutils>=0.18
 numpy>=2.1
 sympy>=1.13
 scipy>=1.14
