@@ -27,7 +27,7 @@ dependencies = [
     "IPython>=8.19",
     'windows_tools>=2.4; sys_platform == "win32"',
     'pywin32>306; sys_platform == "win32"',
-    "docutils>=0.18",
+    "docutils>=0.18,<0.21",
     "sphinx-rtd-theme>=1.2.0",
     ]
 dynamic = ["version"]
