@@ -169,6 +169,12 @@ class circuit(object):
         """
         (*list*) with reference designators (*str*) of referenced elements.
         """
+
+        self.netlist = None
+        """
+        Netlist (*str*) that will be created with the self.createNetlist() methos.
+        """
+
     def depVars(self):
         """
         Returns the list with valid detectors.
@@ -600,8 +606,7 @@ def _initAll():
     SPICEMODELS['CS']    = ['l', 'w', 'm', 'scale', 'temp', 'dtemp', 'ic']   
     SPICEMODELS['L']     = ['nt', 'm', 'scale', 'temp', 'dtemp', 'tc1', 'tc2', 'ic']  
     SPICEMODELS['K']     = []  
-    SPICEMODELS['SV']    = ['onoff']  
-    SPICEMODELS['SI']    = ['onoff']  
+    SPICEMODELS['S']     = ['onoff']  
     SPICEMODELS['V']     = []  
     SPICEMODELS['I']     = []  
     SPICEMODELS['E']     = ['m']  

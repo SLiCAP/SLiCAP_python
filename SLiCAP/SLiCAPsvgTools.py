@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Cropps SVG images to drawing format
+# Cropps SVG images to drawing format and creates a white background
 # Tested on SLiCAP schematics created with Kicad
 # Author: Chiel van Diepen, Crownstone/Almende The Netherlands
-
-# pip install svgelements
+# Modified by Claude, adding a white background
 
 import os
 import argparse
@@ -112,11 +111,16 @@ def _crop_svg(input_path):
     root.set("width", f"{width}mm")
     root.set("height", f"{height}mm")
 
-    # Save the cropped SVG
-    #output_path = os.path.splitext(input_path)[0] + "_cropped.svg"
-    #tree.write(output_path)
+    # Insert white background rectangle as first child
+    ns  = root.tag.split("}")[0].lstrip("{") if "}" in root.tag else ""
+    tag = f"{{{ns}}}rect" if ns else "rect"
+    bg  = ET.Element(tag, attrib={
+         "x": str(min_x), "y": str(min_y),
+         "width": str(width), "height": str(height),
+         "fill": "white"
+    })
+    root.insert(0, bg)
     tree.write(input_path)
-    #return output_path
 
 if __name__ == "__main__":
     

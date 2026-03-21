@@ -6,12 +6,17 @@ SLiCAP module with math functions.
 import sys
 import sympy as sp
 import numpy as np
+
+np.seterr(all = 'ignore')
+
 import SLiCAP.SLiCAPconfigure as ini
 from numpy.polynomial import Polynomial
+from numpy import trapezoid
 from scipy.integrate import quad
 from scipy.optimize import fsolve
 from SLiCAP.SLiCAPlex import _replaceScaleFactors
 from pytexit import py2tex
+from copy import deepcopy
 
 def det(M, method="ME"):
     """
@@ -40,8 +45,8 @@ def det(M, method="ME"):
     if M.shape[0] != M.shape[1]:
         print("ERROR: Cannot determine determinant of non-square matrix.")
         D = None
-    if method == "ME" and ini.reduce_matrix and len(M.atoms(sp.Symbol)) > 0:
-        M, factor = _eliminateVars(M)
+    if (method == "ME" or method == "BS") and ini.reduce_matrix and len(M.atoms(sp.Symbol)) > 0:
+        M, factor = _eliminateVars(M, method)
     dim = M.shape[0]
     if M.is_zero_matrix:
         D = 0
@@ -52,7 +57,7 @@ def det(M, method="ME"):
     elif method == "ME":
         D = _detME(M) * factor
     elif method == "BS":
-        D = _detBS(M)
+        D = _detBS(M) * factor
     elif method == "LU":
         D = M.det(method="LU")
     elif method == "bareiss":
@@ -64,10 +69,10 @@ def det(M, method="ME"):
         D = None
     return D
 
-def _eliminateVars(M):
+def _eliminateVars(M, method):
     """
     Reduces the size of a matrix through division-free elimination of variables.
-    Returns matrix with dim >= 1.
+    Returns matrix with dim >= 1 and a multiplication factor for the determinant.
 
     :param M: sympy matrix
     :type M: sympy.Matrix()
@@ -145,20 +150,22 @@ def _detBS(M):
     sign = 1
     dim = newM.shape[0]
     for k in range(dim-1):
-        if newM[k, k] == 0:
-            for m in range(k+1, dim):
+        if newM[k, k].is_zero:
+            for m in range(k+1, dim-1):
                 if newM[m, k] != 0:
                     row_m = newM.row(m)
                     newM[m, :] = newM.row(k)
                     newM[k, :] = row_m
                     sign = -sign
-            if m == dim:
-                return sp.S(0)
+                    break
+                if m == dim-1:
+                    return sp.S(0)
         for i in range(k+1, dim):
             for j in range(k+1, dim):
                 newM[i, j] = newM[k, k] * newM[i, j] - newM[i, k] * newM[k, j]
                 if k:
                     newM[i, j] = sp.factor(newM[i, j] / newM[k-1, k-1])
+            newM[i, k] = 0
     D = sign * newM[dim-1, dim-1]
     return sp.simplify(D)
 
@@ -391,7 +398,10 @@ def _zeroValue(numer, denom, var):
     numerValue = numer.xreplace({var: 0})
     denomValue = denom.xreplace({var: 0})
     if numerValue == 0 and denomValue == 0:
-        gain = sp.sympify("undefined")
+        try:
+            gain = sp.limit(numer/denom, var, 0)
+        except:
+            gain = sp.sympify("undefined")
     elif numerValue == 0:
         gain = sp.N(0)
     elif denomValue == 0:
@@ -547,10 +557,14 @@ def _checkNumeric(exprList):
     """
     numeric = True
     for item in exprList:
-        params = sp.N(item).atoms(sp.Symbol)
-        if len(params) > 0:
-            numeric = False
-            break
+        try:
+            complex(item)
+        except:
+            item = item.evalf()
+            params = item.atoms(sp.Symbol)
+            if len(params) > 0:
+                numeric = False
+                break
     return numeric
 
 def _checkExpression(expr):
@@ -1000,7 +1014,7 @@ def _delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
         delay = [0 for i in range(len(f))]
     return delay
 
-def doCDSint(noiseResult, tau, f_min, f_max):
+def _doCDSint(noiseResult, tau, fmin, fmax, method, points=0):
     """
     Returns the integral from ini.frequency = f_min to ini.frequency = f_max,
     of a noise spectrum after multiplying it with (2*sin(pi*ini.frequency*tau))^2
@@ -1011,37 +1025,116 @@ def doCDSint(noiseResult, tau, f_min, f_max):
     :param tau: Time between two samples
     :type tau: sympy.Expr, sympy.Symbol, int or float
 
-    :param f_min: Lower limit of the integral
-    :type f_min: sympy.Expr, sympy.Symbol, int or float
+    :param fmin: Lower limit of the integral
+    :type fmin: sympy.Expr, sympy.Symbol, int or float
 
-    :param f_max: Upper limit of the integral
-    :type f_max: sympy.Expr, sympy.Symbol, int or float
+    :param fmax: Upper limit of the integral
+    :type fmax: sympy.Expr, sympy.Symbol, int or float
+    
+                   - "auto": automatic selection of integration method
+                   - "symbolic": forces symbolic integration 
+                   - "scipy": numeric integration using scipy.integrate.quad
+                   - "log": numeric integration using numpy.trapezoid with a
+                            logarithmic frequency sweep from f_min to f_max 
+                            and the number of points set by points
+                   - "lin": numeric integration using numpy.trapezoid with a
+                            linear frequency sweep from fmin to fmax 
+                            and dx=(fmax-fmin)/points
+                   - "list": numeric integration using numpy.trapezoid with frequency
+                             points taken from points.
+                     
+                   Defaults to 'auto'
+                   
+    :type method: str
+    
+    :param points: Number of frequency points for integration for method="lin"
+                   and method="log", or a list with points. Defaults to 0.
+                   If type(points) == list f_min, and f_max will be ignored.
+    :type points: int, list
 
     :return: integral of the spectrum from f_min to f_max after corelated double sampling
     :rtype: sympy.Expr, sympy.Symbol, int or float
     """
+    # method is determined by parent routine
     _phi = sp.Symbol('_phi', positive=True)
+    lim_l = sp.simplify(fmin*tau*sp.pi)
+    lim_u = sp.simplify(fmax*tau*sp.pi)
     noiseResult *= ((2*sp.sin(sp.pi*ini.frequency*tau)))**2
     noiseResult = noiseResult.xreplace({ini.frequency: _phi/tau/sp.pi})
-    noiseResultCDSint = sp.integrate(
-        noiseResult/sp.pi/tau, (_phi, f_min*tau*sp.pi, f_max*tau*sp.pi))
-    return sp.simplify(noiseResultCDSint)
+    if method == "symbolic":  
+        try:
+            noiseResult = assumePosParams(noiseResult)
+            noiseResultCDSint = sp.integrate(
+                sp.simplify(noiseResult/sp.pi/tau), (_phi, lim_l, lim_u))
+        except:
+            print("ERROR: cannot evaluate integral symbolically.")
+            noiseResultCDSint = None  
+    else:
+        # Use numeric integration
+        noise_spectrum    = sp.lambdify( _phi,  sp.N(noiseResult/sp.pi/tau))
+        noiseResultCDSint = 0
+        lim_l             = float(lim_l)
+        lim_u             = float(lim_u)
+        i                 = 1
+        start             = lim_l
+        if method == "scipy":
+            while i * np.pi < lim_u:
+                noiseResultCDSint += quad(noise_spectrum, start, i*np.pi)[0]
+                i += 1
+                start += np.pi
+            noiseResultCDSint += quad(noise_spectrum, start, lim_u)[0]
+        elif method == "lin":
+            while i * np.pi < lim_u:
+                x = np.linspace(start, i*np.pi, points)
+                noiseResultCDSint += trapezoid(noise_spectrum(x), x)
+                i += 1
+                start += np.pi
+            x = np.linspace(start, lim_u, points)
+            noiseResultCDSint += trapezoid(noise_spectrum(x), x)
+        elif method== "log":
+            x = np.geomspace(start, i*np.pi, points)
+            while i * np.pi < lim_u:
+                noiseResultCDSint += trapezoid(noise_spectrum(x), x)
+                i += 1
+                start += np.pi
+                x = np.linspace(start, i*np.pi, points)
+            x = np.linspace(start, lim_u, points)
+            noiseResultCDSint += trapezoid(noise_spectrum(x), x)
+        elif method == "list":
+            noiseResultCDSint += trapezoid(noise_spectrum(points), points)
+    return noiseResultCDSint
 
-def doCDS(noiseResult, tau):
+def doCDS(result, tau):
     """
-    Returns noiseResult after multiplying it with (2*sin(pi*ini.frequency*tau))^2
+    Returns a copy of the noise execution result with all onoise results in it
+    multiplied with (2*sin(pi*ini.frequency*tau))^2, and deleted inoise results.
 
-    :param noiseResult: sympy expression of a noise density spectrum in V^2/Hz or A^2/Hz
-    :type noiseResult: sympy.Expr, sympy.Symbol, int or float
+    :param result: sympy instruction object
+    :type result: sympy.instruction
 
     :param tau: Time between two samples
     :type tau: sympy.Expr, sympy.Symbol, int or float
 
-    :return: noiseResult*(2*sin(pi*ini.frequency*tau))^2
-    :rtype: sympy.Expr, sympy.Symbol, int or float
+    :return: sympy instruction object
+    :rtype: sympy.instruction
     """
-    return noiseResult*((2*sp.sin(sp.pi*ini.frequency*tau)))**2
-
+    cpy_result = deepcopy(result)
+    terms = cpy_result.onoiseTerms.keys()
+    if type(cpy_result.onoise) == list:
+        for i in range(len(cpy_result.onoise)):
+            cpy_result.onoise[i] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+            for term in terms:
+                cpy_result.onoiseTerms[term][i] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+        cpy_result.inoise = []
+        for term in cpy_result.inoiseTerms.keys():
+            cpy_result.inoiseTerms[term] = []
+    else:
+        cpy_result.onoise *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+        cpy_result.inoise = None
+        for term in terms:
+            cpy_result.onoiseTerms[term] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+            cpy_result.inoiseTerms[term] = None
+    return cpy_result
 
 def routh(charPoly, eps=sp.Symbol('epsilon')):
     """
@@ -1310,7 +1403,183 @@ def chebyshev1Poly(n, ripple):
     P_s = P_s.xreplace({s: s*w3dB})
     return P_s
 
-def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
+def _doVarNoiseData(noiseData, numeric, method, CDS, tau, fmin, fmax, points, wf):
+    """
+    Calculates and returns total variance of noise spectra.
+    
+    :param noiseData: 
+        
+        a. Dictionary with key-value pairs:
+        
+          - keys (str): names of noise sources
+          - value (expr, list): input or output referred noise spectrum or list with spectra
+        
+        b. Expression of a noise spectrum or a list of expressions
+        
+    :type param: dict
+    
+    :param numeric: True if result needs to be numeric
+    :type numeric: Bool
+    
+    :param method: Integration method, implemented methods are:
+        
+                   - "auto": automatic selection of integration method
+                   - "symbolic": forces symbolic integration 
+                   - "scipy": numeric integration using scipy.integrate.quad
+                              CDS will use integration per section f=1/tau
+                   - "log": numeric integration using numpy.trapezoid with a
+                            logarithmic frequency sweep from f_min to f_max 
+                            and the number of points (CDS: per section) set by points
+                   - "lin": numeric integration using numpy.trapezoid with a
+                            linear frequency sweep from fmin to fmax 
+                            and the number of points (CDS: per section) set by points
+                   - "list": numeric integration using numpy.trapezoid with frequency
+                             points taken from points (CDS: switches method to 'scipy').
+                     
+                   Defaults to 'auto'
+                   
+    :type method: str
+
+    :param CDS: True if correlated double sampling is required, defaults to False
+                If True parameter 'tau' must be given a nonzero finite value
+                (can be symbolic). 
+                If method=="log" a logarithmic frequency seep will be used from 
+                the lowest frequency until the frequency of the first notch: 
+                f=1/tau. Linear sweeping will be used for all other frequency 
+                segments.
+                The number of points per segment will be set to points.
+                If type(points) == list, the method will be set to 'scipy'.
+    :type CDS: Bool
+
+    :param tau: CDS delay time
+    :type tau: str, int, float, sp.Symbol
+
+    :param fmin: Lower limit of the frequency range in Hz.
+    :type fmin: str, int, float, sp.Symbol
+
+    :param fmax: Upper limit of the frequency range in Hz.
+    :type fmax: str, int, float, sp.Symbol
+    
+    :param points: Number of frequency points for integration for method="lin"
+                   and method="log", or a list with points. Defaults to 0.
+                   If type(points) == list f_min, and f_max will be ignored.
+    :type points: int, list
+    
+    :param wf: Frequency weighting function (H(s) or H(f))
+    :type wf: str, int, float, sympy expr
+
+    :return: RMS noise over the frequency interval.
+
+            - An expression or value if parameter stepping of the instruction is disabled.
+            - A list with expressions or values if parameter stepping of the instruction is enabled.
+    :rtype: int, float, sympy.Expr
+
+    """
+    if type(wf) == int or type(wf) == float or type(wf) == str:
+        wf = sp.sympify(wf)
+    if numeric == True:
+        wf = sp.N(wf)
+    wf = wf.subs(ini.laplace, 2*sp.pi*sp.I*ini.frequency)
+    wf = assumeRealParams(wf)  
+    sq_mag_wf = clearAssumptions(sp.simplify(sp.re(wf)**2 + sp.im(wf)**2))
+    sq_mag_wf = float2rational(sq_mag_wf)
+    if type(noiseData) == dict:
+        noiseSources = list(noiseData.keys())
+        if type(noiseData[noiseSources[0]]) == list:
+            numSteps = len(noiseData[noiseSources[0]])
+        else:
+            numSteps = 1
+    else:
+        if type(noiseData) != list:
+            noiseData = [noiseData]
+        numSteps = len(noiseData)
+        noiseDataDict = {}
+        noiseDataDict[0] = noiseData
+        noiseData = noiseDataDict
+        noiseSources = [0]
+    if type(fmin) == float and type(fmax) == float:
+        numlimits = True
+    else:
+        numlimits = False
+    if method.lower() == 'list' and type(points) == list:
+        fmin = points[0]
+        fmax = points[-1]
+    var = []
+    for i in range(numSteps):
+        var_i    = sp.N(0)
+        for src in noiseSources:
+            if type(noiseData[src]) != list:
+                data = noiseData[src]
+            else:
+                data = noiseData[src][i]
+            if numeric:
+                data = sp.N(data) 
+            if data != 0:
+                data *= sq_mag_wf
+                data = float2rational(data)
+                # Normalize rational to prevent numeric overflow
+                #try:
+                #    data = normalizeRational(data, ini.frequency)
+                #except:
+                #    pass
+                params = data.atoms(sp.Symbol)
+                if (len(params) == 0 or ini.frequency not in params) and CDS == False:
+                    var_i += data * (fmax - fmin)
+                else:
+                    # Determine best method for this term if method="auto"
+                    if method == "auto":
+                        no_params = False
+                        if len(params) == 0 or (len(params) == 1 and ini.frequency in params):
+                            no_params = True
+                        if not no_params or not numlimits:
+                            int_method = "symbolic"
+                        elif numlimits:
+                            if type(points) == list:
+                                if len(points) > 1:
+                                    int_method = "list"
+                                else:
+                                    int_method = "scipy"
+                            elif int(points) <= 2:
+                                int_method = "scipy"
+                            elif int(points) > 2:
+                                if fmin > 0 and CDS == False:
+                                 int_method = "log"
+                                else:
+                                    int_method = "lin"
+                            else:
+                                int_method = "symbolic"
+                    else:
+                        int_method = method
+                    if CDS:
+                        var_i += _doCDSint(data, tau, fmin, fmax, method=int_method, points=points)
+                    elif int_method == "symbolic":
+                        func = assumePosParams(data)
+                        var_i += sp.integrate(func, [ini.frequency, fmin, fmax])
+                    else:
+                        noise_spectrum = sp.lambdify(
+                            ini.frequency, sp.N(data))
+                        if int_method == "scipy":
+                            term = quad(noise_spectrum, fmin, fmax)[0]
+                            var_i += term
+                        elif int_method == "lin":
+                            x = np.linspace(fmin, fmax, points)
+                            term = trapezoid(noise_spectrum(x), x=x)
+                            var_i += term
+                        elif int_method == "list":
+                            term = trapezoid(noise_spectrum(points), x=points)
+                            var_i += term
+                        elif int_method == "log":
+                            x = np.geomspace(fmin, fmax, points)
+                            term = trapezoid(noise_spectrum(x), x=x)
+                            var_i += term
+        if numeric == True:
+            var.append(sp.N(clearAssumptions(sp.expand(var_i))))
+        else:
+            var.append(clearAssumptions(sp.expand(var_i)))
+    return var
+
+def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None, 
+              method="auto", points=0, wf=1):
     """
     """
     errors = 0
@@ -1319,9 +1588,6 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
     else:
         sources = source
     numlimits = False
-    if fmin == None or fmax == None:
-        print("Error in frequency range specification.")
-        errors += 1
     if CDS:
         if tau == None:
             print(
@@ -1346,75 +1612,92 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
             # Numeric values for fmin and fmax but fmin >= fmax
             print("Error in frequency range specification.")
             errors += 1
+        elif fMi == 0 and method == "log":
+            print("Error: method='log' cannot be combined with fmin=0.")
+            errors += 1
         elif fMa > fMi:
             # Numeric values for fmin and fmax and fmax >= fmin
             numlimits = True
-    elif noiseResult.dataType != 'noise':
+        if numlimits:
+            fmax = float(fmax)
+            fmin = float(fmin)
+            
+    if noiseResult.dataType != 'noise':
         print("Error: expected dataType noise, got: '{0}'.".format(
             noiseResult.dataType))
         errors += 1
+    
+    if method != "symbolic" and numlimits == True:
+        if noise == "onoise": 
+            if type(noiseResult.onoise) != list:
+                spectra = [noiseResult.onoise]
+            else:
+                spectra = noiseResult.onoise
+        elif noise == "inoise":
+            if type(noiseResult.inoise) != list:
+                spectra = [noiseResult.inoise]
+            else:
+                spectra = noiseResult.inoise
+        params = []
+        for i in range(len(spectra)):
+            params += list(sp.N(spectra[i]).atoms(sp.Symbol))
+            params = set(params)                
+        if len(params) > 1 or (len(params) == 1 and ini.frequency not in params):
+            if method != "symbolic":
+                print("Error: found symbolic data, cannot perform numeric integration.")
+                errors += 1
+        elif method == "list": 
+            if type(points) != list and len(points) < 2:
+                print("Error: missing or incomplete list with frequencies.")
+                errors += 1
+            else:
+                for i in range(1, len(points)):
+                    try:
+                        points[i] = float(points[i])
+                        if points[i] <= points[i-1]:
+                            print("Error: improper list with frequencies.")
+                            errors += 1
+                            break
+                    except:
+                        print("Error: improper list with frequencies.")
+                        errors += 1
+                        break
+                    if errors:
+                        break
+        elif method == "lin" or method == "log" or method == "scipy": 
+            if not numlimits:
+                print("Error: integration method requires numeric frequeny range with fmax > fmin.")
+                errors += 1
+            if method == "log" and (fmin == 0 or fmax == 0):
+                print("Error: logarithmic integration cannot include zero.")
+                errors += 1             
     if errors == 0:
-        names = noiseResult.snoiseTerms.keys()
-        if len(sources) == 1 and sources[0] == None:
-            noiseSources = [name for name in names]
-        else:
-            # Check sources names and add if correct
-            noiseSources = []
-            for src in sources:
-                if src in names:
-                    noiseSources.append(src)
-                elif src != None:
-                    print("Error: unknown noise source: '{0}'.".format(src))
-                    errors += 1
         if noise == 'onoise':
             noiseData = noiseResult.onoiseTerms
         elif noise == 'inoise':
             noiseData = noiseResult.inoiseTerms
-    var = []
-    if errors == 0:
-        numSteps = 1
-        if type(noiseResult.onoise) == list:
-            numSteps = len(noiseResult.onoise)
-        for i in range(numSteps):
-            var_i = sp.N(0)
-            for src in noiseSources:
-                if type(noiseData[src]) != list:
-                    data = float2rational(sp.simplify(noiseData[src]))
-                else:
-                    data = float2rational(sp.simplify(noiseData[src][i]))
-                if data != 0:
-                    # Normalize rational to prevent numeric overflow
-                    try:
-                        data = normalizeRational(data, ini.frequency)
-                    except:
-                        pass
-                    if CDS:
-                        var_i += doCDSint(data, tau, fmin, fmax)
-                    else:
-                        params = sp.N(data).atoms(sp.Symbol)
-                        if len(params) == 0 or ini.frequency not in params:
-                            # Frequency-independent spectrum, multiply with (fmax-fmin)
-                            var_i += data * (fmax - fmin)
-                        elif len(params) == 1 and ini.frequency in params and numlimits:
-                            # Numeric frequency-dependent spectrum, use numeric integration
-                            noise_spectrum = sp.lambdify(
-                                ini.frequency, sp.N(data))
-                            term = quad(noise_spectrum, fmin, fmax)[0]
-                            var_i += term
-                        else:
-                            # Try sympy integration
-                            func = assumePosParams(data)
-                            var_i += sp.integrate(func,
-                                                  [ini.frequency, fmin, fmax])
-            if noiseResult.numeric == True:
-                var.append(sp.N(clearAssumptions(sp.expand(var_i))))
-            else:
-                var.append(clearAssumptions(sp.expand(var_i)))
+        names = noiseResult.snoiseTerms.keys()
+        if len(sources) == 1 and sources[0] == None:
+            pass
+        else:
+            # Check sources names and add if correct
+            noiseDataNew = {}
+            for src in sources:
+                if src in names:
+                    noiseDataNew[src] = noiseData[src]
+                elif src != None:
+                    print("Error: unknown noise source: '{0}'.".format(src))
+                    errors += 1
+            noiseData = noiseDataNew
+        # Now the actual calculation starts
+        var = _doVarNoiseData(noiseData, noiseResult.numeric, method, CDS, tau, 
+                              fmin, fmax, points, wf)
     if len(var) == 1:
         var = var[0]
     return var
 
-def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
+def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None, 
+             method="auto", points=0, wf=1):
     """
     Calculates the RMS source-referred noise or detector-referred noise,
     or the contribution of a specific noise source or a collection of sources
@@ -1422,7 +1705,7 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
 
     :param noiseResult: Results of the execution of an instruction with data
                         type 'noise'.
-    :type noiseResult: SLiCAPprotos.allResults
+    :type noiseResult: SLiCAPinstruction.instruction
 
     :param noise: 'inoise' or 'onoise' for source-referred noise or detector-
                 referred noise, respectively.
@@ -1437,16 +1720,50 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
     :param source: refDes (ID) or list with IDs of noise sources
                 of which the contribution to the RMS noise needs to be
                 evaluated. Only IDs of current of voltage sources with a
-                nonzero value for 'noise' are accepted.
+                nonzero value for their 'noise' parameter are accepted.
     :type source: str, list
 
     :param CDS: True if correlated double sampling is required, defaults to False
                 If True parameter 'tau' must be given a nonzero finite value
-                (can be symbolic)
+                (can be symbolic). 
+                If method=="log" a logarithmic frequency seep will be used from 
+                the lowest frequency until the frequency of the first notch: 
+                f=1/tau. Linear sweeping will be used for all other frequency 
+                segments.
+                The number of points per segment will be set to points.
+                If type(points) == list, the method will be set to 'scipy'.
     :type CDS: Bool
 
     :param tau: CDS delay time
     :type tau: str, int, float, sp.Symbol
+    
+    :param method: Integration method, implemented methods are:
+        
+                   - "auto": automatic selection of integration method
+                   - "symbolic": forces symbolic integration 
+                   - "scipy": numeric integration using scipy.integrate.quad.
+                              CDS will use integration per section f=1/tau
+                   - "log": numeric integration using numpy.trapezoid with a
+                            logarithmic frequency sweep from f_min to f_max 
+                            and the number of points (CDS: per section  f=1/tau) set by points
+                   - "lin": numeric integration using numpy.trapezoid with a
+                            linear frequency sweep from fmin to fmax 
+                            and the number of points (CDS: per section  f=1/tau) set by points
+                   - "list": numeric integration using numpy.trapezoid with frequency
+                             points taken from points (CDS: switches method to 'scipy').
+                     
+                   Defaults to 'auto'
+                   
+    :type method: str
+    
+    :param points: Number of frequency points for integration for method="lin"
+                   and method="log", or a list with points. Defaults to 0.
+                   If type(points) == list f_min, and f_max will be redefined
+                   to the first and the last number in the list.
+    :type points: int, list
+      
+    :param wf: Frequency weighting function (H(s) or H(f))
+    :type wf: str, int, float, sympy expr
 
     :return: RMS noise over the frequency interval.
 
@@ -1454,8 +1771,9 @@ def rmsNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None):
             - A list with expressions or values if parameter stepping of the instruction is enabled.
     :rtype: int, float, sympy.Expr
     """
-    result = _varNoise(noiseResult, noise, fmin, fmax,
-                       source=source, CDS=CDS, tau=tau)
+    method = method.lower()
+    result = _varNoise(noiseResult, noise, fmin, fmax, source=source, CDS=CDS, 
+                       tau=tau, method=method, points=points, wf=wf)
     if type(result) == list:
         rms = [sp.sqrt(item) for item in result]
     else:
@@ -1594,7 +1912,7 @@ def ilt(expr, s, t, integrate=False):
     variables = sp.N(expr).atoms(sp.Symbol)
     if len(variables) == 0 or s not in variables:
         inv_laplace = sp.DiracDelta(t)*expr
-    elif len(variables) == 1:
+    elif len(variables) == 1 and s in variables:
         num, den = expr.as_numer_denom()
         if num.is_polynomial() and den.is_polynomial():
             polyDen = sp.Poly(den, s)
@@ -1777,7 +2095,7 @@ def listPZ(pzResult):
     Prints lists with numeric poles and zeros.
 
     :param pzResult: SLiCAP execution results of pole-zero analysis.
-    :type pzResult: SLiCAPprotos.allResults
+    :type pzResult: SLiCAPinstruction.instruction
 
     :return: None
     :rtype: NoneType
@@ -1849,14 +2167,19 @@ def listPZ(pzResult):
     print('\n')
     return
 
-def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True):
+def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True, wf=1, 
+                          method="auto", CDS=False, tau=None, 
+                          points=1000, numeric=True):
+    """
+    """
     results = {}
     terms = zip(poly.coeffs(), poly.monoms())
     for coeff, (exp_1, exp_2) in terms:
         coeff = sp.factor(coeff)
         if doit and (len(coeff.atoms(sp.Symbol)) == 0 or coeff.atoms(sp.Symbol) == {x}):
-            coeff_func = sp.lambdify(x, coeff)
-            integral, error = quad(coeff_func, x_lower, x_upper)
+            #coeff_func = sp.lambdify(x, coeff)
+            #integral, error = quad(coeff_func, x_lower, x_upper)
+            integral = _doVarNoiseData(coeff, numeric, method, CDS, tau, x_lower, x_upper, points, wf=wf)[0]
         else:
             try:
                 if doit:
@@ -1868,7 +2191,9 @@ def _integrate_all_coeffs(poly, x, x_lower, x_upper, doit=True):
         results[(exp_1, exp_2)] = integral
     return results
 
-def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True):
+def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True, 
+                      wf=1, method="auto", CDS=False, tau=None, 
+                      points=1000, numeric=True):
     # Find the highest order terms in the denominator
     numer, denom = func.as_numer_denom()
     poly_denom = sp.Poly(denom, variables[0], variables[1])
@@ -1883,10 +2208,14 @@ def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True):
 
     # Integrate the polynomial coefficients numerically
     integratedCoeffs = _integrate_all_coeffs(
-        poly, x, x_lower, x_upper, doit=doit)
+        poly, x, x_lower, x_upper, doit=doit, wf=wf, 
+        method=method,         CDS=CDS, tau=tau, points=points, 
+        numeric=numeric)
     return integratedCoeffs, exponents
 
-def integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
+def integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True, 
+                               wf=1, method="auto", CDS=False, tau=None, 
+                               points=1000, numeric=True):
     """
     Returns a dictionary with key-value pairs:
 
@@ -1928,7 +2257,9 @@ def integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
 
     if len(variables) == 2:
         integrated_coeffs, orders = _integrateCoeffs2(
-            expr, variables, x, x_lower, x_upper, doit=doit)
+            expr, variables, x, x_lower, x_upper, doit=doit, 
+            wf=wf, method=method, CDS=CDS, tau=tau, 
+            points=points, numeric=numeric)
     else:
         raise NotImplementedError(
             "Only two-variable monomials are implemented.")
@@ -1939,7 +2270,9 @@ def integrated_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
         new_coeffs[newkey] = integrated_coeffs[key]
     return new_coeffs
 
-def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
+def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True, 
+                              wf=1, method="auto", CDS=False, tau=None, 
+                              points=1000, numeric=True):
     """
     Returns expr in which x in coefficients of monomials of 
     variables are integrated over the range x_lower ... x_upper. If doit=True
@@ -1966,12 +2299,56 @@ def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True):
                  else integral operators will be returned.
     :type doit: bool
 
+    :param CDS: True if correlated double sampling is required, defaults to False
+                If True parameter 'tau' must be given a nonzero finite value
+                (can be symbolic). 
+                If method=="log" a logarithmic frequency seep will be used from 
+                the lowest frequency until the frequency of the first notch: 
+                f=1/tau. Linear sweeping will be used for all other frequency 
+                segments.
+                The number of points per segment will be set to points.
+                If type(points) == list, the method will be set to 'scipy'.
+    :type CDS: Bool
+
+    :param tau: CDS delay time
+    :type tau: str, int, float, sp.Symbol
+    
+    :param method: Integration method, implemented methods are:
+        
+                   - "auto": automatic selection of integration method
+                   - "symbolic": forces symbolic integration 
+                   - "scipy": numeric integration using scipy.integrate.quad
+                              CDS will use integration per section f=1/tau
+                   - "log": numeric integration using numpy.trapezoid with a
+                            logarithmic frequency sweep from f_min to f_max 
+                            and the number of points (CDS: per section) set by points
+                   - "lin": numeric integration using numpy.trapezoid with a
+                            linear frequency sweep from fmin to fmax 
+                            and the number of points (CDS: per section) set by points
+                   - "list": numeric integration using numpy.trapezoid with frequency
+                             points taken from points (CDS: switches method to 'scipy').
+                     
+                   Defaults to 'auto'
+                   
+    :type method: str
+    
+    :param points: Number of frequency points for integration for method="lin"
+                   and method="log", or a list with points. Defaults to 0.
+                   If type(points) == list f_min, and f_max will be ignored.
+    :type points: int, list
+    
+    :param numeric: If True the result will be converted to numeric. 
+                    Defaults to True
+    :type numeric: Bool
+
     :return: Integration result
     :rtype: sympy.expr, int or float
     """
     integratedCoeffs = integrated_monomial_coeffs(
         expr, variables, x, x_lower, x_upper, doit=doit)
-    integratedResult = sum(sp.Mul(key, integratedCoeffs[key], evaluate=doit)
+    integratedResult = sum(sp.Mul(key, integratedCoeffs[key], evaluate=doit, 
+                                  wf=wf, method=method, CDS=CDS, 
+                                  tau=tau, points=points, numeric=True)
                            for key in integratedCoeffs.keys())
     return integratedResult
 
@@ -1985,12 +2362,12 @@ def units2TeX(units):
     :return: LaTeX code of 'units' without opening or closing tags.
     :rtype: str
     """
+    tex = " "
     if type(units) == str and units != '':
         replacements = {}
         replacements['Ohm'] = 'Omega'
         for key in replacements.keys():
             units = units.replace(key, replacements[key])
-        tex = ""
         for unitpart in units.split():
             tex += py2tex(unitpart, print_latex=False,
                           print_formula=False, simplify_output=False)[2:-2] + " "
@@ -2053,7 +2430,7 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
             print("Error: missing f_low")
     elif f_type == "ap":
         if f_high != None:
-            proto = proto.xreplace({ini.laplace: -ini.laplace})/proto
+            proto = proto.xreplace({ini.laplace: - ini.laplace})/proto
             proto = proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_high)})
         else:
             print("Error: missing f_high")
@@ -2064,12 +2441,11 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
             Q = f_c/B
             if f_type == "bp" and f_c != None:
                 proto = 1/proto.xreplace({ini.laplace: Q *
-                                     (ini.laplace+1/ini.laplace)})
+                                     (ini.laplace + 1/ini.laplace)})
                 proto = normalizeRational(sp.simplify(
                     proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_c)})))
             elif f_type == "bs" and f_c != None:
-                proto = 1/proto.xreplace({ini.laplace: 1 /
-                                     (Q*(ini.laplace+1/ini.laplace))})
+                proto = 1/proto.xreplace({ini.laplace: 1/(Q*(ini.laplace + 1/ini.laplace))})
                 proto = normalizeRational(sp.simplify(
                     proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_c)})))
         elif f_low == None:
@@ -2084,7 +2460,7 @@ def DIN_A(f_0=1000):
 
     See WiKi R_A(f): https://en.wikipedia.org/wiki/A-weighting
 
-    :param f_0: Normalization frequency (frequency at which the weighting = 1),
+    :param f_0: Normalization frequency (frequency at which the weight = 1),
                 defaults to 1kHz
     :type f_0: float, int, sympy.Symbol
 
@@ -2098,7 +2474,6 @@ def DIN_A(f_0=1000):
     return float2rational(DIN_A / DIN_A.xreplace({f: f_0}))
 
 if __name__ == "__main__":
-    from time import time
     ini.hz = True
     """
     t = sp.Symbol('t')
@@ -2198,6 +2573,6 @@ if __name__ == "__main__":
     variables = (g_m, c_iss)
     f, f_min, f_max = sp.symbols("f, f_min, f_max")
     integratedCoeffs = integrated_monomial_coeffs(
-        expr, variables, f, f_min, f_max, doit=False)
+        expr, variables, f, f_min, f_max, doit=False, wf=1, method="auto", CDS=False, tau=None, points=1000, numeric=True)
     result = integrate_monomial_coeffs(
-        expr, variables, f, f_min, f_max, doit=False)
+        expr, variables, f, f_min, f_max, doit=False, wf=1, method="auto", CDS=False, tau=None, points=1000, numeric=True)

@@ -11,6 +11,7 @@ from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPDF
 from SLiCAP.SLiCAPprotos import _MODELS, _SPICEMODELS
 import re
+import sympy as sp
 
 class _KiCADcomponent(object):
     def __init__(self):
@@ -267,7 +268,7 @@ def backAnnotateSchematic(sch, opinfo):
     f.write(schematic)
     f.close()
     KiCADsch2svg(sch)  
-    
+      
 if __name__=='__main__':
     from SLiCAP import initProject
     prj=initProject('kicad')

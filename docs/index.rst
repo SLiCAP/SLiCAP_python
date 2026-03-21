@@ -6,11 +6,11 @@ SLiCAP Manual
 
 Welcome to the version 4 manual of SLiCAP. This edition surpasses all previous versions and has been completely rewritten.
 
-SLiCAP is a **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram, is designed to set up and solve equations for analog circuit design and automatically update design data in documentation.
-
-SLiCAP is written in Python.
-
-SLiCAP is distributed under the `MIT license <https://opensource.org/license/mit>`_
+- SLiCAP is a **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram, is designed to set up and solve equations for analog circuit design and automatically update design data in documentation.
+- SLiCAP is written in Python.
+- SLiCAP is distributed under the `MIT license <https://opensource.org/license/mit>`_
+- SLiCAP `statistics <https://pypistats.org/packages/slicap>`_
+- SLiCAP `training courses <https://montagne.nl/slicap>`_
 
 .. admonition:: Video Presentation SLiCAP KiCON Europe 2025
     :class: note
