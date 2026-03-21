@@ -76,15 +76,15 @@ This directory contains the libraries, the examples, and the documentation.
 **This directory will be deleted and recreated each time you install SLiCAP.**
 
 ## Documentation
-By default, the documentation is placed in /home/<yourUserName\>/SLiCAP/docs/ (LINUX) or \users\<yourUserName\>\SLiCAP\docs\ (MSWindows). 
 
-Execution of the SLiCAP command:
+HTML documentation opens in you default browser with the SLiCAP command:
 
     >>> Help()
     
-shows the HTML documentation in your default browser.
+It can also be viewed at https://slicap.org
 
 ## Setting up SLiCAP from source code
+
 1. Intall Python 3.12+ with the packages listed in requirements.txt (for MSwindows Anaconda installation is preferred)
 2. Download or clone the SLiCAP archive from github
 3. Extract it in some directory
