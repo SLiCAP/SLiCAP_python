@@ -1880,8 +1880,8 @@ class instruction(object):
         if no errors are found it returns a :class:`allResults` object with the
         results of the instruction.
 
-        :return: allResults object with results of the execution
-        :rtype: SLiCAPprotos.allResults
+        :return: instruction object with results of the execution
+        :rtype: SLiCAPinstruction.instruction
 
         >>> # create an instance if a SLiCAP instruction
         >>> my_instr = instruction()

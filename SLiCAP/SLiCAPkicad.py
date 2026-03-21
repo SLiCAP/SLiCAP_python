@@ -268,7 +268,46 @@ def backAnnotateSchematic(sch, opinfo):
     f.write(schematic)
     f.close()
     KiCADsch2svg(sch)  
+<<<<<<< HEAD
       
+=======
+    
+def _poly_s_circuit(sourceType, element, nodes, ref, expr, pardefs):
+    srcTypes = ["E", "F", "G", "H"]
+    if sourceType.upper() not in srcTypes:
+        print("Error: unknown controlled source type '{}'.".format(sourceType))
+        subckt = None
+    expr = sp.sympify(expr)
+    symbols = expr.atoms(sp.Symbol)
+    if ini.laplace not in symbols:
+        subckt = None
+    else:
+        subckt = ".subckt X_{}_poly_s ".format(element)
+        for node in nodes:
+            subckt += " {}".format(node)
+        subckt += ref
+        for param in symbols.keys():
+            if param == ini.laplace or param == sp.pi:
+                pass
+            else:
+                if param in pardefs.keys():
+                    value = pardefs[param]
+                    subckt += "{}={}".format(str(param), str(pardefs[param]))
+                else:
+                    print("Error: parameter {} has no value.".format(str(param)))
+                    subckt = None
+                    break
+    if subckt != None:
+        subckt += "\n"
+        try:
+            num, den = expr.as_numer_denom()
+            num = sp.poly(num, ini.laplace)
+            den = sp.poly(den, ini.laplace)
+        except:
+            print("Error: 'cannot write '{}' as a rational function of '{}'".format(expr, str(ini.laplace)))
+            subckt = None
+    return subckt
+    
 if __name__=='__main__':
     from SLiCAP import initProject
     prj=initProject('kicad')

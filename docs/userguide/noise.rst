@@ -18,7 +18,7 @@ SLiCAP output displayed on this manual page, is generated with the script: ``noi
 Noise parameters
 ================
 
-During noise analysis, SLiCAP uses the ``noise`` parameter of independent voltage sources and independent current sources as uncorrelated noise sources. It inserts noise current sources in parallel with resistors with their noise spectrum determined by the parameters ``noisetemp`` and ``noiseflow``.
+During noise analysis, SLiCAP uses the ``noise`` parameter of independent voltage sources and independent current sources as uncorrelated noise sources. It inserts noise current sources in parallel with resistors. The spectran density of these sources is determined by the parameters ``noisetemp`` and ``noiseflow``.
 
 .. literalinclude:: ../noise.py
     :linenos:
@@ -288,6 +288,28 @@ Typesetted:
 Noise weighting functions
 -------------------------
 
+You can calculate the RMS noise using spectral weighting functions:
+
+.. math::
+
+   \mathrm{RMS_{noise}} = \sqrt{ \int_{f_\mathrm{min}}^{f_\mathrm{max}} S_f \left| W(f) \right|^2 df}
+
+    
+where :math:`W(f)` is a weighting function.
+
+Weighting functions can be defined as Laplace or Fourier expressions:
+
+.. code-block:: python
+
+    wf1 = DIN_A()                                            # see definition below
+    wf2 = sl.filterFunc("buterworth", "lp", 2, f_high = 1e6) # 2-nd order low-pass Butterworth
+                                                             # filter; 1 MHz corner frequency
+    wf3 = sp.sympify("1/s") # Integrator
+    wf4 = sp.sympify("(sin(pi*f*tau))/(pi*f*tau))            # Sinc filter
+    wf5 = sl.filterFunc("bessel", "hp", 2, f_low = 1e3)      # 2-nd order high-pass Bessel
+                                                             # filter; 1 kHz corner frequency
+    wf6 = wf2 * wf5                                          # Cascade connection of two filters
+
 DIN A
 `````
 
@@ -385,8 +407,16 @@ Typesetted:
 The following SLiCAP functions can be used to change the domain of variables:
 
 #. `assumePosParams() <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.assumePosParams>`__
+
+   This will redefine all the symbolic variables in an expression, except the Laplace variable, as *Positive*.
+   
 #. `assumeRealParams() <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.assumeRealParams>`__
+
+   This will redefine all the symbolic variables in an expression, except the Laplace variable, as *Real*.
+   
 #. `clearAssumptions() <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.clearAssumptions>`__
+
+   This will redefine all the symbolic variables in an expression without assumption.
 
 Obtain symbolic coefficients of numeric intergals
 -------------------------------------------------

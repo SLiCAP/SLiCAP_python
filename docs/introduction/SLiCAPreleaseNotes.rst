@@ -7,6 +7,11 @@ SLiCAP release notes
 SLiCAP Version 4.0 release notes
 ================================
 
+#. RMS noise calculations have been improved:
+
+   - Integration methods can be selected
+   - Noise weighting (filter) functions can be added
+   
 #. The netlist syntax and the matrix stamps of ``F``, ``H``, and ``HZ`` element models has been made SPICE-compatible. All SLiCAP symbol libraries, model libraries, and the netlist parser have been updated accordingly and are NO LONGER compatible with earlier versions.
 #. Element branch current names have all been set to ``I_<refdes>``, where ``refdes`` is the reference designator of the element. This is NOT compatible with previous versions.
 #. Improved output of noise and dcvar analysis for balanced circuits with ``convtype='dd'`` or ``convtype='cc'``. By default, paired noise or dcvar sources are renamed to common-mode or differential-mode sources.
@@ -23,8 +28,8 @@ SLiCAP Version 4.0 release notes
        
        VERSION
        -------
-       ini.install_version        = 4.0.9
-       ini.latest_version         = 4.0.9
+       ini.install_version        = 4.0.11
+       ini.latest_version         = 4.0.11
     
 #. The execution of the ``reduce_circuit`` and the ``reduce_matrix`` options have been improved. ``reduce_matrix`` now also works for matrices that do not include Laplace expressions and it only performs multiplication and addition on symbolic expressions.
 #. ``listPZ`` displays frequencies in rad/s if ``ini.hz=False``

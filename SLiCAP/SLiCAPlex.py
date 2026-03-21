@@ -189,7 +189,9 @@ def t_INT(t):
     return t
 
 def t_FNAME(t):
-    r'/?[^\s]+\.[a-zA-Z]+'
+    r'"?/?[^\s]+\.[a-zA-Z]+"?'
+    if t.value[0] == '"' and t.value[-1] == '"':
+        t.value = t.value[1: -1]
     return t
 
 def t_ID(t):
@@ -322,7 +324,7 @@ def _get_input_line(token):
 lexer = lex.lex()
 
 if __name__ == '__main__':
-    fi = '/home/anton/Desktop/Haoyuan/cir/negativeCapacitanceCurrentTransistorinv.cir'
+    fi = '/home/anton/DATA/SLiCAP/SLiCAP_python_tests/ASMPT-11/cir/classABamp.cir'
     print(fi)
     f = open(fi, 'r')
     netlist = f.read()
