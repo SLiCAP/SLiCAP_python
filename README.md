@@ -41,47 +41,37 @@
        pip install slicap
 
 ## Addidional software
-- SLiCAP can generate netlists from schematic files from:
-  - Kicad (all platforms, preferred!)
-  - LTspice (MSWindows: install LTspice on the system drive, Linux and MacOS: use MSwindows version and wine)
-  - gschem (MSWindows: install gschem and its netlister on the system drive, Linux and MacOS: use lepton-eda)
-  - lepton-eda (Linux and MacOS, MSWindows: use gSchem for windows)
-- Inkscape is used to:
-  - convert the page size of SVG images of schematic files generates with Kicad, lepton-eda, or gSchem to the image size
-  - convert the above svg images to pdf (for use in LaTeX).
+
+SLiCAP can generate netlists from schematic files from:
+
+- Kicad (all platforms, preferred!)
+- LTspice (MSWindows: install LTspice on the system drive, Linux and MacOS: use MSwindows version and wine)
+- gschem (MSWindows: install gschem and its netlister on the system drive, Linux and MacOS: use lepton-eda)
+- lepton-eda (Linux and MacOS, MSWindows: use gSchem for windows)
 
 Preferred for all platforms is to install or upgrade to the latest version of Kicad, and install Inkscape.
 
 ## First Run
 
-To verify correct installation of SLiCAP run the example "myFirstRCnetwork.py" in the project folder. This project folder is found in the example folder in the SLiCAP home directory. 
-
 On the first run:
 
 - SLiCAP searches for installed applications:
+
   - Kicad,
   - LTspice
   - NGspice
   - gSchem (MSWindows only)
   - lepton-eda (Linux and MacOS)
-- SLiCAP creates a SLiCAP.ini file in the SLiCAP home directory. This file contains initial setting and commands to start the above applications. It can be edited manually, and when deleted it will be recreated on the next run. Searching for applications on MSWindows may take a while!
+  
+- SLiCAP creates a SLiCAP.ini file in the user home directory. This file contains initial setting and commands to start the above applications. It can be edited manually, and when deleted it will be recreated on the next run. Searching for applications on MSWindows may take a while!
 
-On the first run of a project, SLiCAP creates a SLiCAP.ini file in the project folder, each time you run the project this file is updated. If you delete it it will be recreated on the next run.
-
-## Project file locations
-Do not place your project files in the **SLiCAP home directory**: /home/<yourUserName\>/SLiCAP/ (LINUX) or \users\<yourUserName\>\SLiCAP\ (MSWindows). 
-
-This directory contains the libraries, the examples, and the documentation. 
-
-**This directory will be deleted and recreated each time you install SLiCAP.**
+On the first run of a project, SLiCAP creates a SLiCAP.ini file in the project folder, each time you run the project this file is updated. It will be recreated after deletion.
 
 ## Documentation
 
-HTML documentation opens in you default browser with the SLiCAP command:
-
     >>> Help()
     
-It can also be viewed at https://slicap.org
+Opens HTML documentation in your default browser. It can also be viewed at https://slicap.org
 
 ## Setting up SLiCAP from source code
 

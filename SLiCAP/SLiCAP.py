@@ -131,8 +131,8 @@ def initProject(name, notebook=False):
     ini.last_updated                          = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     project_config['project']['last_updated'] = ini.last_updated
     
-    # Update configuration files
-    ini.main_config, ini.project_config = ini._update_ini_files()
+    # Update configuration files; this is done on the first import of SLiCAPconfigure.py
+    # ini.main_config, ini.project_config = ini._update_ini_files()
     # Create the project directory structure, at the first run of initProject()
     _makeDir(ini.html_path)
     _makeDir(ini.txt_path)

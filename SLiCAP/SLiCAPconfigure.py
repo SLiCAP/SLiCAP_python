@@ -10,7 +10,6 @@ Configuration settings are imported as global (ini.<setting>)
 
 import configparser
 import os
-import sys
 import platform
 import re
 import inspect
@@ -87,16 +86,6 @@ def _find_installed_windows_software():
         search_list.append('NGspice')
     else:
         commands['ngspice'] = ''
-        """
-    for package in search_list:
-        y_n = input("\nDo you want SLiCAP to search for the {} command? [y/n] >>> ".format(package)).lower()[0]
-        while y_n != 'y' and y_n != 'n':
-            y_n = input("\nPlease enter 'y' for 'yes' or 'n' for 'no' >>> ").lower()[0]
-        if y_n == 'y':
-            pass
-        else:
-            commands[package.lower()] = ''
-        """
     # search for the command to start each app
     if len(search_list) > 0:
         found_all = False
@@ -267,8 +256,8 @@ def _generate_project_config():
                      "md_snippets"   : 'sphinx/SLiCAPdata/',
                      "project"       : os.path.abspath('.') + '/'
                     }
-    SLiCAPconfig = configparser.ConfigParser()
-    SLiCAPconfig['math']         = {"laplace"               : "s",
+    project_config = configparser.ConfigParser()
+    project_config['math']         = {"laplace"               : "s",
                                     "frequency"             : "f",
                                     "numer"                 : "ME",
                                     "denom"                 : "ME",
@@ -279,10 +268,10 @@ def _generate_project_config():
                                     "reducematrix"          : True,
     #                                "reducecircuit"         : True
                                     }
-    SLiCAPconfig['balancing']    = {"update_srcnames"       : True,
+    project_config['balancing']    = {"update_srcnames"       : True,
                                     "pair_ext"              : "P,N",
                                     "remove_param_pair_ext" : True}
-    SLiCAPconfig['plot']         = {"axisheight"            : 5,
+    project_config['plot']         = {"axisheight"            : 5,
                                     "axiswidth"             : 7,
                                     "defaultcolors"         : "r,b,g,c,m,y,k",
                                     "defaultmarkers"        : "",
@@ -294,7 +283,7 @@ def _generate_project_config():
                                     "linetype"              : "-",
                                     "svgmargin"             : 1
                                     }                            
-    SLiCAPconfig['gaincolors']   = {"asymptotic"            : "r",
+    project_config['gaincolors']   = {"asymptotic"            : "r",
                                     "gain"                  : "b",
                                     "loopgain"              : "k",
                                     "servo"                 : "m",
@@ -302,7 +291,7 @@ def _generate_project_config():
                                     "ideal"                 : "c",
                                     "vi"                    : "c"
                                     }
-    SLiCAPconfig['display']      = {'Hz'                    : True,
+    project_config['display']      = {'Hz'                    : True,
                                     'Digits'                : 4,
                                     'notebook'              : False,
                                     'scalefactors'          : False,
@@ -312,20 +301,20 @@ def _generate_project_config():
     except:
         _author = 'default'
         
-    SLiCAPconfig['project']      = {'author'         : _author,
+    project_config['project']      = {'author'         : _author,
                                     'created'        : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     'last_updated'   : '',
                                     'title'          : ''
                                     }
-    SLiCAPconfig['projectpaths'] = project_paths
-    SLiCAPconfig['html']         = {'current_index'  : 'index.html',
+    project_config['projectpaths'] = project_paths
+    project_config['html']         = {'current_index'  : 'index.html',
                                     'current_page'   : 'index.html',
                                     'pages'          : '',
                                     'prefix'         : ''
                                     }
-    SLiCAPconfig['labels']        = {
+    project_config['labels']        = {
                                     }
-    return SLiCAPconfig
+    return project_config
      
 def _generate_main_config():
     install_path  = inspect.getfile(_find_installed_software).replace('\\', '/').split('/')
@@ -349,12 +338,12 @@ def _generate_main_config():
         commands = _find_installed_windows_software()
     else:
         commands =  _find_installed_software()
-    SLiCAPconfig = configparser.ConfigParser()
-    SLiCAPconfig['version']      = {"install_version" : INSTALLVERSION,
+    main_config = configparser.ConfigParser()
+    main_config['version']      = {"install_version" : INSTALLVERSION,
                                      "latest_version" : _check_version()}
-    SLiCAPconfig['installpaths'] = install_paths
-    SLiCAPconfig['commands']     = commands
-    return SLiCAPconfig
+    main_config['installpaths'] = install_paths
+    main_config['commands']     = commands
+    return main_config
 
 def _generate_default_config():
     default_config = {'version':{'install_version'   : '',
@@ -418,7 +407,7 @@ def _write_project_config(config_dict):
 def _write_main_config(config_dict):
     with open(_get_home_path() + "SLiCAP.ini", "w") as f:
         config_dict.write(f)
-
+        
 def _update_project_config():
     config_dict = _read_project_config()
     config_dict['project']['title']        = project_title
@@ -430,7 +419,7 @@ def _update_project_config():
     config_dict["html"]["pages"]           = (',').join(html_pages)
     config_dict["labels"]                  = html_labels
     _write_project_config(config_dict)
-
+    
 def _update_ini_files():
     generate        = False # Will be set to True is main config is corrupted
     main_config     = _read_main_config()
@@ -452,19 +441,42 @@ def _update_ini_files():
     if generate:
         print("Updating main configuration file; this may take a while.")
         main_config = _generate_main_config()
-        _write_main_config(main_config)
+    
+    
+    main_config['version']      = {"install_version" : INSTALLVERSION,
+                                   "latest_version" : _check_version()}
+    # Remove unused entries
+    del_keys = []
+    for key in main_keys:
+        if key != "DEFAULT" and key not in default_keys:
+            del_keys.append(key)
+    for key in del_keys:
+        del main_config[key]
+    
+    # Update main configuration file
+    _write_main_config(main_config)
+
+    # Update project configuration file
     project_config = _read_project_config()
     proj_keys = project_config.keys()
     default_config = _generate_project_config()
-    main_keys = default_config.keys()
-    for main_key in main_keys:
-        if main_key not in proj_keys:
-            project_config[main_key] = default_config[main_key]
-        sub_keys     = default_config[main_key].keys()
-        prj_sub_keys = project_config[main_key].keys()
+    default_keys = default_config.keys()
+    for default_key in default_keys:
+        if default_key not in proj_keys:
+            project_config[default_key] = default_config[default_key]
+        sub_keys     = default_config[default_key].keys()
+        prj_sub_keys = project_config[default_key].keys()
         for sub_key in sub_keys:
             if sub_key not in prj_sub_keys:
-                project_config[main_key][sub_key] = default_config[main_key][sub_key]
+                project_config[default_key][sub_key] = default_config[default_key][sub_key]
+
+    # Remove unused entries
+    del_keys = []
+    for key in proj_keys:
+        if key != "DEFAULT" and key not in default_keys:
+            del_keys.append(key)
+    for key in del_keys:
+        del project_config[key]
     _write_project_config(project_config)
     
     return main_config, project_config    
@@ -686,7 +698,6 @@ step_function         = eval(project_config['math']['stepfunction'])
 factor                = eval(project_config['math']['factor'])
 max_rec_subst         = eval(project_config['math']['maxrecsubst'])
 reduce_matrix         = eval(project_config['math']['reducematrix'])
-#reduce_circuit        = eval(project_config['math']['reducecircuit'])
 
 gain_colors_gain      = project_config['gaincolors']['gain']
 gain_colors_asymptotic= project_config['gaincolors']['asymptotic']
