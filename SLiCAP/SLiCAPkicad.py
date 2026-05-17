@@ -22,13 +22,6 @@ class _KiCADcomponent(object):
         self.params = {}
         self.cmd = ""
         
-def _removeParenthesis(field):
-    while field[0] == "(":
-        field = field[1:]
-    while field[-1] == ")":
-        field = field[:-1]
-    return field
-
 def _checkTitle(title):
     title = '"' + title + '"'
     return title.replace('""', '"')
@@ -41,91 +34,197 @@ def _parseKiCADnetlist(kicad_sch, kicadPath='', language="SLICAP"):
     try:
         subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', ini.cir_path + kicadPath + fileName + ".net", ini.cir_path + kicadPath + fileName + ".kicad_sch"])
         f = open(ini.cir_path + kicadPath + fileName + ".net", "r")
-        lines = f.readlines()
+        text = f.read()
         f.close()
-        netlist, subckt, subckt_lib = _parseKiCADnetlistlines(lines, cirTitle, language)
+        netlist, subckt, subckt_lib = _parseKiCADnetlisttext(text, cirTitle, language)
         f = open(cirFile, 'w')
         f.write(netlist)
         f.close()
     except FileNotFoundError:
         print("\nError: could not run Kicad using '{}'.".format(ini.kicad))
     return cirName
-    
-def _parseKiCADnetlistlines(lines, cirTitle, language):
+
+
+# ---------------------------------------------------------------------------
+# S-expression tokeniser and parser  (KiCad 9.x and 10.x compatible)
+#
+# KiCad 10 moved from compact single-line layout to fully expanded multi-line
+# S-expressions.  Parsing the whole file into a tree once makes the rest of
+# the code layout-agnostic and works for both versions.
+# ---------------------------------------------------------------------------
+
+def _tokenise(text):
+    """
+    Yield tokens from a KiCad S-expression string.
+    Tokens are: '(' | ')' | bare-word | "quoted string" (with quotes stripped).
+    """
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if c in ' \t\r\n':
+            i += 1
+        elif c in '()':
+            yield c
+            i += 1
+        elif c == '"':
+            j = i + 1
+            while j < n and text[j] != '"':
+                if text[j] == '\\':   # skip escaped character
+                    j += 1
+                j += 1
+            yield text[i+1:j]         # yield content without surrounding quotes
+            i = j + 1
+        else:
+            j = i
+            while j < n and text[j] not in ' \t\r\n()"':
+                j += 1
+            yield text[i:j]
+            i = j
+
+
+def _parse_sexpr(tokens):
+    """
+    Recursively parse a token stream into a nested list.
+    Must be called after the opening '(' has been consumed.
+    Each (tag child1 child2 ...) becomes ['tag', child1, child2, ...],
+    where children are plain strings or nested lists.
+    """
+    tag = next(tokens)
+    children = []
+    for tok in tokens:
+        if tok == '(':
+            children.append(_parse_sexpr(tokens))
+        elif tok == ')':
+            return [tag] + children
+        else:
+            children.append(tok)
+    return [tag] + children   # top-level fallback for a well-formed file
+
+
+def _find_child(node, tag):
+    """Return the first child list whose tag matches, or None."""
+    for child in node[1:]:
+        if isinstance(child, list) and child[0] == tag:
+            return child
+    return None
+
+
+def _find_all_children(node, tag):
+    """Return all child lists whose tag matches."""
+    return [child for child in node[1:] if isinstance(child, list) and child[0] == tag]
+
+
+def _child_value(node, tag):
+    """
+    Return the first bare string inside the child with the given tag, or None.
+    E.g. for (ref "R1"), _child_value(comp, 'ref') returns 'R1'.
+    """
+    child = _find_child(node, tag)
+    if child is None:
+        return None
+    return next((i for i in child[1:] if isinstance(i, str)), None)
+
+
+# ---------------------------------------------------------------------------
+# Main parser  –  now tree-based, KiCad 9.x and 10.x compatible
+# ---------------------------------------------------------------------------
+
+def _parseKiCADnetlisttext(text, cirTitle, language):
     reserved   = ["Description", "Footprint", "Datasheet"]
     components = {}
     nodes      = {}
     nodelist   = []
-    comps      = False
-    title      = False
     subckt     = False
     subckt_lib = False
-    for line in lines:
-        # remove spaces in expression
-        try:
-            startExpr = line.index("{")
-            stopExpr = line.index("}", startExpr)
-            line = line[0:startExpr] + line[startExpr:stopExpr].replace(" ", "").replace("\t", "") + line[stopExpr:]
-        except ValueError:
-            pass
-        fields = line.split()
-        fields = [_removeParenthesis(field) for field in fields]
-        if fields[0] == "title":
-            if len(fields) > 1:
-                title = _checkTitle(" ".join(fields[1:]))
-        elif fields[0] == "comp":
+
+    # Collapse whitespace inside {param expressions} before tokenising,
+    # so e.g. {1 / (2*pi*R*f_c)} is never split across tokens.
+    text = re.sub(r'\{[^}]*\}', lambda m: m.group(0).replace(' ', '').replace('\t', ''), text)
+    tokens = iter(_tokenise(text))
+    next(tokens)              # consume the outermost '('
+    tree = _parse_sexpr(tokens)
+
+    # ---- title ----
+    design_node = _find_child(tree, 'design')
+    title = False
+    if design_node is not None:
+        sheet_node = _find_child(design_node, 'sheet')
+        if sheet_node is not None:
+            tb = _find_child(sheet_node, 'title_block')
+            if tb is not None:
+                t = _child_value(tb, 'title')
+                if t:
+                    title = _checkTitle(t)
+
+    # ---- components ----
+    comps_node = _find_child(tree, 'components')
+    if comps_node is not None:
+        for comp_node in _find_all_children(comps_node, 'comp'):
             newComp = _KiCADcomponent()
-            newComp.refDes = fields[fields.index('ref')+1][1:-1]
-            comps= True
-        elif fields[0] == "tstamps":
+            newComp.refDes = _child_value(comp_node, 'ref')
+            if newComp.refDes is None:
+                continue
+
+            # value
+            val = _child_value(comp_node, 'value')
+            if val and val != '~':
+                newComp.params["value"] = val
+
+            # fields
+            fields_node = _find_child(comp_node, 'fields')
+            if fields_node is not None:
+                for field_node in _find_all_children(fields_node, 'field'):
+                    field_name = _child_value(field_node, 'name')
+                    # field value is a bare string sibling of the (name ...) child
+                    field_val = next((i for i in field_node[1:] if isinstance(i, str)), None)
+                    if field_name is None or field_val is None:
+                        continue
+                    if field_name == "model":
+                        newComp.model = field_val
+                    elif field_name[0:-1] == "ref":
+                        newComp.refs.append(field_val)
+                    elif field_name == "Vsource":
+                        newComp.refs.append(field_val)
+                    elif field_name == 'command':
+                        newComp.command = field_val
+                    else:
+                        newComp.params[field_name] = field_val
+
             components[newComp.refDes] = newComp
-            comps = False
-        elif fields[0] == "value" and comps:
-            if language == "SLiCAP":
-                value = fields[fields.index("value")+1][1:-1]
-            elif language == "SPICE":
-                value = " ".join(fields[fields.index("value")+1:])[1:-1]
-            if value != '~':
-                newComp.params["value"] = value
-        elif fields[0] == "field" and comps:
-            try:
-                fieldName = fields[2][1:-1]
-                fieldValue = fields[3][1:-1]
-                if fieldName == "model":
-                    newComp.model = fieldValue
-                elif fieldName[0:-1] == "ref":
-                    newComp.refs.append(fieldValue)
-                elif fieldName == "Vsource":
-                    newComp.refs.append(fieldValue)
-                elif fieldName == 'command':
-                    newComp.command = ' '.join(fields[3:])[1:-1]
-                else:    
-                    newComp.params[fieldName] = fieldValue
-            except IndexError:
-                # Field has no value!
-                pass
-        elif fields[0] == 'net':
-            lastNode = fields[fields.index('name')+1][1:-1]
-            #lastNode = fields[4][1:-1]
-            nodes[lastNode] = lastNode
-        elif fields[0] == "node":
-            refDes = fields[fields.index('ref')+1][1:-1]
-            pinNum = fields[fields.index("pin")+1][1:-1]
-            components[refDes].nodes[pinNum] = lastNode
-    nodenames = nodes.keys()
+
+    # ---- nets ----
+    nets_node = _find_child(tree, 'nets')
+    if nets_node is not None:
+        for net_node in _find_all_children(nets_node, 'net'):
+            net_name = _child_value(net_node, 'name')
+            if net_name is None:
+                continue
+            nodes[net_name] = net_name
+            for node_node in _find_all_children(net_node, 'node'):
+                refDes = _child_value(node_node, 'ref')
+                pinNum = _child_value(node_node, 'pin')
+                if refDes and pinNum and refDes in components:
+                    components[refDes].nodes[pinNum] = net_name
+
+    # ---- normalise node names ----
+    nodenames = list(nodes.keys())
     for node in nodenames:
         i = 1
         if "(" in node:
-            while str(i) in nodenames or str(i) in nodelist:
+            while str(i) in nodes.values() or str(i) in nodelist:
                 i += 1
             nodes[node] = str(i)
             nodelist.append(str(i))
         elif node[0] == "/":
             nodes[node] = node[1:]
             nodelist.append(node[1:])
+
     for refDes in components.keys():
-        for node in components[refDes].nodes.keys():
-            components[refDes].nodes[node] = nodes[components[refDes].nodes[node]]
+        for pin in components[refDes].nodes.keys():
+            raw = components[refDes].nodes[pin]
+            components[refDes].nodes[pin] = nodes.get(raw, raw)
+
+    # ---- build netlist text ----
     netlist = ""
     for refDes in components.keys():
         onoff = None
@@ -147,9 +246,9 @@ def _parseKiCADnetlistlines(lines, cirTitle, language):
                                 netlist += " " + param + "=" + components[refDes].params[param]
                         except KeyError:
                             if param not in reserved:
-                                    netlist += " " + param + "=" + components[refDes].params[param]
+                                netlist += " " + param + "=" + components[refDes].params[param]
                     elif param not in reserved:
-                            netlist += " " + param + "=" + components[refDes].params[param]
+                        netlist += " " + param + "=" + components[refDes].params[param]
                 elif language == "SPICE":
                     if param == "onoff":
                         onoff = components[refDes].params["onoff"]
@@ -159,8 +258,8 @@ def _parseKiCADnetlistlines(lines, cirTitle, language):
                         netlist += " " + param + "=" + components[refDes].params[param]
                     elif param not in reserved:
                         netlist += " " + param + "=" + components[refDes].params[param]
-            if language == "SPICE" and onoff != None:
-                netlist += " " + onoff  
+            if language == "SPICE" and onoff is not None:
+                netlist += " " + onoff
         else:
             CMD = components[refDes].command.split()
             if CMD[0].upper() == ".SUBCKT":
@@ -172,9 +271,8 @@ def _parseKiCADnetlistlines(lines, cirTitle, language):
                     subckt_lib = " ".join(CMD[1:]).replace('\\"', '"').replace('" ', '"')
                     print("LIB", subckt_lib)
             else:
-                netlist +='\n' + components[refDes].command
-    #if language == "SPICE":
-    #    netlist += "\n.INC %sSLiCAP/files/lib/SPICE.lib"%(ini.install_path)
+                netlist += '\n' + components[refDes].command
+
     if not title:
         title = cirTitle
     if subckt:
@@ -187,6 +285,7 @@ def _parseKiCADnetlistlines(lines, cirTitle, language):
         netlist = title + netlist
         netlist += "\n.end"
     return netlist, subckt, subckt_lib
+
 
 def KiCADsch2svg(fileName):
     """
@@ -219,9 +318,9 @@ def _kicadNetlist(fileName, cirTitle, language="SLiCAP"):
         kicadnetlist  = fileName.split('.')[0] + '.net'        
         subprocess.run([ini.kicad, 'sch', 'export', 'netlist', '-o', kicadnetlist, fileName])
         f = open(kicadnetlist, "r")
-        lines = f.readlines()
+        text = f.read()
         f.close()
-        netlist, subckt, subckt_lib = _parseKiCADnetlistlines(lines, cirTitle, language=language)
+        netlist, subckt, subckt_lib = _parseKiCADnetlisttext(text, cirTitle, language=language)
         if subckt:
             f = open(ini.user_lib_path + subckt + ".lib", "w")
             f.write(netlist)
@@ -275,4 +374,3 @@ if __name__=='__main__':
     fileName    = "SLiCAP.kicad_sch"
     print(_parseKiCADnetlist(fileName))
     KiCADsch2svg(fileName)
- 
