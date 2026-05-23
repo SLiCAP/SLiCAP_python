@@ -81,7 +81,7 @@ class MOS(object):
         :param step: Step data for ID; list with start value, number of values
                      and stop value. Defaults to None
         """
-        if type(step) != list or len(step) != 3:
+        if not isinstance(step, list) or len(step) != 3:
             stepStart = '{ID}'
             stepNum   = '1'
             stepStep  = '0'
@@ -112,12 +112,10 @@ class MOS(object):
         txt += 'M1 d2 g2 s2 b2 %s W={W} L={L} M={M}\n'%(self.dev)
         # VGS copy
         txt += 'E2 g2 2 g1 0 1\n'
-        f = open('cir/MOS_OP_I.cir', 'r')
-        txt += f.read()
-        f.close()
-        f = open('MOS_OP.cir', 'w')
-        f.write(txt)
-        f.close()
+        with open('cir/MOS_OP_I.cir', 'r') as f:
+            txt += f.read()
+        with open('MOS_OP.cir', 'w') as f:
+            f.write(txt)
         system(ini.ngspice + ' -b MOS_OP.cir -o MOS_OP.log')
         #remove('MOS_OP.cir')
         #remove('MOS_OP.log')
@@ -155,7 +153,7 @@ class MOS(object):
         :param step: Step data for VG; list with start value, number of values
                      and stop value. Defaults to None
         """
-        if type(step) != list or len(step) != 3:
+        if not isinstance(step, list) or len(step) != 3:
             stepStart = '{VG}'
             stepNum   = '1'
             stepStep  = '0'
@@ -179,12 +177,10 @@ class MOS(object):
         txt += '.param select = 0\n\n'
         txt += '%s\n\n'%(self.lib)
         txt += '%s d g s b %s W={W} L={L} M={M}\n\n'%(self.refDes, self.dev)
-        f = open('cir/MOS_OP_V.cir', 'r')
-        txt += f.read()
-        f.close()
-        f = open('MOS_OP.cir', 'w')
-        f.write(txt)
-        f.close()
+        with open('cir/MOS_OP_V.cir', 'r') as f:
+            txt += f.read()
+        with open('MOS_OP.cir', 'w') as f:
+            f.write(txt)
         system(ini.ngspice + ' -b MOS_OP.cir -o MOS_OP.log')
         remove('MOS_OP.cir')
         remove('MOS_OP.log')
@@ -194,9 +190,8 @@ class MOS(object):
         self._determineAccuracy()
 
     def _getParams(self):
-        f = open('MOS_OP.out', 'r')
-        lines = f.readlines()
-        f.close()
+        with open('MOS_OP.out', 'r') as f:
+            lines = f.readlines()
         #remove('MOS_OP.out')
         names  = False
         values = False
@@ -216,7 +211,7 @@ class MOS(object):
                 if values:
                     if len(fields) == 2:
                         i = 0
-                    if parnames[i] in self.params.keys():
+                    if parnames[i] in self.params:
                         self.params[parnames[i]].append(float(fields[0]))
                         i += 1
                     elif fields[0] != 'Values:':
@@ -228,7 +223,7 @@ class MOS(object):
                             i += 1
         del self.params['yes']
         if self.step:
-            for key in self.params.keys():
+            for key in self.params:
                 self.params[key] = array(self.params[key])
 
     def _makeParDefs(self):
@@ -296,9 +291,8 @@ class MOS(object):
         txt += 'V4 b  0  dc {VB}\n'
         txt += 'L1 d  dd 1G\n'
         txt += '.end'
-        f = open('MOS_noise.cir', 'w')
-        f.write(txt)
-        f.close()
+        with open('MOS_noise.cir', 'w') as f:
+            f.write(txt)
         simCmd = 'noise V(d) V2 dec %s %s %s'%( str(numDec), str(fmin), str(fmax))
         namesDict = {'inoise': 'inoise_spectrum'}
         output = ngspice2traces('MOS_noise', simCmd, namesDict, stepCmd=None, traceType='onoise', squaredNoise=True)
@@ -306,8 +300,8 @@ class MOS(object):
         remove('MOS_noise.csv')
         return output
 
-def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None, 
-                   traceType='magPhase', squaredNoise=False, postProc=None, 
+def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
+                   traceType='magPhase', squaredNoise=False, postProc=None,
                    saveLog=True, optDict=None, mode=None):
     """
     Creates a dictionary with values or traces from an ngspice run.
@@ -330,7 +324,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
     :param stepCmd: Step instruction or None if no parameter stepping is performed:
 
                     Syntax: *<parname> <stepmethod> <firstvalue> (<lastvalue> <numberofvalues | listwithvalues>)*
-                    
+
                     - parname (*str*): name of the parameter (not a RefDes)
                     - stepmethod (*str*): lin, log or list
 
@@ -341,7 +335,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                       key: plot label (*str*)
 
                       value: nodal voltage, branch current or device parameter in ngspice notation
-                      
+
     :type namesDict: dict
 
     :param traceType: Type of traces for AC, noise, and FFT analysis:
@@ -351,126 +345,125 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                       - dBmagPhase: dB(magnitude) and phase
                       - onoise: output referred noise
                       - inoise: input referred noise
-                      
+
     :type traceType: str
-    
-    :param parList: List with parameter definitions, each item in the list must 
+
+    :param parList: List with parameter definitions, each item in the list must
                     be a tuple with the name and the value of a parameter. The
-                    name must be a string, and the value a string, an integer, 
-                    a float, or a SPICE expression (between curly brackets). 
-                    The order of parameter definitions should be such that 
+                    name must be a string, and the value a string, an integer,
+                    a float, or a SPICE expression (between curly brackets).
+                    The order of parameter definitions should be such that
                     SPICE can evaluate a numeric value for each parameter in a
                     non-recursive way.
-                    
+
                     :Example:
-                        
+
                     >>> params = [('R', '1k'), ('C', '1n'), ('tau', '{1/(R*C)}')]
-                    
+
     :type parList: list
-    
+
     :param squaredNoise: - True: output in V^2/Hz, A^2/Hz, V^2 or A^2
                          - False: output in V/rt(Hz), A/rt(Hz), V or A
-                         
+
                          Defaults to True
-                         
+
     :type squaredNoise: Bool
-    
+
     :param postProc: Post processing fuction for transient analysis:
-        
+
                      - None
-                     
+
                        No post processing is performed
-        
-                     - FFT <vector> (<vector> ...) 
-                     
+
+                     - FFT <vector> (<vector> ...)
+
                        Returns the Fast Fourier Transform of one or more vectors
                        obtained from a transient analysis. Curently only Hanning
                        windowing has been implemented.
-                       
-                     - FOURIER <vector> (<vector> ...) 
-                     
-                       Lists the values of the first ten harmonics of one or 
-                       more vectors obtained from a transient analysis in the 
+
+                     - FOURIER <vector> (<vector> ...)
+
+                       Lists the values of the first ten harmonics of one or
+                       more vectors obtained from a transient analysis in the
                        simulation log file.
-                       
+
     :type postProc: str, NoneType
-    
+
     :param saveLog: True | False, defaults to True. The log file is saved in the
                     txt folder in the project directory. The name is the circuit
                     file name with '.log' file extension.
-                    
+
     :type saveLog: Bool
-    
+
     :param optDict: None (default) or a dictionary with NGspice options, The
                     keys are the NGspice option names and the values are 'None'
                     if the option requires no value, or the option value.
-    
+
     :type optDict: NoneType, dict
-    
+
     :param mode: NGspice simulation mode, defaults to 'ltpsa'
-     
-    :return: - In case of an "OP" instruction without parameter stepping: 
-             
+
+    :return: - In case of an "OP" instruction without parameter stepping:
+
                A dictionary with key-value pairs:
-                   
+
                - key: *str* Name of the variable
                - value: *float* Value of the parameter, voltage or current
-               
+
              - In all other cases: a tuple (*dict*, *str1*, *str2*)
-             
+
                - dict
-               
+
                  - key: *str* Name of the variable
                  - value: SLiCAP.SLiCAPplots.trace object or single value
-                 
+
                - str1: name of the x-variable
                - str2: units if the x-variable
-             
+
     :rtype: tuple: dict, (dict, str, str)
     """
     if ini.ngspice != "":
-        if mode == None:
+        if mode is None:
             mode = ''
         else:
             mode = mode.lower()
         labels = {}
         simType = simCmd.split()[0].lower()
-        f = open(cirFile + '.cir', 'r')
-        netlistlines = f.readlines()
-        f.close()
+        with open(cirFile + '.cir', 'r') as f:
+            netlistlines = f.readlines()
         netlist = ""
         for line in netlistlines:
             if line.strip().upper() != ".END":
-                netlist += line   
+                netlist += line
         netlist += "** Python input section **"
-        if parList != None:
+        if parList is not None:
             for pardef in parList:
-                if pardef != None and len(pardef) == 2:
+                if pardef is not None and len(pardef) == 2:
                     netlist += "\n.param " + str(pardef[0]) + "=" + str(pardef[1])
-        if stepCmd != None:
+        if stepCmd is not None:
             stepFields = stepCmd.split()
             stepPar = stepFields[0]
             stepMethod = stepFields[1].lower()
             if stepMethod == 'list':
                 try:
                     stepList = eval(re.findall(r'\[[\s,.+-eE0-9]*\]', stepCmd)[0])
-                except:
+                except (IndexError, ValueError, SyntaxError):
                     print('Error in step list.')
                     return
             else:
                 try:
                     stepStart  = float(_checkExpression(stepFields[2]))
-                except:
+                except (IndexError, ValueError, TypeError):
                     print('Error: missing or error in stepstart value.')
                     return
                 try:
                     stepStop  = float(_checkExpression(stepFields[3]))
-                except:
+                except (IndexError, ValueError, TypeError):
                     print('Error: missing or error in stepCmd stop value.')
                     return
                 try:
                     stepNum  = int(_checkExpression(stepFields[4]))
-                except:
+                except (IndexError, ValueError, TypeError):
                     print('Error: missing or error in step number.')
                     return
             if stepMethod == 'lin':
@@ -480,9 +473,9 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             for i in range(len(stepList)):
                 cmdsection = ""
                 traceNames = []
-                if optDict != None:
-                    for opt in optDict.keys():
-                        cmdsection += '\n.option ' + opt + ' = ' + str(optDict[opt])
+                if optDict is not None:
+                    for opt, optVal in optDict.items():
+                        cmdsection += '\n.option ' + opt + ' = ' + str(optVal)
                 if stepPar.lower() == "temp":
                     cmdsection += '\n.option ' + stepPar + ' = ' + str(stepList[i])
                 else:
@@ -495,7 +488,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                 if simType == 'noise':
                     totalNoise = False
                     cmdsection += '\nsetplot noise1\n'
-                for key in list(namesDict.keys()):
+                for key in namesDict:
                     if namesDict[key].lower().split("_")[-1] != "total":
                         traceName = key + '_' + str(i)
                         labels[traceName] = key + ':' + stepPar + '=' + '{0: 8.2e}'.format(stepList[i])
@@ -507,7 +500,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                         totalNoise = True
                 if simType == 'noise' and totalNoise:
                     cmdsection += '\nsetplot noise2\n'
-                    for key in list(namesDict.keys()):
+                    for key in namesDict:
                         if namesDict[key].lower().split("_")[-1] == "total":
                             traceName = key + '_' + str(i)
                             labels[traceName] = key + ':' + stepPar + '=' + '{0: 8.2e}'.format(stepList[i])
@@ -517,25 +510,23 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                             traceNames.append(traceName)
                 if i > 0:
                     cmdsection += "\nset appendwrite"
-                if postProc != None:
+                if postProc is not None:
                     cmdsection += postProc + '\n'
                 cmdsection += '\nwrdata ' + cirFile  + '.csv'
                 for name in traceNames:
                     cmdsection += ' ' + name
                 cmdsection += '\n.endc\n'
-                if i == 0: 
+                if i == 0:
                     netlist += '\n.end'
-                f = open('simFile.sp', 'w')
-                f.write(netlist + cmdsection)
-                f.close()
+                with open('simFile.sp', 'w') as f:
+                    f.write(netlist + cmdsection)
                 system(ini.ngspice + ' -b simFile.sp -D ngbehavior={} -o simFile.log > temp.txt'.format(mode))
         else:
-            cmdsection = ""
-            if optDict != None:
-                for opt in optDict.keys():
+            if optDict is not None:
+                for opt, optVal in optDict.items():
                     netlist += '\n.option ' + opt
-                    if optDict[opt] != None:
-                        netlist += ' = ' + str(optDict[opt])
+                    if optVal is not None:
+                        netlist += ' = ' + str(optVal)
             netlist += '\n.control\nset wr_vecnames\nset wr_singlescale\n'
             if simType == 'noise' and squaredNoise:
                 netlist += '\nset sqrnoise\n'
@@ -543,31 +534,29 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             if simType == 'noise':
                 totalNoise = False
                 netlist += '\nsetplot noise1\n'
-            for key in list(namesDict.keys()):
+            for key in namesDict:
                 if namesDict[key].lower().split("_")[-1] != "total":
                     netlist += 'let ' + key + ' = ' + namesDict[key] + '\n'
                 else:
                     totalNoise = True
             if simType == 'noise' and totalNoise:
                 netlist += '\nsetplot noise2\n'
-                for key in  list(namesDict.keys()):
+                for key in namesDict:
                     if namesDict[key].lower().split("_")[-1] == "total":
-                        netlist += 'let ' + key + ' = ' + namesDict[key] + '\n' 
-            if postProc != None:
+                        netlist += 'let ' + key + ' = ' + namesDict[key] + '\n'
+            if postProc is not None:
                 netlist += postProc + '\n'
             netlist += 'wrdata ' + cirFile + '.csv'
-            for key in list(namesDict.keys()):
+            for key in namesDict:
                 netlist += ' ' + key
             netlist += '\n.endc'
             netlist += '\n.end'
-            f = open('simFile.sp' , 'w')
-            f.write(netlist)
-            f.close()
+            with open('simFile.sp', 'w') as f:
+                f.write(netlist)
             system(ini.ngspice + ' -b simFile.sp -D ngbehavior={} -o simFile.log > temp.txt'.format(mode))
         try:
-            f = open(cirFile + '.csv', 'r')
-            txt = f.read()
-            f.close()
+            with open(cirFile + '.csv', 'r') as f:
+                txt = f.read()
             analysisType = simCmd.split()[0].upper()
             if analysisType == 'DC':
                 lines = txt.splitlines()
@@ -576,18 +565,16 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             if analysisType == 'NOISE' and totalNoise:
                 lines = txt.splitlines()
                 xVar = lines[0].split()[0]
-                #print("X:", xVar)
                 labels[xVar] = simCmd.split()[1]
                 analysisType = "OP"
-            if labels != None:
+            if labels:
                 for key in labels:
                     txt = txt.replace(key + ' ', labels[key] + ' ')
-            f = open(cirFile + '.csv', 'w')
-            f.write(txt)
-            f.close()
+            with open(cirFile + '.csv', 'w') as f:
+                f.write(txt)
             if saveLog:
                 file_name = cirFile.replace("\\", "/").split("/")[-1]
-                copy2('simFile.log', ini.txt_path + file_name + ".log") 
+                copy2('simFile.log', ini.txt_path + file_name + ".log")
             remove('temp.txt')
             fileName = cirFile.split('/')[-1]
             copy2(cirFile + '.csv', ini.csv_path + fileName + '.csv')
@@ -595,9 +582,9 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             return traceDict
         except FileNotFoundError:
             try:
-                 f = open('simFile.log')
-                 for line in f.readlines():
-                     print(line)
+                with open('simFile.log') as f:
+                    for line in f.readlines():
+                        print(line)
             except FileNotFoundError:
                 print("ERROR: NGspice cannot be executed with: '{}'.".format(ini.ngspice))
         #remove('simFile.sp')
@@ -607,11 +594,10 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
 def _processNGspiceResult(cirFile, analysisType, traceType, postProc):
     # Read the CSV file
     traceDict = None
-    f = open(cirFile + '.csv', 'r')
-    lines = f.readlines()
-    f.close()
+    with open(cirFile + '.csv', 'r') as f:
+        lines = f.readlines()
     analysisType = analysisType.upper()
-    if analysisType == 'DC' or analysisType == 'NOISE' or (analysisType == 'TRAN' and  (postProc == None or postProc.split()[0].upper() == "FOURIER")):
+    if analysisType == 'DC' or analysisType == 'NOISE' or (analysisType == 'TRAN' and  (postProc is None or postProc.split()[0].upper() == "FOURIER")):
         traceDict = _makeDCTRNStraces(lines)
     elif analysisType.upper() == 'AC' or analysisType == 'TRAN':
         traceDict = _makeACtraces(lines, traceType)
@@ -662,12 +648,12 @@ def _makeOPtraces(lines):
                 print("Error in parsing NGspice results (often indicating 'nan' values). Check the log file for details.")
                 return traceDict
     if step:
-        for key in list(traceDict.keys()):
+        for key in traceDict:
             traceDict[key] = trace([stepVals, traceDict[key]])
             traceDict[key].label = key
         traceDict = (traceDict, stepPar, "")
     else:
-        for key in traceDict.keys():
+        for key in traceDict:
             traceDict[key] = traceDict[key][0]
     return traceDict
 
@@ -686,7 +672,7 @@ def _makeDCTRNStraces(lines):
             for j in range(len(labels)):
                 traceDict[labels[j]][0].append(eval(fields[0])) # time
                 traceDict[labels[j]][1].append(eval(fields[j+1])) # value
-    for key in list(traceDict.keys()):
+    for key in traceDict:
         traceDict[key] = trace((traceDict[key][0], traceDict[key][1]))
         traceDict[key].label = key
     if xVar == "frequency":
@@ -716,7 +702,7 @@ def _makeACtraces(lines, traceType):
                 else:
                     traceDict[labels[j]][0].append(eval(fields[0])) # frequency
                     traceDict[labels[j]][1].append(eval(fields[j+1])) # real
-    for key in list(traceDict.keys()):
+    for key in traceDict:
         freq = traceDict[key][0]
         real = array(traceDict[key][1])
         imag = array(traceDict[key][2])
@@ -744,17 +730,13 @@ def _makeACtraces(lines, traceType):
 def selectTraces(traceDict, namesList):
     """
     This function returns a dictionary selected traces from a dictionary with traces.
-    
+
     :param traceDict: A dictionary with key-value pairs:
                       - key: name of the trace
                       - value: a SLiCAP.SLiCAPplots.trace object holding trace (x, y) data and a trace label
-    
+
     :param namesList: A list with names of traces (== keys in traceDict) that needs to be returned
     :return:          a dictionary with selected traces (sub of traceDict)
     :rtype:           dict
     """
-    traces = {}
-    for key in traceDict.keys():
-        if key in namesList:
-            traces[key] = traceDict[key]
-    return traces
+    return {key: traceDict[key] for key in namesList if key in traceDict}

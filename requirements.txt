@@ -1,5 +1,5 @@
 docutils>=0.18
-numpy>=2.1
+numpy>=2.4
 sympy>=1.13
 scipy>=1.14
 ply>=3.11

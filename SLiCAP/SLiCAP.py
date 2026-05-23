@@ -71,7 +71,7 @@ def _makeDir(dirName):
         os.makedirs(dirName)
     return
 
-def initProject(name, notebook=False):
+def initProject(name, notebook=False, report_dirs=True):
     """
     Initializes a SLiCAP project.
 
@@ -84,6 +84,13 @@ def initProject(name, notebook=False):
 
     :param name: Name of the project: appears on the main html index page.
     :type name: str
+    
+    :param notebook: True if SLiCAP runs from a Jupyter notebook, defaults to False
+    :type notebook: Bool
+    
+    :param create_dirs: True will create but not overwrite the SLiCAP directory 
+                        structure. Defaults to True
+    :type create_dirs: Bool
 
     :return:     None
     :rtype:      NoneType
@@ -114,54 +121,58 @@ def initProject(name, notebook=False):
         ini.axis_height   = 3
         ini.plot_fontsize = 9
         ini.line_width    = 1
-    # Define the project title and reset the html pages 
+    # Define the project title
     ini.project_title                         = name
-    ini.html_page                             = 'index.html'
-    project_config['html']['current_page']    = ini.html_page
-    ini.html_index                            = 'index.html'
-    project_config['html']['current_index']   = ini.html_index
-    ini.html_pages                            = []
-    project_config['html']['pages']           = (',').join(ini.html_pages)
-    ini.html_labels                           = {}
-    project_config['labels']                  = ini.html_labels
-    ini.html_prefix                           = ''
-    project_config['html']['prefix']          = ini.html_prefix
     ini.project_title                         = name
     project_config['project']['title']        = ini.project_title
     ini.last_updated                          = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     project_config['project']['last_updated'] = ini.last_updated
-    
-    # Update configuration files; this is done on the first import of SLiCAPconfigure.py
-    # ini.main_config, ini.project_config = ini._update_ini_files()
-    # Create the project directory structure, at the first run of initProject()
-    _makeDir(ini.html_path)
+    # Create the project directories if they do not yet exist
+    _makeDir(ini.cir_path)
+    _makeDir(ini.img_path)
     _makeDir(ini.txt_path)
     _makeDir(ini.csv_path)
-    _makeDir(ini.img_path)
-    _makeDir(ini.sphinx_path)
-    _makeDir(ini.cir_path)
-    _makeDir(ini.user_lib_path)
-    _makeDir(ini.tex_path)
-    _makeDir(ini.html_path + 'img/')
-    _makeDir(ini.html_path + 'css/')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/html/css/slicap.css', ini.html_path + 'css/slicap.css')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/html/img/Grid.png', ini.html_path + 'css/Grid.png')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/make.bat', ini.sphinx_path + 'make.bat')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/Makefile', ini.sphinx_path + 'Makefile')
-    _makeDir(ini.sphinx_path + 'SLiCAPdata/')
-    _makeDir(ini.sphinx_path + 'source/')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/conf.py', ini.sphinx_path + 'source/conf.py')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/index.rst', ini.sphinx_path + 'source/index.rst')
-    _makeDir(ini.sphinx_path + 'source/img/')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/img' + '/colorCode.svg', ini.sphinx_path + 'source/img/colorCode.svg')
-    _makeDir(ini.sphinx_path + 'source/_static/')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_static/html_logo.png', ini.sphinx_path + 'source/_static/html_logo.png')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_static/custom.css', ini.sphinx_path + 'source/_static/custom.css')
-    _makeDir(ini.sphinx_path + 'source/_templates/')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_templates/layout.html', ini.sphinx_path + 'source/_templates/layout.html')
-    _makeDir(ini.tex_path + 'SLiCAPdata/')
-    _copyNotOverwrite(ini.install_path + 'SLiCAP/files/tex/preambuleSLiCAP.tex', ini.tex_path + 'preambuleSLiCAP.tex')
-    #
+    if report_dirs:
+        # Reset the html pages 
+        # Update configuration files; this is done on the first import of SLiCAPconfigure.py
+        # ini.main_config, ini.project_config = ini._update_ini_files()
+        ini.html_page                             = 'index.html'
+        project_config['html']['current_page']    = ini.html_page
+        ini.html_index                            = 'index.html'
+        project_config['html']['current_index']   = ini.html_index
+        ini.html_pages                            = []
+        project_config['html']['pages']           = (',').join(ini.html_pages)
+        ini.html_labels                           = {}
+        project_config['labels']                  = ini.html_labels
+        ini.html_prefix                           = ''
+        project_config['html']['prefix']          = ini.html_prefix
+        # Create the report directories at the first run of initProject()
+        _makeDir(ini.html_path)
+        _makeDir(ini.sphinx_path)
+        _makeDir(ini.user_lib_path)
+        _makeDir(ini.tex_path)
+        _makeDir(ini.html_path + 'img/')
+        _makeDir(ini.html_path + 'css/')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/html/css/slicap.css', ini.html_path + 'css/slicap.css')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/html/img/Grid.png', ini.html_path + 'css/Grid.png')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/make.bat', ini.sphinx_path + 'make.bat')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/Makefile', ini.sphinx_path + 'Makefile')
+        _makeDir(ini.sphinx_path + 'SLiCAPdata/')
+        _makeDir(ini.sphinx_path + 'source/')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/conf.py', ini.sphinx_path + 'source/conf.py')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/index.rst', ini.sphinx_path + 'source/index.rst')
+        _makeDir(ini.sphinx_path + 'source/img/')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/img' + '/colorCode.svg', ini.sphinx_path + 'source/img/colorCode.svg')
+        _makeDir(ini.sphinx_path + 'source/_static/')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_static/html_logo.png', ini.sphinx_path + 'source/_static/html_logo.png')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_static/custom.css', ini.sphinx_path + 'source/_static/custom.css')
+        _makeDir(ini.sphinx_path + 'source/_templates/')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/sphinx/_templates/layout.html', ini.sphinx_path + 'source/_templates/layout.html')
+        _makeDir(ini.tex_path + 'SLiCAPdata/')
+        _copyNotOverwrite(ini.install_path + 'SLiCAP/files/tex/preambuleSLiCAP.tex', ini.tex_path + 'preambuleSLiCAP.tex')
+        #
+    else: 
+        ini.notebook = True
     if not ini.notebook:
         # Create the HTML project index file
         _startHTML(name)

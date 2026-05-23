@@ -532,8 +532,8 @@ def _checkNumber(var):
     :param var: Variable that may represent a number.
     :type var: str, sympy object, int, float
 
-    :return: sympy expression
-    :rtype: int, float
+    :return: Rational number
+    :rtype: sympy.rational
     """
     if type(var) == str:
         var = _replaceScaleFactors(var)
@@ -544,6 +544,18 @@ def _checkNumber(var):
     except BaseException:
         var = None
     return var
+
+def str2number(var):
+    """
+    Returns a number with its value represented by var.
+
+    :param var: Variable that may represent a number.
+    :type var: str, sympy object, int, float
+
+    :return: number
+    :rtype: float, int
+    """
+    return eval(_replaceScaleFactors(str(var)))
 
 def _checkNumeric(exprList):
     """
@@ -632,8 +644,14 @@ def fullSubs(valExpr, parDefs):
                     substDict[param] = float2rational(parDefs[param])
                 else:
                     # In case of floats, integers or strings:
-                    substDict[param] = sp.sympify(
-                        str(parDefs[param]), rational=True)
+                    symval = sp.sympify(str(parDefs[param]), rational=True)
+                    if isinstance(symval, sp.Rational) and not isinstance(symval, sp.Integer):
+                        # Non-integer rational (e.g. Rational(7293,10000)): use
+                        # Float to prevent rational-power lockup in sp.N().
+                        # Integers, pi, E, sqrt(2) are all left untouched.
+                        substDict[param] = sp.Float(symval, 15)
+                    else:
+                        substDict[param] = symval
         # perform the substitution
         newvalExpr = valExpr
         valExpr = newvalExpr.xreplace(substDict)
@@ -641,7 +659,7 @@ def fullSubs(valExpr, parDefs):
     if i == ini.max_rec_subst:
         print("Warning: reached maximum number of substitutions for expression '{0}'".format(
             strValExpr))
-    return valExpr
+    return float2rational(valExpr)
 
 def assumeRealParams(expr, params='all'):
     """
@@ -737,7 +755,7 @@ def clearAssumptions(expr, params='all'):
                 {sp.Symbol(params[i], real=True): sp.Symbol(params[i])})
     elif type(params) == str:
         if params == 'all':
-            params = expr.atoms(sp.Symbol)
+            params = sp.N(expr).atoms(sp.Symbol)
             try:
                 params.remove(ini.laplace)
             except BaseException:
@@ -1475,14 +1493,18 @@ def _doVarNoiseData(noiseData, numeric, method, CDS, tau, fmin, fmax, points, wf
     :rtype: int, float, sympy.Expr
 
     """
+    errors = False
     if type(wf) == int or type(wf) == float or type(wf) == str:
         wf = sp.sympify(wf)
     if numeric == True:
         wf = sp.N(wf)
-    wf = wf.subs(ini.laplace, 2*sp.pi*sp.I*ini.frequency)
-    wf = assumeRealParams(wf)  
-    sq_mag_wf = clearAssumptions(sp.simplify(sp.re(wf)**2 + sp.im(wf)**2))
-    sq_mag_wf = float2rational(sq_mag_wf)
+    if ini.laplace in wf.atoms(sp.Symbol):
+        wf = wf.subs(ini.laplace, 2*sp.pi*sp.I*ini.frequency)
+        wf = assumePosParams(wf)  
+        sq_mag_wf = clearAssumptions(sp.simplify(sp.re(wf)**2 + sp.im(wf)**2))
+        sq_mag_wf = float2rational(sq_mag_wf)
+    else:
+        sq_mag_wf = wf**2
     if type(noiseData) == dict:
         noiseSources = list(noiseData.keys())
         if type(noiseData[noiseSources[0]]) == list:
@@ -1497,85 +1519,100 @@ def _doVarNoiseData(noiseData, numeric, method, CDS, tau, fmin, fmax, points, wf
         noiseDataDict[0] = noiseData
         noiseData = noiseDataDict
         noiseSources = [0]
-    if type(fmin) == float and type(fmax) == float:
-        numlimits = True
-    else:
+    if fmin == sp.oo or fmin == -sp.oo:
+        print("Error: lower limit of frequency range cannot be infinite.")
+        errors = True
+    if fmax == -sp.oo:
+        print("Error: frequency range must be positive.")
+        errors = True
+    if fmax == sp.oo:      
+        # Use symbolic integration
         numlimits = False
-    if method.lower() == 'list' and type(points) == list:
-        fmin = points[0]
-        fmax = points[-1]
-    var = []
-    for i in range(numSteps):
-        var_i    = sp.N(0)
-        for src in noiseSources:
-            if type(noiseData[src]) != list:
-                data = noiseData[src]
-            else:
-                data = noiseData[src][i]
-            if numeric:
-                data = sp.N(data) 
-            if data != 0:
-                data *= sq_mag_wf
-                data = float2rational(data)
-                # Normalize rational to prevent numeric overflow
-                #try:
-                #    data = normalizeRational(data, ini.frequency)
-                #except:
-                #    pass
-                params = data.atoms(sp.Symbol)
-                if (len(params) == 0 or ini.frequency not in params) and CDS == False:
-                    var_i += data * (fmax - fmin)
-                else:
-                    # Determine best method for this term if method="auto"
-                    if method == "auto":
-                        no_params = False
-                        if len(params) == 0 or (len(params) == 1 and ini.frequency in params):
-                            no_params = True
-                        if not no_params or not numlimits:
-                            int_method = "symbolic"
-                        elif numlimits:
-                            if type(points) == list:
-                                if len(points) > 1:
-                                    int_method = "list"
-                                else:
-                                    int_method = "scipy"
-                            elif int(points) <= 2:
-                                int_method = "scipy"
-                            elif int(points) > 2:
-                                if fmin > 0 and CDS == False:
-                                 int_method = "log"
-                                else:
-                                    int_method = "lin"
-                            else:
-                                int_method = "symbolic"
-                    else:
-                        int_method = method
-                    if CDS:
-                        var_i += _doCDSint(data, tau, fmin, fmax, method=int_method, points=points)
-                    elif int_method == "symbolic":
-                        func = assumePosParams(data)
-                        var_i += sp.integrate(func, [ini.frequency, fmin, fmax])
-                    else:
-                        noise_spectrum = sp.lambdify(
-                            ini.frequency, sp.N(data))
-                        if int_method == "scipy":
-                            term = quad(noise_spectrum, fmin, fmax)[0]
-                            var_i += term
-                        elif int_method == "lin":
-                            x = np.linspace(fmin, fmax, points)
-                            term = trapezoid(noise_spectrum(x), x=x)
-                            var_i += term
-                        elif int_method == "list":
-                            term = trapezoid(noise_spectrum(points), x=points)
-                            var_i += term
-                        elif int_method == "log":
-                            x = np.geomspace(fmin, fmax, points)
-                            term = trapezoid(noise_spectrum(x), x=x)
-                            var_i += term
-        if numeric == True:
-            var.append(sp.N(clearAssumptions(sp.expand(var_i))))
+    else:
+        try:
+            fmin = float(fmin)
+            fmax = float(fmax)
+            numlimits = True
+        except TypeError:
+            numlimits = False
+    if numlimits and (fmax <= fmin or fmin < 0 or fmax <=0):
+        print("Error in frequency range.")
+        errors = True
+    if method.lower() == 'list':
+        if type(points) == list:
+            fmin = points[0]
+            fmax = points[-1]
         else:
-            var.append(clearAssumptions(sp.expand(var_i)))
+            print("Error: expected a list with frequencies.")
+            errors = True
+    var = []
+    if not errors:
+        for i in range(numSteps):
+            var_i    = sp.N(0)
+            for src in noiseSources:
+                if type(noiseData[src]) != list:
+                    data = noiseData[src]
+                else:
+                    data = noiseData[src][i]
+                if numeric:
+                    data = sp.N(data) 
+                if data != 0:
+                    data *= sq_mag_wf
+                    data = clearAssumptions(float2rational(data))
+                    params = data.atoms(sp.Symbol)
+                    if ini.frequency not in params and CDS == False:
+                        var_i += data * (fmax - fmin)
+                    else:
+                        # Determine best method for this term if method="auto"
+                        if method == "auto":
+                            no_params = False
+                            if len(params) == 0 or (len(params) == 1 and ini.frequency in params):
+                                no_params = True
+                            if not no_params or not numlimits:
+                                int_method = "symbolic"
+                            elif numlimits:
+                                if type(points) == list:
+                                    if len(points) > 1:
+                                        int_method = "list"
+                                    else:
+                                        int_method = "scipy"
+                                elif int(points) <= 2:
+                                    int_method = "scipy"
+                                elif int(points) > 2:
+                                    if fmin > 0 and CDS == False:
+                                     int_method = "log"
+                                    else:
+                                        int_method = "lin"
+                                else:
+                                    int_method = "symbolic"
+                        else:
+                            int_method = method
+                        if CDS:
+                            var_i += _doCDSint(data, tau, fmin, fmax, method=int_method, points=points)
+                        elif int_method == "symbolic":
+                            func = assumePosParams(data)
+                            var_i += sp.integrate(func, [ini.frequency, fmin, fmax])
+                        else:
+                            noise_spectrum = sp.lambdify(
+                                ini.frequency, sp.N(data))
+                            if int_method == "scipy":
+                                term = quad(noise_spectrum, fmin, fmax)[0]
+                                var_i += term
+                            elif int_method == "lin":
+                                x = np.linspace(fmin, fmax, points)
+                                term = trapezoid(noise_spectrum(x), x=x)
+                                var_i += term
+                            elif int_method == "list":
+                                term = trapezoid(noise_spectrum(points), x=points)
+                                var_i += term
+                            elif int_method == "log":
+                                x = np.geomspace(fmin, fmax, points)
+                                term = trapezoid(noise_spectrum(x), x=x)
+                                var_i += term
+            if numeric == True:
+                var.append(sp.N(clearAssumptions(sp.expand(var_i))))
+            else:
+                var.append(clearAssumptions(sp.expand(var_i)))
     return var
 
 def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None, 
@@ -2200,12 +2237,11 @@ def _integrateCoeffs2(func, variables, x, x_lower, x_upper, doit=True,
     max_degree = poly_denom.total_degree()
     for exponents in poly_denom.monoms():
         if sum(exponents) == max_degree:
-            var0_order, var1_order = exponents
-
-    # Change the order to use sp.Poly
-    poly = sp.Poly(sp.simplify(
-        func * variables[0]**var0_order * variables[1]**var1_order), variables[0], variables[1])
-
+            var0_order, var1_order = exponents    
+    # Change the order to use sp.Poly 
+    denom = sp.simplify(sp.expand(denom) /( variables[0]**var0_order * variables[1]**var1_order))  
+    func = numer/denom
+    poly = sp.Poly(func, variables[0], variables[1])
     # Integrate the polynomial coefficients numerically
     integratedCoeffs = _integrate_all_coeffs(
         poly, x, x_lower, x_upper, doit=doit, wf=wf, 

@@ -282,7 +282,7 @@ class circuit(object):
                 else:
                     print("Error: cannot define a number as parameter.")
         else:
-            print("Error: expected a dict type argument.")
+            print("Error: defPars requires a dict type argument.")
         self.updateParams()
         return
 
