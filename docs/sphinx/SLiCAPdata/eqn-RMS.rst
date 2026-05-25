@@ -1,4 +1,4 @@
 .. math::
 
-    V_{nRMS} = 711.4 \left(S_{i} + 4.956 \cdot 10^{-7} S_{v} + 7.616 \cdot 10^{-24}\right)^{0.5}\,\,\left[\mathrm{V}\right]
+    V_{nRMS} = \left(2.531 \cdot 10^{5} S_{i} + 0.2508 S_{v} + 3.855 \cdot 10^{-18}\right)^{0.5}\,\,\left[\mathrm{ V}\right]
 

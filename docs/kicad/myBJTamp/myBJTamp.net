@@ -1,8 +1,8 @@
 (export (version "E")
   (design
     (source "/home/anton/DATA/SLiCAP/SLiCAP_github/SLiCAP_python/docs/kicad/myBJTamp/myBJTamp.kicad_sch")
-    (date "2026-01-04T16:45:12+0100")
-    (tool "Eeschema 9.0.6-9.0.6~ubuntu24.04.1")
+    (date "2026-05-25T08:48:03+0200")
+    (tool "Eeschema 9.0.7-9.0.7~ubuntu24.04.1")
     (sheet (number "1") (name "/") (tstamps "/")
       (title_block
         (title)

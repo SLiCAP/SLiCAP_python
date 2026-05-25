@@ -429,7 +429,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             mode = mode.lower()
         labels = {}
         simType = simCmd.split()[0].lower()
-        with open(cirFile + '.cir', 'r') as f:
+        with open(ini.cir_path + cirFile + '.cir', 'r') as f:
             netlistlines = f.readlines()
         netlist = ""
         for line in netlistlines:
@@ -512,15 +512,15 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                     cmdsection += "\nset appendwrite"
                 if postProc is not None:
                     cmdsection += postProc + '\n'
-                cmdsection += '\nwrdata ' + cirFile  + '.csv'
+                cmdsection += '\nwrdata ' + ini.cir_path + cirFile  + '.csv'
                 for name in traceNames:
                     cmdsection += ' ' + name
                 cmdsection += '\n.endc\n'
                 if i == 0:
                     netlist += '\n.end'
-                with open('simFile.sp', 'w') as f:
+                with open(ini.cir_path + 'simFile.sp', 'w') as f:
                     f.write(netlist + cmdsection)
-                system(ini.ngspice + ' -b simFile.sp -D ngbehavior={} -o simFile.log > temp.txt'.format(mode))
+                system(ini.ngspice + ' -b ' + ini.cir_path + 'simFile.sp -D ngbehavior={} -o ' + ini.txt_path + 'simFile.log > ' + ini.txt_path + 'temp.txt'.format(mode))
         else:
             if optDict is not None:
                 for opt, optVal in optDict.items():
@@ -546,16 +546,16 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                         netlist += 'let ' + key + ' = ' + namesDict[key] + '\n'
             if postProc is not None:
                 netlist += postProc + '\n'
-            netlist += 'wrdata ' + cirFile + '.csv'
+            netlist += 'wrdata ' + ini.cir_path + cirFile + '.csv'
             for key in namesDict:
                 netlist += ' ' + key
             netlist += '\n.endc'
             netlist += '\n.end'
-            with open('simFile.sp', 'w') as f:
+            with open(ini.cir_path + 'simFile.sp', 'w') as f:
                 f.write(netlist)
-            system(ini.ngspice + ' -b simFile.sp -D ngbehavior={} -o simFile.log > temp.txt'.format(mode))
+            system(ini.ngspice + ' -b ' + ini.cir_path + 'simFile.sp -D ngbehavior={} -o ' + ini.txt_path + 'simFile.log > ' + ini.txt_path + 'temp.txt'.format(mode))
         try:
-            with open(cirFile + '.csv', 'r') as f:
+            with open(ini.cir_path + cirFile + '.csv', 'r') as f:
                 txt = f.read()
             analysisType = simCmd.split()[0].upper()
             if analysisType == 'DC':
@@ -570,19 +570,19 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             if labels:
                 for key in labels:
                     txt = txt.replace(key + ' ', labels[key] + ' ')
-            with open(cirFile + '.csv', 'w') as f:
+            with open(ini.cir_path + cirFile + '.csv', 'w') as f:
                 f.write(txt)
-            if saveLog:
-                file_name = cirFile.replace("\\", "/").split("/")[-1]
-                copy2('simFile.log', ini.txt_path + file_name + ".log")
-            remove('temp.txt')
+            #if saveLog:
+            #    file_name = cirFile.replace("\\", "/").split("/")[-1]
+            #    copy2('simFile.log', ini.txt_path + file_name + ".log")
+            #remove('temp.txt')
             fileName = cirFile.split('/')[-1]
-            copy2(cirFile + '.csv', ini.csv_path + fileName + '.csv')
+            copy2(ini.cir_path + cirFile + '.csv', ini.csv_path + fileName + '.csv')
             traceDict = _processNGspiceResult(cirFile, analysisType, traceType, postProc)
             return traceDict
         except FileNotFoundError:
             try:
-                with open('simFile.log') as f:
+                with open(ini.txt_path + 'simFile.log') as f:
                     for line in f.readlines():
                         print(line)
             except FileNotFoundError:
@@ -594,7 +594,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
 def _processNGspiceResult(cirFile, analysisType, traceType, postProc):
     # Read the CSV file
     traceDict = None
-    with open(cirFile + '.csv', 'r') as f:
+    with open(ini.cir_path + cirFile + '.csv', 'r') as f:
         lines = f.readlines()
     analysisType = analysisType.upper()
     if analysisType == 'DC' or analysisType == 'NOISE' or (analysisType == 'TRAN' and  (postProc is None or postProc.split()[0].upper() == "FOURIER")):
@@ -605,7 +605,7 @@ def _processNGspiceResult(cirFile, analysisType, traceType, postProc):
         traceDict = _makeOPtraces(lines)
     else:
         raise NotImplementedError()
-    remove(cirFile + '.csv')
+    remove(ini.cir_path + cirFile + '.csv')
     return traceDict
 
 def _makeOPtraces(lines):

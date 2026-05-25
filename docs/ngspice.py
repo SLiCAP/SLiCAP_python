@@ -14,7 +14,7 @@ netlist  = sl.makeCircuit("kicad/" + fileName + "/" + fileName + ".kicad_sch",
 # DC sweep
 simCmd  = "DC V2 6 12 1"
 names   = {"V_c2": "V(c2)", "V_e2":"V(e2)"}
-DC, x_name, x_units = sl.ngspice2traces("cir/" + fileName, simCmd, names)
+DC, x_name, x_units = sl.ngspice2traces(fileName, simCmd, names)
 
 # DC plot 
 sl.plot("VampQspiceDC", "DC voltages $V_{c2}$, $V_{e2}$ versus power supply", 
@@ -24,7 +24,7 @@ sl.plot("VampQspiceDC", "DC voltages $V_{c2}$, $V_{e2}$ versus power supply",
 simCmd  = "AC DEC 50 5 10MEG" 
 stepCmd = "C_c LIN 2p 20p 10"
 names   = {"V_out": "V(out)"}
-mag, phase, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, 
+mag, phase, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, 
                                                  names, stepCmd=stepCmd, 
                                                  traceType='dBmagPhase')
 
@@ -40,7 +40,7 @@ sl.plot("VampQspiceP", "arg($V_{out}$)", "semilogx",
 simCmd  = "TRAN 1n 1u"
 stepCmd = "C_c LIN 2p 20p 10"
 names   = {"V_out": "V(out)"}
-tran, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, names, 
+tran, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, names, 
                                            stepCmd=stepCmd)
 # Time plot
 sl.plot("VampQspiceT1", "Pulse $V_{out}$, stepped $C_c$", "lin", 
@@ -49,7 +49,7 @@ sl.plot("VampQspiceT1", "Pulse $V_{out}$, stepped $C_c$", "lin",
 # TRAN simumlation, multiple traces
 simCmd  = "TRAN 1n 1u"
 names   = {"V_out": "V(out)", "V_in": "V(in)", "V_c2": "V(c2)"}
-tran, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, names)
+tran, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, names)
 
 # Time plot
 sl.plot("VampQspiceT2", "Pulse $V_{out}$, $C_c$=18pF", "lin", tran, 
@@ -67,7 +67,7 @@ f.close()
 simCmd  = "TRAN 10n 20u"
 stepCmd = "V_p LIN 0.5 1 2"
 names   = {"V_out": "V(out)", "V_in": "V(in)", "V_c2": "V(c2)"}
-sine, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, 
+sine, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, 
                                            names, stepCmd=stepCmd)
 
 # Time plot
@@ -77,7 +77,7 @@ sl.plot("VampQspiceS", "Sine overdrive $V_{out}$, $C_c$=18pF", "lin", sine,
 # DC TEMP sweep
 simCmd  = "DC TEMP -55 125 5"
 names   = {"V_c2": "V(c2)", "V_e2":"V(e2)"}
-TMP, x_name, x_units = sl.ngspice2traces("cir/" + fileName, simCmd, names)
+TMP, x_name, x_units = sl.ngspice2traces(fileName, simCmd, names)
 
 # TEMP plot 
 sl.plot("VampQspiceTMP", "DC voltages $V_{c2}$, $V_{e2}$ versus temperature", 
@@ -86,7 +86,7 @@ sl.plot("VampQspiceTMP", "DC voltages $V_{c2}$, $V_{e2}$ versus temperature",
 # NOISE analysis
 simCmd  = "NOISE V(out) V1 dec 50 5 10MEG"
 names   = {"S_vo": "onoise_spectrum", "S_vi": "inoise_spectrum"}
-NOISE, x_name, x_units = sl.ngspice2traces("cir/" + fileName, simCmd, names, 
+NOISE, x_name, x_units = sl.ngspice2traces(fileName, simCmd, names, 
                                            squaredNoise=False)
 
 # NOISE plot 
@@ -97,7 +97,7 @@ sl.plot("VampQspiceNOISE", "Noise input and output spectrum",
 simCmd  = "NOISE V(out) V1 dec 50 5 10MEG"
 stepCmd = "TEMP LIN -55 125 50"
 names   = {"v_no": "onoise_total"}
-NOISETOT, x_name, x_units = sl.ngspice2traces("cir/" + fileName, simCmd, names, 
+NOISETOT, x_name, x_units = sl.ngspice2traces(fileName, simCmd, names, 
                                               stepCmd=stepCmd, 
                                               squaredNoise=False)
 # TOTAL NOISE plot 
@@ -113,7 +113,7 @@ names   = {"V_c1": "V(c1)",
            "V_e2": "V(e2)", 
            "I_V2": "I(V2)"}
 
-OPinfo  = sl.ngspice2traces("cir/" + fileName, simCmd, names, stepCmd=None)
+OPinfo  = sl.ngspice2traces(fileName, simCmd, names, stepCmd=None)
 
 for name in OPinfo.keys():
     print(name, ":", OPinfo[name])
@@ -129,7 +129,7 @@ sl.backAnnotateSchematic("kicad/" + fileName + "/" + fileName + ".kicad_sch",
 simCmd   = "TRAN 0.1u 20u"
 params   = [("V_p", 0.5)]
 names    = {"V_out": "V(out)"}
-tran, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, names, parList=params)
+tran, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, names, parList=params)
 sl.plot("VampQspiceSIN", "$V_{out}$", "lin", tran , xName=x_name, xUnits=x_units,
         yUnits="V")
 
@@ -144,7 +144,7 @@ set specwindoworder=8
 FFT V_AC_rms
 """
 options  = {"RELTOL": 1e-6}
-mag, phase, x_name, x_units  = sl.ngspice2traces("cir/" + fileName, simCmd, names, 
+mag, phase, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, names, 
                                                  postProc=postProc, saveLog=True, 
                                                  traceType='magPhase', 
                                                  parList=params, optDict=options)
@@ -158,5 +158,5 @@ params   = [("V_p", 0.5)]
 names    = {"V_AC": "V(c2)-{}".format(str(OPinfo['V_c2']))}
 postProc = "FOURIER 100k V_AC"
 options  = {"RELTOL": 1e-6}
-results  = sl.ngspice2traces("cir/" + fileName, simCmd, names, optDict=options, 
+results  = sl.ngspice2traces(fileName, simCmd, names, optDict=options, 
                              postProc=postProc, saveLog=True, parList=params)

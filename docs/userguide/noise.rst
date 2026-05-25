@@ -367,43 +367,6 @@ Typesetted:
 .. image:: /img/CDS.svg
     :width: 500px
     
-The function `doCDSint <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.doCDSint>`__ performs both CDS filtering and integration over frequency.
-
-Below the script that calculates the variance of the output voltage of a switched transimpedance integrator with a gain :math:`Z_t=\frac{1}{2\pi f C_i}` and an input noise current with a spectral density :math:`S_i` to which CDS filtering of the output signal with a time delay :math:`\tau` is applied.
-
-.. literalinclude:: ../noise.py
-    :linenos:
-    :lines: 85-87
-    :lineno-start: 85
-
-SLiCAP uses :math:`\_\phi=\pi f \tau` rather than :math:`f` as integration variable. Integration is not always possible because the integral may depend on the domain of the variables:
-
-.. code-block:: text
-
-    S_i*tau*Integral(sin(_phi)**2/_phi**2, (_phi, 0, oo*tau))/(pi*C_i**2)
-    
-As shown above, the integral cannot be evaluated (undefined when :math:`\tau=0`. However, it can be done with the aid of assumptions.
-
-Use assumptions
----------------
-
-Below the script to obtain the integral from above.
-
-.. literalinclude:: ../noise.py
-    :linenos:
-    :lines: 89-91
-    :lineno-start: 89
-
-With :math:`\tau>0` the above integral can be evaluated:
-
-.. code-block:: text
-
-    S_i*tau/(2*C_i**2)
-    
-Typesetted:
-
-.. include:: ../sphinx/SLiCAPdata/eqn-CDSint.rst
-
 The following SLiCAP functions can be used to change the domain of variables:
 
 #. `assumePosParams() <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.assumePosParams>`__
@@ -427,8 +390,8 @@ The function `integrate_monomial_coeffs() <../reference/SLiCAPmath.html#SLiCAP.S
 
 .. literalinclude:: ../noise.py
     :linenos:
-    :lines: 93-96
-    :lineno-start: 93
+    :lines: 85-89
+    :lineno-start: 85
     
 This yields:
 
@@ -444,8 +407,8 @@ The function `integrated_monomial_coeffs() <../reference/SLiCAPmath.html#SLiCAP.
 
 .. literalinclude:: ../noise.py
     :linenos:
-    :lines: 99-100
-    :lineno-start: 99
+    :lines: 91-92
+    :lineno-start: 91
     
 Typesetted output:
 
@@ -460,8 +423,8 @@ As a matter of fact, all equations, tables and figures on this page are created 
 
 .. literalinclude:: ../noise.py
     :linenos:
-    :lines: 102-114
-    :lineno-start: 102
+    :lines: 94-107
+    :lineno-start: 94
     
 The typesetted tables and equations are shown on this page.
 

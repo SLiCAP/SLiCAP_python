@@ -82,14 +82,6 @@ traceDict   = {"CDS": cds_trace}
 sl.plot("CDS", "CDS weighting curve", "semilogx", traceDict, 
         xName="Frequency", xUnits="Hz", yUnits="dB", show=False)
 
-S_v = sp.sympify("S_i/(2*pi*f*C_i)^2")
-var = sl.doCDSint(S_v, tau, 0, sp.oo)
-print(var)
-
-var = sl.assumePosParams(var).doit()
-var = sl.clearAssumptions(var)
-print(var)
-
 Si, Sv = sp.symbols("S_i, S_v")
 integrated_noise   = sl.integrate_monomial_coeffs(numNoise.onoise, [Si, Sv], 
                                                   sl.ini.frequency, f_min, f_max, 
@@ -108,7 +100,6 @@ rst.noiseContribs(noiseResult, "Noise contributions").save("table-noiseContribs"
 rst.eqn("V_nRMS", RMS, units="V").save("eqn-RMS")
 rst.eqn("F", F, units="dB").save("eqn-F")
 rst.eqn("S_vCDS", cds_weighted, units="V**2/Hz").save("eqn-CDSweighting")
-rst.eqn("sigma^2", var, units="V**2").save("eqn-CDSint")
 rst.eqn("v_n^2", integrated_noise, units="V**2").save("eqn-intCoeffs")
 rst.dictTable(integrated_noise_coeffs, 
               caption="Numeric integrals as coeffs of :math:`S_v` and :math:`S_i`").save("table-coeffsNoise")

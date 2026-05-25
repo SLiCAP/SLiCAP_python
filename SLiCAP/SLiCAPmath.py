@@ -1127,8 +1127,8 @@ def doCDS(result, tau):
     Returns a copy of the noise execution result with all onoise results in it
     multiplied with (2*sin(pi*ini.frequency*tau))^2, and deleted inoise results.
 
-    :param result: sympy instruction object
-    :type result: sympy.instruction
+    :param result: sympy instruction object, or variable
+    :type result: sympy.instruction, int, float, sympy.Expr
 
     :param tau: Time between two samples
     :type tau: sympy.Expr, sympy.Symbol, int or float
@@ -1137,21 +1137,24 @@ def doCDS(result, tau):
     :rtype: sympy.instruction
     """
     cpy_result = deepcopy(result)
-    terms = cpy_result.onoiseTerms.keys()
-    if type(cpy_result.onoise) == list:
-        for i in range(len(cpy_result.onoise)):
-            cpy_result.onoise[i] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+    try:
+        terms = cpy_result.onoiseTerms.keys()
+        if type(cpy_result.onoise) == list:
+            for i in range(len(cpy_result.onoise)):
+                cpy_result.onoise[i] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+                for term in terms:
+                    cpy_result.onoiseTerms[term][i] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+            cpy_result.inoise = []
+            for term in cpy_result.inoiseTerms.keys():
+                cpy_result.inoiseTerms[term] = []
+        else:
+            cpy_result.onoise *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+            cpy_result.inoise = None
             for term in terms:
-                cpy_result.onoiseTerms[term][i] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
-        cpy_result.inoise = []
-        for term in cpy_result.inoiseTerms.keys():
-            cpy_result.inoiseTerms[term] = []
-    else:
-        cpy_result.onoise *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
-        cpy_result.inoise = None
-        for term in terms:
-            cpy_result.onoiseTerms[term] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
-            cpy_result.inoiseTerms[term] = None
+                cpy_result.onoiseTerms[term] *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
+                cpy_result.inoiseTerms[term] = None
+    except AttributeError:
+        cpy_result *= (2*sp.sin(sp.pi*ini.frequency*tau))**2
     return cpy_result
 
 def routh(charPoly, eps=sp.Symbol('epsilon')):
@@ -1620,6 +1623,7 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None,
     """
     """
     errors = 0
+    var = []
     if type(source) != list:
         sources = [source]
     else:
@@ -1680,7 +1684,7 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None,
             params += list(sp.N(spectra[i]).atoms(sp.Symbol))
             params = set(params)                
         if len(params) > 1 or (len(params) == 1 and ini.frequency not in params):
-            if method != "symbolic":
+            if method != "symbolic" and method !="auto":
                 print("Error: found symbolic data, cannot perform numeric integration.")
                 errors += 1
         elif method == "list": 
@@ -2381,10 +2385,10 @@ def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True,
     :rtype: sympy.expr, int or float
     """
     integratedCoeffs = integrated_monomial_coeffs(
-        expr, variables, x, x_lower, x_upper, doit=doit)
-    integratedResult = sum(sp.Mul(key, integratedCoeffs[key], evaluate=doit, 
-                                  wf=wf, method=method, CDS=CDS, 
-                                  tau=tau, points=points, numeric=True)
+        expr, variables, x, x_lower, x_upper, doit=doit, 
+                                      wf=wf, method=method, CDS=CDS, 
+                                      tau=tau, points=points, numeric=True)
+    integratedResult = sum(sp.Mul(key, integratedCoeffs[key], evaluate=doit)
                            for key in integratedCoeffs.keys())
     return integratedResult
 
