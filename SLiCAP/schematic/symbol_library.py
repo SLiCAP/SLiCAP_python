@@ -33,8 +33,6 @@ reported, never silently worked around.
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from SLiCAP.SLiCAPsvgTools import _calculate_element_bbox
-
 SVG_NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NS)
 
@@ -68,6 +66,7 @@ def _geometry_bbox(g_element) -> tuple | None:
     single implementation of SVG bbox math.  Comment nodes (callable tag) are
     skipped to keep that helper from logging spurious errors.
     """
+    from SLiCAP.SLiCAPsvgTools import _calculate_element_bbox
     boxes = []
     for el in g_element.iter():
         if el is g_element or not isinstance(el.tag, str):
