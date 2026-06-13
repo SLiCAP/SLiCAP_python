@@ -419,7 +419,7 @@ class MainWindow(QMainWindow):
         self._current_path = None
         project.set_current(None)
         self._build_library()               # back to system symbols only
-        import app.config as _config
+        import SLiCAP.schematic.config as _config
         _config.load(None)                  # new doc → global style defaults
         self._doc_props = DocumentProperties.new()
         self._dirty = False
@@ -448,7 +448,7 @@ class MainWindow(QMainWindow):
         # while building the scene goes to (and is read from) <name>.cache, and
         # the schematic's own style (<name>.ini) is applied before items render.
         project.set_current(path)
-        import app.config as _config
+        import SLiCAP.schematic.config as _config
         _config.load(project.ini_path())
         # Rebuild the library with this schematic's frozen symbols overlaid, so
         # it renders with the symbols it was drawn with (and user symbols win).
@@ -518,7 +518,7 @@ class MainWindow(QMainWindow):
     def _activate_context(self) -> None:
         project.set_current(self._current_path)
         if self._current_path is not None:
-            import app.config as _config
+            import SLiCAP.schematic.config as _config
             _config.load(project.ini_path())
         self._library.inject_into_component_item()
 
@@ -613,7 +613,7 @@ class MainWindow(QMainWindow):
             data.save(path)
             self._current_path = path
             project.set_current(path)   # migrates session-temp cache → <name>.cache
-            import app.config as _config
+            import SLiCAP.schematic.config as _config
             _config.write(project.ini_path())   # persist current style → <name>.ini
             used = {c.symbol_name for c in data.components}
             if used:                            # freeze the symbols this schematic uses

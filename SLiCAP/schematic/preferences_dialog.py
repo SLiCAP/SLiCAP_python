@@ -228,7 +228,7 @@ class PreferencesDialog(QDialog):
         # Edit the CURRENT schematic's style: start from the effective config so
         # unedited keys are preserved, overlay the dialog's widget values, and
         # apply live. It is persisted to <name>.ini when the schematic is saved.
-        import app.config as config
+        import SLiCAP.schematic.config as config
         cfg = config.snapshot()
         for (section, key), widget in self._widgets.items():
             if section not in cfg:

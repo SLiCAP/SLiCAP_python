@@ -268,7 +268,7 @@ class SymbolLibrary:
         Authoritative: the dicts are cleared first so they mirror exactly the
         symbols in THIS library (rebuilding on Open/New never leaves a previous
         schematic's symbols behind)."""
-        import app.component_item as ci
+        import SLiCAP.schematic.component_item as ci
         for d in (ci.SYMBOL_PREFIX, ci.PIN_POSITIONS, ci.SYMBOL_TIGHT_RECT,
                   ci.SYMBOL_NODES, ci.SYMBOL_MODEL, ci.SYMBOL_PARAMS,
                   ci.SYMBOL_REFS, ci.SYMBOL_DESCRIPTION, ci.SYMBOL_INFO):

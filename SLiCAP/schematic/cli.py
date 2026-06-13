@@ -17,11 +17,7 @@ import os
 import sys
 from pathlib import Path
 
-# Put the project root (parent of app/) on sys.path so `import app...` resolves
-# whether run as `python -m app.cli` or `python app/cli.py`.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-_SYMBOLS_SVG = Path(__file__).parent / "symbols" / "Symbols.svg"
+_SYMBOLS_SVG = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "Symbols.svg"
 
 
 # ── Qt bootstrap ─────────────────────────────────────────────────────────────
