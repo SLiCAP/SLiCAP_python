@@ -59,40 +59,83 @@ def _f(el, attr: str, default: float = 0.0) -> float:
         return default
 
 
+def _stroke_halfwidth(attrib) -> float:
+    stroke = attrib.get("stroke", "none")
+    if stroke in ("none", ""):
+        return 0.0
+    try:
+        return float(attrib.get("stroke-width", "1")) / 2.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _text_bbox(element, attrib) -> tuple | None:
+    try:
+        x = float(attrib.get("x", "0"))
+        y = float(attrib.get("y", "0"))
+        font_size = float(attrib.get("font-size", "10"))
+    except (TypeError, ValueError):
+        return None
+    width = len(element.text or "") * 0.6 * font_size
+    anchor = attrib.get("text-anchor", "start")
+    if anchor == "middle":
+        x0, x1 = x - width / 2.0, x + width / 2.0
+    elif anchor == "end":
+        x0, x1 = x - width, x
+    else:
+        x0, x1 = x, x + width
+    # Cover both alphabetic and middle-baseline Qt rendering (see SLiCAPsvgTools).
+    y0, y1 = y - 0.9 * font_size, y + 0.5 * font_size
+    return (x0, y0, x1, y1)
+
+
 def _element_bbox(el) -> tuple | None:
-    """Return (x0, y0, x1, y1) for one SVG element, or None if unrecognised."""
+    """Return (x0, y0, x1, y1) for one SVG element, or None if unrecognised.
+
+    Uses direct arithmetic for simple shapes (avoids svgelements.Line.bbox()
+    which raises on degenerate lines in some versions).  Text extents are
+    estimated from character count and font-size.  Stroke width is added on
+    all sides.
+    """
     tag = el.tag.split("}")[-1] if isinstance(el.tag, str) else ""
     a = el.attrib
+    bbox = None
     try:
-        if tag == "line":
+        if tag == "text":
+            bbox = _text_bbox(el, a)
+        elif tag == "line":
             x1, y1 = float(a.get("x1", 0)), float(a.get("y1", 0))
             x2, y2 = float(a.get("x2", 0)), float(a.get("y2", 0))
-            return (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
-        if tag == "rect":
+            bbox = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
+        elif tag == "rect":
             x, y = float(a.get("x", 0)), float(a.get("y", 0))
             w, h = float(a.get("width", 0)), float(a.get("height", 0))
-            return (x, y, x + w, y + h)
-        if tag == "circle":
+            bbox = (x, y, x + w, y + h)
+        elif tag == "circle":
             cx, cy, r = float(a.get("cx", 0)), float(a.get("cy", 0)), float(a.get("r", 0))
-            return (cx - r, cy - r, cx + r, cy + r)
-        if tag == "ellipse":
+            bbox = (cx - r, cy - r, cx + r, cy + r)
+        elif tag == "ellipse":
             cx, cy = float(a.get("cx", 0)), float(a.get("cy", 0))
             rx, ry = float(a.get("rx", 0)), float(a.get("ry", 0))
-            return (cx - rx, cy - ry, cx + rx, cy + ry)
-        if tag in ("polyline", "polygon"):
+            bbox = (cx - rx, cy - ry, cx + rx, cy + ry)
+        elif tag in ("polyline", "polygon"):
             coords = [float(v) for v in a.get("points", "").replace(",", " ").split()]
-            if len(coords) < 2:
-                return None
             xs, ys = coords[0::2], coords[1::2]
-            return (min(xs), min(ys), max(xs), max(ys))
-        if tag == "path":
+            if xs and ys:
+                bbox = (min(xs), min(ys), max(xs), max(ys))
+        elif tag == "path":
             from svgelements import Path as _SvgPath
             bb = _SvgPath(d=a.get("d", "")).bbox()
             if bb and len(bb) == 4:
-                return (bb[0], bb[1], bb[2], bb[3])
+                bbox = (bb[0], bb[1], bb[2], bb[3])
     except Exception:
         pass
-    return None
+    if bbox is not None:
+        hw = _stroke_halfwidth(a)
+        if hw:
+            x0, y0, x1, y1 = bbox
+            bbox = (x0 - hw, y0 - hw, x1 + hw, y1 + hw)
+    return bbox
 
 
 def _geometry_bbox(g_element) -> tuple | None:
