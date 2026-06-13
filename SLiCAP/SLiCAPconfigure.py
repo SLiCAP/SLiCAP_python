@@ -247,6 +247,7 @@ def _generate_project_config():
                      "csv"           : 'csv/',
                      "txt"           : 'txt/',
                      "img"           : 'img/',
+                     "sch"           : 'sch/',
                      "sphinx"        : 'sphinx/',
                      "tex"           : 'tex/',
                      "tex_snippets"  : 'tex/SLiCAPdata/',
@@ -662,6 +663,7 @@ csv_path              = project_config['projectpaths']['csv']
 txt_path              = project_config['projectpaths']['txt']
 tex_path              = project_config['projectpaths']['tex']
 user_lib_path         = project_config['projectpaths']['lib']
+schematic_path        = project_config['projectpaths'].get('sch', 'sch/')
 sphinx_path           = project_config['projectpaths']['sphinx']
 tex_snippets          = project_config['projectpaths']['tex_snippets']
 html_snippets         = project_config['projectpaths']['html_snippets']

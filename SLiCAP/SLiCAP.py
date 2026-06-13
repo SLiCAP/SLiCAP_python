@@ -148,6 +148,7 @@ def initProject(name, notebook=False, report_dirs=True):
     _makeDir(ini.img_path)
     _makeDir(ini.txt_path)
     _makeDir(ini.csv_path)
+    _makeDir(ini.schematic_path)
     if report_dirs:
         # Reset the html pages 
         # Update configuration files; this is done on the first import of SLiCAPconfigure.py

@@ -29,11 +29,9 @@ dependencies = [
     'pywin32>306; sys_platform == "win32"',
     "docutils>=0.18",
     "sphinx-rtd-theme>=1.2.0",
+    "PySide6>=6.4",
     ]
 dynamic = ["version"]
-
-[project.optional-dependencies]
-gui = ["PySide6>=6.4"]
 
 [project.scripts]
 slicap-schematic = "SLiCAP.schematic.main:main"

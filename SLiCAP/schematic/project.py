@@ -35,9 +35,10 @@ from pathlib import Path
 _base: Path | None = None          # the .slicap_sch path, or None when unsaved
 
 # The default project root — the directory holding the cir/ sch/ img/ lib/ and
-# symbols/ subdirectories.  It is the app's own root (parent of app/), used when
-# no schematic is open yet.
-APP_ROOT = Path(__file__).resolve().parent.parent
+# symbols/ subdirectories.  Defaults to the working directory at start-up so
+# that launching via sl.startSchematic() (which inherits the project's cwd)
+# puts new schematics in <project>/sch/ instead of the install directory.
+APP_ROOT = Path.cwd()
 
 
 def current() -> Path | None:
