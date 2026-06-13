@@ -59,21 +59,47 @@ def _f(el, attr: str, default: float = 0.0) -> float:
         return default
 
 
-def _geometry_bbox(g_element) -> tuple | None:
-    """Union of every drawable child's bounding box, or None if there is none.
+def _element_bbox(el) -> tuple | None:
+    """Return (x0, y0, x1, y1) for one SVG element, or None if unrecognised."""
+    tag = el.tag.split("}")[-1] if isinstance(el.tag, str) else ""
+    a = el.attrib
+    try:
+        if tag == "line":
+            x1, y1 = float(a.get("x1", 0)), float(a.get("y1", 0))
+            x2, y2 = float(a.get("x2", 0)), float(a.get("y2", 0))
+            return (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
+        if tag == "rect":
+            x, y = float(a.get("x", 0)), float(a.get("y", 0))
+            w, h = float(a.get("width", 0)), float(a.get("height", 0))
+            return (x, y, x + w, y + h)
+        if tag == "circle":
+            cx, cy, r = float(a.get("cx", 0)), float(a.get("cy", 0)), float(a.get("r", 0))
+            return (cx - r, cy - r, cx + r, cy + r)
+        if tag == "ellipse":
+            cx, cy = float(a.get("cx", 0)), float(a.get("cy", 0))
+            rx, ry = float(a.get("rx", 0)), float(a.get("ry", 0))
+            return (cx - rx, cy - ry, cx + rx, cy + ry)
+        if tag in ("polyline", "polygon"):
+            coords = [float(v) for v in a.get("points", "").replace(",", " ").split()]
+            if len(coords) < 2:
+                return None
+            xs, ys = coords[0::2], coords[1::2]
+            return (min(xs), min(ys), max(xs), max(ys))
+        if tag == "path":
+            from svgelements import Path as _SvgPath
+            bb = _SvgPath(d=a.get("d", "")).bbox()
+            if bb and len(bb) == 4:
+                return (bb[0], bb[1], bb[2], bb[3])
+    except Exception:
+        pass
+    return None
 
-    Geometry is measured by SLiCAPsvgTools._calculate_element_bbox so there is a
-    single implementation of SVG bbox math.  Comment nodes (callable tag) are
-    skipped to keep that helper from logging spurious errors.
-    """
-    from SLiCAP.SLiCAPsvgTools import _calculate_element_bbox
-    boxes = []
-    for el in g_element.iter():
-        if el is g_element or not isinstance(el.tag, str):
-            continue
-        b = _calculate_element_bbox(el)
-        if b:
-            boxes.append(b)
+
+def _geometry_bbox(g_element) -> tuple | None:
+    """Union bounding box of all drawable children, or None if there are none."""
+    boxes = [b for el in g_element.iter()
+             if el is not g_element and isinstance(el.tag, str)
+             for b in (_element_bbox(el),) if b is not None]
     if not boxes:
         return None
     return (min(b[0] for b in boxes), min(b[1] for b in boxes),
