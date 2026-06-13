@@ -333,14 +333,12 @@ class SymbolLibrary:
     def inject_into_component_item(self) -> None:
         """Publish loaded metadata into the component_item module dicts.
 
-        Authoritative: the dicts are cleared first so they mirror exactly the
-        symbols in THIS library (rebuilding on Open/New never leaves a previous
-        schematic's symbols behind)."""
+        Merges into the global dicts rather than replacing them so that parent
+        and child schematics can both be open: activating the child window must
+        not wipe the parent's subcircuit symbol (whose pin names are shown in
+        the parent view).  update() overwrites same-named entries, which is
+        correct when a symbol is redefined across library versions."""
         import SLiCAP.schematic.component_item as ci
-        for d in (ci.SYMBOL_PREFIX, ci.PIN_POSITIONS, ci.SYMBOL_TIGHT_RECT,
-                  ci.SYMBOL_NODES, ci.SYMBOL_MODEL, ci.SYMBOL_PARAMS,
-                  ci.SYMBOL_REFS, ci.SYMBOL_DESCRIPTION, ci.SYMBOL_INFO):
-            d.clear()
         ci.SYMBOL_PREFIX.update({n: s.prefix for n, s in self._symbols.items()})
         ci.PIN_POSITIONS.update({n: list(s.pins) for n, s in self._symbols.items()})
         ci.SYMBOL_TIGHT_RECT.update({n: s.select_box for n, s in self._symbols.items()})
