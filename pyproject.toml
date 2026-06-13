@@ -32,6 +32,12 @@ dependencies = [
     ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+gui = ["PySide6>=6.4"]
+
+[project.scripts]
+slicap-schematic = "SLiCAP.schematic.main:main"
+
 [project.urls]
 Homepage = "https://slicap.github.io/SLiCAP_python/"
 Issues = "https://github.com/SLiCAP/SLiCAP_python"
@@ -40,4 +46,4 @@ Issues = "https://github.com/SLiCAP/SLiCAP_python"
 version = {attr = "SLiCAP.__version__"}  # any module attribute compatible with ast.literal_eval
 
 [tool.setuptools]
-packages = ["SLiCAP"]
+packages = ["SLiCAP", "SLiCAP.schematic"]

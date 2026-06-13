@@ -1,0 +1,26 @@
+Screenshots needed to complete the manual
+=========================================
+
+Capture each image, save it as a PNG with the exact file name below, and drop it
+into this folder (docs/images/).  Recommended width ~1000-1400 px.
+
+  overview_hearingloop.png      A finished schematic (e.g. the hearing-loop demo)
+  flow_design_documentation.png Diagram: one drawing -> netlist + figure
+  main_window.png               The main window: menus, palette, empty canvas
+  canvas_grid.png               Close-up of the grid (minor cells + major lines)
+  place_symbol_dialog.png       The Place Symbol dialog with a symbol selected
+  properties_dialog.png         A component's Properties dialog (R or N)
+  wiring_draw.png               Drawing an orthogonal wire pin-to-pin
+  pin_markers.png               A part with grey markers on its unconnected pins
+  net_label.png                 A net label naming the "out" node
+  parameter_table.png           A parameter table on the schematic
+  latex_fragment.png            A typeset LaTeX equation placed on the canvas
+  preferences.png               The Preferences dialog (show several groups)
+  export_netlist.png            Schematic next to its exported netlist
+
+Notes
+-----
+* The .rst files reference these names; if you rename a file, update the
+  matching ".. figure::" directive.
+* Until the PNGs are present, "sphinx-build" prints "image file not readable"
+  warnings but still produces the HTML.

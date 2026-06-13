@@ -66,7 +66,12 @@ SLiCAP Reference
 ----------------
 
 `SLiCAP Reference <reference/SLiCAPreference.html>`_ documents all SLiCAP user callable functions and objects.
-    
+
+SLiCAP Schematic Capture
+-------------------------
+
+The `Schematic Capture editor <schematics/index.html>`_ is a graphical tool for drawing circuits and exporting them directly as SLiCAP netlists and publication-quality SVG/PDF figures.  Install with ``pip install SLiCAP[gui]``, then run ``slicap-schematic``.
+
 .. toctree::
     :hidden:
 
@@ -75,5 +80,6 @@ SLiCAP Reference
     tutorials/SLiCAPtutorials
     syntax/SLiCAPnetlistSyntax
     reference/SLiCAPreference
+    schematics/index
     
 .. image:: /img/colorCode.svg
