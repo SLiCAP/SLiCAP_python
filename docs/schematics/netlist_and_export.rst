@@ -24,17 +24,40 @@ From the command line
 =====================
 
 The same outputs can be generated without opening the window — useful for build
-scripts and for regenerating every figure in a book:
+scripts and Makefiles:
 
 .. code-block:: console
 
-   $ python -m app.cli netlist  sch/my_circuit.slicap_sch [-o cir/my_circuit.cir]
-   $ python -m app.cli svg      sch/my_circuit.slicap_sch [-o img/my_circuit.svg]
-   $ python -m app.cli pdf      sch/my_circuit.slicap_sch [-o img/my_circuit.pdf]
+   $ python -m SLiCAP.schematic.cli netlist  sch/my_circuit.slicap_sch
+   $ python -m SLiCAP.schematic.cli svg      sch/my_circuit.slicap_sch
+   $ python -m SLiCAP.schematic.cli pdf      sch/my_circuit.slicap_sch
 
-If ``-o`` is omitted, the output takes the schematic's name with the new
-extension and lands in the project's ``cir/`` (netlist) or ``img/`` (svg/pdf)
-directory.
+If ``-o <file>`` is omitted, the output takes the schematic's name with the
+appropriate extension and lands in the project's ``cir/`` (netlist) or
+``img/`` (SVG / PDF) directory automatically.
+
+Running it in SLiCAP
+====================
+
+``makeCircuit()`` recognises the ``.slicap_sch`` extension and generates the
+netlist and figures automatically before parsing:
+
+.. code-block:: python
+
+   import SLiCAP as sl
+   sl.initProject("My Design")
+   cir = sl.makeCircuit("sch/my_circuit.slicap_sch")   # exports + parses
+   result = sl.doNoise(cir, pardefs="circuit", numeric=True)
+
+You can also trigger the export step separately — for example to regenerate
+figures without re-running the analysis:
+
+.. code-block:: python
+
+   from SLiCAP.schematic import make_schematic
+   make_schematic("sch/my_circuit.slicap_sch")   # writes cir/ and img/
+
+See https://www.slicap.org for the full analysis workflow.
 
 What the netlist looks like
 ===========================
@@ -57,17 +80,3 @@ node order), any references, the model and the parameters:
    C3 out 0 C value={C_L}
    ...
    .end
-
-Running it in SLiCAP
-====================
-
-Point SLiCAP at the exported ``.cir`` file:
-
-.. code-block:: python
-
-   import SLiCAP as sl
-   sl.initProject("My Design")
-   cir = sl.makeCircuit("my_circuit.cir")
-   result = sl.doNoise(cir, pardefs="circuit", numeric=True)
-
-See https://www.slicap.org for the analysis workflow.
