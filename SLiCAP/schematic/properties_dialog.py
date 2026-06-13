@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt
 
 import html
 
-from app import project
+from . import project
 from .component_item import (
     ComponentItem, available_models, params_for_symbol,
     fixed_params_for_symbol, refs_for_symbol,

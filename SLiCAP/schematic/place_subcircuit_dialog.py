@@ -19,7 +19,7 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtGui import QPainter
 from PySide6.QtCore import Qt, QByteArray
 
-from app import project
+from . import project
 from .config import GRID_SIZE
 from .subcircuit import parse_subckt, box_symbol_svg, SubcktDef, min_half, _FLOOR
 from .symbol_library import Symbol

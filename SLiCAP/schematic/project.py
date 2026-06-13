@@ -77,7 +77,7 @@ def cache_dir() -> Path:
         # Not created here — only when a render actually happens, so a schematic
         # with no LaTeX leaves no empty <name>.cache dir.
         return _base.with_suffix(".cache")
-    from app import latex_label
+    from . import latex_label
     return latex_label.get_cache_dir()
 
 
@@ -99,7 +99,7 @@ def set_current(path: "Path | str | None") -> None:
     saved schematic is immediately self-contained.
     """
     global _base
-    from app import latex_label
+    from . import latex_label
     old_cache = latex_label.CACHE_DIR     # where renders have gone so far (may be None)
     _base = Path(path) if path else None
     new_cache = cache_dir()

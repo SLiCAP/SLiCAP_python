@@ -770,7 +770,7 @@ class SchematicScene(QGraphicsScene):
 
     def _update_draw_ghost(self, scene_pos: QPointF) -> None:
         from .shape_item import ShapeItem
-        from app import config as cfg
+        from . import config as cfg
         color = "#000000"
         lw    = 1.5
 
@@ -2341,7 +2341,7 @@ class SchematicScene(QGraphicsScene):
             return
         if isinstance(item, LibraryItem):
             from PySide6.QtWidgets import QFileDialog
-            from app import project
+            from . import project
             path, _ = QFileDialog.getOpenFileName(
                 None, "Select Library File",
                 item.file_path or str(project.subdir("lib")),

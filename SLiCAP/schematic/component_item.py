@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsItem, QGraphicsSimpleTextItem, QStyle
 from PySide6.QtCore import QByteArray, Qt, QPointF, QRectF
 from PySide6.QtGui import QPen, QColor, QPainter, QFont, QFontMetricsF, QTransform, QPainterPath
 
-from app import config
+from . import config
 from .config import (
     snap,
     COMP_LABEL_FONT, COMP_LABEL_COLOR, COMP_LABEL_SVG_HEIGHT,

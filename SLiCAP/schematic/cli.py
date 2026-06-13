@@ -40,7 +40,7 @@ def _load_scene(input_path: Path):
     from .schematic_data import SchematicData
     from .symbol_library import SymbolLibrary
     from .canvas import SchematicScene
-    from app import project
+    from . import project
 
     project.set_current(input_path)   # LaTeX cache → <name>.cache, not a temp dir
     data    = SchematicData.load(input_path)
@@ -59,7 +59,7 @@ def _default_output(input_path: Path, kind: str, suffix: str) -> Path:
 
     Must be called after _load_scene so the project root is set from the input.
     """
-    from app import project
+    from . import project
     return project.subdir(kind) / input_path.with_suffix(suffix).name
 
 
