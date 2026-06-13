@@ -269,6 +269,9 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
         _gNetlist(fileName, cirTitle)
     elif cirType == "kicad_sch":
         netlist, subckt = _kicadNetlist(fileName, cirTitle, language=language)
+    elif cirType == "slicap_sch":
+        from SLiCAP.schematic import make_schematic
+        make_schematic(fileName, cir_title=cirTitle)
     elif cirType == "cir":
         pass
     else:

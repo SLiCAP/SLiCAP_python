@@ -66,6 +66,9 @@ def cmd_netlist(args):
     from .component_item import ComponentItem
     from .wire_item import WireItem
     from .command_item import CommandItem
+    from .analysis_item import AnalysisItem
+    from .library_item import LibraryItem
+    from .parameter_item import ParameterItem
     from .netlist import build_netlist
 
     scene, data = _load_scene(input_path)
@@ -73,10 +76,16 @@ def cmd_netlist(args):
     items = scene.items()
     comps = [i for i in items if isinstance(i, ComponentItem)]
     wires = [i for i in items if isinstance(i, WireItem)]
-    cmds  = [i for i in items if isinstance(i, CommandItem)]
+    cmds  = [i for i in items if isinstance(i, (CommandItem, AnalysisItem))]
+    libs  = [i for i in items if isinstance(i, LibraryItem)]
+    prms  = [i for i in items if isinstance(i, ParameterItem)]
     title = data.properties.title or input_path.stem
 
-    output_path.write_text(build_netlist(comps, wires, cmds, title), encoding="utf-8")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        build_netlist(comps, wires, cmds, title, libs=libs, params=prms),
+        encoding="utf-8",
+    )
     print(f"Netlist  →  {output_path}")
 
 
