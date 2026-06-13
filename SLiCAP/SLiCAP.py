@@ -35,15 +35,31 @@ np.set_printoptions(edgeitems=30, linewidth=1000,
 def Help():
     """
     Opens the SLiCAP HTML documentation in the default browser.
-    
+
     :example:
-    
+
     >>> import SLiCAP as sl
     >>> # Display the SLiCAP HTML help in your default browser:
     >>> sl.Help()
     """
     webbrowser.open_new(ini.doc_path + 'index.html')
     return
+
+def startSchematic():
+    """
+    Launch the SLiCAP schematic capture GUI as a separate process.
+
+    The GUI runs independently — this call returns immediately and does not
+    block the Python session or Jupyter notebook.
+
+    :example:
+
+    >>> import SLiCAP as sl
+    >>> sl.initProject("My Design")
+    >>> sl.startSchematic()
+    """
+    import subprocess, sys
+    subprocess.Popen([sys.executable, "-m", "SLiCAP.schematic.main"])
 
 def _copyNotOverwrite(src, dest):
     """
