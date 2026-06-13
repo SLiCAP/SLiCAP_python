@@ -442,8 +442,8 @@ def _update_ini_files():
     if generate:
         print("Updating main configuration file; this may take a while.")
         main_config = _generate_main_config()
-    
-    
+        main_keys   = main_config.keys()   # refresh so del loop targets the new config
+
     main_config['version']      = {"install_version" : INSTALLVERSION,
                                    "latest_version" : _check_version()}
     # Remove unused entries
