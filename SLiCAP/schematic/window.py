@@ -14,13 +14,15 @@ from .schematic_data import DocumentProperties
 from . import project
 
 _SYMBOLS_SVG = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "Symbols.svg"
+_SYMBOLS_DIR = _SYMBOLS_SVG.parent
 _FILE_FILTER  = "SLiCAP Schematic (*.slicap_sch);;All Files (*)"
 _NET_FILTER   = "SLiCAP Netlist (*.cir);;All Files (*)"
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, config: str = "full"):
         super().__init__()
+        self._config = config
         self.setWindowTitle("SLiCAP Schematic Capture")
         self.resize(1200, 800)
 
@@ -401,9 +403,11 @@ class MainWindow(QMainWindow):
         """(Re)build the symbol library: system symbols, optionally overlaid by a
         schematic's frozen <name>.symbols (which overrides system symbols)."""
         lib = SymbolLibrary(_SYMBOLS_SVG)
-        # User symbol libraries in the project's lib/ (add/redefine system
-        # symbols), excluding generated block symbols (each pairs with a .lib and
-        # loads only when its subcircuit is placed).
+        if self._config == "full":
+            # Load all additional SVGs from the system symbols directory.
+            lib.add_user_library(_SYMBOLS_DIR, exclude_stems={"Symbols"})
+        # User symbol libraries in the project's lib/ (always loaded regardless
+        # of config); generated block symbols are excluded — they load on placement.
         libdir = project.subdir("lib")
         lib.add_user_library(libdir, exclude_stems={p.stem for p in libdir.glob("*.lib")})
         if overlay_path is not None:

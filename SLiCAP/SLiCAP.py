@@ -45,21 +45,29 @@ def Help():
     webbrowser.open_new(ini.doc_path + 'index.html')
     return
 
-def startSchematic():
+def startSchematic(config="full"):
     """
     Launch the SLiCAP schematic capture GUI as a separate process.
 
     The GUI runs independently — this call returns immediately and does not
     block the Python session or Jupyter notebook.
 
+    :param config: Symbol library set to load at startup.
+
+        - ``'full'`` *(default)*: load all SVG files in the system symbols directory.
+        - ``'basic'``: load only ``Symbols.svg`` (the standard SLiCAP symbol set).
+
+    :type config: str
+
     :example:
 
     >>> import SLiCAP as sl
     >>> sl.initProject("My Design")
-    >>> sl.startSchematic()
+    >>> sl.startSchematic()              # full symbol library (default)
+    >>> sl.startSchematic(config='basic')  # basic symbol set only
     """
     import subprocess, sys
-    subprocess.Popen([sys.executable, "-m", "SLiCAP.schematic.main"])
+    subprocess.Popen([sys.executable, "-m", "SLiCAP.schematic.main", "--config", config])
 
 def _copyNotOverwrite(src, dest):
     """
