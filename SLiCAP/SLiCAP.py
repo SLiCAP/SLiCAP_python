@@ -67,7 +67,8 @@ def startSchematic(config="full"):
     >>> sl.startSchematic(config='basic')  # basic symbol set only
     """
     import subprocess, sys
-    subprocess.Popen([sys.executable, "-m", "SLiCAP.schematic.main", "--config", config])
+    cmd = f'"{sys.executable}" -m SLiCAP.schematic.main --config {config}'
+    subprocess.Popen(cmd, shell=True)
 
 def _copyNotOverwrite(src, dest):
     """

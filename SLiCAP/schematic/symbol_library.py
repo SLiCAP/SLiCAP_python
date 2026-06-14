@@ -227,20 +227,16 @@ class Symbol:
 class SymbolLibrary:
     """
     Loads symbols from a bundle file (Symbols.svg, one <g id> per symbol in
-    <defs>) and from individual *.svg files in the same directory.
+    <defs>).
 
-    Each individual file may hold one or more <g id="name" data-prefix=...>
-    symbol definitions anywhere in the tree.  Individual files take effect only
-    for names not already provided by the bundle.
-
-    After construction call inject_into_component_item() to publish all loaded
+    Call add_user_library() afterward to load additional SVGs from any
+    directory.  Call inject_into_component_item() to publish all loaded
     metadata into the component_item module-level dicts.
     """
 
     def __init__(self, svg_path: Path):
         self._symbols: dict[str, Symbol] = {}
         self._load_bundle(svg_path)
-        self._scan_individual(svg_path.parent, exclude=svg_path.name)
 
     # ── loading ───────────────────────────────────────────────────────────────
 
@@ -312,21 +308,6 @@ class SymbolLibrary:
         content = (f'<svg xmlns="{SVG_NS}">\n  <defs>\n'
                    + "\n".join(parts) + "\n  </defs>\n</svg>\n")
         Path(path).write_text(content, encoding="utf-8")
-
-    def _scan_individual(self, directory: Path, exclude: str) -> None:
-        parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
-        for svg_file in sorted(directory.glob("*.svg")):
-            if svg_file.name == exclude:
-                continue
-            try:
-                root = ET.parse(svg_file, parser).getroot()
-            except ET.ParseError:
-                continue
-            for g in root.iter(f"{{{SVG_NS}}}g"):
-                name = g.get("id")
-                if not name or not g.get("data-prefix") or name in self._symbols:
-                    continue  # not a symbol, or bundle already provides it
-                self._symbols[name] = Symbol(g, svg_file.name)
 
     # ── public API ────────────────────────────────────────────────────────────
 

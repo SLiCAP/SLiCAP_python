@@ -22,10 +22,15 @@ def main():
     except SymbolError as exc:
         # A malformed symbol definition is the user's to fix, in the SVG file —
         # we report it clearly and stop rather than guessing a correction.
+        print(f"Symbol library error: {exc}", file=sys.stderr)
         QMessageBox.critical(
             None, "Symbol library error",
             f"{exc}\n\nPlease fix the symbol SVG file, then restart.",
         )
+        sys.exit(1)
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
     window.show()
     sys.exit(app.exec())

@@ -23,9 +23,15 @@ _SYMBOLS_SVG = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "
 # ── Qt bootstrap ─────────────────────────────────────────────────────────────
 
 def _qt_app():
-    """Return (or create) a headless QApplication."""
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    """Return (or create) a headless QApplication.
+
+    Only sets QT_QPA_PLATFORM=offscreen when there is no existing app — never
+    when called from inside a running GUI, because that would corrupt the
+    parent's environment and cause all subsequent subprocesses to be invisible.
+    """
     from PySide6.QtWidgets import QApplication
+    if QApplication.instance() is None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     return QApplication.instance() or QApplication(sys.argv[:1])
 
 
@@ -79,7 +85,7 @@ def cmd_netlist(args):
     cmds  = [i for i in items if isinstance(i, (CommandItem, AnalysisItem))]
     libs  = [i for i in items if isinstance(i, LibraryItem)]
     prms  = [i for i in items if isinstance(i, ParameterItem)]
-    title = data.properties.title or input_path.stem
+    title = getattr(args, "title", None) or data.properties.title or input_path.stem
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
@@ -122,6 +128,8 @@ def main():
     p_net.add_argument("input")
     p_net.add_argument("-o", "--output", metavar="FILE",
                        help="Output file (default: <input>.cir)")
+    p_net.add_argument("--title", metavar="TITLE", default=None,
+                       help="Circuit title (default: from schematic or file stem)")
 
     p_svg = sub.add_parser("svg", help="Export schematic to SVG")
     p_svg.add_argument("input")
