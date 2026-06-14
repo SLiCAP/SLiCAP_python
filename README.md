@@ -16,6 +16,7 @@
 - SLiCAP facilitates design education and knowledge building
 
 ## Features
+- SLiCAP-compatible schematic capture program with LaTeX rendering of expressions, with cli export of netlist, svg image and pdf image
 - Accepts SPICE-like netlists as input and provides netlist generation from, amongst others, Kicad and LTspice schematic files.
 - Facilitates concurrent design and documentation
 - Supports and facilitates structured analog design
