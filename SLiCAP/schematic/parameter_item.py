@@ -173,15 +173,22 @@ class ParameterItem(QGraphicsItem):
                 s = "{" + s + "}"
             return expression_to_latex(s)
 
+        def _name_tex(s: str) -> str:
+            s = s.strip()
+            if s.startswith("{") and s.endswith("}"):
+                s = s[1:-1].strip()
+            s = s.replace('_', r'\_').replace('^', r'\^{}')
+            return rf"\mathit{{{s}}}"
+
         rows = " \\\\\n".join(
-            f"  {_value_texify(name)} & {_value_texify(value)}"
+            f"  {_name_tex(name)} & {_value_texify(value)}"
             for name, value in params
         )
         return (
             r"\["                                                    "\n"
-            r"\begin{array}{r@{\ }l}"                               "\n"
+            r"\begin{array}{r@{\,}l}"                               "\n"
             r"\multicolumn{2}{c}{\textbf{Parameters}} \\"          "\n"
-            r"\textbf{name} & \textbf{value} \\"                  "\n"
+            r"\mathit{name} & \mathit{value} \\"                   "\n"
             r"\hline"                                               "\n"
             + rows + "\n"
             r"\end{array}"                                          "\n"
