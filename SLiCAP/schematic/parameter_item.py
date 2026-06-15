@@ -177,7 +177,7 @@ class ParameterItem(QGraphicsItem):
             s = s.strip()
             if s.startswith("{") and s.endswith("}"):
                 s = s[1:-1].strip()
-            return rf"\text{{{s}:}}\,"
+            return rf"\text{{{s}: }}"
 
         rows = " \\\\\n".join(
             f"  {_name_tex(name)} & {_value_texify(value)}"
@@ -187,7 +187,7 @@ class ParameterItem(QGraphicsItem):
             r"\["                                                    "\n"
             r"\begin{array}{r@{}l}"                                 "\n"
             r"\multicolumn{2}{c}{\textbf{Parameters}} \\"          "\n"
-            r"\text{name:}\, & \mathit{value} \\"                  "\n"
+            r"\text{name: } & \mathit{value} \\"                   "\n"
             r"\hline"                                               "\n"
             + rows + "\n"
             r"\end{array}"                                          "\n"
