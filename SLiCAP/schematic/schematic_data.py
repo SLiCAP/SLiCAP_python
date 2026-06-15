@@ -113,10 +113,14 @@ class LibraryData:
 class ModelData:
     x: float
     y: float
-    model_name: str
-    model_type: str
-    simulator:  str          # "SLiCAP" or "SPICE"
-    params:     list         # list of [name, value] string pairs
+    model_name:    str
+    model_type:    str
+    simulator:     str          # "SLiCAP" or "SPICE"
+    params:        list         # list of [name, value] string pairs
+    preamble_path: str  = ""
+    svg_b64:       str  = ""
+    display_width:  int = 200
+    display_height: int = 80
 
 
 @dataclass
@@ -321,10 +325,14 @@ class SchematicData:
             "model_defs": [
                 {
                     "x": m.x, "y": m.y,
-                    "model_name": m.model_name,
-                    "model_type": m.model_type,
-                    "simulator":  m.simulator,
-                    "params":     [list(p) for p in m.params],
+                    "model_name":    m.model_name,
+                    "model_type":    m.model_type,
+                    "simulator":     m.simulator,
+                    "params":        [list(p) for p in m.params],
+                    "preamble_path": m.preamble_path,
+                    "svg_b64":       m.svg_b64,
+                    "display_width":  m.display_width,
+                    "display_height": m.display_height,
                 }
                 for m in self.model_defs
             ],
@@ -469,6 +477,10 @@ class SchematicData:
                 model_type=m.get("model_type", ""),
                 simulator=m.get("simulator", "SLiCAP"),
                 params=[list(p) for p in m.get("params", [])],
+                preamble_path=m.get("preamble_path", ""),
+                svg_b64=m.get("svg_b64", ""),
+                display_width=m.get("display_width", 200),
+                display_height=m.get("display_height", 80),
             )
             for m in data.get("model_defs", [])
         ]

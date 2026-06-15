@@ -298,7 +298,9 @@ class MainWindow(QMainWindow):
         if dlg.exec() and dlg.model_name() and dlg.model_type():
             self._scene.start_model_placement(
                 dlg.model_name(), dlg.model_type(),
-                dlg.simulator(), dlg.get_params()
+                dlg.simulator(), dlg.get_params(),
+                dlg.preamble_path(), dlg.svg_bytes(),
+                dlg.display_width(), dlg.display_height(),
             )
 
     def _on_place_subcircuit(self):

@@ -219,7 +219,7 @@ class SchematicScene(QGraphicsScene):
         self._analysis_pending: tuple | None = None   # (source, detector, lgref)
         self._placing_text:     str | None   = None   # text for PLACING_TEXT mode
         self._hyperlink_pending: tuple | None = None  # (url, label)
-        self._model_pending:    tuple | None = None   # (name, type, simulator, params)
+        self._model_pending:    tuple | None = None   # (name, type, sim, params, preamble, svg, w, h)
 
         # shape drawing state
         self._draw_kind:   str | None       = None   # "line"|"rect"|"circle"
@@ -508,6 +508,7 @@ class SchematicScene(QGraphicsScene):
         self._analysis_pending  = None
         self._placing_text      = None
         self._hyperlink_pending = None
+        self._model_pending     = None
         # also cancel any in-progress shape draw
         if self._draw_ghost is not None and self._draw_ghost.scene():
             self.removeItem(self._draw_ghost)
@@ -749,20 +750,42 @@ class SchematicScene(QGraphicsScene):
         self.placing_started.emit()
 
     def start_model_placement(self, model_name: str, model_type: str,
-                               simulator: str, params: list):
-        from PySide6.QtWidgets import QGraphicsSimpleTextItem
-        from PySide6.QtGui import QBrush
+                               simulator: str, params: list,
+                               preamble_path: str = "",
+                               svg_bytes: bytes | None = None,
+                               display_width: int = 200, display_height: int = 80):
         self._end_wire(commit=False)
         self._cancel_placement()
-        ghost = QGraphicsSimpleTextItem(f".model {model_name} {model_type}")
-        ghost.setFont(COMMAND_FONT)
-        ghost.setBrush(QBrush(COMMAND_COLOR))
+        if svg_bytes:
+            from PySide6.QtWidgets import QGraphicsPixmapItem
+            from PySide6.QtGui import QPixmap, QPainter as _QPainter
+            from PySide6.QtSvg import QSvgRenderer
+            from PySide6.QtCore import QByteArray
+            renderer = QSvgRenderer(QByteArray(svg_bytes))
+            w, h = max(1, display_width), max(1, display_height)
+            if renderer.isValid():
+                px = QPixmap(w, h)
+                px.fill(Qt.transparent)
+                p = _QPainter(px)
+                renderer.render(p)
+                p.end()
+            else:
+                px = QPixmap(w, h)
+                px.fill(QColor(200, 225, 255))
+            ghost = QGraphicsPixmapItem(px)
+        else:
+            from PySide6.QtWidgets import QGraphicsSimpleTextItem
+            from PySide6.QtGui import QBrush
+            ghost = QGraphicsSimpleTextItem(f".model {model_name} {model_type}")
+            ghost.setFont(COMMAND_FONT)
+            ghost.setBrush(QBrush(COMMAND_COLOR))
         ghost.setOpacity(0.5)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._model_pending = (model_name, model_type, simulator, params)
+        self._model_pending = (model_name, model_type, simulator, params,
+                               preamble_path, svg_bytes, display_width, display_height)
         self._mode = _Mode.PLACING_MODEL
         self.placing_started.emit()
 
@@ -1551,12 +1574,18 @@ class SchematicScene(QGraphicsScene):
                     url=item.url, label=item.label,
                 ))
             elif isinstance(item, ModelItem):
+                svg_b64 = (base64.b64encode(item._svg_bytes).decode()
+                           if item._svg_bytes else "")
                 model_defs.append(ModelData(
                     x=item.pos().x(), y=item.pos().y(),
                     model_name=item.model_name,
                     model_type=item.model_type,
                     simulator=item.simulator,
                     params=[list(p) for p in item.params],
+                    preamble_path=item.preamble_path,
+                    svg_b64=svg_b64,
+                    display_width=item.display_width,
+                    display_height=item.display_height,
                 ))
             elif isinstance(item, ShapeItem):
                 from .schematic_data import ShapeData
@@ -1684,9 +1713,12 @@ class SchematicScene(QGraphicsScene):
             ))
 
         for md in data.model_defs:
+            svg_bytes = base64.b64decode(md.svg_b64) if md.svg_b64 else None
             self.addItem(ModelItem(
                 md.model_name, md.model_type, md.simulator,
                 [list(p) for p in md.params],
+                md.preamble_path, svg_bytes,
+                md.display_width, md.display_height,
                 QPointF(md.x, md.y),
             ))
 
@@ -1782,8 +1814,8 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_MODEL and event.button() == Qt.LeftButton:
             self._push_undo()
-            mn, mt, sim, prms = self._model_pending
-            self.addItem(ModelItem(mn, mt, sim, prms, pos))
+            mn, mt, sim, prms, pp, sb, w, h = self._model_pending
+            self.addItem(ModelItem(mn, mt, sim, prms, pp, sb, w, h, pos))
             self._cancel_placement()
 
         elif self._mode == _Mode.PASTING and event.button() == Qt.LeftButton:
@@ -2489,14 +2521,29 @@ class SchematicScene(QGraphicsScene):
                 model_type=item.model_type,
                 simulator=item.simulator,
                 params=item.params,
+                preamble_path=item.preamble_path,
+                svg_bytes=item._svg_bytes,
+                display_width=item.display_width,
+                display_height=item.display_height,
             )
             if dlg.exec():
                 self._push_undo()
-                item.model_name = dlg.model_name()
-                item.model_type = dlg.model_type()
-                item.simulator  = dlg.simulator()
-                item.params     = dlg.get_params()
-                item._update_text()
+                item.model_name    = dlg.model_name()
+                item.model_type    = dlg.model_type()
+                item.simulator     = dlg.simulator()
+                item.params        = dlg.get_params()
+                item.preamble_path = dlg.preamble_path()
+                new_bytes = dlg.svg_bytes()
+                if new_bytes:
+                    item._svg_bytes    = new_bytes
+                    item._load_renderer()
+                    item.display_width  = dlg.display_width()
+                    item.display_height = dlg.display_height()
+                else:
+                    item._svg_bytes = None
+                    item._renderer  = None
+                item.prepareGeometryChange()
+                item.update()
             return
         if isinstance(item, FreeTextItem):
             from .text_dialog import TextDialog
