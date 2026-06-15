@@ -215,7 +215,7 @@ class _PropertyLabel(QGraphicsItem):
         svg_w = vb.width() * scale
         svg_h = vb.height() * scale
         fm = QFontMetricsF(_LABEL_FONT)
-        prefix_w = fm.horizontalAdvance(prefix) if prefix else 0.0
+        prefix_w = (fm.horizontalAdvance(prefix) + fm.horizontalAdvance(" ") * 0.25) if prefix else 0.0
         # Bottom-aligned: y=0 is the bottom edge (matches text-mode baseline).
         self._svg_renderer = renderer
         self._svg_rect = QRectF(prefix_w, -svg_h, svg_w, svg_h)
@@ -492,7 +492,7 @@ class ComponentItem(_ViewBoxSvgItem):
                 continue
 
             lbl = _PropertyLabel(key, self)
-            prefix = f"{key}: " if show_name else ""
+            prefix = f"{key}:" if show_name else ""
 
             if is_expression(raw_val):
                 svg = render_expression(raw_val)
@@ -501,7 +501,7 @@ class ComponentItem(_ViewBoxSvgItem):
                 else:
                     lbl.set_text(self._prop_text(key))
             else:
-                lbl.set_text(prefix + raw_val if prefix else raw_val)
+                lbl.set_text((prefix + " " + raw_val) if prefix else raw_val)
 
             lbl.setPos(QPointF(*self.prop_offsets[key]))
             lbl.setTransform(_counter_transform(self.rotation(), self.h_flip, self.v_flip))
