@@ -195,16 +195,16 @@ class ModelItem(QGraphicsItem):
             r"\]"
         )
 
-    def netlist_line(self) -> str:
-        """Return the .model netlist line; values are auto-wrapped in {}."""
+    def netlist_lines(self) -> list:
+        """Return .model lines for netlist export; values are auto-wrapped in {}."""
         def _wrap(v: str) -> str:
             v = v.strip()
             if v and not (v.startswith("{") and v.endswith("}")):
                 return "{" + v + "}"
             return v
 
+        header = f".model {self.model_name} {self.model_type}"
         filled = [(n.strip(), _wrap(v)) for n, v in self.params if n.strip()]
         if filled:
-            param_str = " ".join(f"{n}={v}" for n, v in filled)
-            return f".model {self.model_name} {self.model_type} {param_str}"
-        return f".model {self.model_name} {self.model_type}"
+            return [header] + [f"+ {n}={v}" for n, v in filled]
+        return [header]

@@ -79,9 +79,11 @@ def build_netlist(
 
     # ── model definitions ─────────────────────────────────────────────────────
     if model_defs:
-        lines.append("")
         for model_item in model_defs:
-            lines.append(model_item.netlist_line())
+            model_lines = model_item.netlist_lines()
+            if model_lines:
+                lines.append("")
+                lines.extend(model_lines)
 
     # ── parameter blocks ──────────────────────────────────────────────────────
     if params:

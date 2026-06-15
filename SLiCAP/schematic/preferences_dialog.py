@@ -212,7 +212,7 @@ class PreferencesDialog(QDialog):
         ])
         group(right, "Scaling defaults (%)", [
             ("Component value (LaTeX)", "component_label", "latex_scale", ispin(COMP_LABEL_LATEX_SCALE, 25, 400)),
-            ("Parameter table",         "scales", "parameter_table",      ispin(SCALE_PARAMETER_TABLE,  1, 500)),
+            ("Parameter table / Model definition", "scales", "parameter_table", ispin(SCALE_PARAMETER_TABLE, 1, 500)),
             ("LaTeX fragment",          "scales", "latex_fragment",        ispin(SCALE_LATEX_FRAGMENT,   1, 500)),
             ("Image",                   "scales", "image",                 ispin(SCALE_IMAGE,             1, 1000)),
         ])
