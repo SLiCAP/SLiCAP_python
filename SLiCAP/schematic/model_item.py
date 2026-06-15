@@ -121,9 +121,9 @@ class ModelItem(QGraphicsItem):
                 v = value.strip()
                 if v:
                     wrapped = v if (v.startswith("{") and v.endswith("}")) else "{" + v + "}"
-                    lines.append(f"+ {n} = {wrapped}")
+                    lines.append(f"{n} = {wrapped}")
                 else:
-                    lines.append(f"+ {n}")
+                    lines.append(f"{n}")
         return lines
 
     def _paint_text_fallback(self, painter: QPainter, r: QRectF) -> None:
@@ -182,14 +182,13 @@ class ModelItem(QGraphicsItem):
             return rf"\[ {header} \]"
 
         rows = " \\\\\n".join(
-            rf"  \texttt{{+}}\ \mathit{{{_escape(n)}}} & {_value_tex(v)}"
+            rf"  \text{{{_escape(n)}}} & {_value_tex(v)}"
             for n, v in filled
         )
         return (
             r"\["                                           "\n"
-            r"\begin{array}{l@{\;=\;}l}"                   "\n"
+            r"\begin{array}{r@{\;=\;}l}"                   "\n"
             rf"\multicolumn{{2}}{{l}}{{{header}}} \\"      "\n"
-            r"\hline"                                       "\n"
             + rows + "\n"
             r"\end{array}"                                  "\n"
             r"\]"

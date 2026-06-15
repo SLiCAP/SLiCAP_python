@@ -455,7 +455,7 @@ class ComponentItem(_ViewBoxSvgItem):
         display_val = val.strip()
         if display_val.startswith("{") and display_val.endswith("}"):
             display_val = display_val[1:-1].strip()
-        return f"{key}: {display_val}" if show_name else display_val
+        return f"{key} = {display_val}" if show_name else display_val
 
     # ── label management ──────────────────────────────────────────────────────
 
@@ -466,7 +466,7 @@ class ComponentItem(_ViewBoxSvgItem):
 
     def update_labels(self) -> None:
         """Rebuild visible property labels from prop_display."""
-        from .latex_label import is_expression, render_expression
+        from .latex_label import is_expression, render_expression, render_name_eq_value
 
         self._save_label_offsets()
 
@@ -493,16 +493,18 @@ class ComponentItem(_ViewBoxSvgItem):
                 continue
 
             lbl = _PropertyLabel(key, self)
-            prefix = f"{key}:" if show_name else ""
 
             if is_expression(raw_val):
-                svg = render_expression(raw_val)
+                if show_name:
+                    svg = render_name_eq_value(key, raw_val)
+                else:
+                    svg = render_expression(raw_val)
                 if svg is not None:
-                    lbl.set_svg(svg, prefix)
+                    lbl.set_svg(svg)
                 else:
                     lbl.set_text(self._prop_text(key))
             else:
-                lbl.set_text((prefix + " " + raw_val) if prefix else raw_val)
+                lbl.set_text(self._prop_text(key))
 
             lbl.setPos(QPointF(*self.prop_offsets[key]))
             lbl.setTransform(_counter_transform(self.rotation(), self.h_flip, self.v_flip))

@@ -145,6 +145,23 @@ def is_expression(value_str: str) -> bool:
     return s.startswith("{") and s.endswith("}")
 
 
+def render_name_eq_value(name: str, value_str: str) -> bytes | None:
+    """
+    Render '\text{name} = value' as SVG for component labels (show_name=True).
+
+    Uses the same $...$ inline-math pipeline as render_expression so the
+    vertical scale matches individual value labels.
+    """
+    if not LATEX_AVAILABLE:
+        return None
+    safe = name.replace('_', r'\_').replace('^', r'\^{}')
+    val = value_str.strip()
+    if not (val.startswith("{") and val.endswith("}")):
+        val = "{" + val + "}"
+    val_tex = expression_to_latex(val)
+    return _render_cached(rf"\text{{{safe}}} = {val_tex}")
+
+
 def render_expression(value_str: str) -> bytes | None:
     """
     Convert a {…} value string to SVG bytes.
