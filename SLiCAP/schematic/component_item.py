@@ -215,7 +215,7 @@ class _PropertyLabel(QGraphicsItem):
         svg_w = vb.width() * scale
         svg_h = vb.height() * scale
         fm = QFontMetricsF(_LABEL_FONT)
-        prefix_w = fm.horizontalAdvance(prefix + " ") if prefix else 0.0
+        prefix_w = fm.horizontalAdvance(prefix) if prefix else 0.0
         # Bottom-aligned: y=0 is the bottom edge (matches text-mode baseline).
         self._svg_renderer = renderer
         self._svg_rect = QRectF(prefix_w, -svg_h, svg_w, svg_h)
