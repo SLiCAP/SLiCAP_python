@@ -20,7 +20,7 @@ _NET_FILTER   = "SLiCAP Netlist (*.cir);;All Files (*)"
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, config: str = "full"):
+    def __init__(self, config: str = "full", file: str | None = None):
         super().__init__()
         self._config = config
         self.setWindowTitle("SLiCAP Schematic Capture")
@@ -38,6 +38,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self._view)
 
         self._build_menu()
+
+        if file is not None:
+            self._load_file(Path(file))
 
     # ── menu ─────────────────────────────────────────────────────────────────
 
@@ -232,6 +235,16 @@ class MainWindow(QMainWindow):
         act_analysis.triggered.connect(self._on_place_analysis)
         menu.addAction(act_analysis)
 
+        menu.addSeparator()
+
+        act_model = QAction("&Model definition…", self)
+        act_model.triggered.connect(self._on_place_model_definition)
+        menu.addAction(act_model)
+
+        act_lib_link = QAction("Library &link…", self)
+        act_lib_link.triggered.connect(self._on_place_library_link)
+        menu.addAction(act_lib_link)
+
     def _build_help_menu(self, bar):
         menu = bar.addMenu("&Help")
 
@@ -270,6 +283,23 @@ class MainWindow(QMainWindow):
         )
         if path:
             self._scene.start_library_placement(path)
+
+    def _on_place_library_link(self):
+        from .library_link_dialog import LibraryLinkDialog
+        dlg = LibraryLinkDialog(parent=self)
+        if dlg.exec() and dlg.file_path():
+            self._scene.start_library_placement(
+                dlg.file_path(), dlg.directive(), dlg.simulator(), dlg.corner()
+            )
+
+    def _on_place_model_definition(self):
+        from .model_dialog import ModelDialog
+        dlg = ModelDialog(parent=self)
+        if dlg.exec() and dlg.model_name() and dlg.model_type():
+            self._scene.start_model_placement(
+                dlg.model_name(), dlg.model_type(),
+                dlg.simulator(), dlg.get_params()
+            )
 
     def _on_place_subcircuit(self):
         """Place a subcircuit (.lib) as an X block: generate a default symbol,
@@ -669,9 +699,12 @@ class MainWindow(QMainWindow):
 
     def _on_preferences(self):
         from .preferences_dialog import PreferencesDialog
+        import SLiCAP.schematic.config as _config
         dlg = PreferencesDialog(self)
         if dlg.exec():
             dlg.save()                       # applies the new style live
+            if self._current_path is not None:
+                _config.write(project.ini_path())  # flush to disk: _activate_context reloads on focus-in
             self._scene.from_data(self._scene.to_data(), self._library)
             self._dirty = True               # style is part of the schematic now
 
@@ -734,6 +767,7 @@ class MainWindow(QMainWindow):
         from .analysis_item import AnalysisItem
         from .library_item import LibraryItem
         from .parameter_item import ParameterItem
+        from .model_item import ModelItem
         from .netlist import build_netlist
         items = self._scene.items()
         comps  = [i for i in items if isinstance(i, ComponentItem)]
@@ -741,8 +775,10 @@ class MainWindow(QMainWindow):
         cmds   = [i for i in items if isinstance(i, (CommandItem, AnalysisItem))]
         libs   = [i for i in items if isinstance(i, LibraryItem)]
         prms   = [i for i in items if isinstance(i, ParameterItem)]
+        models = [i for i in items if isinstance(i, ModelItem)]
         title = self._doc_props.title or (self._current_path.stem if self._current_path else "schematic")
-        text = build_netlist(comps, wires, cmds, title, libs=libs, params=prms)
+        text = build_netlist(comps, wires, cmds, title, libs=libs, params=prms,
+                             model_defs=models)
         try:
             p.write_text(text, encoding="utf-8")
         except Exception as exc:

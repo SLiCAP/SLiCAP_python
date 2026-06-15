@@ -104,6 +104,19 @@ class LibraryData:
     x: float
     y: float
     file_path: str
+    directive: str = "lib"    # "lib" or "inc"
+    simulator: str = "SLiCAP" # "SLiCAP" or "SPICE"
+    corner:    str = ""       # SPICE corner (only for SPICE .lib)
+
+
+@dataclass
+class ModelData:
+    x: float
+    y: float
+    model_name: str
+    model_type: str
+    simulator:  str          # "SLiCAP" or "SPICE"
+    params:     list         # list of [name, value] string pairs
 
 
 @dataclass
@@ -185,6 +198,7 @@ class SchematicData:
     parameters:       list[ParameterData]        = field(default_factory=list)
     analysis_items:   list[AnalysisData]         = field(default_factory=list)
     shapes:           list[ShapeData]            = field(default_factory=list)
+    model_defs:       list[ModelData]            = field(default_factory=list)
     properties:       DocumentProperties         = field(default_factory=DocumentProperties)
 
     def to_json(self) -> str:
@@ -234,7 +248,11 @@ class SchematicData:
                 for c in self.commands
             ],
             "libs": [
-                {"x": l.x, "y": l.y, "file_path": l.file_path}
+                {
+                    "x": l.x, "y": l.y, "file_path": l.file_path,
+                    "directive": l.directive, "simulator": l.simulator,
+                    "corner": l.corner,
+                }
                 for l in self.libs
             ],
             "images": [
@@ -300,6 +318,16 @@ class SchematicData:
                 }
                 for s in self.shapes
             ],
+            "model_defs": [
+                {
+                    "x": m.x, "y": m.y,
+                    "model_name": m.model_name,
+                    "model_type": m.model_type,
+                    "simulator":  m.simulator,
+                    "params":     [list(p) for p in m.params],
+                }
+                for m in self.model_defs
+            ],
             "properties": {
                 "title":          self.properties.title,
                 "author":         self.properties.author,
@@ -364,7 +392,12 @@ class SchematicData:
             for c in data.get("commands", [])
         ]
         libs = [
-            LibraryData(x=l["x"], y=l["y"], file_path=l["file_path"])
+            LibraryData(
+                x=l["x"], y=l["y"], file_path=l["file_path"],
+                directive=l.get("directive", "lib"),
+                simulator=l.get("simulator", "SLiCAP"),
+                corner=l.get("corner", ""),
+            )
             for l in data.get("libs", [])
         ]
         images = [
@@ -429,6 +462,16 @@ class SchematicData:
             )
             for s in data.get("shapes", [])
         ]
+        model_defs = [
+            ModelData(
+                x=m["x"], y=m["y"],
+                model_name=m.get("model_name", ""),
+                model_type=m.get("model_type", ""),
+                simulator=m.get("simulator", "SLiCAP"),
+                params=[list(p) for p in m.get("params", [])],
+            )
+            for m in data.get("model_defs", [])
+        ]
         p = data.get("properties", {})
         properties = DocumentProperties(
             title=p.get("title", ""),
@@ -447,7 +490,8 @@ class SchematicData:
                    commands=commands, libs=libs, images=images,
                    border=border, latex_fragments=latex_fragments,
                    parameters=parameters, analysis_items=analysis_items,
-                   hyperlinks=hyperlinks, shapes=shapes, properties=properties)
+                   hyperlinks=hyperlinks, shapes=shapes,
+                   model_defs=model_defs, properties=properties)
 
     def normalize_origin(self, grid_size: int = 5) -> None:
         """Shift all positions so the bounding-rect centre lands on the origin.
@@ -465,7 +509,7 @@ class SchematicData:
             xs.append(j.x); ys.append(j.y)
         for item in (*self.free_texts, *self.hyperlinks, *self.commands,
                      *self.libs, *self.images, *self.latex_fragments,
-                     *self.parameters, *self.analysis_items):
+                     *self.parameters, *self.analysis_items, *self.model_defs):
             xs.append(item.x); ys.append(item.y)
         for s in self.shapes:
             xs.append(s.x); ys.append(s.y)
@@ -490,7 +534,7 @@ class SchematicData:
             j.x -= dx; j.y -= dy
         for item in (*self.free_texts, *self.hyperlinks, *self.commands,
                      *self.libs, *self.images, *self.latex_fragments,
-                     *self.parameters, *self.analysis_items):
+                     *self.parameters, *self.analysis_items, *self.model_defs):
             item.x -= dx; item.y -= dy
         for s in self.shapes:
             s.x -= dx; s.y -= dy

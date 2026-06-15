@@ -28,6 +28,7 @@ from .parameter_item import ParameterItem
 from .analysis_item import AnalysisItem
 from .hyperlink_item import HyperlinkItem
 from .shape_item import ShapeItem
+from .model_item import ModelItem
 
 
 class _Mode(Enum):
@@ -44,6 +45,7 @@ class _Mode(Enum):
     PLACING_PARAMETER   = auto()
     PLACING_ANALYSIS    = auto()
     PLACING_HYPERLINK   = auto()
+    PLACING_MODEL       = auto()
     PASTING             = auto()
     DRAWING_LINE        = auto()
     DRAWING_RECT        = auto()
@@ -210,13 +212,14 @@ class SchematicScene(QGraphicsScene):
         self._wire_pin_preview_wires: list = []  # preview WireItems for bridge wires during drag
 
         self._border_pending:   tuple | None = None   # (width, height, show_in_export)
-        self._library_pending:  str | None   = None   # file_path
+        self._library_pending:  tuple | None = None   # (file_path, directive, simulator, corner)
         self._image_pending:    tuple | None = None   # (file_path, width, height)
         self._latex_pending:    tuple | None = None   # (code, preamble, svg_bytes, w, h)
         self._param_pending:    tuple | None = None   # (params, preamble, svg_bytes, w, h)
         self._analysis_pending: tuple | None = None   # (source, detector, lgref)
         self._placing_text:     str | None   = None   # text for PLACING_TEXT mode
         self._hyperlink_pending: tuple | None = None  # (url, label)
+        self._model_pending:    tuple | None = None   # (name, type, simulator, params)
 
         # shape drawing state
         self._draw_kind:   str | None       = None   # "line"|"rect"|"circle"
@@ -609,13 +612,18 @@ class SchematicScene(QGraphicsScene):
         self._mode = _Mode.PLACING_BORDER
         self.placing_started.emit()
 
-    def start_library_placement(self, file_path: str):
+    def start_library_placement(self, file_path: str, directive: str = "lib",
+                                simulator: str = "SLiCAP", corner: str = ""):
         from pathlib import Path
         from PySide6.QtWidgets import QGraphicsSimpleTextItem
         from PySide6.QtGui import QBrush
         self._end_wire(commit=False)
         self._cancel_placement()
-        ghost = QGraphicsSimpleTextItem(f".lib {Path(file_path).name}")
+        name = Path(file_path).name if file_path else ""
+        ghost_text = f".{directive} {name}"
+        if corner:
+            ghost_text += f" {corner}"
+        ghost = QGraphicsSimpleTextItem(ghost_text)
         ghost.setFont(COMMAND_FONT)
         ghost.setBrush(QBrush(COMMAND_COLOR))
         ghost.setOpacity(0.5)
@@ -623,7 +631,7 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._library_pending = file_path
+        self._library_pending = (file_path, directive, simulator, corner)
         self._mode = _Mode.PLACING_LIBRARY
         self.placing_started.emit()
 
@@ -738,6 +746,24 @@ class SchematicScene(QGraphicsScene):
         self.addItem(self._ghost)
         self._analysis_pending = (source, detector, lgref)
         self._mode = _Mode.PLACING_ANALYSIS
+        self.placing_started.emit()
+
+    def start_model_placement(self, model_name: str, model_type: str,
+                               simulator: str, params: list):
+        from PySide6.QtWidgets import QGraphicsSimpleTextItem
+        from PySide6.QtGui import QBrush
+        self._end_wire(commit=False)
+        self._cancel_placement()
+        ghost = QGraphicsSimpleTextItem(f".model {model_name} {model_type}")
+        ghost.setFont(COMMAND_FONT)
+        ghost.setBrush(QBrush(COMMAND_COLOR))
+        ghost.setOpacity(0.5)
+        ghost.setAcceptedMouseButtons(Qt.NoButton)
+        self._ghost = ghost
+        self._ghost.setPos(QPointF(-9999, -9999))
+        self.addItem(self._ghost)
+        self._model_pending = (model_name, model_type, simulator, params)
+        self._mode = _Mode.PLACING_MODEL
         self.placing_started.emit()
 
     # ── shape drawing ─────────────────────────────────────────────────────────
@@ -1427,8 +1453,8 @@ class SchematicScene(QGraphicsScene):
 
     def to_data(self):
         """Serialize the current scene to a SchematicData object."""
-        from .schematic_data import SchematicData, ComponentData, WireData, JunctionData, FreeTextData, CommandData, BorderData, LibraryData, ImageData, LatexFragmentData, ParameterData, AnalysisData, HyperlinkData
-        comps, wires, junctions, free_texts, commands, libs, images, latex_frags, param_items, analysis_items, hyperlinks, shapes = [], [], [], [], [], [], [], [], [], [], [], []
+        from .schematic_data import SchematicData, ComponentData, WireData, JunctionData, FreeTextData, CommandData, BorderData, LibraryData, ImageData, LatexFragmentData, ParameterData, AnalysisData, HyperlinkData, ModelData
+        comps, wires, junctions, free_texts, commands, libs, images, latex_frags, param_items, analysis_items, hyperlinks, shapes, model_defs = [], [], [], [], [], [], [], [], [], [], [], [], []
         border_data = None
         for item in self.items():
             if isinstance(item, ComponentItem):
@@ -1479,6 +1505,9 @@ class SchematicScene(QGraphicsScene):
                 libs.append(LibraryData(
                     x=item.pos().x(), y=item.pos().y(),
                     file_path=item.file_path,
+                    directive=item.directive,
+                    simulator=item.simulator,
+                    corner=item.corner,
                 ))
             elif isinstance(item, ImageItem):
                 images.append(ImageData(
@@ -1521,6 +1550,14 @@ class SchematicScene(QGraphicsScene):
                     x=item.pos().x(), y=item.pos().y(),
                     url=item.url, label=item.label,
                 ))
+            elif isinstance(item, ModelItem):
+                model_defs.append(ModelData(
+                    x=item.pos().x(), y=item.pos().y(),
+                    model_name=item.model_name,
+                    model_type=item.model_type,
+                    simulator=item.simulator,
+                    params=[list(p) for p in item.params],
+                ))
             elif isinstance(item, ShapeItem):
                 from .schematic_data import ShapeData
                 shapes.append(ShapeData(
@@ -1540,7 +1577,8 @@ class SchematicScene(QGraphicsScene):
                              commands=commands, libs=libs, images=images,
                              border=border_data, latex_fragments=latex_frags,
                              parameters=param_items, analysis_items=analysis_items,
-                             hyperlinks=hyperlinks, shapes=shapes)
+                             hyperlinks=hyperlinks, shapes=shapes,
+                             model_defs=model_defs)
 
     def from_data(self, data, library) -> None:
         """Populate the scene from a SchematicData object."""
@@ -1601,7 +1639,8 @@ class SchematicScene(QGraphicsScene):
             self.addItem(CommandItem(cd.text, QPointF(cd.x, cd.y)))
 
         for ld in data.libs:
-            self.addItem(LibraryItem(ld.file_path, QPointF(ld.x, ld.y)))
+            self.addItem(LibraryItem(ld.file_path, QPointF(ld.x, ld.y),
+                                     ld.directive, ld.simulator, ld.corner))
 
         for img in data.images:
             self.addItem(ImageItem(img.file_path, img.display_width,
@@ -1642,6 +1681,13 @@ class SchematicScene(QGraphicsScene):
                 line_end_end=sd.line_end_end,
                 line_width=sd.line_width,
                 pos=QPointF(sd.x, sd.y),
+            ))
+
+        for md in data.model_defs:
+            self.addItem(ModelItem(
+                md.model_name, md.model_type, md.simulator,
+                [list(p) for p in md.params],
+                QPointF(md.x, md.y),
             ))
 
         if data.border is not None:
@@ -1706,7 +1752,8 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_LIBRARY and event.button() == Qt.LeftButton:
             self._push_undo()
-            self.addItem(LibraryItem(self._library_pending, pos))
+            fp, directive, simulator, corner = self._library_pending
+            self.addItem(LibraryItem(fp, pos, directive, simulator, corner))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_IMAGE and event.button() == Qt.LeftButton:
@@ -1731,6 +1778,12 @@ class SchematicScene(QGraphicsScene):
             self._push_undo()
             src, det, lgr = self._analysis_pending
             self.addItem(AnalysisItem(src, det, lgr, pos))
+            self._cancel_placement()
+
+        elif self._mode == _Mode.PLACING_MODEL and event.button() == Qt.LeftButton:
+            self._push_undo()
+            mn, mt, sim, prms = self._model_pending
+            self.addItem(ModelItem(mn, mt, sim, prms, pos))
             self._cancel_placement()
 
         elif self._mode == _Mode.PASTING and event.button() == Qt.LeftButton:
@@ -1915,7 +1968,7 @@ class SchematicScene(QGraphicsScene):
                     if isinstance(i, (ComponentItem, FreeTextItem, CommandItem,
                                       JunctionItem, BorderItem,
                                       LibraryItem, ImageItem, LatexFragmentItem, ParameterItem,
-                                      AnalysisItem, HyperlinkItem))
+                                      AnalysisItem, HyperlinkItem, ModelItem))
                 }
                 # Custom group drag: intercept multi-item non-wire selections so
                 # rubber-banding runs after all items have moved (not per-item in itemChange).
@@ -1926,7 +1979,7 @@ class SchematicScene(QGraphicsScene):
                         if isinstance(i, (ComponentItem, FreeTextItem, CommandItem,
                                           JunctionItem, BorderItem, LibraryItem,
                                           ImageItem, LatexFragmentItem, ParameterItem,
-                                          AnalysisItem, HyperlinkItem, ShapeItem))
+                                          AnalysisItem, HyperlinkItem, ShapeItem, ModelItem))
                     ]
                     if len(non_wire_sel) > 1:
                         self._comp_group_move_start = snap(raw)
@@ -2027,7 +2080,7 @@ class SchematicScene(QGraphicsScene):
                            _Mode.PLACING_BORDER, _Mode.PLACING_LIBRARY,
                            _Mode.PLACING_IMAGE, _Mode.PLACING_LATEX,
                            _Mode.PLACING_PARAMETER, _Mode.PLACING_ANALYSIS,
-                           _Mode.PLACING_HYPERLINK)
+                           _Mode.PLACING_HYPERLINK, _Mode.PLACING_MODEL)
                 and self._ghost is not None):
             self._ghost.setPos(pos)
 
@@ -2285,7 +2338,7 @@ class SchematicScene(QGraphicsScene):
                     if isinstance(i, (ComponentItem, FreeTextItem, CommandItem,
                                       JunctionItem, BorderItem,
                                       LibraryItem, ImageItem, LatexFragmentItem, ParameterItem,
-                                      AnalysisItem))
+                                      AnalysisItem, ModelItem))
                     and id(i) in self._pre_drag_pos
                 )
                 if moved:
@@ -2340,16 +2393,19 @@ class SchematicScene(QGraphicsScene):
                 item.show_in_export = dlg.show_in_export()
             return
         if isinstance(item, LibraryItem):
-            from PySide6.QtWidgets import QFileDialog
-            from . import project
-            path, _ = QFileDialog.getOpenFileName(
-                None, "Select Library File",
-                item.file_path or str(project.subdir("lib")),
-                "Library Files (*.lib *.spi *.sp);;All Files (*)",
+            from .library_link_dialog import LibraryLinkDialog
+            dlg = LibraryLinkDialog(
+                directive=item.directive,
+                simulator=item.simulator,
+                file_path=item.file_path,
+                corner=item.corner,
             )
-            if path:
+            if dlg.exec() and dlg.file_path():
                 self._push_undo()
-                item.file_path = path
+                item.file_path  = dlg.file_path()
+                item.directive  = dlg.directive()
+                item.simulator  = dlg.simulator()
+                item.corner     = dlg.corner()
                 item._update_text()
             return
         if isinstance(item, ImageItem):
@@ -2425,6 +2481,22 @@ class SchematicScene(QGraphicsScene):
                 item.detector = dlg.get_detector()
                 item.lgref    = dlg.get_lgref()
                 item.update_text()
+            return
+        if isinstance(item, ModelItem):
+            from .model_dialog import ModelDialog
+            dlg = ModelDialog(
+                model_name=item.model_name,
+                model_type=item.model_type,
+                simulator=item.simulator,
+                params=item.params,
+            )
+            if dlg.exec():
+                self._push_undo()
+                item.model_name = dlg.model_name()
+                item.model_type = dlg.model_type()
+                item.simulator  = dlg.simulator()
+                item.params     = dlg.get_params()
+                item._update_text()
             return
         if isinstance(item, FreeTextItem):
             from .text_dialog import TextDialog

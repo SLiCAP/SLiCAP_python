@@ -51,6 +51,7 @@ def build_netlist(
     title:      str = "schematic",
     libs:       list = None, # list[LibraryItem]
     params:     list = None, # list[ParameterItem]
+    model_defs: list = None, # list[ModelItem]
 ) -> str:
     """
     Build a SLiCAP netlist string.
@@ -74,10 +75,13 @@ def build_netlist(
     if libs:
         lines.append("")
         for lib_item in libs:
-            path = lib_item.file_path
-            if " " in path:
-                path = f'"{path}"'
-            lines.append(f".lib {path}")
+            lines.append(lib_item.netlist_line())
+
+    # ── model definitions ─────────────────────────────────────────────────────
+    if model_defs:
+        lines.append("")
+        for model_item in model_defs:
+            lines.append(model_item.netlist_line())
 
     # ── parameter blocks ──────────────────────────────────────────────────────
     if params:

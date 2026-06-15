@@ -14,11 +14,17 @@ def main():
         default="full",
         help="Symbol library set: 'basic' loads only Symbols.svg; 'full' loads all system SVGs (default).",
     )
+    parser.add_argument(
+        "file",
+        nargs="?",
+        default=None,
+        help="Schematic file to open at startup (.slicap_sch).",
+    )
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
     try:
-        window = MainWindow(config=args.config)
+        window = MainWindow(config=args.config, file=args.file)
     except SymbolError as exc:
         # A malformed symbol definition is the user's to fix, in the SVG file —
         # we report it clearly and stop rather than guessing a correction.

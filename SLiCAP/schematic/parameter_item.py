@@ -179,7 +179,7 @@ class ParameterItem(QGraphicsItem):
         )
         return (
             r"\["                                                    "\n"
-            r"\begin{array}{r@{\quad}l}"                            "\n"
+            r"\begin{array}{r@{\ }l}"                               "\n"
             r"\multicolumn{2}{c}{\textbf{Parameters}} \\"          "\n"
             r"\textbf{name} & \textbf{value} \\"                  "\n"
             r"\hline"                                               "\n"
