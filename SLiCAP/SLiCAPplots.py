@@ -200,7 +200,6 @@ class axis(object):
         """
         Scale factor (*str*) for the y-scale; e.g. M for 1E6. Defaults to ''.
         """
-        return
 
     def makeTraceDict(self):
         """
@@ -388,7 +387,7 @@ class figure(object):
             plt.show()
         self.updateTracedict()
         plt.close(fig)
-        return
+        return True
 
 def defaultsPlot():
     """
@@ -423,7 +422,7 @@ def defaultsPlot():
                     t.set_fontsize(ini.plot_fontsize)
             except:
                 pass
-    return
+
 
 def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, 
               sweepVar = 'auto', sweepScale = '', xVar = 'auto', xScale = '', 
