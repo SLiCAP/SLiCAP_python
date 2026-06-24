@@ -12,7 +12,7 @@ import html
 from . import project
 from .component_item import (
     ComponentItem, available_models, params_for_symbol,
-    fixed_params_for_symbol, refs_for_symbol,
+    fixed_params_for_symbol, refs_for_symbol, strip_braces,
     SYMBOL_DESCRIPTION, SYMBOL_INFO, SYMBOL_PREFIX,
 )
 
@@ -87,23 +87,21 @@ class PropertiesDialog(QDialog):
         self._grid.addWidget(self._ref_sv,     _REFDES_ROW, 2, Qt.AlignCenter)
         self._grid.addWidget(self._ref_sn,     _REFDES_ROW, 3, Qt.AlignCenter)
 
-        # Model row
+        # Model row — a free text field: the model is the SLiCAP model name (or,
+        # for an X block, the subcircuit name) and the user must be able to type
+        # any value, not just pick from the symbol's single data-model default.
         self._models = available_models(item.symbol_name)
         if self._models:
-            self._model_combo = QComboBox()
-            self._model_combo.addItems(self._models)
-            idx = self._model_combo.findText(item.model)
-            self._model_combo.setCurrentIndex(max(idx, 0))
+            self._model_edit = QLineEdit(item.model)
             sv_mod, sn_mod = item.prop_display.get("model", (False, False))
             self._model_sv, self._model_sn = _make_pair(sv_mod, sn_mod)
-            self._grid.addWidget(QLabel("model"),   _MODEL_ROW, 0)
-            self._grid.addWidget(self._model_combo, _MODEL_ROW, 1)
-            self._grid.addWidget(self._model_sv,    _MODEL_ROW, 2, Qt.AlignCenter)
-            self._grid.addWidget(self._model_sn,    _MODEL_ROW, 3, Qt.AlignCenter)
+            self._grid.addWidget(QLabel("model"),  _MODEL_ROW, 0)
+            self._grid.addWidget(self._model_edit, _MODEL_ROW, 1)
+            self._grid.addWidget(self._model_sv,   _MODEL_ROW, 2, Qt.AlignCenter)
+            self._grid.addWidget(self._model_sn,   _MODEL_ROW, 3, Qt.AlignCenter)
             self._params_start = _MODEL_ROW + 1
-            self._model_combo.currentTextChanged.connect(self._on_model_changed)
         else:
-            self._model_combo = None
+            self._model_edit = None
             self._model_sv = self._model_sn = None
             self._params_start = _MODEL_ROW
 
@@ -118,7 +116,7 @@ class PropertiesDialog(QDialog):
         self._ref_sv_checks: list[QCheckBox]      = []
         self._ref_sn_checks: list[QCheckBox]      = []
         self._ref_widgets:   list[QWidget]        = []
-        current_model = self._model_combo.currentText() if self._model_combo else item.model
+        current_model = self._model_edit.text() if self._model_edit else item.model
         self._rebuild_params(current_model, item.params, item.prop_display)
         self._rebuild_refs(current_model, item.refs, item.prop_display)
 
@@ -195,7 +193,7 @@ class PropertiesDialog(QDialog):
             row = self._params_start + i
             sv_val, sn_val = existing_display.get(name, (True, False) if name == "value" else (False, False))
             lbl  = QLabel(name)
-            edit = QLineEdit(existing_values.get(name, ""))
+            edit = QLineEdit(strip_braces(existing_values.get(name, "")))
             sv, sn = _make_pair(sv_val, sn_val)
             self._grid.addWidget(lbl,  row, 0)
             self._grid.addWidget(edit, row, 1)
@@ -206,20 +204,6 @@ class PropertiesDialog(QDialog):
             self._param_sv[name]    = sv
             self._param_sn[name]    = sn
         self._params_count = len(param_keys)
-
-    def _on_model_changed(self, model_name: str) -> None:
-        current_values  = {n: e.text() for n, e in self._param_edits.items()}
-        current_display = {
-            n: (self._param_sv[n].isChecked(), self._param_sn[n].isChecked())
-            for n in self._param_sv
-        }
-        current_ref_display = {
-            f"ref {i + 1}": (self._ref_sv_checks[i].isChecked(), self._ref_sn_checks[i].isChecked())
-            for i in range(len(self._ref_sv_checks))
-        }
-        self._rebuild_params(model_name, current_values, current_display)
-        self._rebuild_refs(model_name, [e.text() for e in self._ref_edits],
-                           current_ref_display)
 
     def _rebuild_refs(self, model_name: str, existing: list[str],
                       existing_display: dict | None = None) -> None:
@@ -259,11 +243,11 @@ class PropertiesDialog(QDialog):
         disp: dict[str, tuple[bool, bool]] = {}
         disp["refdes"] = (self._ref_sv.isChecked(), self._ref_sn.isChecked())
 
-        if self._model_combo is not None:
-            self._item.model = self._model_combo.currentText()
+        if self._model_edit is not None:
+            self._item.model = self._model_edit.text().strip()
             disp["model"] = (self._model_sv.isChecked(), self._model_sn.isChecked())
 
-        self._item.params = {n: e.text().strip() for n, e in self._param_edits.items()}
+        self._item.params = {n: strip_braces(e.text()) for n, e in self._param_edits.items()}
         for name in self._param_sv:
             disp[name] = (self._param_sv[name].isChecked(),
                           self._param_sn[name].isChecked())

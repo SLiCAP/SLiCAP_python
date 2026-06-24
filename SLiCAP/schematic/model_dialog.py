@@ -16,25 +16,13 @@ def _slicap_model_types() -> list:
         return []
 
 
-def _spice_model_types() -> list:
+def _model_param_names(model_type: str) -> list:
+    """Standard SLiCAP parameter names for the given model type."""
     try:
-        from SLiCAP.SLiCAPprotos import _SPICEMODELS
-        return sorted(_SPICEMODELS.keys())
-    except Exception:
-        return []
-
-
-def _model_param_names(simulator: str, model_type: str) -> list:
-    """Standard parameter names for the given model type."""
-    try:
-        if simulator == "SLiCAP":
-            from SLiCAP.SLiCAPprotos import _MODELS
-            m = _MODELS.get(model_type)
-            if m:
-                return list(m.params.keys())
-        else:
-            from SLiCAP.SLiCAPprotos import _SPICEMODELS
-            return list(_SPICEMODELS.get(model_type, []))
+        from SLiCAP.SLiCAPprotos import _MODELS
+        m = _MODELS.get(model_type)
+        if m:
+            return list(m.params.keys())
     except Exception:
         pass
     return []
@@ -69,13 +57,8 @@ class ModelDialog(QDialog):
         outer = QVBoxLayout(self)
         outer.setSizeConstraint(QLayout.SetMinimumSize)
 
-        # ── simulator / type / name ───────────────────────────────────────────
+        # ── type / name ───────────────────────────────────────────────────────
         form = QFormLayout()
-
-        self._sim_combo = QComboBox()
-        self._sim_combo.addItems(["SLiCAP", "SPICE"])
-        self._sim_combo.setCurrentText(simulator)
-        form.addRow("Simulator:", self._sim_combo)
 
         self._type_combo = QComboBox()
         form.addRow("Model type:", self._type_combo)
@@ -180,8 +163,7 @@ class ModelDialog(QDialog):
         self._table.itemChanged.connect(self._mark_dirty)
 
         # Populate type combo first (without triggering signals) then connect.
-        self._populate_type_combo(simulator, model_type)
-        self._sim_combo.currentTextChanged.connect(self._on_sim_changed)
+        self._populate_type_combo(model_type)
         self._type_combo.currentTextChanged.connect(self._on_type_changed)
 
         if self._is_editing:
@@ -210,12 +192,10 @@ class ModelDialog(QDialog):
 
     # ── type-combo helpers ────────────────────────────────────────────────────
 
-    def _populate_type_combo(self, simulator: str, select: str = "") -> None:
+    def _populate_type_combo(self, select: str = "") -> None:
         self._type_combo.blockSignals(True)
         self._type_combo.clear()
-        items = (_slicap_model_types() if simulator == "SLiCAP"
-                 else _spice_model_types())
-        self._type_combo.addItems(items)
+        self._type_combo.addItems(_slicap_model_types())
         if select:
             idx = self._type_combo.findText(select)
             if idx >= 0:
@@ -225,16 +205,9 @@ class ModelDialog(QDialog):
     def _refill_params(self) -> None:
         self._table.blockSignals(True)
         self._table.setRowCount(0)
-        for name in _model_param_names(self._sim_combo.currentText(),
-                                        self._type_combo.currentText()):
+        for name in _model_param_names(self._type_combo.currentText()):
             self._add_row(name, "")
         self._table.blockSignals(False)
-
-    def _on_sim_changed(self, sim: str) -> None:
-        self._populate_type_combo(sim, self._type_combo.currentText())
-        if not self._is_editing:
-            self._refill_params()
-            self._mark_dirty()
 
     def _on_type_changed(self, _: str) -> None:
         if not self._is_editing:
@@ -390,7 +363,7 @@ class ModelDialog(QDialog):
         return self._type_combo.currentText()
 
     def simulator(self) -> str:
-        return self._sim_combo.currentText()
+        return "SLiCAP"
 
     def get_params(self) -> list:
         return self._current_params()

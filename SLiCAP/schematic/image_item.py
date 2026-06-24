@@ -1,3 +1,4 @@
+import weakref
 from pathlib import Path
 
 from PySide6.QtWidgets import QGraphicsItem, QStyle
@@ -5,6 +6,8 @@ from PySide6.QtCore import Qt, QPointF, QSize, QRectF
 from PySide6.QtGui import QPixmap, QColor, QPainter, QPainterPath, QPen
 
 from .config import snap
+
+_live_image_items: weakref.WeakSet = weakref.WeakSet()
 
 _PLACEHOLDER_COLOR = QColor(200, 200, 200)
 _SELECTED          = QStyle.State_Selected
@@ -39,7 +42,16 @@ class ImageItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self._renderer = None          # QSvgRenderer for SVG files
         self._pixmap: QPixmap | None = None  # QPixmap for raster / PDF
+        _live_image_items.add(self)
         self._load()
+
+    def rescale(self, ratio: float) -> None:
+        self.prepareGeometryChange()
+        self.display_width  = max(1, round(self.display_width  * ratio))
+        self.display_height = max(1, round(self.display_height * ratio))
+        if self._pixmap is not None:
+            self._load()  # reload raster/PDF pixmap at new size
+        self.update()
 
     # ── loading ───────────────────────────────────────────────────────────────
 

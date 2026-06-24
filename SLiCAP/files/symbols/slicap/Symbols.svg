@@ -2,41 +2,6 @@
 
   <defs>
 
-    <g id="R"
-       data-prefix="R" 
-       data-nodes="pos neg"
-       data-model="R" 
-       data-params="value dcvar dcvarlot noisetemp noiseflow"
-       data-description="Resistor (nonzero resistance)"
-       data-info="https://www.slicap.org/syntax/devices.html#r-resistor">
-
-       <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
-       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
-       <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1"/>
-
-       <!-- Pins -->
-       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
-    </g>
-    
-    <g id="R0"
-       data-prefix="R" 
-       data-nodes="pos neg"
-       data-model="r" 
-       data-params="value dcvar dcvarlot noisetemp noiseflow"
-       data-description="Resistor (finite resistance; includes zero)"
-       data-info="https://www.slicap.org/syntax/devices.html#r-resistor">
-
-       <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
-       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
-       <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1"/>
-       <text x="5" y="-13" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
-
-       <!-- Pins -->
-       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
-    </g>
-
     <g id="C"
        data-prefix="C" 
        data-nodes="pos neg"
@@ -70,6 +35,41 @@
              fill="none" stroke="black" stroke-width="1"/>
        <text x="5" y="-13" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
        
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+    </g>
+
+    <g id="R"
+       data-prefix="R" 
+       data-nodes="pos neg"
+       data-model="R" 
+       data-params="value dcvar dcvarlot noisetemp noiseflow"
+       data-description="Resistor (nonzero resistance)"
+       data-info="https://www.slicap.org/syntax/devices.html#r-resistor">
+
+       <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1"/>
+
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+    </g>
+    
+    <g id="R0"
+       data-prefix="R" 
+       data-nodes="pos neg"
+       data-model="r" 
+       data-params="value dcvar dcvarlot noisetemp noiseflow"
+       data-description="Resistor (finite resistance; includes zero)"
+       data-info="https://www.slicap.org/syntax/devices.html#r-resistor">
+
+       <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       <text x="5" y="-13" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+
        <!-- Pins -->
        <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
        <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
@@ -113,6 +113,56 @@
        <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
     </g>
 
+    <g id="VCVS"
+       data-prefix="E" 
+       data-nodes="outp outn inp inn"
+       data-model="E" 
+       data-params="value"
+       data-description="Voltage-controlled voltage source"
+       data-info="https://www.slicap.org/syntax/devices.html#e-voltage-controlled-voltage-source">
+
+       <line x1="10" y1="-20" x2="10" y2="20" stroke="black" stroke-width="1"/>
+       <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-20" y1="-20" x2="-10" y2="-20" stroke="black" stroke-width="1"/>
+       <line x1="-20" y1="20" x2="-10" y2="20" stroke="black" stroke-width="1"/>
+       <text x="-15" y="-10" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="-15" y="15" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       <text x="15" y="-10" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="15" y="15" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
+    <g id="VCVS-Z"
+       data-prefix="E" 
+       data-nodes="outp outn inp inn"
+       data-model="EZ" 
+       data-params="value zo"
+       data-description="Voltage-controlled voltage source with finite output impedance"
+       data-info="https://www.slicap.org/syntax/devices.html#e-voltage-controlled-voltage-source">
+
+       <polyline points="20 -20 10 -20 10 20" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-20" y1="-20" x2="-10" y2="-20" stroke="black" stroke-width="1"/>
+       <line x1="-20" y1="20" x2="-10" y2="20" stroke="black" stroke-width="1"/>
+       <text x="-15" y="-10" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="-15" y="15" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       <text x="15" y="-10" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="15" y="15" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       <rect x="20" y="-25" width="20" height="10" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="40" y1="-20" x2="50" y2="-20" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="50" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
     <g id="CCCS"
        data-prefix="F" 
        data-nodes="outp outn"
@@ -134,26 +184,28 @@
        <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
     </g>
 
-    <g id="VCVS"
-       data-prefix="E" 
+    <g id="VCCS"
+       data-prefix="G" 
        data-nodes="outp outn inp inn"
-       data-model="E" 
+       data-model="G" 
        data-params="value"
-       data-description="Voltage-controlled voltage source"
-       data-info="https://www.slicap.org/syntax/devices.html#e-voltage-controlled-voltage-source">
+       data-description="Voltage-controlled current source"
+       data-info="https://www.slicap.org/syntax/devices.html#g-voltage-controlled-current-source">
 
-       <polyline points="20 -20 10 -20 10 20 20 20" stroke="black" stroke-width="1" fill="none" />
+       <line x1="10" y1="-20" x2="10" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="10" y1="20" x2="10" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
        <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-5" y1="-10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       <polyline points="-5 12 -3 6 -7 6 -5 12" stroke="black" stroke-width="0" fill="black"/>
        <line x1="-20" y1="-20" x2="-10" y2="-20" stroke="black" stroke-width="1"/>
        <line x1="-20" y1="20" x2="-10" y2="20" stroke="black" stroke-width="1"/>
        <text x="-15" y="-10" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
        <text x="-15" y="15" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
-       <text x="15" y="-10" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
-       <text x="15" y="15" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
        
        <!-- Pins -->
-       <circle cx="20" cy="-20" r="0.5" class="node" data-node="outp" />
-       <circle cx="20" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
        <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
        <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
     </g>
@@ -165,7 +217,7 @@
        data-model="H" 
        data-params="value"
        data-description="Current-controlled voltage source"
-       data-info="https://www.slicap.org/syntax/devices.html#h-current-controlled-voltage-source">
+       data-info="https://www.slicap.org/syntax/devices#model-h">
 
        <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
        <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
@@ -177,33 +229,28 @@
        <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
     </g>
 
-    <g id="VCCS"
-       data-prefix="G" 
-       data-nodes="outp outn inp inn"
-       data-model="G" 
-       data-params="value"
-       data-description="Voltage-controlled current source"
-       data-info="https://www.slicap.org/syntax/devices.html#g-voltage-controlled-current-source">
+    <g id="CCVS-Z"
+       data-prefix="H" 
+       data-nodes="outp outn"
+       data-refs="V?"
+       data-model="HZ" 
+       data-params="value zo"
+       data-description="Current-controlled voltage source with finite output impedance"
+       data-info="https://www.slicap.org/syntax/devices#model-hz">
 
-       <polyline points="20 -20 10 -20 10 -10" stroke="black" stroke-width="1" fill="none" />
-       <polyline points="20 20 10 20 10 10" stroke="black" stroke-width="1" fill="none" />
-       <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
-       <line x1="0" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
-       <line x1="-5" y1="-10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
-       <polyline points="-5 12 -3 6 -7 6 -5 12" stroke="black" stroke-width="0" fill="black"/>
-       <line x1="-20" y1="-20" x2="-10" y2="-20" stroke="black" stroke-width="1"/>
-       <line x1="-20" y1="20" x2="-10" y2="20" stroke="black" stroke-width="1"/>
-       <text x="-15" y="-10" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
-       <text x="-15" y="15" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       <polyline points="10 -20 0 -20 0 20" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="30" y1="-20" x2="40" y2="-20" stroke="black" stroke-width="1"/>
+       <rect x="10" y="-25" width="20" height="10" fill="none" stroke="black" stroke-width="1"/>
+       <text x="5" y="-10" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="15" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
        
        <!-- Pins -->
-       <circle cx="20" cy="-20" r="0.5" class="node" data-node="outp" />
-       <circle cx="20" cy="20" r="0.5" class="node" data-node="outn" />
-       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
-       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+       <circle cx="40" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
     </g>
 
-    <g id="nullor"
+    <g id="N"
        data-prefix="N" 
        data-nodes="outp outn inp inn"
        data-model="N" 
@@ -213,22 +260,22 @@
        <!-- norator -->
        <circle cx="10" cy="5" r="5" fill="none" stroke="black" stroke-width="1"/>
        <circle cx="10" cy="-5" r="5" fill="none" stroke="black" stroke-width="1"/>
-       <polyline points="20 -20 10 -20 10 -10" stroke="black" stroke-width="1" fill="none" />
-       <polyline points="20 20 10 20 10 10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 -20 10 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points=" 10 20 10 10" stroke="black" stroke-width="1" fill="none" />
                 
        <!-- nullator -->
        <ellipse cx="-10" cy="0" rx="5" ry="10" fill="none" stroke="black" stroke-width="1"/>
-       <polyline points="-20 20 -10 20 -10 10" stroke="black" stroke-width="1" fill="none" />
-       <polyline points="-20 -20 -10 -20 -10 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-10 20 -10 10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-10 -20 -10 -10" stroke="black" stroke-width="1" fill="none" />
        
        <!-- Pins -->
-       <circle cx="20" cy="-20" r="0.5" class="node" data-node="outp" />
-       <circle cx="20" cy="20" r="0.5" class="node" data-node="outn" />
-       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
-       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-10" cy="20" r="0.5" class="node" data-node="inn" />
     </g>
 
-    <g id="transformer" 
+    <g id="TR" 
        data-prefix="T" 
        data-nodes="outp outn inp inn"
        data-model="T" 
@@ -236,22 +283,19 @@
        data-description="Ideal transformer"
        data-info="https://www.slicap.org/syntax/devices.html#t-ideal-transformer">
 
-       <polyline points="-20 -20 -10 -20 -10 -12 -3 -8 -10 -4 -3 0 -10 4 -3 8 -10 12 -10 20 -20 20"
-                 stroke="black" stroke-width="1" fill="none" />      
-       <polyline points="20 -20 10 -20 10 -12 3 -8 10 -4 3 0 10 4 3 8 10 12 10 20 20 20"
-                 stroke="black" stroke-width="1" fill="none" />               
-       <text x="-5" y="-13" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
-       <text x="5" y="-13" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <polyline points="-10 -20 -10 -12 -3 -8 -10 -4 -3 0 -10 4 -3 8 -10 12 -10 20" stroke="black" stroke-width="1" fill="none" />      
+       <polyline points="10 -20 10 -12 3 -8 10 -4 3 0 10 4 3 8 10 12 10 20" stroke="black" stroke-width="1" fill="none" />               
+       <text x="-5" y="-13" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>       <text x="5" y="-13" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
        <text x="0" y="-22" dominant-baseline="middle" text-anchor="middle" font-size="7">1:value</text>
        
        <!-- Pins -->
-       <circle cx="20" cy="-20" r="0.5" class="node" data-node="outp" />
-       <circle cx="20" cy="20" r="0.5" class="node" data-node="outn" />
-       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
-       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-10" cy="20" r="0.5" class="node" data-node="inn" />
     </g>
     
-    <g id="gyrator" 
+    <g id="GY" 
        data-prefix="W" 
        data-nodes="outp outn inp inn"
        data-model="W" 
@@ -259,8 +303,8 @@
        data-description="Gyrator"
        data-info="https://www.slicap.org/syntax/devices.html#w-gyrator">
 
-       <polyline points="-20 -20 -10 -20 -10 20 -20 20" stroke="black" stroke-width="1" fill="none" />  
-       <polyline points="20 -20 10 -20 10 20 20 20" stroke="black" stroke-width="1" fill="none" />    
+       <polyline points="-10 -20 -10 20" stroke="black" stroke-width="1" fill="none" />  
+       <polyline points="10 -20 10 20" stroke="black" stroke-width="1" fill="none" />    
        <path d="M -10,-10 A 6 10 0 0 1 -10,10" fill="none" stroke="black" stroke-width="1" />
        <path d="M 10,10 A 6 10 0 0 1 10,-10" fill="none" stroke="black" stroke-width="1" />
               
@@ -269,10 +313,10 @@
        <text x="0" y="-22" dominant-baseline="middle" text-anchor="middle" font-size="7">value</text>
        
        <!-- Pins -->
-       <circle cx="20" cy="-20" r="0.5" class="node" data-node="outp" />
-       <circle cx="20" cy="20" r="0.5" class="node" data-node="outn" />
-       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
-       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-10" cy="20" r="0.5" class="node" data-node="inn" />
     </g>
     
     <g id="K"
@@ -288,7 +332,7 @@
        <polyline points="-16 0 -10 -2 -10 2 -16 0" stroke="black" stroke-width="0" fill="black"/>
     </g>
     
-    <g id="ground"
+    <g id="0"
        data-prefix="GND" 
        data-nodes="0" 
        data-description="Reference node (GND) connection">
@@ -303,7 +347,7 @@
     </g>
 
     <g id="port"
-       data-prefix="PORT" 
+       data-prefix="P" 
        data-nodes="port" 
        data-description="Hierarchical connection">
 

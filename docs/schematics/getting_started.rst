@@ -14,15 +14,51 @@ Requirements
   editor falls back to plain-text labels.
 
 Launching the editor
-=====================
+====================
 
-From the project root directory, run:
+**From a Python session or Jupyter notebook** (the usual way):
+
+.. code-block:: python
+
+   import SLiCAP as sl
+   sl.initProject("My Design")
+
+   sl.startSchematic()                              # blank canvas, full symbol library
+   sl.startSchematic(config='basic')               # blank canvas, basic symbols only
+   sl.startSchematic(file='sch/mydesign.slicap_sch')          # open an existing file
+   sl.startSchematic(config='basic', file='sch/mydesign.slicap_sch')
+
+The call returns immediately; the editor runs as an independent process alongside
+the Python session.
+
+``config`` controls which symbols are available in the *Place → Symbol* menu:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 85
+
+   * - ``config``
+     - Symbol set loaded
+   * - ``'full'`` *(default)*
+     - All SVG files in the system symbols directory — the complete SLiCAP library.
+   * - ``'basic'``
+     - ``Symbols.svg`` only (the standard IEC/SLiCAP set, without e.g. the MOSFET
+       symbol ``M``).  Use this when your project does not need device-level
+       symbols.
+
+``file`` is the path to a ``.slicap_sch`` file to open at startup.
+If omitted, the editor opens with a blank schematic.
+
+**From the command line** (for scripting or desktop shortcuts):
 
 .. code-block:: console
 
-   $ python -m app.main
+   $ python -m SLiCAP.schematic.main                            # blank, full library
+   $ python -m SLiCAP.schematic.main --config basic             # blank, basic library
+   $ python -m SLiCAP.schematic.main sch/mydesign.slicap_sch   # open file
+   $ python -m SLiCAP.schematic.main --config basic sch/mydesign.slicap_sch
 
-The main window opens with an empty canvas.
+The main window opens with an empty canvas (or the specified schematic).
 
 .. figure:: images/main_window.png
    :alt: The main window

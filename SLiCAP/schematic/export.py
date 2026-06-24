@@ -94,6 +94,8 @@ def _build_svg(scene, title: str = "") -> bytes:
     from .image_item import ImageItem
     from .latex_fragment_item import LatexFragmentItem
     from .parameter_item import ParameterItem
+    from .model_item import ModelItem
+    from .library_item import LibraryItem
     from .config import (
         WIRE_COLOR, WIRE_WIDTH,
         JUNCTION_COLOR, JUNCTION_RADIUS,
@@ -149,14 +151,15 @@ def _build_svg(scene, title: str = "") -> bytes:
             _component(root, defs, item, lbl_color, COMP_LABEL_FONT_SIZE)
         elif isinstance(item, ImageItem):
             _image_svg(root, defs, item)
-        elif isinstance(item, (LatexFragmentItem, ParameterItem)):
+        elif isinstance(item, (LatexFragmentItem, ParameterItem, ModelItem)):
             if item._svg_bytes:
                 pos = item.pos()
                 _inline_image_svg(root, defs, item._svg_bytes,
                                   pos.x(), pos.y(),
-                                  item.display_width, item.display_height)
-        elif isinstance(item, (FreeTextItem, CommandItem, AnalysisItem)):
-            is_cmd = isinstance(item, (CommandItem, AnalysisItem))
+                                  item.display_width, item.display_height,
+                                  aspect_fit=True)
+        elif isinstance(item, (FreeTextItem, CommandItem, AnalysisItem, LibraryItem)):
+            is_cmd = isinstance(item, (CommandItem, AnalysisItem, LibraryItem))
             _text_block(
                 root, item,
                 cmd_color if is_cmd else txt_color,
@@ -261,7 +264,8 @@ def _image_svg(parent, defs, item) -> None:
 
 
 def _inline_image_svg(parent, defs, svg_bytes: bytes,
-                      x: float, y: float, w: float, h: float) -> None:
+                      x: float, y: float, w: float, h: float,
+                      aspect_fit: bool = False) -> None:
     """
     Inline an SVG file as scaled vector content at scene position (x, y).
 
@@ -269,6 +273,10 @@ def _inline_image_svg(parent, defs, svg_bytes: bytes,
     scene units.  IDs are prefixed to avoid collisions with other inlined SVGs.
     Any <defs> inside the embedded SVG are hoisted to the output document's
     top-level <defs>.
+
+    When *aspect_fit* is True, content is scaled uniformly to the largest size
+    that fits within (w, h) and centred — matching the canvas _aspect_fit
+    behaviour used for LatexFragmentItem, ParameterItem, and ModelItem.
     """
     global _image_uid
     try:
@@ -306,9 +314,17 @@ def _inline_image_svg(parent, defs, svg_bytes: bytes,
         else:
             content.append(child)
 
-    sx = w / vb_w
-    sy = h / vb_h
-    transform = f"translate({x:.3f},{y:.3f}) scale({sx:.6f},{sy:.6f})"
+    if aspect_fit:
+        scale  = min(w / vb_w, h / vb_h)
+        fit_w  = vb_w * scale
+        fit_h  = vb_h * scale
+        x_off  = x + (w - fit_w) / 2
+        y_off  = y + (h - fit_h) / 2
+        transform = f"translate({x_off:.3f},{y_off:.3f}) scale({scale:.6f},{scale:.6f})"
+    else:
+        sx = w / vb_w
+        sy = h / vb_h
+        transform = f"translate({x:.3f},{y:.3f}) scale({sx:.6f},{sy:.6f})"
     if vb_x or vb_y:
         transform += f" translate({-vb_x:.3f},{-vb_y:.3f})"
 
@@ -343,28 +359,28 @@ def _component(parent, defs, item, lbl_color, lbl_fs):
 
     for lbl in item._labels.values():
         sp = lbl.mapToScene(QPointF(0.0, 0.0))
+        font, color = lbl._font_and_color()
+        clr = _qhex(color)
+        fs  = font.pointSizeF()
         if lbl._text:
             t = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
             t.set("x", f"{sp.x():.2f}")
             t.set("y", f"{sp.y():.2f}")
-            t.set("font-family", "sans-serif")
-            t.set("font-size", f"{lbl_fs}pt")
-            t.set("fill", lbl_color)
+            t.set("font-family", font.family() or "sans-serif")
+            t.set("font-size", f"{fs:.1f}pt")
+            t.set("fill", clr)
             # For h_flipped components the label's local origin is baseline-right;
             # use text-anchor="end" so SVG anchors the text on the same side.
             if item.h_flip:
                 t.set("text-anchor", "end")
             t.text = lbl._text
         elif lbl._svg_renderer is not None:
-            _latex_label(parent, defs, item, lbl, sp, lbl_color, lbl_fs)
+            _latex_label(parent, defs, item, lbl, sp, clr, fs)
 
 
 def _latex_label(parent, defs, item, lbl, sp, lbl_color, lbl_fs):
     """Inline a LaTeX property label as scaled vector SVG content."""
-    from .latex_label import render_expression
-
-    raw_val   = item._prop_value(lbl.prop_key)
-    svg_bytes = render_expression(raw_val)
+    svg_bytes = lbl._svg_bytes or None
 
     if svg_bytes is None:
         text = item._prop_text(lbl.prop_key)
@@ -402,7 +418,7 @@ def _latex_label(parent, defs, item, lbl, sp, lbl_color, lbl_fs):
         # Prefix text centred on SVG: baseline at SVG centre (sp.y() - svg_h/2)
         t.set("y", f"{sp.y() - svg_h / 2:.2f}")
         t.set("font-family", "sans-serif")
-        t.set("font-size", str(lbl_fs))
+        t.set("font-size", f"{lbl_fs}pt")
         t.set("fill", lbl_color)
         t.text = lbl._prefix
 

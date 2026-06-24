@@ -9,8 +9,8 @@ of truth for a block's interface (name, ordered ports, overridable parameters);
 interface so the block can be placed like any other component.
 
 The generated symbol carries the SLiCAP symbol contract used everywhere else
-(``data-prefix="X"``, ``data-model="<name>"``, ``data-nodes``, ``data-params``
-plus ``<circle class="node">`` markers), so a placed block reuses the existing
+(``data-prefix="X"``, ``data-model="<name>"``, ``data-nodes``, ``data-params``,
+``data-show-pinnames="true"`` plus ``<circle class="node">`` markers), so a placed block reuses the existing
 netlist machinery verbatim and emits ``X1 <nodes…> <name> par=val …``.
 """
 import math
@@ -214,6 +214,7 @@ def box_symbol_svg(defn: SubcktDef, placement: list | None = None,
         f'     data-nodes="{" ".join(ports)}"\n'
         f'     data-model="{defn.name}"\n'
         f'     data-params="{param_names}"\n'
+        f'     data-show-pinnames="true"\n'
         f'     data-description="Subcircuit {defn.name}">\n'
         f'      {body}\n'
         f'  </g>\n'

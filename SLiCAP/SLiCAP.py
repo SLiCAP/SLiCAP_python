@@ -45,7 +45,7 @@ def Help():
     webbrowser.open_new(ini.doc_path + 'index.html')
     return
 
-def startSchematic(config="full"):
+def startSchematic(config="full", file=None):
     """
     Launch the SLiCAP schematic capture GUI as a separate process.
 
@@ -59,15 +59,22 @@ def startSchematic(config="full"):
 
     :type config: str
 
+    :param file: Path to a ``.slicap_sch`` file to open at startup.
+                 If ``None`` (default) the editor opens with a blank schematic.
+    :type file: str or None
+
     :example:
 
     >>> import SLiCAP as sl
     >>> sl.initProject("My Design")
-    >>> sl.startSchematic()              # full symbol library (default)
-    >>> sl.startSchematic(config='basic')  # basic symbol set only
+    >>> sl.startSchematic()                          # blank schematic, full library
+    >>> sl.startSchematic(config='basic')            # blank schematic, basic library
+    >>> sl.startSchematic(file='sch/mydesign.slicap_sch')  # open existing file
     """
     import subprocess, sys
     cmd = f'"{sys.executable}" -m SLiCAP.schematic.main --config {config}'
+    if file is not None:
+        cmd += f' "{file}"'
     subprocess.Popen(cmd, shell=True)
 
 def _copyNotOverwrite(src, dest):

@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, QPointF, QRectF, Signal, QTimer
 from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPainterPath, QTransform, QTextCursor
 
 from .config import (
-    GRID_SIZE, GRID_MAJOR, snap,
+    GRID_SIZE, GRID_MAJOR, DEFAULT_ZOOM, snap,
     GRID_MINOR_COLOR, GRID_MAJOR_COLOR,
     JUNCTION_COLOR, JUNCTION_RADIUS,
     COMMAND_COLOR, COMMAND_FONT,
@@ -201,25 +201,26 @@ class SchematicScene(QGraphicsScene):
         self._vdrag_pin_anchor:  tuple | None = None  # (comp, (lx, ly)) if vertex was on a pin
         self._vdrag_pin_preview: WireItem | None = None
 
-        self._wire_move_wires:   list = []
-        self._wire_move_origins: list = []
-        self._wire_move_others:  list = []
-        self._wire_move_start:   QPointF | None = None
-        self._wire_move_moved:   bool = False
-        self._wire_move_rb:      list = []   # [(wire, {idx: orig_QPointF})]
-        self._pin_anchors:       list = []   # [(anchor_QPointF, comp, (lx,ly))]
+        self._wire_move_wires:     list = []
+        self._wire_move_origins:   list = []
+        self._wire_move_others:    list = []
+        self._wire_move_start:     QPointF | None = None
+        self._wire_move_moved:     bool = False
+        self._wire_move_rb:        list = []   # [(wire, {idx: orig_QPointF})]
+        self._wire_move_junctions: list = []   # [(JunctionItem, orig_QPointF)]
+        self._pin_anchors:         list = []   # [(anchor_QPointF, comp, (lx,ly))]
         self._wire_pin_anchors:  list = []   # [(comp, (lx,ly), wire, idx)] — wire ends on a pin
         self._wire_pin_preview_wires: list = []  # preview WireItems for bridge wires during drag
 
         self._border_pending:   tuple | None = None   # (width, height, show_in_export)
         self._library_pending:  tuple | None = None   # (file_path, directive, simulator, corner)
         self._image_pending:    tuple | None = None   # (file_path, width, height)
-        self._latex_pending:    tuple | None = None   # (code, preamble, svg_bytes, w, h)
-        self._param_pending:    tuple | None = None   # (params, preamble, svg_bytes, w, h)
+        self._latex_pending:    tuple | None = None   # (code, preamble, w, h)
+        self._param_pending:    tuple | None = None   # (params, preamble, w, h)
         self._analysis_pending: tuple | None = None   # (source, detector, lgref)
         self._placing_text:     str | None   = None   # text for PLACING_TEXT mode
         self._hyperlink_pending: tuple | None = None  # (url, label)
-        self._model_pending:    tuple | None = None   # (name, type, sim, params, preamble, svg, w, h)
+        self._model_pending:    tuple | None = None   # (name, type, sim, params, preamble, w, h)
 
         # shape drawing state
         self._draw_kind:   str | None       = None   # "line"|"rect"|"circle"
@@ -674,14 +675,15 @@ class SchematicScene(QGraphicsScene):
         self.placing_started.emit()
 
     def start_latex_placement(self, latex_code: str, preamble_path: str,
-                              svg_bytes: bytes, width: int, height: int):
+                              width: int, height: int):
         from PySide6.QtWidgets import QGraphicsPixmapItem
         from PySide6.QtGui import QPixmap, QPainter as _QPainter
-        from PySide6.QtCore import QByteArray
         self._end_wire(commit=False)
         self._cancel_placement()
-        # Ghost: render SVG bytes to a pixmap
+        from .latex_label import render_latex_raw
+        svg_bytes, _ = render_latex_raw(latex_code, preamble_path)
         from PySide6.QtSvg import QSvgRenderer
+        from PySide6.QtCore import QByteArray
         renderer = QSvgRenderer(QByteArray(svg_bytes)) if svg_bytes else None
         w, h = max(1, width), max(1, height)
         if renderer and renderer.isValid():
@@ -699,18 +701,21 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._latex_pending = (latex_code, preamble_path, svg_bytes, width, height)
+        self._latex_pending = (latex_code, preamble_path, width, height)
         self._mode = _Mode.PLACING_LATEX
         self.placing_started.emit()
 
     def start_parameter_placement(self, params: list, preamble_path: str,
-                                   svg_bytes: bytes, width: int, height: int):
+                                   width: int, height: int):
         from PySide6.QtWidgets import QGraphicsPixmapItem
         from PySide6.QtGui import QPixmap, QPainter as _QPainter
-        from PySide6.QtCore import QByteArray
         self._end_wire(commit=False)
         self._cancel_placement()
+        from .latex_label import render_latex_raw
+        from .parameter_item import ParameterItem as _PI
+        svg_bytes, _ = render_latex_raw(_PI.build_latex(params), preamble_path)
         from PySide6.QtSvg import QSvgRenderer
+        from PySide6.QtCore import QByteArray
         renderer = QSvgRenderer(QByteArray(svg_bytes)) if svg_bytes else None
         w, h = max(1, width), max(1, height)
         if renderer and renderer.isValid():
@@ -728,7 +733,7 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._param_pending = (params, preamble_path, svg_bytes, width, height)
+        self._param_pending = (params, preamble_path, width, height)
         self._mode = _Mode.PLACING_PARAMETER
         self.placing_started.emit()
 
@@ -752,10 +757,13 @@ class SchematicScene(QGraphicsScene):
     def start_model_placement(self, model_name: str, model_type: str,
                                simulator: str, params: list,
                                preamble_path: str = "",
-                               svg_bytes: bytes | None = None,
                                display_width: int = 200, display_height: int = 80):
         self._end_wire(commit=False)
         self._cancel_placement()
+        from .latex_label import render_latex_raw
+        from .model_item import ModelItem as _MI
+        svg_bytes, _ = render_latex_raw(
+            _MI.build_latex(model_name, model_type, params), preamble_path)
         if svg_bytes:
             from PySide6.QtWidgets import QGraphicsPixmapItem
             from PySide6.QtGui import QPixmap, QPainter as _QPainter
@@ -785,7 +793,7 @@ class SchematicScene(QGraphicsScene):
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
         self._model_pending = (model_name, model_type, simulator, params,
-                               preamble_path, svg_bytes, display_width, display_height)
+                               preamble_path, display_width, display_height)
         self._mode = _Mode.PLACING_MODEL
         self.placing_started.emit()
 
@@ -945,13 +953,14 @@ class SchematicScene(QGraphicsScene):
         self._vdrag_rb          = []
         self._vdrag_pin_anchor  = None
         self._vdrag_pin_preview = None
-        self._wire_move_wires   = []
-        self._wire_move_origins = []
-        self._wire_move_others  = []
-        self._wire_move_start   = None
-        self._wire_move_moved   = False
-        self._wire_move_rb      = []
-        self._pin_anchors       = []
+        self._wire_move_wires     = []
+        self._wire_move_origins   = []
+        self._wire_move_others    = []
+        self._wire_move_start     = None
+        self._wire_move_moved     = False
+        self._wire_move_rb        = []
+        self._wire_move_junctions = []
+        self._pin_anchors         = []
         self._wire_pin_preview_wires = []
         self._border_pending    = None
         self._library_pending   = None
@@ -1540,24 +1549,18 @@ class SchematicScene(QGraphicsScene):
                     display_height=item.display_height,
                 ))
             elif isinstance(item, LatexFragmentItem):
-                svg_b64 = (base64.b64encode(item._svg_bytes).decode()
-                           if item._svg_bytes else "")
                 latex_frags.append(LatexFragmentData(
                     x=item.pos().x(), y=item.pos().y(),
                     latex_code=item.latex_code,
                     preamble_path=item.preamble_path,
-                    svg_b64=svg_b64,
                     display_width=item.display_width,
                     display_height=item.display_height,
                 ))
             elif isinstance(item, ParameterItem):
-                svg_b64 = (base64.b64encode(item._svg_bytes).decode()
-                           if item._svg_bytes else "")
                 param_items.append(ParameterData(
                     x=item.pos().x(), y=item.pos().y(),
                     params=[list(p) for p in item.params],
                     preamble_path=item.preamble_path,
-                    svg_b64=svg_b64,
                     display_width=item.display_width,
                     display_height=item.display_height,
                 ))
@@ -1574,8 +1577,6 @@ class SchematicScene(QGraphicsScene):
                     url=item.url, label=item.label,
                 ))
             elif isinstance(item, ModelItem):
-                svg_b64 = (base64.b64encode(item._svg_bytes).decode()
-                           if item._svg_bytes else "")
                 model_defs.append(ModelData(
                     x=item.pos().x(), y=item.pos().y(),
                     model_name=item.model_name,
@@ -1583,7 +1584,6 @@ class SchematicScene(QGraphicsScene):
                     simulator=item.simulator,
                     params=[list(p) for p in item.params],
                     preamble_path=item.preamble_path,
-                    svg_b64=svg_b64,
                     display_width=item.display_width,
                     display_height=item.display_height,
                 ))
@@ -1676,17 +1676,15 @@ class SchematicScene(QGraphicsScene):
                                    img.display_height, QPointF(img.x, img.y)))
 
         for frag in data.latex_fragments:
-            svg_bytes = base64.b64decode(frag.svg_b64) if frag.svg_b64 else None
             self.addItem(LatexFragmentItem(
-                frag.latex_code, frag.preamble_path, svg_bytes,
+                frag.latex_code, frag.preamble_path,
                 frag.display_width, frag.display_height,
                 QPointF(frag.x, frag.y),
             ))
 
         for pd in data.parameters:
-            svg_bytes = base64.b64decode(pd.svg_b64) if pd.svg_b64 else None
             self.addItem(ParameterItem(
-                [tuple(p) for p in pd.params], pd.preamble_path, svg_bytes,
+                [tuple(p) for p in pd.params], pd.preamble_path,
                 pd.display_width, pd.display_height,
                 QPointF(pd.x, pd.y),
             ))
@@ -1713,11 +1711,10 @@ class SchematicScene(QGraphicsScene):
             ))
 
         for md in data.model_defs:
-            svg_bytes = base64.b64decode(md.svg_b64) if md.svg_b64 else None
             self.addItem(ModelItem(
                 md.model_name, md.model_type, md.simulator,
                 [list(p) for p in md.params],
-                md.preamble_path, svg_bytes,
+                md.preamble_path,
                 md.display_width, md.display_height,
                 QPointF(md.x, md.y),
             ))
@@ -1796,14 +1793,14 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_LATEX and event.button() == Qt.LeftButton:
             self._push_undo()
-            lc, pp, sb, w, h = self._latex_pending
-            self.addItem(LatexFragmentItem(lc, pp, sb, w, h, pos))
+            lc, pp, w, h = self._latex_pending
+            self.addItem(LatexFragmentItem(lc, pp, w, h, pos))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_PARAMETER and event.button() == Qt.LeftButton:
             self._push_undo()
-            prms, pp, sb, w, h = self._param_pending
-            self.addItem(ParameterItem(prms, pp, sb, w, h, pos))
+            prms, pp, w, h = self._param_pending
+            self.addItem(ParameterItem(prms, pp, w, h, pos))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_ANALYSIS and event.button() == Qt.LeftButton:
@@ -1814,8 +1811,8 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_MODEL and event.button() == Qt.LeftButton:
             self._push_undo()
-            mn, mt, sim, prms, pp, sb, w, h = self._model_pending
-            self.addItem(ModelItem(mn, mt, sim, prms, pp, sb, w, h, pos))
+            mn, mt, sim, prms, pp, w, h = self._model_pending
+            self.addItem(ModelItem(mn, mt, sim, prms, pp, w, h, pos))
             self._cancel_placement()
 
         elif self._mode == _Mode.PASTING and event.button() == Qt.LeftButton:
@@ -1948,6 +1945,13 @@ class SchematicScene(QGraphicsScene):
                             hits[last] = QPointF(candidate.points[last])
                         if hits:
                             self._wire_move_rb.append((candidate, hits))
+                    # Junctions at moving endpoints follow the drag visually.
+                    self._wire_move_junctions = [
+                        (item, QPointF(item.pos()))
+                        for item in self.items()
+                        if isinstance(item, JunctionItem)
+                        and _pt_key(item.pos()) in ep_keys
+                    ]
                     # Rule 1: remember which moved-wire endpoints sit on a
                     # component pin, so the connection is bridged (not dropped)
                     # if the wire is dragged off the pin. The component (if it
@@ -2143,6 +2147,9 @@ class SchematicScene(QGraphicsScene):
                 for idx, orig_pt in rb_ep_origins.items():
                     rb_wire.points[idx] = orig_pt + delta
                 rb_wire._rebuild()
+            for junc, orig_pos in self._wire_move_junctions:
+                if junc.scene() is not None:
+                    junc.setPos(orig_pos + delta)
             for other_item, ox, oy in self._wire_move_others:
                 other_item.setPos(snap(QPointF(ox + delta.x(), oy + delta.y())))
             for (comp, local, wire, idx), pw in zip(self._wire_pin_anchors,
@@ -2303,6 +2310,7 @@ class SchematicScene(QGraphicsScene):
                 self._wire_move_others       = []
                 self._wire_move_moved        = False
                 self._wire_move_rb           = []
+                self._wire_move_junctions    = []
                 self._wire_pin_anchors       = []
                 self._wire_pin_preview_wires = []
                 return
@@ -2468,11 +2476,10 @@ class SchematicScene(QGraphicsScene):
                 self._push_undo()
                 item.latex_code    = dlg.latex_code()
                 item.preamble_path = dlg.preamble_path()
-                item._svg_bytes    = dlg.svg_bytes()
-                item._load_renderer()
-                item.prepareGeometryChange()
                 item.display_width  = dlg.display_width()
                 item.display_height = dlg.display_height()
+                item._load_renderer()
+                item.prepareGeometryChange()
                 item.update()
             return
         if isinstance(item, ParameterItem):
@@ -2489,15 +2496,9 @@ class SchematicScene(QGraphicsScene):
                 item.prepareGeometryChange()
                 item.params        = dlg.get_params()
                 item.preamble_path = dlg.preamble_path()
-                new_bytes = dlg.svg_bytes()
-                if new_bytes:
-                    item._svg_bytes    = new_bytes
-                    item._load_renderer()
-                    item.display_width  = dlg.display_width()
-                    item.display_height = dlg.display_height()
-                else:
-                    item._svg_bytes = None
-                    item._renderer  = None
+                item.display_width  = dlg.display_width()
+                item.display_height = dlg.display_height()
+                item._load_renderer()
                 item.update()
             return
         if isinstance(item, AnalysisItem):
@@ -2533,15 +2534,9 @@ class SchematicScene(QGraphicsScene):
                 item.simulator     = dlg.simulator()
                 item.params        = dlg.get_params()
                 item.preamble_path = dlg.preamble_path()
-                new_bytes = dlg.svg_bytes()
-                if new_bytes:
-                    item._svg_bytes    = new_bytes
-                    item._load_renderer()
-                    item.display_width  = dlg.display_width()
-                    item.display_height = dlg.display_height()
-                else:
-                    item._svg_bytes = None
-                    item._renderer  = None
+                item.display_width  = dlg.display_width()
+                item.display_height = dlg.display_height()
+                item._load_renderer()
                 item.prepareGeometryChange()
                 item.update()
             return
@@ -2692,7 +2687,7 @@ class SchematicView(QGraphicsView):
         QTimer.singleShot(0, self._init_view)
 
     def _init_view(self):
-        self.scale(2, 2)
+        self.scale(DEFAULT_ZOOM, DEFAULT_ZOOM)
         self.centerOn(0, 0)
 
     def _on_active_mode(self):
@@ -2717,7 +2712,7 @@ class SchematicView(QGraphicsView):
 
     def zoom_reset(self):
         self.resetTransform()
-        self.scale(2, 2)
+        self.scale(DEFAULT_ZOOM, DEFAULT_ZOOM)
         r = self.scene().itemsBoundingRect()
         self.centerOn(r.center() if not r.isNull() else QPointF(0, 0))
 

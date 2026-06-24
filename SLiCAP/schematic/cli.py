@@ -45,6 +45,8 @@ def _load_scene(input_path: Path):
     from . import project
 
     project.set_current(input_path)   # LaTeX cache → <name>.cache, not a temp dir
+    import SLiCAP.schematic.config as _config
+    _config.load(project.ini_path())  # apply schematic's saved style settings
     data    = SchematicData.load(input_path)
     library = SymbolLibrary(_SYMBOLS_SVG)
     library.add_bundle(project.symbols_path())   # this schematic's frozen symbols
@@ -75,7 +77,7 @@ def cmd_netlist(args):
     from .analysis_item import AnalysisItem
     from .library_item import LibraryItem
     from .parameter_item import ParameterItem
-    from .netlist import build_netlist
+    from .netlist import build_netlist, NetlistError
 
     scene, data = _load_scene(input_path)
     output_path = Path(args.output) if args.output else _default_output(input_path, "cir", ".cir")
@@ -87,11 +89,17 @@ def cmd_netlist(args):
     prms  = [i for i in items if isinstance(i, ParameterItem)]
     title = getattr(args, "title", None) or data.properties.title or input_path.stem
 
+    try:
+        text = build_netlist(comps, wires, cmds, title, libs=libs, params=prms)
+    except NetlistError as exc:
+        print("Netlist not generated — unresolved '?' placeholders remain:",
+              file=sys.stderr)
+        for err in exc.errors:
+            print(f"  {err}", file=sys.stderr)
+        sys.exit(1)
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        build_netlist(comps, wires, cmds, title, libs=libs, params=prms),
-        encoding="utf-8",
-    )
+    output_path.write_text(text, encoding="utf-8")
     print(f"Netlist  →  {output_path}")
 
 

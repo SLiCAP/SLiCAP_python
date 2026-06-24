@@ -11,6 +11,11 @@ from PySide6.QtGui import QColor, QFont
 GRID_SIZE  = 5
 GRID_MAJOR = 8   # minor cells between major grid lines (major spacing = 8×GRID_SIZE)
 
+# Device pixels per scene unit at default zoom (the canvas opens and zoom-resets
+# at this scale).  Shared so off-canvas previews can render symbols at the exact
+# same size the user sees on the canvas.
+DEFAULT_ZOOM = 2
+
 
 def snap(pos: QPointF) -> QPointF:
     x = round(pos.x() / GRID_SIZE) * GRID_SIZE
@@ -85,11 +90,13 @@ COMP_LABEL_LATEX_SCALE  = _i("component_label", "latex_scale", 100)
 COMP_LABEL_SVG_HEIGHT   = COMP_LABEL_LATEX_SCALE / 100.0 * 20.0
 COMP_LABEL_FONT         = QFont(COMP_REFDES_FONT_FAMILY, COMP_LABEL_FONT_SIZE)
 
-# Component parameter labels (non-LaTeX display only)
+# Component parameter labels (value, noisetemp, …)
 COMP_PARAM_FONT_FAMILY = _s("component_param", "font_family", "sans-serif")
 COMP_PARAM_FONT_SIZE   = _i("component_param", "font_size",   7)
 COMP_PARAM_COLOR       = _c("component_param", "color",       "#0055BB")
 COMP_PARAM_FONT        = QFont(COMP_PARAM_FONT_FAMILY, COMP_PARAM_FONT_SIZE)
+COMP_PARAM_LATEX_SCALE = _i("component_param", "latex_scale", 100)
+COMP_PARAM_SVG_HEIGHT  = COMP_PARAM_LATEX_SCALE / 100.0 * 20.0
 
 # Grid
 GRID_MINOR_COLOR = _c("grid", "minor_color", "#DCDCDC")
@@ -160,7 +167,7 @@ def apply_parser(cfg) -> None:
     _cfg.clear()
     for section in cfg.sections():
         _cfg[section] = {k: v for k, v in cfg[section].items()}
-    _apply()
+    _apply(rescale_items=True)
 
 
 def snapshot() -> "configparser.ConfigParser":
@@ -178,7 +185,7 @@ def write(path) -> None:
         _cfg.write(fh)
 
 
-def _apply() -> None:
+def _apply(*, rescale_items: bool = False) -> None:
     """Recompute every style constant from _cfg and push into all app modules."""
     import sys
 
@@ -217,6 +224,8 @@ def _apply() -> None:
     g["COMP_PARAM_FONT_SIZE"]   = _i("component_param", "font_size",   7)
     g["COMP_PARAM_COLOR"]       = _c("component_param", "color",       "#0055BB")
     g["COMP_PARAM_FONT"]        = QFont(g["COMP_PARAM_FONT_FAMILY"], g["COMP_PARAM_FONT_SIZE"])
+    g["COMP_PARAM_LATEX_SCALE"] = _i("component_param", "latex_scale", 100)
+    g["COMP_PARAM_SVG_HEIGHT"]  = g["COMP_PARAM_LATEX_SCALE"] / 100.0 * 20.0
 
     g["GRID_MINOR_COLOR"] = _c("grid", "minor_color", "#DCDCDC")
     g["GRID_MAJOR_COLOR"] = _c("grid", "major_color", "#B4B4B4")
@@ -247,6 +256,9 @@ def _apply() -> None:
     g["HYPERLINK_UNDERLINE"]   = _b("hyperlink", "underline",   True)
     g["HYPERLINK_FONT"]        = QFont(g["HYPERLINK_FONT_FAMILY"], g["HYPERLINK_FONT_SIZE"])
 
+    old_param_scale = g.get("SCALE_PARAMETER_TABLE", 100)
+    old_latex_scale = g.get("SCALE_LATEX_FRAGMENT",  100)
+    old_image_scale = g.get("SCALE_IMAGE",            50)
     g["SCALE_PARAMETER_TABLE"] = _i("scales", "parameter_table", 100)
     g["SCALE_LATEX_FRAGMENT"]  = _i("scales", "latex_fragment",  100)
     g["SCALE_IMAGE"]           = _i("scales", "image",            50)
@@ -261,6 +273,7 @@ def _apply() -> None:
         "COMP_LABEL_COLOR", "COMP_LABEL_FONT_SIZE", "COMP_LABEL_LATEX_SCALE",
         "COMP_LABEL_SVG_HEIGHT", "COMP_LABEL_FONT",
         "COMP_PARAM_FONT_FAMILY", "COMP_PARAM_FONT_SIZE", "COMP_PARAM_COLOR", "COMP_PARAM_FONT",
+        "COMP_PARAM_LATEX_SCALE", "COMP_PARAM_SVG_HEIGHT",
         "GRID_MINOR_COLOR", "GRID_MAJOR_COLOR",
         "HANDLE_COLOR", "HANDLE_SIZE", "CONNECTION_COLOR",
         "JUNCTION_COLOR", "JUNCTION_RADIUS",
@@ -284,7 +297,47 @@ def _apply() -> None:
     # component_item caches module-level aliases that need separate update
     ci = sys.modules.get("SLiCAP.schematic.component_item")
     if ci is not None:
+        scale_changed = (
+            ci.__dict__.get("_LABEL_SVG_HEIGHT") != g["COMP_LABEL_SVG_HEIGHT"] or
+            ci.__dict__.get("_PARAM_SVG_HEIGHT")  != g["COMP_PARAM_SVG_HEIGHT"]
+        )
         ci.__dict__["_LABEL_FONT"]       = g["COMP_LABEL_FONT"]
         ci.__dict__["_LABEL_SVG_HEIGHT"] = g["COMP_LABEL_SVG_HEIGHT"]
         ci.__dict__["_PARAM_FONT"]       = g["COMP_PARAM_FONT"]
+        ci.__dict__["_PARAM_SVG_HEIGHT"] = g["COMP_PARAM_SVG_HEIGHT"]
         ci.__dict__["COMP_PARAM_COLOR"]  = g["COMP_PARAM_COLOR"]
+        if scale_changed:
+            for comp in list(ci._live_components):
+                comp.refresh_svg_labels()
+
+    # Rescale placed items (ParameterItem, ModelItem, LatexFragmentItem, ImageItem)
+    # only when called from apply_parser() — a live Preferences change, not a reload.
+    if rescale_items:
+        param_ratio = (g["SCALE_PARAMETER_TABLE"] / old_param_scale
+                       if old_param_scale else 1.0)
+        latex_ratio = (g["SCALE_LATEX_FRAGMENT"]  / old_latex_scale
+                       if old_latex_scale else 1.0)
+        image_ratio = (g["SCALE_IMAGE"]           / old_image_scale
+                       if old_image_scale else 1.0)
+
+        if param_ratio != 1.0:
+            pi = sys.modules.get("SLiCAP.schematic.parameter_item")
+            mi = sys.modules.get("SLiCAP.schematic.model_item")
+            if pi is not None:
+                for item in list(pi._live_param_items):
+                    item.rescale(param_ratio)
+            if mi is not None:
+                for item in list(mi._live_model_items):
+                    item.rescale(param_ratio)
+
+        if latex_ratio != 1.0:
+            li = sys.modules.get("SLiCAP.schematic.latex_fragment_item")
+            if li is not None:
+                for item in list(li._live_latex_items):
+                    item.rescale(latex_ratio)
+
+        if image_ratio != 1.0:
+            ii = sys.modules.get("SLiCAP.schematic.image_item")
+            if ii is not None:
+                for item in list(ii._live_image_items):
+                    item.rescale(image_ratio)

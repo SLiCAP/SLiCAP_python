@@ -97,8 +97,18 @@ def _ensure_slicap() -> bool:
         with contextlib.redirect_stdout(io.StringIO()):
             from SLiCAP.SLiCAPmath import _checkExpression
             from SLiCAP.SLiCAPhtml import _latex_ENG
+            from SLiCAP.SLiCAPlatex import sub2rm
         _slicap_check = _checkExpression
-        _slicap_latex = _latex_ENG
+        # IEEE typesetting: subscripts that are plain alphanumeric labels are set
+        # upright (\mathrm) rather than italic.  Applied here, at the single
+        # SLiCAP→LaTeX boundary, so every generated equation/symbol — component
+        # value labels and the parameter & model tables alike — is formatted
+        # consistently.  (Free-form user LaTeX fragments do not pass through here
+        # and keep whatever formatting the user wrote.)
+        def _latex_ieee(sympy_obj):
+            s = _latex_ENG(sympy_obj)
+            return sub2rm(s) if s else s
+        _slicap_latex = _latex_ieee
         _slicap_ready = True
     except Exception:
         _slicap_ready = False
@@ -145,12 +155,20 @@ def is_expression(value_str: str) -> bool:
     return s.startswith("{") and s.endswith("}")
 
 
+def _is_placeholder(expr_str: str) -> bool:
+    """True for the bare "?" reminder used for unset values/models.
+
+    It is shown literally as a prompt to the user and must never be handed to
+    SLiCAP's expression parser, which would raise a Sympify error on it."""
+    return expr_str.strip() == "?"
+
+
 def render_name_eq_value(name: str, value_str: str) -> bytes | None:
     """
     Render '\text{name} = value' as SVG for component labels (show_name=True).
 
-    Uses the same $...$ inline-math pipeline as render_expression so the
-    vertical scale matches individual value labels.
+    Uses _latex_to_svg directly (not _render_cached) so the combined LaTeX
+    string is never passed through the SymPy parser.
     """
     if not LATEX_AVAILABLE:
         return None
@@ -159,7 +177,9 @@ def render_name_eq_value(name: str, value_str: str) -> bytes | None:
     if not (val.startswith("{") and val.endswith("}")):
         val = "{" + val + "}"
     val_tex = expression_to_latex(val)
-    return _render_cached(rf"\text{{{safe}}} = {val_tex}")
+    if not val_tex:
+        val_tex = val[1:-1]
+    return _render_latex_str(rf"{{\footnotesize \textsf{{{safe}}}}} = {val_tex}")
 
 
 def render_expression(value_str: str) -> bytes | None:
@@ -193,21 +213,31 @@ def expression_to_latex(value_str: str) -> str:
     if not is_expression(value_str):
         return value_str
     expr_str = value_str.strip()[1:-1].strip()
+    if _is_placeholder(expr_str):
+        return expr_str                  # unset "?" reminder — render literally
     if not _ensure_slicap():
         return expr_str
     try:
         sympy_obj = _slicap_check(expr_str)
         if sympy_obj is None:
             return expr_str
-        return _slicap_latex(sympy_obj)
+        result = _slicap_latex(sympy_obj)
+        if not result:
+            return expr_str
+        return result
     except Exception:
         return expr_str
 
 
 # ── implementation ────────────────────────────────────────────────────────────
 
+# Bump when the SLiCAP→LaTeX formatting changes (e.g. sub2rm IEEE subscripts),
+# so SVGs cached under an older formatting are re-rendered rather than reused.
+_FORMAT_VERSION = "ieee-sub2rm-1"
+
+
 def _cache_path(expr_str: str) -> Path:
-    h = hashlib.sha256(expr_str.encode()).hexdigest()[:24]
+    h = hashlib.sha256((_FORMAT_VERSION + "\x00" + expr_str).encode()).hexdigest()[:24]
     return get_cache_dir() / f"{h}.svg"
 
 
@@ -224,12 +254,32 @@ def _render_cached(expr_str: str) -> bytes | None:
 def _render_fresh(expr_str: str) -> bytes | None:
     if not LATEX_AVAILABLE or not _ensure_slicap():
         return None
+    if _is_placeholder(expr_str):
+        return None                      # unset "?" reminder — not an expression
     try:
-        sympy_obj  = _slicap_check(expr_str)
-        latex_str  = _slicap_latex(sympy_obj)
+        sympy_obj = _slicap_check(expr_str)
+        if sympy_obj is None:
+            return None
+        latex_str = _slicap_latex(sympy_obj)
+        if not latex_str:
+            return None
     except Exception:
         return None
     return _latex_to_svg(latex_str)
+
+
+def _render_latex_str(latex_str: str) -> bytes | None:
+    """Cache and render a pre-built LaTeX math string, bypassing SymPy parsing."""
+    if not LATEX_AVAILABLE:
+        return None
+    h = hashlib.sha256(("raw:" + latex_str).encode()).hexdigest()[:24]
+    path = get_cache_dir() / f"{h}.svg"
+    if path.exists():
+        return path.read_bytes()
+    svg = _latex_to_svg(latex_str)
+    if svg is not None:
+        path.write_bytes(svg)
+    return svg
 
 
 def _latex_to_svg(latex_str: str) -> bytes | None:

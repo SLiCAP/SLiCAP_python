@@ -13,7 +13,8 @@ SLiCAP Python package's model tables:
        data-model="F"                      SLiCAP model name
        data-params="value"                 overridable parameter names
        data-description="..."              shown in Place / Properties dialogs
-       data-info="https://...">            clickable help/datasheet link
+       data-info="https://..."             clickable help/datasheet link
+       data-show-pinnames="true">          draw node names on canvas (block symbols)
         ...artwork...
         <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp"/>
         <circle cx="0" cy="20"  r="0.5" class="node" data-node="outn"/>
@@ -160,7 +161,8 @@ class Symbol:
     """All metadata + render SVG for a single library symbol."""
 
     __slots__ = ("name", "prefix", "nodes", "pins", "model", "params",
-                 "refs", "description", "info", "select_box", "svg", "g_xml")
+                 "refs", "description", "info", "show_pinnames",
+                 "select_box", "svg", "g_xml")
 
     def __init__(self, g_element, source: str):
         name = g_element.get("id")
@@ -174,6 +176,12 @@ class Symbol:
         self.params      = (g_element.get("data-params") or "").split()
         self.description = g_element.get("data-description", "")
         self.info        = g_element.get("data-info", "")
+        # Whether to draw the SLiCAP node names on the canvas.  Block symbols
+        # (auto-generated subcircuit boxes) set this true because their shape
+        # carries no pin meaning; hand-drawn symbols leave it unset (false), as
+        # their artwork already identifies each pin.
+        self.show_pinnames = (g_element.get("data-show-pinnames", "")
+                              .strip().lower() in ("true", "1", "yes"))
         self.pins        = self._read_pins(g_element, source)
 
         box = _geometry_bbox(g_element)
@@ -309,6 +317,21 @@ class SymbolLibrary:
                    + "\n".join(parts) + "\n  </defs>\n</svg>\n")
         Path(path).write_text(content, encoding="utf-8")
 
+    def update_symbols(self, other: "SymbolLibrary", names) -> list[str]:
+        """Replace this library's definitions of *names* with those from *other*.
+
+        Used to refresh a schematic's frozen symbols with the most recent
+        versions from the live symbol library.  Returns the names that were
+        actually found in *other* and updated; names absent there are left
+        untouched (reported back so the caller can warn the user)."""
+        updated: list[str] = []
+        for n in names:
+            sym = other.symbol(n)
+            if sym is not None:
+                self._symbols[n] = sym
+                updated.append(n)
+        return updated
+
     # ── public API ────────────────────────────────────────────────────────────
 
     def inject_into_component_item(self) -> None:
@@ -329,6 +352,7 @@ class SymbolLibrary:
         ci.SYMBOL_REFS.update({n: len(s.refs) for n, s in self._symbols.items()})
         ci.SYMBOL_DESCRIPTION.update({n: s.description for n, s in self._symbols.items()})
         ci.SYMBOL_INFO.update({n: s.info for n, s in self._symbols.items()})
+        ci.SYMBOL_SHOW_PINNAMES.update({n: s.show_pinnames for n, s in self._symbols.items()})
 
     @property
     def names(self) -> list[str]:

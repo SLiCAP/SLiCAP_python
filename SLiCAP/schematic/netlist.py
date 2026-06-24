@@ -1,11 +1,25 @@
 from __future__ import annotations
 from PySide6.QtCore import QPointF
 
-from .component_item import PIN_POSITIONS
+from .component_item import PIN_POSITIONS, wrap_braces
 from .connectivity import resolve_nets, _rpt
 
 # Symbols that are net annotations only — no element line in the netlist
 _ANNOTATION = {"ground", "port"}
+
+
+class NetlistError(Exception):
+    """A netlist could not be generated because unresolved "?" placeholders
+    remain — a value, model, reference or connection the user must still define.
+
+    Symbols declare such placeholders as "?" in their SVG definition; a netlist
+    must never contain "?" (it would only make the SLiCAP parser fail later), so
+    generation is aborted and nothing is written.  ``errors`` lists the problems,
+    one human-readable message per issue."""
+
+    def __init__(self, errors):
+        self.errors = list(errors)
+        super().__init__("\n".join(self.errors))
 
 
 def _node_resolver(components: list, wires: list):
@@ -19,8 +33,14 @@ def _node_resolver(components: list, wires: list):
 
 
 def _element_lines(components: list, node_fn) -> list[str]:
-    """Element lines (one per non-annotation component) in netlist order."""
-    lines: list[str] = []
+    """Element lines (one per non-annotation component) in netlist order.
+
+    Raises NetlistError if any unresolved "?" placeholder remains (missing
+    value, model, reference or connection), so a netlist containing "?" — which
+    would only make the SLiCAP parser fail later — is never produced.  All
+    problems across all components are collected and reported together."""
+    lines:  list[str] = []
+    errors: list[str] = []
     for comp in components:
         if comp.symbol_name in _ANNOTATION:
             continue
@@ -31,16 +51,30 @@ def _element_lines(components: list, node_fn) -> list[str]:
         model  = comp.model
         params = [(k, v) for k, v in comp.params.items() if v.strip()]
 
-        parts = [comp.instance_id]
+        cid = comp.instance_id
+        if any("?" in n for n in nodes):
+            errors.append(f"{cid}: missing connection — '?' found in a node name.")
+        if any("?" in r for r in refs):
+            errors.append(f"{cid}: missing reference — '?' found in a referenced element name.")
+        if "?" in model:
+            errors.append(f"{cid}: missing model — '?' found in the model name.")
+        for k, v in params:
+            if "?" in v:
+                errors.append(f"{cid}: missing value — '?' found in parameter '{k}'.")
+
+        parts = [cid]
         if nodes:
             parts.extend(nodes)
         if refs:
             parts.extend(refs)
         if model:
             parts.append(model)
-        parts.extend(f"{k}={v}" for k, v in params)
+        parts.extend(f"{k}={wrap_braces(v)}" for k, v in params)
 
         lines.append(" ".join(parts))
+
+    if errors:
+        raise NetlistError(errors)
     return lines
 
 

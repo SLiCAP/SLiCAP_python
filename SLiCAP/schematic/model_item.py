@@ -1,8 +1,12 @@
+import weakref
+
 from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QFont, QFontMetricsF, QPen
 
 from .config import snap, COMP_LABEL_FONT_SIZE, COMP_REFDES_FONT_FAMILY
+
+_live_model_items: weakref.WeakSet = weakref.WeakSet()
 
 _BORDER_COLOR = QColor(60, 100, 140)
 _LINE_SPACING = 1.3
@@ -23,7 +27,6 @@ class ModelItem(QGraphicsItem):
     def __init__(self, model_name: str, model_type: str, simulator: str,
                  params: list,
                  preamble_path: str = "",
-                 svg_bytes: bytes | None = None,
                  display_width: int = 200, display_height: int = 80,
                  pos: QPointF = QPointF(0, 0)):
         super().__init__()
@@ -32,7 +35,7 @@ class ModelItem(QGraphicsItem):
         self.simulator:      str          = simulator
         self.params:         list         = list(params)
         self.preamble_path:  str          = preamble_path
-        self._svg_bytes:     bytes | None = svg_bytes
+        self._svg_bytes:     bytes | None = None
         self.display_width:  int          = display_width
         self.display_height: int          = display_height
         self.setPos(pos)
@@ -40,21 +43,26 @@ class ModelItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self._renderer = None
+        _live_model_items.add(self)
         self._load_renderer()
+
+    def rescale(self, ratio: float) -> None:
+        self.prepareGeometryChange()
+        self.display_width  = max(1, round(self.display_width  * ratio))
+        self.display_height = max(1, round(self.display_height * ratio))
+        self.update()
 
     def _load_renderer(self) -> None:
         self._renderer = None
         from .latex_label import LATEX_AVAILABLE
-        if not LATEX_AVAILABLE:
-            return
-        if self._svg_bytes is None:
+        if LATEX_AVAILABLE:
             from .latex_label import render_latex_raw
             svg, _err = render_latex_raw(
                 self.build_latex(self.model_name, self.model_type, self.params),
                 self.preamble_path,
             )
             if svg:
-                self._svg_bytes = svg
+                self._svg_bytes = svg  # keep stored bytes up to date
         if self._svg_bytes:
             from PySide6.QtSvg import QSvgRenderer
             from PySide6.QtCore import QByteArray
@@ -182,7 +190,7 @@ class ModelItem(QGraphicsItem):
             return rf"\[ {header} \]"
 
         rows = " \\\\\n".join(
-            rf"  \text{{{_escape(n)}}} & {_value_tex(v)}"
+            rf"  {{\footnotesize \textsf{{{_escape(n)}}}}} & {_value_tex(v)}"
             for n, v in filled
         )
         return (

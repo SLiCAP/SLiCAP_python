@@ -185,6 +185,10 @@ class MainWindow(QMainWindow):
         act_rename.triggered.connect(self._on_rename_components)
         menu.addAction(act_rename)
 
+        act_reload = QAction("&Load selected symbols from library", self)
+        act_reload.triggered.connect(self._on_reload_symbols)
+        menu.addAction(act_reload)
+
     def _build_place_menu(self, bar):
         menu = bar.addMenu("&Place")
 
@@ -299,7 +303,7 @@ class MainWindow(QMainWindow):
             self._scene.start_model_placement(
                 dlg.model_name(), dlg.model_type(),
                 dlg.simulator(), dlg.get_params(),
-                dlg.preamble_path(), dlg.svg_bytes(),
+                dlg.preamble_path(),
                 dlg.display_width(), dlg.display_height(),
             )
 
@@ -362,7 +366,7 @@ class MainWindow(QMainWindow):
         if dlg.exec() and dlg.svg_bytes():
             self._scene.start_latex_placement(
                 dlg.latex_code(), dlg.preamble_path(),
-                dlg.svg_bytes(), dlg.display_width(), dlg.display_height(),
+                dlg.display_width(), dlg.display_height(),
             )
 
     def _on_place_parameters(self):
@@ -371,7 +375,7 @@ class MainWindow(QMainWindow):
         if dlg.exec() and dlg.svg_bytes():
             self._scene.start_parameter_placement(
                 dlg.get_params(), dlg.preamble_path(),
-                dlg.svg_bytes(), dlg.display_width(), dlg.display_height(),
+                dlg.display_width(), dlg.display_height(),
             )
 
     def _on_place_analysis(self):
@@ -390,6 +394,62 @@ class MainWindow(QMainWindow):
             self._scene._undo_stack.pop()  # nothing changed, discard the snapshot
         msg = f"{n} component{'s' if n != 1 else ''} renamed." if n else "All components already numbered correctly."
         QMessageBox.information(self, "Rename Components", msg)
+
+    def _on_reload_symbols(self):
+        """Refresh the selected symbols with the most recent library definitions.
+
+        Replaces the schematic's cached (frozen) definition of each selected
+        symbol — and every instance of it on the canvas — with the live version
+        from the symbol library.  Pin positions may move, so connections can
+        break; restoring them is left to the user (per the warning)."""
+        from .component_item import ComponentItem
+        selected = [i for i in self._scene.selectedItems() if isinstance(i, ComponentItem)]
+        if not selected:
+            QMessageBox.information(
+                self, "Load symbols from library",
+                "Select one or more component symbols on the canvas first.",
+            )
+            return
+        names = sorted({i.symbol_name for i in selected})
+        ret = QMessageBox.warning(
+            self, "Load symbols from library",
+            "The cached definition of the selected symbol(s):\n\n"
+            f"    {', '.join(names)}\n\n"
+            "and every instance of them on the canvas will be replaced with the "
+            "most recent version from the symbol library.\n\n"
+            "Pin positions may differ from the cached symbols, which can break "
+            "existing wire connections — restoring them is up to you.\n\nProceed?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
+        )
+        if ret != QMessageBox.Yes:
+            return
+
+        fresh = self._make_library(None)        # live, un-frozen definitions
+        updated = self._library.update_symbols(fresh, names)
+        if updated:
+            self._library.inject_into_component_item()
+            for item in self._scene.items():
+                if isinstance(item, ComponentItem) and item.symbol_name in updated:
+                    svg = self._library.svg_bytes(item.symbol_name)
+                    if svg is not None:
+                        item.reload_svg(svg)
+            self._scene._sync_junctions()        # refresh pin/connection markers
+            self._dirty = True
+
+        missing = [n for n in names if n not in updated]
+        if missing:
+            QMessageBox.warning(
+                self, "Load symbols from library",
+                "These symbols were not found in the library and were left "
+                f"unchanged:\n\n    {', '.join(missing)}",
+            )
+        elif updated:
+            QMessageBox.information(
+                self, "Load symbols from library",
+                f"Reloaded {len(updated)} symbol"
+                f"{'s' if len(updated) != 1 else ''} from the library.\n\n"
+                "Save the schematic to persist the updated symbol cache.",
+            )
 
     def _on_place_text(self):
         from .text_dialog import TextDialog
@@ -431,9 +491,10 @@ class MainWindow(QMainWindow):
         if svg is not None:
             self._scene.start_placement(name, svg)
 
-    def _build_library(self, overlay_path=None):
-        """(Re)build the symbol library: system symbols, optionally overlaid by a
-        schematic's frozen <name>.symbols (which overrides system symbols)."""
+    def _make_library(self, overlay_path=None) -> SymbolLibrary:
+        """Construct a symbol library (system symbols, optionally overlaid by a
+        schematic's frozen <name>.symbols) without publishing it as the active
+        library.  Pass overlay_path=None to get the live, un-frozen definitions."""
         lib = SymbolLibrary(_SYMBOLS_SVG)
         if self._config == "full":
             # Load all additional SVGs from the system symbols directory.
@@ -444,6 +505,13 @@ class MainWindow(QMainWindow):
         lib.add_user_library(libdir, exclude_stems={p.stem for p in libdir.glob("*.lib")})
         if overlay_path is not None:
             lib.add_bundle(overlay_path)
+        return lib
+
+    def _build_library(self, overlay_path=None):
+        """(Re)build the active symbol library: system symbols, optionally
+        overlaid by a schematic's frozen <name>.symbols (which overrides system
+        symbols)."""
+        lib = self._make_library(overlay_path)
         lib.inject_into_component_item()
         self._library = lib
         if hasattr(self, "_scene"):
@@ -710,9 +778,18 @@ class MainWindow(QMainWindow):
             self._scene.from_data(self._scene.to_data(), self._library)
             self._dirty = True               # style is part of the schematic now
 
+    def _default_export_path(self, subdir: str, ext: str) -> str:
+        """Default save path for an export: <schematic stem><ext> in *subdir*.
+
+        Mirrors the .slicap_sch base name so exporting design.slicap_sch
+        proposes design.cir / design.svg / design.pdf."""
+        stem = self._current_path.stem if self._current_path else "schematic"
+        return str(project.subdir(subdir) / f"{stem}{ext}")
+
     def _on_export_svg(self):
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export SVG", str(project.subdir("img")), "SVG (*.svg);;All Files (*)"
+            self, "Export SVG", self._default_export_path("img", ".svg"),
+            "SVG (*.svg);;All Files (*)"
         )
         if not path:
             return
@@ -731,7 +808,8 @@ class MainWindow(QMainWindow):
 
     def _on_export_pdf(self):
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export PDF", str(project.subdir("img")), "PDF (*.pdf);;All Files (*)"
+            self, "Export PDF", self._default_export_path("img", ".pdf"),
+            "PDF (*.pdf);;All Files (*)"
         )
         if not path:
             return
@@ -756,7 +834,7 @@ class MainWindow(QMainWindow):
 
     def _on_export_netlist(self):
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export Netlist", str(project.subdir("cir")), _NET_FILTER
+            self, "Export Netlist", self._default_export_path("cir", ".cir"), _NET_FILTER
         )
         if not path:
             return
@@ -770,7 +848,7 @@ class MainWindow(QMainWindow):
         from .library_item import LibraryItem
         from .parameter_item import ParameterItem
         from .model_item import ModelItem
-        from .netlist import build_netlist
+        from .netlist import build_netlist, NetlistError
         items = self._scene.items()
         comps  = [i for i in items if isinstance(i, ComponentItem)]
         wires  = [i for i in items if isinstance(i, WireItem)]
@@ -779,8 +857,16 @@ class MainWindow(QMainWindow):
         prms   = [i for i in items if isinstance(i, ParameterItem)]
         models = [i for i in items if isinstance(i, ModelItem)]
         title = self._doc_props.title or (self._current_path.stem if self._current_path else "schematic")
-        text = build_netlist(comps, wires, cmds, title, libs=libs, params=prms,
-                             model_defs=models)
+        try:
+            text = build_netlist(comps, wires, cmds, title, libs=libs, params=prms,
+                                 model_defs=models)
+        except NetlistError as exc:
+            QMessageBox.critical(
+                self, "Netlist not generated",
+                "Unresolved “?” placeholders remain, so no netlist was written:\n\n"
+                + "\n".join(exc.errors),
+            )
+            return
         try:
             p.write_text(text, encoding="utf-8")
         except Exception as exc:

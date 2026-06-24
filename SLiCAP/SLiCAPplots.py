@@ -257,6 +257,12 @@ class figure(object):
         (*bool*) if 'True' the figure will be displayed with the method
         **SLiCAPplots.figure.plot()**. Defaults to [].
         """
+        
+        self.save = True
+        """
+        (*bool*) if 'True' the figure will be saved to the img folder in pdf and in svg format
+        Defaults to True.
+        """
 
         self.fileName = fileName
         """
@@ -381,9 +387,10 @@ class figure(object):
                     # Set default font sizes and grid
                     defaultsPlot()
         # Save the figure"
-        plt.savefig(ini.img_path + self.fileName + "." + self.fileType)
-        if self.fileType.lower() != "pdf":
-            plt.savefig(ini.img_path + self.fileName + ".pdf")
+        if self.save:
+            plt.savefig(ini.img_path + self.fileName + "." + self.fileType)
+            if self.fileType.lower() != "pdf":
+                plt.savefig(ini.img_path + self.fileName + ".pdf")
         if self.show:
             plt.show()
         self.updateTracedict()
@@ -429,7 +436,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
               sweepVar = 'auto', sweepScale = '', xVar = 'auto', xScale = '', 
               xUnits = '', xLim = [], yLim = [], axisType = 'auto', 
               funcType = 'auto', yVar = 'auto', yScale = '', yUnits = '',
-              noiseSources = None, show = False):
+              noiseSources = None, show = False, save = True):
     """
     Plots a function by sweeping one variable and optionally stepping another.
 
@@ -528,6 +535,9 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
     :param show: If 'True' the plot will be shown in the workspace.
     :type show: bool
 
+    :param save: If 'True' the plot will be saved to the img folder in both pdf and svg format. Defaults to True.
+    :type show: bool
+
     :return: fig
     :rtype: SLiCAPplots.figure
     """
@@ -538,6 +548,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
     timeTypes  = ['time', 'impulse', 'step']
     fig = figure(fileName)
     fig.show = show
+    fig.save = save
     ax = axis(title)
     ax.polar = False
     if type(results) != list:
@@ -905,7 +916,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
     return fig
 
 def plotPZ(fileName, title, results, xmin = None, xmax = None, 
-           ymin = None, ymax = None, xscale = '', yscale = '', show = False):
+           ymin = None, ymax = None, xscale = '', yscale = '', show = False, save = True):
     """
     Creates a pole-zero scatter plot.
 
@@ -958,11 +969,15 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
     :param show: If 'True' the plot will be shown in the workspace. Defaults to False.
     :type show: bool
 
+    :param save: If 'True' the plot will be saved to the img folder in both pdf and svg format. Defaults to True.
+    :type show: bool
+
     :return: fig
     :rtype: SLiCAPplots.figure
     """
     fig = figure(fileName)
     fig.show = show
+    fig.save = save
     fig.axisWidth = fig.axisHeight
     pz = axis(title)
     pz.xScale = 'lin'
@@ -1241,7 +1256,7 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
 
 def plot(fileName, title, axisType, plotData, xName = '', xScale = '', 
          xUnits = '', yName = '', yScale = '', yUnits = '', xLim = [] , 
-         yLim = [], show = False):
+         yLim = [], show = False, save = True):
     """
     Plots x-y data, or multiple pairs of x-y data.
 
@@ -1295,11 +1310,15 @@ def plot(fileName, title, axisType, plotData, xName = '', xScale = '',
     :param show: If 'True' the plot will be shown in the workspace.
     :type show: bool
 
+    :param save: If 'True' the plot will be saved to the img folder in both pdf and svg format. Defaults to True.
+    :type show: bool
+
     :return: fig
     :rtype: SLiCAPplots.figure
     """
     fig = figure(fileName)
     fig.show = show
+    fig.save = save
     ax = axis(title)
     colNum = 0
     numColors = len(ini.default_colors)

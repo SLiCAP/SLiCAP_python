@@ -62,7 +62,8 @@ class _SymbolPreview(QWidget):
         p.scale(scale, scale)
         p.translate(-vb.center().x(), -vb.center().y())
         renderer.render(p, vb)
-        draw_subckt_pin_names(p, self._sym.nodes, self._sym.pins)
+        if self._sym.show_pinnames:
+            draw_subckt_pin_names(p, self._sym.nodes, self._sym.pins)
         p.end()
 
 

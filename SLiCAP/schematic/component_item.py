@@ -1,3 +1,5 @@
+import weakref
+
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtSvgWidgets import QGraphicsSvgItem
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsSimpleTextItem, QStyle
@@ -8,6 +10,7 @@ from . import config
 from .config import (
     snap,
     COMP_LABEL_FONT, COMP_LABEL_COLOR, COMP_LABEL_SVG_HEIGHT,
+    COMP_PARAM_SVG_HEIGHT,
     COMP_PARAM_FONT, COMP_PARAM_COLOR,
 )
 
@@ -96,6 +99,7 @@ SYMBOL_PARAMS:      dict[str, list[str]]                 = {}  # name → param 
 SYMBOL_REFS:        dict[str, int]                       = {}  # name → # of references
 SYMBOL_DESCRIPTION: dict[str, str]                       = {}  # name → description
 SYMBOL_INFO:        dict[str, str]                       = {}  # name → help/info URL
+SYMBOL_SHOW_PINNAMES: dict[str, bool]                    = {}  # name → draw node names?
 
 # Fixed params for power symbols (ground, port) — {symbol: {param: default}}.
 # These carry no SLiCAP model, so their editable field is supplied here.
@@ -130,9 +134,40 @@ def refs_for_symbol(symbol_name: str) -> int:
     """Return the number of element references this symbol requires."""
     return SYMBOL_REFS.get(symbol_name, 0)
 
+
+def strip_braces(value: str) -> str:
+    """Remove a single pair of surrounding {…} braces, if present.
+
+    Parameter values/expressions are stored and edited *without* braces — the
+    braces are a netlist-syntax detail the program adds, never something the
+    user types (see wrap_braces)."""
+    s = value.strip()
+    if s.startswith("{") and s.endswith("}"):
+        return s[1:-1].strip()
+    return s
+
+
+def wrap_braces(value: str) -> str:
+    """Wrap a parameter value in {…} unless already wrapped; empty stays empty.
+
+    In a SLiCAP netlist every parameter value/expression is enclosed in curly
+    braces. The user enters the bare expression; the netlist writer and LaTeX
+    renderer add the braces via this helper."""
+    s = value.strip()
+    # A bare "?" is an unset-value reminder, not an expression — never brace it
+    # (and netlist generation rejects it before output anyway).
+    if not s or s == "?" or (s.startswith("{") and s.endswith("}")):
+        return s
+    return "{" + s + "}"
+
 _LABEL_FONT       = COMP_LABEL_FONT      # refdes font (also used for LaTeX-mode prefix text)
 _LABEL_SVG_HEIGHT = COMP_LABEL_SVG_HEIGHT
 _PARAM_FONT       = COMP_PARAM_FONT      # parameter plain-text font
+_PARAM_SVG_HEIGHT = COMP_PARAM_SVG_HEIGHT
+
+# All live ComponentItem instances — used by config.apply() to re-render SVG
+# labels when the latex scale preference changes.
+_live_components: weakref.WeakSet = weakref.WeakSet()
 
 _DEFAULT_LABEL_X    = 32   # fallback when no tight rect is available
 _DEFAULT_LABEL_Y0   = -10
@@ -157,6 +192,7 @@ class _PropertyLabel(QGraphicsItem):
         self.prop_key = prop_key
         self._text: str = ""
         self._svg_renderer: QSvgRenderer | None = None
+        self._svg_bytes: bytes = b""        # kept for SVG export
         self._svg_rect: QRectF = QRectF()   # scaled draw rect, centered at (0,0)
         self._prefix: str = ""              # plain text before the SVG
         self._prefix_w: float = 0.0         # cached width of prefix string
@@ -193,6 +229,7 @@ class _PropertyLabel(QGraphicsItem):
     def set_text(self, text: str) -> None:
         self._text = text
         self._svg_renderer = None
+        self._svg_bytes = b""
         self._svg_rect = QRectF()
         self._prefix = ""
         self._prefix_w = 0.0
@@ -202,14 +239,16 @@ class _PropertyLabel(QGraphicsItem):
         renderer = QSvgRenderer(QByteArray(svg_bytes))
         if not renderer.isValid():
             self._svg_renderer = None
+            self._svg_bytes = b""
             return
         vb = renderer.viewBoxF()
         from .latex_label import svg_line_height
         ref_h = svg_line_height()
+        target_h = _LABEL_SVG_HEIGHT if self.prop_key == "refdes" else _PARAM_SVG_HEIGHT
         if ref_h and ref_h > 0:
-            scale = _LABEL_SVG_HEIGHT / ref_h * 0.75
+            scale = target_h / ref_h * 0.75
         elif vb.height() > 0:
-            scale = _LABEL_SVG_HEIGHT / vb.height() * 0.75
+            scale = target_h / vb.height() * 0.75
         else:
             scale = 1.0
         svg_w = vb.width() * scale
@@ -219,6 +258,7 @@ class _PropertyLabel(QGraphicsItem):
         prefix_w = (fm.horizontalAdvance(prefix) + fm.horizontalAdvance(" ") * 0.25) if prefix else 0.0
         # Bottom-aligned: y=0 is the bottom edge (matches text-mode baseline).
         self._svg_renderer = renderer
+        self._svg_bytes = svg_bytes
         self._svg_rect = QRectF(prefix_w, -svg_h, svg_w, svg_h)
         self._prefix = prefix
         self._prefix_w = prefix_w
@@ -366,6 +406,10 @@ class ComponentItem(_ViewBoxSvgItem):
         # outline by default; the pin names are drawn inside (see paint()).
         if SYMBOL_PREFIX.get(symbol_name) == "X" and self.model:
             self.prop_display["model"] = (True, False)
+        # A "?" placeholder model (the symbol's data-model SVG meta field) means a
+        # .model definition is still required — show it on the canvas as a reminder.
+        elif self.model == "?":
+            self.prop_display["model"] = (True, False)
         self.prop_offsets: dict[str, tuple[float, float]] = {}
         self.h_flip: bool = False
         self.v_flip: bool = False
@@ -374,6 +418,7 @@ class ComponentItem(_ViewBoxSvgItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        self.setZValue(1)   # above wires (Z=0) so labels are always selectable
         self._prev_pos: "QPointF | None" = None
         # Wires captured at the start of a drag (as [(wire, point_index), …]) so
         # they follow this component's pins. None until the first move of a drag;
@@ -386,6 +431,7 @@ class ComponentItem(_ViewBoxSvgItem):
             range(len(PIN_POSITIONS.get(symbol_name, [])))
         )
         self.update_labels()
+        _live_components.add(self)
 
     # ── flip / rotation ───────────────────────────────────────────────────────
 
@@ -494,11 +540,18 @@ class ComponentItem(_ViewBoxSvgItem):
 
             lbl = _PropertyLabel(key, self)
 
-            if is_expression(raw_val):
+            # Parameter values are LaTeX expressions by default: the user enters
+            # the bare expression and the braces that mark it as an expression
+            # are added here for rendering (refdes/model/refs are left as-is).
+            # Power symbols' "name" param is a net name, not an expression.
+            is_param = key in self.params and self.symbol_name not in ("ground", "port")
+            render_val = wrap_braces(raw_val) if is_param else raw_val
+
+            if is_expression(render_val):
                 if show_name:
-                    svg = render_name_eq_value(key, raw_val)
+                    svg = render_name_eq_value(key, render_val)
                 else:
-                    svg = render_expression(raw_val)
+                    svg = render_expression(render_val)
                 if svg is not None:
                     lbl.set_svg(svg)
                 else:
@@ -509,6 +562,17 @@ class ComponentItem(_ViewBoxSvgItem):
             lbl.setPos(QPointF(*self.prop_offsets[key]))
             lbl.setTransform(_counter_transform(self.rotation(), self.h_flip, self.v_flip))
             self._labels[key] = lbl
+
+    def refresh_svg_labels(self) -> None:
+        """Re-scale all SVG-mode labels using the current _LABEL/_PARAM_SVG_HEIGHT.
+
+        Called by config.apply() when the latex_scale preference changes.
+        Re-uses cached SVG bytes so no LaTeX recompilation happens.
+        """
+        for lbl in self._labels.values():
+            if lbl._svg_bytes:
+                lbl.set_svg(lbl._svg_bytes, lbl._prefix)
+        self.update()
 
     # ── geometry ──────────────────────────────────────────────────────────────
 
@@ -537,6 +601,26 @@ class ComponentItem(_ViewBoxSvgItem):
             self.mapToScene(QPointF(lx, ly))
             for lx, ly in PIN_POSITIONS.get(self.symbol_name, [])
         ]
+
+    def reload_svg(self, svg_bytes: bytes) -> None:
+        """Swap this instance's artwork for a freshly loaded symbol definition.
+
+        Rebuilds the SVG renderer, re-derives geometry-dependent state (bounding
+        rect, label anchor, pin markers) and the labels.  Symbol *metadata*
+        (pins, params, model …) must already have been republished into the
+        component_item globals via SymbolLibrary.inject_into_component_item().
+
+        Connections are deliberately NOT re-derived: pins may have moved, so the
+        caller (and ultimately the user) is responsible for repairing wiring."""
+        self.prepareGeometryChange()
+        self._svg_bytes = svg_bytes
+        self._renderer = QSvgRenderer(QByteArray(_apply_symbol_colors(svg_bytes)))
+        self.setSharedRenderer(self._renderer)
+        # Pin count may have changed; mark every pin unconnected until the scene
+        # re-runs connectivity (_sync_junctions) and corrects the markers.
+        self._unconnected_pins = set(range(len(PIN_POSITIONS.get(self.symbol_name, []))))
+        self.update_labels()
+        self.update()
 
     def set_unconnected_pins(self, indices: set[int]) -> None:
         """Record which pin indices have nothing attached (scene calls this)."""
@@ -607,11 +691,11 @@ class ComponentItem(_ViewBoxSvgItem):
                     painter.drawRect(QRectF(lx - h, ly - h, size, size))
             painter.restore()
 
-        # Pin names — for subcircuit (X) blocks, label each pin with its node
-        # name just inside the outline so connections can be verified. Each name
-        # is counter-transformed so it stays horizontal and unmirrored under any
-        # rotation/flip of the block.
-        if SYMBOL_PREFIX.get(self.symbol_name) == "X":
+        # Pin names — only for symbols that opt in via data-show-pinnames (the
+        # auto-generated subcircuit boxes, whose shape carries no pin meaning).
+        # Each name is counter-transformed so it stays horizontal and unmirrored
+        # under any rotation/flip of the block.
+        if SYMBOL_SHOW_PINNAMES.get(self.symbol_name, False):
             draw_subckt_pin_names(
                 painter,
                 SYMBOL_NODES.get(self.symbol_name, []),

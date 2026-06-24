@@ -16,8 +16,8 @@ from .config import (
     SYMBOL_STROKE_COLOR, SYMBOL_TEXT_COLOR,
     WIRE_COLOR, WIRE_WIDTH,
     NET_LABEL_COLOR, NET_LABEL_FONT_SIZE,
-    COMP_REFDES_FONT_FAMILY, COMP_LABEL_COLOR, COMP_LABEL_FONT_SIZE, COMP_LABEL_LATEX_SCALE,
-    COMP_PARAM_FONT_FAMILY, COMP_PARAM_FONT_SIZE, COMP_PARAM_COLOR,
+    COMP_REFDES_FONT_FAMILY, COMP_LABEL_COLOR, COMP_LABEL_FONT_SIZE,
+    COMP_PARAM_FONT_FAMILY, COMP_PARAM_FONT_SIZE, COMP_PARAM_COLOR, COMP_PARAM_LATEX_SCALE,
     GRID_MINOR_COLOR, GRID_MAJOR_COLOR,
     HANDLE_COLOR, HANDLE_SIZE, CONNECTION_COLOR,
     JUNCTION_COLOR, JUNCTION_RADIUS,
@@ -163,9 +163,10 @@ class PreferencesDialog(QDialog):
             ("Colour",      "component_label", "color",       cbtn(COMP_LABEL_COLOR)),
         ])
         group(left, "Component parameters", [
-            ("Font family", "component_param", "font_family", combo(COMP_PARAM_FONT_FAMILY)),
-            ("Font size",   "component_param", "font_size",   ispin(COMP_PARAM_FONT_SIZE, 4, 32)),
-            ("Colour",      "component_param", "color",       cbtn(COMP_PARAM_COLOR)),
+            ("Font family",   "component_param", "font_family",   combo(COMP_PARAM_FONT_FAMILY)),
+            ("Font size",     "component_param", "font_size",     ispin(COMP_PARAM_FONT_SIZE, 4, 32)),
+            ("Colour",        "component_param", "color",         cbtn(COMP_PARAM_COLOR)),
+            ("LaTeX scale %", "component_param", "latex_scale",   ispin(COMP_PARAM_LATEX_SCALE, 25, 400)),
         ])
         group(left, "Text annotations", [
             ("Font family", "text", "font_family", combo(TEXT_FONT_FAMILY)),
@@ -211,7 +212,6 @@ class PreferencesDialog(QDialog):
             ("Radius", "junctions", "radius", fspin(JUNCTION_RADIUS, 1.0, 10.0, 0.5)),
         ])
         group(right, "Scaling defaults (%)", [
-            ("Component value (LaTeX)", "component_label", "latex_scale", ispin(COMP_LABEL_LATEX_SCALE, 25, 400)),
             ("Parameter table / Model definition", "scales", "parameter_table", ispin(SCALE_PARAMETER_TABLE, 1, 500)),
             ("LaTeX fragment",          "scales", "latex_fragment",        ispin(SCALE_LATEX_FRAGMENT,   1, 500)),
             ("Image",                   "scales", "image",                 ispin(SCALE_IMAGE,             1, 1000)),

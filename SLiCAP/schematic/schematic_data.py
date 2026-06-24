@@ -147,9 +147,9 @@ class ParameterData:
     y: float
     params: list          # list of [name, value] string pairs
     preamble_path: str
-    svg_b64: str          # base64-encoded SVG bytes; "" if not yet rendered
     display_width: int
     display_height: int
+    svg_b64: str = ""    # kept for reading old files; no longer written
 
 
 @dataclass
@@ -167,9 +167,9 @@ class LatexFragmentData:
     y: float
     latex_code: str
     preamble_path: str
-    svg_b64: str      # base64-encoded SVG bytes; "" if not yet rendered
     display_width: int
     display_height: int
+    svg_b64: str = ""  # kept for reading old files; no longer written
 
 
 @dataclass
@@ -280,7 +280,6 @@ class SchematicData:
                     "x": f.x, "y": f.y,
                     "latex_code": f.latex_code,
                     "preamble_path": f.preamble_path,
-                    "svg_b64": f.svg_b64,
                     "display_width":  f.display_width,
                     "display_height": f.display_height,
                 }
@@ -291,7 +290,6 @@ class SchematicData:
                     "x": p.x, "y": p.y,
                     "params": p.params,
                     "preamble_path": p.preamble_path,
-                    "svg_b64": p.svg_b64,
                     "display_width":  p.display_width,
                     "display_height": p.display_height,
                 }
@@ -330,7 +328,6 @@ class SchematicData:
                     "simulator":     m.simulator,
                     "params":        [list(p) for p in m.params],
                     "preamble_path": m.preamble_path,
-                    "svg_b64":       m.svg_b64,
                     "display_width":  m.display_width,
                     "display_height": m.display_height,
                 }
