@@ -115,7 +115,7 @@ def resolve_nets(
 
     # Priority 1 — ground (net name from params, defaults to "0")
     for comp in components:
-        if comp.symbol_name == "ground":
+        if comp.symbol_name == "0":
             name = comp.params.get("name", "0").strip() or "0"
             root = uf.find(_rpt(comp.mapToScene(QPointF(0.0, 0.0))))
             root_name[root] = name

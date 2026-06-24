@@ -104,8 +104,8 @@ SYMBOL_SHOW_PINNAMES: dict[str, bool]                    = {}  # name → draw n
 # Fixed params for power symbols (ground, port) — {symbol: {param: default}}.
 # These carry no SLiCAP model, so their editable field is supplied here.
 _SYMBOL_FIXED_PARAMS: dict[str, dict[str, str]] = {
-    "ground": {"name": "0"},
-    "port":   {"name": ""},
+    "0":    {"name": "0"},
+    "port": {"name": ""},
 }
 
 
@@ -393,9 +393,9 @@ class ComponentItem(_ViewBoxSvgItem):
         _is_sub = SYMBOL_PREFIX.get(symbol_name) == "X"
         self.refs: list[str] = [] if _is_sub else ["?"] * _n_refs
         # Ground and port are power symbols — show net name, never refdes
-        _show_refdes = symbol_name not in ("ground", "port")
+        _show_refdes = symbol_name not in ("0", "port")
         self.prop_display: dict[str, tuple[bool, bool]] = {"refdes": (_show_refdes, False)}
-        if symbol_name in ("ground", "port"):
+        if symbol_name in ("0", "port"):
             self.prop_display["name"] = (True, False)
         # Show "value" and ref fields by default for new placements
         if "value" in self.params:
@@ -544,7 +544,7 @@ class ComponentItem(_ViewBoxSvgItem):
             # the bare expression and the braces that mark it as an expression
             # are added here for rendering (refdes/model/refs are left as-is).
             # Power symbols' "name" param is a net name, not an expression.
-            is_param = key in self.params and self.symbol_name not in ("ground", "port")
+            is_param = key in self.params and self.symbol_name not in ("0", "port")
             render_val = wrap_braces(raw_val) if is_param else raw_val
 
             if is_expression(render_val):

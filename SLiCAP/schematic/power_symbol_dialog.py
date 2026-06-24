@@ -26,7 +26,7 @@ class PowerSymbolDialog(QDialog):
         # ── net name ──────────────────────────────────────────────────────────
         name_grid = QGridLayout()
         name_grid.setColumnStretch(1, 1)
-        _name = item.params.get("name") or ("0" if item.symbol_name == "ground" else "")
+        _name = item.params.get("name") or ("0" if item.symbol_name == "0" else "")
         self._name_edit = QLineEdit(_name)
         name_grid.addWidget(QLabel("Net name"), 0, 0)
         name_grid.addWidget(self._name_edit, 0, 1)

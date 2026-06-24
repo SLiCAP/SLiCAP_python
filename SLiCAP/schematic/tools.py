@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from .component_item import ComponentItem, SYMBOL_PREFIX
 
-_ANNOTATION = {"ground", "port"}
+_ANNOTATION = {"0", "port"}
 
 
 def rename_left_right_top_bottom(scene) -> int:

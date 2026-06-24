@@ -5,7 +5,7 @@ from .component_item import PIN_POSITIONS, wrap_braces
 from .connectivity import resolve_nets, _rpt
 
 # Symbols that are net annotations only — no element line in the netlist
-_ANNOTATION = {"ground", "port"}
+_ANNOTATION = {"0", "port"}
 
 
 class NetlistError(Exception):

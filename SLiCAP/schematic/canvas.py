@@ -1635,8 +1635,8 @@ class SchematicScene(QGraphicsScene):
             item.prop_display = {k: tuple(v) for k, v in cd.prop_display.items()}
             item.prop_offsets = {k: tuple(v) for k, v in cd.prop_offsets.items()}
             # Backfill defaults for power symbols saved without net name (old files)
-            if cd.symbol_name in ("ground", "port"):
-                item.params.setdefault("name", "0" if cd.symbol_name == "ground" else "")
+            if cd.symbol_name in ("0", "port"):
+                item.params.setdefault("name", "0" if cd.symbol_name == "0" else "")
                 item.prop_display.setdefault("name", (True, False))
             item.update_labels()
             self.addItem(item)
@@ -2574,7 +2574,7 @@ class SchematicScene(QGraphicsScene):
             self._open_net_label(item)
             return
         if isinstance(item, ComponentItem):
-            if item.symbol_name in ("ground", "port"):
+            if item.symbol_name in ("0", "port"):
                 from .power_symbol_dialog import PowerSymbolDialog
                 dlg = PowerSymbolDialog(item)
                 if dlg.exec():
