@@ -3,3 +3,20 @@ SLiCAP_python.egg-info
 __pycache__
 dist
 SLiCAP.egg*
+
+# Runtime-generated config
+SLiCAP.ini
+SLiCAP/**/*.ini
+
+# Sphinx build output
+SLiCAP/docs/
+
+# KiCAD editor backups
+SLiCAP/files/kicad/SLiCAP-backups/
+SLiCAP/files/kicad/*.bak
+
+# Simulation / export outputs from test runs
+docs/cir/
+docs/csv/
+docs/html/
+docs/txt/
