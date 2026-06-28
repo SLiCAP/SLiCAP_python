@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPen, QBrush, QColor, QPainterPath, QPainterPathStroker
 
-from .config import snap
+from .config import snap, Z_BORDER
 
 _PEN_COLOR = QColor(80, 80, 180)
 _PEN_WIDTH = 0.8
@@ -24,7 +24,7 @@ class BorderItem(QGraphicsRectItem):
         self.setPos(x, y)
         self.setPen(QPen(_PEN_COLOR, _PEN_WIDTH, Qt.DashLine))
         self.setBrush(QBrush(Qt.NoBrush))
-        self.setZValue(-1)
+        self.setZValue(Z_BORDER)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)

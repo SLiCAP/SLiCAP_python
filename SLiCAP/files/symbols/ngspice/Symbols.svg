@@ -1,0 +1,684 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+<g id="R"
+   data-prefix="R"
+   data-nodes="pos neg"
+   data-params="value|?|0|1"
+   data-description="Resistor">
+
+       <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1"/>
+
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+    </g>
+
+<g id="C"
+   data-prefix="C"
+   data-nodes="pos neg"
+   data-params="value|?|0|1; ic||1|0"
+   data-description="Capacitor">
+
+       <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2"/>
+       <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2"/>
+       <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+
+    </g>
+
+<g id="L"
+   data-prefix="L"
+   data-nodes="pos neg"
+   data-params="value|?|0|1; ic||1|0"
+   data-description="Inductor">
+
+       <!-- single path: lead + 3 right-side semicircular bumps + lead
+            each arc: radius 4, clockwise sweep (0 0 1) passes through positive-x side -->
+       <path d="M 0 -20 L 0 -12 A 4 4 0 0 1 0 -4 A 4 4 0 0 1 0  4 A 4 4 0 0 1 0  12 L 0 20"
+             fill="none" stroke="black" stroke-width="1"/>
+       <text x="5" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+    </g>
+
+<g id="V"
+   data-prefix="V"
+   data-nodes="outp outn"
+   data-params="value|?|0|1; ac||1|0; tran||1|0"
+   data-description="Independent voltage source">
+
+       <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       <text x="8" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="8" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+<g id="I"
+   data-prefix="I"
+   data-nodes="outp outn"
+   data-params="value|?|0|1; ac||1|0; tran||1|0"
+   data-description="Independent current source">
+
+       <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="20" x2="0" y2="10"  stroke="black" stroke-width="1"/>
+       <line x1="-10" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="-10" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <polyline points="15 12 17 6 13 6 15 12" stroke="black" stroke-width="0" fill="black"/>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+<g id="E"
+   data-prefix="E"
+   data-nodes="outp outn inp inn"
+   data-params="value|?|0|1"
+   data-description="Voltage-controlled voltage source (gain)">
+
+       <line x1="10" y1="-20" x2="10" y2="20" stroke="black" stroke-width="1"/>
+       <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-20" y1="-20" x2="-10" y2="-20" stroke="black" stroke-width="1"/>
+       <line x1="-20" y1="20" x2="-10" y2="20" stroke="black" stroke-width="1"/>
+       <text x="-15" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="-15" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       <text x="15" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="15" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
+<g id="G"
+   data-prefix="G"
+   data-nodes="outp outn inp inn"
+   data-params="value|?|0|1"
+   data-description="Voltage-controlled current source (gm)">
+
+       <line x1="10" y1="-20" x2="10" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="10" y1="20" x2="10" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
+       <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-5" y1="-10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       <polyline points="-5 12 -3 6 -7 6 -5 12" stroke="black" stroke-width="0" fill="black"/>
+       <line x1="-20" y1="-20" x2="-10" y2="-20" stroke="black" stroke-width="1"/>
+       <line x1="-20" y1="20" x2="-10" y2="20" stroke="black" stroke-width="1"/>
+       <text x="-15" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="-15" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
+<g id="F"
+   data-prefix="F"
+   data-nodes="outp outn"
+   data-refs="Vc"
+   data-params="value|?|0|1"
+   data-description="Current-controlled current source (gain)">
+
+       <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="20" x2="0" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="-10" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="-10" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <polyline points="15 12 17 6 13 6 15 12" stroke="black" stroke-width="0" fill="black"/>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+<g id="H"
+   data-prefix="H"
+   data-nodes="outp outn"
+   data-refs="Vc"
+   data-params="value|?|0|1"
+   data-description="Current-controlled voltage source (Rm)">
+
+       <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       <text x="5" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+<g id="K"
+   data-prefix="K"
+   data-refs="L1 L2"
+   data-params="value|?|0|1"
+   data-description="Coupled inductors (coupling factor)">
+
+       <!-- Symbol outline -->
+       <line x1="-10" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <polyline points="16 0 10 -2 10 2 16 0" stroke="black" stroke-width="0" fill="black"/>
+       <polyline points="-16 0 -10 -2 -10 2 -16 0" stroke="black" stroke-width="0" fill="black"/>
+    </g>
+
+<g id="D"
+   data-prefix="D"
+   data-nodes="A C"
+   data-model="?|1"
+   data-params="area||1|0; m||1|0"
+   data-description="Diode (requires .model)">
+       
+       <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       <polyline points="-7 -7 7 -7 0 0.5 -7 -7" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-7" y1="1" x2="7" y2="1" stroke="black" stroke-width="2"/>
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="A" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="C" />
+    </g>
+
+<g id="0"
+   data-prefix="GND"
+   data-nodes="0"
+   data-description="Ground (node 0)">
+
+       <!-- connection node: (0, 0) -->
+       <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1"/>
+       <polyline points = "0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
+      
+       <!-- Pins -->
+       <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
+    </g>
+
+<g id="BV"
+   data-prefix="B"
+   data-nodes="outp outn"
+   data-params="v||1|1"
+   data-description="Behavioural voltage source (v=expr)">
+
+       <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       <text x="5" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+<g id="BI"
+   data-prefix="B"
+   data-nodes="outp outn"
+   data-params="i||1|1"
+   data-description="Behavioural current source (i=expr)">
+
+       <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="20" x2="0" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="-10" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="-10" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <polyline points="15 12 17 6 13 6 15 12" stroke="black" stroke-width="0" fill="black"/>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+<g id="RS"
+   data-prefix="R"
+   data-nodes="pos neg"
+   data-model="?|1"
+   data-params="L||1|0; W||1|0"
+   data-description="Semiconductor resistor (.model)">
+
+       <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1"/>
+
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+    </g>
+
+<g id="CS"
+   data-prefix="C"
+   data-nodes="pos neg"
+   data-model="?|1"
+   data-params="L||1|0; W||1|0; ic||1|0"
+   data-description="Semiconductor capacitor (.model)">
+
+       <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2"/>
+       <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2"/>
+       <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+
+    </g>
+
+<g id="N"
+   data-prefix="X"
+   data-nodes="outp outn inp inn"
+   data-model="Nullor|1"
+   data-description="Nullor (subcircuit, SPICE.lib)">
+      
+       <!-- norator -->
+       <circle cx="10" cy="5" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <circle cx="10" cy="-5" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <polyline points="10 -20 10 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points=" 10 20 10 10" stroke="black" stroke-width="1" fill="none" />
+       <text x="15" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+                
+       <!-- nullator -->
+       <ellipse cx="-10" cy="0" rx="5" ry="10" fill="none" stroke="black" stroke-width="1"/>
+       <polyline points="-10 20 -10 10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-10 -20 -10 -10" stroke="black" stroke-width="1" fill="none" />
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-10" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
+<g id="TR"
+   data-prefix="X"
+   data-nodes="outp outn inp inn"
+   data-model="Transformer|1"
+   data-params="n||1|1"
+   data-description="Transformer subcircuit (ratio n)">
+
+       <polyline points="-10 -20 -10 -12 -3 -8 -10 -4 -3 0 -10 4 -3 8 -10 12 -10 20" stroke="black" stroke-width="1" fill="none" />      
+       <polyline points="10 -20 10 -12 3 -8 10 -4 3 0 10 4 3 8 10 12 10 20" stroke="black" stroke-width="1" fill="none" />               
+       <text x="-5" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="-5" y="-24.2" dominant-baseline="middle" text-anchor="middle" font-size="7">1</text>
+       <text x="0" y="-24.2" dominant-baseline="middle" text-anchor="middle" font-size="7">:</text>
+       <text x="5" y="-24.2" dominant-baseline="middle" text-anchor="middle" font-size="7">n</text>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-10" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
+<g id="GY"
+   data-prefix="X"
+   data-nodes="outp outn inp inn"
+   data-model="Gyrator|1"
+   data-params="g||1|1"
+   data-description="Gyrator subcircuit (g)">
+
+       <polyline points="-10 -20 -10 20" stroke="black" stroke-width="1" fill="none" />  
+       <polyline points="10 -20 10 20" stroke="black" stroke-width="1" fill="none" />    
+       <path d="M -10,-10 A 6 10 0 0 1 -10,10" fill="none" stroke="black" stroke-width="1" />
+       <path d="M 10,10 A 6 10 0 0 1 10,-10" fill="none" stroke="black" stroke-width="1" />
+              
+       <text x="-5" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="0" y="-24.2" dominant-baseline="middle" text-anchor="middle" font-size="7">value</text>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-10" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
+<g id="QN4"
+   data-prefix="Q"
+   data-nodes="C B E S"
+   data-model="?|1"
+   data-params="area||1|0; m||1|0"
+   data-description="NPN bipolar transistor, 4-terminal (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="10" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
+       <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
+       <circle cx="20" cy="0" r="0.5" class="node" data-node="S" />
+    <polyline points="8 8 6.2 3.4 3.4 6.2" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="QP4"
+   data-prefix="Q"
+   data-nodes="C B E S"
+   data-model="?|1"
+   data-params="area||1|0; m||1|0"
+   data-description="PNP bipolar transistor, 4-terminal (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="10" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
+       <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
+       <circle cx="20" cy="0" r="0.5" class="node" data-node="S" />
+    <polyline points="2 2 6.6 3.8 3.8 6.6" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="QN3"
+   data-prefix="Q"
+   data-nodes="C B E"
+   data-model="?|1"
+   data-params="area||1|0; m||1|0"
+   data-description="NPN bipolar transistor, 3-terminal (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1"/>
+       
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
+       <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
+       
+    <polyline points="8 8 6.2 3.4 3.4 6.2" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="QP3"
+   data-prefix="Q"
+   data-nodes="C B E"
+   data-model="?|1"
+   data-params="area||1|0; m||1|0"
+   data-description="PNP bipolar transistor, 3-terminal (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1"/>
+       
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
+       <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
+       
+    <polyline points="2 2 6.6 3.8 3.8 6.6" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="MN4"
+   data-prefix="M"
+   data-nodes="D G S B"
+   data-model="?|1"
+   data-params="W||1|1; L||1|1; M||1|0; AD||1|0; AS||1|0"
+   data-description="NMOS MOSFET, 4-terminal (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 10 0 5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-3" x2="0" y2="3" stroke="black" stroke-width="1"/>
+       
+       <line x1="-5" y1="-10.5" x2="-5" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+       <circle cx="10" cy="0" r="0.5" class="node" data-node="B" />
+    <polyline points="2 0 6 2 6 -2" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="MP4"
+   data-prefix="M"
+   data-nodes="D G S B"
+   data-model="?|1"
+   data-params="W||1|1; L||1|1; M||1|0; AD||1|0; AS||1|0"
+   data-description="PMOS MOSFET, 4-terminal (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 10 0 5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-3" x2="0" y2="3" stroke="black" stroke-width="1"/>
+       
+       <line x1="-5" y1="-10.5" x2="-5" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+       <circle cx="10" cy="0" r="0.5" class="node" data-node="B" />
+    <polyline points="8 0 4 2 4 -2" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="MN3"
+   data-prefix="M"
+   data-nodes="D G S"
+   data-model="?|1"
+   data-params="W||1|1; L||1|1; M||1|0"
+   data-description="NMOS MOSFET, 3-terminal, bulk=source (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 10 0 5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-3" x2="0" y2="3" stroke="black" stroke-width="1"/>
+       
+       <line x1="-5" y1="-10.5" x2="-5" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+       
+    <line x1="10" y1="0" x2="10" y2="10" stroke="black" stroke-width="1"/><polyline points="2 0 6 2 6 -2" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="MP3"
+   data-prefix="M"
+   data-nodes="D G S"
+   data-model="?|1"
+   data-params="W||1|1; L||1|1; M||1|0"
+   data-description="PMOS MOSFET, 3-terminal, bulk=source (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 10 0 5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-3" x2="0" y2="3" stroke="black" stroke-width="1"/>
+       
+       <line x1="-5" y1="-10.5" x2="-5" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+       
+    <line x1="10" y1="0" x2="10" y2="10" stroke="black" stroke-width="1"/><polyline points="8 0 4 2 4 -2" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="JN"
+   data-prefix="J"
+   data-nodes="D G S"
+   data-model="?|1"
+   data-params="area||1|0"
+   data-description="N-channel JFET (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 -10 10" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+    <polyline points="0 10 -4 8.5 -4 11.5" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="JP"
+   data-prefix="J"
+   data-nodes="D G S"
+   data-model="?|1"
+   data-params="area||1|0"
+   data-description="P-channel JFET (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 -10 10" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+    <polyline points="-5 10 -1 8.5 -1 11.5" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="ZN"
+   data-prefix="Z"
+   data-nodes="D G S"
+   data-model="?|1"
+   data-params="area||1|0"
+   data-description="N-channel MESFET (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 -10 10" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+    <polyline points="0 10 -4 8.5 -4 11.5" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="ZP"
+   data-prefix="Z"
+   data-nodes="D G S"
+   data-model="?|1"
+   data-params="area||1|0"
+   data-description="P-channel MESFET (.model)">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 -10 10" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+    <polyline points="-5 10 -1 8.5 -1 11.5" stroke="black" stroke-width="0" fill="black"/></g>
+
+<g id="SV"
+   data-prefix="S" data-nodes="outp outn inp inn" data-model="?|1"
+   data-description="Voltage-controlled switch (.model)">
+   <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp"/>
+   <circle cx="0" cy="20"  r="0.5" class="node" data-node="outn"/>
+   <circle cx="-25" cy="-6" r="0.5" class="node" data-node="inp"/>
+   <circle cx="-25" cy="6"  r="0.5" class="node" data-node="inn"/>
+   <polyline points="0,-20 0,-9" fill="none" stroke="black" stroke-width="1"/>
+   <polyline points="0,20 0,9"   fill="none" stroke="black" stroke-width="1"/>
+   <circle cx="0" cy="-9" r="1.3" fill="black"/><circle cx="0" cy="9" r="1.3" fill="black"/>
+   <line x1="0" y1="-9" x2="6" y2="7" stroke="black" stroke-width="1"/>
+   <polyline points="-25,-6 -10,-6 -10,6 -25,6" fill="none" stroke="black" stroke-width="1" stroke-dasharray="2,2"/>
+   <line x1="-10" y1="0" x2="-3" y2="0" stroke="black" stroke-width="1" stroke-dasharray="2,2"/>
+</g>
+
+<g id="SI"
+   data-prefix="W" data-nodes="outp outn" data-refs="Vc" data-model="?|1"
+   data-description="Current-controlled switch (control current via ref; .model)">
+   <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp"/>
+   <circle cx="0" cy="20"  r="0.5" class="node" data-node="outn"/>
+   <polyline points="0,-20 0,-9" fill="none" stroke="black" stroke-width="1"/>
+   <polyline points="0,20 0,9"   fill="none" stroke="black" stroke-width="1"/>
+   <circle cx="0" cy="-9" r="1.3" fill="black"/><circle cx="0" cy="9" r="1.3" fill="black"/>
+   <line x1="0" y1="-9" x2="6" y2="7" stroke="black" stroke-width="1"/>
+</g>
+
+<g id="T"
+   data-prefix="T" data-nodes="ap an bp bn" data-params="Z0|?|1|1; Td|?|1|1"
+   data-description="Lossless transmission line (Z0, Td)">
+   <circle cx="-20" cy="-10" r="0.5" class="node" data-node="ap"/>
+   <circle cx="-20" cy="10"  r="0.5" class="node" data-node="an"/>
+   <circle cx="20"  cy="-10" r="0.5" class="node" data-node="bp"/>
+   <circle cx="20"  cy="10"  r="0.5" class="node" data-node="bn"/>
+   <line x1="-20" y1="-10" x2="-12" y2="-10" stroke="black" stroke-width="1"/>
+   <line x1="-20" y1="10"  x2="-12" y2="10"  stroke="black" stroke-width="1"/>
+   <line x1="20"  y1="-10" x2="12"  y2="-10" stroke="black" stroke-width="1"/>
+   <line x1="20"  y1="10"  x2="12"  y2="10"  stroke="black" stroke-width="1"/>
+   <rect x="-12" y="-13" width="24" height="26" rx="3" fill="none" stroke="black" stroke-width="1"/>
+   <line x1="-4" y1="-13" x2="-4" y2="13" stroke="black" stroke-width="1"/>
+   <line x1="4"  y1="-13" x2="4"  y2="13" stroke="black" stroke-width="1"/>
+</g>
+
+<g id="TL"
+   data-prefix="O" data-nodes="ap an bp bn" data-model="?|1"
+   data-description="Lossy transmission line (LTRA .model)">
+   <circle cx="-20" cy="-10" r="0.5" class="node" data-node="ap"/>
+   <circle cx="-20" cy="10"  r="0.5" class="node" data-node="an"/>
+   <circle cx="20"  cy="-10" r="0.5" class="node" data-node="bp"/>
+   <circle cx="20"  cy="10"  r="0.5" class="node" data-node="bn"/>
+   <line x1="-20" y1="-10" x2="-12" y2="-10" stroke="black" stroke-width="1"/>
+   <line x1="-20" y1="10"  x2="-12" y2="10"  stroke="black" stroke-width="1"/>
+   <line x1="20"  y1="-10" x2="12"  y2="-10" stroke="black" stroke-width="1"/>
+   <line x1="20"  y1="10"  x2="12"  y2="10"  stroke="black" stroke-width="1"/>
+   <rect x="-12" y="-13" width="24" height="26" rx="3" fill="none" stroke="black" stroke-width="1"/>
+   <text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="7">LTRA</text>
+</g>
+
+<g id="OpAmp5"
+   data-prefix="X"
+   data-nodes="ni ii vp vn out"
+   data-model="OpAmp|1"
+   data-description="5-terminal opamp subcircuit (add parameters)">
+       
+       <!-- Symbol outline -->
+       <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-5" y1="-10" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="-5" y1="10" x2="0" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="20" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="30" y1="0" x2="35" y2="0" stroke="black" stroke-width="1"/>
+       <text x="5" y="-9.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="9.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="-5" cy="-10" r="0.5" class="node" data-node="ni" />
+       <circle cx="-5" cy="10" r="0.5" class="node" data-node="ii" />
+       <circle cx="35" cy="0" r="0.5" class="node" data-node="out" />
+       <circle cx="15" cy="20" r="0.5" class="node" data-node="vn" />
+    <line x1="15" y1="-20" x2="15" y2="-10" stroke="black" stroke-width="1"/><circle cx="15" cy="-20" r="0.5" class="node" data-node="vp"/></g>
+  </defs>
+</svg>

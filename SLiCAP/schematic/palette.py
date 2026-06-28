@@ -46,13 +46,13 @@ class SymbolPalette(QListWidget):
 
 
 def _render_icon(svg_bytes: bytes, size: int) -> QIcon:
-    renderer = QSvgRenderer(QByteArray(svg_bytes))
-    # Symbols declare their own (often non-square) viewBox, so keep the aspect
-    # ratio to avoid stretching a tall/thin symbol to fill the square icon.
-    renderer.setAspectRatioMode(Qt.KeepAspectRatio)
+    from PySide6.QtCore import QRectF
+    from .component_item import paint_symbol
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
-    renderer.render(painter)
+    # Render through the canvas' symbol path so embedded text is centred and
+    # matches a placed component (KeepAspectRatio is handled inside paint_symbol).
+    paint_symbol(painter, svg_bytes, QRectF(0, 0, size, size))
     painter.end()
     return QIcon(pixmap)

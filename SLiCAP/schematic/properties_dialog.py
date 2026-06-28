@@ -53,7 +53,8 @@ class PropertiesDialog(QDialog):
             head.setMaximumWidth(360)
             lines = []
             if desc:
-                lines.append(f"<b>{html.escape(desc)}</b>")
+                from .symbol_library import description_to_html
+                lines.append(description_to_html(desc))
             if info:
                 url = html.escape(info, quote=True)
                 lines.append(f'<a href="{url}">{html.escape(info)}</a>')

@@ -12,6 +12,7 @@ from .config import (
     WIRE_COLOR, WIRE_WIDTH,
     NET_LABEL_COLOR, NET_LABEL_FONT,
     HANDLE_COLOR, HANDLE_SIZE,
+    Z_WIRE, Z_NET_LABEL,
 )
 
 _HIT_TOL          = 6.0   # click-to-wire tolerance in scene units
@@ -49,7 +50,14 @@ class _NetLabel(QGraphicsSimpleTextItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)   # selectable independently
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setAcceptedMouseButtons(Qt.LeftButton)
-        self.setZValue(2)   # above wires (Z=0) and junctions (Z=1)
+        self.setZValue(Z_NET_LABEL)
+
+    def shape(self) -> QPainterPath:
+        # Pad the clickable area beyond the tight glyph bounds so a short net
+        # name is an easy target (the default shape is hard to hit).
+        path = QPainterPath()
+        path.addRect(self.boundingRect().adjusted(-3, -2, 3, 2))
+        return path
 
     def mousePressEvent(self, event):
         w = self.parentItem()
@@ -120,6 +128,7 @@ class WireItem(QGraphicsPathItem):
         self._net_label: _NetLabel | None = None
         self._label_active: bool = False
         self.setPen(QPen(WIRE_COLOR, WIRE_WIDTH))
+        self.setZValue(Z_WIRE)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self._rebuild()
 

@@ -357,6 +357,25 @@ def _component(parent, defs, item, lbl_color, lbl_fs):
     for child in sym:
         g.append(child)
 
+    # Embedded symbol text was stripped from the artwork (item._svg_bytes); emit
+    # each piece upright at its transformed position so it stays readable under
+    # rotation/mirroring, matching the canvas.
+    from . import config as _cfg
+    for t in getattr(item, "symbol_texts", ()):
+        content = t.get("content")
+        if not content:
+            continue
+        sp = item.mapToScene(QPointF(t["x"], t["y"]))
+        te = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
+        te.set("x", f"{sp.x():.2f}")
+        te.set("y", f"{sp.y():.2f}")
+        te.set("font-family", "sans-serif")
+        te.set("font-size", f"{t['size']:.1f}")
+        te.set("text-anchor", "middle")        # centred horizontally and …
+        te.set("dominant-baseline", "central")  # … vertically on the anchor point
+        te.set("fill", _qhex(_cfg.SYMBOL_TEXT_COLOR))
+        te.text = content
+
     for lbl in item._labels.values():
         sp = lbl.mapToScene(QPointF(0.0, 0.0))
         font, color = lbl._font_and_color()

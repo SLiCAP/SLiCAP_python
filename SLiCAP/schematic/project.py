@@ -118,3 +118,8 @@ def set_current(path: "Path | str | None") -> None:
                         pass
 
     latex_label.set_cache_dir(new_cache)
+
+    # Point terminal-output logging at txt/<name>.log for this schematic (or the
+    # terminal only when unsaved).  subdir() creates txt/ only if missing.
+    from . import logfile
+    logfile.set_log_path(subdir("txt") / (_base.stem + ".log") if _base else None)

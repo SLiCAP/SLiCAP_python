@@ -189,6 +189,10 @@ class MainWindow(QMainWindow):
         act_reload.triggered.connect(self._on_reload_symbols)
         menu.addAction(act_reload)
 
+        act_update = QAction("&Update symbols from library", self)
+        act_update.triggered.connect(self._on_update_symbols_from_library)
+        menu.addAction(act_update)
+
     def _build_place_menu(self, bar):
         menu = bar.addMenu("&Place")
 
@@ -450,6 +454,50 @@ class MainWindow(QMainWindow):
                 f"{'s' if len(updated) != 1 else ''} from the library.\n\n"
                 "Save the schematic to persist the updated symbol cache.",
             )
+
+    def _on_update_symbols_from_library(self):
+        """Drop the whole frozen symbol cache and reload every symbol fresh from
+        the system library.
+
+        Unlike "Load selected symbols…", this rebuilds the active library without
+        the schematic's frozen <name>.symbols overlay, refreshes every instance on
+        the canvas, and deletes the on-disk cache (it is regenerated on save).
+        Pin positions may move, so connections can break — restoring them is left
+        to the user."""
+        from .component_item import ComponentItem
+        ret = QMessageBox.warning(
+            self, "Update symbols from library",
+            "This deletes the schematic's symbol cache and reloads every symbol "
+            "from the system library, refreshing all instances on the canvas.\n\n"
+            "Pin positions may differ from the cached symbols, which can break "
+            "existing wire connections — restoring them is up to you.\n\nProceed?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
+        )
+        if ret != QMessageBox.Yes:
+            return
+
+        # Rebuild the active library from the system (+ project lib/) symbols,
+        # dropping the frozen overlay, and republish the metadata.
+        self._build_library(None)
+        for item in self._scene.items():
+            if isinstance(item, ComponentItem):
+                svg = self._library.svg_bytes(item.symbol_name)
+                if svg is not None:
+                    item.reload_svg(svg)
+        self._scene._sync_junctions()
+
+        # Delete the on-disk cache so it is regenerated from the live library on
+        # the next save.
+        cache = project.symbols_path()
+        if cache is not None and cache.is_file():
+            cache.unlink()
+        self._dirty = True
+
+        QMessageBox.information(
+            self, "Update symbols from library",
+            "All symbols reloaded from the system library.\n\n"
+            "Save the schematic to regenerate its symbol cache.",
+        )
 
     def _on_place_text(self):
         from .text_dialog import TextDialog

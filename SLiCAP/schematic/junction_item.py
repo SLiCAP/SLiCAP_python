@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem
 from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import QPen, QBrush, Qt
 
-from .config import JUNCTION_COLOR, JUNCTION_RADIUS, snap
+from .config import JUNCTION_COLOR, JUNCTION_RADIUS, snap, Z_JUNCTION
 
 _SEL_PAD = 3.0  # extra space around the dot so the selection box appears around it
 
@@ -26,7 +26,7 @@ class JunctionItem(QGraphicsEllipseItem):
         self.setPos(center)
         self.setPen(QPen(Qt.NoPen))
         self.setBrush(QBrush(JUNCTION_COLOR))
-        self.setZValue(1)
+        self.setZValue(Z_JUNCTION)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)

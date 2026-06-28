@@ -57,7 +57,8 @@ class PlaceSymbolDialog(QDialog):
         # The widget is sized per symbol to the symbol's own extent × DEFAULT_ZOOM
         # (see _on_selection_changed), so it appears at the exact same pixels-per-
         # grid-unit as on the canvas at default zoom — never stretched or clipped.
-        self._svg = QSvgWidget()
+        self._svg = QLabel()
+        self._svg.setAlignment(Qt.AlignCenter)
 
         # The preview area has a FIXED width (the widest symbol plus side margin)
         # so the column does not jiggle horizontally as the selection scrolls.
@@ -149,24 +150,35 @@ class PlaceSymbolDialog(QDialog):
 
     def _on_selection_changed(self, current, _previous):
         if current is None:
-            self._svg.load(QByteArray())
+            self._svg.clear()
             self._meta.setText("")
             return
         sym = self._library.symbol(current.text())
-        self._svg.load(QByteArray(sym.svg) if sym else QByteArray())
-        # Size the widget to the symbol's own extent (the SVG viewBox is in scene
-        # units) × DEFAULT_ZOOM, so the symbol shows at exactly the pixels-per-
-        # grid-unit of the canvas at default zoom, whole and unstretched.  The
-        # preview area then sizes itself to this plus its vertical margins, and the
-        # dialog minimum grows with it.
-        vb = self._svg.renderer().viewBoxF()
-        self._svg.setFixedSize(QSize(round(vb.width() * DEFAULT_ZOOM),
-                                     round(vb.height() * DEFAULT_ZOOM)))
+        # Render the symbol through the canvas' own path (paint_symbol) so the
+        # embedded text is centred exactly as on a placed component.  Size the
+        # preview to the symbol's own extent × DEFAULT_ZOOM, so it shows at the
+        # same pixels-per-grid-unit as the canvas at default zoom.
+        if sym is not None:
+            from PySide6.QtGui import QPixmap, QPainter
+            from PySide6.QtCore import QRectF
+            from .component_item import paint_symbol
+            _x, _y, w, h = sym.select_box
+            pw, ph = max(1, round(w * DEFAULT_ZOOM)), max(1, round(h * DEFAULT_ZOOM))
+            pm = QPixmap(pw, ph)
+            pm.fill(Qt.transparent)
+            p = QPainter(pm)
+            paint_symbol(p, sym.svg, QRectF(0, 0, pw, ph))
+            p.end()
+            self._svg.setPixmap(pm)
+            self._svg.setFixedSize(QSize(pw, ph))
+        else:
+            self._svg.clear()
 
         lines = []
         if sym is not None:
             if sym.description:
-                lines.append(html.escape(sym.description))
+                from .symbol_library import description_to_html
+                lines.append(description_to_html(sym.description))
             if sym.info:
                 url = html.escape(sym.info, quote=True)
                 lines.append(f'<a href="{url}">{html.escape(sym.info)}</a>')

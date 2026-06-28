@@ -157,10 +157,65 @@ def _vb_str(rect: tuple) -> str:
 
 # ── one parsed symbol ─────────────────────────────────────────────────────────
 
+def description_to_html(desc: str) -> str:
+    """Render a symbol's data-description as safe HTML for the place/properties
+    dialogs: a literal ``\\n`` (and any real newline) becomes a line break, all
+    other text is HTML-escaped."""
+    import html as _html
+    return _html.escape(desc or "").replace("\\n", "<br>").replace("\n", "<br>")
+
+
+def _parse_model_field(raw: str, source: str, sym: str) -> tuple[str, bool]:
+    """Parse ``data-model`` = ``name|show`` into ``(name, show_on_canvas)``.
+
+    An empty/absent attribute means "no model" → ``("", False)``.  The pipe form
+    is required; a bare ``name`` (the old format) is rejected so libraries are
+    migrated cleanly."""
+    raw = (raw or "").strip()
+    if not raw:
+        return "", False
+    if "|" not in raw:
+        raise SymbolError(
+            f"Symbol '{sym}' in {source}: data-model='{raw}' is not in the "
+            f"'name|show' form (e.g. 'C|0' or '?|1')."
+        )
+    name, _, show = raw.partition("|")
+    return name.strip(), show.strip() == "1"
+
+
+def _parse_params_field(
+    raw: str, source: str, sym: str
+) -> tuple[dict[str, str], dict[str, tuple[bool, bool]]]:
+    """Parse ``data-params`` = ``name|default|show_name|show_value; …``.
+
+    Returns ``(defaults, display)`` where ``defaults`` maps each parameter name
+    to its default value/expression and ``display`` maps it to the
+    ``(show_value, show_name)`` pair used by ComponentItem.prop_display.  Insertion
+    order (= on-canvas order) is preserved.  Every entry must carry all four
+    pipe-separated fields; not-applicable fields are left empty (e.g. ``W||0|0``)."""
+    defaults: dict[str, str] = {}
+    display:  dict[str, tuple[bool, bool]] = {}
+    for entry in (raw or "").split(";"):
+        entry = entry.strip()
+        if not entry:
+            continue
+        fields = entry.split("|")
+        if len(fields) != 4:
+            raise SymbolError(
+                f"Symbol '{sym}' in {source}: parameter entry '{entry}' must have "
+                f"four pipe-separated fields: name|default|show_name|show_value."
+            )
+        pname = fields[0].strip()
+        defaults[pname] = fields[1].strip()
+        display[pname]  = (fields[3].strip() == "1", fields[2].strip() == "1")
+    return defaults, display
+
+
 class Symbol:
     """All metadata + render SVG for a single library symbol."""
 
-    __slots__ = ("name", "prefix", "nodes", "pins", "model", "params",
+    __slots__ = ("name", "prefix", "nodes", "pins", "model", "model_show",
+                 "params", "param_defaults", "param_display",
                  "refs", "description", "info", "show_pinnames",
                  "select_box", "svg", "g_xml")
 
@@ -172,8 +227,11 @@ class Symbol:
         self.prefix      = g_element.get("data-prefix", "")
         self.nodes       = (g_element.get("data-nodes") or "").split()
         self.refs        = (g_element.get("data-refs") or "").split()
-        self.model       = g_element.get("data-model", "")
-        self.params      = (g_element.get("data-params") or "").split()
+        self.model, self.model_show = _parse_model_field(
+            g_element.get("data-model", ""), source, name)
+        self.param_defaults, self.param_display = _parse_params_field(
+            g_element.get("data-params", ""), source, name)
+        self.params      = list(self.param_defaults.keys())
         self.description = g_element.get("data-description", "")
         self.info        = g_element.get("data-info", "")
         # Whether to draw the SLiCAP node names on the canvas.  Block symbols
@@ -265,20 +323,30 @@ class SymbolLibrary:
         for g in defs.findall(f"{{{SVG_NS}}}g"):
             self._add_g(g, path.name, override=False)
 
-    def add_bundle(self, path) -> None:
+    def add_bundle(self, path) -> list[str]:
         """Overlay a frozen <name>.symbols bundle: its symbols OVERRIDE the
         system ones of the same name (a schematic renders with the symbols it was
-        drawn with, and user-defined symbols win)."""
+        drawn with, and user-defined symbols win).
+
+        The bundle is a cache, so a symbol that no longer parses (e.g. an
+        outdated metadata format) is skipped rather than aborting the load — the
+        already-loaded system definition is used in its place.  Returns the names
+        of any skipped symbols so the caller can report them."""
+        skipped: list[str] = []
         if not path or not Path(path).is_file():
-            return
+            return skipped
         parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
         try:
             root = ET.parse(str(path), parser).getroot()
         except ET.ParseError:
-            return
+            return skipped
         for g in root.iter(f"{{{SVG_NS}}}g"):
             if g.get("id") and g.get("data-prefix"):
-                self._add_g(g, Path(path).name, override=True)
+                try:
+                    self._add_g(g, Path(path).name, override=True)
+                except SymbolError:
+                    skipped.append(g.get("id"))
+        return skipped
 
     def add_user_library(self, directory, exclude_stems=()) -> None:
         """Load user symbol libraries from a directory's ``*.svg`` files, AFTER
@@ -348,7 +416,10 @@ class SymbolLibrary:
         ci.SYMBOL_TIGHT_RECT.update({n: s.select_box for n, s in self._symbols.items()})
         ci.SYMBOL_NODES.update({n: list(s.nodes) for n, s in self._symbols.items()})
         ci.SYMBOL_MODEL.update({n: s.model for n, s in self._symbols.items()})
+        ci.SYMBOL_MODEL_SHOW.update({n: s.model_show for n, s in self._symbols.items()})
         ci.SYMBOL_PARAMS.update({n: list(s.params) for n, s in self._symbols.items()})
+        ci.SYMBOL_PARAM_DEFAULTS.update({n: dict(s.param_defaults) for n, s in self._symbols.items()})
+        ci.SYMBOL_PARAM_DISPLAY.update({n: dict(s.param_display) for n, s in self._symbols.items()})
         ci.SYMBOL_REFS.update({n: len(s.refs) for n, s in self._symbols.items()})
         ci.SYMBOL_DESCRIPTION.update({n: s.description for n, s in self._symbols.items()})
         ci.SYMBOL_INFO.update({n: s.info for n, s in self._symbols.items()})

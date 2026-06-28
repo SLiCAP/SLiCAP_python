@@ -4,9 +4,13 @@ import argparse
 from PySide6.QtWidgets import QApplication, QMessageBox
 from .window import MainWindow
 from .symbol_library import SymbolError
+from . import logfile
 
 
 def main():
+    # Tee stdout/stderr so terminal output is also captured to the current
+    # schematic's txt/<name>.log (see project.set_current / logfile).
+    logfile.install()
     parser = argparse.ArgumentParser(prog="slicap-schematic-gui")
     parser.add_argument(
         "--config",

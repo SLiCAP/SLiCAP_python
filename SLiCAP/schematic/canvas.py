@@ -14,6 +14,7 @@ from .config import (
     GRID_MINOR_COLOR, GRID_MAJOR_COLOR,
     JUNCTION_COLOR, JUNCTION_RADIUS,
     COMMAND_COLOR, COMMAND_FONT,
+    Z_WIRE, Z_WIRE_DRAG,
 )
 from .component_item import ComponentItem, SYMBOL_PREFIX, PIN_POSITIONS, make_ghost
 from .wire_item import WireItem
@@ -417,10 +418,17 @@ class SchematicScene(QGraphicsScene):
         for data in self._clipboard:
             kind = data['kind']
             if kind == 'component':
+                # Re-fetch the full symbol SVG from the library so embedded text
+                # (stripped from item._svg_bytes) is restored on the copy, just as
+                # file loading does.  Fall back to the stored artwork if absent.
+                lib = getattr(self, '_library', None)
+                svg = lib.svg_bytes(data['symbol_name']) if lib is not None else None
+                if svg is None:
+                    svg = data['svg_bytes']
                 item = ComponentItem(
                     data['symbol_name'],
                     self._next_id(data['symbol_name']),
-                    data['svg_bytes'],
+                    svg,
                 )
                 item.setPos(QPointF(data['x'], data['y']) + delta)
                 item.setRotation(data['rotation'])
@@ -1854,6 +1862,14 @@ class SchematicScene(QGraphicsScene):
                     if isinstance(it, ComponentItem):
                         it._drag_wires = None
                 item = self.itemAt(raw, QTransform())
+                # A net label is a wire child, so its high Z only orders it among
+                # siblings — other top-level items (junctions, crossing wires) can
+                # occlude it in hit-testing.  Give an explicit net label under the
+                # cursor priority so it can be selected and dragged.
+                from .wire_item import _NetLabel
+                _lbl = next((i for i in self.items(raw) if isinstance(i, _NetLabel)), None)
+                if _lbl is not None:
+                    item = _lbl
                 if isinstance(item, WireItem):
                     # Accept the event so the view's RubberBandDrag mode does not
                     # start a rubber-band (which would clear our selection on release).
@@ -1922,7 +1938,7 @@ class SchematicScene(QGraphicsScene):
                     # Lift moved wires above rubber-band partners (Z=0) so their
                     # selection handles are never overdrawn during drag.
                     for wire in self._wire_move_wires:
-                        wire.setZValue(1)
+                        wire.setZValue(Z_WIRE_DRAG)
                     # Collect adjacent non-selected wires sharing an endpoint
                     # with a wire being moved (rubber-band partners).
                     moved_ids = {id(w) for w in self._wire_move_wires}
@@ -2278,7 +2294,7 @@ class SchematicScene(QGraphicsScene):
                 # Restore Z-values that were raised at drag-start.
                 for wire in self._wire_move_wires:
                     if wire.scene() is not None:
-                        wire.setZValue(0)
+                        wire.setZValue(Z_WIRE)
                 if self._wire_move_moved:
                     self._push_snapshot(self._pre_drag_data)
                     self._reconnect_after_move()
@@ -2389,6 +2405,27 @@ class SchematicScene(QGraphicsScene):
                             new_pin = comp.mapToScene(QPointF(*local_xy))
                             if _pt_key(new_pin) != _pt_key(anchor):
                                 self.addItem(WireItem(_elbow(anchor, new_pin, True)))
+                    # A junction dragged off a component pin takes its attached
+                    # wires with it (JunctionItem._rubber_band_wires) but leaves the
+                    # pin behind — bridge the pin to the junction's new position so
+                    # the connection is not silently dropped (only deleting a wire
+                    # or component should disconnect a pin).
+                    comp_pins = {
+                        _pt_key(comp.mapToScene(QPointF(lx, ly)))
+                        for comp in self.items() if isinstance(comp, ComponentItem)
+                        for lx, ly in PIN_POSITIONS.get(comp.symbol_name, [])
+                    }
+                    for j in self.items():
+                        if not isinstance(j, JunctionItem):
+                            continue
+                        old_xy = self._pre_drag_pos.get(id(j))
+                        if old_xy is None:
+                            continue
+                        old_pin = QPointF(*old_xy)
+                        new_pos = j.pos()
+                        if (_pt_key(old_pin) in comp_pins
+                                and _pt_key(old_pin) != _pt_key(new_pos)):
+                            self.addItem(WireItem(_elbow(old_pin, QPointF(new_pos), True)))
                     self._sync_junctions()
                     self._remove_short_circuit_wires()
                     self._sync_junctions()
@@ -2572,6 +2609,17 @@ class SchematicScene(QGraphicsScene):
             return
         if isinstance(item, WireItem):
             self._open_net_label(item)
+            return
+        from .component_item import _PropertyLabel
+        if isinstance(item, _PropertyLabel) and isinstance(item.parentItem(), ComponentItem):
+            comp = item.parentItem()
+            from .attribute_dialog import AttributeDialog
+            dlg = AttributeDialog(comp, item.prop_key)
+            if dlg.exec():
+                self._push_undo()
+                dlg.apply()
+                if comp.symbol_name == "port":
+                    self._sync_port_net_names()
             return
         if isinstance(item, ComponentItem):
             if item.symbol_name in ("0", "port"):

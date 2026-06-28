@@ -7,6 +7,7 @@ SLiCAP module for interfacing with NGspice.
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import _checkExpression
 from os     import system, remove
+import subprocess
 from sympy  import Symbol
 from SLiCAP.SLiCAPplots import trace
 from numpy  import array, sqrt, arctan, pi, unwrap, log10, linspace, geomspace
@@ -116,7 +117,7 @@ class MOS(object):
             txt += f.read()
         with open('MOS_OP.cir', 'w') as f:
             f.write(txt)
-        system(ini.ngspice + ' -b MOS_OP.cir -o MOS_OP.log')
+        _run_ngspice([ini.ngspice, '-b', 'MOS_OP.cir', '-o', 'MOS_OP.log'])
         #remove('MOS_OP.cir')
         #remove('MOS_OP.log')
         self._getParams()
@@ -181,7 +182,7 @@ class MOS(object):
             txt += f.read()
         with open('MOS_OP.cir', 'w') as f:
             f.write(txt)
-        system(ini.ngspice + ' -b MOS_OP.cir -o MOS_OP.log')
+        _run_ngspice([ini.ngspice, '-b', 'MOS_OP.cir', '-o', 'MOS_OP.log'])
         remove('MOS_OP.cir')
         remove('MOS_OP.log')
         self._getParams()
@@ -300,9 +301,34 @@ class MOS(object):
         remove('MOS_noise.csv')
         return output
 
+def _run_ngspice(args, stdout_path=None, timeout=None):
+    """Run ngspice as a direct child process so it can be reliably terminated.
+
+    :param args: ngspice command and arguments as a list (run without a shell,
+                 so the timeout kills ngspice itself, not just a shell wrapper).
+    :param stdout_path: file to receive ngspice console output, or None to inherit.
+    :param timeout: seconds before the job is killed, or None for no limit
+                    (default; identical to the previous os.system behaviour).
+    :return: True if ngspice completed, False if it timed out or could not run.
+    """
+    out = open(stdout_path, 'w') if stdout_path is not None else None
+    try:
+        subprocess.run(args, stdout=out, timeout=timeout)
+        return True
+    except subprocess.TimeoutExpired:
+        print("ERROR: NGspice exceeded the {} s time limit and was terminated.".format(timeout))
+        return False
+    except FileNotFoundError:
+        print("ERROR: NGspice cannot be executed with: '{}'.".format(ini.ngspice))
+        return False
+    finally:
+        if out is not None:
+            out.close()
+
+
 def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                    traceType='magPhase', squaredNoise=False, postProc=None,
-                   saveLog=True, optDict=None, mode=None):
+                   saveLog=True, optDict=None, mode=None, timeout=None):
     """
     Creates a dictionary with values or traces from an ngspice run.
 
@@ -424,7 +450,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
     """
     if ini.ngspice != "":
         if mode is None:
-            mode = ''
+            mode = 'ltpsa'
         else:
             mode = mode.lower()
         labels = {}
@@ -520,7 +546,11 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
                     netlist += '\n.end'
                 with open(ini.cir_path + 'simFile.sp', 'w') as f:
                     f.write(netlist + cmdsection)
-                system(ini.ngspice + ' -b ' + ini.cir_path + 'simFile.sp -D ngbehavior={} -o ' + ini.txt_path + 'simFile.log > ' + ini.txt_path + 'temp.txt'.format(mode))
+                if not _run_ngspice([ini.ngspice, '-b', ini.cir_path + 'simFile.sp',
+                                     '-D', 'ngbehavior=' + mode,
+                                     '-o', ini.txt_path + 'simFile.log'],
+                                    stdout_path=ini.txt_path + 'temp.txt', timeout=timeout):
+                    return None
         else:
             if optDict is not None:
                 for opt, optVal in optDict.items():
@@ -553,7 +583,11 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             netlist += '\n.end'
             with open(ini.cir_path + 'simFile.sp', 'w') as f:
                 f.write(netlist)
-            system(ini.ngspice + ' -b ' + ini.cir_path + 'simFile.sp -D ngbehavior={} -o ' + ini.txt_path + 'simFile.log > ' + ini.txt_path + 'temp.txt'.format(mode))
+            if not _run_ngspice([ini.ngspice, '-b', ini.cir_path + 'simFile.sp',
+                                 '-D', 'ngbehavior=' + mode,
+                                 '-o', ini.txt_path + 'simFile.log'],
+                                stdout_path=ini.txt_path + 'temp.txt', timeout=timeout):
+                return None
         try:
             with open(ini.cir_path + cirFile + '.csv', 'r') as f:
                 txt = f.read()

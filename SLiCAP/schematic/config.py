@@ -23,6 +23,24 @@ def snap(pos: QPointF) -> QPointF:
     return QPointF(x, y)
 
 
+# ── canvas stacking order (Z-values) ──────────────────────────────────────────
+# One distinct value per item type so overlapping items have a deterministic
+# selection order.  Qt's itemAt() returns the highest-Z item; for equal Z it
+# falls back to insertion order, which is unpredictable — these constants remove
+# those ties.  Higher = on top / selected first.
+#
+# Note: child labels (a component's property labels, a wire's net label) are
+# stacked relative to their PARENT, so their Z only orders them against siblings,
+# not against unrelated top-level items.  The net label therefore also gets an
+# explicit pick in the canvas press handler.
+Z_BORDER    = -10   # frame, always behind everything
+Z_WIRE      = 0
+Z_WIRE_DRAG = 5     # a wire lifted above its rubber-band partners during a drag
+Z_COMPONENT = 10
+Z_JUNCTION  = 20    # small dots stay grabbable on top of components
+Z_NET_LABEL = 30    # most clickable (child of a wire; see note above)
+
+
 # ── style — loaded from style.ini, falls back to defaults ────────────────────
 
 STYLE_FILE = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "style.ini"
@@ -95,7 +113,7 @@ COMP_PARAM_FONT_FAMILY = _s("component_param", "font_family", "sans-serif")
 COMP_PARAM_FONT_SIZE   = _i("component_param", "font_size",   7)
 COMP_PARAM_COLOR       = _c("component_param", "color",       "#0055BB")
 COMP_PARAM_FONT        = QFont(COMP_PARAM_FONT_FAMILY, COMP_PARAM_FONT_SIZE)
-COMP_PARAM_LATEX_SCALE = _i("component_param", "latex_scale", 100)
+COMP_PARAM_LATEX_SCALE = _i("component_param", "latex_scale", 60)
 COMP_PARAM_SVG_HEIGHT  = COMP_PARAM_LATEX_SCALE / 100.0 * 20.0
 
 # Grid
@@ -224,7 +242,7 @@ def _apply(*, rescale_items: bool = False) -> None:
     g["COMP_PARAM_FONT_SIZE"]   = _i("component_param", "font_size",   7)
     g["COMP_PARAM_COLOR"]       = _c("component_param", "color",       "#0055BB")
     g["COMP_PARAM_FONT"]        = QFont(g["COMP_PARAM_FONT_FAMILY"], g["COMP_PARAM_FONT_SIZE"])
-    g["COMP_PARAM_LATEX_SCALE"] = _i("component_param", "latex_scale", 100)
+    g["COMP_PARAM_LATEX_SCALE"] = _i("component_param", "latex_scale", 60)
     g["COMP_PARAM_SVG_HEIGHT"]  = g["COMP_PARAM_LATEX_SCALE"] / 100.0 * 20.0
 
     g["GRID_MINOR_COLOR"] = _c("grid", "minor_color", "#DCDCDC")

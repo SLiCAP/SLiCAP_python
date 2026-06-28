@@ -2112,9 +2112,15 @@ def ENG(number, scaleFactors=False):
             number = float(number)
         absValue = np.abs(number)
         if absValue != 0:
-            exp = int(np.log10(absValue)/3)*3
-            if exp < 0:
-                exp -= 3
+            # Engineering exponent = largest multiple of 3 not exceeding log10.
+            # floor() rounds correctly for both signs (int() truncated toward
+            # zero, needing a -=3 hack that over-corrected exact powers of 1000,
+            # e.g. 1n -> 1000e-12 instead of 1e-9). log10 is first rounded so
+            # floating-point noise does not push a boundary value across a
+            # power-of-1000 step; the precision tracks the display resolution
+            # (ini.disp significant digits) so only values that are anyway
+            # indistinguishable from the boundary at the shown precision snap.
+            exp = int(np.floor(round(np.log10(absValue), ini.disp + 1)/3))*3
             number = number/(10**exp)
         number = str(number)
         if number[-1] == '.':

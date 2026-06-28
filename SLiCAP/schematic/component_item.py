@@ -1,3 +1,4 @@
+import re
 import weakref
 
 from PySide6.QtSvg import QSvgRenderer
@@ -83,6 +84,97 @@ def _counter_transform(rotation: float, h_flip: bool, v_flip: bool) -> "QTransfo
     return QTransform().rotate(-rotation).scale(sx, sy)
 
 
+_TEXT_RE = re.compile(rb'<text\b([^>]*)>(.*?)</text>', re.S)
+
+
+def _split_symbol_text(svg_bytes: bytes) -> tuple[bytes, list[dict]]:
+    """Split a symbol's SVG into (artwork_without_text, embedded_texts).
+
+    Embedded <text> labels (e.g. +/- polarity markers, noise-source labels) are
+    removed from the artwork so they can be redrawn upright and unmirrored on top,
+    regardless of the component's rotation/flip.  Each text is
+    {x, y, size, content} in symbol-local coordinates."""
+    texts: list[dict] = []
+
+    def _num(s, default):
+        try:
+            return float(s)
+        except (TypeError, ValueError):
+            return default
+
+    def _attr(attrs: str, name: str, default: float) -> float:
+        m = re.search(rf'{name}\s*=\s*"([^"]*)"', attrs)
+        return _num(m.group(1), default) if m else default
+
+    def _repl(m):
+        attrs   = m.group(1).decode("utf-8", "replace")
+        content = m.group(2).decode("utf-8", "replace").strip()
+        if content:
+            texts.append({
+                "x":    _attr(attrs, "x", 0.0),
+                "y":    _attr(attrs, "y", 0.0),
+                "size": _attr(attrs, "font-size", 8.0),
+                "content": content,
+            })
+        return b""
+
+    return _TEXT_RE.sub(_repl, svg_bytes), texts
+
+
+def draw_symbol_texts(painter, texts, rotation: float,
+                      h_flip: bool, v_flip: bool) -> None:
+    """Draw a symbol's embedded text labels upright and unmirrored under any
+    rotation/flip (companion to draw_subckt_pin_names; used by ComponentItem and
+    the SVG/PDF exporter via the same text list)."""
+    if not texts:
+        return
+    ct = _counter_transform(rotation, h_flip, v_flip)
+    painter.save()
+    painter.setPen(config.SYMBOL_TEXT_COLOR)
+    for t in texts:
+        content = t["content"]
+        if not content:
+            continue
+        f = QFont(_PARAM_FONT)
+        f.setPixelSize(max(1, round(t["size"])))
+        painter.setFont(f)
+        painter.save()
+        painter.translate(t["x"], t["y"])
+        painter.setTransform(ct, True)
+        # Centred horizontally AND vertically on the anchor point, so the counter
+        # transform pivots on the glyph centre — the text stays put (just upright)
+        # under any rotation/mirror.  The previews render through the same path
+        # (paint_symbol) so the canvas and previews match exactly.
+        painter.drawText(QRectF(-100.0, -100.0, 200.0, 200.0),
+                         Qt.AlignCenter, content)
+        painter.restore()
+    painter.restore()
+
+
+def paint_symbol(painter, svg_bytes: bytes, rect: QRectF) -> None:
+    """Render a symbol (artwork + centred embedded text, default orientation)
+    into ``rect`` of ``painter``, preserving aspect ratio.
+
+    Shared by the palette icons and the place-symbol preview so they render the
+    embedded text identically to the canvas (ComponentItem.paint)."""
+    stripped, texts = _split_symbol_text(svg_bytes)
+    renderer = QSvgRenderer(QByteArray(_apply_symbol_colors(stripped)))
+    vb = renderer.viewBoxF()
+    if vb.width() <= 0 or vb.height() <= 0:
+        return
+    sc = min(rect.width() / vb.width(), rect.height() / vb.height())
+    w, h = vb.width() * sc, vb.height() * sc
+    ox = rect.x() + (rect.width() - w) / 2.0
+    oy = rect.y() + (rect.height() - h) / 2.0
+    renderer.render(painter, QRectF(ox, oy, w, h))
+    painter.save()
+    painter.translate(ox, oy)
+    painter.scale(sc, sc)
+    painter.translate(-vb.left(), -vb.top())
+    draw_symbol_texts(painter, texts, 0.0, False, False)
+    painter.restore()
+
+
 # ── symbol metadata ───────────────────────────────────────────────────────────
 # These dicts are the single source of truth for placed components.  They start
 # empty and are filled by SymbolLibrary.inject_into_component_item() at startup,
@@ -95,7 +187,10 @@ PIN_POSITIONS:      dict[str, list[tuple[float, float]]] = {}  # name → pin co
 SYMBOL_TIGHT_RECT:  dict[str, tuple[float, float, float, float]] = {}  # name → select box
 SYMBOL_NODES:       dict[str, list[str]]                 = {}  # name → node names
 SYMBOL_MODEL:       dict[str, str]                       = {}  # name → SLiCAP model
-SYMBOL_PARAMS:      dict[str, list[str]]                 = {}  # name → param names
+SYMBOL_MODEL_SHOW:  dict[str, bool]                      = {}  # name → show model on canvas?
+SYMBOL_PARAMS:      dict[str, list[str]]                 = {}  # name → param names (order)
+SYMBOL_PARAM_DEFAULTS: dict[str, dict[str, str]]         = {}  # name → {param: default value}
+SYMBOL_PARAM_DISPLAY:  dict[str, dict[str, tuple[bool, bool]]] = {}  # name → {param: (show_value, show_name)}
 SYMBOL_REFS:        dict[str, int]                       = {}  # name → # of references
 SYMBOL_DESCRIPTION: dict[str, str]                       = {}  # name → description
 SYMBOL_INFO:        dict[str, str]                       = {}  # name → help/info URL
@@ -117,12 +212,11 @@ def available_models(symbol_name: str) -> list[str]:
 
 def params_for_symbol(symbol_name: str) -> dict[str, str]:
     """Return a params dict for the symbol (preserving param order).
-    For non-subcircuit symbols the 'value' parameter gets '?' as a reminder;
-    all other parameters default to '' and are omitted from the netlist when unset.
-    Subcircuit/hierarchical blocks (prefix 'X') always use '' so the user is not
-    prompted for parameters that may be optional or auto-filled."""
-    is_sub = SYMBOL_PREFIX.get(symbol_name) == "X"
-    return {k: ("?" if k == "value" and not is_sub else "") for k in SYMBOL_PARAMS.get(symbol_name, [])}
+
+    Default values come straight from the symbol's ``data-params`` definition
+    (see SymbolLibrary): a value of ``?`` marks a parameter the user must fill in;
+    an empty default is omitted from the netlist until set."""
+    return dict(SYMBOL_PARAM_DEFAULTS.get(symbol_name, {}))
 
 
 def fixed_params_for_symbol(symbol_name: str) -> dict[str, str]:
@@ -171,7 +265,7 @@ _live_components: weakref.WeakSet = weakref.WeakSet()
 
 _DEFAULT_LABEL_X    = 32   # fallback when no tight rect is available
 _DEFAULT_LABEL_Y0   = -10
-_DEFAULT_LABEL_STEP = 12
+_DEFAULT_LABEL_STEP = 10   # line spacing (scene units) between attribute labels
 _LABEL_MARGIN       = 5    # gap between symbol right edge and first label column
 
 
@@ -213,14 +307,14 @@ class _PropertyLabel(QGraphicsItem):
     def mousePressEvent(self, event):
         p = self.parentItem()
         if p is not None:
-            p._label_active = True
+            p._active_label_key = self.prop_key
+            p.setSelected(True)        # so the leader shows as a selection cue
             p.update()
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         p = self.parentItem()
         if p is not None:
-            p._label_active = False
             p.update()
         super().mouseReleaseEvent(event)
 
@@ -383,10 +477,13 @@ class ComponentItem(_ViewBoxSvgItem):
     """
 
     def __init__(self, symbol_name: str, instance_id: str, svg_bytes: bytes):
-        super().__init__(svg_bytes)
+        stripped, texts = _split_symbol_text(svg_bytes)
+        super().__init__(stripped)
         self.symbol_name  = symbol_name
         self.instance_id  = instance_id
-        self._svg_bytes   = svg_bytes
+        self._svg_bytes   = stripped
+        # Embedded symbol text, drawn upright in paint()/export (not in the artwork).
+        self.symbol_texts = texts
         self.model: str   = SYMBOL_MODEL.get(symbol_name, "")
         self.params: dict[str, str]  = params_for_symbol(symbol_name) or fixed_params_for_symbol(symbol_name)
         _n_refs = refs_for_symbol(symbol_name)
@@ -395,30 +492,32 @@ class ComponentItem(_ViewBoxSvgItem):
         # Ground and port are power symbols — show net name, never refdes
         _show_refdes = symbol_name not in ("0", "port")
         self.prop_display: dict[str, tuple[bool, bool]] = {"refdes": (_show_refdes, False)}
-        if symbol_name in ("0", "port"):
-            self.prop_display["name"] = (True, False)
-        # Show "value" and ref fields by default for new placements
-        if "value" in self.params:
-            self.prop_display["value"] = (True, False)
+        # Parameter default visibility comes from the symbol's data-params.
+        _param_disp = SYMBOL_PARAM_DISPLAY.get(symbol_name, {})
+        for pname in self.params:
+            self.prop_display[pname] = _param_disp.get(pname, (False, False))
+        # References are shown by default.
         for i in range(refs_for_symbol(symbol_name)):
             self.prop_display[f"ref {i + 1}"] = (True, False)
-        # Subcircuit (X) blocks show their name (the .subckt / model) outside the
-        # outline by default; the pin names are drawn inside (see paint()).
-        if SYMBOL_PREFIX.get(symbol_name) == "X" and self.model:
-            self.prop_display["model"] = (True, False)
-        # A "?" placeholder model (the symbol's data-model SVG meta field) means a
-        # .model definition is still required — show it on the canvas as a reminder.
-        elif self.model == "?":
-            self.prop_display["model"] = (True, False)
+        # The model is shown per the symbol's data-model flag (subcircuit blocks
+        # and "?" reminders set it, e.g. data-model="?|1").
+        if self.model:
+            self.prop_display["model"] = (SYMBOL_MODEL_SHOW.get(symbol_name, False), False)
+        # Power symbols (ground/port) carry a net-name field, shown by default.
+        if symbol_name in ("0", "port"):
+            self.prop_display["name"] = (True, False)
         self.prop_offsets: dict[str, tuple[float, float]] = {}
         self.h_flip: bool = False
         self.v_flip: bool = False
         self._labels: dict[str, _PropertyLabel] = {}
-        self._label_active: bool = False
+        # Key of the label the user last clicked, or None.  Drives the dashed
+        # leader line: a clicked attribute shows only its own line; selecting the
+        # component body (no active label) shows lines to all attributes.
+        self._active_label_key: "str | None" = None
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.setZValue(1)   # above wires (Z=0) so labels are always selectable
+        self.setZValue(config.Z_COMPONENT)   # above wires so labels stay selectable
         self._prev_pos: "QPointF | None" = None
         # Wires captured at the start of a drag (as [(wire, point_index), …]) so
         # they follow this component's pins. None until the first move of a drag;
@@ -462,12 +561,13 @@ class ComponentItem(_ViewBoxSvgItem):
         return _DEFAULT_LABEL_X
 
     def _all_prop_keys(self) -> list[str]:
-        """Ordered list of every key that can be displayed as a label."""
-        keys = ["refdes"] + list(self.params.keys())
-        n_refs = refs_for_symbol(self.symbol_name)
-        keys += [f"ref {i + 1}" for i in range(n_refs)]
+        """Ordered list of every key that can be displayed as a label, in the
+        on-canvas stacking order: refdes, references, model, then parameters."""
+        keys = ["refdes"]
+        keys += [f"ref {i + 1}" for i in range(refs_for_symbol(self.symbol_name))]
         if self.model:
             keys.append("model")
+        keys += list(self.params.keys())
         return keys
 
     def _prop_value(self, key: str) -> str:
@@ -613,8 +713,9 @@ class ComponentItem(_ViewBoxSvgItem):
         Connections are deliberately NOT re-derived: pins may have moved, so the
         caller (and ultimately the user) is responsible for repairing wiring."""
         self.prepareGeometryChange()
-        self._svg_bytes = svg_bytes
-        self._renderer = QSvgRenderer(QByteArray(_apply_symbol_colors(svg_bytes)))
+        stripped, self.symbol_texts = _split_symbol_text(svg_bytes)
+        self._svg_bytes = stripped
+        self._renderer = QSvgRenderer(QByteArray(_apply_symbol_colors(stripped)))
         self.setSharedRenderer(self._renderer)
         # Pin count may have changed; mark every pin unconnected until the scene
         # re-runs connectivity (_sync_junctions) and corrects the markers.
@@ -629,7 +730,15 @@ class ComponentItem(_ViewBoxSvgItem):
             self._unconnected_pins = new
             self.update()
 
+    def mousePressEvent(self, event):
+        # Clicking the symbol body (not a label) clears the focused attribute,
+        # so all leader lines show again.
+        self._active_label_key = None
+        super().mousePressEvent(event)
+
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSelectedHasChanged and not value:
+            self._active_label_key = None      # deselected → forget focused label
         if change == QGraphicsItem.ItemPositionChange and self.scene():
             # Save old position here — self.pos() is still the old value at this point.
             self._prev_pos = self.pos()
@@ -675,6 +784,11 @@ class ComponentItem(_ViewBoxSvgItem):
     def paint(self, painter, option, widget=None):
         super().paint(painter, option, widget)
 
+        # Embedded symbol text (+/- markers, noise labels …) — drawn on top of the
+        # artwork and kept upright/unmirrored under any rotation/flip.
+        draw_symbol_texts(painter, self.symbol_texts,
+                          self.rotation(), self.h_flip, self.v_flip)
+
         # Pin markers — small grey squares on UNCONNECTED pins; they disappear as
         # soon as a wire or another pin connects to the pin (the scene keeps
         # _unconnected_pins in sync). Drawn here so they sit on top of the symbol.
@@ -703,13 +817,17 @@ class ComponentItem(_ViewBoxSvgItem):
                 self.rotation(), self.h_flip, self.v_flip,
             )
 
-        # Dashed leader lines — when component or any of its labels is active
-        if self._labels and ((option.state & QStyle.State_Selected) or self._label_active):
+        # Dashed leader lines from the symbol centre to its attribute labels,
+        # drawn while the component is selected.  A clicked attribute shows only
+        # its own leader; selecting the body (no active label) shows them all.
+        if self._labels and (option.state & QStyle.State_Selected):
+            active = self._labels.get(self._active_label_key)
             painter.save()
             painter.setPen(QPen(COMP_LABEL_COLOR, 0.5, Qt.DashLine))
             painter.setBrush(Qt.NoBrush)
             origin = QPointF(0.0, 0.0)
-            for lbl in self._labels.values():
+            targets = [active] if active is not None else list(self._labels.values())
+            for lbl in targets:
                 painter.drawLine(origin, lbl.pos())
             painter.restore()
 
