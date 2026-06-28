@@ -1,0 +1,684 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+  
+    <g id="D" 
+       data-prefix="D" 
+       data-nodes="A C"
+       data-model="D|0" 
+       data-params="gd||0|0; cd||0|0; rs||0|0"
+       data-description="Small-signal diode model"
+       data-info="https://www.slicap.org/syntax/devices#model-d">
+       
+       <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       <polyline points="-7 -7 7 -7 0 0.5 -7 -7" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-7" y1="1" x2="7" y2="1" stroke="black" stroke-width="2"/>
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="A" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="C" />
+    </g>  
+    
+    <g id="DX" 
+       data-prefix="X" 
+       data-nodes="A C"
+       data-model="?|1" 
+       data-params="ID||0|0"
+       data-description="Small-signal diode subcircuit with parameter ID (forward bias current)"
+       data-info="">
+       
+       <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
+       <polyline points="-7 -7 7 -7 0 0.5 -7 -7" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-7" y1="1" x2="7" y2="1" stroke="black" stroke-width="2"/>
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="A" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="C" />
+    </g>
+    
+    <g id="J" 
+       data-prefix="J" 
+       data-nodes="D G S"
+       data-model="J|0" 
+       data-params="cgs||0|0; cdg||0|0; cdb||0|0; gm||0|0; go||0|0"
+       data-description="Small-signal JFET model"
+       data-info="https://www.slicap.org/syntax/devices#model-j">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 -10 10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="2 10 5 13 8 10 5 7 2 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+    </g>
+    
+    <g id="JX" 
+       data-prefix="X" 
+       data-nodes="D G S"
+       data-model="?|1" 
+       data-params="ID||0|0"
+       data-description="Small-signal JFET subcircuit with parameter ID"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 -10 10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="2 10 5 13 8 10 5 7 2 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+    </g>
+    
+    <g id="M" 
+       data-prefix="M" 
+       data-nodes="D G S B"
+       data-model="M|0" 
+       data-params="cgs||0|0; cgb||0|0; cdg||0|0; cdb||0|0; csb||0|0; gm||0|0; gb||0|0; go||0|0"
+       data-description="4-terminal small-signal MOS model"
+       data-info="https://www.slicap.org/syntax/devices.html#m-4-terminal-mos">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 10 0 5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-3" x2="0" y2="3" stroke="black" stroke-width="1"/>
+       <polyline points="2 0 5 3 8 0 5 -3 2 0" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-5" y1="-10.5" x2="-5" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+       <circle cx="10" cy="0" r="0.5" class="node" data-node="B" />
+    </g>
+    
+    <g id="MX" 
+       data-prefix="X" 
+       data-nodes="D G S B"
+       data-model="?|1" 
+       data-params="ID||0|0; W||0|0; L||0|0"
+       data-description="4-terminal small-signal MOS subcircuit with parameters ID, W, L"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 10 0 5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-3" x2="0" y2="3" stroke="black" stroke-width="1"/>
+       <polyline points="2 0 5 3 8 0 5 -3 2 0" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-5" y1="-10.5" x2="-5" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+       <circle cx="10" cy="0" r="0.5" class="node" data-node="B" />
+    </g>
+    
+    <g id="MXV" 
+       data-prefix="X" 
+       data-nodes="D G S B"
+       data-model="?|1" 
+       data-params="VD||0|0; VG||0|0; VS||0|0; W||0|0; L||0|0"
+       data-description="4-terminal small-signal, voltage-controlled MOS subcircuit with parameters VD, VG, VS, W, L (voltages with respect to the bulk)"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 10 0 5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-3" x2="0" y2="3" stroke="black" stroke-width="1"/>
+       <polyline points="2 0 5 3 8 0 5 -3 2 0" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-5" y1="-10.5" x2="-5" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+       <circle cx="10" cy="0" r="0.5" class="node" data-node="B" />
+    </g>
+    
+    <g id="MD" 
+       data-prefix="M" 
+       data-nodes="D1 D2 G1 G2"
+       data-model="MD|0" 
+       data-params="gm||0|0; go||0|0; cgg||0|0; cdg||0|0; cdd||0|0"
+       data-description="4-terminal small-signal model differential-pair MOS"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="-10 -20 -10 -10 -20 -10 -20 -5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-20" y1="-3" x2="-20" y2="3" stroke="black" stroke-width="1"/>
+       <polyline points="-18 10 -15 13 -12 10 -15 7 -18 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-25" y1="-10.5" x2="-25" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-30" y1="10" x2="-25" y2="10" stroke="black" stroke-width="1"/>
+       
+       <polyline points="10 -20 10 -10 20 -10 20 -5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="20" y1="-3" x2="20" y2="3" stroke="black" stroke-width="1"/>
+       <polyline points="18 10 15 13 12 10 15 7 18 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="25" y1="-10.5" x2="25" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="30" y1="10" x2="25" y2="10" stroke="black" stroke-width="1"/>
+       
+       <polyline points="-20 5 -20 10 -10 10 -10 20 10 20 10 10 20 10 20 5" stroke="black" stroke-width="1" fill="none" />
+       
+       <!-- Pins -->
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="D1" />
+       <circle cx="-30" cy="10" r="0.5" class="node" data-node="G1" />
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D2" />
+       <circle cx="30" cy="10" r="0.5" class="node" data-node="G2" />
+    </g>
+    
+    <g id="MDX" 
+       data-prefix="X" 
+       data-nodes="D1 D2 G1 G2"
+       data-model="?|1" 
+       data-params="ID||0|0; W||0|0; L||0|0"
+       data-description="4-terminal small-signal MOS subcircuit with parameters ID, W, L"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="-10 -20 -10 -10 -20 -10 -20 -5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-20" y1="-3" x2="-20" y2="3" stroke="black" stroke-width="1"/>
+       <polyline points="-18 10 -15 13 -12 10 -15 7 -18 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-25" y1="-10.5" x2="-25" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-30" y1="10" x2="-25" y2="10" stroke="black" stroke-width="1"/>
+       
+       <polyline points="10 -20 10 -10 20 -10 20 -5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="20" y1="-3" x2="20" y2="3" stroke="black" stroke-width="1"/>
+       <polyline points="18 10 15 13 12 10 15 7 18 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="25" y1="-10.5" x2="25" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="30" y1="10" x2="25" y2="10" stroke="black" stroke-width="1"/>
+       
+       <polyline points="-20 5 -20 10 -10 10 -10 20 10 20 10 10 20 10 20 5" stroke="black" stroke-width="1" fill="none" />
+       
+       <!-- Pins -->
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="D1" />
+       <circle cx="-30" cy="10" r="0.5" class="node" data-node="G1" />
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D2" />
+       <circle cx="30" cy="10" r="0.5" class="node" data-node="G2" />
+    </g>
+    
+    <g id="MPNX" 
+       data-prefix="X" 
+       data-nodes="D G S B"
+       data-model="?|1" 
+       data-params="ID_N||0|0; W_N||0|0; L_N||0|0; ID_P||0|0; W_P||0|0; L_P||0|0"
+       data-description="4-terminal small-signal complementairy-parallel MOS subcircuit with parameters ID, W, L for constituting transistors"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 10 0 5" stroke="black" stroke-width="1" fill="none" />
+       <line x1="0" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-3" x2="0" y2="3" stroke="black" stroke-width="1"/>
+       <polyline points="2 0 5 3 8 0 5 -3 2 0" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-5" y1="-10.5" x2="-5" y2="10.5" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="10" x2="-5" y2="10" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="D" />
+       <circle cx="-10" cy="10" r="0.5" class="node" data-node="G" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="S" />
+       <circle cx="10" cy="0" r="0.5" class="node" data-node="B" />
+    </g>
+    
+    <g id="OM" 
+       data-prefix="O" 
+       data-nodes="outp outn inp inn"
+       data-model="?|1" 
+       data-params=""
+       data-description="Operational amplifier (requires .model definition)"
+       data-info="https://www.slicap.org/syntax/devices#o-operational-amplifier">
+       
+       <!-- Symbol outline -->
+       <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-5" y1="-10" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="-5" y1="10" x2="0" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="20" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="30" y1="0" x2="35" y2="0" stroke="black" stroke-width="1"/>
+       <text x="5" y="-9.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="9.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="-5" cy="-10" r="0.5" class="node" data-node="inp" />
+       <circle cx="-5" cy="10" r="0.5" class="node" data-node="inn" />
+       <circle cx="35" cy="0" r="0.5" class="node" data-node="outp" />
+       <circle cx="15" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+    
+    <g id="OV" 
+       data-prefix="O" 
+       data-nodes="outp outn inp inn"
+       data-model="OV|0" 
+       data-params="av||0|0; gd||0|0; gc||0|0; cd||0|0; cc||0|0; zo||0|0"
+       data-description="Voltage feedback opamp"
+       data-info="https://www.slicap.org/syntax/devices#model-ov">
+       
+       <!-- Symbol outline -->
+       <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-5" y1="-10" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="-5" y1="10" x2="0" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="20" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="30" y1="0" x2="35" y2="0" stroke="black" stroke-width="1"/>
+       <text x="5" y="-9.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="9.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="-5" cy="-10" r="0.5" class="node" data-node="inp" />
+       <circle cx="-5" cy="10" r="0.5" class="node" data-node="inn" />
+       <circle cx="35" cy="0" r="0.5" class="node" data-node="outp" />
+       <circle cx="15" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+    
+    <g id="OC" 
+       data-prefix="O" 
+       data-nodes="outp outn inp inn"
+       data-model="OC|0" 
+       data-params="cp||0|0; gp||0|0; cpn||0|0; gnn||0|0; gm||0|0; zt||0|0; zo||0|0"
+       data-description="Current feedback opamp"
+       data-info="https://www.slicap.org/syntax/devices#model-oc">
+       
+       <!-- Symbol outline -->
+       <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-5" y1="-10" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="-5" y1="10" x2="0" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="20" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="30" y1="0" x2="35" y2="0" stroke="black" stroke-width="1"/>
+       <text x="5" y="-9.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="9.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="-5" cy="-10" r="0.5" class="node" data-node="inp" />
+       <circle cx="-5" cy="10" r="0.5" class="node" data-node="inn" />
+       <circle cx="35" cy="0" r="0.5" class="node" data-node="outp" />
+       <circle cx="15" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+    
+    <g id="QV" 
+       data-prefix="Q" 
+       data-nodes="C B E S"
+       data-model="QV|0" 
+       data-params="gm||0|0; go||0|0; gbc||0|0; gpi||0|0; rb||0|0; cpi||0|0; cbc||0|0; cbx||0|0"
+       data-description="Small-signal model BJT"
+       data-info="https://www.slicap.org/syntax/devices#parameters-model-qv">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 10 10 5 5 5 5 10 10 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="10" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
+       <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
+       <circle cx="20" cy="0" r="0.5" class="node" data-node="S" />
+    </g>
+    
+    <g id="QL" 
+       data-prefix="Q" 
+       data-nodes="C B E S"
+       data-model="QL|0" 
+       data-params="gm||0|0; go||0|0; gbc||0|0; gpi||0|0; rb||0|0; cpi||0|0; cbc||0|0; cbx||0|0"
+       data-description="Small-signal model lateral BJT"
+       data-info="https://www.slicap.org/syntax/devices#model-ql">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 10 10 5 5 5 5 10 10 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="10" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
+       <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
+       <circle cx="20" cy="0" r="0.5" class="node" data-node="S" />
+    </g>
+    
+    <g id="QD" 
+       data-prefix="Q" 
+       data-nodes="C1 C2 B1 B2"
+       data-model="QD|0" 
+       data-params="gm||0|0; gcc||0|0; gbc||0|0; gbb||0|0; rb||0|0; cbb||0|0; cbc||0|0; cbx||0|0"
+       data-description="Small-signal differential pair BJT model"
+       data-info="https://www.slicap.org/syntax/devices#model-qd">
+       
+       <!-- Symbol outline -->
+       <polyline points="-10 -20 -10 -10 -20 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-10 10 -10 5 -15 5 -15 10 -10 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-20" y1="-12" x2="-20" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-30" y1="0" x2="-20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <polyline points="-20 0 -10 10 -10 20 10 20 10 10 20 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 -20 10 -10 20 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 10 10 5 15 5 15 10 10 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="20" y1="-12" x2="20" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="30" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="C1" />
+       <circle cx="-30" cy="0" r="0.5" class="node" data-node="B1" />
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C2" />
+       <circle cx="30" cy="0" r="0.5" class="node" data-node="B2" />
+    </g>
+    
+    <g id="QX" 
+       data-prefix="X" 
+       data-nodes="C B E S"
+       data-model="?|1" 
+       data-params="IC||0|0; VCE||0|0"
+       data-description="Small-signal BJT subcircuit with parameters IC, VCE"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 10 10 5 5 5 5 10 10 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="10" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
+       <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
+       <circle cx="20" cy="0" r="0.5" class="node" data-node="S" />
+    </g>
+    
+    <g id="QDX" 
+       data-prefix="X" 
+       data-nodes="C1 C2 B1 B2"
+       data-model="?|1" 
+       data-params="IC||0|0; VCE||0|0"
+       data-description="Small-signal differential pair BJT subcircuit with parameters IC, VCE"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="-10 -20 -10 -10 -20 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-10 10 -10 5 -15 5 -15 10 -10 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="-20" y1="-12" x2="-20" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="-30" y1="0" x2="-20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <polyline points="-20 0 -10 10 -10 20 10 20 10 10 20 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 -20 10 -10 20 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 10 10 5 15 5 15 10 10 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="20" y1="-12" x2="20" y2="12" stroke="black" stroke-width="2"/>
+       <line x1="30" y1="0" x2="20" y2="0" stroke="black" stroke-width="1"/>
+       
+       <!-- Pins -->
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="C1" />
+       <circle cx="-30" cy="0" r="0.5" class="node" data-node="B1" />
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C2" />
+       <circle cx="30" cy="0" r="0.5" class="node" data-node="B2" />
+    </g>
+
+    <g id="Nnoise"
+       data-prefix="X" 
+       data-nodes="inp inn outp outn"
+       data-model="N_noise|1" 
+       data-params="sv||0|0; si||0|0"
+       data-description="Nullor with input referred noise sources; vn: sv [V^2/Hz], in: si [A^2/Hz]">
+      
+       <!-- norator -->
+       <circle cx="10" cy="5" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <circle cx="10" cy="-5" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <polyline points="10 -20 10 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points=" 10 20 10 10" stroke="black" stroke-width="1" fill="none" />
+       <text x="15" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+                
+       <!-- nullator -->
+       <ellipse cx="-10" cy="0" rx="5" ry="10" fill="none" stroke="black" stroke-width="1"/>
+       <polyline points="-45 20 -10 20 -10 10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-45 -20 -10 -20 -10 -10" stroke="black" stroke-width="1" fill="none" />
+       
+       <!-- vn -->
+       <circle cx="-22.5" cy="-20" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <text x="-22.5" y="-28.9" dominant-baseline="middle" text-anchor="middle" font-size="6">vn</text>
+       
+       <!-- in -->
+       <circle cx="-35" cy="0" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-40" y1="0" x2="-30" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="-35" y1="-20" x2="-35" y2="-5" stroke="black" stroke-width="1"/>
+       <line x1="-35" y1="20" x2="-35" y2="5" stroke="black" stroke-width="1"/>
+       <text x="-26" y="0.1" dominant-baseline="middle" text-anchor="middle" font-size="6">in</text>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-45" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-45" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
+    <g id="Ndcvar"
+       data-prefix="X" 
+       data-nodes="inp inn outp outn comm"
+       data-model="N_dcvar|1" 
+       data-params="svo||0|0; sio||0|0; iib||0|0; sib||0|0"
+       data-description="Nullor with input-referred bias and offset
+       \nvo: svo: standard deviation input offset voltage (zero mean) [V], 
+       \nib: iib: mean value input bias current [A]
+       \nib: sib: standard deviation input bias current [A]
+       \nio: sio, standard deviation input offset current (zero mean) [A]">
+      
+       <!-- norator -->
+       <circle cx="10" cy="5" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <circle cx="10" cy="-5" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <polyline points="10 -20 10 -10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points=" 10 20 10 10" stroke="black" stroke-width="1" fill="none" />
+       <text x="15" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+                
+       <!-- nullator -->
+       <ellipse cx="-10" cy="0" rx="5" ry="10" fill="none" stroke="black" stroke-width="1"/>
+       <polyline points="-45 20 -10 20 -10 10" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-45 -20 -10 -20 -10 -10" stroke="black" stroke-width="1" fill="none" />
+       
+       <!-- vo -->
+       <circle cx="-22.5" cy="-20" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <text x="-22.5" y="-28.9" dominant-baseline="middle" text-anchor="middle" font-size="6">vo</text>
+       
+       <!-- io -->
+       <circle cx="-35" cy="0" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-40" y1="0" x2="-30" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="-35" y1="-20" x2="-35" y2="-5" stroke="black" stroke-width="1"/>
+       <line x1="-35" y1="20" x2="-35" y2="5" stroke="black" stroke-width="1"/>
+       <text x="-26" y="0.1" dominant-baseline="middle" text-anchor="middle" font-size="6">io</text>
+       
+       <!-- ib input bias currents -->
+       <circle cx="-22.5" cy="-40" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-22.5" y1="-45" x2="-22.5" y2="-35" stroke="black" stroke-width="1"/>
+       <circle cx="-22.5" cy="40" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-22.5" y1="45" x2="-22.5" y2="35" stroke="black" stroke-width="1"/>
+       <polyline points="-40 -20 -40 -40 -27.5 -40" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-40 20 -40 40 -27.5 40" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-17.5 -40 0 -40 0 45" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="-17.5 40 0 40 0 20" stroke="black" stroke-width="1" fill="none" />
+       
+       <line x1="-27.5" y1="-47.5" x2="-20" y2="-47.5" stroke="black" stroke-width="0.5"/>
+       <polyline points="-17.5 -47.5 -20 -46.25 -20 -48.75 -17.5 -47.5" stroke="black" stroke-width="0" fill=" black" />
+       <text x="-22.5" y="-51.9" dominant-baseline="middle" text-anchor="middle" font-size="6">ib</text>
+       
+       <line x1="-27.5" y1="32.5" x2="-20" y2="32.5" stroke="black" stroke-width="0.5"/>
+       <polyline points="-17.5 32.5 -20 31.25 -20 33.75 -17.5 32.5" stroke="black" stroke-width="0" fill=" black" />
+       <text x="-22.5" y="28.1" dominant-baseline="middle" text-anchor="middle" font-size="6">ib</text>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-45" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-45" cy="20" r="0.5" class="node" data-node="inn" />
+       <circle cx="0" cy="45" r="0.5" class="node" data-node="comm" />
+    </g>    
+    
+    <g id="Onoise" 
+       data-prefix="X" 
+       data-nodes="inp inn outp outn"
+       data-model="O_noise|1" 
+       data-params="sv||0|0; si||0|0"
+       data-description="Nullor with input referred noise sources; v: sv [V^2/Hz], i: si [A^2/Hz]"
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-35" y1="-10" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="-35" y1="10" x2="0" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="20" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="30" y1="0" x2="35" y2="0" stroke="black" stroke-width="1"/>
+       <text x="5" y="-9.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="9.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- vn -->
+       <circle cx="-12.5" cy="-10" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <text x="-12.5" y="-18.9" dominant-baseline="middle" text-anchor="middle" font-size="6">vn</text>
+       
+       <!-- in -->
+       <circle cx="-25" cy="0" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-30" y1="0" x2="-20" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="-25" y1="-10" x2="-25" y2="-5" stroke="black" stroke-width="1"/>
+       <line x1="-25" y1="10" x2="-25" y2="5" stroke="black" stroke-width="1"/>
+       <text x="-16" y="0.1" dominant-baseline="middle" text-anchor="middle" font-size="6">in</text>
+       
+       <!-- Pins -->
+       <circle cx="-35" cy="-10" r="0.5" class="node" data-node="inp" />
+       <circle cx="-35" cy="10" r="0.5" class="node" data-node="inn" />
+       <circle cx="35" cy="0" r="0.5" class="node" data-node="outp" />
+       <circle cx="15" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+    
+    
+    <g id="Odcvar" 
+       data-prefix="X" 
+       data-nodes="inp inn outp outn"
+       data-model="O_dcvar|1" 
+       data-params="svo||0|0; sio||0|0; iib||0|0; sib||0|0"
+       data-description="Nullor with input-referred bias and offset
+       \nvo: svo: standard deviation input offset voltage (zero mean) [V], 
+       \nib: iib: mean value input bias current [A]
+       \nib: sib: standard deviation input bias current [A]
+       \nio: sio, standard deviation input offset current (zero mean) [A]"      
+       data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-45" y1="-10" x2="0" y2="-10" stroke="black" stroke-width="1"/>
+       <line x1="-45" y1="10" x2="0" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="15" y1="20" x2="15" y2="10" stroke="black" stroke-width="1"/>
+       <line x1="30" y1="0" x2="35" y2="0" stroke="black" stroke-width="1"/>
+       <text x="5" y="-9.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="9.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- vo -->
+       <circle cx="-22.5" cy="-10" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <text x="-22.5" y="-18.9" dominant-baseline="middle" text-anchor="middle" font-size="6">vo</text>
+       
+       <!-- io -->
+       <circle cx="-35" cy="0" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-40" y1="0" x2="-30" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="-35" y1="-10" x2="-35" y2="-5" stroke="black" stroke-width="1"/>
+       <line x1="-35" y1="10" x2="-35" y2="5" stroke="black" stroke-width="1"/>
+       <text x="-26" y="0.1" dominant-baseline="middle" text-anchor="middle" font-size="6">io</text>
+       
+       <!-- ib input bias currents -->
+       <line x1="-12.5" y1="-12.5" x2="-5" y2="-12.5" stroke="black" stroke-width="0.5"/>
+       <polyline points="-2.5 -12.5 -5 -11.25 -5 -13.75 -2.5 -12.5" stroke="black" stroke-width="0" fill=" black" />
+       <text x="-10" y="-16.9" dominant-baseline="middle" text-anchor="middle" font-size="6">ib</text>
+       
+       <line x1="-12.5" y1="7.5" x2="-5" y2="7.5" stroke="black" stroke-width="0.5"/>
+       <polyline points="-2.5 7.5 -5 6.25 -5 8.75 -2.5 7.5" stroke="black" stroke-width="0" fill=" black" />
+       <text x="-10" y="3.1" dominant-baseline="middle" text-anchor="middle" font-size="6">ib</text>
+       
+       <!-- Pins -->
+       <circle cx="-45" cy="-10" r="0.5" class="node" data-node="inp" />
+       <circle cx="-45" cy="10" r="0.5" class="node" data-node="inn" />
+       <circle cx="35" cy="0" r="0.5" class="node" data-node="outp" />
+       <circle cx="15" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+    <g id="Mnoise"
+       data-prefix="X" 
+       data-nodes="in comm out"
+       data-model="?|1" 
+       data-params="ID||0|0; IG||0|0; W||0|0; L||0|0"
+       data-description="MOS input-referred noise sources subcircuit with parameters ID IG W L">
+       
+       <!-- vn -->
+       <circle cx="10" cy="-20" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <text x="10" y="-28.9" dominant-baseline="middle" text-anchor="middle" font-size="6">vn</text>
+       <line x1="-10" y1="-20" x2="20" y2="-20" stroke="black" stroke-width="1"/>
+       
+       <!-- in -->
+       <circle cx="0" cy="0" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-5" y1="0" x2="5" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="-5" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="20" x2="0" y2="5" stroke="black" stroke-width="1"/>
+       <text x="9" y="0.1" dominant-baseline="middle" text-anchor="middle" font-size="6">in</text>
+       
+       <!-- Pins -->
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="in" />
+       <circle cx="20" cy="-20" r="0.5" class="node" data-node="out" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="comm" />
+    </g>
+    
+    <g id="Qnoise"
+       data-prefix="X" 
+       data-nodes="in comm out"
+       data-model="?|1" 
+       data-params="IC||0|0; VCE||0|0"
+       data-description="BJT input-referred noise sources subcircuit with parameters IC VCE">
+       
+       <!-- vn -->
+       <circle cx="10" cy="-20" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <text x="10" y="-28.9" dominant-baseline="middle" text-anchor="middle" font-size="6">vn</text>
+       <line x1="-10" y1="-20" x2="20" y2="-20" stroke="black" stroke-width="1"/>
+       
+       <!-- in -->
+       <circle cx="0" cy="0" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-5" y1="0" x2="5" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="-5" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="20" x2="0" y2="5" stroke="black" stroke-width="1"/>
+       <text x="9" y="0.1" dominant-baseline="middle" text-anchor="middle" font-size="6">in</text>
+       
+       <!-- Pins -->
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="in" />
+       <circle cx="20" cy="-20" r="0.5" class="node" data-node="out" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="comm" />
+    </g>
+    
+    <g id="Jnoise"
+       data-prefix="X" 
+       data-nodes="in comm out"
+       data-model="?|1" 
+       data-params="ID||0|0; IG||0|0"
+       data-description="JFET input-referred noise sources subcircuit with parameters ID IG">
+       
+       <!-- vn -->
+       <circle cx="10" cy="-20" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <text x="10" y="-28.9" dominant-baseline="middle" text-anchor="middle" font-size="6">vn</text>
+       <line x1="-10" y1="-20" x2="20" y2="-20" stroke="black" stroke-width="1"/>
+       
+       <!-- in -->
+       <circle cx="0" cy="0" r="5" fill="none" stroke="black" stroke-width="1"/>
+       <line x1="-5" y1="0" x2="5" y2="0" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="-20" x2="0" y2="-5" stroke="black" stroke-width="1"/>
+       <line x1="0" y1="20" x2="0" y2="5" stroke="black" stroke-width="1"/>
+       <text x="9" y="0.1" dominant-baseline="middle" text-anchor="middle" font-size="6">in</text>
+       
+       <!-- Pins -->
+       <circle cx="-10" cy="-20" r="0.5" class="node" data-node="in" />
+       <circle cx="20" cy="-20" r="0.5" class="node" data-node="out" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="comm" />
+    </g>
+
+</defs>
+</svg>
