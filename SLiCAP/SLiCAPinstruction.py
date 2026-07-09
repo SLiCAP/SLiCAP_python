@@ -487,7 +487,6 @@ class instruction(object):
         """
         self.simType    = simType
         self._checkSimType()
-        return
 
     def _checkSimType(self):
         """
@@ -546,7 +545,6 @@ class instruction(object):
         else:
             print("Error: argument type must be type 'str'.")
             self.errors += 1
-        return
 
     def setConvType(self, convType):
         """
@@ -574,7 +572,6 @@ class instruction(object):
                 self.errors += 1
         else:
             self.convType = None
-        return
 
     def setPairExt(self, pairExt):
         """
@@ -586,7 +583,6 @@ class instruction(object):
         """
         if self.checkPairExt(pairExt) == 0:
             self.pairExt = pairExt
-        return
 
     def checkPairExt(self, pairExt):
         """
@@ -623,7 +619,6 @@ class instruction(object):
         """
         if self.checkPairedCircuits(cirPairs) == 0:
             self.pairedCircuits = cirPairs
-        return
 
     def checkPairedCircuits(self, circuitPairs):
         """
@@ -671,7 +666,6 @@ class instruction(object):
         """
         self.dataType = dataType
         self.checkDataType()
-        return
 
     def checkDataType(self):
         """
@@ -690,7 +684,6 @@ class instruction(object):
             print("Error: missing data type specification.")
         else:
             print("Error: data type must be type 'str' or 'None'.")
-        return
 
     def stepOn(self):
         """
@@ -706,7 +699,6 @@ class instruction(object):
         >>> my_instruction.stepOn()
         """
         self.step = True
-        return
 
     def stepOff(self):
         """
@@ -722,7 +714,6 @@ class instruction(object):
         >>> my_instruction.stepOff()
         """
         self.step = False
-        return
 
     def setStepVar(self, stepVar):
         """
@@ -757,7 +748,6 @@ class instruction(object):
         """
         self.stepVar = stepVar
         self.checkStepVar()
-        return
 
     def checkStepVar(self):
         """
@@ -777,7 +767,6 @@ class instruction(object):
             print("Error: argument type must be 'str' or 'sympy.Symbol'.")
         if self.stepVar not in list(self.circuit.parDefs.keys()) and self.stepVar not in self.circuit.params:
             print("Warning: unknown step parameter '{0}'.".format(self.stepVar))
-        return
 
     def setStepVars(self, stepVars):
         """
@@ -820,7 +809,6 @@ class instruction(object):
         """
         self.stepVars = stepVars
         self.checkStepVars()
-        return
 
     def checkStepVars(self):
         """
@@ -855,7 +843,6 @@ class instruction(object):
             print("Error: argument should be a list.")
             errors += 1
         self.errors += errors
-        return
 
     def setStepMethod(self, stepMethod):
         """
@@ -878,7 +865,6 @@ class instruction(object):
         """
         self.stepMethod = stepMethod
         self.checkStepMethod()
-        return
 
     def checkStepMethod(self):
         """
@@ -899,7 +885,6 @@ class instruction(object):
                 print("Error: unknown step method '{0}',".format(self.stepMethod))
             else:
                 self.stepMethod == self.stepMethod.lower()
-        return
 
     def setStepStart(self, stepStart):
         """
@@ -926,7 +911,6 @@ class instruction(object):
         """
         self.stepStart = stepStart
         self.checkStepStart()
-        return
 
     def checkStepStart(self):
         """
@@ -944,7 +928,6 @@ class instruction(object):
                 print("Error: cannot determine numeric value of stepStart.")
             else:
                 self.stepStart = value
-        return
 
     def setStepStop(self, stepStop):
         """
@@ -970,7 +953,6 @@ class instruction(object):
         """
         self.stepStop = stepStop
         self.checkStepStop()
-        return
 
     def checkStepStop(self):
         """
@@ -988,7 +970,6 @@ class instruction(object):
                 print("Error: cannot determine numeric value of stepStop.")
             else:
                 self.stepStop = value
-        return
 
     def setStepNum(self, stepNum):
         """
@@ -1014,7 +995,6 @@ class instruction(object):
         """
         self.stepNum = stepNum
         self.checkStepNum()
-        return
 
     def checkStepNum(self):
         """
@@ -1035,7 +1015,6 @@ class instruction(object):
             else:
                 self.errors += 1
                 print("Error: step number type must be 'int'.")
-        return
 
     def setStepList(self, stepList):
         """
@@ -1064,7 +1043,6 @@ class instruction(object):
         """
         self.stepList = stepList
         self.checkStepList()
-        return
 
     def checkStepList(self):
         """
@@ -1089,7 +1067,6 @@ class instruction(object):
         else:
             self.errors += 1
             print("Error: expected a list type for 'stepValues'.")
-        return
 
     def setStepArray(self, stepArray):
         """
@@ -1118,7 +1095,6 @@ class instruction(object):
         """
         self.stepArray = stepArray
         self.checkStepArray()
-        return
 
     def checkStepArray(self):
         """
@@ -1153,7 +1129,6 @@ class instruction(object):
                                 print("Error: cannot determine numeric value of stepArray[{0}, {1}].".format(i, j))
                             else:
                                 self.stepArray[i][j] = value
-        return
 
 
     def setSource(self, source):
@@ -1199,7 +1174,6 @@ class instruction(object):
         else:
             print("Error in loop gain reference specification.")
         self.checkSource(need = False)
-        return
 
     def checkSource(self, need = True):
         """
@@ -1241,7 +1215,6 @@ class instruction(object):
                             print("Error: two sources must be of the same type.")
             if self.srcUnits == 'I':
                 self.srcUnits = 'A'
-        return
 
     def setDetector(self, detector):
         """
@@ -1288,7 +1261,6 @@ class instruction(object):
         """
         self.detector = detector
         self.checkDetector()
-        return
 
     def checkDetector(self):
         """
@@ -1359,7 +1331,6 @@ class instruction(object):
         else:
             self.errors += 1
             print("Error: missing detector definition.")
-        return
 
     def setLGref(self, lgRef):
         """
@@ -1389,7 +1360,6 @@ class instruction(object):
             self.checkLGref()
         else:
             print("Error in loop gain reference specification.")
-        return
 
     def checkLGref(self):
         """
@@ -1405,7 +1375,6 @@ class instruction(object):
             if lgRef != None and lgRef not in self.circuit.controlled:
                 self.errors += 1
                 print("Error: unkown loop gain reference: '{0}'.".format(self.lgRef))
-        return
 
     def delPar(self, parName):
         """
@@ -1430,7 +1399,6 @@ class instruction(object):
         >>> my_instr.circuit.delPar('R')
         """
         self.circuit.delPar(parName)
-        return
 
     def defPar(self, parName, parValue):
         """
@@ -1456,7 +1424,6 @@ class instruction(object):
 
         """
         self.circuit.defPar(str(parName), parValue)
-        return
 
     def defPars(self, parDict):
         """
@@ -1482,7 +1449,6 @@ class instruction(object):
         """
         # define multiple parameters.
         self.circuit.defPars(parDict)
-        return
 
     def getParValue(self, parName):
         """
@@ -1658,7 +1624,6 @@ class instruction(object):
         >>> my_instr.setCircuit('my_circuit.cir')
         """
         self.circuit = _checkCircuit(fileName)
-        return
 
     def checkCircuit(self):
         """
@@ -1675,7 +1640,6 @@ class instruction(object):
         elif type(self.circuit) != type(circuit()):
             self.errors += 1
             print("Error: not SLiCAP a circuit object for this instruction.")
-        return
 
     def _checkNumeric(self):
         """
@@ -1688,7 +1652,6 @@ class instruction(object):
         if not self.numeric:
             self.errors += 1
             print("Error: dataType '{0}' not available for simType: '{1}'.".format(self.dataType, self.simType))
-        return
 
     def checkStep(self):
         """
@@ -1740,7 +1703,6 @@ class instruction(object):
                         tmpLst = self.stepArray[i]
                         tmpLst = [sp.Rational(item) for item in tmpLst]
                         self.stepDict[self.stepVars[i]] = tmpLst
-        return
 
     def check(self):
         """
@@ -1871,7 +1833,6 @@ class instruction(object):
                 self.stepDict = {} # Clear the dictionary with step data
                 self.checkStep()
         self.references = [ref for ref in self.circuit.references]
-        return
 
     def execute(self):
         """

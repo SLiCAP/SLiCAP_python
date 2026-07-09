@@ -49,4 +49,3 @@ def _LTspiceNetlist(fileName, cirTitle):
                       + " manually!\n")
             except FileNotFoundError:
                 print("\nError: could not open: '{}'.\nUnable to create netlist with LTspice.".format(baseFileName + '.net'))
-    return
