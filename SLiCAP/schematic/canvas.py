@@ -642,7 +642,8 @@ class SchematicScene(QGraphicsScene):
             "analysis": sorted(
                 (tuple(a.source), tuple(map(tuple, a.detector)),
                  tuple(a.lgref)) for a in d.analysis_items),
-            "libs": sorted((l.file_path, l.directive, l.corner)
+            "libs": sorted(tuple((e.get("directive", ""), e.get("file", ""),
+                                  e.get("corner", "")) for e in l.entries)
                            for l in d.libs),
             "params": sorted(tuple(map(tuple, p.params))
                              for p in d.parameters),
@@ -788,28 +789,28 @@ class SchematicScene(QGraphicsScene):
         self._mode = _Mode.PLACING_BORDER
         self.placing_started.emit()
 
-    def start_library_placement(self, file_path: str, directive: str = "lib",
-                                simulator: str = "SLiCAP", corner: str = ""):
-        from pathlib import Path
-        from PySide6.QtWidgets import QGraphicsSimpleTextItem
-        from PySide6.QtGui import QBrush
-        self._end_wire(commit=False)
-        self._cancel_placement()
-        name = Path(file_path).name if file_path else ""
-        ghost_text = f".{directive} {name}"
-        if corner:
-            ghost_text += f" {corner}"
-        ghost = QGraphicsSimpleTextItem(ghost_text)
-        ghost.setFont(self.style.COMMAND_FONT)
-        ghost.setBrush(QBrush(self.style.COMMAND_COLOR))
-        ghost.setOpacity(0.5)
-        ghost.setAcceptedMouseButtons(Qt.NoButton)
-        self._ghost = ghost
-        self._ghost.setPos(QPointF(-9999, -9999))
-        self.addItem(self._ghost)
-        self._library_pending = (file_path, directive, simulator, corner)
-        self._mode = _Mode.PLACING_LIBRARY
-        self.placing_started.emit()
+    def library_block(self):
+        """The single library block on this schematic, or None."""
+        for it in self.items():
+            if isinstance(it, LibraryItem):
+                return it
+        return None
+
+    def apply_library_block(self, entries, show: bool = True, pos=None) -> None:
+        """Create/update THE library block from a list of entry dicts (the
+        caller pushes undo).  Empty entries remove the block."""
+        block = self.library_block()
+        if not entries:
+            if block is not None:
+                self.removeItem(block)
+            return
+        entries = [dict(e) for e in entries]
+        if block is None:
+            self.addItem(LibraryItem(entries, pos or QPointF(0, 0), show=show))
+        else:
+            block.entries = entries
+            block.set_show(show)
+            block.update_text()
 
     def start_image_placement(self, file_path: str, width: int, height: int):
         from pathlib import Path as _Path
@@ -1695,10 +1696,7 @@ class SchematicScene(QGraphicsScene):
             elif isinstance(item, LibraryItem):
                 libs.append(LibraryData(
                     x=item.pos().x(), y=item.pos().y(),
-                    file_path=item.file_path,
-                    directive=item.directive,
-                    simulator=item.simulator,
-                    corner=item.corner,
+                    entries=[dict(e) for e in item.entries],
                     show=item.show_on_schematic,
                 ))
             elif isinstance(item, ImageItem):
@@ -1834,10 +1832,16 @@ class SchematicScene(QGraphicsScene):
         for cd in data.commands:
             self.addItem(CommandItem(cd.text, QPointF(cd.x, cd.y)))
 
+        # One library BLOCK per schematic: merge every stored LibraryData
+        # (new single block, or legacy one-file-per-item schematics) into it.
+        lib_entries, lib_pos, lib_show = [], None, True
         for ld in data.libs:
-            self.addItem(LibraryItem(ld.file_path, QPointF(ld.x, ld.y),
-                                     ld.directive, ld.simulator, ld.corner,
-                                     show=getattr(ld, "show", True)))
+            if lib_pos is None:
+                lib_pos  = QPointF(ld.x, ld.y)
+                lib_show = getattr(ld, "show", True)
+            lib_entries.extend(dict(e) for e in ld.entries)
+        if lib_entries:
+            self.addItem(LibraryItem(lib_entries, lib_pos, show=lib_show))
 
         for img in data.images:
             self.addItem(ImageItem(img.file_path, img.display_width,
@@ -1952,12 +1956,6 @@ class SchematicScene(QGraphicsScene):
             for existing in [i for i in self.items() if isinstance(i, BorderItem)]:
                 self.removeItem(existing)
             self.addItem(BorderItem(pos.x(), pos.y(), **self._border_pending))
-            self._cancel_placement()
-
-        elif self._mode == _Mode.PLACING_LIBRARY and event.button() == Qt.LeftButton:
-            self._push_undo()
-            fp, directive, simulator, corner = self._library_pending
-            self.addItem(LibraryItem(fp, pos, directive, simulator, corner))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_IMAGE and event.button() == Qt.LeftButton:
@@ -2719,22 +2717,19 @@ class SchematicScene(QGraphicsScene):
                 item.apply_style()
             return
         if isinstance(item, LibraryItem):
-            from .library_link_dialog import LibraryLinkDialog
-            dlg = LibraryLinkDialog(
-                directive=item.directive,
-                simulator=item.simulator,
-                file_path=item.file_path,
-                corner=item.corner,
-                show=item.show_on_schematic,
-            )
-            if dlg.exec() and dlg.file_path():
+            from .library_dialog import LibraryDialog
+            dlg = LibraryDialog(entries=item.entries,
+                                sch_type=getattr(self, "sch_type", "slicap"),
+                                show=item.show_on_schematic)
+            if dlg.exec():
                 self._push_undo()
-                item.file_path  = dlg.file_path()
-                item.directive  = dlg.directive()
-                item.simulator  = dlg.simulator()
-                item.corner     = dlg.corner()
-                item.set_show(dlg.show_on_schematic())
-                item._update_text()
+                entries = dlg.entries()
+                if entries:
+                    item.entries = entries
+                    item.set_show(dlg.show_on_schematic())
+                    item.update_text()
+                else:                      # all lines removed → drop the block
+                    self.removeItem(item)
             return
         if isinstance(item, ImageItem):
             from .image_dialog import ImageDialog

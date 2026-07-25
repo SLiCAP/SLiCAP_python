@@ -104,14 +104,51 @@ def sweep_cache(cache_dir) -> int:
 
 # ── tool availability ─────────────────────────────────────────────────────────
 
-# System check — immutable after startup, and deliberately the ONLY global in
-# the LaTeX story.  Whether LaTeX rendering is *wanted* is a per-schematic
-# preference (Style.LATEX_RENDERING_ENABLED); schematic-bound callers check
-# both, non-schematic callers (e.g. the design-data viewer) only this.
-LATEX_INSTALLED: bool = (
-    shutil.which("pdflatex") is not None and
-    shutil.which("dvisvgm")  is not None
-)
+# Tool paths come from SLiCAP.ini (the [commands] section, like ngspice), so
+# rendering uses an ABSOLUTE path and never depends on the GUI's launch-time
+# PATH — the source of the "checkbox is greyed out" confusion. A PATH lookup is
+# the fallback when the config has no entry. Resolved lazily and CWD-safely via
+# _ensure_slicap (which reads the config in the session cache dir, not the
+# project folder), then cached once complete.
+#
+# Whether LaTeX rendering is *wanted* is a per-schematic preference
+# (Style.LATEX_RENDERING_ENABLED); schematic-bound callers check both,
+# non-schematic callers (e.g. the design-data viewer) only LATEX_INSTALLED.
+_latex_tools_cache: "tuple[str, str] | None" = None
+
+
+def _latex_tools() -> "tuple[str, str]":
+    """(pdflatex, dvisvgm) executable paths — SLiCAP.ini first, PATH fallback."""
+    global _latex_tools_cache
+    if _latex_tools_cache is not None:
+        return _latex_tools_cache
+    pdftex = dvisvgm = ""
+    if _ensure_slicap():
+        try:
+            import SLiCAP.SLiCAPconfigure as _ini
+            pdftex  = (getattr(_ini, "pdflatex", "") or "").strip()
+            dvisvgm = (getattr(_ini, "dvisvgm",  "") or "").strip()
+        except Exception:
+            pass
+    pdftex  = pdftex  or (shutil.which("pdflatex") or "")
+    dvisvgm = dvisvgm or (shutil.which("dvisvgm")  or "")
+    tools = (pdftex, dvisvgm)
+    if pdftex and dvisvgm:          # cache only a complete resolution, so a
+        _latex_tools_cache = tools  # later config edit / install can still take
+    return tools                    # effect on the next check
+
+
+def _latex_installed() -> bool:
+    pdftex, dvisvgm = _latex_tools()
+    return bool(pdftex) and bool(dvisvgm)
+
+
+def __getattr__(name):
+    # PEP 562: LATEX_INSTALLED resolves lazily against the config at each read
+    # (all callers import it inside functions, so this evaluates at runtime).
+    if name == "LATEX_INSTALLED":
+        return _latex_installed()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # ── LaTeX template ────────────────────────────────────────────────────────────
 
@@ -177,7 +214,7 @@ def svg_line_height() -> float | None:
     callers can derive a scale factor without hard-coding pdf2svg's unit system.
     Returns None when the pipeline is unavailable.
     """
-    if not LATEX_INSTALLED:
+    if not _latex_installed():
         return None
     global _reference_line_height
     if _reference_line_height is not None:
@@ -220,7 +257,7 @@ def render_stimuli_label(prefix: str, pairs: list, cache_dir=None) -> bytes | No
     pairs  -- list of (param_name, value_str) tuples; value_str is a bare
               number or a {…} expression
     """
-    if not LATEX_INSTALLED:
+    if not _latex_installed():
         return None
     safe_pfx = prefix.replace('_', r'\_')
     rows = [rf"\text{{{safe_pfx}}}"]
@@ -244,7 +281,7 @@ def render_name_eq_value(name: str, value_str: str, cache_dir=None) -> bytes | N
     Uses _latex_to_svg directly (not _render_cached) so the combined LaTeX
     string is never passed through the SymPy parser.
     """
-    if not LATEX_INSTALLED:
+    if not _latex_installed():
         return None
     safe = name.replace('_', r'\_').replace('^', r'\^{}')
     val = value_str.strip()
@@ -280,7 +317,7 @@ def render_refdes(refdes: str, bold: bool = False, cache_dir=None) -> bytes | No
     the result in ``\\mathrm{\\mathbf{…}}``. Returns None when LaTeX is
     unavailable or the refdes cannot be rendered — the caller falls back to text.
     """
-    if not LATEX_INSTALLED:
+    if not _latex_installed():
         return None
     name = refdes.strip()
     if not name or _is_placeholder(name):
@@ -309,7 +346,7 @@ def render_expression(value_str: str, cache_dir=None) -> bytes | None:
     Returns None when LaTeX rendering is disabled, the value is not an
     expression, SLiCAP is unavailable, or any step in the pipeline fails.
     """
-    if not LATEX_INSTALLED:
+    if not _latex_installed():
         return None
     if not is_expression(value_str):
         return None
@@ -395,7 +432,7 @@ def _render_cached(expr_str: str, cache_dir=None) -> bytes | None:
 
 
 def _render_fresh(expr_str: str, cache: Path) -> bytes | None:
-    if not LATEX_INSTALLED or not _ensure_slicap():
+    if not _latex_installed() or not _ensure_slicap():
         return None
     if _is_placeholder(expr_str):
         return None                      # unset "?" reminder — not an expression
@@ -413,7 +450,7 @@ def _render_fresh(expr_str: str, cache: Path) -> bytes | None:
 
 def _render_latex_str(latex_str: str, cache_dir=None) -> bytes | None:
     """Cache and render a pre-built LaTeX math string, bypassing SymPy parsing."""
-    if not LATEX_INSTALLED:
+    if not _latex_installed():
         return None
     cache = _resolve_cache(cache_dir)
     h = hashlib.sha256(("raw:" + latex_str).encode()).hexdigest()[:24]
@@ -438,7 +475,7 @@ def _latex_to_svg(latex_str: str, cache: Path) -> bytes | None:
             encoding="utf-8",
         )
         subprocess.run(
-            ["pdflatex", "-interaction=batchmode", "expr.tex"],
+            [_latex_tools()[0], "-interaction=batchmode", "expr.tex"],
             cwd=tmpdir,
             capture_output=True,
         )
@@ -448,7 +485,7 @@ def _latex_to_svg(latex_str: str, cache: Path) -> bytes | None:
 
         svg_file = tmpdir / "expr.svg"
         subprocess.run(
-            ["dvisvgm", "--pdf", "--no-fonts", "expr.pdf", "-o", "expr.svg"],
+            [_latex_tools()[1], "--pdf", "--no-fonts", "expr.pdf", "-o", "expr.svg"],
             cwd=tmpdir,
             capture_output=True,
         )
@@ -475,7 +512,7 @@ def render_latex_raw(latex_code: str,
     Results are cached in ``cache_dir`` (session temp when omitted),
     keyed on content hash.
     """
-    if not LATEX_INSTALLED:
+    if not _latex_installed():
         return None, "pdflatex or dvisvgm not found"
     if preamble_path:
         p = Path(preamble_path)
@@ -513,7 +550,7 @@ def render_latex_raw(latex_code: str,
         tex = tmpdir / "frag.tex"
         tex.write_text(doc, encoding="utf-8")
         subprocess.run(
-            ["pdflatex", "-interaction=batchmode", "frag.tex"],
+            [_latex_tools()[0], "-interaction=batchmode", "frag.tex"],
             cwd=tmpdir, capture_output=True,
         )
         pdf = tmpdir / "frag.pdf"
@@ -526,7 +563,7 @@ def render_latex_raw(latex_code: str,
             return None, "pdflatex failed (no output)"
         svg = tmpdir / "frag.svg"
         subprocess.run(
-            ["dvisvgm", "--pdf", "--no-fonts", "frag.pdf", "-o", "frag.svg"],
+            [_latex_tools()[1], "--pdf", "--no-fonts", "frag.pdf", "-o", "frag.svg"],
             cwd=tmpdir, capture_output=True,
         )
         if not svg.exists():

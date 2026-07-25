@@ -108,12 +108,14 @@ class CommandData:
 
 @dataclass
 class LibraryData:
+    # One library BLOCK holding a list of entries; each entry is a dict
+    # {"directive": "lib"|"inc", "file": <path>, "corner": <str>}. SLiCAP
+    # schematics use "lib" with no corner; NGspice schematics may use "inc"/"lib"
+    # and a corner on "lib". (Was one library per item; kept backward-compatible
+    # in from_dict.)
     x: float
     y: float
-    file_path: str
-    directive: str = "lib"    # "lib" or "inc"
-    simulator: str = "SLiCAP" # "SLiCAP" or "SPICE"
-    corner:    str = ""       # SPICE corner (only for SPICE .lib)
+    entries: list = field(default_factory=list)
     show: bool = True         # drawn on the schematic; ALWAYS netlisted
 
 
@@ -272,9 +274,9 @@ class SchematicData:
             ],
             "libs": [
                 {
-                    "x": l.x, "y": l.y, "file_path": l.file_path,
-                    "directive": l.directive, "simulator": l.simulator,
-                    "corner": l.corner, "show": l.show,
+                    "x": l.x, "y": l.y,
+                    "entries": [dict(e) for e in l.entries],
+                    "show": l.show,
                 }
                 for l in self.libs
             ],
@@ -440,16 +442,18 @@ class SchematicData:
             CommandData(x=c["x"], y=c["y"], text=c.get("text", ""))
             for c in data.get("commands", [])
         ]
-        libs = [
-            LibraryData(
-                x=l["x"], y=l["y"], file_path=l["file_path"],
-                directive=l.get("directive", "lib"),
-                simulator=l.get("simulator", "SLiCAP"),
-                corner=l.get("corner", ""),
+        libs = []
+        for l in data.get("libs", []):
+            if "entries" in l:
+                entries = [dict(e) for e in l["entries"]]
+            else:                                   # legacy: one file per item
+                entries = [{"directive": l.get("directive", "lib"),
+                            "file": l.get("file_path", ""),
+                            "corner": l.get("corner", "")}]
+            libs.append(LibraryData(
+                x=l["x"], y=l["y"], entries=entries,
                 show=bool(l.get("show", True)),
-            )
-            for l in data.get("libs", [])
-        ]
+            ))
         images = [
             ImageData(
                 x=i["x"], y=i["y"],

@@ -112,7 +112,7 @@ def _write_netlist(input_path, scene, data, output_path, title):
             text = build_netlist(comps, wires, cmds, title,
                                  libs=libs, params=prms)
     except NetlistError as exc:
-        print("Netlist not generated — unresolved '?' placeholders remain:",
+        print("Netlist not generated - unresolved '?' placeholders remain:",
               file=sys.stderr)
         for err in exc.errors:
             print(f"  {err}", file=sys.stderr)
@@ -120,7 +120,7 @@ def _write_netlist(input_path, scene, data, output_path, title):
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(text, encoding="utf-8")
-    print(f"Netlist  →  {output_path}")
+    print(f"Netlist  --> {output_path}")
 
 
 def cmd_netlist(args):
@@ -141,7 +141,7 @@ def cmd_svg(args):
     scene, data = _load_scene(input_path)
     output_path = Path(args.output) if args.output else _default_output(input_path, "img", ".svg")
     export_svg(scene, output_path, data.properties.title or input_path.stem)
-    print(f"SVG      →  {output_path}")
+    print(f"SVG      --> {output_path}")
 
 
 def cmd_pdf(args):
@@ -151,7 +151,7 @@ def cmd_pdf(args):
     scene, data = _load_scene(input_path)
     output_path = Path(args.output) if args.output else _default_output(input_path, "img", ".pdf")
     export_pdf(scene, output_path)
-    print(f"PDF      →  {output_path}")
+    print(f"PDF      --> {output_path}")
 
 
 def cmd_export(args):
@@ -167,10 +167,10 @@ def cmd_export(args):
                    _default_output(input_path, "cir", ".cir"), title)
     svg = _default_output(input_path, "img", ".svg")
     export_svg(scene, svg, data.properties.title or input_path.stem)
-    print(f"SVG      →  {svg}")
+    print(f"SVG      --> {svg}")
     pdf = _default_output(input_path, "img", ".pdf")
     export_pdf(scene, pdf)
-    print(f"PDF      →  {pdf}")
+    print(f"PDF      --> {pdf}")
 
 
 # ── entry point ───────────────────────────────────────────────────────────────

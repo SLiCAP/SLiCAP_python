@@ -1218,7 +1218,7 @@ def _inject_overrides(netlist_text, param_override, option_override):
         )
         netlist_text, n = pat.subn(f'{pname} = {{{pval}}}', netlist_text)
         if n == 0:
-            print(f"WARNING: step parameter '{pname}' not found in netlist — "
+            print(f"WARNING: step parameter '{pname}' not found in netlist - "
                   f"check that the name matches the .param definition exactly.")
             netlist_text = netlist_text.rstrip('\n') + f'\n.param {pname} = {{{pval}}}\n'
 

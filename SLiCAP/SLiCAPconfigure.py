@@ -76,7 +76,10 @@ def _find_installed_software():
     """
     names = {'kicad': 'kicad-cli', 'geda': 'gnetlist',
              'lepton-eda': 'lepton-cli', 'ngspice': 'ngspice',
-             'ltspice': 'ltspice'}
+             'ltspice': 'ltspice',
+             # LaTeX toolchain — stored like ngspice so rendering uses an
+             # absolute path, not the GUI's launch-time PATH (Anton, 2026-07-25).
+             'pdflatex': 'pdflatex', 'dvisvgm': 'dvisvgm'}
     commands = {key: (shutil.which(cmd) or '') for key, cmd in names.items()}
     if commands['lepton-eda']:
         commands['geda'] = shutil.which('lepton-netlist') or commands['geda']
@@ -237,7 +240,9 @@ def _generate_default_config():
                                   'geda'             : '',
                                   'lepton-eda'       : '',
                                   'ngspice'          : '',
-                                  'slicap_det'       : ''}
+                                  'slicap_det'       : '',
+                                  'pdflatex'         : '',
+                                  'dvisvgm'          : ''}
                       }
     return default_config
 
@@ -596,6 +601,11 @@ gnetlist              = main_config['commands']['geda']
 lepton_eda            = main_config['commands']['lepton-eda']
 ngspice               = main_config['commands']['ngspice']
 slicap_det            = main_config['commands'].get('slicap_det', '')
+# LaTeX toolchain (absolute paths, like ngspice) — the migration in
+# _update_ini_files() adds these keys to older configs; .get keeps a transient
+# or corrupted config from raising here.
+pdflatex              = main_config['commands'].get('pdflatex', '')
+dvisvgm               = main_config['commands'].get('dvisvgm', '')
 
 project_title         = project_config['project']['title']
 author                = project_config['project']['author']

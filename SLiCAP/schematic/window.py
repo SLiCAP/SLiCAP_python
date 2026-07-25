@@ -158,6 +158,7 @@ class CanvasPanel(QWidget):
         self._sch_type = sch_type
         self._scene = SchematicScene()
         self._scene.style = self._style
+        self._scene.sch_type = sch_type   # "slicap" | "ngspice"; the library editor reads it
         self._view  = SchematicView(self._scene)
         self._scene.data_changed.connect(lambda: setattr(self, '_dirty', True))
         # The scene's double-click edit of an analysis block uses the same
@@ -361,9 +362,6 @@ class CanvasPanel(QWidget):
         menu.addSeparator()
         act = QAction("&Model definition…", self)
         act.triggered.connect(self._on_place_model_definition)
-        menu.addAction(act)
-        act = QAction("Library &link…", self)
-        act.triggered.connect(self._on_place_library_link)
         menu.addAction(act)
 
     def _build_tools_menu(self):
@@ -784,42 +782,19 @@ class CanvasPanel(QWidget):
             self._scene.start_border_placement(dlg.border_properties())
 
     def _on_place_library(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Select Library File", str(project.subdir("lib")),
-            "Library Files (*.lib *.spi *.sp);;All Files (*)")
-        if path:
-            self._scene.start_library_placement(path)
-
-    def _on_place_library_link(self):
-        from .library_link_dialog import LibraryLinkDialog
-        from .library_item import LibraryItem
-        dlg = LibraryLinkDialog(parent=self)
-        if dlg.exec() and dlg.file_path():
-            # Same file already linked (visible or hidden) → edit in place
-            # instead of duplicating; also the route back to a hidden link.
-            target = str(Path(dlg.file_path()).resolve())
-            for item in self._scene.items():
-                if (isinstance(item, LibraryItem)
-                        and str(Path(item.file_path).resolve()) == target):
-                    self._scene._push_undo()
-                    item.directive = dlg.directive()
-                    item.simulator = dlg.simulator()
-                    item.corner    = dlg.corner()
-                    item.set_show(dlg.show_on_schematic())
-                    item._update_text()
-                    return
-            if dlg.show_on_schematic():
-                self._scene.start_library_placement(
-                    dlg.file_path(), dlg.directive(), dlg.simulator(),
-                    dlg.corner())
-            else:
-                # hidden: nothing to position — added directly (netlisted,
-                # not drawn); re-showing keeps the stored position
-                self._scene._push_undo()
-                self._scene.addItem(LibraryItem(
-                    dlg.file_path(), directive=dlg.directive(),
-                    simulator=dlg.simulator(), corner=dlg.corner(),
-                    show=False))
+        """Open the Add / Edit libraries editor for the schematic's one library
+        block (create it if none)."""
+        from .library_dialog import LibraryDialog
+        block   = self._scene.library_block()
+        entries = list(block.entries) if block else []
+        show    = block.show_on_schematic if block else True
+        dlg = LibraryDialog(entries=entries, sch_type=self._sch_type,
+                            show=show, parent=self)
+        if dlg.exec():
+            self._scene._push_undo()
+            pos = self._view.mapToScene(20, 20)
+            self._scene.apply_library_block(dlg.entries(),
+                                            dlg.show_on_schematic(), pos)
 
     def _on_place_model_definition(self):
         from .model_dialog import ModelDialog
@@ -871,12 +846,20 @@ class CanvasPanel(QWidget):
         self._scene.start_placement(defn.name, svg)
 
     def _ensure_library_include(self, lib_path):
-        from .library_item import LibraryItem
-        target = str(Path(lib_path).resolve())
-        for item in self._scene.items():
-            if isinstance(item, LibraryItem) and str(Path(item.file_path).resolve()) == target:
+        """Ensure the schematic's library block references lib_path (a symbol was
+        loaded from it), adding a '.lib' entry if it is not already listed."""
+        target  = str(Path(lib_path).resolve())
+        block   = self._scene.library_block()
+        entries = list(block.entries) if block else []
+        for e in entries:
+            f = e.get("file")
+            if f and str(Path(f).resolve()) == target:
                 return
-        self._scene.addItem(LibraryItem(str(lib_path), self._view.mapToScene(20, 20)))
+        entries.append({"directive": "lib", "file": str(lib_path), "corner": ""})
+        self._scene._push_undo()
+        self._scene.apply_library_block(
+            entries, block.show_on_schematic if block else True,
+            self._view.mapToScene(20, 20))
 
     def _on_place_image(self):
         from .image_dialog import ImageDialog

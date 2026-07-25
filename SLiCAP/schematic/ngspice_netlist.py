@@ -156,14 +156,14 @@ def _element_lines(components: list, node_fn) -> list[str]:
         cid = comp.instance_id
 
         if any("?" in n for n in nodes):
-            errors.append(f"{cid}: missing connection — '?' in a node name.")
+            errors.append(f"{cid}: missing connection - '?' in a node name.")
         if any("?" in r for r in refs):
-            errors.append(f"{cid}: missing reference — '?' in a referenced element name.")
+            errors.append(f"{cid}: missing reference - '?' in a referenced element name.")
         if model and "?" in model:
-            errors.append(f"{cid}: missing model — '?' in model name.")
+            errors.append(f"{cid}: missing model - '?' in model name.")
         for k, v in params.items():
             if v.strip() and "?" in v:
-                errors.append(f"{cid}: missing value — '?' in parameter '{k}'.")
+                errors.append(f"{cid}: missing value - '?' in parameter '{k}'.")
 
         parts = [cid] + nodes + refs
         if model:
@@ -211,7 +211,8 @@ def build_ngspice_netlist(
     if libs:
         lines.append("")
         for lib_item in libs:
-            lines.append(f'.include "{lib_item.file_path}"')
+            for e in lib_item._display_entries():
+                lines.append(f'.include "{e["file"]}"')
 
     if params:
         for param_item in params:

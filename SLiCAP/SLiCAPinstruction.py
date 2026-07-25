@@ -1530,6 +1530,33 @@ class instruction(object):
         self.circuit.defPars(parDict)
         return
 
+    def get(self, name, default=None):
+        """Look up a numeric result vector or the swept step values by name.
+
+        Restores the dict-style access (``result.get("name")``) that scripts
+        used before ``op``/``dc``/``noise``/``tran`` returned an ``instruction``
+        instead of a raw result dict: a result key (a named output, a node, or
+        the sweep axis) comes from the ``op``/``dc``/… data; the step variable
+        returns its swept values.  Returns *default* when *name* is absent.
+
+        :param name: result key or step-variable name
+        :type name: str
+        :return: the numeric vector/array, or *default*
+        """
+        dt   = getattr(self, "dataType", None)
+        data = getattr(self, dt, None) if dt else None
+        if isinstance(data, dict) and name in data:
+            return data[name]
+        if getattr(self, "step", False):
+            if name == getattr(self, "stepVar", None):
+                return getattr(self, "stepList", default)
+            stepvars = getattr(self, "stepVars", None) or []
+            if name in stepvars:
+                arr = getattr(self, "stepArray", None)
+                if arr is not None:
+                    return arr[stepvars.index(name)]
+        return default
+
     def getParValue(self, parName):
         """
         Returns the value or expression of one or more parameters.

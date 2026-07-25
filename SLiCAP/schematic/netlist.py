@@ -53,14 +53,14 @@ def _element_lines(components: list, node_fn) -> list[str]:
 
         cid = comp.instance_id
         if any("?" in n for n in nodes):
-            errors.append(f"{cid}: missing connection — '?' found in a node name.")
+            errors.append(f"{cid}: missing connection - '?' found in a node name.")
         if any("?" in r for r in refs):
-            errors.append(f"{cid}: missing reference — '?' found in a referenced element name.")
+            errors.append(f"{cid}: missing reference - '?' found in a referenced element name.")
         if "?" in model:
-            errors.append(f"{cid}: missing model — '?' found in the model name.")
+            errors.append(f"{cid}: missing model - '?' found in the model name.")
         for k, v in params:
             if "?" in v:
-                errors.append(f"{cid}: missing value — '?' found in parameter '{k}'.")
+                errors.append(f"{cid}: missing value - '?' found in parameter '{k}'.")
 
         parts = [cid]
         if nodes:
@@ -109,7 +109,7 @@ def build_netlist(
     if libs:
         lines.append("")
         for lib_item in libs:
-            lines.append(lib_item.netlist_line())
+            lines.extend(lib_item.netlist_lines())
 
     # ── model definitions ─────────────────────────────────────────────────────
     if model_defs:

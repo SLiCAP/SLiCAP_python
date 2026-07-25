@@ -174,7 +174,7 @@ def _build_svg(scene, title: str = "") -> bytes:
             if (isinstance(item, (AnalysisItem, LibraryItem))
                     and not item.isVisible()):
                 continue        # "Show on schematic" off: netlisted, not drawn
-            if isinstance(item, AnalysisItem) and item._svg_bytes:
+            if isinstance(item, (AnalysisItem, LibraryItem)) and item._svg_bytes:
                 pos = item.pos()          # LaTeX-rendered block → embed the vector SVG
                 _inline_image_svg(root, defs, item._svg_bytes,
                                   pos.x(), pos.y(),
