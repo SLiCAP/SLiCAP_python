@@ -200,7 +200,7 @@ def KiCADsch2svg(fileName):
     :type fileName: str
     """
     if ini.kicad == "":
-        print("Please install KiCad, delete '~/SLiCAP.ini', and run this script again.")
+        print("Please install KiCad, delete the main configuration file (~/SLiCAP/SLiCAP.ini), and run this script again.")
     else:
         cirName = fileName.split('/')[-1].split('.')[0]
         if os.path.isfile(fileName):
@@ -213,7 +213,7 @@ def KiCADsch2svg(fileName):
     
 def _kicadNetlist(fileName, cirTitle, language="SLiCAP"):
     if ini.kicad == "":
-        print("Please install KiCad, delete '~/SLiCAP.ini', and run this script again.")
+        print("Please install KiCad, delete the main configuration file (~/SLiCAP/SLiCAP.ini), and run this script again.")
     elif os.path.isfile(fileName):
         print("Creating netlist of {} using KiCAD".format(fileName))
         kicadnetlist  = fileName.split('.')[0] + '.net'        

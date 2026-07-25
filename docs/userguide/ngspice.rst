@@ -260,6 +260,40 @@ The SLiCAP function `backAnnotateSchematic() <../reference/SLiCAPkicad.html#SLiC
 Fourier and FFT post processing functions
 =========================================
 
+Structured post-processing on ``sl.tran()``
+-------------------------------------------
+
+The transient analysis function accepts the post-processing options
+directly (the modern, instruction-based equivalent of the legacy
+``postProc`` string below); both require ``names=``:
+
+.. code-block:: python
+
+    # Harmonics table: the returned instruction holds the TIME traces
+    # (dataType 'tran'); the table (magnitude/phase/normalized per
+    # harmonic + THD per signal) is attached as the TR.fourier dict.
+    TR = sl.tran("RCsin", "0.1u", "100u", names={"V_out": "v(out)"},
+                 fourier="100k")                       # or {"freq": "100k",
+                                                       #     "nfreqs": 10}
+    print(TR.fourier["thd(v_out)"])                    # THD in percent
+
+    # FFT: the returned instruction is FREQUENCY-domain (dataType 'fft',
+    # complex arrays + "frequency") and plots like an ac result.
+    FF = sl.tran("RCsin", "0.05u", "163.84u", names={"V_out": "v(out)"},
+                 fft=True)                             # or {"window":
+                                                       #     "gaussian",
+                                                       #     "order": 8}
+    SPEC = sl.ngspice_instr2traces(FF, trace_type="dBmag")
+    sl.plot("spectrum", "Output spectrum", "semilogx", SPEC,
+            xUnits="Hz", yUnits="dBV")
+
+The analysed vectors are created with NGspice ``let`` from the ``names``
+entries, so derived expressions (e.g. ``"v(1)-v(2)"``) work.  ``fft``
+window names follow NGspice ``specwindow`` (default ``hanning``);
+``fourier`` is not available for stepped runs, ``fft`` is.  In the
+schematic editor both options are on the Transient tab of the NGspice
+instruction dialog ("Post-processing").
+
 Transient analysis with parameter substitution
 ----------------------------------------------
 

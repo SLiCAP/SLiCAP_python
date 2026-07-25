@@ -74,27 +74,50 @@ On the first run of a project, SLiCAP creates a SLiCAP.ini file in the project f
     
 Opens HTML documentation in your default browser. It can also be viewed at https://slicap.org
 
+## Schematic editor command-line usage
+
+The schematic editor can be launched from the command line with:
+
+    slicap
+
+This opens the full schematic editor window. For a lighter startup without the instruction panel and related simulation dock widgets, use:
+
+    slicap-schematics
+
+You can also open a schematic directly and let the program infer the schematic type from the file extension:
+
+    slicap mycircuit.slicap_sch
+    slicap mycircuit.spice_sch
+
+If you want to force the mode explicitly, use `--config`:
+
+    slicap-schematics --config slicap mycircuit.slicap_sch
+    slicap-schematics --config ngspice mycircuit.spice_sch
+
+The CLI also supports direct file export for schematic workflows:
+
+    python -m SLiCAP.schematic.cli netlist mycircuit.slicap_sch
+    python -m SLiCAP.schematic.cli svg mycircuit.slicap_sch
+    python -m SLiCAP.schematic.cli pdf mycircuit.slicap_sch
+
 ## Setting up SLiCAP from source code
 
-1. Intall Python 3.12+ with the packages listed in requirements.txt (for MSwindows Anaconda installation is preferred)
+1. Install Python 3.12+ (for MSwindows Anaconda installation is preferred)
 2. Download or clone the SLiCAP archive from github
 3. Extract it in some directory
-4. Open a terminal (or an Anaconda terminal if you run python from Anaconda) in the directory with setup.py
-5. Install requirements:
+4. Open a terminal (or an Anaconda terminal if you run python from Anaconda) in the directory with pyproject.toml
+5. Install:
 
-       python -m pip install -r requirements.txt
+       python -m pip install .
+
+   Don't forget the dot! This also installs all required packages, listed
+   in pyproject.toml.
 
 6. Make Documentation:
 
-       cd ./doc
+       cd ./docs
        make html
        cd ..
-
-7. Lastly, Install: 
-
-       python -m pip install .
-   
-   Don't forget the dot!
 
 ## Contributing
 If you want to contribute to the development of SLiCAP, please [Email Us](mailto:anton@montagne.nl).

@@ -21,7 +21,7 @@ def _gNetlist(fileName, cirTitle):
     :type cirTitle: str
     """
     if ini.gnetlist == "":
-        print("Please install gnetlist spice -noqsi, delete '~/SLiCAP.ini' and run this script again.")
+        print("Please install gnetlist spice -noqsi, delete the main configuration file (~/SLiCAP/SLiCAP.ini) and run this script again.")
     else:
         if os.path.isfile(fileName):
             baseFileName = fileName.split('.')[0]

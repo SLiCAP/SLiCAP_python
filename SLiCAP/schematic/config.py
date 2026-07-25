@@ -41,321 +41,197 @@ Z_JUNCTION  = 20    # small dots stay grabbable on top of components
 Z_NET_LABEL = 30    # most clickable (child of a wire; see note above)
 
 
-# ── style — loaded from style.ini, falls back to defaults ────────────────────
+# ── per-schematic style ───────────────────────────────────────────────────────
+#
+# Every open schematic owns its own Style: the global style.ini template
+# overlaid with the schematic's sidecar ``<name>.ini``.  Items resolve their
+# style through their scene (``style_of``), so several schematics with
+# different styles can be open — and visible — at the same time without one
+# file's preferences leaking into another file's drawing.  There is no
+# process-global style state.
 
 STYLE_FILE = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "style.ini"
 
-_cfg = configparser.ConfigParser()
-_cfg.read(STYLE_FILE)
 
+class Style:
+    """The drawing style of one schematic (colours, fonts, scales, flags).
 
-def _c(section: str, key: str, default: str) -> QColor:
-    try:
-        return QColor(_cfg[section][key])
-    except KeyError:
-        return QColor(default)
-
-
-def _f(section: str, key: str, default: float) -> float:
-    try:
-        return float(_cfg[section][key])
-    except (KeyError, ValueError):
-        return default
-
-
-def _i(section: str, key: str, default: int) -> int:
-    try:
-        return int(_cfg[section][key])
-    except (KeyError, ValueError):
-        return default
-
-
-def _s(section: str, key: str, default: str) -> str:
-    try:
-        return _cfg[section][key].strip()
-    except KeyError:
-        return default
-
-
-def _b(section: str, key: str, default: bool) -> bool:
-    try:
-        return _cfg[section][key].strip().lower() in ("true", "1", "yes")
-    except KeyError:
-        return default
-
-
-# LaTeX rendering preference
-LATEX_RENDERING_ENABLED = _b("rendering", "latex_rendering", True)
-
-# Symbol colours
-SYMBOL_STROKE_COLOR = _c("symbol", "stroke_color", "#000000")
-SYMBOL_TEXT_COLOR   = _c("symbol", "text_color",   "#000000")
-
-# Wire
-WIRE_COLOR = _c("wire", "color", "#000000")
-WIRE_WIDTH = _f("wire", "width", 1.0)
-
-# Net labels
-NET_LABEL_COLOR     = _c("net_label", "color",     "#0055BB")
-NET_LABEL_FONT_SIZE = _i("net_label", "font_size", 7)
-NET_LABEL_FONT      = QFont("sans-serif", NET_LABEL_FONT_SIZE)
-
-# Component refdes labels
-COMP_REFDES_FONT_FAMILY = _s("component_label", "font_family", "sans-serif")
-COMP_LABEL_COLOR        = _c("component_label", "color",       "#000000")
-COMP_LABEL_FONT_SIZE    = _i("component_label", "font_size",   7)
-COMP_LABEL_LATEX_SCALE  = _i("component_label", "latex_scale", 100)
-COMP_LABEL_SVG_HEIGHT   = COMP_LABEL_LATEX_SCALE / 100.0 * 20.0
-COMP_LABEL_FONT         = QFont(COMP_REFDES_FONT_FAMILY, COMP_LABEL_FONT_SIZE)
-
-# Component parameter labels (value, noisetemp, …)
-COMP_PARAM_FONT_FAMILY = _s("component_param", "font_family", "sans-serif")
-COMP_PARAM_FONT_SIZE   = _i("component_param", "font_size",   7)
-COMP_PARAM_COLOR       = _c("component_param", "color",       "#0055BB")
-COMP_PARAM_FONT        = QFont(COMP_PARAM_FONT_FAMILY, COMP_PARAM_FONT_SIZE)
-COMP_PARAM_LATEX_SCALE = _i("component_param", "latex_scale", 60)
-COMP_PARAM_SVG_HEIGHT  = COMP_PARAM_LATEX_SCALE / 100.0 * 20.0
-
-# Grid
-GRID_MINOR_COLOR = _c("grid", "minor_color", "#DCDCDC")
-GRID_MAJOR_COLOR = _c("grid", "major_color", "#B4B4B4")
-
-# Wire vertex handles + unconnected-pin connection markers (same section)
-HANDLE_COLOR     = _c("handles", "color", "#0078D7")
-HANDLE_SIZE      = _f("handles", "size",  4.0)
-CONNECTION_COLOR = _c("handles", "connection_color", "#888888")
-
-# Junctions
-JUNCTION_COLOR  = _c("junctions", "color",  "#000000")
-JUNCTION_RADIUS = _f("junctions", "radius", 3.0)
-
-# Free text annotations
-FREE_TEXT_COLOR     = _c("free_text", "color",     "#333333")
-FREE_TEXT_FONT_SIZE = _i("free_text", "font_size",  8)
-FREE_TEXT_FONT      = QFont("sans-serif", FREE_TEXT_FONT_SIZE)
-
-# SLiCAP command blocks
-COMMAND_COLOR     = _c("command", "color",     "#004080")
-COMMAND_FONT_SIZE = _i("command", "font_size",  7)
-COMMAND_FONT      = QFont("monospace", COMMAND_FONT_SIZE)
-
-# Text annotations
-TEXT_FONT_FAMILY = _s("text", "font_family", "sans-serif")
-TEXT_FONT_SIZE   = _i("text", "font_size",   8)
-TEXT_COLOR       = _c("text", "color",       "#333333")
-TEXT_FONT        = QFont(TEXT_FONT_FAMILY, TEXT_FONT_SIZE)
-
-# Hyperlinks
-HYPERLINK_FONT_FAMILY = _s("hyperlink", "font_family", "sans-serif")
-HYPERLINK_FONT_SIZE   = _i("hyperlink", "font_size",   8)
-HYPERLINK_COLOR       = _c("hyperlink", "color",       "#0000cc")
-HYPERLINK_UNDERLINE   = _b("hyperlink", "underline",   True)
-HYPERLINK_FONT        = QFont(HYPERLINK_FONT_FAMILY, HYPERLINK_FONT_SIZE)
-
-# Default scaling (%) applied when first placing canvas items
-SCALE_PARAMETER_TABLE = _i("scales", "parameter_table", 100)
-SCALE_LATEX_FRAGMENT  = _i("scales", "latex_fragment",  100)
-SCALE_IMAGE           = _i("scales", "image",            50)
-
-
-def load(schematic_ini=None) -> None:
-    """Load global defaults (style.ini), then a schematic's overrides on top.
-
-    The global style.ini is the template for new schematics; an opened
-    schematic's ``<name>.ini`` (a full style snapshot) overrides it so the
-    drawing always looks as it did when saved, regardless of this machine's
-    global defaults.
+    Constructed from the global ``style.ini`` template plus an optional
+    per-schematic sidecar overlay.  The Preferences dialog edits a
+    ``snapshot()`` and commits it with ``apply_parser()``; ``write()``
+    persists the effective style to the schematic's sidecar.
     """
-    _cfg.clear()
-    _cfg.read(STYLE_FILE)
-    if schematic_ini is not None and Path(schematic_ini).is_file():
-        _cfg.read(str(schematic_ini))
-    _apply()
+
+    def __init__(self, sidecar: "Path | str | None" = None):
+        self._cfg = configparser.ConfigParser()
+        self._cfg.read(STYLE_FILE)
+        if sidecar is not None and Path(sidecar).is_file():
+            self._cfg.read(str(sidecar))
+        self._recompute()
+
+    # -- typed readers ---------------------------------------------------------
+
+    def _c(self, section: str, key: str, default: str) -> QColor:
+        try:
+            return QColor(self._cfg[section][key])
+        except KeyError:
+            return QColor(default)
+
+    def _f(self, section: str, key: str, default: float) -> float:
+        try:
+            return float(self._cfg[section][key])
+        except (KeyError, ValueError):
+            return default
+
+    def _i(self, section: str, key: str, default: int) -> int:
+        try:
+            return int(self._cfg[section][key])
+        except (KeyError, ValueError):
+            return default
+
+    def _s(self, section: str, key: str, default: str) -> str:
+        try:
+            return self._cfg[section][key].strip()
+        except KeyError:
+            return default
+
+    def _b(self, section: str, key: str, default: bool) -> bool:
+        try:
+            return self._cfg[section][key].strip().lower() in ("true", "1", "yes")
+        except KeyError:
+            return default
+
+    # -- attribute computation -------------------------------------------------
+
+    def _recompute(self) -> None:
+        # LaTeX rendering preference of THIS schematic.  Whether LaTeX is
+        # installed on this machine is a separate, global fact
+        # (latex_label.LATEX_INSTALLED) — the only global in the LaTeX story.
+        self.LATEX_RENDERING_ENABLED = self._b("rendering", "latex_rendering", True)
+
+        # Symbol colours
+        self.SYMBOL_STROKE_COLOR = self._c("symbol", "stroke_color", "#000000")
+        self.SYMBOL_TEXT_COLOR   = self._c("symbol", "text_color",   "#000000")
+
+        # Wire
+        self.WIRE_COLOR = self._c("wire", "color", "#000000")
+        self.WIRE_WIDTH = self._f("wire", "width", 1.0)
+
+        # Net labels
+        self.NET_LABEL_COLOR     = self._c("net_label", "color",     "#0055BB")
+        self.NET_LABEL_FONT_SIZE = self._i("net_label", "font_size", 7)
+        self.NET_LABEL_FONT      = QFont("sans-serif", self.NET_LABEL_FONT_SIZE)
+
+        # Component refdes labels.  IEEE-style element identifiers (customer
+        # request, 2026-07-11): render the refdes through the SLiCAP LaTeX
+        # chokepoint like parameter names, optionally upright bold.
+        self.COMP_REFDES_FONT_FAMILY = self._s("component_label", "font_family", "sans-serif")
+        self.COMP_LABEL_COLOR        = self._c("component_label", "color",       "#000000")
+        self.COMP_LABEL_FONT_SIZE    = self._i("component_label", "font_size",   7)
+        self.COMP_LABEL_LATEX_SCALE  = self._i("component_label", "latex_scale", 100)
+        self.COMP_LABEL_LATEX        = self._b("component_label", "latex",       False)
+        self.COMP_LABEL_LATEX_BOLD   = self._b("component_label", "latex_bold",  False)
+        self.COMP_LABEL_SVG_HEIGHT   = self.COMP_LABEL_LATEX_SCALE / 100.0 * 20.0
+        self.COMP_LABEL_FONT         = QFont(self.COMP_REFDES_FONT_FAMILY,
+                                             self.COMP_LABEL_FONT_SIZE)
+
+        # Component parameter labels (value, noisetemp, …)
+        self.COMP_PARAM_FONT_FAMILY = self._s("component_param", "font_family", "sans-serif")
+        self.COMP_PARAM_FONT_SIZE   = self._i("component_param", "font_size",   7)
+        self.COMP_PARAM_COLOR       = self._c("component_param", "color",       "#0055BB")
+        self.COMP_PARAM_FONT        = QFont(self.COMP_PARAM_FONT_FAMILY,
+                                            self.COMP_PARAM_FONT_SIZE)
+        self.COMP_PARAM_LATEX_SCALE = self._i("component_param", "latex_scale", 60)
+        self.COMP_PARAM_SVG_HEIGHT  = self.COMP_PARAM_LATEX_SCALE / 100.0 * 20.0
+
+        # Grid
+        self.GRID_MINOR_COLOR = self._c("grid", "minor_color", "#DCDCDC")
+        self.GRID_MAJOR_COLOR = self._c("grid", "major_color", "#B4B4B4")
+
+        # Wire vertex handles + unconnected-pin connection markers
+        self.HANDLE_COLOR     = self._c("handles", "color", "#0078D7")
+        self.HANDLE_SIZE      = self._f("handles", "size",  4.0)
+        self.CONNECTION_COLOR = self._c("handles", "connection_color", "#888888")
+
+        # Junctions
+        self.JUNCTION_COLOR  = self._c("junctions", "color",  "#000000")
+        self.JUNCTION_RADIUS = self._f("junctions", "radius", 3.0)
+
+        # Free text annotations
+        self.FREE_TEXT_COLOR     = self._c("free_text", "color",     "#333333")
+        self.FREE_TEXT_FONT_SIZE = self._i("free_text", "font_size",  8)
+        self.FREE_TEXT_FONT      = QFont("sans-serif", self.FREE_TEXT_FONT_SIZE)
+
+        # SLiCAP command blocks
+        self.COMMAND_COLOR     = self._c("command", "color",     "#004080")
+        self.COMMAND_FONT_SIZE = self._i("command", "font_size",  7)
+        self.COMMAND_FONT      = QFont("monospace", self.COMMAND_FONT_SIZE)
+
+        # Text annotations
+        self.TEXT_FONT_FAMILY = self._s("text", "font_family", "sans-serif")
+        self.TEXT_FONT_SIZE   = self._i("text", "font_size",   8)
+        self.TEXT_COLOR       = self._c("text", "color",       "#333333")
+        self.TEXT_FONT        = QFont(self.TEXT_FONT_FAMILY, self.TEXT_FONT_SIZE)
+
+        # Hyperlinks
+        self.HYPERLINK_FONT_FAMILY = self._s("hyperlink", "font_family", "sans-serif")
+        self.HYPERLINK_FONT_SIZE   = self._i("hyperlink", "font_size",   8)
+        self.HYPERLINK_COLOR       = self._c("hyperlink", "color",       "#0000cc")
+        self.HYPERLINK_UNDERLINE   = self._b("hyperlink", "underline",   True)
+        self.HYPERLINK_FONT        = QFont(self.HYPERLINK_FONT_FAMILY,
+                                           self.HYPERLINK_FONT_SIZE)
+        self.HYPERLINK_FONT.setUnderline(self.HYPERLINK_UNDERLINE)
+
+        # DC operating-point (bias) back-annotations on NGspice schematics
+        # ("V: 1.23m" on wires, "I: -2m" on V-sources/inductors).
+        self.BIAS_FONT_FAMILY = self._s("bias_annotation", "font_family", "sans-serif")
+        self.BIAS_FONT_SIZE   = self._i("bias_annotation", "font_size",   7)
+        self.BIAS_COLOR       = self._c("bias_annotation", "color",       "#B00020")
+        self.BIAS_DIGITS      = self._i("bias_annotation", "digits",      4)
+        self.BIAS_FONT        = QFont(self.BIAS_FONT_FAMILY, self.BIAS_FONT_SIZE)
+
+        # Scale (%) of the parameter table / model definition blocks — the
+        # single source for their on-canvas size (natural size × this value).
+        # LaTeX fragments and images scale per instance in their dialogs.
+        self.SCALE_PARAMETER_TABLE = self._i("scales", "parameter_table", 100)
+
+    # -- Preferences-dialog protocol --------------------------------------------
+
+    def snapshot(self) -> configparser.ConfigParser:
+        """A copy of the effective style for the Preferences dialog to edit."""
+        cfg = configparser.ConfigParser()
+        for section in self._cfg.sections():
+            cfg[section] = {k: v for k, v in self._cfg[section].items()}
+        return cfg
+
+    def apply_parser(self, cfg: configparser.ConfigParser) -> None:
+        """Replace the style with `cfg` (the Preferences dialog's result)."""
+        self._cfg = configparser.ConfigParser()
+        for section in cfg.sections():
+            self._cfg[section] = {k: v for k, v in cfg[section].items()}
+        self._recompute()
+
+    def write(self, path) -> None:
+        """Serialise the effective style to `path` (the schematic's .ini)."""
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w") as fh:
+            self._cfg.write(fh)
 
 
-def reload() -> None:
-    """Re-read the current sources (global + current schematic .ini) and apply."""
-    from . import project
-    load(project.ini_path())
+_default_style: Style | None = None
 
 
-def apply_parser(cfg) -> None:
-    """Replace the in-memory style with `cfg` and propagate live (used by the
-    Preferences dialog, which edits the current schematic's style)."""
-    _cfg.clear()
-    for section in cfg.sections():
-        _cfg[section] = {k: v for k, v in cfg[section].items()}
-    _apply(rescale_items=True)
+def default_style() -> Style:
+    """The style.ini template style — the style of anything not (yet) tied to
+    a schematic: items not added to a scene, previews without a panel."""
+    global _default_style
+    if _default_style is None:
+        _default_style = Style()
+    return _default_style
 
 
-def snapshot() -> "configparser.ConfigParser":
-    """A copy of the current effective style (for the Preferences dialog)."""
-    cfg = configparser.ConfigParser()
-    for section in _cfg.sections():
-        cfg[section] = {k: v for k, v in _cfg[section].items()}
-    return cfg
-
-
-def write(path) -> None:
-    """Serialise the current effective style to `path` (the schematic's .ini)."""
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as fh:
-        _cfg.write(fh)
-
-
-def _apply(*, rescale_items: bool = False) -> None:
-    """Recompute every style constant from _cfg and push into all app modules."""
-    import sys
-
-    # Recompute every style constant and update this module's globals.
-    g = sys.modules[__name__].__dict__
-
-    g["LATEX_RENDERING_ENABLED"] = _b("rendering", "latex_rendering", True)
-
-    # Push updated LATEX_AVAILABLE into latex_label (depends on both system
-    # check and user preference, so it needs special handling here).
-    ll = sys.modules.get("SLiCAP.schematic.latex_label")
-    if ll is not None:
-        ll.__dict__["LATEX_AVAILABLE"] = (
-            ll.__dict__.get("_LATEX_INSTALLED", False)
-            and g["LATEX_RENDERING_ENABLED"]
-        )
-
-    g["SYMBOL_STROKE_COLOR"] = _c("symbol", "stroke_color", "#000000")
-    g["SYMBOL_TEXT_COLOR"]   = _c("symbol", "text_color",   "#000000")
-
-    g["WIRE_COLOR"] = _c("wire", "color", "#000000")
-    g["WIRE_WIDTH"] = _f("wire", "width", 1.2)
-
-    g["NET_LABEL_COLOR"]     = _c("net_label", "color",     "#0055BB")
-    g["NET_LABEL_FONT_SIZE"] = _i("net_label", "font_size", 7)
-    g["NET_LABEL_FONT"]      = QFont("sans-serif", g["NET_LABEL_FONT_SIZE"])
-
-    g["COMP_REFDES_FONT_FAMILY"] = _s("component_label", "font_family", "sans-serif")
-    g["COMP_LABEL_COLOR"]       = _c("component_label", "color",       "#000000")
-    g["COMP_LABEL_FONT_SIZE"]   = _i("component_label", "font_size",   7)
-    g["COMP_LABEL_LATEX_SCALE"] = _i("component_label", "latex_scale", 100)
-    g["COMP_LABEL_SVG_HEIGHT"]  = g["COMP_LABEL_LATEX_SCALE"] / 100.0 * 20.0
-    g["COMP_LABEL_FONT"]        = QFont(g["COMP_REFDES_FONT_FAMILY"], g["COMP_LABEL_FONT_SIZE"])
-
-    g["COMP_PARAM_FONT_FAMILY"] = _s("component_param", "font_family", "sans-serif")
-    g["COMP_PARAM_FONT_SIZE"]   = _i("component_param", "font_size",   7)
-    g["COMP_PARAM_COLOR"]       = _c("component_param", "color",       "#0055BB")
-    g["COMP_PARAM_FONT"]        = QFont(g["COMP_PARAM_FONT_FAMILY"], g["COMP_PARAM_FONT_SIZE"])
-    g["COMP_PARAM_LATEX_SCALE"] = _i("component_param", "latex_scale", 60)
-    g["COMP_PARAM_SVG_HEIGHT"]  = g["COMP_PARAM_LATEX_SCALE"] / 100.0 * 20.0
-
-    g["GRID_MINOR_COLOR"] = _c("grid", "minor_color", "#DCDCDC")
-    g["GRID_MAJOR_COLOR"] = _c("grid", "major_color", "#B4B4B4")
-
-    g["HANDLE_COLOR"]     = _c("handles", "color", "#0078D7")
-    g["HANDLE_SIZE"]      = _f("handles", "size",  4.0)
-    g["CONNECTION_COLOR"] = _c("handles", "connection_color", "#888888")
-
-    g["JUNCTION_COLOR"]  = _c("junctions", "color",  "#000000")
-    g["JUNCTION_RADIUS"] = _f("junctions", "radius", 3.0)
-
-    g["FREE_TEXT_COLOR"]     = _c("free_text", "color",     "#333333")
-    g["FREE_TEXT_FONT_SIZE"] = _i("free_text", "font_size",  8)
-    g["FREE_TEXT_FONT"]      = QFont("sans-serif", g["FREE_TEXT_FONT_SIZE"])
-
-    g["COMMAND_COLOR"]     = _c("command", "color",     "#004080")
-    g["COMMAND_FONT_SIZE"] = _i("command", "font_size",  7)
-    g["COMMAND_FONT"]      = QFont("monospace", g["COMMAND_FONT_SIZE"])
-
-    g["TEXT_FONT_FAMILY"] = _s("text", "font_family", "sans-serif")
-    g["TEXT_FONT_SIZE"]   = _i("text", "font_size",   8)
-    g["TEXT_COLOR"]       = _c("text", "color",       "#333333")
-    g["TEXT_FONT"]        = QFont(g["TEXT_FONT_FAMILY"], g["TEXT_FONT_SIZE"])
-
-    g["HYPERLINK_FONT_FAMILY"] = _s("hyperlink", "font_family", "sans-serif")
-    g["HYPERLINK_FONT_SIZE"]   = _i("hyperlink", "font_size",   8)
-    g["HYPERLINK_COLOR"]       = _c("hyperlink", "color",       "#0000cc")
-    g["HYPERLINK_UNDERLINE"]   = _b("hyperlink", "underline",   True)
-    g["HYPERLINK_FONT"]        = QFont(g["HYPERLINK_FONT_FAMILY"], g["HYPERLINK_FONT_SIZE"])
-
-    old_param_scale = g.get("SCALE_PARAMETER_TABLE", 100)
-    old_latex_scale = g.get("SCALE_LATEX_FRAGMENT",  100)
-    old_image_scale = g.get("SCALE_IMAGE",            50)
-    g["SCALE_PARAMETER_TABLE"] = _i("scales", "parameter_table", 100)
-    g["SCALE_LATEX_FRAGMENT"]  = _i("scales", "latex_fragment",  100)
-    g["SCALE_IMAGE"]           = _i("scales", "image",            50)
-
-    # Names to push to any app.* module that imported them via 'from .config import ...'
-    _names = {
-        "LATEX_RENDERING_ENABLED",
-        "SYMBOL_STROKE_COLOR", "SYMBOL_TEXT_COLOR",
-        "WIRE_COLOR", "WIRE_WIDTH",
-        "NET_LABEL_COLOR", "NET_LABEL_FONT_SIZE", "NET_LABEL_FONT",
-        "COMP_REFDES_FONT_FAMILY",
-        "COMP_LABEL_COLOR", "COMP_LABEL_FONT_SIZE", "COMP_LABEL_LATEX_SCALE",
-        "COMP_LABEL_SVG_HEIGHT", "COMP_LABEL_FONT",
-        "COMP_PARAM_FONT_FAMILY", "COMP_PARAM_FONT_SIZE", "COMP_PARAM_COLOR", "COMP_PARAM_FONT",
-        "COMP_PARAM_LATEX_SCALE", "COMP_PARAM_SVG_HEIGHT",
-        "GRID_MINOR_COLOR", "GRID_MAJOR_COLOR",
-        "HANDLE_COLOR", "HANDLE_SIZE", "CONNECTION_COLOR",
-        "JUNCTION_COLOR", "JUNCTION_RADIUS",
-        "FREE_TEXT_COLOR", "FREE_TEXT_FONT_SIZE", "FREE_TEXT_FONT",
-        "COMMAND_COLOR", "COMMAND_FONT_SIZE", "COMMAND_FONT",
-        "TEXT_FONT_FAMILY", "TEXT_FONT_SIZE", "TEXT_COLOR", "TEXT_FONT",
-        "HYPERLINK_FONT_FAMILY", "HYPERLINK_FONT_SIZE", "HYPERLINK_COLOR",
-        "HYPERLINK_UNDERLINE", "HYPERLINK_FONT",
-        "SCALE_PARAMETER_TABLE", "SCALE_LATEX_FRAGMENT", "SCALE_IMAGE",
-    }
-    for mod in list(sys.modules.values()):
-        if mod is None or mod is sys.modules[__name__]:
-            continue
-        if not getattr(mod, "__name__", "").startswith("SLiCAP.schematic."):
-            continue
-        md = mod.__dict__
-        for name in _names:
-            if name in md:
-                md[name] = g[name]
-
-    # component_item caches module-level aliases that need separate update
-    ci = sys.modules.get("SLiCAP.schematic.component_item")
-    if ci is not None:
-        scale_changed = (
-            ci.__dict__.get("_LABEL_SVG_HEIGHT") != g["COMP_LABEL_SVG_HEIGHT"] or
-            ci.__dict__.get("_PARAM_SVG_HEIGHT")  != g["COMP_PARAM_SVG_HEIGHT"]
-        )
-        ci.__dict__["_LABEL_FONT"]       = g["COMP_LABEL_FONT"]
-        ci.__dict__["_LABEL_SVG_HEIGHT"] = g["COMP_LABEL_SVG_HEIGHT"]
-        ci.__dict__["_PARAM_FONT"]       = g["COMP_PARAM_FONT"]
-        ci.__dict__["_PARAM_SVG_HEIGHT"] = g["COMP_PARAM_SVG_HEIGHT"]
-        ci.__dict__["COMP_PARAM_COLOR"]  = g["COMP_PARAM_COLOR"]
-        if scale_changed:
-            for comp in list(ci._live_components):
-                comp.refresh_svg_labels()
-
-    # Rescale placed items (ParameterItem, ModelItem, LatexFragmentItem, ImageItem)
-    # only when called from apply_parser() — a live Preferences change, not a reload.
-    if rescale_items:
-        param_ratio = (g["SCALE_PARAMETER_TABLE"] / old_param_scale
-                       if old_param_scale else 1.0)
-        latex_ratio = (g["SCALE_LATEX_FRAGMENT"]  / old_latex_scale
-                       if old_latex_scale else 1.0)
-        image_ratio = (g["SCALE_IMAGE"]           / old_image_scale
-                       if old_image_scale else 1.0)
-
-        if param_ratio != 1.0:
-            pi = sys.modules.get("SLiCAP.schematic.parameter_item")
-            mi = sys.modules.get("SLiCAP.schematic.model_item")
-            if pi is not None:
-                for item in list(pi._live_param_items):
-                    item.rescale(param_ratio)
-            if mi is not None:
-                for item in list(mi._live_model_items):
-                    item.rescale(param_ratio)
-
-        if latex_ratio != 1.0:
-            li = sys.modules.get("SLiCAP.schematic.latex_fragment_item")
-            if li is not None:
-                for item in list(li._live_latex_items):
-                    item.rescale(latex_ratio)
-
-        if image_ratio != 1.0:
-            ii = sys.modules.get("SLiCAP.schematic.image_item")
-            if ii is not None:
-                for item in list(ii._live_image_items):
-                    item.rescale(image_ratio)
+def style_of(item) -> Style:
+    """Resolve a QGraphicsItem's style through its scene (defaults when the
+    item is not in a scene, or is a duck-typed stand-in without one)."""
+    scene = item.scene() if hasattr(item, "scene") else None
+    return getattr(scene, "style", None) or default_style()

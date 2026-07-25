@@ -1,5 +1,20 @@
 """
-Dialog for placing or editing a circuit parameter table on the canvas.
+Dialog for defining THE circuit parameter table of a schematic (one table per
+schematic; opened prefilled whether the table is shown or hidden).
+
+Workflow (Anton, 2026-07-12):
+- "Show on schematic" checked (new table): the action button reads "Place";
+  with LaTeX rendering enabled it first shows the modal LaTeX preview
+  (Close = back to editing, OK = accept), then the caller runs the
+  click-to-place ghost.
+- "Show on schematic" unchecked: the action button reads "OK" — the
+  definitions are accepted without placement; the (hidden) table still
+  netlists its .param lines.
+- Edit mode (the table already exists): the button reads "OK" and changes
+  apply in place; toggling the checkbox shows/hides the existing item.
+
+The table's on-canvas SCALE is a schematic preference (Preferences →
+"Scaling defaults"), deliberately not settable here — one value, one place.
 """
 from __future__ import annotations
 
@@ -9,11 +24,10 @@ from pathlib import Path
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QTableWidget, QTableWidgetItem, QAbstractItemView,
-    QSpinBox, QDialogButtonBox, QFileDialog, QApplication, QLayout,
+    QCheckBox, QDialogButtonBox, QFileDialog, QApplication, QLayout,
     QHeaderView,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QPainter
 
 
 def _find_slicap_preamble() -> str:
@@ -43,21 +57,22 @@ def _find_slicap_preamble() -> str:
 
 
 class ParameterDialog(QDialog):
-    _PREVIEW_MAX_W = 500
-    _PREVIEW_MAX_H = 200
 
     def __init__(self, params=None,
                  preamble_path: str = "",
-                 svg_bytes: bytes | None = None,
-                 display_width: int | None = None,
-                 display_height: int | None = None,
+                 show: bool = True,
+                 edit_mode: bool = False,
+                 style=None,
                  parent=None):
         super().__init__(parent, Qt.Window)
+        from .config import default_style
+        from .latex_label import LATEX_INSTALLED
+        self._style = style or default_style()
+        # Preview rendering needs the tools AND the schematic's preference.
+        self._latex_ok = LATEX_INSTALLED and self._style.LATEX_RENDERING_ENABLED
+        self._edit_mode = edit_mode
         self.setWindowTitle("Circuit Parameters")
         self.setMinimumWidth(520)
-        self._svg_bytes: bytes | None = svg_bytes
-        self._natural_w: int | None = None
-        self._natural_h: int | None = None
 
         outer = QVBoxLayout(self)
         outer.setSizeConstraint(QLayout.SetMinimumSize)
@@ -72,7 +87,7 @@ class ParameterDialog(QDialog):
         browse_btn = QPushButton("Browse…")
         browse_btn.clicked.connect(self._browse_preamble)
         clear_btn  = QPushButton("Clear")
-        clear_btn.clicked.connect(self._clear_preamble)
+        clear_btn.clicked.connect(self._preamble_edit.clear)
         prow.addWidget(self._preamble_edit, stretch=1)
         prow.addWidget(browse_btn)
         prow.addWidget(clear_btn)
@@ -93,10 +108,15 @@ class ParameterDialog(QDialog):
         # ── table action buttons ──────────────────────────────────────────────
         btn_row = QHBoxLayout()
         add_btn = QPushButton("Add row")
-        add_btn.clicked.connect(self._add_empty_row)
+        add_btn.clicked.connect(self._add_row)
         del_btn = QPushButton("Remove row")
         del_btn.clicked.connect(self._remove_selected_row)
-        hint = QLabel("Use LaTeX math syntax in both columns (e.g. R_1,  10\\,\\text{k})")
+        # Names and values are SLiCAP netlist syntax — they become .param
+        # lines; the LaTeX typesetting happens automatically (the same
+        # chokepoint as the component value labels). Raw LaTeX here would
+        # break the netlist.
+        hint = QLabel("SLiCAP syntax, e.g. R_s and 10k or 1/(2*pi*R_s*C_c) — "
+                      "netlisted as .param lines, typeset automatically")
         hint.setStyleSheet("color: grey; font-size: 9pt;")
         btn_row.addWidget(add_btn)
         btn_row.addWidget(del_btn)
@@ -105,96 +125,28 @@ class ParameterDialog(QDialog):
         btn_row.addStretch(1)
         outer.addLayout(btn_row)
 
-        # ── preview button + status ───────────────────────────────────────────
-        prev_row = QHBoxLayout()
-        self._prev_btn = QPushButton("Preview")
-        self._prev_btn.clicked.connect(self._render)
-        self._status_lbl = QLabel("")
-        self._status_lbl.setWordWrap(True)
-        prev_row.addWidget(self._prev_btn)
-        prev_row.addWidget(self._status_lbl, stretch=1)
-        outer.addLayout(prev_row)
+        # ── show on schematic ─────────────────────────────────────────────────
+        self._show_cb = QCheckBox("Show on schematic (parameters are always netlisted)")
+        self._show_cb.setChecked(show)
+        self._show_cb.toggled.connect(self._update_action_button)
+        outer.addWidget(self._show_cb)
 
-        # ── preview area ──────────────────────────────────────────────────────
-        self._preview_lbl = QLabel("(click Preview to render)")
-        self._preview_lbl.setAlignment(Qt.AlignCenter)
-        self._preview_lbl.setMinimumHeight(80)
-        self._preview_lbl.setStyleSheet(
-            "border: 1px solid #999; background: white; padding: 4px;"
-        )
-        outer.addWidget(self._preview_lbl)
-
-        # ── scale row ─────────────────────────────────────────────────────────
-        from .config import SCALE_PARAMETER_TABLE
-        # Compute natural size from existing SVG (edit mode) so we can back-
-        # calculate the current scale percentage.
-        if svg_bytes:
-            self._compute_natural_size(svg_bytes)
-        if self._natural_w and display_width:
-            init_scale = max(1, round(display_width / self._natural_w * 100))
-        else:
-            init_scale = SCALE_PARAMETER_TABLE
-
-        scale_row = QHBoxLayout()
-        scale_row.addWidget(QLabel("Scale:"))
-        self._scale_spin = QSpinBox()
-        self._scale_spin.setRange(1, 500)
-        self._scale_spin.setValue(init_scale)
-        self._scale_spin.setSuffix(" %")
-        scale_row.addWidget(self._scale_spin)
-        scale_row.addSpacing(16)
-        self._size_lbl = QLabel()
-        scale_row.addWidget(self._size_lbl)
-        scale_row.addSpacing(10)
-        grid_hint = QLabel("(1 grid square = 5 units,  resistor pin-to-pin = 50 units)")
-        grid_hint.setStyleSheet("color: grey; font-size: 9pt;")
-        scale_row.addWidget(grid_hint)
-        scale_row.addStretch(1)
-        outer.addLayout(scale_row)
-
-        # ── OK / Cancel ───────────────────────────────────────────────────────
-        self._btn_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        )
-        self._btn_box.accepted.connect(self.accept)
+        # ── action buttons ────────────────────────────────────────────────────
+        self._btn_box = QDialogButtonBox(QDialogButtonBox.Cancel)
+        self._action_btn = QPushButton()
+        self._btn_box.addButton(self._action_btn, QDialogButtonBox.AcceptRole)
+        self._btn_box.accepted.connect(self._on_action)
         self._btn_box.rejected.connect(self.reject)
-        self._ok_btn = self._btn_box.button(QDialogButtonBox.Ok)
         outer.addWidget(self._btn_box)
-
-        self._scale_spin.valueChanged.connect(self._on_scale_changed)
-        self._update_size_labels()
-
-        self._table.itemChanged.connect(self._mark_dirty)
-
-        from .latex_label import LATEX_AVAILABLE as _latex_ok
-        if not _latex_ok:
-            self._prev_btn.setEnabled(False)
-            self._prev_btn.setToolTip(
-                "LaTeX rendering is disabled in Preferences → Rendering."
-            )
-            self._preview_lbl.setText(
-                "LaTeX rendering is disabled.\n"
-                "Enable it in Preferences → Rendering to preview and re-render."
-            )
-            self._ok_btn.setEnabled(True)
-        elif svg_bytes:
-            self._show_svg(svg_bytes)
-            self._status_lbl.setText("Ready.")
-            self._ok_btn.setEnabled(True)
-        else:
-            self._ok_btn.setEnabled(False)
+        self._update_action_button()
 
     # ── table helpers ─────────────────────────────────────────────────────────
 
     def _add_row(self, name: str = "", value: str = "") -> None:
         row = self._table.rowCount()
         self._table.insertRow(row)
-        self._table.setItem(row, 0, QTableWidgetItem(name))
-        self._table.setItem(row, 1, QTableWidgetItem(value))
-
-    def _add_empty_row(self) -> None:
-        self._add_row()
-        self._mark_dirty()
+        self._table.setItem(row, 0, QTableWidgetItem(name or ""))
+        self._table.setItem(row, 1, QTableWidgetItem(value or ""))
 
     def _remove_selected_row(self) -> None:
         rows = sorted({idx.row() for idx in self._table.selectedIndexes()},
@@ -206,7 +158,6 @@ class ParameterDialog(QDialog):
             rc = self._table.rowCount()
             if rc > 0:
                 self._table.removeRow(rc - 1)
-        self._mark_dirty()
 
     def _current_params(self) -> list:
         result = []
@@ -221,12 +172,6 @@ class ParameterDialog(QDialog):
 
     # ── slots ─────────────────────────────────────────────────────────────────
 
-    def _mark_dirty(self) -> None:
-        self._svg_bytes = None
-        from .latex_label import LATEX_AVAILABLE
-        if LATEX_AVAILABLE:
-            self._ok_btn.setEnabled(False)
-
     def _browse_preamble(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self, "Select Preamble File",
@@ -235,88 +180,45 @@ class ParameterDialog(QDialog):
         )
         if path:
             self._preamble_edit.setText(path)
-            self._mark_dirty()
 
-    def _clear_preamble(self) -> None:
-        self._preamble_edit.clear()
-        self._mark_dirty()
+    def _update_action_button(self) -> None:
+        # "Place" only when a NEW table will be placed on the schematic;
+        # editing an existing table applies in place ("OK"), and a hidden
+        # table is accepted without placement ("OK").
+        place = self._show_cb.isChecked() and not self._edit_mode
+        self._action_btn.setText("Place" if place else "OK")
 
-    def _render(self) -> None:
-        from .latex_label import render_latex_raw
-        from .parameter_item import ParameterItem
-        params   = self._current_params()
-        code     = ParameterItem.build_latex(params)
-        preamble = self._preamble_edit.text()
-        self._prev_btn.setEnabled(False)
-        self._status_lbl.setText("Rendering…")
-        QApplication.processEvents()
-        svg_bytes, error = render_latex_raw(code, preamble)
-        self._prev_btn.setEnabled(True)
-        if svg_bytes:
-            self._svg_bytes = svg_bytes
-            self._status_lbl.setText("OK")
-            self._show_svg(svg_bytes)
-            self._compute_natural_size(svg_bytes)
-            self._update_size_labels()
-            self._ok_btn.setEnabled(True)
-        else:
-            self._svg_bytes = None
-            self._status_lbl.setText(f"Error: {error}")
-            self._preview_lbl.setText("(render failed)")
-            self._ok_btn.setEnabled(False)
-
-    def _show_svg(self, svg_bytes: bytes) -> None:
-        from PySide6.QtSvg import QSvgRenderer
-        from PySide6.QtCore import QByteArray
-        renderer = QSvgRenderer(QByteArray(svg_bytes))
-        if not renderer.isValid():
-            self._preview_lbl.setText("(invalid SVG)")
-            return
-        vb = renderer.viewBoxF()
-        sw = vb.width()  if vb.width()  > 0 else renderer.defaultSize().width()
-        sh = vb.height() if vb.height() > 0 else renderer.defaultSize().height()
-        if sw <= 0 or sh <= 0:
-            self._preview_lbl.setText("(empty SVG)")
-            return
-        scale = min(self._PREVIEW_MAX_W / sw, self._PREVIEW_MAX_H / sh, 3.0)
-        pw, ph = max(1, int(sw * scale)), max(1, int(sh * scale))
-        px = QPixmap(pw, ph)
-        px.fill(Qt.white)
-        p = QPainter(px)
-        renderer.render(p)
-        p.end()
-        self._preview_lbl.setPixmap(px)
-
-    def _compute_natural_size(self, svg_bytes: bytes) -> None:
-        """Compute the baseline (100 %) width/height in scene units from SVG."""
-        from PySide6.QtSvg import QSvgRenderer
-        from PySide6.QtCore import QByteArray
-        from .latex_label import svg_line_height
-        from .config import COMP_LABEL_FONT_SIZE
-        renderer = QSvgRenderer(QByteArray(svg_bytes))
-        if not renderer.isValid():
-            return
-        vb = renderer.viewBoxF()
-        svg_w = vb.width()  if vb.width()  > 0 else renderer.defaultSize().width()
-        svg_h = vb.height() if vb.height() > 0 else renderer.defaultSize().height()
-        if svg_w <= 0 or svg_h <= 0:
-            return
-        ref_h = svg_line_height()
-        base = (COMP_LABEL_FONT_SIZE / ref_h) if (ref_h and ref_h > 0) else 0.5
-        self._natural_w = max(1, round(svg_w * base))
-        self._natural_h = max(1, round(svg_h * base))
-
-    def _on_scale_changed(self, _: int) -> None:
-        self._update_size_labels()
-
-    def _update_size_labels(self) -> None:
-        if self._natural_w and self._natural_h:
-            pct = self._scale_spin.value()
-            w = max(1, round(self._natural_w * pct / 100))
-            h = max(1, round(self._natural_h * pct / 100))
-            self._size_lbl.setText(f"Width: {w} units   Height: {h} units")
-        else:
-            self._size_lbl.setText("Width: — units   Height: — units")
+    def _on_action(self) -> None:
+        if self._latex_ok:
+            from .latex_label import render_latex_raw
+            from .parameter_item import ParameterItem
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                svg, error = render_latex_raw(
+                    ParameterItem.build_latex(self._current_params()),
+                    self._preamble_edit.text())
+            finally:
+                QApplication.restoreOverrideCursor()
+            if self._action_btn.text() == "Place":
+                # Modal LaTeX preview: Close returns to editing, OK accepts.
+                from .latex_preview_dialog import LatexPreviewDialog
+                if not LatexPreviewDialog(svg, error, self).exec():
+                    return                  # back to editing
+            elif svg is None:
+                # OK mode has no preview step, but a LaTeX error must not
+                # pass silently (Anton, 2026-07-12). Accepting stays
+                # possible: the netlist is unaffected, the canvas falls
+                # back to plain text (with the error in its tooltip).
+                from PySide6.QtWidgets import QMessageBox
+                if QMessageBox.warning(
+                        self, "LaTeX error",
+                        "The parameter table does not compile:\n\n"
+                        f"{error}\n\n"
+                        "Accept anyway? (The canvas shows plain text.)",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.No) != QMessageBox.Yes:
+                    return                  # back to editing
+        self.accept()
 
     # ── result accessors ──────────────────────────────────────────────────────
 
@@ -326,15 +228,5 @@ class ParameterDialog(QDialog):
     def preamble_path(self) -> str:
         return self._preamble_edit.text()
 
-    def svg_bytes(self) -> bytes | None:
-        return self._svg_bytes
-
-    def display_width(self) -> int:
-        if self._natural_w:
-            return max(1, round(self._natural_w * self._scale_spin.value() / 100))
-        return 200
-
-    def display_height(self) -> int:
-        if self._natural_h:
-            return max(1, round(self._natural_h * self._scale_spin.value() / 100))
-        return 80
+    def show_on_schematic(self) -> bool:
+        return self._show_cb.isChecked()

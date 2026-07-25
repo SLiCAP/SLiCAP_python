@@ -7,7 +7,8 @@ from PySide6.QtCore import Qt
 
 class NetLabelDialog(QDialog):
     def __init__(self, current_name: str | None, display: bool,
-                 locked: bool = False, parent=None):
+                 locked: bool = False, offer_dc: bool = False,
+                 show_dc: bool = False, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Net Label")
         self.setMinimumWidth(280)
@@ -37,6 +38,16 @@ class NetLabelDialog(QDialog):
         self._display_cb.setChecked(display)
         outer.addWidget(self._display_cb)
 
+        # DC operating-point back-annotation — NGspice schematics only.
+        self._dc_cb = QCheckBox("Show DC operating voltage")
+        self._dc_cb.setChecked(show_dc)
+        self._dc_cb.setToolTip(
+            "Places a 'V: <value>' text on this wire segment; the value is\n"
+            "updated after an operating-point (op) run and greyed when the\n"
+            "schematic changed since that run.")
+        if offer_dc:
+            outer.addWidget(self._dc_cb)
+
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -53,3 +64,6 @@ class NetLabelDialog(QDialog):
 
     def display(self) -> bool:
         return self._display_cb.isChecked()
+
+    def show_dc(self) -> bool:
+        return self._dc_cb.isChecked()

@@ -408,6 +408,18 @@ Extract traces from a figure
     :lines: 144-145
     :lineno-start: 144
 
+The function `fig2traces() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.SLiCAPplots.fig2traces>`_
+returns the traces of a figure as a dictionary that can directly be passed
+to ``plot()``, optionally filtered by trace label. This works for any
+figure, including figures created with ``plotSweep()``, so traces from
+different analysis types can be combined in one plot:
+
+.. code-block:: python
+
+    # Overlay selected traces from two existing figures in a new plot
+    sl.plot("cmp", "Compare", "semilogx",
+            {**sl.fig2traces(fig_a), **sl.fig2traces(fig_b, ["V_out"])})
+
 Add a dictionary with traces to an existing plot
 ------------------------------------------------
 
@@ -428,6 +440,33 @@ Create and plot a dictionary with traces
     :linenos:
     :lines: 159-179
     :lineno-start: 159
+
+Derived traces: expressions of simulation results
+-------------------------------------------------
+
+A trace can be computed from other traces of the same simulation — the
+equivalent of typing a waveform expression in simulators such as SIMetrix
+or LTspice. Trace data are numpy arrays (``trace.xData``, ``trace.yData``),
+so any numpy expression of traces that share the same sweep works:
+
+.. code-block:: python
+
+    # Common-mode output voltage from two traces of one transient analysis
+    trcs = sl.ngspice_instr2traces(TRAN1)
+    v_cm = sl.trace([trcs["V_1"].xData,
+                     (trcs["V_1"].yData + trcs["V_2"].yData)/2])
+    v_cm.label = "$V_{cm}$"
+    sl.plot("Vcm", "Common-mode output voltage", "lin", {"V_cm": v_cm},
+            show=True)
+
+Alternatives that avoid trace arithmetic:
+
+- For NGspice, the simulator can evaluate the expression itself: enter it
+  in the ``names`` dictionary of the instruction, e.g.
+  ``names={"V_cm": "(V(1)+V(2))/2"}``.
+- For SLiCAP, balanced circuits can be converted into differential-mode
+  and common-mode equivalents with the ``convtype`` argument (see
+  `Balanced circuits <balanced.html>`_).
 
 .. image:: /img/powers_x.svg
     :width: 500

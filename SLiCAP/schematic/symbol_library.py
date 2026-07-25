@@ -296,8 +296,9 @@ class SymbolLibrary:
     <defs>).
 
     Call add_user_library() afterward to load additional SVGs from any
-    directory.  Call inject_into_component_item() to publish all loaded
-    metadata into the component_item module-level dicts.
+    directory.  Each schematic panel owns its own SymbolLibrary; placed
+    components hold the Symbol record they were created from (there is no
+    process-global symbol namespace).
     """
 
     def __init__(self, svg_path: Path):
@@ -401,29 +402,6 @@ class SymbolLibrary:
         return updated
 
     # ── public API ────────────────────────────────────────────────────────────
-
-    def inject_into_component_item(self) -> None:
-        """Publish loaded metadata into the component_item module dicts.
-
-        Merges into the global dicts rather than replacing them so that parent
-        and child schematics can both be open: activating the child window must
-        not wipe the parent's subcircuit symbol (whose pin names are shown in
-        the parent view).  update() overwrites same-named entries, which is
-        correct when a symbol is redefined across library versions."""
-        import SLiCAP.schematic.component_item as ci
-        ci.SYMBOL_PREFIX.update({n: s.prefix for n, s in self._symbols.items()})
-        ci.PIN_POSITIONS.update({n: list(s.pins) for n, s in self._symbols.items()})
-        ci.SYMBOL_TIGHT_RECT.update({n: s.select_box for n, s in self._symbols.items()})
-        ci.SYMBOL_NODES.update({n: list(s.nodes) for n, s in self._symbols.items()})
-        ci.SYMBOL_MODEL.update({n: s.model for n, s in self._symbols.items()})
-        ci.SYMBOL_MODEL_SHOW.update({n: s.model_show for n, s in self._symbols.items()})
-        ci.SYMBOL_PARAMS.update({n: list(s.params) for n, s in self._symbols.items()})
-        ci.SYMBOL_PARAM_DEFAULTS.update({n: dict(s.param_defaults) for n, s in self._symbols.items()})
-        ci.SYMBOL_PARAM_DISPLAY.update({n: dict(s.param_display) for n, s in self._symbols.items()})
-        ci.SYMBOL_REFS.update({n: len(s.refs) for n, s in self._symbols.items()})
-        ci.SYMBOL_DESCRIPTION.update({n: s.description for n, s in self._symbols.items()})
-        ci.SYMBOL_INFO.update({n: s.info for n, s in self._symbols.items()})
-        ci.SYMBOL_SHOW_PINNAMES.update({n: s.show_pinnames for n, s in self._symbols.items()})
 
     @property
     def names(self) -> list[str]:

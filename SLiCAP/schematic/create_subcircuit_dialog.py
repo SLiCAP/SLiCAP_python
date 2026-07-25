@@ -26,7 +26,7 @@ class CreateSubcircuitDialog(QDialog):
         # ── name ───────────────────────────────────────────────────────────────
         head = QGridLayout()
         head.addWidget(QLabel("<b>Subcircuit name:</b>"), 0, 0)
-        head.addWidget(QLabel(name or "(set a title in Document Properties)"), 0, 1)
+        head.addWidget(QLabel(name or "(set a title in Schematic Properties)"), 0, 1)
         outer.addLayout(head)
 
         # ── ports (reorderable node list) ──────────────────────────────────────

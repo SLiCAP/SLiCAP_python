@@ -16,7 +16,26 @@ SLiCAP/files/kicad/SLiCAP-backups/
 SLiCAP/files/kicad/*.bak
 
 # Simulation / export outputs from test runs
+lib/
 docs/cir/
 docs/csv/
 docs/html/
 docs/txt/
+schematic/sch/
+schematic/lib/
+schematic/__pycache__/
+
+# AI communication
+SLNG.md
+SLiCAP_GUI.md
+schematic_ngspice.md
+schematic.md
+NymSymCAD.md
+NGspice_simulator.md
+ACDE.md
+latest_bugs.md
+CLAUDE.md
+
+# AI tests
+tests/
+.pytest_cache/

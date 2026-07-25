@@ -12,11 +12,19 @@ _PAGE_SIZES = ["A4", "A3", "A2", "A1", "Letter", "Legal", "Tabloid", "Custom"]
 class DocumentPropertiesDialog(QDialog):
     def __init__(self, props: DocumentProperties, parent=None):
         super().__init__(parent, Qt.Window)
-        self.setWindowTitle("Document Properties")
+        self.setWindowTitle("Schematic Properties")
         self.setMinimumWidth(360)
 
         layout = QFormLayout(self)
         layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+
+        self._project = QLineEdit(props.project)
+        self._project.setToolTip(
+            "SLiCAP project name. Used by sl.initProject() in the generated "
+            "main.py that runs the instruction file. Empty → the schematic file "
+            "stem is used."
+        )
+        layout.addRow("Project:", self._project)
 
         self._title = QLineEdit(props.title)
         layout.addRow("Title:", self._title)
@@ -79,6 +87,7 @@ class DocumentPropertiesDialog(QDialog):
             self._width.setFocus()
 
     def apply(self, props: DocumentProperties) -> None:
+        props.project        = self._project.text().strip()
         props.title          = self._title.text().strip()
         props.author         = self._author.text().strip()
         props.created        = self._created.text().strip()

@@ -26,8 +26,10 @@ class ImageDialog(QDialog):
     """
 
     def __init__(self, file_path: str = "", display_width: int = 200,
-                 display_height: int = 200, parent=None):
+                 display_height: int = 200, style=None, parent=None):
         super().__init__(parent, Qt.Window)
+        from .config import default_style
+        self._style = style or default_style()
         self.setWindowTitle("Image")
         self._natural_w: int | None = None
         self._natural_h: int | None = None
@@ -48,14 +50,13 @@ class ImageDialog(QDialog):
         outer.addLayout(file_row)
 
         # ── scale row ─────────────────────────────────────────────────────────
-        from .config import SCALE_IMAGE
         # For an existing image, load natural size and back-calculate scale.
         if file_path:
             self._load_natural_size(file_path)
         if self._natural_w and self._natural_w > 0:
             init_scale = max(1, round(display_width / self._natural_w * 100))
         else:
-            init_scale = SCALE_IMAGE
+            init_scale = 50
 
         scale_row = QHBoxLayout()
         scale_row.addWidget(QLabel("Scale:"))
@@ -93,9 +94,8 @@ class ImageDialog(QDialog):
         if path:
             self._path_edit.setText(path)
             self._load_natural_size(path)
-            # Reset scale to preference default for newly chosen file.
-            from .config import SCALE_IMAGE
-            self._scale_spin.setValue(SCALE_IMAGE)
+            # Reset scale to the default for a newly chosen file.
+            self._scale_spin.setValue(50)
             self._update_size_labels()
 
     def _load_natural_size(self, path: str) -> None:

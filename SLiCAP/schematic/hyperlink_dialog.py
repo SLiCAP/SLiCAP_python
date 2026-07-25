@@ -9,15 +9,13 @@ from PySide6.QtCore import Qt
 class HyperlinkDialog(QDialog):
     """Dialog for placing or editing a hyperlink annotation."""
 
-    def __init__(self, url: str = "", label: str = "", parent=None):
+    def __init__(self, url: str = "", label: str = "", style=None, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Hyperlink")
         self.setMinimumWidth(380)
 
-        from .config import (
-            HYPERLINK_FONT_FAMILY, HYPERLINK_FONT_SIZE,
-            HYPERLINK_COLOR, HYPERLINK_UNDERLINE,
-        )
+        from .config import default_style
+        style = style or default_style()
 
         outer = QVBoxLayout()
         self.setLayout(outer)
@@ -33,12 +31,12 @@ class HyperlinkDialog(QDialog):
         outer.addLayout(form)
 
         # Preview line showing appearance.
-        preview_font = QFont(HYPERLINK_FONT_FAMILY, HYPERLINK_FONT_SIZE)
-        preview_font.setUnderline(HYPERLINK_UNDERLINE)
+        preview_font = QFont(style.HYPERLINK_FONT_FAMILY, style.HYPERLINK_FONT_SIZE)
+        preview_font.setUnderline(style.HYPERLINK_UNDERLINE)
         self._preview = QLabel(label or url or "preview")
         self._preview.setFont(preview_font)
         self._preview.setStyleSheet(
-            f"color: {HYPERLINK_COLOR.name()}; padding: 4px;"
+            f"color: {style.HYPERLINK_COLOR.name()}; padding: 4px;"
         )
         outer.addWidget(self._preview)
 

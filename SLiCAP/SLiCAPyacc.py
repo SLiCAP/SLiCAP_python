@@ -38,6 +38,7 @@ detectors and loop gain references
 """
 
 import os
+import pickle
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from copy import deepcopy
@@ -90,10 +91,26 @@ _USERCIRCUITS    = {}
 # User defined global parameters from library files
 _USERPARAMS      = {}
 
+# In-memory cache for compiled user libraries (None = not yet loaded from disk)
+_USER_LIB_CACHE  = None
+
+# Validity key of the system libraries compiled in this process (None until
+# they are compiled or loaded from the on-disk cache). See _libraryCacheKey().
+_SYSLIBS_KEY     = None
+
 def _initializeParser():
     global _CIRCUITNAMES, _CIRCUITS, _SLiCAPMODELS, _SLiCAPPARAMS
     global _SLiCAPCIRCUITS, _USERLIBS, _USERMODELS, _USERCIRCUITS, _USERPARAMS
-    
+    global _USER_LIB_CACHE
+
+    # The compiled system libraries only depend on the library files and a few
+    # settings, all captured in the validity key. When they are unchanged
+    # (e.g. a second initProject() call in the same process), resetting the
+    # user state suffices.
+    if _SYSLIBS_KEY is not None and _SYSLIBS_KEY == _libraryCacheKey():
+        _resetParser()
+        ini.SLiCAPPARAMS = _SLiCAPPARAMS
+        return
     _CIRCUITNAMES    = []
     _CIRCUITS        = {}
     _SLiCAPMODELS    = {}
@@ -103,10 +120,12 @@ def _initializeParser():
     _USERMODELS      = {}
     _USERCIRCUITS    = {}
     _USERPARAMS      = {}
+    _USER_LIB_CACHE  = None
     _makeLibraries()
-    
+
 def _resetParser():
-    global _CIRCUITNAMES, _CIRCUITS, _USERCIRCUITS, _USERPARAMS, _USERLIBS, _USERMODELS
+    global _CIRCUITNAMES, _CIRCUITS, _USERCIRCUITS, _USERPARAMS, _USERLIBS
+    global _USERMODELS, _USER_LIB_CACHE
 
     _CIRCUITNAMES    = []
     _CIRCUITS        = {}
@@ -114,6 +133,7 @@ def _resetParser():
     _USERMODELS      = {}
     _USERCIRCUITS    = {}
     _USERPARAMS      = {}
+    _USER_LIB_CACHE  = None
     
 def _compileSLiCAPLibraries():
     """
@@ -156,8 +176,25 @@ def _compileUSERLibrary(fileName):
     :return: None
     :rtype: NoneType
     """
-    global _USERCIRCUITS, _USERPARAMS, _USERMODELS
+    global _USERCIRCUITS, _USERPARAMS, _USERMODELS, _USER_LIB_CACHE
+
+    # Check per-file cache (keyed by version info + mtime + size)
+    key   = _userLibFileKey(fileName)
+    cache = _getUserLibCache()
+    entry = cache.get(fileName)
+    if entry is not None and entry.get('key') == key:
+        print("Loading library from cache: " + fileName + ".")
+        _USERCIRCUITS.update(entry['circuits'])
+        _USERMODELS.update(entry['models'])
+        _USERPARAMS.update(entry['params'])
+        return
+
+    # Cache miss — compile from source
     print("Compiling library: " + fileName + ".")
+    cirs_before   = set(_USERCIRCUITS.keys())
+    models_before = set(_USERMODELS.keys())
+    params_before = set(_USERPARAMS.keys())
+
     f = open(fileName, 'r')
     netlist = f.read()
     f.close()
@@ -171,6 +208,15 @@ def _compileUSERLibrary(fileName):
     # PASS 2 and 3
     for cir in _USERCIRCUITS.keys():
         _checkReferences(_USERCIRCUITS[cir])
+
+    # Store only the delta contributed by this file
+    cache[fileName] = {
+        'key'     : key,
+        'circuits': {k: v for k, v in _USERCIRCUITS.items() if k not in cirs_before},
+        'models'  : {k: v for k, v in _USERMODELS.items()   if k not in models_before},
+        'params'  : {k: v for k, v in _USERPARAMS.items()   if k not in params_before},
+    }
+    _saveUserLibCache()
 
 def _parseNetlist(netlist, name, cirType):
     """
@@ -1329,5 +1375,94 @@ def _checkCircuit(fileName):
         print("Found", _CIRCUITS['main'].errors, "error(s).")
     return _CIRCUITS['main']
 
+def _libraryCacheKey():
+    """Validity key covering everything the compiled system libraries depend
+    on: the SLiCAP and sympy versions, the library files themselves, and the
+    project-configurable symbols used during expansion."""
+    key = {'slicap'    : ini.install_version,
+           'sympy'     : sp.__version__,
+           'libpath'   : ini.main_lib_path,
+           'laplace'   : str(ini.laplace),
+           'frequency' : str(ini.frequency)}
+    for fi in _SLiCAPLIBS:
+        st = os.stat(ini.main_lib_path + fi)
+        key[fi] = (st.st_mtime, st.st_size)
+    return key
+
+def _libraryCachePath():
+    # Next to the main configuration file (~/SLiCAP/), following its
+    # location convention.
+    return os.path.join(os.path.dirname(ini.main_config_path()),
+                        "SLiCAP_libcache.pkl")
+
+def _loadLibraryCache(key):
+    """Loads the compiled system libraries from the on-disk cache. Returns
+    True on success, False when the cache is absent, stale, or unreadable."""
+    global _SLiCAPCIRCUITS, _SLiCAPMODELS, _SLiCAPPARAMS
+    try:
+        with open(_libraryCachePath(), 'rb') as f:
+            cached = pickle.load(f)
+        if cached['key'] != key:
+            return False
+        _SLiCAPCIRCUITS, _SLiCAPMODELS, _SLiCAPPARAMS = cached['libs']
+    except Exception:
+        return False
+    ini.SLiCAPPARAMS = _SLiCAPPARAMS
+    return True
+
+def _saveLibraryCache(key):
+    """Writes the compiled system libraries to the on-disk cache. Atomic
+    (write + rename) so concurrent script runs cannot corrupt it; failure is
+    harmless — the cache is an optimisation only."""
+    try:
+        path = _libraryCachePath()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp  = path + '.tmp.' + str(os.getpid())
+        with open(tmp, 'wb') as f:
+            pickle.dump({'key' : key,
+                         'libs': (_SLiCAPCIRCUITS, _SLiCAPMODELS,
+                                  _SLiCAPPARAMS)}, f)
+        os.replace(tmp, path)
+    except Exception:
+        pass
+
 def _makeLibraries():
-    _compileSLiCAPLibraries()
+    global _SYSLIBS_KEY
+    key = _libraryCacheKey()
+    if not _loadLibraryCache(key):
+        _compileSLiCAPLibraries()
+        _saveLibraryCache(key)
+    _SYSLIBS_KEY = key
+
+# ── user library cache ────────────────────────────────────────────────────────
+
+def _userLibCachePath():
+    return os.path.join(ini.cir_path, 'userlibcache.pkl')
+
+def _userLibFileKey(fileName):
+    """Per-file validity key: versions + file mtime and size."""
+    st = os.stat(fileName)
+    return (ini.install_version, sp.__version__, st.st_mtime, st.st_size)
+
+def _getUserLibCache():
+    """Return the in-memory cache, loading from disk on first call per session."""
+    global _USER_LIB_CACHE
+    if _USER_LIB_CACHE is None:
+        try:
+            with open(_userLibCachePath(), 'rb') as f:
+                data = pickle.load(f)
+            _USER_LIB_CACHE = data if isinstance(data, dict) else {}
+        except Exception:
+            _USER_LIB_CACHE = {}
+    return _USER_LIB_CACHE
+
+def _saveUserLibCache():
+    """Atomically write the in-memory user lib cache to disk."""
+    try:
+        path = _userLibCachePath()
+        tmp  = path + '.tmp.' + str(os.getpid())
+        with open(tmp, 'wb') as f:
+            pickle.dump(_USER_LIB_CACHE, f)
+        os.replace(tmp, path)
+    except Exception:
+        pass

@@ -47,7 +47,7 @@ Borders and document properties
 ===============================
 
 * :menuselection:`Place --> Border` (:kbd:`B`) adds a drawing border/frame.
-* :menuselection:`File --> Document Properties…` sets the title, author and page
+* :menuselection:`File --> Schematic properties…` sets the title, author and page
   size, which are used when exporting and printing.
 
 Renaming components

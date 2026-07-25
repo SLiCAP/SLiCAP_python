@@ -59,7 +59,8 @@ Cdg2 d2 g2 {cdg}
 
 * Voltage feedback operational amplifier
 .subckt OV inP inN out ref av=1M zo=0 gd=0 gc=0 cd=0 cc=0 ; default values
-E out ref inP inN EZ value={av} zo={zo}
+E int ref inP inN E value={av} 
+H out int H H value={zo}
 Gd inP inN inP inN g value={gd}
 Gc1 inP ref inP ref g value={gc/2}
 Gc2 inN ref inN ref g value={gc/2}
@@ -70,9 +71,9 @@ Cc2 inN ref {cc/2}
 
 * Current feedback operational amplifier
 .subckt OC inP inN out ref gm=20m zt=50k gpn=0 gp=0 cpn=0 cp=0 zo=0; default values
-* H out ref ref  1 HZ value={zt} zo={zo} ; version < 4
-H1 out ref V1 HZ value={zt} zo={zo}    ; update version 4
-V1 ref 1 V value=0                     ; update version 4
+H1 out ref V1 H value={zt} 
+H2 int out H2 H value={zo}
+V1 ref 1 V value=0
 Gm 1 inN inP inN g value={gm}
 Gp inP ref inP ref g value={gp}
 Gpn inP inN inP inP g value={gpn}

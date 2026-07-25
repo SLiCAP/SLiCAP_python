@@ -888,7 +888,27 @@ def sub2rm(textext):
         pos = m.end()
     out += textext[pos:]
     return out
-        
+
+
+def symbolLatex(name):
+    """
+    Renders an identifier (reference designator, detector name, ...) as a LaTeX
+    math symbol name with IEEE upright subscripts (see :func:`sub2rm`).
+
+    The name is turned into a sympy ``Symbol`` and typeset with sympy's ``latex``;
+    it is NOT parsed as an expression, so a name such as 'I1P' stays 'I1P' instead
+    of being misread as I*peta ('I1e15') by the engineering-notation number
+    formatter.
+
+    :param name: identifier string (refdes, detector name, ...)
+    :type name: str
+
+    :return: LaTeX math string
+    :rtype: str
+    """
+    return sub2rm(sp.latex(sp.Symbol(str(name))))
+
+
 # Non-public functions for creating table snippets
 
 def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label='', color="myyellow"):

@@ -5,7 +5,7 @@
 ngspice.py: SLiCAP scripts for the HTML help file
 """
 import SLiCAP as sl
-
+#sl.initProject("ngspice")
 # Create SPICE netlist
 fileName = "VampQspice"
 netlist  = sl.makeCircuit("kicad/" + fileName + "/" + fileName + ".kicad_sch", 

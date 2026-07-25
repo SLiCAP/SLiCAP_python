@@ -42,8 +42,8 @@ Other packages
 .. admonition:: Important
     :class: note
 
-    SLiCAP works well without having additional packages installed. Functions that search for installed apps are:
-    
+    SLiCAP works well without having additional packages installed. Functions that use these external programs are:
+
     - SLiCAP netlist generation with `makeCircuit() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__
     - All functions from the `NGspice module <../reference/SLiCAPngspice.html>`__
     
@@ -85,50 +85,33 @@ SLiCAP comes with a KiCAD SPICE symbol library for all standard NGspice devices 
 Completing and testing the installation
 =======================================
 
-After installing or updating SLiCAP, you can use it as any other Python package. On its first import, however, SLiCAP searches for installed software for schematic capture and NGspicen. It stores install information information in a SLiCAP.ini file in the **user home directory**: ``~/SLiCAP.ini``. You can edit this file manually or delete it. If deleted or corrupted, SLiCAP generates an **updated version** on the next import.
+After installing or updating SLiCAP, you can use it as any other Python package. On its first import, SLiCAP creates a main configuration file in the **user home directory**: ``~/SLiCAP.ini``. Commands for programs found on the search PATH or in their default MS-Windows install locations (e.g. ``C:\Spice64\bin`` for NGspice) are filled in automatically; SLiCAP does **not** search the disk and does not access the internet.
 
-.. admonition:: First import under MSWindows
-
-    .. code-block:: python
-
-        >>> import SLiCAP as sl
-        
-        Updating main configuration file; this may take a while.
-
-        Do you have NGspice installed? [y/n] >>> y
-
-        Searching installed software, this will time-out after 120 seconds!
-
-        KiCad command set as: C:\Program Files\KiCad\kicad-cli.exe
-        LTSpice command set as: C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe
-        gnetlist command set as: C:\Program Files (x86)\gEDA\gnetlist.exe
-        NGspice command set as: C:\Users\<USER>\ngspice\Spice64\ngspice.exe
-        SLiCAP found all installed apps!
-        SLiCAP Version matches with the latest release of SLiCAP on github.
-        Generating project configuration file: SLiCAP.ini.
-
-.. admonition:: First import under Linux or MacOS
+.. admonition:: First import
 
     .. code-block:: python
 
         >>> import SLiCAP as sl
-        
+
         Generating main configuration file: ~/SLiCAP.ini.
-
-        /usr/bin/kicad-cli
-        /usr/bin/lepton-cli
-        /usr/bin/ngspice
-        SLiCAP Version matches with the latest release of SLiCAP on github.
         Generating project configuration file: SLiCAP.ini.
 
 Main configuration
 ==================
 
-Updating of the main configuration file ``~/SLiCAP.ini`` is recommended if:
+Programs that were not detected automatically (under MS-Windows most
+installers do not extend the search PATH) are configured in one of two ways:
 
-#. One or more apps listed above are installed or removed
-#. During installation under MS-Windows, searching to the apps listed above timed out
-    
+#. In the SLiCAP GUI (started with the ``slicap`` command):
+   :menuselection:`File --> Configure SLiCAP…`. Enter or browse to the
+   program paths; *Detect* fills in programs found on the PATH or in their
+   default install locations, and *Test* verifies each entry.
+#. Manually, by editing the **[commands]** section of ``~/SLiCAP.ini``
+   (see the examples below).
+
+Reconfiguration is only needed when one of these programs is installed,
+removed, or moved.
+
 Below an **example** of the command section for user "USR" under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:\\Users\\USR\\SLiCAP.ini
 
 .. code-block:: python
@@ -169,8 +152,8 @@ Below an example of showing some main configuration settings under Linux:
     
     VERSION
     -------
-    ini.install_version        = 4.0
-    ini.latest_version         = 4.0
+    ini.install_version        = 6.0.0
+    ini.latest_version         = 6.0.0
     
     >>> sl.ini.dump('commands')
     
@@ -258,8 +241,8 @@ The python script below (user=USR, python environment=ENV, os=LINUX) generates/u
     
     VERSION
     -------
-    ini.install_version        = 4.0
-    ini.latest_version         = 4.0
+    ini.install_version        = 6.0.0
+    ini.latest_version         = 6.0.0
 
     INSTALL
     -------

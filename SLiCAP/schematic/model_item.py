@@ -1,12 +1,8 @@
-import weakref
-
 from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QFont, QFontMetricsF, QPen
 
-from .config import snap, COMP_LABEL_FONT_SIZE, COMP_REFDES_FONT_FAMILY
-
-_live_model_items: weakref.WeakSet = weakref.WeakSet()
+from .config import snap, style_of
 
 _BORDER_COLOR = QColor(60, 100, 140)
 _LINE_SPACING = 1.3
@@ -21,14 +17,20 @@ class ModelItem(QGraphicsItem):
 
     Renders as a LaTeX SVG block (header + one parameter per line) when
     pdflatex/dvisvgm are available; falls back to plain multi-line text.
+    Netlists its .model line ALWAYS, also when "Show on schematic" is off
+    (hidden: in the scene, not drawn/exported).
+
+    The on-canvas size is DERIVED: natural SVG size × the schematic's
+    SCALE_PARAMETER_TABLE preference (no per-item scale).
+
     Double-click opens the model definition dialog to edit.
     """
 
     def __init__(self, model_name: str, model_type: str, simulator: str,
                  params: list,
                  preamble_path: str = "",
-                 display_width: int = 200, display_height: int = 80,
-                 pos: QPointF = QPointF(0, 0)):
+                 pos: QPointF = QPointF(0, 0),
+                 show: bool = True):
         super().__init__()
         self.model_name:     str          = model_name
         self.model_type:     str          = model_type
@@ -36,31 +38,37 @@ class ModelItem(QGraphicsItem):
         self.params:         list         = list(params)
         self.preamble_path:  str          = preamble_path
         self._svg_bytes:     bytes | None = None
-        self.display_width:  int          = display_width
-        self.display_height: int          = display_height
+        self.display_width:  int          = 200   # derived in _load_renderer
+        self.display_height: int          = 80
+        # "Show on schematic" — same semantics as the parameter table.
+        self.show_on_schematic = bool(show)
+        self.setVisible(self.show_on_schematic)
         self.setPos(pos)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self._renderer = None
-        _live_model_items.add(self)
         self._load_renderer()
 
-    def rescale(self, ratio: float) -> None:
-        self.prepareGeometryChange()
-        self.display_width  = max(1, round(self.display_width  * ratio))
-        self.display_height = max(1, round(self.display_height * ratio))
-        self.update()
+    def set_show(self, show: bool) -> None:
+        self.show_on_schematic = bool(show)
+        self.setVisible(self.show_on_schematic)
 
     def _load_renderer(self) -> None:
         self._renderer = None
-        from .latex_label import LATEX_AVAILABLE
-        if LATEX_AVAILABLE:
-            from .latex_label import render_latex_raw
-            svg, _err = render_latex_raw(
+        from .latex_label import LATEX_INSTALLED
+        # Fresh rendering needs the tools AND the owning schematic's preference;
+        # before the item is in a scene only stored bytes are used (the scene-
+        # entry hook re-runs this with the real style).
+        if (self.scene() is not None and LATEX_INSTALLED
+                and style_of(self).LATEX_RENDERING_ENABLED):
+            from .latex_label import cache_dir_of, render_latex_raw
+            svg, err = render_latex_raw(
                 self.build_latex(self.model_name, self.model_type, self.params),
                 self.preamble_path,
+                cache_dir=cache_dir_of(self),
             )
+            self._render_error = err or ""
             if svg:
                 self._svg_bytes = svg  # keep stored bytes up to date
         if self._svg_bytes:
@@ -69,6 +77,22 @@ class ModelItem(QGraphicsItem):
             r = QSvgRenderer(QByteArray(self._svg_bytes))
             if r.isValid():
                 self._renderer = r
+                self._derive_size(r)
+        # Text fallback caused by a LaTeX error: say WHY in the tooltip.
+        if self._renderer is None and getattr(self, "_render_error", ""):
+            self.setToolTip("LaTeX rendering failed:\n" + self._render_error)
+        else:
+            self.setToolTip("")
+
+    def _derive_size(self, renderer) -> None:
+        """Display size = natural size × the schematic's table-scale preference."""
+        from .parameter_item import svg_scene_size
+        style = style_of(self)
+        natural = svg_scene_size(renderer, style)
+        if natural is not None:
+            pct = style.SCALE_PARAMETER_TABLE / 100.0
+            self.display_width  = max(1, round(natural[0] * pct))
+            self.display_height = max(1, round(natural[1] * pct))
 
     # ── geometry ──────────────────────────────────────────────────────────────
 
@@ -82,12 +106,18 @@ class ModelItem(QGraphicsItem):
         path.addRect(self.boundingRect())
         return path
 
-    def _natural_text_rect(self) -> QRectF:
-        hdr_font = QFont(COMP_REFDES_FONT_FAMILY)
+    def _fonts(self) -> tuple[QFont, QFont]:
+        """(header, body) fonts from the owning schematic's style."""
+        style = style_of(self)
+        hdr_font = QFont(style.COMP_REFDES_FONT_FAMILY)
         hdr_font.setBold(True)
-        hdr_font.setPointSizeF(COMP_LABEL_FONT_SIZE)
-        body_font = QFont(COMP_REFDES_FONT_FAMILY)
-        body_font.setPointSizeF(COMP_LABEL_FONT_SIZE)
+        hdr_font.setPointSizeF(style.COMP_LABEL_FONT_SIZE)
+        body_font = QFont(style.COMP_REFDES_FONT_FAMILY)
+        body_font.setPointSizeF(style.COMP_LABEL_FONT_SIZE)
+        return hdr_font, body_font
+
+    def _natural_text_rect(self) -> QRectF:
+        hdr_font, body_font = self._fonts()
 
         fm_h = QFontMetricsF(hdr_font)
         fm_b = QFontMetricsF(body_font)
@@ -137,11 +167,7 @@ class ModelItem(QGraphicsItem):
     def _paint_text_fallback(self, painter: QPainter, r: QRectF) -> None:
         lines = self._text_display_lines()
 
-        hdr_font = QFont(COMP_REFDES_FONT_FAMILY)
-        hdr_font.setBold(True)
-        hdr_font.setPointSizeF(COMP_LABEL_FONT_SIZE)
-        body_font = QFont(COMP_REFDES_FONT_FAMILY)
-        body_font.setPointSizeF(COMP_LABEL_FONT_SIZE)
+        hdr_font, body_font = self._fonts()
 
         fm_h   = QFontMetricsF(hdr_font)
         fm_b   = QFontMetricsF(body_font)
@@ -160,6 +186,10 @@ class ModelItem(QGraphicsItem):
             y += line_h
 
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
+            self.prepareGeometryChange()
+            self._load_renderer()
+            self.update()
         if change == QGraphicsItem.ItemPositionChange:
             return snap(value)
         return super().itemChange(change, value)

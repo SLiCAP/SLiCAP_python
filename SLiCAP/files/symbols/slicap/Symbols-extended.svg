@@ -231,7 +231,7 @@
     
     <g id="OM" 
        data-prefix="O" 
-       data-nodes="outp outn inp inn"
+       data-nodes="inp inn outp outn"
        data-model="?|1" 
        data-params=""
        data-description="Operational amplifier (requires .model definition)"
@@ -255,7 +255,7 @@
     
     <g id="OV" 
        data-prefix="O" 
-       data-nodes="outp outn inp inn"
+       data-nodes="inp inn outp outn"
        data-model="OV|0" 
        data-params="av||0|0; gd||0|0; gc||0|0; cd||0|0; cc||0|0; zo||0|0"
        data-description="Voltage feedback opamp"
@@ -279,7 +279,7 @@
     
     <g id="OC" 
        data-prefix="O" 
-       data-nodes="outp outn inp inn"
+       data-nodes="inp inn outp outn"
        data-model="OC|0" 
        data-params="cp||0|0; gp||0|0; cpn||0|0; gnn||0|0; gm||0|0; zt||0|0; zo||0|0"
        data-description="Current feedback opamp"

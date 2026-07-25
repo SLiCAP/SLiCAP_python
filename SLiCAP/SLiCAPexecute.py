@@ -1207,7 +1207,7 @@ def _makeInstrParDict(instr):
         else:
             for key in list(instr.parDefs.keys()):
                 if key not in list(instr.stepDict.keys()):
-                    parDefs[key] = instr.circuit.parDefs[key]
+                    parDefs[key] = instr.parDefs[key]
         instr.parDefs = parDefs
     elif not instr.ignoreCircuitParams:
         instr.parDefs = deepcopy(instr.circuit.parDefs)
@@ -1535,11 +1535,12 @@ def _doPyNumer(instr):
         instr.numer.append(num)
     return instr
 
-def _doPyLaplace(instr):
+def _doPyLaplace(instr, normalize=False):
     instr = _doPyNumer(instr)
     instr = _doPyDenom(instr)
     laplaceRational = instr.numer[-1]/instr.denom[-1]
-    laplaceRational = normalizeRational(laplaceRational, ini.laplace)
+    if normalize:
+        laplaceRational = normalizeRational(laplaceRational, ini.laplace)
     instr.laplace.append(laplaceRational)
     instr.numer[-1], instr.denom[-1] = laplaceRational.as_numer_denom()
     return instr

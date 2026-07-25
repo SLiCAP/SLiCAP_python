@@ -8,7 +8,31 @@ Python API:       from SLiCAP.schematic import make_schematic
 from pathlib import Path
 
 
-def make_schematic(sch_path, cir_title=None):
+def _outputs_current(sch_path: Path) -> "Path | None":
+    """Return the .cir path when the netlist, SVG and PDF are all newer than
+    the schematic source AND its style sidecar — i.e. regeneration can be
+    skipped (Anton, 2026-07-16: images stay in sync, but an unchanged
+    schematic is not re-exported on every dialog open). Returns None when
+    anything is missing or stale."""
+    from . import project
+    project.set_current(sch_path)
+    cir = project.subdir("cir") / sch_path.with_suffix(".cir").name
+    svg = project.subdir("img") / sch_path.with_suffix(".svg").name
+    pdf = project.subdir("img") / sch_path.with_suffix(".pdf").name
+    try:
+        src = sch_path.stat().st_mtime
+        sidecar = project.ini_path_for(sch_path)
+        if sidecar and Path(sidecar).is_file():
+            src = max(src, Path(sidecar).stat().st_mtime)
+    except OSError:
+        return None
+    for out in (cir, svg, pdf):
+        if not out.exists() or out.stat().st_mtime < src:
+            return None
+    return cir
+
+
+def make_schematic(sch_path, cir_title=None, force=False):
     """Export a .slicap_sch schematic to netlist, SVG and PDF.
 
     Runs headlessly (no GUI window).  Call this before ``sl.makeCircuit()``
@@ -31,11 +55,21 @@ def make_schematic(sch_path, cir_title=None):
 
     sch_path = Path(sch_path).resolve()
 
+    # Skip regeneration when the outputs are already current (biggest win:
+    # no subprocess at all when the schematic hasn't changed).
+    if not force:
+        current = _outputs_current(sch_path)
+        if current is not None:
+            return current
+
     title_args = ["--title", cir_title] if cir_title else []
 
-    # ── netlist (required) ────────────────────────────────────────────────────
+    # ── netlist + SVG + PDF in ONE subprocess ─────────────────────────────────
+    # The cold Python+Qt import (~1.1 s) and the scene load are paid once
+    # here instead of three times (Anton, 2026-07-16). Netlist failure is
+    # fatal; SVG/PDF failures are reported but non-fatal.
     result = subprocess.run(
-        [sys.executable, "-m", "SLiCAP.schematic.cli", "netlist",
+        [sys.executable, "-m", "SLiCAP.schematic.cli", "export",
          str(sch_path)] + title_args,
         capture_output=True, text=True,
     )
@@ -43,23 +77,8 @@ def make_schematic(sch_path, cir_title=None):
         print(result.stdout, end="")
     if result.returncode != 0:
         raise RuntimeError(
-            f"Schematic-to-netlist conversion failed:\n"
-            f"{result.stderr or result.stdout}"
+            f"Schematic export failed:\n{result.stderr or result.stdout}"
         )
-
-    # ── SVG (non-fatal) ───────────────────────────────────────────────────────
-    r = subprocess.run(
-        [sys.executable, "-m", "SLiCAP.schematic.cli", "svg", str(sch_path)],
-        capture_output=True, text=True,
-    )
-    if r.stdout:
-        print(r.stdout, end="")
-
-    # ── PDF (non-fatal) ───────────────────────────────────────────────────────
-    subprocess.run(
-        [sys.executable, "-m", "SLiCAP.schematic.cli", "pdf", str(sch_path)],
-        capture_output=True, text=True,
-    )
 
     # Derive the .cir path without creating any Qt objects.
     from . import project

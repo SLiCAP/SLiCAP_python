@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsItem
 from PySide6.QtCore import Qt, QPointF
 
-from .config import COMMAND_COLOR, COMMAND_FONT, snap
+from .config import snap, style_of, default_style
 
 
 class CommandItem(QGraphicsTextItem):
@@ -14,14 +14,19 @@ class CommandItem(QGraphicsTextItem):
     def __init__(self, text: str = ".", pos: QPointF = QPointF(0, 0)):
         super().__init__(text)
         self.setPos(pos)
-        self.setFont(COMMAND_FONT)
-        self.setDefaultTextColor(COMMAND_COLOR)
+        self._apply_style(default_style())
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setTextInteractionFlags(Qt.NoTextInteraction)
 
+    def _apply_style(self, style) -> None:
+        self.setFont(style.COMMAND_FONT)
+        self.setDefaultTextColor(style.COMMAND_COLOR)
+
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
+            self._apply_style(style_of(self))
         if change == QGraphicsItem.ItemPositionChange:
             return snap(value)
         return super().itemChange(change, value)

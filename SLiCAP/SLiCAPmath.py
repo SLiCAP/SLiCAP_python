@@ -4,6 +4,7 @@
 SLiCAP module with math functions.
 """
 import sys
+import subprocess
 import sympy as sp
 import numpy as np
 
@@ -31,10 +32,14 @@ def det(M, method="ME"):
     :param method: Method used:
 
                    - ME: SLiCAP Minor expansion
-                   - BS: SLiCAP Bareis fraction-free expansion
-                   - FC: SLiCAP Frequency Constants method
+                   - MECPP: Minor expansion by the external C++/GiNaC engine
+                     'slicap_det' (see SLiCAP_GiNAC.md). The command is
+                     configured in the main configuration file [commands]; if it is not
+                     available, det() falls back to 'ME' (same result,
+                     computed in Python).
+                   - BS: deprecated (removed); redirected to 'ME'
                    - LU: Sympy built-in LU method
-                   - bareis: Sympy built-in Bareis method
+                   - bareiss: Sympy built-in Bareis method
 
     :return: Determinant of 'M'
     :rtype:  sympy.Expr
@@ -45,7 +50,17 @@ def det(M, method="ME"):
     if M.shape[0] != M.shape[1]:
         print("ERROR: Cannot determine determinant of non-square matrix.")
         D = None
-    if (method == "ME" or method == "BS") and ini.reduce_matrix and len(M.atoms(sp.Symbol)) > 0:
+    if method == "BS":
+        if not _mecpp_state["warned_bs"]:
+            print("Warning: det(method='BS') is deprecated; using 'ME' instead.")
+            _mecpp_state["warned_bs"] = True
+        method = "ME"
+    if method == "MECPP":
+        D = _detMECPP(M)
+        if D is not None:
+            return D
+        method = "ME"  # engine unavailable or failed; warning already printed
+    if method == "ME" and ini.reduce_matrix and len(M.atoms(sp.Symbol)) > 0:
         M, factor = _eliminateVars(M, method)
     dim = M.shape[0]
     if M.is_zero_matrix:
@@ -56,8 +71,6 @@ def det(M, method="ME"):
         D = sp.expand(M[0, 0]*M[1, 1]-M[1, 0]*M[0, 1]) * factor
     elif method == "ME":
         D = _detME(M) * factor
-    elif method == "BS":
-        D = _detBS(M) * factor
     elif method == "LU":
         D = M.det(method="LU")
     elif method == "bareiss":
@@ -145,29 +158,83 @@ def _detME(M):
                         D += M[row, 0] * minor
     return sp.expand(D)
 
-def _detBS(M):
-    newM = M.copy()
-    sign = 1
-    dim = newM.shape[0]
-    for k in range(dim-1):
-        if newM[k, k].is_zero:
-            for m in range(k+1, dim-1):
-                if newM[m, k] != 0:
-                    row_m = newM.row(m)
-                    newM[m, :] = newM.row(k)
-                    newM[k, :] = row_m
-                    sign = -sign
-                    break
-                if m == dim-1:
-                    return sp.S(0)
-        for i in range(k+1, dim):
-            for j in range(k+1, dim):
-                newM[i, j] = newM[k, k] * newM[i, j] - newM[i, k] * newM[k, j]
-                if k:
-                    newM[i, j] = sp.factor(newM[i, j] / newM[k-1, k-1])
-            newM[i, k] = 0
-    D = sign * newM[dim-1, dim-1]
-    return sp.simplify(D)
+# State for the external C++/GiNaC determinant engine (method 'MECPP') and
+# one-time deprecation warnings; see SLiCAP_GiNAC.md.
+_mecpp_state = {"checked": False, "ok": False,
+                "warned_missing": False, "warned_bs": False}
+
+def _detMECPP(M):
+    """
+    Computes the determinant of 'M' with the external C++/GiNaC engine
+    'slicap_det' (source: ginac_det/, see SLiCAP_GiNAC.md), using SLiCAP's
+    own ME algorithm compiled with exact rational arithmetic.
+
+    Returns the determinant as a sympy expression, or None when the engine
+    is not configured, incompatible, or fails — det() then falls back to
+    the Python 'ME' implementation, which remains the reference.
+
+    :param M: Square sympy matrix with rational numeric entries
+              (float2rational must have been applied).
+    :type M: sympy.Matrix
+    """
+    cmd = ini.slicap_det
+    if cmd == "":
+        if not _mecpp_state["warned_missing"]:
+            print("Warning: no 'slicap_det' command configured in "
+                  "the main configuration file [commands]; det(method='MECPP') falls "
+                  "back to 'ME'.")
+            _mecpp_state["warned_missing"] = True
+        return None
+    if not _mecpp_state["checked"]:
+        _mecpp_state["checked"] = True
+        try:
+            r = subprocess.run([cmd, "--version"], capture_output=True,
+                               text=True)
+            _mecpp_state["ok"] = (r.returncode == 0 and
+                                  r.stdout.startswith("slicap_det protocol 1"))
+        except Exception:
+            _mecpp_state["ok"] = False
+        if not _mecpp_state["ok"]:
+            print("Warning: '{}' is not a compatible slicap_det "
+                  "(protocol 1); det(method='MECPP') falls back to "
+                  "'ME'.".format(cmd))
+    if not _mecpp_state["ok"]:
+        return None
+    # The wire format carries only alias names (sym0, sym1, ...): sympy
+    # symbol names may be unlexable for GiNaC (e.g. the leading underscore
+    # of _LGREF_1 in loop-gain analyses), and mapping the aliases back to
+    # the ORIGINAL symbol objects preserves assumptions exactly.
+    syms = sorted(M.free_symbols, key=lambda x: x.name)
+    fwd = {s: sp.Symbol("sym{}".format(k)) for k, s in enumerate(syms)}
+    rev = {a: s for s, a in fwd.items()}
+    M = M.xreplace(fwd)
+    dim = M.shape[0]
+    lines = [str(dim)]
+    for i in range(dim):
+        for j in range(dim):
+            lines.append(str(M[i, j]).replace("**", "^"))
+    args = [cmd, "--method", "ME"]
+    if not ini.reduce_matrix:
+        args.append("--no-reduce")
+    try:
+        r = subprocess.run(args, input="\n".join(lines) + "\n",
+                           capture_output=True, text=True)
+    except Exception as e:
+        print("Warning: slicap_det failed ({}); falling back to 'ME'.".format(e))
+        return None
+    if r.returncode != 0:
+        msg = r.stderr.strip().splitlines()
+        msg = msg[0] if msg else "no message"
+        print("Warning: slicap_det returned an error ({}); falling back "
+              "to 'ME'.".format(msg))
+        return None
+    try:
+        D = sp.sympify(r.stdout.strip().replace("^", "**"),
+                       locals={"Pi": sp.pi, "E": sp.E, "I": sp.I})
+    except Exception:
+        print("Warning: could not parse slicap_det output; falling back to 'ME'.")
+        return None
+    return D.xreplace({a: rev[a] for a in D.free_symbols if a in rev})
 
 def _Roots(expr, var):
     if isinstance(expr, sp.Basic) and isinstance(var, sp.Symbol):
@@ -316,11 +383,17 @@ def normalizeRational(rational, var=ini.laplace, method='lowest'):
 
     :type method: str
 
-    :return:  Normalized rational function of the variable.
+    :return:  Normalized rational function of the variable; input that is
+              not a rational function of 'var' (matrices, non-rational
+              expressions) is returned unchanged — normalization is a
+              presentation step and must pass anything else through.
     :rtype: sympy.Expr
     """
-    gain, numCoeffs, denCoeffs = coeffsTransfer(
-        rational, var=var, method=method)
+    try:
+        gain, numCoeffs, denCoeffs = coeffsTransfer(
+            rational, var=var, method=method)
+    except (AttributeError, sp.PolynomialError, TypeError):
+        return rational
     if len(numCoeffs) and len(denCoeffs):
         numCoeffs = list(reversed(numCoeffs))
         denCoeffs = list(reversed(denCoeffs))
@@ -640,18 +713,17 @@ def fullSubs(valExpr, parDefs):
         params = valExpr.atoms(sp.Symbol)
         for param in params:
             if param in parDefs.keys():
-                if type(parDefs[param]) == isinstance(valExpr, sp.Basic):
-                    substDict[param] = float2rational(parDefs[param])
+                # Every value takes the string round-trip below (a former
+                # sympy-value fast path compared a type against a bool and
+                # was dead; removed 2026-07-13, behavior unchanged).
+                symval = sp.sympify(str(parDefs[param]), rational=True)
+                if isinstance(symval, sp.Rational) and not isinstance(symval, sp.Integer):
+                    # Non-integer rational (e.g. Rational(7293,10000)): use
+                    # Float to prevent rational-power lockup in sp.N().
+                    # Integers, pi, E, sqrt(2) are all left untouched.
+                    substDict[param] = sp.Float(symval, 15)
                 else:
-                    # In case of floats, integers or strings:
-                    symval = sp.sympify(str(parDefs[param]), rational=True)
-                    if isinstance(symval, sp.Rational) and not isinstance(symval, sp.Integer):
-                        # Non-integer rational (e.g. Rational(7293,10000)): use
-                        # Float to prevent rational-power lockup in sp.N().
-                        # Integers, pi, E, sqrt(2) are all left untouched.
-                        substDict[param] = sp.Float(symval, 15)
-                    else:
-                        substDict[param] = symval
+                    substDict[param] = symval
         # perform the substitution
         newvalExpr = valExpr
         valExpr = newvalExpr.xreplace(substDict)
@@ -803,7 +875,8 @@ def phaseMargin(LaplaceExpr):
     if type(LaplaceExpr) != list:
         LaplaceExpr = [LaplaceExpr]
     for expr in LaplaceExpr:
-        expr = normalizeRational(sp.N(expr))
+        #expr = normalizeRational(sp.N(expr))
+        expr = sp.N(expr)
         if ini.hz == True:
             data = expr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
         else:
@@ -827,7 +900,7 @@ def phaseMargin(LaplaceExpr):
         freqs = freqs[0]
     return (mrgns, freqs)
 
-def _makeNumData(yFunc, xVar, x, normalize=True):
+def _makeNumData(yFunc, xVar, x, normalize=False):
     """
     Returns a list of values y, where y[i] = yFunc(x[i]).
 
@@ -861,6 +934,76 @@ def _makeNumData(yFunc, xVar, x, normalize=True):
         y = [sp.N(yFunc) for i in range(len(x))]
     return y
 
+def _rational_coeffs_numeric(expr, var):
+    """
+    Returns (numCoeffs, denCoeffs) as complex lists for a univariate rational
+    function of 'var' with numeric coefficients, both scaled by their common
+    largest coefficient magnitude so the float conversion cannot overflow
+    (the scale cancels in num/den). Returns None when 'expr' is not such a
+    function; callers then use their symbolic path.
+
+    :param expr: Function of 'var'.
+    :type expr: sympy.Expr
+
+    :param var: Variable of 'expr'
+    :type var: sympy.Symbol
+
+    :return: (numCoeffs, denCoeffs) in decreasing order of the exponent of
+             'var', or None.
+    :rtype: tuple, NoneType
+    """
+    if not isinstance(expr, sp.Basic):
+        return None
+    if getattr(expr, "is_Matrix", False):
+        return None
+    if expr.free_symbols - {var}:
+        return None
+    num, den = expr.as_numer_denom()
+    try:
+        npoly = sp.Poly(num, var)
+        dpoly = sp.Poly(den, var)
+    except sp.PolynomialError:
+        return None
+    ncoeffs = npoly.all_coeffs()
+    dcoeffs = dpoly.all_coeffs()
+    try:
+        scale = max(sp.Abs(c) for c in ncoeffs + dcoeffs)
+        if scale == 0:
+            return [0.0], [1.0]
+        ncoeffs = [complex(c / scale) for c in ncoeffs]
+        dcoeffs = [complex(c / scale) for c in dcoeffs]
+    except (TypeError, ValueError):
+        return None
+    return ncoeffs, dcoeffs
+
+def _freq_response(LaplaceExpr, f):
+    """
+    Numeric complex frequency response of 'LaplaceExpr': the Laplace
+    variable is replaced with 2*pi*1j*f (ini.hz == True) or 1j*f
+    (ini.hz == False) and the rational function is evaluated with numpy
+    on its scaled float coefficients — no symbolic evaluation.
+
+    Returns None when 'LaplaceExpr' is not a univariate rational function
+    of the Laplace variable with numeric coefficients; callers then fall
+    back to their symbolic path.
+
+    :param LaplaceExpr: Univariate function of the Laplace variable.
+    :type LaplaceExpr: sympy.Expr
+
+    :param f: Frequency value, list or array of frequency values.
+
+    :return: Complex response array (shape of f), or None.
+    :rtype: numpy.ndarray, NoneType
+    """
+    coeffs = _rational_coeffs_numeric(LaplaceExpr, ini.laplace)
+    if coeffs is None:
+        return None
+    ncoeffs, dcoeffs = coeffs
+    w = np.asarray(f, dtype=float)
+    jw = 2j * np.pi * w if ini.hz else 1j * w
+    with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+        return np.polyval(ncoeffs, jw) / np.polyval(dcoeffs, jw)
+
 def _magFunc_f(LaplaceExpr, f):
     """
     Calculates the magnitude at the real frequency f (Fourier) from the
@@ -883,7 +1026,11 @@ def _magFunc_f(LaplaceExpr, f):
 
     :rtype: float, numpy.array
     """
-    LaplaceExpr = normalizeRational(sp.N(LaplaceExpr))
+    H = _freq_response(LaplaceExpr, f)
+    if H is not None:
+        return np.abs(H)
+    #LaplaceExpr = normalizeRational(sp.N(LaplaceExpr))
+    LaplaceExpr = sp.N(LaplaceExpr)
     if type(f) == list:
         # Convert lists into numpy arrays
         f = np.array(f)
@@ -917,7 +1064,12 @@ def _dB_magFunc_f(LaplaceExpr, f):
 
     :rtype: float, numpy.array
     """
-    LaplaceExpr = normalizeRational(sp.N(LaplaceExpr))
+    H = _freq_response(LaplaceExpr, f)
+    if H is not None:
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return 20 * np.log10(np.abs(H))
+    #LaplaceExpr = normalizeRational(sp.N(LaplaceExpr))
+    LaplaceExpr = sp.N(LaplaceExpr)
     if type(f) == list:
         f = np.array(f)
     if ini.hz == True:
@@ -950,14 +1102,24 @@ def _phaseFunc_f(LaplaceExpr, f):
 
     :rtype: float, numpy.array
     """
-    LaplaceExpr = normalizeRational(sp.N(LaplaceExpr))
+    H = _freq_response(LaplaceExpr, f)
+    if H is not None:
+        phase = np.asarray(np.angle(H))
+        if phase.ndim:            # unwrap needs a sweep; a scalar f
+            phase = np.unwrap(phase)  # (phaseMargin) is returned as-is
+        if ini.hz:
+            phase = phase * 180 / np.pi
+        return phase
+    #LaplaceExpr = normalizeRational(sp.N(LaplaceExpr))
+    LaplaceExpr = sp.N(LaplaceExpr)
     if type(f) == list:
         f = np.array(f)
     if ini.hz == True:
         data = LaplaceExpr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
     else:
         data = LaplaceExpr.xreplace({ini.laplace: sp.I*ini.frequency})
-    data = sp.N(normalizeRational(data, ini.frequency))
+    #data = sp.N(normalizeRational(data, ini.frequency))
+    data = sp.N(data)
     if ini.frequency in data.atoms(sp.Symbol):
         try:
             func = sp.lambdify(ini.frequency, data, ini.lambdify)
@@ -1003,6 +1165,15 @@ def _delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
 
     :rtype: float, numpy.array
     """
+    # Numeric implementation (2026-07-11): evaluate the complex response and
+    # differentiate the unwrapped phase with groupDelay() — the former
+    # symbolic two-point delta trick crashed on object-dtype lambdify
+    # results (sympy Float coefficients) and was less accurate. The *delta*
+    # parameter is kept for call compatibility but no longer used.
+    H = _freq_response(LaplaceExpr, f)
+    if H is not None:
+        f = np.asarray(f, dtype=float)
+        return groupDelay(f, np.real(H), np.imag(H), Hz=ini.hz)
     if type(f) == list:
         f = np.array(f)
     if ini.hz == True:
@@ -1010,27 +1181,18 @@ def _delayFunc_f(LaplaceExpr, f, delta=10**(-ini.disp)):
     else:
         data = LaplaceExpr.xreplace({ini.laplace: sp.I*ini.frequency})
     if ini.frequency in data.atoms(sp.Symbol):
-        data = sp.N(normalizeRational(data, ini.frequency))
+        #data = sp.N(normalizeRational(data, ini.frequency))
+        data = sp.N(data)
         try:
             func = sp.lambdify(ini.frequency, data, ini.lambdify)
-            angle1 = np.angle(func(f))
-            angle2 = np.angle(func(f*(1+delta)))
+            H = np.asarray(func(f), dtype=complex)
+            if H.shape != np.shape(f):
+                H = np.full(np.shape(f), complex(H))   # constant response
         except BaseException:
-            angle1 = np.array([np.angle(data.xreplace({ini.frequency: f[i]}))
-                              for i in range(len(f))])
-            angle2 = np.array(
-                [np.angle(data.xreplace({ini.frequency: f[i]*(1+delta)})) for i in range(len(f))])
-        try:
-            angle1 = np.unwrap(angle1)
-            angle2 = np.unwrap(angle2)
-        except BaseException:
-            pass
-        delay = (angle1 - angle2)/delta/f
-        if ini.hz == True:
-            delay = delay/2/np.pi
-    else:
-        delay = [0 for i in range(len(f))]
-    return delay
+            H = np.array([complex(data.xreplace({ini.frequency: float(v)}))
+                          for v in f])
+        return groupDelay(f, np.real(H), np.imag(H), Hz=ini.hz)
+    return np.zeros(len(f))
 
 def _doCDSint(noiseResult, tau, fmin, fmax, method, points=0):
     """
@@ -1926,6 +2088,63 @@ def roundN(expr, numeric=False):
         pass
     return expr
 
+def _ilt_numeric_simple(numCoeffs, rootDict, t):
+    """
+    Returns the inverse Laplace transform for the all-simple-poles numeric
+    case as a real sympy expression, assembled directly from the numeric
+    residues:
+
+    Re(c*exp((sigma + j*omega)*t)) = exp(sigma*t)*(Re(c)*cos(omega*t) -
+    Im(c)*sin(omega*t))
+
+    summed over ALL roots — conjugate pairs add up correctly by
+    construction, so no pairing and no symbolic as_real_imag/trigsimp is
+    needed. Returns None when a residue is not finite in float arithmetic;
+    ilt() then uses the symbolic residue path.
+
+    :param numCoeffs: Numerator coefficients (numeric, decreasing order).
+    :type numCoeffs: list
+
+    :param rootDict: Denominator roots (all with multiplicity 1).
+    :type rootDict: dict
+
+    :param t: time variable
+    :type t: sympy.Symbol
+
+    :return: Inverse Laplace Transform f(t), or None.
+    :rtype: sympy.Expr, NoneType
+    """
+    rts = np.array(list(rootDict.keys()), dtype=complex)
+    try:
+        nc = np.array([complex(c) for c in numCoeffs], dtype=complex)
+    except (TypeError, OverflowError):
+        return None
+    if not np.all(np.isfinite(nc)):
+        return None
+    # spurious imaginary parts on real roots (numpy root finding) are
+    # chopped relative to the root scale; genuine high-Q pole pairs are
+    # far above this threshold
+    tol = 1e-10 * max(float(np.max(np.abs(rts))) if len(rts) else 0.0, 1.0)
+    terms = []
+    for k, rk in enumerate(rts):
+        denom = np.prod(rk - np.delete(rts, k))
+        if denom == 0:
+            return None
+        c = np.polyval(nc, rk) / denom
+        if not np.isfinite(c):
+            return None
+        sigma = float(rk.real)
+        omega = float(rk.imag)
+        if abs(omega) <= tol:
+            omega = 0.0
+        decay = sp.exp(sigma*t) if sigma != 0.0 else sp.S.One
+        if omega == 0.0:
+            terms.append(float(c.real) * decay)
+        else:
+            terms.append(decay * (float(c.real)*sp.cos(omega*t)
+                                  - float(c.imag)*sp.sin(omega*t)))
+    return sp.Add(*terms)
+
 def ilt(expr, s, t, integrate=False):
     """
     Returns the Inverse Laplace Transform f(t) of an expression F(s) for t > 0.
@@ -1956,10 +2175,23 @@ def ilt(expr, s, t, integrate=False):
     elif len(variables) == 1 and s in variables:
         num, den = expr.as_numer_denom()
         if num.is_polynomial() and den.is_polynomial():
+            # Cancel exact common polynomial factors first: uncancelled
+            # factors (e.g. determinant ratios that are no longer
+            # normalized at compute time) add spurious pole/zero pairs to
+            # the result and can push the coefficient spread past the
+            # float64 range below (found via ASMPT-12, 2026-07-13).
+            try:
+                num, den = sp.cancel(num/den).as_numer_denom()
+            except sp.PolynomialError:
+                pass
             polyDen = sp.Poly(den, s)
             gainD = sp.Poly.LC(polyDen)
             denCoeffs = polyDen.all_coeffs()
-            denCoeffs = [sp.N(coeff/gainD) for coeff in denCoeffs]
+            # Scale for root finding by the largest coefficient magnitude —
+            # roots are scale-invariant and LC-relative ratios can overflow
+            # float64 (the residue formula below keeps using gainD).
+            scaleD = max(sp.Abs(c) for c in denCoeffs)
+            denCoeffs = [sp.N(coeff/scaleD) for coeff in denCoeffs]
             if integrate:
                 denCoeffs.append(0)
             den = Polynomial(np.array(denCoeffs[::-1], dtype=float))
@@ -1974,28 +2206,35 @@ def ilt(expr, s, t, integrate=False):
             polyNum = sp.Poly(num, s)
             numCoeffs = polyNum.all_coeffs()
             numCoeffs = [sp.N(numCoeff/gainD) for numCoeff in numCoeffs]
-            num = sp.Poly(numCoeffs, s)
-            inv_laplace = 0
-            for root in rts:
-                # get root multiplicity
-                n = rootDict[root]
-                # build the function
-                fs = num.as_expr()*sp.exp(s*t)
-                for rt in rts:
-                    if rt != root:
-                        fs /= (s-rt)**rootDict[rt]
-                # calculate residue
-                if n == 1:
-                    inv_laplace += fs.xreplace({s: root})
-                else:
-                    inv_laplace += (1/sp.factorial(n-1)) * \
-                        sp.diff(fs, (s, n-1)).xreplace({s: root})
+            if len(rootDict) and max(rootDict.values()) <= 1:
+                # all poles simple: assemble the real time function directly
+                # from numeric residues — no symbolic as_real_imag/trigsimp
+                inv_laplace = _ilt_numeric_simple(numCoeffs, rootDict, t)
+            if inv_laplace is None:
+                # repeated poles, or non-finite numeric residues:
+                # symbolic residue path
+                num = sp.Poly(numCoeffs, s)
+                inv_laplace = 0
+                for root in rts:
+                    # get root multiplicity
+                    n = rootDict[root]
+                    # build the function
+                    fs = num.as_expr()*sp.exp(s*t)
+                    for rt in rts:
+                        if rt != root:
+                            fs /= (s-rt)**rootDict[rt]
+                    # calculate residue
+                    if n == 1:
+                        inv_laplace += fs.xreplace({s: root})
+                    else:
+                        inv_laplace += (1/sp.factorial(n-1)) * \
+                            sp.diff(fs, (s, n-1)).xreplace({s: root})
 
-            inv_laplace = assumeRealParams(inv_laplace)
-            inv_laplace = inv_laplace.as_real_imag()[0]
-            if sp.I in inv_laplace.atoms():
-                inv_laplace = inv_laplace.rewrite(sp.cos).simplify().trigsimp()
-            inv_laplace = clearAssumptions(inv_laplace)
+                inv_laplace = assumeRealParams(inv_laplace)
+                inv_laplace = inv_laplace.as_real_imag()[0]
+                if sp.I in inv_laplace.atoms():
+                    inv_laplace = inv_laplace.rewrite(sp.cos).simplify().trigsimp()
+                inv_laplace = clearAssumptions(inv_laplace)
         else:
             # If the numerator or denominator cannot be written as a polynomial in 's':
             # use the sympy inverse_laplace_transform() method
@@ -2519,6 +2758,709 @@ def DIN_A(f_0=1000):
     # normalized the weighting function w.r.t. 1kHz
     return float2rational(DIN_A / DIN_A.xreplace({f: f_0}))
 
+# =============================================================================
+# Public signal-processing helpers — type-dispatching (numpy or sympy input)
+# =============================================================================
+
+def mag(data, f=None):
+    """
+    Magnitude of data.
+
+    - numpy array (AC result or noise ASD): returns ``np.abs(data)``.
+      Works element-wise on 2D stepped results (shape n_steps × n_sweep).
+    - sympy Laplace expression: evaluates ``|H(j·2π·f)|`` at the frequencies
+      in *f* using :func:`_magFunc_f`.
+
+    :param data: Complex numpy array or sympy Laplace expression.
+    :type data: numpy.ndarray, sympy.Expr
+
+    :param f: Frequency array [Hz], required when *data* is a sympy expression.
+    :type f: list, numpy.ndarray, NoneType
+
+    :return: Magnitude.
+    :rtype: numpy.ndarray, list
+    """
+    if isinstance(data, np.ndarray):
+        return np.abs(data)
+    return _magFunc_f(data, f)
+
+
+def dB(data, f=None, power=False):
+    """
+    Decibel value of data.
+
+    - numpy array:
+
+      - *power* = ``False`` (default): ``20·log₁₀|data|``.
+        Use for complex amplitudes (AC voltages/currents) and noise amplitude
+        spectral densities (V/√Hz, A/√Hz).
+      - *power* = ``True``: ``10·log₁₀|data|``.
+        Use for noise **power** spectral densities (V²/Hz, A²/Hz).
+
+      Note: ``dB(np.sqrt(S_psd))`` and ``dB(S_psd, power=True)`` give identical
+      results because ``20·log₁₀(√x) = 10·log₁₀(x)``.
+
+      Works element-wise on 2D stepped results (shape n_steps × n_sweep).
+
+    - sympy Laplace expression: always uses ``20·log₁₀|H(j·2π·f)|``
+      via :func:`_dB_magFunc_f`; the *power* flag is ignored.
+
+    :param data: Complex numpy array or sympy Laplace expression.
+    :type data: numpy.ndarray, sympy.Expr
+
+    :param f: Frequency array [Hz], required when *data* is a sympy expression.
+    :type f: list, numpy.ndarray, NoneType
+
+    :param power: Set ``True`` when *data* is a power spectral density (V²/Hz).
+                  Defaults to ``False``.
+    :type power: bool
+
+    :return: dB values.
+    :rtype: numpy.ndarray, list
+    """
+    if isinstance(data, np.ndarray):
+        factor = 10 if power else 20
+        return factor * np.log10(np.abs(data))
+    return _dB_magFunc_f(data, f)
+
+
+def phase(data, f=None, deg=True):
+    """
+    Phase angle of data.
+
+    - numpy array: unwrapped phase along the last axis (``axis=-1``), so 2D
+      stepped results (shape n_steps × n_sweep) are handled row-wise.
+      Returns degrees when *deg* is ``True`` (default), radians otherwise.
+    - sympy Laplace expression: evaluates ``∠H(j·2π·f)`` at *f* via
+      :func:`_phaseFunc_f` (always returns degrees when ``ini.hz`` is True).
+
+    :param data: Complex numpy array or sympy Laplace expression.
+    :type data: numpy.ndarray, sympy.Expr
+
+    :param f: Frequency array [Hz], required when *data* is a sympy expression.
+    :type f: list, numpy.ndarray, NoneType
+
+    :param deg: Return degrees (True, default) or radians (False).
+                Ignored for sympy input.
+    :type deg: bool
+
+    :return: Phase angle.
+    :rtype: numpy.ndarray, list
+    """
+    if isinstance(data, np.ndarray):
+        ph = np.unwrap(np.angle(data, deg=False), axis=-1)
+        return np.degrees(ph) if deg else ph
+    return _phaseFunc_f(data, f)
+
+
+def delay(data, f):
+    """
+    Group delay of data.
+
+    - numpy array: ``-d(phase)/d(ω)`` computed via ``np.gradient`` along
+      ``axis=-1``. Works on 2D stepped results (shape n_steps × n_sweep).
+    - sympy Laplace expression: evaluates via :func:`_delayFunc_f`.
+
+    :param data: Complex numpy array or sympy Laplace expression.
+    :type data: numpy.ndarray, sympy.Expr
+
+    :param f: Frequency array [Hz].
+    :type f: list, numpy.ndarray
+
+    :return: Group delay [s].
+    :rtype: numpy.ndarray, list
+    """
+    if isinstance(data, np.ndarray):
+        ph    = np.unwrap(np.angle(data), axis=-1)
+        omega = 2 * np.pi * np.asarray(f, dtype=float)
+        return -np.gradient(ph, omega, axis=-1)
+    return _delayFunc_f(data, f)
+
+
+# =============================================================================
+# Goal functions — pure numpy, no sympy analogue
+# =============================================================================
+
+def YatX(y, x, x0):
+    """
+    Interpolate *y* at *x* = *x0*.
+
+    For 2D arrays (stepped results, shape n_steps × n_sweep) the interpolation
+    is applied row-wise along the last axis and a 1D array of length n_steps is
+    returned.
+
+    :param y: Data array (1D or 2D).
+    :type y: list, numpy.ndarray
+
+    :param x: X-axis values (1D, same length as the last axis of *y*).
+    :type x: list, numpy.ndarray
+
+    :param x0: X value at which to interpolate.
+    :type x0: float, int
+
+    :return: Interpolated value(s).
+    :rtype: float, numpy.ndarray
+    """
+    y, x = np.asarray(y, dtype=float), np.asarray(x, dtype=float)
+    if y.ndim == 1:
+        return float(np.interp(x0, x, y))
+    return np.array([float(np.interp(x0, x, row)) for row in y])
+
+
+def XatNthY(x, y, y0, n=1):
+    """
+    Find the *n*-th x value where *y* crosses *y0* (linear interpolation at
+    the crossing point).
+
+    :param x: X-axis values (1D).
+    :type x: list, numpy.ndarray
+
+    :param y: Data values (1D, same length as *x*).
+    :type y: list, numpy.ndarray
+
+    :param y0: Target y value (crossing level).
+    :type y0: float, int
+
+    :param n: Which crossing to return (1 = first, 2 = second, …).
+              Defaults to 1.
+    :type n: int
+
+    :return: Interpolated x at the *n*-th crossing, or ``None`` if fewer
+             than *n* crossings are found.
+    :rtype: float, NoneType
+    """
+    x      = np.asarray(x, dtype=float)
+    shifted = np.asarray(y, dtype=float) - y0
+    idx    = np.where(np.diff(np.sign(shifted)))[0]
+    if len(idx) < n:
+        return None
+    i = idx[n - 1]
+    return float(x[i] - shifted[i] * (x[i + 1] - x[i]) / (shifted[i + 1] - shifted[i]))
+
+
+def RMS(y, x=None):
+    """
+    RMS value of *y*.
+
+    - With *x*: ``sqrt(trapezoid(y², x) / (x[-1] - x[0]))`` — proper
+      time- or frequency-domain average.
+    - Without *x*: ``sqrt(mean(y²))`` — RMS over the available samples.
+
+    The operation is applied along ``axis=-1`` so 2D stepped results
+    (shape n_steps × n_sweep) return a 1D array of length n_steps.
+
+    :param y: Data values.
+    :type y: list, numpy.ndarray
+
+    :param x: X-axis values (same length as last axis of *y*). Defaults to None.
+    :type x: list, numpy.ndarray, NoneType
+
+    :return: RMS value(s).
+    :rtype: float, numpy.ndarray
+    """
+    y = np.asarray(y, dtype=float)
+    if x is None:
+        return np.sqrt(np.mean(y ** 2, axis=-1))
+    x = np.asarray(x, dtype=float)
+    return np.sqrt(np.trapezoid(y ** 2, x, axis=-1) / (x[-1] - x[0]))
+
+
+def SUM(y, x=None):
+    """
+    Sum or integral of *y*.
+
+    - With *x*: trapezoid integration along ``axis=-1``.
+    - Without *x*: plain ``numpy.sum`` along ``axis=-1``.
+
+    :param y: Data values.
+    :type y: list, numpy.ndarray
+
+    :param x: X-axis values. Defaults to None.
+    :type x: list, numpy.ndarray, NoneType
+
+    :return: Sum or integral.
+    :rtype: float, numpy.ndarray
+    """
+    y = np.asarray(y, dtype=float)
+    if x is None:
+        return np.sum(y, axis=-1)
+    return np.trapezoid(y, np.asarray(x, dtype=float), axis=-1)
+
+
+class WeightingFilter(object):
+    """
+    Single noise weighting filter for use with noiseWeighting().
+
+    Supported filter types (f_type):
+
+    - "lp"     : low-pass,  requires char, f_c, order
+    - "hp"     : high-pass, requires char, f_c, order
+    - "ap"     : all-pass,  requires char, f_c, order
+    - "bp"     : band-pass, requires char, f_c, B, order
+    - "bs"     : band-stop, requires char, f_c, B, order
+    - "custom" : arbitrary, requires expr (sympy expression in ini.laplace)
+
+    Supported filter characteristics (char):
+
+    - "butterworth"
+    - "bessel"
+    - "chebyshev1"
+
+    :param f_type: Filter type string (see above).
+    :type f_type: str
+
+    :param char: Filter characteristic (butterworth / bessel / chebyshev1).
+    :type char: str, NoneType
+
+    :param f_c: Corner frequency [Hz].
+    :type f_c: float, int, NoneType
+
+    :param B: Bandwidth [Hz] (band-pass / band-stop only).
+    :type B: float, int, NoneType
+
+    :param order: Filter order.
+    :type order: int, NoneType
+
+    :param ripple: Pass-band ripple [dB] (chebyshev1 only).
+    :type ripple: float, NoneType
+
+    :param expr: Custom sympy expression in ini.laplace (custom type only).
+    :type expr: sympy.Expr, str, NoneType
+    """
+    def __init__(self, f_type, char=None, f_c=None, B=None,
+                 order=None, ripple=None, expr=None):
+        self.f_type  = f_type
+        self.char    = char
+        self.f_c     = f_c
+        self.B       = B
+        self.order   = order
+        self.ripple  = ripple
+        self.expr    = expr
+        self.errors  = False
+
+    def create_expr(self):
+        """
+        Build self.expr as a Laplace-domain transfer function.
+
+        :return: True if successful, False on error.
+        :rtype: bool
+        """
+        CHARS = ["butterworth", "bessel", "chebyshev1"]
+        TYPES = ["lp", "hp", "ap", "bp", "bs", "custom"]
+        self.errors = False
+        try:
+            self.f_type = self.f_type.lower()
+        except Exception:
+            print("WeightingFilter: unknown filter type.")
+            self.errors = True
+        if self.f_type not in TYPES:
+            print("WeightingFilter: unknown filter type '{}'.".format(self.f_type))
+            self.errors = True
+        elif self.f_type == "custom":
+            try:
+                self.expr = sp.sympify(self.expr)
+            except sp.SympifyError:
+                print("WeightingFilter: error in custom expression.")
+                self.errors = True
+        else:
+            try:
+                self.char = self.char.lower()
+                if self.char not in CHARS:
+                    print("WeightingFilter: unknown filter characteristic '{}'.".format(self.char))
+                    self.errors = True
+            except Exception:
+                print("WeightingFilter: missing or invalid filter characteristic.")
+                self.errors = True
+            try:
+                self.f_c = float(self.f_c)
+                if self.f_c <= 0:
+                    print("WeightingFilter: f_c must be > 0.")
+                    self.errors = True
+                if self.f_type in ("lp", "ap"):
+                    f_h, f_l = self.f_c, None
+                elif self.f_type == "hp":
+                    f_l, f_h = self.f_c, None
+                else:
+                    f_h, f_l = None, None
+            except (TypeError, ValueError):
+                print("WeightingFilter: missing or invalid f_c.")
+                self.errors = True
+            try:
+                self.order = int(self.order)
+                if self.order <= 0:
+                    print("WeightingFilter: order must be > 0.")
+                    self.errors = True
+            except (TypeError, ValueError):
+                print("WeightingFilter: missing or invalid order.")
+                self.errors = True
+            if self.f_type in ("bp", "bs"):
+                try:
+                    self.B = float(self.B)
+                    if self.B <= 0:
+                        print("WeightingFilter: bandwidth B must be > 0.")
+                        self.errors = True
+                    elif self.B > self.f_c:
+                        print("WeightingFilter: B must be < f_c. Use cascaded lp/hp instead.")
+                        self.errors = True
+                    else:
+                        _fl = sp.Symbol("f_low", positive=True)
+                        f_l = sp.solve(_fl * self.B + _fl**2 - self.f_c**2, _fl)[0]
+                        f_h = f_l + self.B
+                except (TypeError, ValueError):
+                    print("WeightingFilter: missing or invalid bandwidth B.")
+                    self.errors = True
+            if self.char == "chebyshev1":
+                try:
+                    self.ripple = float(self.ripple)
+                    if self.ripple <= 0:
+                        print("WeightingFilter: ripple must be > 0.")
+                        self.errors = True
+                except (TypeError, ValueError):
+                    print("WeightingFilter: missing or invalid ripple.")
+                    self.errors = True
+            if not self.errors:
+                num, den = filterFunc(self.char, self.f_type, self.order,
+                                      f_high=f_h, f_low=f_l,
+                                      ripple=self.ripple).as_numer_denom()
+                self.expr = sp.expand(num) / sp.expand(den)
+        return not self.errors
+
+
+def noiseWeighting(filters_dict):
+    """
+    Build the combined squared-magnitude noise weighting function from a dict
+    of cascaded weighting filters.
+
+    The result is a sympy expression in ini.frequency that evaluates to
+    |H_1(f)|^2 * |H_2(f)|^2 * ... for all cascaded filters. Pass this to
+    weightedRMS() to integrate a NGspice noise spectrum with weighting.
+
+    Supported filter-dict keys:
+
+    - "din_a"  : DIN A audio weighting, no sub-parameters needed ({})
+    - "cds"    : Correlated Double Sampling; requires {"tau": <value>}
+    - "lp","hp","ap","bp","bs" : see WeightingFilter; sub-dict is its kwargs
+    - "custom" : see WeightingFilter; sub-dict must contain {"expr": <expr>}
+
+    Example::
+
+        wf = noiseWeighting({
+            "din_a": {},
+            "hp"   : {"char": "Butterworth", "f_c": 20, "order": 2},
+        })
+
+    :param filters_dict: Mapping of filter-type key to parameter dict.
+    :type filters_dict: dict
+
+    :return: Squared magnitude of cascaded filters as a sympy expression in
+             ini.frequency. Returns 1 if filters_dict is empty.
+    :rtype: sympy.Expr
+    """
+    f = ini.frequency
+    sq_mag_wf = sp.Integer(1)
+    for key, params in filters_dict.items():
+        key_lower = key.lower()
+        imag_part = sp.Integer(0)
+        if key_lower == "cds":
+            par = {k.lower(): v for k, v in params.items()}
+            tau = par.get("tau")
+            if tau is None:
+                print("noiseWeighting: CDS filter requires 'tau' parameter.")
+                continue
+            real_part = 2 * sp.sin(sp.pi * f * tau)
+        elif key_lower == "din_a":
+            real_part = DIN_A()
+        else:
+            par = {k.lower(): v for k, v in params.items()}
+            fi = WeightingFilter(key_lower,
+                                 char=par.get("char"),
+                                 f_c=par.get("f_c"),
+                                 B=par.get("b"),
+                                 order=par.get("order"),
+                                 ripple=par.get("ripple"),
+                                 expr=par.get("expr"))
+            if not fi.create_expr():
+                print("noiseWeighting: skipping invalid filter '{}'.".format(key))
+                continue
+            expr = sp.N(fi.expr.subs(ini.laplace, 2 * sp.I * sp.pi * f))
+            real_part, imag_part = expr.as_real_imag()
+        sq_mag_wf = sq_mag_wf * (real_part**2 + imag_part**2)
+    return sq_mag_wf
+
+
+def weightedRMS(spectrum, frequencies, sq_mag_wf=1):
+    """
+    Apply a noise weighting filter to a numpy noise power spectrum and return
+    unweighted and weighted RMS values.
+
+    The weighting is applied outside NGspice: NGspice computes the raw noise
+    power spectral density; this function multiplies it by the squared
+    magnitude of the weighting filter(s) and integrates.
+
+    :param spectrum: 1D numpy array of noise power spectral density (V^2/Hz
+                     or A^2/Hz) as returned by a NGspice noise analysis.
+    :type spectrum: numpy.ndarray
+
+    :param frequencies: 1D numpy array of frequency points corresponding to
+                        spectrum.
+    :type frequencies: numpy.ndarray
+
+    :param sq_mag_wf: Squared magnitude of the weighting filter as a sympy
+                      expression in ini.frequency, as returned by
+                      noiseWeighting(). Pass 1 (default) for unweighted RMS.
+    :type sq_mag_wf: sympy.Expr, int, float
+
+    :return: Tuple (rms_unweighted, rms_weighted, weighted_spectrum) where:
+
+             - rms_unweighted   : float — RMS of the unweighted spectrum
+             - rms_weighted     : float — RMS of the weighted spectrum
+             - weighted_spectrum : numpy.ndarray — weighted noise PSD (same
+               units as spectrum)
+
+    :rtype: tuple
+    """
+    spectrum    = np.array(spectrum, dtype=float)
+    frequencies = np.array(frequencies, dtype=float)
+    if sq_mag_wf == 1:
+        mag_sq = np.ones_like(frequencies)
+    else:
+        mag_sq = sp.lambdify(ini.frequency, sp.N(sq_mag_wf),
+                             modules='numpy')(frequencies)
+    w_spectrum = mag_sq * spectrum
+    rms_u = float(np.sqrt(np.trapezoid(spectrum,   frequencies)))
+    rms_w = float(np.sqrt(np.trapezoid(w_spectrum, frequencies)))
+    return rms_u, rms_w, w_spectrum
+
+def groupDelay(frequency, realPart, imagPart, Hz=True):
+    """
+    Returns the group delay of a sampled complex frequency response:
+
+    .. math::
+
+        \\tau_g = -\\frac{ d \\varphi }{ d \\omega }
+
+    where the phase :math:`\\varphi` (radians) is obtained from the real
+    and imaginary parts and unwrapped before differentiation, and
+    :math:`\\omega` is the radian frequency. The finite-difference
+    derivative shortens the array by one point; the last point is
+    duplicated so the returned array has the same length as *frequency*.
+
+    :param frequency: Frequency values, in Hz (Hz=True, default) or in
+                      rad/s (Hz=False). Must be monotonic.
+    :type frequency: list, numpy.ndarray
+
+    :param realPart: Real part of the response at each frequency.
+    :type realPart: list, numpy.ndarray
+
+    :param imagPart: Imaginary part of the response at each frequency.
+    :type imagPart: list, numpy.ndarray
+
+    :param Hz: True if *frequency* is in Hz; the values are then multiplied
+               with :math:`2 \\pi` before differentiation. Defaults to True.
+    :type Hz: bool
+
+    :return: Group delay in seconds at each frequency; same length as
+             *frequency*.
+    :rtype: numpy.ndarray
+    """
+    f  = np.asarray(frequency, dtype=float)
+    re = np.asarray(realPart, dtype=float)
+    im = np.asarray(imagPart, dtype=float)
+    if len(f) < 2:
+        return np.zeros_like(f)
+    w   = 2*np.pi*f if Hz else f
+    phi = np.unwrap(np.arctan2(im, re))
+    tau = -np.diff(phi)/np.diff(w)
+    return np.append(tau, tau[-1])
+
+def goal_rms(x, y):
+    """RMS of *y* integrated over *x*: ``sqrt(trapz(y², x) / (x[-1] - x[0]))``.
+
+    Suitable as a ``goal_fn`` argument to
+    :func:`~SLiCAP.SLiCAPngspice.ngspice_instr2traces` (or
+    :func:`~SLiCAP.SLiCAPngspice.ngspice_dict2traces`).
+
+    :param x: 1-D sweep-axis array.
+    :type x: numpy.ndarray
+    :param y: 1-D signal array (already post-processed by *trace_type*).
+    :type y: numpy.ndarray
+    :return: RMS value.
+    :rtype: float
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.real(np.asarray(y, dtype=float))
+    return float(np.sqrt(np.trapezoid(y * y, x) / (x[-1] - x[0])))
+
+def goal_mean(x, y):
+    """Mean of *y* over *x*: ``trapz(y, x) / (x[-1] - x[0])``.
+
+    :param x: 1-D sweep-axis array.
+    :type x: numpy.ndarray
+    :param y: 1-D signal array.
+    :type y: numpy.ndarray
+    :return: Mean value.
+    :rtype: float
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.real(np.asarray(y, dtype=float))
+    return float(np.trapezoid(y, x) / (x[-1] - x[0]))
+
+def goal_max(x, y):
+    """Maximum value of *y*.
+
+    :param x: 1-D sweep-axis array (unused, present for uniform signature).
+    :type x: numpy.ndarray
+    :param y: 1-D signal array.
+    :type y: numpy.ndarray
+    :return: max(y).
+    :rtype: float
+    """
+    return float(np.max(np.asarray(y)))
+    
+def goal_min(x, y):
+    """Miniimum value of *y*.
+
+    :param x: 1-D sweep-axis array (unused, present for uniform signature).
+    :type x: numpy.ndarray
+    :param y: 1-D signal array.
+    :type y: numpy.ndarray
+    :return: min(y).
+    :rtype: float
+    """
+    return float(np.min(np.asarray(y)))
+
+def goal_x_at_max_y(x, y):
+    """*x* value at which ``y`` is maximum
+
+    :param x: 1-D sweep-axis array.
+    :type x: numpy.ndarray
+    :param y: 1-D signal array.
+    :type y: numpy.ndarray
+    :return: x at maximum y.
+    :rtype: float
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    return float(x[np.argmax(y)])
+
+def goal_x_at_min_y(x, y):
+    """*x* value at which ``y`` is minimum.
+
+    :param x: 1-D sweep-axis array.
+    :type x: numpy.ndarray
+    :param y: 1-D signal array.
+    :type y: numpy.ndarray
+    :return: x at minimum y.
+    :rtype: float
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    return float(x[np.argmin(y)])
+
+def goal_y_at_x(x0):
+    """Return a goal function that interpolates *y* at *x* = *x0*.
+
+    :param x0: Target x value.
+    :type x0: float
+    :return: ``goal_fn(x, y)`` callable.
+    :rtype: callable
+
+    :Example:
+
+    >>> # Value of v(out) at f = 1 kHz across all steps
+    >>> traces = sl.ngspice_instr2traces(AC1, goal_fn=sl.goal_y_at_x(1e3))
+    """
+    def _goal(x, y):
+        x = np.asarray(x, dtype=float)
+        y = np.real(np.asarray(y, dtype=float))
+        return float(np.interp(x0, x, y))
+    _goal.__name__ = f"goal_y_at_x({x0!r})"
+    return _goal
+
+def goal_x_at_nth_y(y0, n=1):
+    """Return a goal function that gives the *x* of the *n*-th crossing of
+    *y* = *y0* (linear interpolation between the samples around the
+    crossing; *n* counts from 1). Returns ``x[-1]`` (end of sweep) when
+    fewer than *n* crossings exist.
+
+    :param y0: The y level whose crossing is sought.
+    :type y0: float
+    :param n: Which crossing (1 = first).
+    :type n: int
+    :return: ``goal_fn(x, y)`` callable.
+    :rtype: callable
+    """
+    def _goal(x, y):
+        x = np.asarray(x, dtype=float)
+        y = np.real(np.asarray(y, dtype=float))
+        above = y >= y0
+        crossings = np.where(np.diff(above.astype(int)) != 0)[0]
+        if len(crossings) < n:
+            return float(x[-1])
+        i = crossings[int(n) - 1]
+        xa, xb = x[i], x[i + 1]
+        ya, yb = y[i], y[i + 1]
+        if yb == ya:
+            return float(xa)
+        return float(xa + (y0 - ya) * (xb - xa) / (yb - ya))
+    _goal.__name__ = f"goal_x_at_nth_y({y0!r}, {n!r})"
+    return _goal
+
+
+def apply_goal(goal_fn, x, Y):
+    """
+    Applies a goal function to each row of a 2-D array (pure math — the
+    back-end trace converters only supply their data in this shape).
+
+    :param goal_fn: Goal function ``f(x, y) -> float``.
+    :type goal_fn: callable
+
+    :param x: Sweep values, shape (n_sweep,).
+    :type x: numpy.ndarray
+
+    :param Y: Row-per-step data, shape (n_steps, n_sweep).
+    :type Y: numpy.ndarray
+
+    :return: Goal value per row, shape (n_steps,).
+    :rtype: numpy.ndarray
+    """
+    Y = np.asarray(Y)
+    return np.array([goal_fn(x, Y[i]) for i in range(Y.shape[0])])
+
+
+# NOTE (Anton, 2026-07-11): the definitions of the goal functions above are
+# PROVISIONAL, pending a dedicated definition round (see SLNG.md "Goal
+# functions in the plot wizard"). goal_bandwidth was REMOVED in that round
+# (Anton, 2026-07-15) because it was not well-defined (high-frequency
+# cutoff relative to the peak — a special case for low-pass shapes, not a
+# true band WIDTH) — do not reintroduce it without a proper definition.
+# Interpolation vs nearest-point must become an explicit choice for the
+# at-x/at-y functions. The REGISTRY MECHANISM below is stable; only the
+# function definitions may change.
+#
+# Registry of the goal functions above, for GUI discovery (Anton's plan,
+# 2026-07-11): the GUI builds its goal-function drop-down from this list and
+# applies the chosen function to the per-run 1-D arrays, so a new goal
+# function added here automatically appears in the GUI. Each entry:
+#
+#     (display name, function, [(parameter label, default), …])
+#
+# - empty parameter list: the function is a goal function itself,
+#   ``f(x, y) -> float``;
+# - non-empty: the function is a FACTORY — ``f(p1, p2, …)`` returns the
+#   goal function; the GUI shows one input field per parameter, in order
+#   (goal_x_at_nth_y needs two — the schema is a list for that reason).
+_GOAL_FUNCTIONS = [
+    ("rms",            goal_rms,        []),
+    ("mean",           goal_mean,       []),
+    ("max",            goal_max,        []),
+    ("min",            goal_min,        []),
+    ("y at x",         goal_y_at_x,     [("x0", 1e3)]),
+    ("x at max y",     goal_x_at_max_y, []),
+    ("x at min y",     goal_x_at_min_y, []),
+    ("x at nth y",     goal_x_at_nth_y, [("y0", 0.0), ("n", 1)]),
+]
+
 if __name__ == "__main__":
     ini.hz = True
     """
@@ -2552,9 +3494,9 @@ if __name__ == "__main__":
     DME = det(M, method="ME")
     t2 = time()
     print("Minor expansion :", t2-t1, 's')
-    DBS = det(M, method="BS")
+    DBS = det(M, method="MECPP")
     t3= time()
-    print("Bareis          :", t3-t2, 's')
+    print("MECPP           :", t3-t2, 's')
 
     M = sp.sympify('Matrix([[0, 1, -1, 0, 0], [1, 1/R_GND + 1/R_1, 0, 0, -1/R_1], [-1, 0, 1/R_1, -1/R_1, 0], [0, 0, -1/R_1, 1/R_2 + 1/R_1, -1/R_2], [0, -1/R_1, 0, -1/R_2, 1/R_2 + 1/R_1]])')
     D = det(M)
@@ -2583,9 +3525,9 @@ if __name__ == "__main__":
     print("ME", t8-t7)
 
     t9 = time()
-    D = det(M, method="BS")
+    D = det(M, method="MECPP")
     t10 = time()
-    print("BS", t10-t9)
+    print("MECPP", t10-t9)
 
     LG = sp.sympify("-0.00647263929159112*(1.42481097731728e-5*s**2 + s)/(6.46865378347277e-16*s**3 + 2.0274790076825e-8*s**2 + 0.0014352663537982*s + 1.0)")
     print(findServoBandwidth(LG))

@@ -36,10 +36,10 @@ Any schematic can be turned into a reusable subcircuit library:
 
 #. Add **port** symbols and name them — the names become the subcircuit's
    external nodes.  A ``ground`` (node 0) stays global and is never a port.
-#. In :menuselection:`File --> Document Properties…`, tick **Save this
+#. In :menuselection:`File --> Schematic properties…`, tick **Save this
    schematic as a SLiCAP subcircuit (.lib)** and give the document a *Title*
    (the subcircuit name).
-#. :menuselection:`File --> Save` opens the **Create Subcircuit** dialog, where
+#. :menuselection:`File --> Save schematic` opens the **Create Subcircuit** dialog, where
    you set the **node order** (drag ports up/down — this order *is* the
    ``.subckt`` node list) and declare the **overridable parameters** (name and
    default).

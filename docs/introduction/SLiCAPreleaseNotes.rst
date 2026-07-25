@@ -4,6 +4,111 @@ SLiCAP release notes
 
 .. image:: /img/colorCode.svg
 
+.. IMPLEMENTATION CHECKLIST — before publishing these notes, the following
+   v6 item still has to be implemented (spec: SLNG.md "Version 6:
+   explicit tool configuration"):
+   - File → Configure SLiCAP… dialog + removal of the installed-software
+     search (+ drop pywin32/windows_tools from pyproject.toml)
+   Everything else listed below is implemented and tested.
+
+SLiCAP Version 6.0 release notes
+================================
+
+#. **Schematic capture GUI.** SLiCAP now includes its own schematic editor;
+   KiCad, LTspice, gSchem, or Lepton-EDA are no longer required for drawing
+   circuits (they remain supported). The GUI is started from the command
+   line with ``slicap`` (full environment with instruction editing and
+   simulation) or ``slicap-schematics`` (schematic editing only), or from
+   Python with ``sl.startSchematic()``. It supports two schematic types:
+
+   - **SLiCAP schematics** (``.slicap_sch``): symbolic analysis netlists
+   - **NGspice schematics** (``.spice_sch``): numeric simulation netlists
+
+   Features include netlist generation, drawing-size SVG/PDF export with
+   LaTeX-rendered labels, hierarchical subcircuits, an instruction editor
+   with analysis dialogs, and a log panel. See
+   `Schematic capture <../schematics/index.html>`_.
+
+#. **NGspice simulations from the GUI.** Instruction dialogs generate and
+   run OP, DC, AC, TRAN, and NOISE analyses, including parameter stepping
+   and per-instruction parameter overrides (``params=``).
+   All values use SLiCAP notation (case-sensitive scale factors: ``m`` =
+   milli, ``M`` = mega); SLiCAP translates automatically wherever values are
+   written into NGspice input (``1M`` → ``1Meg`` — NGspice reads suffixes
+   case-insensitively). See
+   `Value notation <../schematics/component_properties.html#value-notation-scale-factors>`_.
+
+#. **Plot dialog and instruction editing.**
+   :menuselection:`Instruction --> Create / edit plot…` (main window)
+   composes a plot from the named analysis results in the instruction file —
+   NGspice results via trace conversion, SLiCAP results via ``plotSweep`` /
+   ``plotPZ`` — with smart defaults per analysis type. Both the plot dialog
+   and the analysis dialogs can **edit existing definitions**: pick a name,
+   the fields prefill from the instruction file, and the regenerated call is
+   appended — the later definition wins when the file runs; removing the
+   superseded line is up to you.
+
+#. **Project management in the GUI.** The main window's File menu creates,
+   opens, saves, and closes SLiCAP projects:
+
+   - :menuselection:`File --> New project…` asks for a project name,
+     directory, and author, generates the project ``main.py``, and runs it
+     once to create the project structure and its ``SLiCAP.ini``.
+   - :menuselection:`File --> Select project folder…` shows the project's files in a
+     **Project panel** on the left; double-clicking a schematic opens it in
+     the editor, any other file opens with its default application. A
+     directory without a ``SLiCAP.ini`` offers to create a project there.
+   - :menuselection:`File --> Save project` saves every open panel with
+     unsaved content; :menuselection:`File --> Close project` returns to the
+     welcome screen. One project is open at a time; switching projects
+     prompts for unsaved work first.
+
+#. **Explicit configuration of external programs.** SLiCAP no longer
+   searches the disk for installed programs (KiCad, LTspice, gEDA/Lepton-EDA,
+   NGspice); on MS-Windows this search could take up to two minutes and
+   broke whenever a program changed its installation layout. Instead:
+
+   - The GUI menu :menuselection:`File --> Configure SLiCAP…` lets you
+     enter, auto-detect, and test the program paths; they are stored in the
+     ``[commands]`` section of ``~/SLiCAP.ini``.
+   - The same section can be edited manually (script-only use); see
+     `Installation <../userguide/install.html>`_.
+   - Automatic detection still covers programs on the search PATH and the
+     default MS-Windows install locations (e.g. ``C:\Spice64\bin`` for
+     NGspice) — it just no longer walks the disk.
+   - An unconfigured program now produces a clear message pointing to the
+     configuration dialog instead of a failed netlist run.
+   - The ``pywin32`` and ``windows_tools`` dependencies have been dropped.
+
+#. **Faster startup.**
+
+   - ``import SLiCAP`` no longer contacts the internet. The check for new
+     releases moved to the GUI menu :menuselection:`Help --> Check for
+     updates…` (also available as ``sl.ini.check_for_updates()``).
+   - The built-in libraries are compiled once and cached
+     (``~/SLiCAP_libcache.pkl``); repeated ``initProject()`` calls are
+     nearly instant. The cache refreshes automatically when SLiCAP, sympy,
+     or a library file changes.
+
+#. `initProject() <../reference/SLiCAP.html#SLiCAP.SLiCAP.initProject>`__
+   accepts an optional ``author`` argument that is stored in the project
+   configuration file, e.g. ``sl.initProject("My project", author="Me")``.
+
+#. **GUI refinements.**
+
+   - Schematics open as tabs; each keeps the full canvas width.
+   - Closing the last schematic returns to the welcome screen;
+     :menuselection:`File --> Exit` (:kbd:`Ctrl+Q`) quits the application.
+   - The main window and the schematic panel now have separate File menus:
+     the main window creates/opens schematics, the schematic panel acts on
+     its own schematic only (*Save schematic*, *Schematic properties…*,
+     *Export netlist…*, *Print schematic…*, *Schematic drawing
+     preferences…*).
+
+#. **Packaging.** Dependencies are declared in ``pyproject.toml`` only;
+   ``requirements.txt`` has been removed. Install from source with
+   ``python -m pip install .``.
+
 SLiCAP Version 4.0 release notes
 ================================
 

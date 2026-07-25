@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem
 from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import QPen, QBrush, Qt
 
-from .config import JUNCTION_COLOR, JUNCTION_RADIUS, snap, Z_JUNCTION
+from .config import snap, style_of, default_style, Z_JUNCTION
 
 _SEL_PAD = 3.0  # extra space around the dot so the selection box appears around it
 
@@ -21,21 +21,28 @@ class JunctionItem(QGraphicsEllipseItem):
     """
 
     def __init__(self, center: QPointF):
-        r = JUNCTION_RADIUS
-        super().__init__(-r, -r, 2 * r, 2 * r)
+        super().__init__()
+        self._apply_style(default_style())
         self.setPos(center)
         self.setPen(QPen(Qt.NoPen))
-        self.setBrush(QBrush(JUNCTION_COLOR))
         self.setZValue(Z_JUNCTION)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
 
+    def _apply_style(self, style) -> None:
+        self._radius = style.JUNCTION_RADIUS
+        r = self._radius
+        self.setRect(-r, -r, 2 * r, 2 * r)
+        self.setBrush(QBrush(style.JUNCTION_COLOR))
+
     def boundingRect(self) -> QRectF:
-        r = JUNCTION_RADIUS + _SEL_PAD
+        r = self._radius + _SEL_PAD
         return QRectF(-r, -r, 2.0 * r, 2.0 * r)
 
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
+            self._apply_style(style_of(self))
         if change == QGraphicsItem.ItemPositionChange:
             snapped = snap(value)
             if self.scene() and not getattr(self.scene(), '_group_drag_active', False):

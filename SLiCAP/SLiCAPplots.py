@@ -7,6 +7,7 @@ import numpy as np
 import sympy as sp
 import matplotlib._pylab_helpers as plotHelp
 import matplotlib.pyplot as plt
+from matplotlib import get_backend
 import SLiCAP.SLiCAPconfigure as ini
 from random import randint
 from SLiCAP.SLiCAPlex import _SCALEFACTORS
@@ -97,6 +98,26 @@ class trace(object):
         self.lineType = ini.line_type
         """
         Line type (*str*) in matplotlib format. Defaults to '-'.
+        """
+        
+        self.xScaleFactor = ""
+        """
+        Scale factor applied to self.xData
+        """
+        
+        self.yScaleFactor = ""
+        """
+        Scale factor applied to self.yData
+        """
+        
+        self.xUnits = ""
+        """
+        Units of self.xData
+        """
+        
+        self.yUnits = ""
+        """
+        Units of self.yData
         """
 
     def makeTable(self):
@@ -272,9 +293,18 @@ class figure(object):
         self.traceDict = {}
         """
         Dictionary with key-value pairs:
-        
+
         - key: label of the trace
         - value: trace object
+        """
+
+        self.cursors = True
+        """
+        (*bool*) If True and show=True, attach interactive A/B cursors to each
+        non-polar axis and a nearest-point cursor to each polar axis.
+        The cursors stay inactive until enabled from the figure toolbar.
+        Silently ignored when the active backend is non-interactive.
+        Defaults to True.
         """
     def updateTracedict(self):
         """
@@ -286,10 +316,14 @@ class figure(object):
                 for trc in axrow.traces:
                     self.traceDict[trc.label] = trc
                 
-    def plot(self):
-        """
-        Creates the figure, and saves it to disck. It displays the figure if 
-        SLiCAPplots.figure.show == True.
+    def make_mpl_figure(self):
+        """Build and return the matplotlib Figure without saving or closing it.
+
+        Called by :meth:`plot` internally; also called by the GUI waveform dock
+        to embed the figure in a ``FigureCanvasQTAgg`` widget.
+
+        :return: live matplotlib Figure, or False on error.
+        :rtype: matplotlib.figure.Figure or bool
         """
         axes = np.array(self.axes)
         try:
@@ -307,6 +341,13 @@ class figure(object):
             return False
         # Define the matplotlib figure object
         fig = plt.figure(figsize = (self.axisWidth*cols, rows*self.axisHeight))
+        # Window title: the SLiCAP figure name instead of "Figure 1" etc.
+        # (no-op for non-interactive backends)
+        if self.fileName:
+            try:
+                fig.canvas.manager.set_window_title(self.fileName)
+            except Exception:
+                pass
         # Create the axes with their plots
         for i in range(len(axesList)):
             if axesList[i] != "":
@@ -371,31 +412,88 @@ class figure(object):
                         scaleY = 10**eval(_SCALEFACTORS[axesList[i].yScaleFactor])
                     else:
                         scaleY = 1
-                    plt.plot(axesList[i].traces[j].xData/scaleX, 
-                             axesList[i].traces[j].yData/scaleY, 
-                             label = axesList[i].traces[j].label, 
+                    plt.plot(axesList[i].traces[j].xData/scaleX,
+                             axesList[i].traces[j].yData/scaleY,
+                             label = axesList[i].traces[j].label,
                              linewidth = axesList[i].traces[j].lineWidth,
-                             color = Color, marker = Marker, 
-                             markeredgecolor = MarkerColor, 
-                             markersize = axesList[i].traces[j].markerSize, 
-                             markeredgewidth = 2, 
-                             markerfacecolor = axesList[i].traces[j].markerFaceColor, 
+                             color = Color, marker = Marker,
+                             markeredgecolor = MarkerColor,
+                             markersize = axesList[i].traces[j].markerSize,
+                             markeredgewidth = 2,
+                             markerfacecolor = axesList[i].traces[j].markerFaceColor,
                              linestyle = axesList[i].traces[j].lineType)
                     if axesList[i].text:
                         X, Y, txt = axesList[i].text
                         plt.text(X, Y, txt, fontsize = ini.plot_fontsize)
                     # Set default font sizes and grid
                     defaultsPlot()
-        # Save the figure"
+        return fig
+
+    def plot(self):
+        """
+        Creates the figure, and saves it to disk. It displays the figure if
+        SLiCAPplots.figure.show == True.
+
+        Showing does NOT block: the script continues (so all instructions of
+        a run execute) and the process waits once, at exit, until every open
+        figure has been closed.
+        """
+        fig = self.make_mpl_figure()
+        if fig is False:
+            return False
+        # Save the figure
         if self.save:
             plt.savefig(ini.img_path + self.fileName + "." + self.fileType)
             if self.fileType.lower() != "pdf":
                 plt.savefig(ini.img_path + self.fileName + ".pdf")
         if self.show:
-            plt.show()
+            if self.cursors:
+                for mpl_ax in fig.axes:
+                    if mpl_ax.name == 'polar':
+                        enable_polar_cursor(mpl_ax)
+                    else:
+                        enable_ab_cursors(mpl_ax)
+            _show_nonblocking()
         self.updateTracedict()
-        plt.close(fig)
+        if not self.show:
+            plt.close(fig)
         return
+
+_atexit_show_registered = False
+
+def _show_nonblocking():
+    """Show all open figures without blocking the running script.
+
+    The process blocks ONCE, at exit, until the user has closed every figure
+    window — so an instruction file executes all its instructions before any
+    figure has to be closed, and the figures stay on screen afterwards.
+    Harmless with non-interactive backends (matplotlib turns show into a
+    warning there)."""
+    global _atexit_show_registered
+    plt.show(block=False)
+    try:
+        plt.pause(0.05)                    # let the window render
+    except Exception:
+        pass                               # non-interactive backend
+    if not _atexit_show_registered:
+        import atexit
+        atexit.register(_block_until_figures_closed)
+        _atexit_show_registered = True
+
+# Printed to stdout the instant the script has finished executing but figures
+# keep the process alive (see _block_until_figures_closed). The GUI instruction
+# runner watches for this line to tell "run finished, only showing plots" apart
+# from "still computing", so a new run is allowed while old plots stay open. It
+# is emitted only under the GUI runner (SLICAP_GUI_RUN) and is swallowed there,
+# never shown in the log.
+_SCRIPT_DONE_SENTINEL = "\x1e__SLiCAP_SCRIPT_DONE__"
+
+def _block_until_figures_closed():
+    if plt.get_fignums():
+        import os
+        if os.environ.get("SLICAP_GUI_RUN"):
+            print(_SCRIPT_DONE_SENTINEL, flush=True)
+        plt.show(block=True)
 
 def defaultsPlot():
     """
@@ -432,11 +530,421 @@ def defaultsPlot():
                 pass
     return
 
-def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum, 
-              sweepVar = 'auto', sweepScale = '', xVar = 'auto', xScale = '', 
-              xUnits = '', xLim = [], yLim = [], axisType = 'auto', 
+_INTERACTIVE_BACKENDS = {
+    'qtagg', 'qt5agg', 'qt4agg', 'tkagg', 'wxagg',
+    'gtk3agg', 'gtk4agg', 'macosx', 'webagg',
+}
+
+def enable_ab_cursors(ax, readout_fn=None):
+    """Attach A/B dual vertical cursors to *ax*.
+
+    Left-click sets cursor A (blue dashed), right-click sets cursor B (red
+    dashed).  When both cursors are placed:
+
+    - A text annotation box appears in the upper-left corner of the plot
+      showing x_A, x_B, ΔX and, for every data trace, y_A, y_B, ΔY.
+    - The same text is printed to stdout immediately (flushed), so it appears
+      in the log panel without waiting for the plot window to close.
+
+    Pass a custom *readout_fn(x_a, x_b)* to add extra processing on top.
+
+    Silent no-op when the active backend is non-interactive (Agg, PDF, SVG, …).
+
+    :param ax: Matplotlib Axes to attach cursors to.
+    :type ax: matplotlib.axes.Axes
+
+    :param readout_fn: Optional extra callback ``f(x_a, x_b)`` called after
+                       the built-in annotation update.
+    :type readout_fn: callable or None
+    """
+    if get_backend().lower() not in _INTERACTIVE_BACKENDS:
+        return
+
+    cursor_a = ax.axvline(x=ax.get_xlim()[0], color='blue', linewidth=1,
+                          linestyle='--', alpha=0.7)
+    cursor_b = ax.axvline(x=ax.get_xlim()[0], color='red', linewidth=1,
+                          linestyle='--', alpha=0.7)
+    cursor_a.set_visible(False)
+    cursor_b.set_visible(False)
+    state = {'x_a': None, 'x_b': None}
+    _cursor_active = [False]
+
+    # ── in-plot annotation box ────────────────────────────────────────────────
+    _ann = ax.text(
+        0.01, 0.99, '',
+        transform=ax.transAxes,
+        va='top', ha='left',
+        fontsize=7.5, fontfamily='monospace',
+        bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow',
+                  edgecolor='#888888', alpha=0.92, linewidth=0.8),
+        visible=False, zorder=20,
+    )
+
+    # ── crosshair lines and annotation ───────────────────────────────────────
+    _crosshair_active = [False]
+    _ch_v = ax.axvline(x=ax.get_xlim()[0], color='green', linewidth=0.8,
+                       linestyle='-', alpha=0.5)
+    _ch_h = ax.axhline(y=ax.get_ylim()[0], color='green', linewidth=0.8,
+                       linestyle='-', alpha=0.5)
+    _ch_v.set_visible(False)
+    _ch_h.set_visible(False)
+    _ch_ann = ax.text(
+        0.99, 0.99, '',
+        transform=ax.transAxes,
+        va='top', ha='right',
+        fontsize=7.5, fontfamily='monospace',
+        bbox=dict(boxstyle='round,pad=0.5', facecolor='#e8ffe8',
+                  edgecolor='green', alpha=0.92, linewidth=0.8),
+        visible=False, zorder=20,
+    )
+
+    # ── toolbar toggle buttons ────────────────────────────────────────────────
+    def _clear_cursors():
+        cursor_a.set_visible(False)
+        cursor_b.set_visible(False)
+        _ann.set_visible(False)
+        state['x_a'] = None
+        state['x_b'] = None
+        _placed[0] = False
+        ax.figure.canvas.draw_idle()
+
+    def _clear_crosshair():
+        _ch_v.set_visible(False)
+        _ch_h.set_visible(False)
+        _ch_ann.set_visible(False)
+        ax.figure.canvas.draw_idle()
+
+    _draw_cid = [None]
+
+    def _add_toolbar_buttons():
+        try:
+            # Try canvas.toolbar first, then manager.toolbar
+            toolbar = ax.figure.canvas.toolbar
+            if toolbar is None:
+                try:
+                    toolbar = ax.figure.canvas.manager.toolbar
+                except Exception:
+                    pass
+            if toolbar is None or not hasattr(toolbar, 'addAction'):
+                _cursor_active[0] = True
+                return
+            # Use the same Qt binding that matplotlib itself uses.
+            # PyQt6 moved QAction from QtWidgets to QtGui.
+            from matplotlib.backends.qt_compat import QtWidgets, QtGui
+            QAction = getattr(QtWidgets, 'QAction', None) or QtGui.QAction
+            _act_cur = QAction('Cursors', toolbar)
+            _act_cur.setCheckable(True)
+            _act_cur.setChecked(False)
+            _act_cur.setToolTip('A/B cursors — left-click: A, right-click: B')
+
+            _act_ch = QAction('Crosshair', toolbar)
+            _act_ch.setCheckable(True)
+            _act_ch.setChecked(False)
+            _act_ch.setToolTip('Crosshair — follows mouse, shows values on all traces')
+
+            def _on_cursor_toggle(checked):
+                _cursor_active[0] = checked
+                if checked and _crosshair_active[0]:
+                    _act_ch.setChecked(False)
+                if not checked:
+                    _clear_cursors()
+
+            def _on_ch_toggle(checked):
+                _crosshair_active[0] = checked
+                if checked and _cursor_active[0]:
+                    _act_cur.setChecked(False)
+                if not checked:
+                    _clear_crosshair()
+
+            _act_cur.toggled.connect(_on_cursor_toggle)
+            _act_ch.toggled.connect(_on_ch_toggle)
+            toolbar.addSeparator()
+            toolbar.addAction(_act_cur)
+            toolbar.addAction(_act_ch)
+        except Exception as e:
+            print(f'[SLiCAP] cursor toolbar setup failed: {e}')
+            _cursor_active[0] = True   # no Qt toolbar — cursors always active
+
+    def _on_first_draw(event):
+        ax.figure.canvas.mpl_disconnect(_draw_cid[0])
+        _add_toolbar_buttons()
+
+    _draw_cid[0] = ax.figure.canvas.mpl_connect('draw_event', _on_first_draw)
+
+    # ── readout text builder ──────────────────────────────────────────────────
+    def _build_text(x_a, x_b):
+        rows = []
+        if x_a is not None:
+            rows.append(f"A : {x_a:.6g}")
+        if x_b is not None:
+            rows.append(f"B : {x_b:.6g}")
+        if x_a is not None and x_b is not None:
+            rows.append(f"ΔX: {x_b - x_a:+.6g}")
+        rows.append("─" * 26)
+        for line in ax.lines:
+            xd = line.get_xdata()
+            yd = line.get_ydata()
+            if len(xd) < 2:
+                continue
+            lbl = line.get_label() or "trace"
+            if lbl.startswith('_'):
+                continue
+            parts = []
+            if x_a is not None:
+                ya = float(np.interp(x_a, xd, np.real(yd)))
+                parts.append(f"A={ya:.6g}")
+            if x_b is not None:
+                yb = float(np.interp(x_b, xd, np.real(yd)))
+                parts.append(f"B={yb:.6g}")
+            if x_a is not None and x_b is not None:
+                ya2 = float(np.interp(x_a, xd, np.real(yd)))
+                yb2 = float(np.interp(x_b, xd, np.real(yd)))
+                parts.append(f"Δ={yb2 - ya2:+.6g}")
+            rows.append(lbl)
+            rows.append("  " + "  ".join(parts))
+        return '\n'.join(rows)
+
+    # ── best-corner auto-placement (fires only on first show) ─────────────────
+    _placed = [False]   # True once the user has manually dragged the annotation
+
+    def _reposition_annotation():
+        if _placed[0]:
+            return
+        try:
+            ax.figure.canvas.draw()
+            renderer = ax.figure.canvas.get_renderer()
+            ann_bbox = _ann.get_window_extent(renderer)
+            ax_win   = ax.get_window_extent(renderer)
+            aw = min(ann_bbox.width  / ax_win.width,  0.95)
+            ah = min(ann_bbox.height / ax_win.height, 0.95)
+        except Exception:
+            aw, ah = 0.35, 0.40
+
+        candidates = [
+            (0.01, 0.99, 'top',    'left',  (0.0,    aw), (1 - ah, 1.0)),
+            (0.99, 0.99, 'top',    'right', (1 - aw, 1.0),(1 - ah, 1.0)),
+            (0.01, 0.01, 'bottom', 'left',  (0.0,    aw), (0.0,    ah)),
+            (0.99, 0.01, 'bottom', 'right', (1 - aw, 1.0),(0.0,    ah)),
+        ]
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        pts_ax = []
+        for line in ax.lines:
+            xd = np.asarray(line.get_xdata())
+            yd = np.real(line.get_ydata())
+            if len(xd) < 2 or (line.get_label() or '').startswith('_'):
+                continue
+            mask = ((xd >= min(xlim)) & (xd <= max(xlim)) &
+                    (yd >= min(ylim)) & (yd <= max(ylim)))
+            if not mask.any():
+                continue
+            disp = ax.transData.transform(np.column_stack([xd[mask], yd[mask]]))
+            pts_ax.append(ax.transAxes.inverted().transform(disp))
+
+        best, best_n = candidates[0], float('inf')
+        for cand in candidates:
+            x0, x1 = cand[4]
+            y0, y1 = cand[5]
+            n = sum(
+                int(np.sum((p[:, 0] >= x0) & (p[:, 0] <= x1) &
+                           (p[:, 1] >= y0) & (p[:, 1] <= y1)))
+                for p in pts_ax
+            )
+            if n < best_n:
+                best_n, best = n, cand
+
+        _ann.set_position((best[0], best[1]))
+        _ann.set_va(best[2])
+        _ann.set_ha(best[3])
+
+    # ── draggable annotation ──────────────────────────────────────────────────
+    _drag = {'on': False, 'x0': 0.0, 'y0': 0.0, 'ax0': 0.0, 'ay0': 0.0}
+
+    def _ann_hit(event):
+        """Return True when *event* is inside the annotation bounding box."""
+        if not _ann.get_visible():
+            return False
+        try:
+            renderer = ax.figure.canvas.get_renderer()
+            return _ann.get_window_extent(renderer).contains(event.x, event.y)
+        except Exception:
+            return False
+
+    def _on_press(event):
+        if not _cursor_active[0]:
+            return
+        try:
+            if ax.figure.canvas.toolbar.mode != '':
+                return
+        except Exception:
+            pass
+        if event.inaxes is not ax or event.xdata is None:
+            return
+        if _ann_hit(event):
+            # Start dragging — don't also set a cursor
+            _drag['on'] = True
+            _drag['x0'] = event.x
+            _drag['y0'] = event.y
+            pos = _ann.get_position()
+            _drag['ax0'], _drag['ay0'] = pos[0], pos[1]
+            return
+        if event.button == 1:
+            cursor_a.set_xdata([event.xdata, event.xdata])
+            cursor_a.set_visible(True)
+            state['x_a'] = event.xdata
+        elif event.button == 3:
+            cursor_b.set_xdata([event.xdata, event.xdata])
+            cursor_b.set_visible(True)
+            state['x_b'] = event.xdata
+        if state['x_a'] is not None or state['x_b'] is not None:
+            text = _build_text(state['x_a'], state['x_b'])
+            _ann.set_text(text)
+            _ann.set_visible(True)
+            _reposition_annotation()
+            if readout_fn is not None and state['x_a'] is not None and state['x_b'] is not None:
+                readout_fn(state['x_a'], state['x_b'])
+        ax.figure.canvas.draw_idle()
+
+    def _on_motion(event):
+        if _drag['on']:
+            try:
+                ax_win = ax.get_window_extent(ax.figure.canvas.get_renderer())
+                dx = (event.x - _drag['x0']) / ax_win.width
+                dy = (event.y - _drag['y0']) / ax_win.height
+            except Exception:
+                return
+            _ann.set_position((_drag['ax0'] + dx, _drag['ay0'] + dy))
+            ax.figure.canvas.draw_idle()
+            return
+
+        if not _crosshair_active[0]:
+            return
+        if event.inaxes is not ax or event.xdata is None:
+            _ch_v.set_visible(False)
+            _ch_h.set_visible(False)
+            _ch_ann.set_visible(False)
+            ax.figure.canvas.draw_idle()
+            return
+
+        x = event.xdata
+        best_y = event.ydata
+        best_dist = float('inf')
+        for line in ax.lines:
+            xd = np.asarray(line.get_xdata())
+            yd = np.real(np.asarray(line.get_ydata()))
+            if len(xd) < 2 or (line.get_label() or '').startswith('_'):
+                continue
+            xmin, xmax = float(np.min(xd)), float(np.max(xd))
+            if not (xmin <= x <= xmax):
+                continue
+            yi = float(np.interp(x, xd, yd))
+            if abs(yi - event.ydata) < best_dist:
+                best_dist = abs(yi - event.ydata)
+                best_y = yi
+
+        _ch_v.set_xdata([x, x])
+        _ch_h.set_ydata([best_y, best_y])
+        _ch_v.set_visible(True)
+        _ch_h.set_visible(True)
+
+        rows = [f"x : {x:.6g}", "─" * 22]
+        for line in ax.lines:
+            xd = np.asarray(line.get_xdata())
+            yd = np.real(np.asarray(line.get_ydata()))
+            if len(xd) < 2 or (line.get_label() or '').startswith('_'):
+                continue
+            xmin, xmax = float(np.min(xd)), float(np.max(xd))
+            if not (xmin <= x <= xmax):
+                continue
+            yi = float(np.interp(x, xd, yd))
+            rows.append(f"{line.get_label() or 'trace'}: {yi:.6g}")
+        _ch_ann.set_text('\n'.join(rows))
+        _ch_ann.set_visible(True)
+        ax.figure.canvas.draw_idle()
+
+    def _on_release(event):
+        if _drag['on']:
+            _placed[0] = True   # freeze auto-placement after first manual drag
+        _drag['on'] = False
+
+    ax.figure.canvas.mpl_connect('button_press_event', _on_press)
+    ax.figure.canvas.mpl_connect('motion_notify_event', _on_motion)
+    ax.figure.canvas.mpl_connect('button_release_event', _on_release)
+
+
+def enable_polar_cursor(ax):
+    """Attach a nearest-point cursor to a polar *ax*.
+
+    Any mouse click snaps to the closest data point on any trace and prints
+    its magnitude, angle (degrees), and — when the trace xData looks like a
+    frequency sweep — the corresponding frequency.
+
+    Silent no-op when the active backend is non-interactive.
+
+    :param ax: Polar matplotlib Axes to attach the cursor to.
+    :type ax: matplotlib.axes.Axes
+    """
+    if get_backend().lower() not in _INTERACTIVE_BACKENDS:
+        return
+
+    marker, = ax.plot([], [], 'ko', markersize=8, zorder=10)
+
+    def _on_click(event):
+        if event.inaxes is not ax or event.xdata is None:
+            return
+        theta_click, r_click = event.xdata, event.ydata
+        best = None
+        best_dist = np.inf
+        for line in ax.lines:
+            if line is marker:
+                continue
+            xd = np.asarray(line.get_xdata())   # angle (radians)
+            yd = np.asarray(line.get_ydata())   # radius
+            if len(xd) == 0:
+                continue
+            dists = (xd - theta_click) ** 2 + (yd - r_click) ** 2
+            i = int(np.argmin(dists))
+            if dists[i] < best_dist:
+                best_dist = dists[i]
+                best = (line, i, xd[i], yd[i])
+        if best is None:
+            return
+        line, idx, theta, r = best
+        marker.set_data([theta], [r])
+        ax.figure.canvas.draw_idle()
+        lbl = line.get_label() or "trace"
+        angle_deg = np.degrees(theta)
+        msg = f"\n{lbl}:  |H|={r:.6g}  angle={angle_deg:.2f}°"
+        # If xData is monotone (frequency-like), report the contour variable.
+        xd = np.asarray(line.get_xdata())
+        if len(xd) > 1 and (np.all(np.diff(xd) >= 0) or np.all(np.diff(xd) <= 0)):
+            msg += f"  idx={idx}"
+        print(msg)
+
+    ax.figure.canvas.mpl_connect('button_press_event', _on_click)
+
+def _undefined_params(yData, fileName):
+    """True if *yData* still contains parameters other than the sweep
+    symbols (Laplace variable, frequency, time) — plotting would fail on
+    them. Tells the user which parameters and how to fix it (SLNG.md,
+    Anton 2026-07-11: forgotten pardefs='circuit' must give a warning,
+    not a crash or a silently missing plot)."""
+    if not isinstance(yData, sp.Basic):
+        return False
+    extra = yData.atoms(sp.Symbol) - {ini.laplace, ini.frequency,
+                                      sp.Symbol('t')}
+    if extra:
+        print("Error: plot '{0}': undefined parameter(s): {1}. Substitute "
+              "the circuit parameters in the instruction first, e.g. with "
+              "pardefs='circuit'.".format(
+                  fileName, ', '.join(sorted(str(s) for s in extra))))
+        return True
+    return False
+
+def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
+              sweepVar = 'auto', sweepScale = '', xVar = 'auto', xScale = '',
+              xUnits = '', xLim = [], yLim = [], axisType = 'auto',
               funcType = 'auto', yVar = 'auto', yScale = '', yUnits = '',
-              noiseSources = None, show = False, save = True):
+              noiseSources = None, show = False, save = True, cursors = True):
     """
     Plots a function by sweeping one variable and optionally stepping another.
 
@@ -460,7 +968,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
       - data type == 'noise', 'laplace', 'numer' or 'denom': sweepVar = ini.frequency
         for data types 'laplace', 'numer' or 'denom' the laplace variable will
         be replaced with sympy.i*ini.frequency or with 2*sympy.pi*sympy.i*ini.frequency
-        before sweeping, when ini.frequency == False, or ini.frequency== True, respectively.
+        before sweeping, when ini.hz == False, or ini.hz== True, respectively.
       - dataType == 'time', 'impulse' or 'step': sweepVar = sympy.Symbol('t')
 
     The type of axis can be 'lin', 'log', 'semilogx', 'semilogy' or 'polar'.
@@ -536,7 +1044,12 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
     :type show: bool
 
     :param save: If 'True' the plot will be saved to the img folder in both pdf and svg format. Defaults to True.
-    :type show: bool
+    :type save: bool
+
+    :param cursors: If 'True', the shown figure's toolbar offers A/B cursors
+                    and a crosshair (inactive until enabled there). Defaults
+                    to True.
+    :type cursors: bool
 
     :return: fig
     :rtype: SLiCAPplots.figure
@@ -549,6 +1062,7 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
     fig = figure(fileName)
     fig.show = show
     fig.save = save
+    fig.cursors = cursors
     ax = axis(title)
     ax.polar = False
     if type(results) != list:
@@ -723,6 +1237,9 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                 elif result.dataType == 'impulse':
                     yData = result.impulse
                     yLabel = '$' + sp.latex(sp.Symbol(result.detLabel)) + '$'
+                if result.dataType != 'noise' and _undefined_params(yData,
+                                                                    fileName):
+                    continue
                 if funcType == 'mag':
                     if ax.polar:
                         radius = _magFunc_f(yData, x)
@@ -785,6 +1302,8 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                             yData = sp.N(result.onoise)
                         elif funcType == 'inoise':
                             yData = sp.N(result.inoise)
+                        if _undefined_params(yData, fileName):
+                            continue
                         y = _makeNumData(yData, ini.frequency, x)
                         newTrace = trace([x, y])
                         newTrace.label = funcType
@@ -795,6 +1314,8 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                                 yData = sp.simplify(sp.N(result.onoiseTerms[srcName]))
                             elif funcType == 'inoise':
                                 yData = sp.simplify(sp.N(result.inoiseTerms[srcName]))
+                            if _undefined_params(yData, fileName):
+                                continue
                             y = _makeNumData(yData, ini.frequency, x)
                             noiseTrace = trace([x, y])
                             noiseTrace.color = ini.default_colors[colNum % numColors]
@@ -806,6 +1327,8 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                             yData = sp.simplify(sp.N(result.onoiseTerms[noiseSources]))
                         elif funcType == 'inoise':
                             yData = sp.simplify(sp.N(result.inoiseTerms[noiseSources]))
+                        if _undefined_params(yData, fileName):
+                            continue
                         y = _makeNumData(yData, ini.frequency, x)
                         noiseTrace = trace([x, y])
                         noiseTrace.color = ini.default_colors[colNum % numColors]
@@ -819,6 +1342,8 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                                     yData = sp.simplify(sp.N(result.onoiseTerms[srcName]))
                                 elif funcType == 'inoise':
                                     yData = sp.simplify(sp.N(result.inoiseTerms[srcName]))
+                                if _undefined_params(yData, fileName):
+                                    continue
                                 y = _makeNumData(yData, ini.frequency, x)
                                 noiseTrace = trace([x, y])
                                 noiseTrace.color = ini.default_colors[colNum % numColors]
@@ -872,6 +1397,8 @@ def plotSweep(fileName, title, results, sweepStart, sweepStop, sweepNum,
                         yLabel += ', run: %s'%(i+1)
                     else:
                         yLabel += ', %s = %8.1e'%(result.stepVar, result.stepList[i])
+                    if _undefined_params(yData, fileName):
+                        break        # same params in every step: warn once
                     if funcType == 'mag':
                         if ax.polar:
                             radius = _magFunc_f(yData, x)
@@ -1254,9 +1781,9 @@ def plotPZ(fileName, title, results, xmin = None, xmax = None,
     fig.plot()
     return fig
 
-def plot(fileName, title, axisType, plotData, xName = '', xScale = '', 
-         xUnits = '', yName = '', yScale = '', yUnits = '', xLim = [] , 
-         yLim = [], show = False, save = True):
+def plot(fileName, title, axisType, plotData, xName = '', xScale = '',
+         xUnits = '', yName = '', yScale = '', yUnits = '', xLim = [],
+         yLim = [], show = False, save = True, cursors = True):
     """
     Plots x-y data, or multiple pairs of x-y data.
 
@@ -1311,7 +1838,12 @@ def plot(fileName, title, axisType, plotData, xName = '', xScale = '',
     :type show: bool
 
     :param save: If 'True' the plot will be saved to the img folder in both pdf and svg format. Defaults to True.
-    :type show: bool
+    :type save: bool
+
+    :param cursors: If 'True', the shown figure's toolbar offers A/B cursors
+                    and a crosshair (inactive until enabled there). Defaults
+                    to True.
+    :type cursors: bool
 
     :return: fig
     :rtype: SLiCAPplots.figure
@@ -1319,6 +1851,7 @@ def plot(fileName, title, axisType, plotData, xName = '', xScale = '',
     fig = figure(fileName)
     fig.show = show
     fig.save = save
+    fig.cursors = cursors
     ax = axis(title)
     colNum = 0
     numColors = len(ini.default_colors)
@@ -1519,6 +2052,43 @@ def traces2fig(traceDict, figObject, axis = [0, 0]):
     for label in list(traceDict.keys()):
         figObject.axes[axis[0]][axis[0]].traces.append(traceDict[label])
     return figObject
+
+def fig2traces(figObject, names=None):
+    """
+    Returns the traces of an existing figure, for reuse in another plot.
+
+    Every figure carries a trace dictionary that is updated when the figure
+    is plotted (plotSweep(), plot() and plotPZ() all do this, also with
+    show=False and save=False). This function makes those traces available
+    as input for plot(), so traces from any figure — including traces that
+    were generated inside plotSweep() — can be combined in a new figure.
+
+    :param figObject: Figure of which the traces must be returned.
+    :type figObject: SLiCAPplots.figure
+
+    :param names: Label, or list of labels, of the traces to be returned.
+                  If None (default), all traces of the figure are returned.
+    :type names: str, list, NoneType
+
+    :return: Dictionary with key-value pairs:
+
+             - key: *str*: label of the trace
+             - value: *SLiCAPplots.trace* trace object
+
+    :rtype: dict
+    """
+    if names is None:
+        return dict(figObject.traceDict)
+    if type(names) == str:
+        names = [names]
+    traceDict = {}
+    for name in names:
+        if name in figObject.traceDict:
+            traceDict[name] = figObject.traceDict[name]
+        else:
+            print("Warning: no trace '{0}' in figure '{1}'.".format(
+                name, figObject.fileName))
+    return traceDict
 
 def LTspiceData2Traces(txtFile):
     """

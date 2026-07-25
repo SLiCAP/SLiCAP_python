@@ -23,42 +23,59 @@ Launching the editor
    import SLiCAP as sl
    sl.initProject("My Design")
 
-   sl.startSchematic()                              # blank canvas, full symbol library
-   sl.startSchematic(config='basic')               # blank canvas, basic symbols only
+   sl.startSchematic()                              # empty editor; choose type from the File menu
+   sl.startSchematic(config='basic')                # SLiCAP basic-symbol capture mode
    sl.startSchematic(file='sch/mydesign.slicap_sch')          # open an existing file
    sl.startSchematic(config='basic', file='sch/mydesign.slicap_sch')
 
 The call returns immediately; the editor runs as an independent process alongside
-the Python session.
+the Python session (schematic-only: no Instruction/Log panels).
 
-``config`` controls which symbols are available in the *Place → Symbol* menu:
+``config`` selects the **capture mode**.  It sets the symbol library *and*
+restricts which schematic type may be created or opened:
 
 .. list-table::
    :header-rows: 1
-   :widths: 15 85
+   :widths: 12 46 42
 
    * - ``config``
      - Symbol set loaded
-   * - ``'full'`` *(default)*
-     - All SVG files in the system symbols directory — the complete SLiCAP library.
+     - Schematic type
+   * - ``None`` *(default)*
+     - chosen per schematic
+     - both SLiCAP and NGspice allowed
    * - ``'basic'``
-     - ``Symbols.svg`` only (the standard IEC/SLiCAP set, without e.g. the MOSFET
-       symbol ``M``).  Use this when your project does not need device-level
-       symbols.
+     - ``Symbols.svg`` only (standard IEC/SLiCAP set, without e.g. the MOSFET
+       symbol ``M``)
+     - SLiCAP only (NGspice disabled)
+   * - ``'slicap'``
+     - the complete SLiCAP library (all SVG files in the system symbols directory)
+     - SLiCAP only (NGspice disabled)
+   * - ``'ngspice'``
+     - the NGspice symbol library
+     - NGspice only (SLiCAP disabled)
 
-``file`` is the path to a ``.slicap_sch`` file to open at startup.
-If omitted, the editor opens with a blank schematic.
+In a restricted mode the disallowed :menuselection:`File --> New ... Schematic`
+entry is greyed out and :menuselection:`File --> Open` lists only files of the
+permitted type.
+
+``file`` is the path to a schematic to open at startup; its type is inferred from
+the extension (``.slicap_sch`` or ``.spice_sch``).  **A canvas is shown only when
+a file is given** — otherwise the editor opens empty and you create or open a
+schematic from the File menu (honouring the capture mode).
 
 **From the command line** (for scripting or desktop shortcuts):
 
 .. code-block:: console
 
-   $ python -m SLiCAP.schematic.main                            # blank, full library
-   $ python -m SLiCAP.schematic.main --config basic             # blank, basic library
-   $ python -m SLiCAP.schematic.main sch/mydesign.slicap_sch   # open file
-   $ python -m SLiCAP.schematic.main --config basic sch/mydesign.slicap_sch
+   $ slicap                                                       # full editor, both types
+   $ slicap-schematics                                            # schematic-only editor, empty
+   $ slicap-schematics --config basic                             # basic SLiCAP mode, empty
+   $ slicap-schematics --config ngspice sch/mydesign.spice_sch    # open an NGspice file
+   $ python -m SLiCAP.schematic.main --schematic-only --config basic
 
-The main window opens with an empty canvas (or the specified schematic).
+Without a ``file`` the editor opens empty; use the File menu to create or open a
+schematic in the selected mode.
 
 .. figure:: images/main_window.png
    :alt: The main window
@@ -85,12 +102,14 @@ A first schematic in five steps
    :menuselection:`Place --> Define src / det / lg ref…` to designate the
    independent source and the detector.
 
-#. **Save and export.**  :menuselection:`File --> Save` writes the
-   ``.slicap_sch`` file; :menuselection:`File --> Export Netlist…` produces a
+#. **Save and export.**  :menuselection:`File --> Save schematic` writes the
+   ``.slicap_sch`` file; :menuselection:`File --> Export netlist…` produces a
    ``.cir`` netlist for SLiCAP.  See :doc:`netlist_and_export`.
 
 The menu bar at a glance
 ========================
+
+Each schematic panel has its own menu bar with actions on that schematic:
 
 .. list-table::
    :header-rows: 1
@@ -99,10 +118,10 @@ The menu bar at a glance
    * - Menu
      - Contents
    * - **File**
-     - New (:kbd:`Ctrl+N`), Open (:kbd:`Ctrl+O`), Save (:kbd:`Ctrl+S`),
-       Save As (:kbd:`Ctrl+Shift+S`), Document Properties, Export Netlist
-       (:kbd:`Ctrl+E`), Export SVG, Export PDF, Print (:kbd:`Ctrl+P`),
-       Preferences.
+     - Save schematic (:kbd:`Ctrl+S`), Save schematic as
+       (:kbd:`Ctrl+Shift+S`), Schematic properties, Export netlist
+       (:kbd:`Ctrl+E`), Export SVG, Export PDF, Print schematic
+       (:kbd:`Ctrl+P`), Schematic drawing preferences.
    * - **Edit**
      - Undo (:kbd:`Ctrl+Z`), Redo (:kbd:`Ctrl+Y`).
    * - **View**
@@ -116,5 +135,26 @@ The menu bar at a glance
      - Symbol (:kbd:`S`), Wire (:kbd:`W`), Net Label (:kbd:`L`),
        Junction (:kbd:`J`), Border (:kbd:`B`), Library, Image, Parameters,
        Define src / det / lg ref.
+   * - **Instruction**
+     - Create / edit SLiCAP instruction (SLiCAP schematics) or
+       Create / edit NGspice instruction (NGspice schematics); Run, Stop.
+
+Creating and opening schematics, and application-wide actions, live in the
+**main window's** menu bar:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 18 82
+
+   * - Menu
+     - Contents
+   * - **File**
+     - New project, Select project folder, Save project, Close project;
+       New SLiCAP Schematic, New NGspice Schematic, Open (:kbd:`Ctrl+O`);
+       Exit (:kbd:`Ctrl+Q`).
+   * - **Instruction**
+     - Create / edit plot; Run (:kbd:`F5`), Stop (:kbd:`F6`).
+   * - **View**
+     - Show/hide the Project, Instructions, and Log panels.
    * - **Help**
-     - Show HTML Documentation (:kbd:`F1`), About.
+     - Show HTML Documentation (:kbd:`F1`), Check for updates, About.

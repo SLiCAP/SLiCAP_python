@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from .component_item import ComponentItem, SYMBOL_PREFIX
+from .component_item import ComponentItem
 
 _ANNOTATION = {"0", "port"}
 
@@ -20,7 +20,7 @@ def rename_left_right_top_bottom(scene) -> int:
     groups: dict[str, list[ComponentItem]] = defaultdict(list)
     for item in scene.items():
         if isinstance(item, ComponentItem) and item.symbol_name not in _ANNOTATION:
-            prefix = SYMBOL_PREFIX.get(item.symbol_name, "X")
+            prefix = item.prefix or "X"
             groups[prefix].append(item)
 
     changed = 0

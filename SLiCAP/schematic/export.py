@@ -13,8 +13,14 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from PySide6.QtCore import QRectF, QPointF, QBuffer, QIODevice
 
-_MARGIN             = 20    # scene-unit padding around bounding box
-_SCENE_UNITS_PER_MM = 2.0   # 1 mm = 2 scene units
+def _units_per_mm() -> float:
+    """Scene units per millimeter — the project setting ini.sch_scale
+    ([gui] sch_scale in the project SLiCAP.ini, default 2). Read
+    dynamically so switching projects picks up each project's scale
+    (Anton, 2026-07-15: book projects with narrow LaTeX figure widths
+    use 4-5)."""
+    import SLiCAP.SLiCAPconfigure as ini
+    return float(getattr(ini, "sch_scale", 2.0))
 _SVG_NS             = "http://www.w3.org/2000/svg"
 _XLINK_NS           = "http://www.w3.org/1999/xlink"
 
@@ -74,7 +80,7 @@ def export_bounds(scene) -> QRectF:
     b = scene.itemsBoundingRect()
     if b.isEmpty():
         b = QRectF(0, 0, 200, 200)
-    return b.adjusted(-_MARGIN, -_MARGIN, _MARGIN, _MARGIN)
+    return b   # tight to content; user adds padding via an (invisible) BorderItem
 
 
 def _qhex(c) -> str:
@@ -96,15 +102,15 @@ def _build_svg(scene, title: str = "") -> bytes:
     from .parameter_item import ParameterItem
     from .model_item import ModelItem
     from .library_item import LibraryItem
-    from .config import (
-        WIRE_COLOR, WIRE_WIDTH,
-        JUNCTION_COLOR, JUNCTION_RADIUS,
-        COMP_LABEL_COLOR, COMP_LABEL_FONT_SIZE,
-        NET_LABEL_COLOR, NET_LABEL_FONT_SIZE,
-        TEXT_COLOR, TEXT_FONT_SIZE, TEXT_FONT_FAMILY, TEXT_FONT,
-        HYPERLINK_COLOR, HYPERLINK_FONT_SIZE, HYPERLINK_FONT_FAMILY, HYPERLINK_UNDERLINE,
-        COMMAND_COLOR, COMMAND_FONT_SIZE, COMMAND_FONT,
-    )
+    from .config import default_style
+
+    # The scene carries the schematic's own style; a bare scene (tests,
+    # headless callers that did not set one) falls back to the defaults.
+    # NOTE: QGraphicsScene has a BUILT-IN .style() method, so the presence
+    # test must be for the SLiCAP style object, not mere truthiness.
+    style = getattr(scene, "style", None)
+    if not hasattr(style, "WIRE_COLOR"):
+        style = default_style()
 
     bounds = export_bounds(scene)
     vx, vy = bounds.x(), bounds.y()
@@ -113,8 +119,12 @@ def _build_svg(scene, title: str = "") -> bytes:
     root = ET.Element(f"{{{_SVG_NS}}}svg")
     root.set("version", "1.1")
     root.set("viewBox", f"{vx:.3f} {vy:.3f} {vw:.3f} {vh:.3f}")
-    root.set("width",  f"{int(vw)}")
-    root.set("height", f"{int(vh)}")
+    # Physical size from the project's units-per-mm (ini.sch_scale): a
+    # border designed in mm exports/prints/includes at that size instead
+    # of the implicit 96-px-per-inch interpretation of unitless pixels.
+    upm = _units_per_mm()
+    root.set("width",  f"{vw / upm:.3f}mm")
+    root.set("height", f"{vh / upm:.3f}mm")
     if title:
         ET.SubElement(root, f"{{{_SVG_NS}}}title").text = title
 
@@ -126,13 +136,13 @@ def _build_svg(scene, title: str = "") -> bytes:
     bg.set("width", f"{vw:.3f}"); bg.set("height", f"{vh:.3f}")
     bg.set("fill", "white")
 
-    wire_color = _qhex(WIRE_COLOR)
-    junc_color = _qhex(JUNCTION_COLOR)
-    lbl_color  = _qhex(COMP_LABEL_COLOR)
-    net_color  = _qhex(NET_LABEL_COLOR)
-    txt_color  = _qhex(TEXT_COLOR)
-    cmd_color  = _qhex(COMMAND_COLOR)
-    lnk_color  = _qhex(HYPERLINK_COLOR)
+    wire_color = _qhex(style.WIRE_COLOR)
+    junc_color = _qhex(style.JUNCTION_COLOR)
+    lbl_color  = _qhex(style.COMP_LABEL_COLOR)
+    net_color  = _qhex(style.NET_LABEL_COLOR)
+    txt_color  = _qhex(style.TEXT_COLOR)
+    cmd_color  = _qhex(style.COMMAND_COLOR)
+    lnk_color  = _qhex(style.HYPERLINK_COLOR)
 
     for item in reversed(scene.items()):
         if item.parentItem() is not None:
@@ -140,18 +150,20 @@ def _build_svg(scene, title: str = "") -> bytes:
 
         from .border_item import BorderItem
         if isinstance(item, BorderItem):
-            if item.show_in_export:
-                _border_rect(root, item)
+            _border_rect(root, item)   # bg (alpha>0) + line (show_in_export)
             continue
         if isinstance(item, WireItem):
-            _wire(root, item, wire_color, WIRE_WIDTH, net_color, NET_LABEL_FONT_SIZE)
+            _wire(root, item, wire_color, style.WIRE_WIDTH, net_color,
+                  style.NET_LABEL_FONT_SIZE)
         elif isinstance(item, JunctionItem):
-            _junction(root, item, junc_color, JUNCTION_RADIUS)
+            _junction(root, item, junc_color, style.JUNCTION_RADIUS)
         elif isinstance(item, ComponentItem):
-            _component(root, defs, item, lbl_color, COMP_LABEL_FONT_SIZE)
+            _component(root, defs, item, lbl_color, style.COMP_LABEL_FONT_SIZE)
         elif isinstance(item, ImageItem):
             _image_svg(root, defs, item)
         elif isinstance(item, (LatexFragmentItem, ParameterItem, ModelItem)):
+            if not item.isVisible():
+                continue        # "Show on schematic" off: netlisted, not drawn
             if item._svg_bytes:
                 pos = item.pos()
                 _inline_image_svg(root, defs, item._svg_bytes,
@@ -159,18 +171,28 @@ def _build_svg(scene, title: str = "") -> bytes:
                                   item.display_width, item.display_height,
                                   aspect_fit=True)
         elif isinstance(item, (FreeTextItem, CommandItem, AnalysisItem, LibraryItem)):
+            if (isinstance(item, (AnalysisItem, LibraryItem))
+                    and not item.isVisible()):
+                continue        # "Show on schematic" off: netlisted, not drawn
+            if isinstance(item, AnalysisItem) and item._svg_bytes:
+                pos = item.pos()          # LaTeX-rendered block → embed the vector SVG
+                _inline_image_svg(root, defs, item._svg_bytes,
+                                  pos.x(), pos.y(),
+                                  item._svg_rect.width(), item._svg_rect.height(),
+                                  aspect_fit=True)
+                continue
             is_cmd = isinstance(item, (CommandItem, AnalysisItem, LibraryItem))
             _text_block(
                 root, item,
                 cmd_color if is_cmd else txt_color,
-                COMMAND_FONT_SIZE if is_cmd else TEXT_FONT_SIZE,
-                "monospace" if is_cmd else TEXT_FONT_FAMILY,
-                COMMAND_FONT if is_cmd else TEXT_FONT,
+                style.COMMAND_FONT_SIZE if is_cmd else style.TEXT_FONT_SIZE,
+                "monospace" if is_cmd else style.TEXT_FONT_FAMILY,
+                style.COMMAND_FONT if is_cmd else style.TEXT_FONT,
             )
         elif isinstance(item, HyperlinkItem):
             _hyperlink_block(root, item, lnk_color,
-                             HYPERLINK_FONT_SIZE, HYPERLINK_FONT_FAMILY,
-                             HYPERLINK_UNDERLINE)
+                             style.HYPERLINK_FONT_SIZE, style.HYPERLINK_FONT_FAMILY,
+                             style.HYPERLINK_UNDERLINE)
         elif isinstance(item, ShapeItem):
             _shape(root, item)
 
@@ -192,7 +214,7 @@ def _wire(parent, item, stroke, width, net_color, net_fs):
     el.set("stroke-linecap", "round")
     el.set("stroke-linejoin", "round")
 
-    if (item.display_name and item.net_name
+    if (item.display_name
             and item._net_label is not None and item._net_label.isVisible()):
         from PySide6.QtGui import QFontMetricsF
         lpos = item._net_label.pos()
@@ -205,7 +227,26 @@ def _wire(parent, item, stroke, width, net_color, net_fs):
         t.set("font-family", "sans-serif")
         t.set("font-size", f"{net_fs}pt")
         t.set("fill", net_color)
-        t.text = item.net_name
+        t.text = item._net_label.text()   # effective name (may be derived)
+
+    # DC operating-point annotation: exported as displayed — the current
+    # value when available, otherwise the "V: —" placeholder.
+    if (item.show_dc_voltage
+            and item._dc_label is not None and item._dc_label.isVisible()):
+        from PySide6.QtGui import QFontMetricsF
+        from .config import style_of
+        style = style_of(item)
+        lbl  = item._dc_label
+        fm   = QFontMetricsF(lbl.font())
+        t = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
+        t.set("x", f"{lbl.pos().x():.2f}")
+        t.set("y", f"{lbl.pos().y() + fm.ascent():.2f}")
+        t.set("font-family", style.BIAS_FONT_FAMILY)
+        t.set("font-size", f"{style.BIAS_FONT_SIZE}pt")
+        t.set("fill", _qhex(lbl.brush().color()))
+        if lbl.font().italic():
+            t.set("font-style", "italic")
+        t.text = lbl.text()
 
 
 def _junction(parent, item, fill, radius):
@@ -217,17 +258,30 @@ def _junction(parent, item, fill, radius):
 
 
 def _border_rect(parent, item):
+    """Border background (bottom layer, when bg_alpha > 0) and border line
+    (when show_in_export). Called first in the item loop (Z_BORDER is the
+    lowest z), so the background rect lands under everything."""
     pos = item.pos()
     r   = item.rect()
-    el  = ET.SubElement(parent, f"{{{_SVG_NS}}}rect")
-    el.set("x",              f"{pos.x():.2f}")
-    el.set("y",              f"{pos.y():.2f}")
-    el.set("width",          f"{r.width():.2f}")
-    el.set("height",         f"{r.height():.2f}")
-    el.set("fill",           "none")
-    el.set("stroke",         "#5050b4")
-    el.set("stroke-width",   "0.8")
-    el.set("stroke-dasharray", "4 2")
+    if getattr(item, "bg_alpha", 0) > 0:
+        bg = ET.SubElement(parent, f"{{{_SVG_NS}}}rect")
+        bg.set("x",      f"{pos.x():.2f}")
+        bg.set("y",      f"{pos.y():.2f}")
+        bg.set("width",  f"{r.width():.2f}")
+        bg.set("height", f"{r.height():.2f}")
+        bg.set("fill",   getattr(item, "bg_color", "#ffffff"))
+        bg.set("fill-opacity", f"{item.bg_alpha / 100:.2f}")
+        bg.set("stroke", "none")
+    if item.show_in_export:
+        el = ET.SubElement(parent, f"{{{_SVG_NS}}}rect")
+        el.set("x",              f"{pos.x():.2f}")
+        el.set("y",              f"{pos.y():.2f}")
+        el.set("width",          f"{r.width():.2f}")
+        el.set("height",         f"{r.height():.2f}")
+        el.set("fill",           "none")
+        el.set("stroke",         getattr(item, "line_color", "#5050b4"))
+        el.set("stroke-width",   f'{getattr(item, "line_width", 0.8):g}')
+        el.set("stroke-dasharray", "4 2")
 
 
 def _image_svg(parent, defs, item) -> None:
@@ -340,11 +394,16 @@ def _component(parent, defs, item, lbl_color, lbl_fs):
     sx     = -1 if item.h_flip else 1
     sy     = -1 if item.v_flip else 1
 
+    # Order matters when rotation AND flip are combined (mirrored ports,
+    # Anton live finding 2026-07-11): the canvas applies rotate FIRST, then
+    # flip (Qt: setTransform(scale) composes on top of setRotation). SVG
+    # transform lists apply right-to-left to the point, so the flip must be
+    # emitted BEFORE the rotation to match: translate · scale · rotate.
     parts = [f"translate({px:.2f},{py:.2f})"]
-    if rot:
-        parts.append(f"rotate({rot:.3f})")
     if sx != 1 or sy != 1:
         parts.append(f"scale({sx},{sy})")
+    if rot:
+        parts.append(f"rotate({rot:.3f})")
 
     try:
         sym = ET.fromstring(item._svg_bytes.decode("utf-8", errors="replace"))
@@ -360,7 +419,8 @@ def _component(parent, defs, item, lbl_color, lbl_fs):
     # Embedded symbol text was stripped from the artwork (item._svg_bytes); emit
     # each piece upright at its transformed position so it stays readable under
     # rotation/mirroring, matching the canvas.
-    from . import config as _cfg
+    from .config import style_of
+    symbol_text_color = style_of(item).SYMBOL_TEXT_COLOR
     for t in getattr(item, "symbol_texts", ()):
         content = t.get("content")
         if not content:
@@ -373,7 +433,7 @@ def _component(parent, defs, item, lbl_color, lbl_fs):
         te.set("font-size", f"{t['size']:.1f}")
         te.set("text-anchor", "middle")        # centred horizontally and …
         te.set("dominant-baseline", "central")  # … vertically on the anchor point
-        te.set("fill", _qhex(_cfg.SYMBOL_TEXT_COLOR))
+        te.set("fill", _qhex(symbol_text_color))
         te.text = content
 
     for lbl in item._labels.values():
@@ -678,17 +738,32 @@ def export_svg(scene, output_path: Path, title: str = "") -> None:
 
 
 def export_pdf(scene, output_path: Path) -> None:
-    import cairosvg
-    cairosvg.svg2pdf(bytestring=_build_svg(scene), write_to=str(output_path))
+    """Render the schematic SVG to PDF with svglib + reportlab — the same
+    pure-Python path used in SLiCAPkicad. No Cairo (dropped for its Windows
+    trouble), and no Qt application required, so it works from the headless
+    ``cli export`` subprocess or any non-GUI caller. The PDF inherits the SVG's
+    physical (mm) page size set in ``_build_svg``."""
+    import os
+    import tempfile
+    from svglib.svglib import svg2rlg
+    from reportlab.graphics import renderPDF
+    with tempfile.NamedTemporaryFile("wb", suffix=".svg", delete=False) as tf:
+        tf.write(_build_svg(scene))
+        tmp = tf.name
+    try:
+        drawing = svg2rlg(tmp)
+        if drawing is None:
+            raise RuntimeError("Could not parse the schematic SVG for PDF export.")
+        renderPDF.drawToFile(drawing, str(output_path))
+    finally:
+        os.unlink(tmp)
 
 
 def print_scene(scene, parent=None) -> None:
-    import os, tempfile
-    import cairosvg
     from PySide6.QtPrintSupport import QPrinter, QPrintDialog
-    from PySide6.QtPdf import QPdfDocument
+    from PySide6.QtSvg import QSvgRenderer
     from PySide6.QtGui import QPainter
-    from PySide6.QtCore import QSize
+    from PySide6.QtCore import QByteArray
     from PySide6.QtWidgets import (
         QDialog, QVBoxLayout, QHBoxLayout, QLabel,
         QDoubleSpinBox, QCheckBox, QDialogButtonBox,
@@ -705,8 +780,8 @@ def print_scene(scene, parent=None) -> None:
 
     page_rect = QRectF(printer.pageRect(QPrinter.DevicePixel))
     dpmm      = printer.resolution() / 25.4
-    nat_w     = svg_w / _SCENE_UNITS_PER_MM * dpmm
-    nat_h     = svg_h / _SCENE_UNITS_PER_MM * dpmm
+    nat_w     = svg_w / _units_per_mm() * dpmm
+    nat_h     = svg_h / _units_per_mm() * dpmm
 
     fit_pct = 0.0
     if nat_w > 0 and nat_h > 0:
@@ -718,8 +793,10 @@ def print_scene(scene, parent=None) -> None:
     scale_dlg.setWindowTitle("Print Scale")
     vlay = QVBoxLayout(scale_dlg)
 
+    # Default is TRUE SIZE (100 %, per ini.sch_scale) — fit-to-page is the
+    # opt-in (Anton, 2026-07-15).
     fit_cb = QCheckBox("Fit to page")
-    fit_cb.setChecked(True)
+    fit_cb.setChecked(False)
     vlay.addWidget(fit_cb)
 
     hlay = QHBoxLayout()
@@ -729,8 +806,8 @@ def print_scene(scene, parent=None) -> None:
     scale_sb.setSingleStep(5.0)
     scale_sb.setDecimals(1)
     scale_sb.setSuffix(" %")
-    scale_sb.setValue(round(fit_pct, 1) if fit_pct > 0 else 100.0)
-    scale_sb.setEnabled(False)
+    scale_sb.setValue(100.0)
+    scale_sb.setEnabled(True)
     hlay.addWidget(scale_sb)
     if fit_pct > 0:
         hlay.addWidget(QLabel(f"(fit = {fit_pct:.1f} %)"))
@@ -764,24 +841,11 @@ def print_scene(scene, parent=None) -> None:
         rw, rh,
     )
 
-    # ── step 4: cairosvg → PDF → raster → paint ──────────────────────────────
-    pdf_bytes = cairosvg.svg2pdf(bytestring=_build_svg(scene))
-    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-    try:
-        tmp.write(pdf_bytes)
-        tmp.close()
-        doc = QPdfDocument(None)
-        doc.load(tmp.name)
-        pt      = doc.pagePointSize(0)
-        img_dpi = max(printer.resolution(), 300)
-        img_w   = max(1, round(pt.width()  / 72.0 * img_dpi))
-        img_h   = max(1, round(pt.height() / 72.0 * img_dpi))
-        qimg    = doc.render(0, QSize(img_w, img_h))
-        doc.close()
-    finally:
-        os.unlink(tmp.name)
-
-    painter = QPainter(printer)
-    painter.setRenderHint(QPainter.SmoothPixmapTransform)
-    painter.drawImage(render_rect, qimg)
+    # ── step 4: render the SVG VECTOR onto the printer ────────────────────────
+    # QSvgRenderer paints vectors straight onto the printer (no cairosvg, no
+    # temp PDF, no rasterisation) — crisp at any scale, same renderer as canvas.
+    renderer = QSvgRenderer(QByteArray(_build_svg(scene)))
+    painter  = QPainter(printer)
+    painter.setRenderHint(QPainter.Antialiasing)
+    renderer.render(painter, render_rect)
     painter.end()

@@ -4,7 +4,7 @@ Project layout + per-schematic sidecar file locations.
 A SLiCAP project directory is organised into subdirectories (mirroring the
 SLiCAP Python project structure, plus a new ``sch/``)::
 
-  sch/   schematic sources (``<name>.slicap_sch``) and their sidecars
+  sch/   schematic sources and their sidecars
   cir/   exported top-level netlists (``<name>.cir``)
   lib/   subcircuit libraries (``<name>.lib``) and their symbols
   img/   exported images (``<name>.svg`` / ``<name>.pdf``)
@@ -12,27 +12,29 @@ SLiCAP Python project structure, plus a new ``sch/``)::
 ``project_root()`` / ``subdir()`` resolve these directories; the root is derived
 from the open schematic (its ``sch/`` parent) or the app root when unsaved.
 
-A schematic saved as ``<name>.slicap_sch`` owns sidecar files that live right
-next to it (i.e. in ``sch/``), so everything belonging to a circuit travels with
-it and nothing accumulates in a global cache:
+A schematic saved as ``<name>.<ext>`` (e.g. ``design.slicap_sch`` or
+``design.spice_sch``) owns sidecar files that live right next to it in ``sch/``,
+named by appending the sidecar suffix to the *full* filename so that same-named
+schematics of different types never collide:
 
-  ``<name>.cache``    directory of rendered-LaTeX SVGs (was ~/.cache/slicap_schematic)
-  ``<name>.ini``      per-schematic style overrides (over the global style.ini)
-  ``<name>.symbols``  frozen copies of every symbol the schematic uses
+  ``<name>.<ext>.cache``    directory of rendered-LaTeX SVGs
+  ``<name>.<ext>.ini``      per-schematic style overrides
+  ``<name>.<ext>.symbols``  frozen copies of every symbol the schematic uses
 
 Until a schematic is first saved it has no name; its sidecars then live in a
 per-session temporary directory (auto-removed on exit) and are migrated to the
-real ``<name>.*`` locations on the first save.
+real locations on the first save.
 
-``set_current()`` is the single entry point: the window calls it on New, Open,
-and Save, and it repoints every subsystem (currently the LaTeX cache).
+``set_current()`` tracks the schematic the user is working in; it drives only
+the genuinely focus-bound state (the stdout log tee, project-root fallback).
+Per-schematic state — style, symbol library, render cache — is owned by the
+panels and resolved through the explicit ``*_for(path)`` helpers.
 """
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
-_base: Path | None = None          # the .slicap_sch path, or None when unsaved
+_base: Path | None = None          # the schematic path, or None when unsaved
 
 # The default project root — the directory holding the cir/ sch/ img/ lib/ and
 # symbols/ subdirectories.  Defaults to the working directory at start-up so
@@ -42,8 +44,20 @@ APP_ROOT = Path.cwd()
 
 
 def current() -> Path | None:
-    """The current schematic's .slicap_sch path, or None when never saved."""
+    """The current schematic path, or None when never saved."""
     return _base
+
+
+def set_app_root(path) -> None:
+    """Set the default project root used when no schematic is open.
+
+    File → Select project folder switches the project while the welcome screen
+    is still showing (no ``_base`` yet); without this, ``project_root()`` would
+    keep returning the start-up working directory, so Open-schematic and new
+    schematics would land in the wrong ``sch/``.
+    """
+    global APP_ROOT
+    APP_ROOT = Path(path)
 
 
 def project_root() -> Path:
@@ -67,59 +81,87 @@ def subdir(name: str) -> Path:
     return d
 
 
-def cache_dir() -> Path:
-    """Directory holding rendered-LaTeX SVGs for the current schematic.
+def root_for(path) -> Path:
+    """Project root derived from an explicit schematic ``path`` — independent
+    of the app-wide current schematic."""
+    parent = Path(path).parent
+    return parent.parent if parent.name == "sch" else parent
 
-    When saved it is ``<name>.cache``; when unsaved it is the LaTeX module's
-    lazily-created session temp (the single source of the unsaved cache, so a
-    later save migrates exactly what was rendered).
+
+def subdir_for(path, name: str) -> Path:
+    """``<root_for(path)>/<name>`` (cir, sch, img, lib), creating it."""
+    d = root_for(path) / name
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _sidecar(ext: str) -> Path:
+    """Return the sidecar path for the current schematic.
+
+    Uses ``<name>.<schematic_ext>.<sidecar_ext>`` so that ``design.slicap_sch``
+    and ``design.spice_sch`` never share a sidecar directory or file.
     """
-    if _base is not None:
-        # Not created here — only when a render actually happens, so a schematic
-        # with no LaTeX leaves no empty <name>.cache dir.
-        return _base.with_suffix(".cache")
-    from . import latex_label
-    return latex_label.get_cache_dir()
+    return _base.parent / (_base.name + ext)
 
 
-def ini_path() -> Path | None:
-    """Path to the per-schematic style overrides, or None when unsaved."""
-    return _base.with_suffix(".ini") if _base else None
+def sidecar_for(path, ext: str) -> Path:
+    """Sidecar path for an explicit schematic ``path`` — independent of the
+    app-wide current schematic, so panels resolve their own sidecars
+    regardless of which schematic holds the global context (e.g. during a
+    save-all loop)."""
+    p = Path(path)
+    return p.parent / (p.name + ext)
 
 
-def symbols_path() -> Path | None:
-    """Path to the per-schematic frozen symbol library, or None when unsaved."""
-    return _base.with_suffix(".symbols") if _base else None
+def ini_path_for(path) -> Path:
+    """Style-sidecar path for an explicit schematic ``path``."""
+    return sidecar_for(path, ".ini")
+
+
+def cache_path_for(path) -> Path:
+    """LaTeX render-cache sidecar for an explicit schematic ``path``."""
+    return sidecar_for(path, ".cache")
+
+
+def symbols_path_for(path) -> Path:
+    """Frozen-symbols sidecar for an explicit schematic ``path``."""
+    return sidecar_for(path, ".symbols")
+
+
+def _migrate_sidecar(old: Path, new: Path) -> None:
+    """Rename an old-style sidecar to the new name if only the old one exists."""
+    if old != new and old.exists() and not new.exists():
+        try:
+            old.rename(new)
+        except OSError:
+            pass
 
 
 def set_current(path: "Path | str | None") -> None:
-    """Point all sidecars at ``path`` (the .slicap_sch file), None when unsaved.
+    """Record the schematic the user is working in, None when unsaved.
 
-    Called by the window on New, Open and Save.  On the first save (unsaved →
-    named) the session-temp LaTeX cache is migrated to ``<name>.cache`` so the
-    saved schematic is immediately self-contained.
+    Called by the window on New, Open, Save and focus changes.  This drives
+    only the genuinely focus-bound state: the stdout/stderr log tee (one
+    process stream, split by focused schematic) and the project-root
+    fallback for dialogs.  Per-schematic state — style, symbol library,
+    LaTeX render cache — is owned by the panels themselves and never
+    follows this pointer.
+
+    Also performs a one-time migration of old-style sidecars (``<stem>.cache``
+    etc.) to the new full-filename style (``<name>.<ext>.cache`` etc.) so that
+    existing SLiCAP schematics keep their style preferences.
     """
     global _base
-    from . import latex_label
-    old_cache = latex_label.CACHE_DIR     # where renders have gone so far (may be None)
     _base = Path(path) if path else None
-    new_cache = cache_dir()
 
-    if path is not None and old_cache is not None and Path(old_cache) != new_cache:
-        svgs = list(Path(old_cache).glob("*.svg"))
-        if svgs:
-            new_cache.mkdir(parents=True, exist_ok=True)
-            for f in svgs:
-                dest = new_cache / f.name
-                if not dest.exists():
-                    try:
-                        shutil.copy2(f, dest)
-                    except OSError:
-                        pass
+    if _base is not None:
+        # One-time migration: old sidecars used _base.with_suffix(ext) which
+        # strips the schematic extension — e.g. design.slicap_sch → design.cache.
+        # Rename to the new full-filename form if only the old one exists.
+        for ext in (".cache", ".ini", ".symbols"):
+            _migrate_sidecar(_base.with_suffix(ext), _sidecar(ext))
 
-    latex_label.set_cache_dir(new_cache)
-
-    # Point terminal-output logging at txt/<name>.log for this schematic (or the
-    # terminal only when unsaved).  subdir() creates txt/ only if missing.
+    # Point terminal-output logging at txt/<name>.<ext>.log for this schematic
+    # (or terminal only when unsaved).  subdir() creates txt/ only if missing.
     from . import logfile
-    logfile.set_log_path(subdir("txt") / (_base.stem + ".log") if _base else None)
+    logfile.set_log_path(subdir("txt") / (_base.name + ".log") if _base else None)

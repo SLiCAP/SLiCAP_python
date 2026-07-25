@@ -44,6 +44,46 @@ parameters come from the symbol itself.
 * Braced expressions are typeset through LaTeX on the canvas (when ``pdflatex``
   and ``dvisvgm`` are available); otherwise they are shown as plain text.
 
+Value notation (scale factors)
+==============================
+
+All values entered in the GUI — component values, parameters, and the fields
+of the instruction dialogs — use **SLiCAP notation**. Scale factors are
+**case-sensitive**:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 20 20 20 20
+
+   * - ``y`` = 1e-24
+     - ``z`` = 1e-21
+     - ``a`` = 1e-18
+     - ``f`` = 1e-15
+     - ``p`` = 1e-12
+   * - ``n`` = 1e-9
+     - ``u`` = 1e-6
+     - ``m`` = 1e-3  *(milli)*
+     - ``k`` = 1e3
+     - ``M`` = 1e6  *(mega)*
+   * - ``G`` = 1e9
+     - ``T`` = 1e12
+     - ``P`` = 1e15
+     -
+     -
+
+.. admonition:: NGspice schematics
+   :class: note
+
+   NGspice itself reads scale factors *case-insensitively* (``m`` **and**
+   ``M`` are milli; mega is ``Meg``). You still enter SLiCAP notation —
+   SLiCAP translates automatically wherever values are written into NGspice
+   input (netlists, ``.param`` lines, instruction arguments): ``1M`` becomes
+   ``1Meg``, and suffixes NGspice does not know (``y``, ``z``, ``a``, ``P``)
+   are expanded numerically. The only exception is **numeric literals inside
+   hand-written brace expressions** like ``{2.2k/R}``: these are passed to
+   NGspice untouched, so use exponent notation (``2.2e3``) or NGspice
+   notation there.
+
 References
 ==========
 
@@ -73,3 +113,27 @@ The lower part of the dialog sets:
 * **Mirror horizontal / vertical** — flip the symbol.
 
 Labels stay upright and readable regardless of the symbol's orientation.
+
+DC operating-point annotation (NGspice)
+=======================================
+
+On NGspice schematics, independent voltage sources and inductors offer a
+**Show DC operating current** check-box in their Properties dialog, and the
+Net Label dialog (double-click a wire) offers **Show DC operating voltage**.
+Checking them places an ``I: <value>`` / ``V: <value>`` text on the canvas.
+
+The values come from the circuit's most recent *unstepped* operating-point
+run (``sl.op(...)`` in the instruction file, which writes
+``cir/<circuit>_op.raw``); they are updated after every run, shown greyed
+and italic while no results are available (``V: —``) or after the schematic
+was edited (stale), and are **never stored in the schematic file** — only
+the check-box and the label position are.
+
+Currents follow the NGspice sign convention: ``I(V...)`` and ``I(L...)``
+are measured *into* the positive terminal, so a source that delivers
+current to the circuit reads **negative**.  A 0 V voltage source in series
+with a branch therefore acts as an ammeter for that branch.
+
+Colour, font, and the number of digits are set in the schematic
+preferences under **Bias annotation** (engineering notation with SLiCAP
+scale factors, e.g. ``1.23m``).

@@ -18,7 +18,7 @@ Grid and snapping
   vertex lands on it.
 * A **major grid line** is drawn every eight fine cells to help you judge
   distances.
-* Grid colours can be changed under :menuselection:`File --> Preferences`
+* Grid colours can be changed under :menuselection:`File --> Schematic drawing preferences`
   (see :doc:`preferences`).
 
 Selecting items

@@ -22,11 +22,17 @@ from SLiCAP.SLiCAPmath import *
 from SLiCAP.SLiCAPplots import *
 from SLiCAP.SLiCAPrst import RSTformatter
 from SLiCAP.SLiCAPlatex import LaTeXformatter, sub2rm
-from SLiCAP.SLiCAPngspice import MOS, ngspice2traces, selectTraces
+from SLiCAP.SLiCAPtxt import TXTformatter
+from SLiCAP.SLiCAPngspice import (MOS, ngspice2traces, selectTraces,
+                                   make_netlist,
+                                   op, ac, dc, tran, noise, ngspice_control,
+                                   NGspiceRaw2dict, RawFile, Analysis,
+                                   ngspice_dict2traces, ngspice_instr2traces)
 from SLiCAP.SLiCAPshell import *
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
 from SLiCAP.SLiCAPkicad import backAnnotateSchematic
+from SLiCAP.SLiCAPstateSpace import doStateSpace
 
 # Increase width for display of numpy arrays:
 np.set_printoptions(edgeitems=30, linewidth=1000,
@@ -45,34 +51,62 @@ def Help():
     webbrowser.open_new(ini.doc_path + 'index.html')
     return
 
-def startSchematic(config="full", file=None):
+def startSchematic(config=None, file=None):
     """
     Launch the SLiCAP schematic capture GUI as a separate process.
 
     The GUI runs independently — this call returns immediately and does not
     block the Python session or Jupyter notebook.
 
-    :param config: Symbol library set to load at startup.
+    The editor always opens in schematic-only mode (no Instruction/Log
+    panels); analysis is driven from the Python session.
 
-        - ``'full'`` *(default)*: load all SVG files in the system symbols directory.
-        - ``'basic'``: load only ``Symbols.svg`` (the standard SLiCAP symbol set).
+    :param config: Capture mode.  Sets the symbol library **and** restricts
+        which schematic type may be created or opened:
 
-    :type config: str
+        - ``None`` *(default)*: both SLiCAP and NGspice schematics allowed;
+          the symbol set is chosen per schematic.
+        - ``'basic'``: SLiCAP only, basic symbol library (``Symbols.svg``
+          only).  Intended for external callers that embed the editor and
+          want only the standard set.  "New NGspice Schematic" is disabled.
+        - ``'slicap'``: SLiCAP only, full symbol library (all SVG files in
+          the system symbols directory).  "New NGspice Schematic" is disabled.
+        - ``'ngspice'``: NGspice only, NGspice symbol library.  "New SLiCAP
+          Schematic" is disabled.
 
-    :param file: Path to a ``.slicap_sch`` file to open at startup.
-                 If ``None`` (default) the editor opens with a blank schematic.
+        In a restricted mode **File → Open** also lists only files of the
+        permitted type.
+
+    :type config: str or None
+
+    :param file: Path to a schematic file to open at startup
+                 (``.slicap_sch`` for SLiCAP, ``.spice_sch`` for NGspice).
+                 The schematic type is inferred automatically from the
+                 extension.  **A canvas is shown only when a file is given;**
+                 otherwise the editor opens empty and the user creates or
+                 opens a schematic from the File menu (in the ``config`` mode).
     :type file: str or None
 
     :example:
 
     >>> import SLiCAP as sl
     >>> sl.initProject("My Design")
-    >>> sl.startSchematic()                          # blank schematic, full library
-    >>> sl.startSchematic(config='basic')            # blank schematic, basic library
-    >>> sl.startSchematic(file='sch/mydesign.slicap_sch')  # open existing file
+    >>> sl.startSchematic()                                  # empty; user picks type via File menu
+    >>> sl.startSchematic(config='slicap')                   # SLiCAP mode, full library
+    >>> sl.startSchematic(config='ngspice')                  # NGspice mode
+    >>> sl.startSchematic(config='basic')                    # SLiCAP mode, basic symbols
+    >>> sl.startSchematic(file='sch/mydesign.slicap_sch')    # open SLiCAP file
+    >>> sl.startSchematic(file='sch/mydesign.spice_sch')     # open NGspice file
     """
     import subprocess, sys
-    cmd = f'"{sys.executable}" -m SLiCAP.schematic.main --config {config}'
+    # startSchematic is the schematic-capture entry point for a Python session
+    # (analysis is done in Python, not in the GUI), so it always opens the
+    # schematic-only editor — no Instruction/Log panels. The explicit flag is
+    # required because '-m SLiCAP.schematic.main' cannot be detected by launcher
+    # name the way the 'slicap-schematics' console script is.
+    cmd = f'"{sys.executable}" -m SLiCAP.schematic.main --schematic-only'
+    if config is not None:
+        cmd += f' --config {config}'
     if file is not None:
         cmd += f' "{file}"'
     subprocess.Popen(cmd, shell=True)
@@ -103,7 +137,7 @@ def _makeDir(dirName):
         os.makedirs(dirName)
     return
 
-def initProject(name, notebook=False, report_dirs=True):
+def initProject(name, notebook=False, report_dirs=True, author=None):
     """
     Initializes a SLiCAP project.
 
@@ -116,13 +150,17 @@ def initProject(name, notebook=False, report_dirs=True):
 
     :param name: Name of the project: appears on the main html index page.
     :type name: str
-    
+
     :param notebook: True if SLiCAP runs from a Jupyter notebook, defaults to False
     :type notebook: Bool
-    
-    :param create_dirs: True will create but not overwrite the SLiCAP directory 
+
+    :param create_dirs: True will create but not overwrite the SLiCAP directory
                         structure. Defaults to True
     :type create_dirs: Bool
+
+    :param author: Project author, written to the 'SLiCAP.ini' [project]
+                   section. None (default) keeps the existing value.
+    :type author: str, NoneType
 
     :return:     None
     :rtype:      NoneType
@@ -155,8 +193,12 @@ def initProject(name, notebook=False, report_dirs=True):
         ini.line_width    = 1
     # Define the project title
     ini.project_title                         = name
-    ini.project_title                         = name
     project_config['project']['title']        = ini.project_title
+    # Define the project author; persisted like the title via
+    # ini._update_project_config() on the first html/file write.
+    if author is not None:
+        ini.author                            = author
+        project_config['project']['author']   = ini.author
     ini.last_updated                          = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     project_config['project']['last_updated'] = ini.last_updated
     # Create the project directories if they do not yet exist
@@ -164,6 +206,7 @@ def initProject(name, notebook=False, report_dirs=True):
     _makeDir(ini.img_path)
     _makeDir(ini.txt_path)
     _makeDir(ini.csv_path)
+    _makeDir(ini.results_path)
     _makeDir(ini.schematic_path)
     if report_dirs:
         # Reset the html pages 

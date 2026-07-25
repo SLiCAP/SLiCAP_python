@@ -20,6 +20,7 @@ language = 'English'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 pygments_style = 'sphinx'
 html_theme = 'sphinx_book_theme'
+tml_theme_options = {"use_source_button": True}
 html_last_updated_fmt = strftime("%d/%m/%Y")
 html_domain_indices = True
 html_use_index = True

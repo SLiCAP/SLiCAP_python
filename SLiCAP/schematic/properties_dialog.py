@@ -11,9 +11,7 @@ import html
 
 from . import project
 from .component_item import (
-    ComponentItem, available_models, params_for_symbol,
-    fixed_params_for_symbol, refs_for_symbol, strip_braces,
-    SYMBOL_DESCRIPTION, SYMBOL_INFO, SYMBOL_PREFIX,
+    ComponentItem, fixed_params_for_symbol, strip_braces,
 )
 
 _HDR_ROW    = 0
@@ -33,9 +31,14 @@ class PropertiesDialog(QDialog):
     "Show value" is also on (the checkbox is disabled otherwise).
     """
 
-    def __init__(self, item: ComponentItem, parent=None):
+    def __init__(self, item: ComponentItem, parent=None,
+                 show_stimuli: bool = False, is_current: bool = False,
+                 offer_dc_current: bool = False):
         super().__init__(parent, Qt.Window)
         self._item = item
+        self._show_stimuli = show_stimuli
+        self._is_current   = is_current
+        self._dc_cb = None
         self.setWindowTitle(f"Properties — {item.instance_id}")
 
         outer = QVBoxLayout()
@@ -43,8 +46,8 @@ class PropertiesDialog(QDialog):
         self.setLayout(outer)
 
         # ── description + clickable info link (from the symbol's data-* meta) ──
-        desc = SYMBOL_DESCRIPTION.get(item.symbol_name, "")
-        info = SYMBOL_INFO.get(item.symbol_name, "")
+        desc = item.symbol.description
+        info = item.symbol.info
         if desc or info:
             head = QLabel()
             head.setTextFormat(Qt.RichText)
@@ -91,7 +94,7 @@ class PropertiesDialog(QDialog):
         # Model row — a free text field: the model is the SLiCAP model name (or,
         # for an X block, the subcircuit name) and the user must be able to type
         # any value, not just pick from the symbol's single data-model default.
-        self._models = available_models(item.symbol_name)
+        self._models = item.available_models()
         if self._models:
             self._model_edit = QLineEdit(item.model)
             sv_mod, sn_mod = item.prop_display.get("model", (False, False))
@@ -150,7 +153,7 @@ class PropertiesDialog(QDialog):
         # An X block's source is sch/<model>.slicap_sch; descending opens it in a
         # new editable window so the user can inspect and edit the subcircuit.
         self._descend_path: Path | None = None
-        if SYMBOL_PREFIX.get(item.symbol_name) == "X":
+        if item.prefix == "X":
             src = project.subdir("sch") / f"{item.model}.slicap_sch"
             btn = QPushButton("Descend into subcircuit")
             if src.is_file():
@@ -159,6 +162,27 @@ class PropertiesDialog(QDialog):
                 btn.setEnabled(False)
                 btn.setToolTip(f"Source schematic not found: sch/{src.name}")
             outer.addWidget(btn)
+
+        if show_stimuli:
+            outer.addWidget(_hline())
+            stim_btn = QPushButton("View / Edit source stimuli…")
+            stim_btn.clicked.connect(self._open_stimuli_dialog)
+            outer.addWidget(stim_btn)
+
+        # DC operating-point back-annotation — offered for independent
+        # V-sources and inductors on NGspice schematics (i(<refdes>) is an
+        # MNA unknown, so it is always available in an op run).
+        if offer_dc_current:
+            outer.addWidget(_hline())
+            self._dc_cb = QCheckBox("Show DC operating current")
+            self._dc_cb.setChecked(
+                item.prop_display.get("dc_current", (False, False))[0])
+            self._dc_cb.setToolTip(
+                "Places an 'I: <value>' text on the canvas; the value is\n"
+                "updated after an operating-point (op) run.  NGspice sign\n"
+                "convention: current INTO the + terminal — a source driving\n"
+                "a load reads negative.")
+            outer.addWidget(self._dc_cb)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -172,6 +196,35 @@ class PropertiesDialog(QDialog):
 
     def descend_path(self) -> "Path | None":
         return self._descend_path
+
+    def _open_stimuli_dialog(self) -> None:
+        from .source_stimuli_dialog import SourceStimuliDialog
+        item = self._item
+        # parent=None so the modal dialog is freely movable rather than a frozen,
+        # centered sheet under GNOME/Mutter (Anton, 2026-07-16).
+        dlg = SourceStimuliDialog(item.params, item.prop_display,
+                                  is_current=self._is_current,
+                                  title=f"Source stimuli — {item.instance_id}",
+                                  parent=None)
+        if dlg.exec():
+            dlg.apply()
+            item._save_label_offsets()
+            item.update_labels()
+            self._refresh_stimuli_rows()
+
+    def _refresh_stimuli_rows(self) -> None:
+        """Sync the dc/ac/tran rows with what the stimuli dialog just wrote
+        into the item — otherwise this dialog's OK writes the STALE row
+        texts back over the fresh stimuli (Anton, 2026-07-12: switching
+        pulse → sine and OK-ing both dialogs lost all stimuli)."""
+        for key in ("dc", "ac", "tran"):
+            edit = self._param_edits.get(key)
+            if edit is not None:
+                edit.setText(strip_braces(self._item.params.get(key, "")))
+            sv = self._param_sv.get(key)
+            if sv is not None:
+                sv.setChecked(
+                    self._item.prop_display.get(key, (False, False))[0])
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
@@ -189,7 +242,8 @@ class PropertiesDialog(QDialog):
         self._param_sv.clear()
         self._param_sn.clear()
 
-        param_keys = list(params_for_symbol(self._item.symbol_name).keys()) or list(fixed_params_for_symbol(self._item.symbol_name).keys())
+        param_keys = (list(self._item.default_params().keys())
+                      or list(fixed_params_for_symbol(self._item.symbol_name).keys()))
         for i, name in enumerate(param_keys):
             row = self._params_start + i
             sv_val, sn_val = existing_display.get(name, (True, False) if name == "value" else (False, False))
@@ -218,7 +272,7 @@ class PropertiesDialog(QDialog):
         self._ref_sv_checks.clear()
         self._ref_sn_checks.clear()
 
-        n = refs_for_symbol(self._item.symbol_name)
+        n = self._item.ref_count()
         start = self._params_start + self._params_count
         for i in range(n):
             key  = f"ref {i + 1}"
@@ -248,7 +302,16 @@ class PropertiesDialog(QDialog):
             self._item.model = self._model_edit.text().strip()
             disp["model"] = (self._model_sv.isChecked(), self._model_sn.isChecked())
 
-        self._item.params = {n: strip_braces(e.text()) for n, e in self._param_edits.items()}
+        # The rows are authoritative ONLY for the keys they show: keys
+        # managed elsewhere — the stimuli dialog's dc/ac/tran and its
+        # internal _<wf>_* bookkeeping — are preserved. A wholesale rebuild
+        # from the rows alone silently dropped them (Anton, 2026-07-12:
+        # OK-ing the properties dialog after editing stimuli lost them).
+        new_params = {k: v for k, v in self._item.params.items()
+                      if k not in self._param_edits}
+        new_params.update({n: strip_braces(e.text())
+                           for n, e in self._param_edits.items()})
+        self._item.params = new_params
         for name in self._param_sv:
             disp[name] = (self._param_sv[name].isChecked(),
                           self._param_sn[name].isChecked())
@@ -259,12 +322,24 @@ class PropertiesDialog(QDialog):
             disp[key] = (self._ref_sv_checks[i].isChecked(),
                          self._ref_sn_checks[i].isChecked())
 
+        # DC-current annotation: from the checkbox when offered, otherwise
+        # preserved (apply() replaces prop_display wholesale).
+        if self._dc_cb is not None:
+            disp["dc_current"] = (self._dc_cb.isChecked(), False)
+        elif "dc_current" in self._item.prop_display:
+            disp["dc_current"] = self._item.prop_display["dc_current"]
+
         self._item.setRotation(self._rotation_combo.currentIndex() * 90)
         self._item.h_flip = self._hflip_cb.isChecked()
         self._item.v_flip = self._vflip_cb.isChecked()
         self._item.apply_transform()
 
         self._item._save_label_offsets()
+        # Same rule for the display flags: keep entries for keys this
+        # dialog has no checkbox for (the stimuli dc/ac/tran flags).
+        for key, flags in self._item.prop_display.items():
+            if key not in disp:
+                disp[key] = flags
         self._item.prop_display = disp
         self._item.update_labels()
 

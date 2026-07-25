@@ -50,8 +50,11 @@ class LatexFragmentDialog(QDialog):
                  svg_bytes: bytes | None = None,
                  display_width: int | None = None,
                  display_height: int | None = None,
+                 style=None,
                  parent=None):
         super().__init__(parent, Qt.Window)
+        from .config import default_style
+        self._style = style or default_style()
         self.setWindowTitle("LaTeX Fragment")
         self.setMinimumWidth(560)
         self._svg_bytes: bytes | None = svg_bytes
@@ -105,14 +108,13 @@ class LatexFragmentDialog(QDialog):
         )
         outer.addWidget(self._preview_lbl)
 
-        # ── scale row ─────────────────────────────────────────────────────────
-        from .config import SCALE_LATEX_FRAGMENT
+        # ── scale row (per-instance — fragments have individual sizes) ───────
         if svg_bytes:
             self._compute_natural_size(svg_bytes)
         if self._natural_w and display_width:
             init_scale = max(1, round(display_width / self._natural_w * 100))
         else:
-            init_scale = SCALE_LATEX_FRAGMENT
+            init_scale = 100
 
         scale_row = QHBoxLayout()
         scale_row.addWidget(QLabel("Scale:"))
@@ -217,7 +219,6 @@ class LatexFragmentDialog(QDialog):
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
         from .latex_label import svg_line_height
-        from .config import COMP_LABEL_FONT_SIZE
         renderer = QSvgRenderer(QByteArray(svg_bytes))
         if not renderer.isValid():
             return
@@ -227,7 +228,7 @@ class LatexFragmentDialog(QDialog):
         if svg_w <= 0 or svg_h <= 0:
             return
         ref_h = svg_line_height()
-        base = (COMP_LABEL_FONT_SIZE / ref_h) if (ref_h and ref_h > 0) else 0.5
+        base = (self._style.COMP_LABEL_FONT_SIZE / ref_h) if (ref_h and ref_h > 0) else 0.5
         self._natural_w = max(1, round(svg_w * base))
         self._natural_h = max(1, round(svg_h * base))
 

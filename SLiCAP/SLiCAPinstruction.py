@@ -418,7 +418,27 @@ class instruction(object):
         the execution of the instruction and possibly modified during the 
         excution of the instruction.
         """
-    
+        self.op          = None
+        self.ac          = None
+        self.dc          = None
+        self.tran        = None
+        self.noise       = None
+        self.temp        = None
+        self.fft         = None
+        self.fourier     = None
+        # True once the instruction has been executed (SLiCAP) or populated from a
+        # simulation result (NGspice). Guards execute() against re-running a result.
+        self.executed    = False
+        # NGspice analysis-command arguments, e.g. "AC dec 20 1 1e6" ->
+        # dataType="ac", simArgs=["dec","20","1","1e6"]. Empty for SLiCAP
+        # instructions. Provenance/metadata — NOT reset by clear().
+        self.simArgs     = []
+        # Per-instruction NGspice parameter definitions: the ordered list of
+        # (name, value) tuples passed to op/dc/ac/tran/noise via params=.
+        # Empty for SLiCAP instructions. Provenance/metadata — NOT reset by
+        # clear().
+        self.simParams   = []
+
     def clear(self):
         
         self.DCvalue     = []
@@ -448,6 +468,32 @@ class instruction(object):
         self.impulse     = []
         self.stepResp    = []
         self.params      = {}
+        self.op          = None
+        self.ac          = None
+        self.dc          = None
+        self.tran        = None
+        self.noise       = None
+        self.temp        = None
+        self.fft         = None
+        self.fourier     = None
+        self.executed    = False
+
+    def __getitem__(self, key):
+        """Subscript access to NGspice results, e.g. ``AC1["V_out"]``.
+
+        Delegates to the result dict of the active ``dataType`` (``self.ac``,
+        ``self.op``, …).  Only meaningful for NGspice results
+        (``gainType == 'vi'``); a symbolic SLiCAP instruction is not
+        subscriptable.
+        """
+        if self.gainType != "vi":
+            raise TypeError(
+                "Subscript access is only available for NGspice results "
+                "(gainType == 'vi').")
+        data = getattr(self, self.dataType, None)
+        if not isinstance(data, dict):
+            raise KeyError(key)
+        return data[key]
 
     def setSimType(self, simType):
         """
@@ -1756,6 +1802,10 @@ class instruction(object):
         >>> my_instr.setCircuit('my_circuit.cir')
         """
         self.errors = 0
+        if self.simArgs or self.executed:
+            # NGspice instruction/result (carries a sim command) or an already-
+            # executed result: the SLiCAP consistency checks do not apply — skip.
+            return
         self.checkCircuit()
         if self.dataType != "matrix":
             if self.convType not in [None, "dd", "cc"]:
@@ -1898,7 +1948,16 @@ class instruction(object):
         >>> result = my_instr.execute()
         >>> print result.laplace
         """
+        if self.executed:
+            raise ValueError(
+                "This instruction already holds results (it has been executed, or "
+                "was populated from a simulation result). Build a new instruction, "
+                "or call the do... function again, to run it.")
         self.check()
-        return _doInstruction(self)
+        # _doInstruction works on a deepcopy and returns it, so the source
+        # instruction stays re-runnable; only the returned result is marked.
+        result = _doInstruction(self)
+        result.executed = True
+        return result
 
 

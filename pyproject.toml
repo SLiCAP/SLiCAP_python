@@ -23,18 +23,25 @@ dependencies = [
     "matplotlib>=3.9.0",
     "svgelements>=1.9.6",
     "svglib>=1.5.1",
+    "reportlab>=3.6",
     "pytexit>=0.4.0",
     "IPython>=8.19",
-    'windows_tools>=2.4; sys_platform == "win32"',
-    'pywin32>306; sys_platform == "win32"',
     "docutils>=0.18",
+    "sphinx>=7.0",
     "sphinx-rtd-theme>=1.2.0",
     "PySide6>=6.4",
+    "requests>=2.25",
     ]
 dynamic = ["version"]
 
+# Optional: HDF5 result storage (sim.save/load/delete). Guarded imports with a
+# "pip install h5py" message, so kept out of the base install.
+[project.optional-dependencies]
+hdf5 = ["h5py>=3.0"]
+
 [project.scripts]
-slicap-schematic = "SLiCAP.schematic.main:main"
+slicap = "SLiCAP.schematic.main:main"
+slicap-schematics = "SLiCAP.schematic.main:main"
 
 [project.urls]
 Homepage = "https://slicap.github.io/SLiCAP_python/"

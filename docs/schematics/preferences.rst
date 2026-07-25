@@ -2,7 +2,7 @@
 Preferences
 ===========
 
-:menuselection:`File --> Preferences…` controls the **appearance** of the
+:menuselection:`File --> Schematic drawing preferences…` controls the **appearance** of the
 current schematic — line widths, colours and fonts.
 
 .. figure:: images/preferences.png

@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QHBoxLayout,
-    QLabel, QLineEdit, QComboBox, QPushButton, QDialogButtonBox, QFileDialog,
+    QLabel, QLineEdit, QComboBox, QCheckBox, QPushButton, QDialogButtonBox,
+    QFileDialog,
 )
 from PySide6.QtCore import Qt
 
@@ -9,7 +10,8 @@ class LibraryLinkDialog(QDialog):
     """Add / Edit a .lib or .inc library link."""
 
     def __init__(self, directive: str = "lib", simulator: str = "SLiCAP",
-                 file_path: str = "", corner: str = "", parent=None):
+                 file_path: str = "", corner: str = "", show: bool = True,
+                 parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Add / Edit Library Link")
         self.setMinimumWidth(480)
@@ -42,6 +44,13 @@ class LibraryLinkDialog(QDialog):
         form.addRow(self._corner_label, self._corner_edit)
 
         layout.addLayout(form)
+
+        # "Show on schematic" (Anton, 2026-07-11, like the analysis block):
+        # only drawing/export is suppressed — always netlisted.
+        self._show_cb = QCheckBox(
+            "Show on schematic  (the link is always netlisted)")
+        self._show_cb.setChecked(bool(show))
+        layout.addWidget(self._show_cb)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -83,3 +92,6 @@ class LibraryLinkDialog(QDialog):
         if self.directive() == "lib" and self.simulator() == "SPICE":
             return self._corner_edit.text().strip()
         return ""
+
+    def show_on_schematic(self) -> bool:
+        return self._show_cb.isChecked()

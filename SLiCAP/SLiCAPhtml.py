@@ -7,7 +7,7 @@ SLiCAP module with functions for creating a basic HTML report.
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from shutil import copy2
-from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric, ENG, units2TeX
+from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric, ENG, units2TeX, normalizeRational
 from IPython.core.display import HTML
 
 _HTMLINSERT = '<!-- INSERT -->' # pattern to be replaced in html files
@@ -543,7 +543,7 @@ def expr2html(expr, units=''):
     if isinstance(expr, sp.Basic):
         if units != '':
             units = '\\left[\\mathrm{' + units2TeX(units) + '}\\right]'
-        html = '$' + _latex_ENG(expr) + units + '$'
+        html = '$' + _latex_ENG(normalizeRational(expr)) + units + '$'
         #html = '$' + sp.latex(roundN(expr)) + units + '$'
         html = _insertHTML(ini.html_path + ini.html_page, html)
     else:
@@ -577,7 +577,7 @@ def eqn2html(arg1, arg2, units='', label='', labelText=''):
     if units != '':
         units = '\\,\\left[ \\mathrm{' + units2TeX(units) + '}\\right]'
     label = _addLabel(label, caption=labelText, labelType='eqn')
-    value = _latex_ENG(arg2)
+    value = _latex_ENG(normalizeRational(arg2))
     #value =  sp.latex(roundN(arg2))    
     html = label + '\\begin{equation}\n' + sp.latex(roundN(arg1)) + '=' + value + units + '\n'
     html += '\\end{equation}\n'

@@ -283,22 +283,26 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
                  expansion=True, description=None, language="SLiCAP"):
     """
     #. Creates and returns a circuit object from:
-        
+
        - A netlist file (".cir" file: always in the cir folder of the project
          folder)
-       - A KiCAD schematic file (".kicad_sch" file, full path or relative to 
+       - A native SLiCAP schematic file (".slicap_sch" file, made with the
+         built-in schematic editor; full path or relative to project folder)
+       - A KiCAD schematic file (".kicad_sch" file, full path or relative to
          project folder)
-       - An LTspice schematic file (".asc" file, full path or relative to 
+       - An LTspice schematic file (".asc" file, full path or relative to
          project folder)
-       - A Lepton-eda schematic file (".sch" file, full path or relative to 
+       - A Lepton-eda schematic file (".sch" file, full path or relative to
          project folder; Linux and macOS only)
-       - A gschem schematic file (".sch" file, full path or relative to script; 
+       - A gschem schematic file (".sch" file, full path or relative to script;
          MSWindows only)
-    
-    #. Creates drawing size PDF and SVG image files of the schematics diagram 
-       (KiCAD and Lepton-eda only, KiCAD requires installation of Inkscape) and 
-       puts these images in the ini.img_path folder.
-    
+
+    #. Creates drawing size PDF and SVG image files of the schematics diagram
+       and puts these images in the ini.img_path folder. This applies to
+       native SLiCAP schematics (built-in export, no extra tools), KiCAD
+       (requires installation of Inkscape) and Lepton-eda; it does not apply
+       to ".cir" netlist input.
+
     #. Creates an HTML page with circuit information.
     
     ----

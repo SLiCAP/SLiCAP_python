@@ -19,7 +19,7 @@ def _LTspiceNetlist(fileName, cirTitle):
     :type cirTitle: str
     """
     if ini.ltspice == "":
-        print("Please install LTspice, delete '~/SLiCAP.ini', and run this script again.")
+        print("Please install LTspice, delete the main configuration file (~/SLiCAP/SLiCAP.ini), and run this script again.")
     else:
         if not os.path.isfile(fileName):
             print("Error: could not open: '{}'.".format(fileName))

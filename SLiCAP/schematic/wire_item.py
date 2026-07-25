@@ -8,12 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QPen, QBrush, QPainterPath, QPainterPathStroker, QPainter, QColor
 
-from .config import (
-    WIRE_COLOR, WIRE_WIDTH,
-    NET_LABEL_COLOR, NET_LABEL_FONT,
-    HANDLE_COLOR, HANDLE_SIZE,
-    Z_WIRE, Z_NET_LABEL,
-)
+from .config import style_of, default_style, Z_WIRE, Z_NET_LABEL
 
 _HIT_TOL          = 6.0   # click-to-wire tolerance in scene units
 _NET_LABEL_OFFSET = 3.0   # default y-offset above the first wire point
@@ -43,14 +38,17 @@ class _NetLabel(QGraphicsSimpleTextItem):
 
     def __init__(self, parent: "WireItem"):
         super().__init__(parent)
-        self.setFont(NET_LABEL_FONT)
-        self.setBrush(QBrush(NET_LABEL_COLOR))
+        self._apply_style(style_of(self))
         self.setPen(QPen(Qt.NoPen))
-        self.setFlag(QGraphicsItem.ItemIsMovable)
+        # Dragging is SCENE-driven (canvas label drag); no ItemIsMovable.
         self.setFlag(QGraphicsItem.ItemIsSelectable)   # selectable independently
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setAcceptedMouseButtons(Qt.LeftButton)
         self.setZValue(Z_NET_LABEL)
+
+    def _apply_style(self, style) -> None:
+        self.setFont(style.NET_LABEL_FONT)
+        self.setBrush(QBrush(style.NET_LABEL_COLOR))
 
     def shape(self) -> QPainterPath:
         # Pad the clickable area beyond the tight glyph bounds so a short net
@@ -58,22 +56,6 @@ class _NetLabel(QGraphicsSimpleTextItem):
         path = QPainterPath()
         path.addRect(self.boundingRect().adjusted(-3, -2, 3, 2))
         return path
-
-    def mousePressEvent(self, event):
-        w = self.parentItem()
-        if w is not None:
-            w._label_active = True
-            w.update()
-        # Accept the event so the wire behind is not also selected.
-        event.accept()
-        super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        w = self.parentItem()
-        if w is not None:
-            w._label_active = False
-            w.update()
-        super().mouseReleaseEvent(event)
 
     def paint(self, painter: QPainter, option, widget=None):
         # Draw text without Qt's default selection indicator.
@@ -88,6 +70,8 @@ class _NetLabel(QGraphicsSimpleTextItem):
             painter.restore()
 
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
+            self._apply_style(style_of(self))
         wire = self.parentItem()
         if wire is not None:
             if change == QGraphicsItem.ItemPositionChange:
@@ -99,6 +83,66 @@ class _NetLabel(QGraphicsSimpleTextItem):
                         self.pos().x() - ref.x(),
                         self.pos().y() - ref.y(),
                     )
+                wire.update()
+        return super().itemChange(change, value)
+
+
+class _DCLabel(QGraphicsSimpleTextItem):
+    """Draggable "V: <value>" bias annotation, child of WireItem.
+
+    Shows the wire's DC operating-point voltage from the scene's op store
+    (NGspice back-annotation). Only the flag and the placement are
+    persisted — the value comes from the most recent unstepped op run and
+    is greyed when unavailable (placeholder "V: —") or stale (the
+    schematic changed after the run)."""
+
+    def __init__(self, parent: "WireItem"):
+        super().__init__(parent)
+        self.setPen(QPen(Qt.NoPen))
+        # Dragging is SCENE-driven (canvas label drag); no ItemIsMovable.
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        self.setAcceptedMouseButtons(Qt.LeftButton)
+        self.setZValue(Z_NET_LABEL)
+        self.setToolTip("DC operating-point voltage of this net (v(net) "
+                        "from the most recent op run)")
+        self.refresh()
+
+    def refresh(self) -> None:
+        from PySide6.QtGui import QFont
+        wire  = self.parentItem()
+        scene = self.scene()
+        style = style_of(self)
+        net = (wire._dc_net or wire.net_name) if wire is not None else None
+        value = (scene.dc_voltage(net)
+                 if hasattr(scene, "dc_voltage") else None)
+        stale = getattr(scene, "op_stale", False)
+        font = QFont(style.BIAS_FONT)
+        if value is None:
+            text, dimmed = "V: —", True
+        else:
+            from SLiCAP.SLiCAPlex import _eng_notation
+            text, dimmed = f"V: {_eng_notation(value, style.BIAS_DIGITS)}", stale
+        font.setItalic(dimmed)
+        self.setFont(font)
+        self.setBrush(QBrush(QColor("#909090") if dimmed else style.BIAS_COLOR))
+        self.setText(text)
+
+    def shape(self) -> QPainterPath:
+        path = QPainterPath()
+        path.addRect(self.boundingRect().adjusted(-3, -2, 3, 2))
+        return path
+
+    def itemChange(self, change, value):
+        wire = self.parentItem()
+        if wire is not None:
+            if change == QGraphicsItem.ItemPositionChange:
+                wire.prepareGeometryChange()
+            elif change == QGraphicsItem.ItemPositionHasChanged:
+                if wire.points:
+                    ref = wire.points[0]
+                    wire.dc_label_offset = QPointF(self.pos().x() - ref.x(),
+                                                   self.pos().y() - ref.y())
                 wire.update()
         return super().itemChange(change, value)
 
@@ -127,7 +171,18 @@ class WireItem(QGraphicsPathItem):
         self._user_net_name: str | None = None # name saved before port override
         self._net_label: _NetLabel | None = None
         self._label_active: bool = False
-        self.setPen(QPen(WIRE_COLOR, WIRE_WIDTH))
+        # DC operating-point back-annotation (NGspice): flag + placement
+        # only; the value comes from the scene's op store.
+        self.show_dc_voltage: bool = False
+        self.dc_label_offset: QPointF = QPointF(0.0, 6.0)
+        self._dc_label: _DCLabel | None = None
+        self._dc_label_active: bool = False
+        # Effective net name, computed at refresh time (netlist authority
+        # when known, else the canonical resolver). Serves the bias
+        # annotation AND the net-name label of unnamed nets.
+        # Transient — never persisted.
+        self._dc_net: str | None = None
+        self._apply_style(default_style())
         self.setZValue(Z_WIRE)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self._rebuild()
@@ -135,11 +190,17 @@ class WireItem(QGraphicsPathItem):
     # ── net label ─────────────────────────────────────────────────────────────
 
     def update_label(self) -> None:
-        """Create, update, or hide the net-name label child item."""
-        if self.display_name and self.net_name:
+        """Create, update, or hide the net-name label child item.
+
+        Shows the EFFECTIVE net name: the user's label when set, otherwise
+        the derived name (netlist authority / canonical resolver via
+        ``_dc_net``, Anton 2026-07-12) — display-only, never persisted, so
+        an unnamed net shows its auto number after netlisting/refresh."""
+        name = self.net_name or self._dc_net
+        if self.display_name and name:
             if self._net_label is None:
                 self._net_label = _NetLabel(self)
-            self._net_label.setText(self.net_name)
+            self._net_label.setText(name)
             self._net_label.setVisible(True)
             self._place_label()
         elif self._net_label is not None:
@@ -153,23 +214,54 @@ class WireItem(QGraphicsPathItem):
         self._net_label.setPos(ref.x() + self.label_offset.x(),
                                ref.y() + self.label_offset.y())
 
+    # ── DC operating-point annotation ─────────────────────────────────────────
+
+    def update_dc_label(self, net: "str | None" = None) -> None:
+        """Create, refresh, or hide the "V: <value>" bias annotation.
+
+        *net* is the effective net from the scene's refresh (the netlist
+        builder's resolver, so auto-numbered nets annotate too — decided
+        2026-07-12 after the live check); None keeps the last known one."""
+        if net is not None:
+            self._dc_net = net
+        if self.show_dc_voltage:
+            if self._dc_label is None:
+                self._dc_label = _DCLabel(self)
+            self._dc_label.refresh()
+            self._dc_label.setVisible(True)
+            self._place_dc_label()
+        elif self._dc_label is not None:
+            self._dc_label.setVisible(False)
+
+    def _place_dc_label(self) -> None:
+        if self._dc_label is None or not self.points:
+            return
+        ref = self.points[0]
+        self._dc_label.setPos(ref.x() + self.dc_label_offset.x(),
+                              ref.y() + self.dc_label_offset.y())
+
+    def _apply_style(self, style) -> None:
+        self._handle_size = style.HANDLE_SIZE
+        self.setPen(QPen(style.WIRE_COLOR, style.WIRE_WIDTH))
+
     # ── bounding rect ─────────────────────────────────────────────────────────
 
     def boundingRect(self) -> QRectF:
         br = super().boundingRect()
-        m = HANDLE_SIZE / 2.0
+        m = self._handle_size / 2.0
         br = br.adjusted(-m, -m, m, m)
-        if self._net_label is not None and self._net_label.isVisible() and self.points:
-            br = br.united(self._net_label.mapRectToParent(self._net_label.boundingRect()))
-            anchor  = self.points[0]
-            lbl_pos = self._net_label.pos()
-            m = 3.0
-            br = br.united(QRectF(
-                min(anchor.x(), lbl_pos.x()) - m,
-                min(anchor.y(), lbl_pos.y()) - m,
-                abs(anchor.x() - lbl_pos.x()) + 2 * m,
-                abs(anchor.y() - lbl_pos.y()) + 2 * m,
-            ))
+        for lbl in (self._net_label, self._dc_label):
+            if lbl is not None and lbl.isVisible() and self.points:
+                br = br.united(lbl.mapRectToParent(lbl.boundingRect()))
+                anchor  = self.points[0]
+                lbl_pos = lbl.pos()
+                m = 3.0
+                br = br.united(QRectF(
+                    min(anchor.x(), lbl_pos.x()) - m,
+                    min(anchor.y(), lbl_pos.y()) - m,
+                    abs(anchor.x() - lbl_pos.x()) + 2 * m,
+                    abs(anchor.y() - lbl_pos.y()) + 2 * m,
+                ))
         return br
 
     # ── hit testing ───────────────────────────────────────────────────────────
@@ -196,6 +288,8 @@ class WireItem(QGraphicsPathItem):
         return best_i
 
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
+            self._apply_style(style_of(self))
         if change == QGraphicsItem.ItemSelectedChange:
             # prepareGeometryChange() invalidates the scene's spatial index
             # and forces a repaint to be scheduled immediately, so selection
@@ -225,6 +319,7 @@ class WireItem(QGraphicsPathItem):
 
     def paint(self, painter: QPainter, option, widget=None):
         super().paint(painter, option, widget)
+        style = style_of(self)
 
         # Anchor dot + leader line — when wire or its label is active
         if ((option.state & QStyle.State_Selected or self._label_active)
@@ -233,20 +328,39 @@ class WireItem(QGraphicsPathItem):
                 and self._net_label.isVisible()
                 and self.points):
             painter.save()
-            painter.setPen(QPen(NET_LABEL_COLOR, 0.6))
-            painter.setBrush(NET_LABEL_COLOR)
+            painter.setPen(QPen(style.NET_LABEL_COLOR, 0.6))
+            painter.setBrush(style.NET_LABEL_COLOR)
             anchor = self.points[0]
             painter.drawLine(anchor, self._net_label.pos())
             painter.drawEllipse(anchor, 2.0, 2.0)
             painter.restore()
 
+        # Anchor dot + dashed leader for the bias annotation — while the
+        # wire is selected or the label is being dragged, so the user sees
+        # which wire the "V: …" belongs to (Anton, 2026-07-12).
+        if ((option.state & QStyle.State_Selected or self._dc_label_active)
+                and self.show_dc_voltage
+                and self._dc_label is not None
+                and self._dc_label.isVisible()
+                and self.points):
+            painter.save()
+            pen = QPen(style.BIAS_COLOR, 0.6, Qt.DashLine)
+            painter.setPen(pen)
+            anchor = self.points[0]
+            painter.drawLine(anchor, self._dc_label.pos())
+            painter.setBrush(style.BIAS_COLOR)
+            painter.setPen(QPen(style.BIAS_COLOR, 0.6))
+            painter.drawEllipse(anchor, 2.0, 2.0)
+            painter.restore()
+
         if option.state & QStyle.State_Selected:
             painter.save()
-            s = HANDLE_SIZE / 2
-            painter.setPen(QPen(HANDLE_COLOR, 0.8))
-            painter.setBrush(HANDLE_COLOR)
+            hs = style.HANDLE_SIZE
+            s = hs / 2
+            painter.setPen(QPen(style.HANDLE_COLOR, 0.8))
+            painter.setBrush(style.HANDLE_COLOR)
             for pt in self.points:
-                painter.drawRect(QRectF(pt.x() - s, pt.y() - s, HANDLE_SIZE, HANDLE_SIZE))
+                painter.drawRect(QRectF(pt.x() - s, pt.y() - s, hs, hs))
             painter.restore()
 
     def _rebuild(self):
@@ -258,3 +372,4 @@ class WireItem(QGraphicsPathItem):
                 path.lineTo(pt)
             self.setPath(path)
         self._place_label()
+        self._place_dc_label()

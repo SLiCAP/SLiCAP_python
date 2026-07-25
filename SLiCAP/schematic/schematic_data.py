@@ -22,6 +22,7 @@ _SYMBOL_NAME_MIGRATION: dict[str, str] = {
 class DocumentProperties:
     title:          str   = ""
     author:         str   = ""
+    project:        str   = ""    # SLiCAP project name → sl.initProject() in main.py
     created:        str   = ""    # ISO date, set once on New
     last_modified:  str   = ""    # ISO date, auto-updated on every Save
     page_size:      str   = "A4"  # standard name or "Custom"
@@ -34,6 +35,8 @@ class DocumentProperties:
     is_subcircuit:     bool = False
     subcircuit_ports:  list = field(default_factory=list)   # ordered port names
     subcircuit_params: list = field(default_factory=list)   # list of [name, default]
+    # NGspice only: body of the .control…endc block (without the wrapper lines)
+    control_section:   str  = ""
 
     @staticmethod
     def new() -> "DocumentProperties":
@@ -69,6 +72,10 @@ class WireData:
     label_offset: tuple[float, float] = (0.0, -3.0)
     net_locked: bool = False
     user_net_name: str | None = None
+    # DC operating-point back-annotation (NGspice): only the FLAG and the
+    # label placement are persisted — never the value.
+    show_dc_voltage: bool = False
+    dc_label_offset: tuple = (0.0, 6.0)
 
 
 @dataclass
@@ -107,6 +114,7 @@ class LibraryData:
     directive: str = "lib"    # "lib" or "inc"
     simulator: str = "SLiCAP" # "SLiCAP" or "SPICE"
     corner:    str = ""       # SPICE corner (only for SPICE .lib)
+    show: bool = True         # drawn on the schematic; ALWAYS netlisted
 
 
 @dataclass
@@ -119,8 +127,9 @@ class ModelData:
     params:        list         # list of [name, value] string pairs
     preamble_path: str  = ""
     svg_b64:       str  = ""
-    display_width:  int = 200
+    display_width:  int = 200   # legacy; size is derived from the style scale
     display_height: int = 80
+    show: bool = True   # drawn on the schematic; ALWAYS netlisted
 
 
 @dataclass
@@ -139,6 +148,12 @@ class BorderData:
     width: float
     height: float
     show_in_export: bool = True
+    fixed_w: bool = False
+    fixed_h: bool = False
+    line_color: str = "#5050b4"
+    line_width: float = 0.8
+    bg_color: str = "#ffffff"
+    bg_alpha: int = 0            # background opacity 0…100 %, bottom layer
 
 
 @dataclass
@@ -147,9 +162,10 @@ class ParameterData:
     y: float
     params: list          # list of [name, value] string pairs
     preamble_path: str
-    display_width: int
+    display_width: int    # legacy; size is derived from the style scale
     display_height: int
     svg_b64: str = ""    # kept for reading old files; no longer written
+    show: bool = True    # drawn on the schematic; ALWAYS netlisted
 
 
 @dataclass
@@ -159,6 +175,7 @@ class AnalysisData:
     source:   list   # 0-2 refdes strings
     detector: list   # 0-2 [type, ref] pairs; type = "V" or "I"
     lgref:    list   # 0-2 refdes strings
+    show: bool = True   # drawn on the schematic; ALWAYS netlisted
 
 
 @dataclass
@@ -232,6 +249,8 @@ class SchematicData:
                     "label_offset": list(w.label_offset),
                     "net_locked": w.net_locked,
                     "user_net_name": w.user_net_name,
+                    "show_dc_voltage": w.show_dc_voltage,
+                    "dc_label_offset": list(w.dc_label_offset),
                 }
                 for w in self.wires
             ],
@@ -255,7 +274,7 @@ class SchematicData:
                 {
                     "x": l.x, "y": l.y, "file_path": l.file_path,
                     "directive": l.directive, "simulator": l.simulator,
-                    "corner": l.corner,
+                    "corner": l.corner, "show": l.show,
                 }
                 for l in self.libs
             ],
@@ -274,6 +293,12 @@ class SchematicData:
                 "width": self.border.width,
                 "height": self.border.height,
                 "show_in_export": self.border.show_in_export,
+                "fixed_w": self.border.fixed_w,
+                "fixed_h": self.border.fixed_h,
+                "line_color": self.border.line_color,
+                "line_width": self.border.line_width,
+                "bg_color": self.border.bg_color,
+                "bg_alpha": self.border.bg_alpha,
             } if self.border is not None else None,
             "latex_fragments": [
                 {
@@ -292,6 +317,7 @@ class SchematicData:
                     "preamble_path": p.preamble_path,
                     "display_width":  p.display_width,
                     "display_height": p.display_height,
+                    "show": p.show,
                 }
                 for p in self.parameters
             ],
@@ -301,6 +327,7 @@ class SchematicData:
                     "source":   a.source,
                     "detector": a.detector,
                     "lgref":    a.lgref,
+                    "show":     a.show,
                 }
                 for a in self.analysis_items
             ],
@@ -330,12 +357,14 @@ class SchematicData:
                     "preamble_path": m.preamble_path,
                     "display_width":  m.display_width,
                     "display_height": m.display_height,
+                    "show": m.show,
                 }
                 for m in self.model_defs
             ],
             "properties": {
                 "title":          self.properties.title,
                 "author":         self.properties.author,
+                "project":        self.properties.project,
                 "created":        self.properties.created,
                 "last_modified":  self.properties.last_modified,
                 "page_size":      self.properties.page_size,
@@ -344,6 +373,7 @@ class SchematicData:
                 "is_subcircuit":     self.properties.is_subcircuit,
                 "subcircuit_ports":  list(self.properties.subcircuit_ports),
                 "subcircuit_params": [list(p) for p in self.properties.subcircuit_params],
+                "control_section":   self.properties.control_section,
             },
         }
         return json.dumps(data, indent=2)
@@ -351,23 +381,35 @@ class SchematicData:
     @classmethod
     def from_json(cls, text: str) -> SchematicData:
         data = json.loads(text)
-        components = [
-            ComponentData(
+        components = []
+        for c in data.get("components", []):
+            params      = dict(c.get("params", {}))
+            prop_display = dict(c.get("prop_display", {"refdes": [True, False]}))
+            prop_offsets = dict(c.get("prop_offsets", {}))
+            # Migrate _stimuli_* → canonical dc/ac/tran keys.
+            for old_key, canon_key in (("_stimuli_dc", "dc"), ("_stimuli_ac", "ac"), ("_stimuli_tran", "tran")):
+                params.pop(old_key, None)
+                if old_key in prop_display:
+                    if canon_key not in prop_display:
+                        prop_display[canon_key] = prop_display[old_key]
+                    del prop_display[old_key]
+                if old_key in prop_offsets:
+                    if canon_key not in prop_offsets:
+                        prop_offsets[canon_key] = prop_offsets[old_key]
+                    del prop_offsets[old_key]
+            components.append(ComponentData(
                 symbol_name=_SYMBOL_NAME_MIGRATION.get(c["symbol_name"], c["symbol_name"]),
                 instance_id=c["instance_id"],
-                x=c["x"],
-                y=c["y"],
+                x=c["x"], y=c["y"],
                 rotation=c.get("rotation", 0.0),
                 h_flip=c.get("h_flip", False),
                 v_flip=c.get("v_flip", False),
-                params=c.get("params", {}),
+                params=params,
                 model=c.get("model", ""),
                 refs=c.get("refs", []),
-                prop_display=c.get("prop_display", {"refdes": [True, False]}),
-                prop_offsets=c.get("prop_offsets", {}),
-            )
-            for c in data.get("components", [])
-        ]
+                prop_display=prop_display,
+                prop_offsets=prop_offsets,
+            ))
         wires = [
             WireData(
                 points=[tuple(p) for p in w["points"]],
@@ -376,6 +418,8 @@ class SchematicData:
                 label_offset=tuple(w.get("label_offset", [0.0, -3.0])),
                 net_locked=w.get("net_locked", False),
                 user_net_name=w.get("user_net_name"),
+                show_dc_voltage=w.get("show_dc_voltage", False),
+                dc_label_offset=tuple(w.get("dc_label_offset", [0.0, 6.0])),
             )
             for w in data.get("wires", [])
         ]
@@ -402,6 +446,7 @@ class SchematicData:
                 directive=l.get("directive", "lib"),
                 simulator=l.get("simulator", "SLiCAP"),
                 corner=l.get("corner", ""),
+                show=bool(l.get("show", True)),
             )
             for l in data.get("libs", [])
         ]
@@ -419,6 +464,12 @@ class SchematicData:
             x=bd["x"], y=bd["y"],
             width=bd["width"], height=bd["height"],
             show_in_export=bd.get("show_in_export", True),
+            fixed_w=bd.get("fixed_w", False),
+            fixed_h=bd.get("fixed_h", False),
+            line_color=bd.get("line_color", "#5050b4"),
+            line_width=bd.get("line_width", 0.8),
+            bg_color=bd.get("bg_color", "#ffffff"),
+            bg_alpha=bd.get("bg_alpha", 0),
         ) if bd else None
         latex_fragments = [
             LatexFragmentData(
@@ -439,6 +490,7 @@ class SchematicData:
                 svg_b64=pd.get("svg_b64", ""),
                 display_width=pd.get("display_width", 200),
                 display_height=pd.get("display_height", 80),
+                show=bool(pd.get("show", True)),
             )
             for pd in data.get("parameters", [])
         ]
@@ -448,6 +500,7 @@ class SchematicData:
                 source=list(a.get("source", [])),
                 detector=[list(d) for d in a.get("detector", [])],
                 lgref=list(a.get("lgref", [])),
+                show=bool(a.get("show", True)),
             )
             for a in data.get("analysis_items", [])
         ]
@@ -478,6 +531,7 @@ class SchematicData:
                 svg_b64=m.get("svg_b64", ""),
                 display_width=m.get("display_width", 200),
                 display_height=m.get("display_height", 80),
+                show=bool(m.get("show", True)),
             )
             for m in data.get("model_defs", [])
         ]
@@ -485,6 +539,7 @@ class SchematicData:
         properties = DocumentProperties(
             title=p.get("title", ""),
             author=p.get("author", ""),
+            project=p.get("project", ""),
             created=p.get("created", ""),
             last_modified=p.get("last_modified", ""),
             page_size=p.get("page_size", "A4"),
@@ -493,6 +548,7 @@ class SchematicData:
             is_subcircuit=p.get("is_subcircuit", False),
             subcircuit_ports=list(p.get("subcircuit_ports", [])),
             subcircuit_params=[list(pair) for pair in p.get("subcircuit_params", [])],
+            control_section=p.get("control_section", ""),
         )
         return cls(components=components, wires=wires,
                    junctions=junctions, free_texts=free_texts,

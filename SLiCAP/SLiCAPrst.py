@@ -820,3 +820,193 @@ def _symRoots2RST(roots, Hz, pz):
             line = [sp.Symbol(pz + '_' + str(i)), ':math:`' + sp.latex(roundN(root)) + '`']
         lineList.append(line)
     return lineList
+
+
+# ── RST → HTML preview (Sphinx) ─────────────────────────────────────────────
+
+def _has_internet(host="cdn.jsdelivr.net", port=443, timeout=1.5):
+    """True when the MathJax CDN host is reachable — decides mathjax vs the
+    imgmath offline fallback for 'auto' math."""
+    import socket
+    try:
+        socket.create_connection((host, port), timeout=timeout).close()
+        return True
+    except OSError:
+        return False
+
+
+def _minimal_conf(math):
+    """Self-contained preview config (no project conf.py): a plain, chrome-free
+    theme. *math* is 'mathjax' (default, online) or 'imgmath' (offline)."""
+    if math == "imgmath":
+        math_lines = 'extensions = ["sphinx.ext.imgmath"]\nimgmath_image_format = "svg"\n'
+    else:
+        math_lines = 'extensions = ["sphinx.ext.mathjax"]\n'
+    return (
+        'project = ""\n'
+        + math_lines +
+        'html_theme = "basic"\n'
+        'html_sidebars = {"**": []}\n'
+        'html_show_sourcelink = False\n'
+        'html_copy_source = False\n'
+        'numfig = True\n'
+        'exclude_patterns = ["_build"]\n'
+    )
+
+
+def _indent(text, n=3):
+    pad = " " * n
+    return "\n".join(pad + ln if ln.strip() else ln
+                     for ln in text.splitlines())
+
+
+def _project_wrapper_conf(src, math="mathjax") -> str:
+    """A conf.py that INHERITS the project's ``sphinx/source/conf.py`` (its
+    theme, CSS, templates, numfig, …) so the preview looks like the real report.
+
+    *math* is 'mathjax' (default) — the project's own renderer, so the preview
+    matches the report and math is selectable — or 'imgmath', the offline
+    fallback (LaTeX → SVG) used when the MathJax CDN is unreachable. The left
+    sidebar is dropped: empty chrome around a single embedded snippet."""
+    src = str(src)
+    conf = (
+        "import os, sys\n"
+        f"_src = {src!r}\n"
+        "sys.path.insert(0, _src)\n"
+        "from conf import *  # noqa: F401,F403 - inherit the project styling\n"
+        "_t = os.path.join(_src, '_templates')\n"
+        "_s = os.path.join(_src, '_static')\n"
+        "templates_path = [_t] if os.path.isdir(_t) else []\n"
+        "html_static_path = [_s] if os.path.isdir(_s) else []\n"
+        "master_doc = 'index'\n"
+        "root_doc = 'index'\n"
+        "html_sidebars = {'**': []}\n"
+        "html_show_sourcelink = False\n"
+        "exclude_patterns = ['_build']\n"
+    )
+    if math == "imgmath":
+        conf += (
+            "extensions = [e for e in list(extensions) if e != 'sphinx.ext.mathjax']\n"
+            "if 'sphinx.ext.imgmath' not in extensions:\n"
+            "    extensions = extensions + ['sphinx.ext.imgmath']\n"
+            "html_math_renderer = 'imgmath'\n"
+            "imgmath_image_format = 'svg'\n"
+        )
+    return conf
+
+
+def snippet2html(rst_text, name="snippet", include_statement="",
+                 sphinx_source=None, math="auto", workdir=None, timeout=180):
+    """Render ONE RST snippet to a standalone HTML page with Sphinx.
+
+    The snippet is shown rendered (tables, math, …) followed by the one-line
+    ``.. include::`` statement that embeds it in a report.
+
+    When *sphinx_source* points at the project's ``sphinx/source`` (its
+    ``conf.py``, theme and ``_static``/``_templates``), the preview inherits
+    that styling — the real report look, e.g. ``sphinx_book_theme`` — via a
+    wrapper config, overriding only the math renderer to imgmath (see
+    :func:`_project_wrapper_conf`). Without a project source a minimal built-in
+    config is used. The build runs as a subprocess and is incremental (reused
+    *workdir*).
+
+    :param rst_text: the snippet's ReStructuredText.
+    :param name: snippet name (page title / cache key).
+    :param include_statement: the include line shown as "how to reuse";
+        defaults to ``.. include:: SLiCAPdata/<name>.rst``.
+    :param sphinx_source: the project's ``sphinx/source`` directory to inherit
+        styling from, or None for the built-in minimal config.
+    :param math: 'mathjax' (online, selectable, matches the report), 'imgmath'
+        (offline LaTeX→SVG), or 'auto' (mathjax when the CDN is reachable, else
+        imgmath). Default 'auto'.
+    :param workdir: persistent build workspace (created if missing).
+    :param timeout: seconds before the Sphinx build is abandoned.
+    :return: ``(html_path, log)`` — html or None, plus the Sphinx log.
+    :rtype: (str | None, str)
+
+    Qt-free: the GUI displays the returned file. Also usable from a script.
+    """
+    import subprocess
+    import sys
+    import tempfile
+    from pathlib import Path
+
+    if workdir is None:
+        workdir = os.path.join(tempfile.gettempdir(), "slicap_rst_preview")
+    workdir = Path(workdir)
+    srcdir = workdir / "src"
+    outdir = workdir / "html"
+    doctrees = workdir / "doctrees"
+    confdir = workdir / "conf"
+    srcdir.mkdir(parents=True, exist_ok=True)
+
+    # mathjax by default (matches the report, math is selectable); imgmath only
+    # when offline — the file:// preview can't reach the MathJax CDN then.
+    if math == "auto":
+        math = "mathjax" if _has_internet() else "imgmath"
+
+    # Style config: inherit the project's sphinx conf (report look), else a
+    # self-contained minimal conf. Both honour the chosen math renderer.
+    src = Path(sphinx_source).resolve() if sphinx_source else None
+    use_project = bool(src and (src / "conf.py").is_file())
+    if use_project:
+        conf_text = _project_wrapper_conf(src, math)
+        confdir.mkdir(parents=True, exist_ok=True)
+        (confdir / "conf.py").write_text(conf_text, encoding="utf-8")
+        use_conf = str(confdir)
+    else:
+        conf_text = _minimal_conf(math)
+        use_conf = None
+
+    # Rebuild from scratch when the effective config changes (project switch,
+    # theme/math change): Sphinx's incremental cache and a previous theme's
+    # _static assets would otherwise bleed into the page.
+    import hashlib
+    import shutil
+    sig = hashlib.md5((conf_text + "\n" + str(math)).encode()).hexdigest()
+    sig_file = workdir / ".conf_sig"
+    if not sig_file.is_file() or sig_file.read_text() != sig:
+        for d in (outdir, doctrees):
+            shutil.rmtree(d, ignore_errors=True)
+        workdir.mkdir(parents=True, exist_ok=True)
+        sig_file.write_text(sig)
+
+    if not include_statement:
+        include_statement = f".. include:: SLiCAPdata/{name}.rst"
+
+    # The snippet rendered, then ONLY the one-line include statement that
+    # embeds it in a report (with its file name) — not a dump of the whole
+    # page's RST, which is what a theme's "view source" button would show and
+    # is not what the user needs (Anton, 2026-07-16).
+    title = str(name)
+    doc = (
+        f"{title}\n{'=' * max(len(title), 3)}\n\n"
+        f"{rst_text}\n\n"
+        ".. rubric:: Include this snippet in a report\n\n"
+        ".. code-block:: rst\n\n"
+        f"{_indent(include_statement)}\n"
+    )
+    (srcdir / "index.rst").write_text(doc, encoding="utf-8")
+
+    if use_conf is None:
+        (srcdir / "conf.py").write_text(conf_text, encoding="utf-8")
+
+    cmd = [sys.executable, "-m", "sphinx", "-b", "html", "-q",
+           "-d", str(doctrees)]
+    if use_conf is not None:
+        cmd += ["-c", use_conf]
+    cmd += [str(srcdir), str(outdir)]
+
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True,
+                              timeout=timeout)
+        log = (proc.stdout or "") + (proc.stderr or "")
+    except subprocess.TimeoutExpired:
+        return None, f"Sphinx build timed out after {timeout}s."
+    except Exception as exc:
+        return None, f"Could not run Sphinx: {exc}"
+
+    html = outdir / "index.html"
+    if proc.returncode != 0 or not html.is_file():
+        return None, log or "Sphinx build failed."
+    return str(html), log

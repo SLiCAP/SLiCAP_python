@@ -9,14 +9,12 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QPointF, QRectF, Signal, QTimer
 from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPainterPath, QTransform, QTextCursor
 
+from . import config as _config
 from .config import (
     GRID_SIZE, GRID_MAJOR, DEFAULT_ZOOM, snap,
-    GRID_MINOR_COLOR, GRID_MAJOR_COLOR,
-    JUNCTION_COLOR, JUNCTION_RADIUS,
-    COMMAND_COLOR, COMMAND_FONT,
     Z_WIRE, Z_WIRE_DRAG,
 )
-from .component_item import ComponentItem, SYMBOL_PREFIX, PIN_POSITIONS, make_ghost
+from .component_item import ComponentItem, make_ghost
 from .wire_item import WireItem
 from .junction_item import JunctionItem
 from .free_text_item import FreeTextItem
@@ -185,6 +183,39 @@ class SchematicScene(QGraphicsScene):
         self.setSceneRect(-2000, -2000, 4000, 4000)
         self.setBackgroundBrush(QColor(255, 255, 255))
 
+        # Strong references to every top-level item (see addItem): shiboken
+        # keeps a Python-created QGraphicsItem alive only through its Python
+        # wrapper — once the creating wrapper is gone, the transient
+        # wrappers scene.items() returns can DELETE the C++ item when they
+        # are garbage-collected (the exported schematic lost its wires,
+        # Anton 2026-07-12). Pinning makes item lifetime explicit: an item
+        # lives until removeItem()/clear().
+        self._pinned: set = set()
+
+        # The schematic's own drawing style.  The owning panel replaces this
+        # with the Style loaded from the file's sidecar; items resolve their
+        # style through the scene (config.style_of), so several open
+        # schematics never share style state.
+        self.style = _config.default_style()
+        # The schematic's own LaTeX render-cache directory (the ``<name>.cache``
+        # sidecar), set by the owning panel; None → the session temp.  Items
+        # resolve it via latex_label.cache_dir_of.
+        self.cache_dir = None
+
+        # DC operating-point results for bias back-annotation (NGspice):
+        # lower-case vector name → float, from the circuit's most recent
+        # UNSTEPPED op run in this session (<cir>_op.raw, loaded by the
+        # panel after every instruction run). op_netlist is the .cir the
+        # raw was produced from — the NAMING AUTHORITY for the nets (the
+        # sims run on that file as last exported). Values are never
+        # persisted; a NETLIST-RELEVANT edit marks them stale (greyed) —
+        # cosmetic edits (annotation toggles, label drags) do not.
+        self.op_results: "dict | None" = None
+        self.op_netlist: "str | None" = None
+        self.op_stale: bool = False
+        self._op_fingerprint: "str | None" = None
+        self.data_changed.connect(self._mark_op_stale)
+
         self._mode            = _Mode.NORMAL
         self._ghost           = None
         self._placing_name    = None
@@ -206,10 +237,16 @@ class SchematicScene(QGraphicsScene):
         self._wire_move_origins:   list = []
         self._wire_move_others:    list = []
         self._wire_move_start:     QPointF | None = None
+        # Scene-driven label drag (net-name / bias labels): Qt's movable
+        # machinery cannot be used — a covering top-level item receives the
+        # press, and an explicit grab misses the button-down bookkeeping
+        # (the label "jumped off the pointer", Anton 2026-07-12).
+        self._label_drag: "tuple | None" = None   # (label, orig_pos, press_scene_pos)
         self._wire_move_moved:     bool = False
         self._wire_move_rb:        list = []   # [(wire, {idx: orig_QPointF})]
         self._wire_move_junctions: list = []   # [(JunctionItem, orig_QPointF)]
         self._pin_anchors:         list = []   # [(anchor_QPointF, comp, (lx,ly))]
+        self._pin_preview_wires:   list = []   # dashed bridge previews during a component drag
         self._wire_pin_anchors:  list = []   # [(comp, (lx,ly), wire, idx)] — wire ends on a pin
         self._wire_pin_preview_wires: list = []  # preview WireItems for bridge wires during drag
 
@@ -217,11 +254,11 @@ class SchematicScene(QGraphicsScene):
         self._library_pending:  tuple | None = None   # (file_path, directive, simulator, corner)
         self._image_pending:    tuple | None = None   # (file_path, width, height)
         self._latex_pending:    tuple | None = None   # (code, preamble, w, h)
-        self._param_pending:    tuple | None = None   # (params, preamble, w, h)
+        self._param_pending:    tuple | None = None   # (params, preamble)
         self._analysis_pending: tuple | None = None   # (source, detector, lgref)
         self._placing_text:     str | None   = None   # text for PLACING_TEXT mode
         self._hyperlink_pending: tuple | None = None  # (url, label)
-        self._model_pending:    tuple | None = None   # (name, type, sim, params, preamble, w, h)
+        self._model_pending:    tuple | None = None   # (name, type, sim, params, preamble)
 
         # shape drawing state
         self._draw_kind:   str | None       = None   # "line"|"rect"|"circle"
@@ -353,7 +390,7 @@ class SchematicScene(QGraphicsScene):
         for data in self._clipboard:
             kind = data['kind']
             if kind == 'component':
-                ghost = make_ghost(data['svg_bytes'])
+                ghost = make_ghost(data['svg_bytes'], self.style)
                 ghost.setTransform(QTransform().scale(
                     -1 if data['h_flip'] else 1,
                     -1 if data['v_flip'] else 1,
@@ -422,14 +459,10 @@ class SchematicScene(QGraphicsScene):
                 # (stripped from item._svg_bytes) is restored on the copy, just as
                 # file loading does.  Fall back to the stored artwork if absent.
                 lib = getattr(self, '_library', None)
-                svg = lib.svg_bytes(data['symbol_name']) if lib is not None else None
-                if svg is None:
-                    svg = data['svg_bytes']
-                item = ComponentItem(
-                    data['symbol_name'],
-                    self._next_id(data['symbol_name']),
-                    svg,
-                )
+                sym = lib.symbol(data['symbol_name']) if lib is not None else None
+                if sym is None:
+                    continue   # symbol unknown to this schematic's library
+                item = ComponentItem(sym, self._next_id(data['symbol_name']))
                 item.setPos(QPointF(data['x'], data['y']) + delta)
                 item.setRotation(data['rotation'])
                 item.h_flip       = data['h_flip']
@@ -489,7 +522,7 @@ class SchematicScene(QGraphicsScene):
         self._mode         = _Mode.PLACING
         self._placing_name = name
         self._placing_svg  = svg_bytes
-        self._ghost        = make_ghost(svg_bytes)
+        self._ghost        = make_ghost(svg_bytes, self.style)
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
         self.placing_started.emit()
@@ -532,18 +565,153 @@ class SchematicScene(QGraphicsScene):
         # — every subcircuit block uses 'X', and e.g. nmos/pmos both use 'M' —
         # must draw from one counter so their refdes never collide.  from_data
         # seeds these counters with the same key (keep them in sync).
-        prefix = SYMBOL_PREFIX.get(symbol_name, "X")
+        sym = self._library.symbol(symbol_name) if getattr(self, '_library', None) else None
+        prefix = (sym.prefix if sym and sym.prefix else "X")
         n = self._counters.get(prefix, 1)
         self._counters[prefix] = n + 1
         return f"{prefix}{n}"
 
+    def _render_ghost_latex(self, latex_code: str, preamble_path: str) -> "bytes | None":
+        """Render LaTeX for a placement ghost, honouring this schematic's
+        latex_rendering preference (None → pixmap placeholder)."""
+        from .latex_label import LATEX_INSTALLED
+        if not (LATEX_INSTALLED and self.style.LATEX_RENDERING_ENABLED):
+            return None
+        from .latex_label import render_latex_raw
+        svg_bytes, _ = render_latex_raw(latex_code, preamble_path,
+                                        cache_dir=self.cache_dir)
+        return svg_bytes
+
+    def _ghost_pixmap(self, svg_bytes) -> "QPixmap":
+        """Placement-ghost pixmap at the DERIVED display size (natural SVG
+        size × the schematic's table-scale preference) — the size the placed
+        item will actually get."""
+        from PySide6.QtGui import QPixmap, QPainter as _QPainter
+        from PySide6.QtSvg import QSvgRenderer
+        from PySide6.QtCore import QByteArray
+        from .parameter_item import svg_scene_size
+        renderer = QSvgRenderer(QByteArray(svg_bytes)) if svg_bytes else None
+        if renderer and renderer.isValid():
+            natural = svg_scene_size(renderer, self.style)
+            pct = self.style.SCALE_PARAMETER_TABLE / 100.0
+            if natural is not None:
+                w = max(1, round(natural[0] * pct))
+                h = max(1, round(natural[1] * pct))
+            else:
+                w, h = 200, 80
+            px = QPixmap(w, h)
+            px.fill(Qt.transparent)
+            p = _QPainter(px)
+            renderer.render(p)
+            p.end()
+        else:
+            px = QPixmap(200, 80)
+            px.fill(QColor(200, 225, 255))
+        return px
+
+    # ── DC operating-point store (bias back-annotation) ───────────────────
+
+    def set_op_results(self, results: "dict | None",
+                       netlist_text: "str | None" = None) -> None:
+        """Install fresh op results (panel calls this after a run).
+        *netlist_text* is the .cir the raw was produced from."""
+        self.op_results = results
+        self.op_netlist = netlist_text
+        self.op_stale = False
+        self._op_fingerprint = self._netlist_fingerprint()
+        self.refresh_bias_annotations()
+
+    def _netlist_fingerprint(self) -> str:
+        """Hash of the NETLIST-RELEVANT scene state.  Cosmetic changes
+        (annotation check-boxes, label positions, text/graphic items) do
+        not change it — only edits that would change the generated netlist
+        mark the op values stale (and undoing them un-marks)."""
+        import hashlib
+        import json
+        d = self.to_data()
+        core = {
+            "components": sorted(
+                (c.symbol_name, c.instance_id, c.model,
+                 sorted(c.params.items()), list(c.refs),
+                 c.x, c.y, c.rotation, c.h_flip, c.v_flip)
+                for c in d.components),
+            "wires": sorted(
+                (tuple(map(tuple, w.points)), w.net_name or "")
+                for w in d.wires),
+            "commands": sorted(c.text for c in d.commands),
+            "analysis": sorted(
+                (tuple(a.source), tuple(map(tuple, a.detector)),
+                 tuple(a.lgref)) for a in d.analysis_items),
+            "libs": sorted((l.file_path, l.directive, l.corner)
+                           for l in d.libs),
+            "params": sorted(tuple(map(tuple, p.params))
+                             for p in d.parameters),
+            "models": sorted(
+                (m.model_name, m.model_type, tuple(map(tuple, m.params)))
+                for m in d.model_defs),
+        }
+        return hashlib.sha1(
+            json.dumps(core, default=str, sort_keys=True).encode()
+        ).hexdigest()
+
+    def _mark_op_stale(self) -> None:
+        if self.op_results is not None:
+            self.op_stale = (self._netlist_fingerprint()
+                             != self._op_fingerprint)
+        # Refresh unconditionally: derived net names (and thus the labels
+        # of unnamed nets) can shift with any topology edit.
+        self.refresh_bias_annotations()
+
+    def refresh_bias_annotations(self) -> None:
+        # Effective nets come FROM THE NETLIST the op raw was produced
+        # with (scene.op_netlist — round 3, Anton 2026-07-12: the sims run
+        # cir/<stem>.cir exactly as last exported, so no live resolver can
+        # be trusted to reproduce its numbers; the file is the naming
+        # authority). Fallback when no netlist is known yet: the builder's
+        # own resolver. The map also feeds the NET-NAME labels of unnamed
+        # nets ("Display net name" without a user label shows the derived
+        # name — Anton, 2026-07-12).
+        from .connectivity import nets_from_netlist, resolve_nets, _rpt
+        comps = [i for i in self.items() if isinstance(i, ComponentItem)]
+        wires = [i for i in self.items() if isinstance(i, WireItem)]
+        if any(w.show_dc_voltage or (w.display_name and not w.net_name)
+               for w in wires):
+            net_map = (nets_from_netlist(comps, wires, self.op_netlist)
+                       if self.op_netlist else resolve_nets(comps, wires))
+        else:
+            net_map = {}
+        for wire in wires:
+            wire.update_dc_label(net_map.get(_rpt(wire.points[0]))
+                                 if wire.points else None)
+            wire.update_label()
+        for comp in comps:
+            if comp.prop_display.get("dc_current", (False, False))[0]:
+                comp.update_labels()
+
+    def dc_voltage(self, net_name) -> "float | None":
+        """v(<net>) from the op results, or None when unavailable."""
+        if not self.op_results or not net_name:
+            return None
+        net = str(net_name).lower()
+        r = self.op_results
+        return r.get(f"v({net})", r.get(net))
+
+    def dc_current(self, refdes) -> "float | None":
+        """i(<refdes>) from the op results (NGspice sign convention:
+        measured INTO the + terminal), or None when unavailable."""
+        if not self.op_results or not refdes:
+            return None
+        ref = str(refdes).lower()
+        r = self.op_results
+        return r.get(f"i({ref})", r.get(f"{ref}#branch"))
+
     def start_junction_placement(self):
         self._end_wire(commit=False)
         self._cancel_placement()
-        r = JUNCTION_RADIUS
+        r = self.style.JUNCTION_RADIUS
         ghost = QGraphicsEllipseItem(-r, -r, 2 * r, 2 * r)
         ghost.setPen(QPen(Qt.NoPen))
-        ghost.setBrush(QBrush(JUNCTION_COLOR))
+        ghost.setBrush(QBrush(self.style.JUNCTION_COLOR))
         ghost.setOpacity(0.4)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
@@ -553,15 +721,14 @@ class SchematicScene(QGraphicsScene):
         self.placing_started.emit()
 
     def start_text_placement(self, text: str = "Text"):
-        from .config import TEXT_FONT, TEXT_COLOR
         from PySide6.QtGui import QBrush
         self._end_wire(commit=False)
         self._cancel_placement()
         self._placing_text = text
         first_line = (text.split('\n')[0] or "Text")[:50]
         ghost = QGraphicsSimpleTextItem(first_line)
-        ghost.setFont(TEXT_FONT)
-        ghost.setBrush(QBrush(TEXT_COLOR))
+        ghost.setFont(self.style.TEXT_FONT)
+        ghost.setBrush(QBrush(self.style.TEXT_COLOR))
         ghost.setOpacity(0.4)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
@@ -571,20 +738,16 @@ class SchematicScene(QGraphicsScene):
         self.placing_started.emit()
 
     def start_hyperlink_placement(self, url: str, label: str):
-        from .config import (
-            HYPERLINK_FONT_FAMILY, HYPERLINK_FONT_SIZE,
-            HYPERLINK_COLOR, HYPERLINK_UNDERLINE,
-        )
         from PySide6.QtGui import QFont, QBrush
         self._end_wire(commit=False)
         self._cancel_placement()
         self._hyperlink_pending = (url, label)
         display = label or url or "hyperlink"
         ghost = QGraphicsSimpleTextItem(display[:50])
-        font = QFont(HYPERLINK_FONT_FAMILY, HYPERLINK_FONT_SIZE)
-        font.setUnderline(HYPERLINK_UNDERLINE)
+        font = QFont(self.style.HYPERLINK_FONT_FAMILY, self.style.HYPERLINK_FONT_SIZE)
+        font.setUnderline(self.style.HYPERLINK_UNDERLINE)
         ghost.setFont(font)
-        ghost.setBrush(QBrush(HYPERLINK_COLOR))
+        ghost.setBrush(QBrush(self.style.HYPERLINK_COLOR))
         ghost.setOpacity(0.5)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
@@ -605,20 +768,23 @@ class SchematicScene(QGraphicsScene):
         self._mode = _Mode.PLACING_COMMAND
         self.placing_started.emit()
 
-    def start_border_placement(self, width: int, height: int, show_in_export: bool):
+    def start_border_placement(self, props: dict):
+        """props = BorderItem kwargs minus x/y (border_properties() of the
+        dialog): width, height, show_in_export, fixed_w/h, line/bg style."""
         self._end_wire(commit=False)
         self._cancel_placement()
         from PySide6.QtWidgets import QGraphicsRectItem
         from PySide6.QtGui import QPen, QBrush, QColor
-        ghost = QGraphicsRectItem(0, 0, width, height)
-        ghost.setPen(QPen(QColor(80, 80, 180), 0.8, Qt.DashLine))
+        ghost = QGraphicsRectItem(0, 0, props["width"], props["height"])
+        ghost.setPen(QPen(QColor(props.get("line_color", "#5050b4")),
+                          props.get("line_width", 0.8), Qt.DashLine))
         ghost.setBrush(QBrush(Qt.NoBrush))
         ghost.setOpacity(0.5)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._border_pending = (width, height, show_in_export)
+        self._border_pending = dict(props)
         self._mode = _Mode.PLACING_BORDER
         self.placing_started.emit()
 
@@ -634,8 +800,8 @@ class SchematicScene(QGraphicsScene):
         if corner:
             ghost_text += f" {corner}"
         ghost = QGraphicsSimpleTextItem(ghost_text)
-        ghost.setFont(COMMAND_FONT)
-        ghost.setBrush(QBrush(COMMAND_COLOR))
+        ghost.setFont(self.style.COMMAND_FONT)
+        ghost.setBrush(QBrush(self.style.COMMAND_COLOR))
         ghost.setOpacity(0.5)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
@@ -688,8 +854,7 @@ class SchematicScene(QGraphicsScene):
         from PySide6.QtGui import QPixmap, QPainter as _QPainter
         self._end_wire(commit=False)
         self._cancel_placement()
-        from .latex_label import render_latex_raw
-        svg_bytes, _ = render_latex_raw(latex_code, preamble_path)
+        svg_bytes = self._render_ghost_latex(latex_code, preamble_path)
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
         renderer = QSvgRenderer(QByteArray(svg_bytes)) if svg_bytes else None
@@ -713,35 +878,19 @@ class SchematicScene(QGraphicsScene):
         self._mode = _Mode.PLACING_LATEX
         self.placing_started.emit()
 
-    def start_parameter_placement(self, params: list, preamble_path: str,
-                                   width: int, height: int):
+    def start_parameter_placement(self, params: list, preamble_path: str):
         from PySide6.QtWidgets import QGraphicsPixmapItem
-        from PySide6.QtGui import QPixmap, QPainter as _QPainter
         self._end_wire(commit=False)
         self._cancel_placement()
-        from .latex_label import render_latex_raw
         from .parameter_item import ParameterItem as _PI
-        svg_bytes, _ = render_latex_raw(_PI.build_latex(params), preamble_path)
-        from PySide6.QtSvg import QSvgRenderer
-        from PySide6.QtCore import QByteArray
-        renderer = QSvgRenderer(QByteArray(svg_bytes)) if svg_bytes else None
-        w, h = max(1, width), max(1, height)
-        if renderer and renderer.isValid():
-            px = QPixmap(w, h)
-            px.fill(Qt.transparent)
-            p = _QPainter(px)
-            renderer.render(p)
-            p.end()
-        else:
-            px = QPixmap(w, h)
-            px.fill(QColor(200, 225, 255))
-        ghost = QGraphicsPixmapItem(px)
+        svg_bytes = self._render_ghost_latex(_PI.build_latex(params), preamble_path)
+        ghost = QGraphicsPixmapItem(self._ghost_pixmap(svg_bytes))
         ghost.setOpacity(0.5)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._param_pending = (params, preamble_path, width, height)
+        self._param_pending = (params, preamble_path)
         self._mode = _Mode.PLACING_PARAMETER
         self.placing_started.emit()
 
@@ -751,8 +900,8 @@ class SchematicScene(QGraphicsScene):
         self._end_wire(commit=False)
         self._cancel_placement()
         ghost = QGraphicsSimpleTextItem(".source / .detector / .lgref")
-        ghost.setFont(COMMAND_FONT)
-        ghost.setBrush(QBrush(COMMAND_COLOR))
+        ghost.setFont(self.style.COMMAND_FONT)
+        ghost.setBrush(QBrush(self.style.COMMAND_COLOR))
         ghost.setOpacity(0.5)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
@@ -764,44 +913,28 @@ class SchematicScene(QGraphicsScene):
 
     def start_model_placement(self, model_name: str, model_type: str,
                                simulator: str, params: list,
-                               preamble_path: str = "",
-                               display_width: int = 200, display_height: int = 80):
+                               preamble_path: str = ""):
         self._end_wire(commit=False)
         self._cancel_placement()
-        from .latex_label import render_latex_raw
         from .model_item import ModelItem as _MI
-        svg_bytes, _ = render_latex_raw(
+        svg_bytes = self._render_ghost_latex(
             _MI.build_latex(model_name, model_type, params), preamble_path)
         if svg_bytes:
             from PySide6.QtWidgets import QGraphicsPixmapItem
-            from PySide6.QtGui import QPixmap, QPainter as _QPainter
-            from PySide6.QtSvg import QSvgRenderer
-            from PySide6.QtCore import QByteArray
-            renderer = QSvgRenderer(QByteArray(svg_bytes))
-            w, h = max(1, display_width), max(1, display_height)
-            if renderer.isValid():
-                px = QPixmap(w, h)
-                px.fill(Qt.transparent)
-                p = _QPainter(px)
-                renderer.render(p)
-                p.end()
-            else:
-                px = QPixmap(w, h)
-                px.fill(QColor(200, 225, 255))
-            ghost = QGraphicsPixmapItem(px)
+            ghost = QGraphicsPixmapItem(self._ghost_pixmap(svg_bytes))
         else:
             from PySide6.QtWidgets import QGraphicsSimpleTextItem
             from PySide6.QtGui import QBrush
             ghost = QGraphicsSimpleTextItem(f".model {model_name} {model_type}")
-            ghost.setFont(COMMAND_FONT)
-            ghost.setBrush(QBrush(COMMAND_COLOR))
+            ghost.setFont(self.style.COMMAND_FONT)
+            ghost.setBrush(QBrush(self.style.COMMAND_COLOR))
         ghost.setOpacity(0.5)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
         self._model_pending = (model_name, model_type, simulator, params,
-                               preamble_path, display_width, display_height)
+                               preamble_path)
         self._mode = _Mode.PLACING_MODEL
         self.placing_started.emit()
 
@@ -952,6 +1085,18 @@ class SchematicScene(QGraphicsScene):
 
     # ── data model ────────────────────────────────────────────────────────────
 
+    def addItem(self, item) -> None:
+        super().addItem(item)
+        self._pinned.add(item)
+
+    def removeItem(self, item) -> None:
+        super().removeItem(item)
+        self._pinned.discard(item)
+
+    def clear(self) -> None:
+        super().clear()
+        self._pinned.clear()
+
     def reset(self):
         """Clear scene and reset all state (for New / before Load)."""
         self._end_wire(commit=False)
@@ -969,6 +1114,7 @@ class SchematicScene(QGraphicsScene):
         self._wire_move_rb        = []
         self._wire_move_junctions = []
         self._pin_anchors         = []
+        self._pin_preview_wires   = []
         self._wire_pin_preview_wires = []
         self._border_pending    = None
         self._library_pending   = None
@@ -1112,7 +1258,7 @@ class SchematicScene(QGraphicsScene):
             comp_delta = item.pos() - QPointF(*old_xy)
             if not (comp_delta.x() or comp_delta.y()):
                 continue
-            for lx, ly in PIN_POSITIONS.get(item.symbol_name, []):
+            for lx, ly in item.pin_positions():
                 new_pin = item.mapToScene(QPointF(lx, ly))
                 old_pin = new_pin - comp_delta
                 anchor_map[_pt_key(old_pin)] = new_pin
@@ -1124,7 +1270,7 @@ class SchematicScene(QGraphicsScene):
             comp_delta = other_item.pos() - QPointF(ox, oy)
             if not (comp_delta.x() or comp_delta.y()):
                 continue
-            for lx, ly in PIN_POSITIONS.get(other_item.symbol_name, []):
+            for lx, ly in other_item.pin_positions():
                 new_pin = other_item.mapToScene(QPointF(lx, ly))
                 old_pin = new_pin - comp_delta
                 anchor_map[_pt_key(old_pin)] = new_pin
@@ -1410,7 +1556,6 @@ class SchematicScene(QGraphicsScene):
         preserved in _user_net_name so it can be restored if the port is removed.
         """
         from .connectivity import _UF, _rpt, _on_segment
-        from .component_item import PIN_POSITIONS
 
         comps = [i for i in self.items() if isinstance(i, ComponentItem)]
         wires = [i for i in self.items() if isinstance(i, WireItem)]
@@ -1428,7 +1573,7 @@ class SchematicScene(QGraphicsScene):
         for wire in wires:
             all_pts.extend(_rpt(p) for p in wire.points)
         for comp in comps:
-            for lx, ly in PIN_POSITIONS.get(comp.symbol_name, []):
+            for lx, ly in comp.pin_positions():
                 all_pts.append(_rpt(comp.mapToScene(QPointF(lx, ly))))
         for pt in all_pts:
             uf.find(pt)
@@ -1445,7 +1590,7 @@ class SchematicScene(QGraphicsScene):
         # Pin-to-pin contacts: two components with pins at the same position
         seen: dict[tuple, tuple] = {}
         for comp in comps:
-            for lx, ly in PIN_POSITIONS.get(comp.symbol_name, []):
+            for lx, ly in comp.pin_positions():
                 pk = _rpt(comp.mapToScene(QPointF(lx, ly)))
                 if pk in seen:
                     uf.union(pk, seen[pk])
@@ -1521,6 +1666,9 @@ class SchematicScene(QGraphicsScene):
                     label_offset=(item.label_offset.x(), item.label_offset.y()),
                     net_locked=item.net_locked,
                     user_net_name=item._user_net_name,
+                    show_dc_voltage=item.show_dc_voltage,
+                    dc_label_offset=(item.dc_label_offset.x(),
+                                     item.dc_label_offset.y()),
                 ))
             elif isinstance(item, JunctionItem):
                 junctions.append(JunctionData(x=item.pos().x(), y=item.pos().y()))
@@ -1540,6 +1688,9 @@ class SchematicScene(QGraphicsScene):
                     x=item.pos().x(), y=item.pos().y(),
                     width=r.width(), height=r.height(),
                     show_in_export=item.show_in_export,
+                    fixed_w=item.fixed_w, fixed_h=item.fixed_h,
+                    line_color=item.line_color, line_width=item.line_width,
+                    bg_color=item.bg_color, bg_alpha=item.bg_alpha,
                 )
             elif isinstance(item, LibraryItem):
                 libs.append(LibraryData(
@@ -1548,6 +1699,7 @@ class SchematicScene(QGraphicsScene):
                     directive=item.directive,
                     simulator=item.simulator,
                     corner=item.corner,
+                    show=item.show_on_schematic,
                 ))
             elif isinstance(item, ImageItem):
                 images.append(ImageData(
@@ -1571,6 +1723,7 @@ class SchematicScene(QGraphicsScene):
                     preamble_path=item.preamble_path,
                     display_width=item.display_width,
                     display_height=item.display_height,
+                    show=item.show_on_schematic,
                 ))
             elif isinstance(item, AnalysisItem):
                 analysis_items.append(AnalysisData(
@@ -1578,6 +1731,7 @@ class SchematicScene(QGraphicsScene):
                     source=list(item.source),
                     detector=[list(d) for d in item.detector],
                     lgref=list(item.lgref),
+                    show=item.show_on_schematic,
                 ))
             elif isinstance(item, HyperlinkItem):
                 hyperlinks.append(HyperlinkData(
@@ -1594,6 +1748,7 @@ class SchematicScene(QGraphicsScene):
                     preamble_path=item.preamble_path,
                     display_width=item.display_width,
                     display_height=item.display_height,
+                    show=item.show_on_schematic,
                 ))
             elif isinstance(item, ShapeItem):
                 from .schematic_data import ShapeData
@@ -1622,10 +1777,10 @@ class SchematicScene(QGraphicsScene):
         self._library = library
         self.reset()
         for cd in data.components:
-            svg = library.svg_bytes(cd.symbol_name)
-            if svg is None:
+            sym = library.symbol(cd.symbol_name)
+            if sym is None:
                 continue
-            item = ComponentItem(cd.symbol_name, cd.instance_id, svg)
+            item = ComponentItem(sym, cd.instance_id)
             # __init__ creates a "refdes" label at the default position.
             # Clear it now so _save_label_offsets() inside update_labels()
             # below does not overwrite the prop_offsets we are about to restore.
@@ -1650,7 +1805,7 @@ class SchematicScene(QGraphicsScene):
             self.addItem(item)
             # Keep counters above highest loaded number — keyed by PREFIX, to
             # match _next_id (otherwise X / M counters reset and refdes collide).
-            prefix = SYMBOL_PREFIX.get(cd.symbol_name, "X")
+            prefix = sym.prefix or "X"
             m = re.match(rf"^{re.escape(prefix)}(\d+)$", cd.instance_id)
             if m:
                 n = int(m.group(1))
@@ -1658,13 +1813,17 @@ class SchematicScene(QGraphicsScene):
 
         for wd in data.wires:
             wire = WireItem([QPointF(x, y) for x, y in wd.points])
-            wire.net_name       = wd.net_name
-            wire.display_name   = wd.display_name
-            wire.label_offset   = QPointF(*wd.label_offset)
-            wire.net_locked     = wd.net_locked
-            wire._user_net_name = wd.user_net_name
+            wire.net_name        = wd.net_name
+            wire.display_name    = wd.display_name
+            wire.label_offset    = QPointF(*wd.label_offset)
+            wire.net_locked      = wd.net_locked
+            wire._user_net_name  = wd.user_net_name
+            wire.show_dc_voltage = getattr(wd, "show_dc_voltage", False)
+            wire.dc_label_offset = QPointF(*getattr(wd, "dc_label_offset",
+                                                    (0.0, 6.0)))
             self.addItem(wire)
             wire.update_label()
+            wire.update_dc_label()
 
         for jd in data.junctions:
             self.addItem(JunctionItem(QPointF(jd.x, jd.y)))
@@ -1677,7 +1836,8 @@ class SchematicScene(QGraphicsScene):
 
         for ld in data.libs:
             self.addItem(LibraryItem(ld.file_path, QPointF(ld.x, ld.y),
-                                     ld.directive, ld.simulator, ld.corner))
+                                     ld.directive, ld.simulator, ld.corner,
+                                     show=getattr(ld, "show", True)))
 
         for img in data.images:
             self.addItem(ImageItem(img.file_path, img.display_width,
@@ -1693,13 +1853,14 @@ class SchematicScene(QGraphicsScene):
         for pd in data.parameters:
             self.addItem(ParameterItem(
                 [tuple(p) for p in pd.params], pd.preamble_path,
-                pd.display_width, pd.display_height,
                 QPointF(pd.x, pd.y),
+                show=getattr(pd, "show", True),
             ))
 
         for ad in data.analysis_items:
             self.addItem(AnalysisItem(ad.source, ad.detector, ad.lgref,
-                                      QPointF(ad.x, ad.y)))
+                                      QPointF(ad.x, ad.y),
+                                      show=getattr(ad, "show", True)))
 
         for hd in data.hyperlinks:
             self.addItem(HyperlinkItem(hd.url, hd.label, QPointF(hd.x, hd.y)))
@@ -1723,15 +1884,22 @@ class SchematicScene(QGraphicsScene):
                 md.model_name, md.model_type, md.simulator,
                 [list(p) for p in md.params],
                 md.preamble_path,
-                md.display_width, md.display_height,
                 QPointF(md.x, md.y),
+                show=getattr(md, "show", True),
             ))
 
         if data.border is not None:
             bd = data.border
-            self.addItem(BorderItem(bd.x, bd.y, bd.width, bd.height, bd.show_in_export))
+            self.addItem(BorderItem(
+                bd.x, bd.y, bd.width, bd.height, bd.show_in_export,
+                fixed_w=bd.fixed_w, fixed_h=bd.fixed_h,
+                line_color=bd.line_color, line_width=bd.line_width,
+                bg_color=bd.bg_color, bg_alpha=bd.bg_alpha))
 
         self._sync_junctions()
+        # Derived net names for 'Display net name' wires without a
+        # user label (transient; netlist authority arrives after a run).
+        self.refresh_bias_annotations()
 
     # ── scene events ─────────────────────────────────────────────────────────
 
@@ -1741,7 +1909,7 @@ class SchematicScene(QGraphicsScene):
         if self._mode == _Mode.PLACING and event.button() == Qt.LeftButton:
             self._push_undo()
             item = ComponentItem(
-                self._placing_name,
+                self._library.symbol(self._placing_name),
                 self._next_id(self._placing_name),
                 self._placing_svg,
             )
@@ -1783,8 +1951,7 @@ class SchematicScene(QGraphicsScene):
             self._push_undo()
             for existing in [i for i in self.items() if isinstance(i, BorderItem)]:
                 self.removeItem(existing)
-            w, h, show = self._border_pending
-            self.addItem(BorderItem(pos.x(), pos.y(), w, h, show))
+            self.addItem(BorderItem(pos.x(), pos.y(), **self._border_pending))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_LIBRARY and event.button() == Qt.LeftButton:
@@ -1807,8 +1974,8 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_PARAMETER and event.button() == Qt.LeftButton:
             self._push_undo()
-            prms, pp, w, h = self._param_pending
-            self.addItem(ParameterItem(prms, pp, w, h, pos))
+            prms, pp = self._param_pending
+            self.addItem(ParameterItem(prms, pp, pos))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_ANALYSIS and event.button() == Qt.LeftButton:
@@ -1819,8 +1986,8 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_MODEL and event.button() == Qt.LeftButton:
             self._push_undo()
-            mn, mt, sim, prms, pp, w, h = self._model_pending
-            self.addItem(ModelItem(mn, mt, sim, prms, pp, w, h, pos))
+            mn, mt, sim, prms, pp = self._model_pending
+            self.addItem(ModelItem(mn, mt, sim, prms, pp, pos))
             self._cancel_placement()
 
         elif self._mode == _Mode.PASTING and event.button() == Qt.LeftButton:
@@ -1862,14 +2029,32 @@ class SchematicScene(QGraphicsScene):
                     if isinstance(it, ComponentItem):
                         it._drag_wires = None
                 item = self.itemAt(raw, QTransform())
-                # A net label is a wire child, so its high Z only orders it among
-                # siblings — other top-level items (junctions, crossing wires) can
-                # occlude it in hit-testing.  Give an explicit net label under the
-                # cursor priority so it can be selected and dragged.
-                from .wire_item import _NetLabel
-                _lbl = next((i for i in self.items(raw) if isinstance(i, _NetLabel)), None)
+                # A net label (and the DC bias annotation) is a wire child, so
+                # its high Z only orders it among siblings — other top-level
+                # items (junctions, crossing wires, components) can occlude it
+                # in hit-testing.  Give a label under the cursor explicit
+                # priority so it can be selected and dragged (Anton,
+                # 2026-07-12: the bias placeholder was unreachable on top of
+                # a component).
+                from .wire_item import _DCLabel, _NetLabel
+                _lbl = next((i for i in self.items(raw)
+                             if isinstance(i, (_NetLabel, _DCLabel))), None)
                 if _lbl is not None:
-                    item = _lbl
+                    # The scene drags the label itself (like wires/groups).
+                    event.accept()          # no rubber band
+                    if not (event.modifiers() & Qt.ControlModifier):
+                        self.clearSelection()
+                    _lbl.setSelected(True)
+                    wire = _lbl.parentItem()
+                    if wire is not None:
+                        if isinstance(_lbl, _DCLabel):
+                            wire._dc_label_active = True
+                        else:
+                            wire._label_active = True
+                        wire.update()
+                    self._label_drag = (_lbl, QPointF(_lbl.pos()),
+                                        event.scenePos())
+                    return
                 if isinstance(item, WireItem):
                     # Accept the event so the view's RubberBandDrag mode does not
                     # start a rubber-band (which would clear our selection on release).
@@ -1907,7 +2092,7 @@ class SchematicScene(QGraphicsScene):
                         for comp in self.items():
                             if not isinstance(comp, ComponentItem):
                                 continue
-                            for lx, ly in PIN_POSITIONS.get(comp.symbol_name, []):
+                            for lx, ly in comp.pin_positions():
                                 if _pt_key(comp.mapToScene(QPointF(lx, ly))) == dragged_key:
                                     self._vdrag_pin_anchor = (comp, (lx, ly))
                                     pw = WireItem([QPointF(item.points[v]),
@@ -1975,7 +2160,7 @@ class SchematicScene(QGraphicsScene):
                     comp_pins: dict[tuple, tuple] = {}
                     for comp in self.items():
                         if isinstance(comp, ComponentItem):
-                            for lx, ly in PIN_POSITIONS.get(comp.symbol_name, []):
+                            for lx, ly in comp.pin_positions():
                                 k = _pt_key(comp.mapToScene(QPointF(lx, ly)))
                                 comp_pins[k] = (comp, (lx, ly))
                     self._wire_pin_anchors = []
@@ -2007,7 +2192,7 @@ class SchematicScene(QGraphicsScene):
                         if isinstance(comp, ComponentItem) and comp is not item
                         for p in comp.pin_scene_pos()
                     }
-                    for lx, ly in PIN_POSITIONS.get(item.symbol_name, []):
+                    for lx, ly in item.pin_positions():
                         p = item.mapToScene(QPointF(lx, ly))
                         pk = _pt_key(p)
                         if pk in others:
@@ -2048,6 +2233,22 @@ class SchematicScene(QGraphicsScene):
                         self._pin_anchors = []   # group move: no bridge wires needed
                         self.group_move_started.emit()
                         return
+                # Single-component drag off a pin-to-pin contact: show the
+                # bridge wire(s) as a dashed preview DURING the drag — like the
+                # wire-move preview above — so pulling a connection apart is
+                # visible immediately, not only after release. Created after the
+                # pre-drag snapshot, and marked _preview, so they are never
+                # serialised, undone, or grabbed by the component's own wire
+                # rubber-banding.
+                self._pin_preview_wires = []
+                for anchor, comp, local in self._pin_anchors:
+                    pw = WireItem([QPointF(anchor), QPointF(anchor)])
+                    pen = pw.pen()
+                    pen.setStyle(Qt.DashLine)
+                    pw.setPen(pen)
+                    pw._preview = True
+                    self.addItem(pw)
+                    self._pin_preview_wires.append(pw)
             elif event.button() == Qt.RightButton:
                 item = self.itemAt(raw, QTransform())
                 if isinstance(item, HyperlinkItem):
@@ -2070,7 +2271,7 @@ class SchematicScene(QGraphicsScene):
             QDesktopServices.openUrl(QUrl(item.url))
         elif chosen is edit_act:
             from .hyperlink_dialog import HyperlinkDialog
-            dlg = HyperlinkDialog(item.url, item.label)
+            dlg = HyperlinkDialog(item.url, item.label, style=self.style)
             if dlg.exec():
                 self._push_undo()
                 item.url   = dlg.url()
@@ -2110,7 +2311,11 @@ class SchematicScene(QGraphicsScene):
                 canon_name    = w.net_name
                 canon_display = w.display_name
                 break
-        dlg = NetLabelDialog(canon_name, canon_display, locked=wire.net_locked)
+        view     = self.views()[0] if self.views() else None
+        panel    = view.parent() if view else None
+        ngspice  = getattr(panel, '_sch_type', None) == 'ngspice'
+        dlg = NetLabelDialog(canon_name, canon_display, locked=wire.net_locked,
+                             offer_dc=ngspice, show_dc=wire.show_dc_voltage)
         if dlg.exec():
             self._push_undo()
             new_name = dlg.net_name() if not wire.net_locked else wire.net_name
@@ -2121,8 +2326,13 @@ class SchematicScene(QGraphicsScene):
                     w._user_net_name = new_name
             # Display flag: only show the label on the right-clicked segment.
             wire.display_name = dlg.display()
+            if ngspice:
+                # DC annotation belongs to the clicked segment only (one
+                # "V: <value>" per net is the user's choice of placement).
+                wire.show_dc_voltage = dlg.show_dc()
             for w in net_wires:
                 w.update_label()
+            self.refresh_bias_annotations()
 
     def mouseMoveEvent(self, event):
         pos = snap(event.scenePos())
@@ -2151,6 +2361,10 @@ class SchematicScene(QGraphicsScene):
                         item.setPos(base + delta)
                     else:
                         item.setPath(_build_path([p + delta for p in base]))
+
+        elif self._label_drag is not None:
+            lbl, orig, start = self._label_drag
+            lbl.setPos(orig + (event.scenePos() - start))
 
         elif self._wire_move_start is not None:
             delta = pos - self._wire_move_start
@@ -2241,6 +2455,15 @@ class SchematicScene(QGraphicsScene):
 
         else:
             super().mouseMoveEvent(event)
+            # Stretch the dashed bridge previews to follow the dragged pins.
+            if self._pin_preview_wires:
+                for (anchor, comp, local), pw in zip(self._pin_anchors,
+                                                     self._pin_preview_wires):
+                    if pw.scene() is None or comp.scene() is None:
+                        continue
+                    new_pin = comp.mapToScene(QPointF(*local))
+                    pw.points = _elbow(QPointF(anchor), QPointF(new_pin), True)
+                    pw._rebuild()
 
     def _reselect_on_footprint(self, moved_segs: list) -> None:
         """Re-select wire items that lie on (or contain) the given footprint.
@@ -2285,6 +2508,15 @@ class SchematicScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
+            if self._label_drag is not None:
+                wire = self._label_drag[0].parentItem()
+                if wire is not None:
+                    wire._label_active = False
+                    wire._dc_label_active = False
+                    wire.update()
+                self._label_drag = None
+                event.accept()
+                return
             if self._wire_move_start is not None:
                 # Remove bridge-wire previews before any geometry operations.
                 for pw in self._wire_pin_preview_wires:
@@ -2388,6 +2620,12 @@ class SchematicScene(QGraphicsScene):
         super().mouseReleaseEvent(event)
         if event.button() == Qt.LeftButton:
             if self._pre_drag_data is not None:
+                # Drop the dashed bridge previews; the real bridge WireItems are
+                # created below from _pin_anchors (only if the pin actually moved).
+                for pw in self._pin_preview_wires:
+                    if pw.scene() is not None:
+                        self.removeItem(pw)
+                self._pin_preview_wires = []
                 moved = any(
                     (i.pos().x(), i.pos().y()) != self._pre_drag_pos.get(id(i))
                     for i in self.items()
@@ -2413,7 +2651,7 @@ class SchematicScene(QGraphicsScene):
                     comp_pins = {
                         _pt_key(comp.mapToScene(QPointF(lx, ly)))
                         for comp in self.items() if isinstance(comp, ComponentItem)
-                        for lx, ly in PIN_POSITIONS.get(comp.symbol_name, [])
+                        for lx, ly in comp.pin_positions()
                     }
                     for j in self.items():
                         if not isinstance(j, JunctionItem):
@@ -2460,14 +2698,25 @@ class SchematicScene(QGraphicsScene):
             from .border_dialog import BorderDialog
             r = item.rect()
             dlg = BorderDialog(
-                width=int(r.width()),
-                height=int(r.height()),
+                width=r.width(),
+                height=r.height(),
                 show_in_export=item.show_in_export,
+                fixed_w=item.fixed_w, fixed_h=item.fixed_h,
+                line_color=item.line_color, line_width=item.line_width,
+                bg_color=item.bg_color, bg_alpha=item.bg_alpha,
             )
             if dlg.exec():
                 self._push_undo()
-                item.setRect(0, 0, dlg.border_width(), dlg.border_height())
-                item.show_in_export = dlg.show_in_export()
+                props = dlg.border_properties()
+                item.setRect(0, 0, props["width"], props["height"])
+                item.show_in_export = props["show_in_export"]
+                item.fixed_w = props["fixed_w"]
+                item.fixed_h = props["fixed_h"]
+                item.line_color = props["line_color"]
+                item.line_width = props["line_width"]
+                item.bg_color = props["bg_color"]
+                item.bg_alpha = props["bg_alpha"]
+                item.apply_style()
             return
         if isinstance(item, LibraryItem):
             from .library_link_dialog import LibraryLinkDialog
@@ -2476,6 +2725,7 @@ class SchematicScene(QGraphicsScene):
                 simulator=item.simulator,
                 file_path=item.file_path,
                 corner=item.corner,
+                show=item.show_on_schematic,
             )
             if dlg.exec() and dlg.file_path():
                 self._push_undo()
@@ -2483,6 +2733,7 @@ class SchematicScene(QGraphicsScene):
                 item.directive  = dlg.directive()
                 item.simulator  = dlg.simulator()
                 item.corner     = dlg.corner()
+                item.set_show(dlg.show_on_schematic())
                 item._update_text()
             return
         if isinstance(item, ImageItem):
@@ -2491,6 +2742,7 @@ class SchematicScene(QGraphicsScene):
                 file_path=item.file_path,
                 display_width=item.display_width,
                 display_height=item.display_height,
+                style=self.style,
             )
             if dlg.exec() and dlg.image_path():
                 self._push_undo()
@@ -2508,6 +2760,7 @@ class SchematicScene(QGraphicsScene):
                 svg_bytes=item._svg_bytes,
                 display_width=item.display_width,
                 display_height=item.display_height,
+                style=self.style,
             )
             if dlg.exec() and dlg.svg_bytes():
                 self._push_undo()
@@ -2524,32 +2777,35 @@ class SchematicScene(QGraphicsScene):
             dlg = ParameterDialog(
                 params=item.params,
                 preamble_path=item.preamble_path,
-                svg_bytes=item._svg_bytes,
-                display_width=item.display_width,
-                display_height=item.display_height,
+                show=item.show_on_schematic,
+                edit_mode=True,
+                style=self.style,
             )
             if dlg.exec():
                 self._push_undo()
                 item.prepareGeometryChange()
                 item.params        = dlg.get_params()
                 item.preamble_path = dlg.preamble_path()
-                item.display_width  = dlg.display_width()
-                item.display_height = dlg.display_height()
+                item.set_show(dlg.show_on_schematic())
                 item._load_renderer()
                 item.update()
             return
         if isinstance(item, AnalysisItem):
             from .analysis_dialog import AnalysisDialog
+            provider = getattr(self, "analysis_candidates", None)
             dlg = AnalysisDialog(
                 source=item.source,
                 detector=item.detector,
                 lgref=item.lgref,
+                show=item.show_on_schematic,
+                **(provider() if provider else {}),
             )
             if dlg.exec():
                 self._push_undo()
                 item.source   = dlg.get_source()
                 item.detector = dlg.get_detector()
                 item.lgref    = dlg.get_lgref()
+                item.set_show(dlg.show_on_schematic())
                 item.update_text()
             return
         if isinstance(item, ModelItem):
@@ -2560,33 +2816,32 @@ class SchematicScene(QGraphicsScene):
                 simulator=item.simulator,
                 params=item.params,
                 preamble_path=item.preamble_path,
-                svg_bytes=item._svg_bytes,
-                display_width=item.display_width,
-                display_height=item.display_height,
+                show=item.show_on_schematic,
+                edit_mode=True,
+                style=self.style,
             )
             if dlg.exec():
                 self._push_undo()
+                item.prepareGeometryChange()
                 item.model_name    = dlg.model_name()
                 item.model_type    = dlg.model_type()
                 item.simulator     = dlg.simulator()
                 item.params        = dlg.get_params()
                 item.preamble_path = dlg.preamble_path()
-                item.display_width  = dlg.display_width()
-                item.display_height = dlg.display_height()
+                item.set_show(dlg.show_on_schematic())
                 item._load_renderer()
-                item.prepareGeometryChange()
                 item.update()
             return
         if isinstance(item, FreeTextItem):
             from .text_dialog import TextDialog
-            dlg = TextDialog(item.toPlainText())
+            dlg = TextDialog(item.toPlainText(), style=self.style)
             if dlg.exec():
                 self._push_undo()
                 item.setPlainText(dlg.text())
             return
         if isinstance(item, HyperlinkItem):
             from .hyperlink_dialog import HyperlinkDialog
-            dlg = HyperlinkDialog(item.url, item.label)
+            dlg = HyperlinkDialog(item.url, item.label, style=self.style)
             if dlg.exec():
                 self._push_undo()
                 item.url   = dlg.url()
@@ -2631,8 +2886,18 @@ class SchematicScene(QGraphicsScene):
                     if item.symbol_name == "port":
                         self._sync_port_net_names()
             else:
+                prefix   = item.prefix or "X"
+                view     = self.views()[0] if self.views() else None
+                win      = view.window() if view else None
+                panel    = view.parent() if view else None
+                sch_type = getattr(panel, '_sch_type', None)
+                show_stimuli = (sch_type == 'ngspice' and prefix in ("V", "I"))
+                offer_dc = (sch_type == 'ngspice' and prefix in ("V", "L"))
                 from .properties_dialog import PropertiesDialog
-                dlg = PropertiesDialog(item)
+                dlg = PropertiesDialog(item,
+                                       show_stimuli=show_stimuli,
+                                       is_current=(prefix == "I"),
+                                       offer_dc_current=offer_dc)
                 result = dlg.exec()
                 if dlg.descend_path() is not None:
                     # Open the subcircuit's schematic in a new editable window so
@@ -2658,8 +2923,8 @@ class SchematicScene(QGraphicsScene):
         right  = int(rect.right())
         bottom = int(rect.bottom())
 
-        minor_pen = QPen(GRID_MINOR_COLOR, 0)
-        major_pen = QPen(GRID_MAJOR_COLOR, 0)
+        minor_pen = QPen(self.style.GRID_MINOR_COLOR, 0)
+        major_pen = QPen(self.style.GRID_MAJOR_COLOR, 0)
 
         x = left
         while x <= right:
@@ -2684,7 +2949,7 @@ def _rb_keep_item(item, scene_rect: QRectF, contains: bool) -> bool:
     Uses tight per-type rects so that label bounding boxes on components and
     wires don't trigger selection when the rubber-band is far from the body.
     """
-    from .component_item import ComponentItem, SYMBOL_TIGHT_RECT
+    from .component_item import ComponentItem
     from .wire_item import WireItem
     if isinstance(item, WireItem):
         if contains:
@@ -2701,8 +2966,7 @@ def _rb_keep_item(item, scene_rect: QRectF, contains: bool) -> bool:
                            max(ys) - min(ys) + 2 * tol)
         return scene_rect.intersects(path_rect)
     if isinstance(item, ComponentItem):
-        tight = SYMBOL_TIGHT_RECT.get(item.symbol_name)
-        local_rect = QRectF(*tight) if tight else QRectF(-30, -30, 60, 60)
+        local_rect = QRectF(*item.symbol.select_box)
         item_rect = item.mapRectToScene(local_rect)
         return scene_rect.contains(item_rect) if contains else scene_rect.intersects(item_rect)
     # JunctionItem, FreeTextItem, CommandItem, etc. — use actual bounding rect (no labels)
@@ -2758,15 +3022,30 @@ class SchematicView(QGraphicsView):
     def zoom_out(self):
         self.scale(1 / 1.25, 1 / 1.25)
 
+    def _visible_items_rect(self) -> QRectF:
+        """Union of the bounding rects of VISIBLE items only.
+
+        Items whose display is switched off (e.g. a parameter table with
+        "show on schematic" disabled) deliberately stay in the scene so
+        they keep netlisting — but scene().itemsBoundingRect() counts them
+        regardless of visibility, which made View → Fit frame invisible
+        content. isVisible() is effective visibility, so children of
+        hidden items are excluded as well."""
+        r = QRectF()
+        for it in self.scene().items():
+            if it.isVisible():
+                r = r.united(it.sceneBoundingRect())
+        return r
+
     def zoom_reset(self):
         self.resetTransform()
         self.scale(DEFAULT_ZOOM, DEFAULT_ZOOM)
-        r = self.scene().itemsBoundingRect()
+        r = self._visible_items_rect()
         self.centerOn(r.center() if not r.isNull() else QPointF(0, 0))
 
     def zoom_fit(self):
-        """Fit all scene items in the viewport with a small margin."""
-        r = self.scene().itemsBoundingRect()
+        """Fit all visible scene items in the viewport with a small margin."""
+        r = self._visible_items_rect()
         if r.isNull():
             self.zoom_reset()
             return

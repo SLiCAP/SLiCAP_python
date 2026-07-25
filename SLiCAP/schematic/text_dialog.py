@@ -8,21 +8,22 @@ from PySide6.QtCore import Qt
 class TextDialog(QDialog):
     """Multi-line text input dialog for placing/editing a text annotation."""
 
-    def __init__(self, text: str = "", parent=None):
+    def __init__(self, text: str = "", style=None, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Text")
         self.setMinimumWidth(360)
 
-        from .config import TEXT_FONT_FAMILY, TEXT_FONT_SIZE, TEXT_COLOR
+        from .config import default_style
+        style = style or default_style()
 
         outer = QVBoxLayout()
         outer.setSizeConstraint(QLayout.SetMinimumSize)
         self.setLayout(outer)
 
-        # Info line showing current Preferences settings (non-editable).
+        # Info line showing the schematic's Preferences settings (non-editable).
         info = QLabel(
-            f"Font: {TEXT_FONT_FAMILY}, {TEXT_FONT_SIZE} pt, "
-            f"colour: {TEXT_COLOR.name()}"
+            f"Font: {style.TEXT_FONT_FAMILY}, {style.TEXT_FONT_SIZE} pt, "
+            f"colour: {style.TEXT_COLOR.name()}"
         )
         info.setStyleSheet("color: grey; font-size: 8pt;")
         outer.addWidget(info)

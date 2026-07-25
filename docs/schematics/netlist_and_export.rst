@@ -8,11 +8,11 @@ A finished schematic produces three things: a **netlist** for analysis, and
 From the GUI
 ============
 
-* :menuselection:`File --> Export Netlist…` (:kbd:`Ctrl+E`) writes a SLiCAP
+* :menuselection:`File --> Export netlist…` (:kbd:`Ctrl+E`) writes a SLiCAP
   ``.cir`` netlist.
 * :menuselection:`File --> Export SVG…` writes a vector figure.
 * :menuselection:`File --> Export PDF…` writes a PDF figure.
-* :menuselection:`File --> Print…` (:kbd:`Ctrl+P`) prints the drawing.
+* :menuselection:`File --> Print schematic…` (:kbd:`Ctrl+P`) prints the drawing.
 
 .. figure:: images/export_netlist.png
    :alt: An exported netlist

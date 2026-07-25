@@ -1,7 +1,7 @@
 from __future__ import annotations
 from PySide6.QtCore import QPointF
 
-from .component_item import PIN_POSITIONS, wrap_braces
+from .component_item import wrap_braces
 from .connectivity import resolve_nets, _rpt
 
 # Symbols that are net annotations only — no element line in the netlist
@@ -45,7 +45,7 @@ def _element_lines(components: list, node_fn) -> list[str]:
         if comp.symbol_name in _ANNOTATION:
             continue
 
-        pins   = PIN_POSITIONS.get(comp.symbol_name, [])
+        pins   = comp.pin_positions()
         nodes  = [node_fn(comp, px, py) for px, py in pins]
         refs   = list(comp.refs)
         model  = comp.model

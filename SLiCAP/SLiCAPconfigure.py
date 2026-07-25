@@ -14,36 +14,39 @@ import platform
 import re
 import inspect
 import requests
+import shutil
 from os.path import expanduser
 from datetime import datetime
 from sympy import Symbol
-from time import time
 from SLiCAP.__init__ import __version__ as INSTALLVERSION
 
-if platform.system() == 'Windows':
-    import win32api
-    import windows_tools.installed_software as wi
 
-TIMEOUT = 120
-
-def _check_version():
+def check_for_updates(timeout=3):
     """
-    Checks the version with the latest SLiCAP version from Git
+    Contacts GitHub for the latest SLiCAP release, stores the result in the
+    main configuration file (~/SLiCAP/SLiCAP.ini), and returns it.
 
-    Returns
-    -------
-    None.
+    Runs on demand only (GUI: Help > Check for updates); deliberately never
+    on import, so importing SLiCAP is fast and works offline.
+
+    :param timeout: Network timeout in seconds, defaults to 3.
+    :type timeout: int, float
+
+    :return: Latest release version, or 'Unknown' when GitHub could not be
+             reached. Compare with ini.install_version.
+    :rtype: str
     """
-    latest = _get_latest_version()
-    if latest == "Unknown":
-        print("You are running SLiCAP version %s. Please check github for updates."%(INSTALLVERSION))
-    elif INSTALLVERSION != latest:
-        print("A new version of SLiCAP is available, please get it from 'https://github.com/SLiCAP/SLiCAP_python.git'.")
-    else:
-        print("SLiCAP Version matches with the latest release of SLiCAP on github.")
-    return str(latest)
-    
-def _get_latest_version():
+    global latest_version
+    latest = _get_latest_version(timeout)
+    if latest != "Unknown":
+        latest_version = latest
+        config_dict = _read_main_config()
+        if 'version' in config_dict:
+            config_dict['version']['latest_version'] = latest
+            _write_main_config(config_dict)
+    return latest
+
+def _get_latest_version(timeout=3):
     """
     Gets the SLiCAP version from Github
 
@@ -52,193 +55,56 @@ def _get_latest_version():
     String Version.
     """
     try:
-        response = requests.get("https://api.github.com/repos/SLiCAP/SLiCAP_python/releases/latest")
+        response = requests.get(
+            "https://api.github.com/repos/SLiCAP/SLiCAP_python/releases/latest",
+            timeout=timeout)
         version = response.json()["tag_name"]
     except BaseException:
         print("Could not determine the latest available version of SLiCAP on github.")
         version = "Unknown"
     return version
 
-def _find_installed_windows_software():
-    """
-    Searches for installed packages from the package list
-
-    Returns
-    -------
-    Dictionary with key-value pairs: key = package name, value = command
-    """
-    package_list = ['LTspice', 'KiCad', 'gEDA', 'NGspice']
-    commands = {}
-    search_list = []
-    # get list with installed apps
-    software_list = wi.get_installed_software()
-    # make a list of apps that we want to search for
-    for dct in software_list:
-        name = dct["name"]
-        if len(name) > 1:
-            name = name.split()[0]
-            if name in package_list:
-                search_list.append(name)
-    y_n = input("\nDo you have NGspice installed? [y/n] >>> ").lower()[0]
-    while y_n != 'y' and y_n != 'n':
-        y_n = input("\nPlease enter 'y' for 'yes' or 'n' for 'no' >>> ").lower()[0]
-    if y_n == 'y':
-        search_list.append('NGspice')
-    else:
-        commands['ngspice'] = ''
-    # search for the command to start each app
-    if len(search_list) > 0:
-        found_all = False
-        t_start = time()
-        time_out = False
-        print("\nSearching installed software, this will time-out after {} seconds!\n".format(str(TIMEOUT)))
-        for drive in win32api.GetLogicalDriveStrings().split('\000')[:-1]:
-            for root, dirs, files in os.walk(drive):
-                t_now = time()
-                if t_now - t_start >TIMEOUT:
-                    time_out = True
-                for name in dirs:
-                    for package in search_list: # Only search for installed software
-                        p_name = package.lower()
-                        if p_name not in commands.keys():
-                            #print("Searching for installation of:", package)
-                            found = False
-                            if package == 'LTspice':
-                                if re.match('LT(S|s)pice*', name, flags=0):
-                                    if os.path.exists(os.path.join(root,name,'XVIIx64.exe')):
-                                        print("LTSpice command set as:", os.path.join(root,name,'XVIIx64.exe'))
-                                        commands[p_name] = os.path.join(root,name,'XVIIx64.exe')
-                                        found = True
-                                    elif  os.path.exists(os.path.join(root,name,'LTspice.exe')):
-                                        print("LTSpice command set as:", os.path.join(root,name,'LTspice.exe'))
-                                        commands[p_name] = os.path.join(root,name,'LTspice.exe')
-                                        found = True
-                                    elif  os.path.exists(os.path.join(root,name,'ltspice.exe')):
-                                        print("LTSpice command set as:", os.path.join(root,name,'ltspice.exe'))
-                                        commands[p_name] = os.path.join(root,name,'ltspice.exe')
-                                        found = True
-                            elif package == 'KiCad':
-                                try:
-                                    if re.match('KiCad', name, flags=0):
-                                        version=os.listdir(os.path.join(root, name))[0]
-                                        file_name = os.path.join(root, name, version, 'bin','kicad-cli.exe')
-                                        if os.path.exists(file_name):
-                                            print("KiCad command set as:", os.path.join(root,name,'kicad-cli.exe'))
-                                            commands[p_name] = file_name
-                                            found = True
-                                except:
-                                    print("Could not find the KiCad command 'kicad-cli.exe'. " +
-                                          "Please add this command manually to the ~/SLiCAP.ini file!")
-                            elif package == 'gEDA':
-                                if re.match('gEDA', name, flags=0):
-                                    file_name = os.path.join(root, name, 'gEDA', 'bin' ,'gnetlist.exe')
-                                    if os.path.exists(file_name):
-                                        print("gnetlist command set as:", os.path.join(root,name,'gnetlist.exe'))
-                                        commands[p_name] = file_name
-                                        found = True
-                            elif package == 'NGspice':
-                                if re.match('Spice64', name, flags=0):
-                                    file_name = os.path.join(root, name, 'bin' ,'ngspice.exe')
-                                    if os.path.exists(file_name):
-                                        print("NGspice command set as:", os.path.join(root,name,'ngspice.exe'))
-                                        commands[p_name] = file_name
-                                        found = True
-                            if found:
-                                # Stop walking is all packages are found
-                                found_all = True
-                                for item in search_list:
-                                    if item.lower() not in list(commands.keys()):
-                                        found_all = False
-                                        break
-                                if found_all == True or time_out:
-                                    break
-                if found_all or time_out:
-                    break
-            if found_all or time_out:
-                break
-    found_list = list(commands.keys())    
-    if found_all:
-        print("SLiCAP found all installed apps!")
-    elif time_out:
-        print("\nSearching time for apps aborted due to time-out!\n")
-        for app in search_list:
-            if app.lower() not in found_list:
-                print("-", app, ": installed but not found")
-        print("\nIf you want SLiCAP to make calls to these apps, please edit " + 
-              "the main configuration file: '~/SLiCAP.ini'. More information " +
-              "is available in the SLiCAP HTML help.")
-    # Complete the commands dictionary
-    if len(found_list) != len(package_list):
-        for package in package_list:
-            p_name = package.lower()
-            if p_name not in found_list:
-                commands[p_name] = ''
-            if package not in search_list:
-                print("-", package, ": not installed")      
-    if len(search_list) != len(package_list):
-        print("After installation of missing apps, delete the '~/SLiCAP.ini' " +
-              "file. It will be recreated with the next SLiCAP import.")
-    commands['lepton-eda'] = ''
-    return commands
-
-def _find_LTspice_wine():
-    """
-    Searches for LTspice under Linux or MacOS
-
-    Returns
-    -------
-    LTspice command
-    """
-    cmd = ''
-    try:
-        home = expanduser("~")
-        drives = [os.path.join(home, '.wine', 'drive_c')]
-        for drive in drives:
-            drive = os.path.join(drive, 'Program Files')
-            for root, dirs, files in os.walk(drive, topdown=True):
-                for name in dirs:
-                    if re.match('LT(S|s)pice*', name, flags=0):
-                        if os.path.exists(os.path.join(root,name,'XVIIx64.exe')):
-                            cmd = os.path.join(root,name,'XVIIx64.exe')
-                        elif  os.path.exists(os.path.join(root,name,'LTspice.exe')):
-                            cmd = os.path.join(root,name,'LTspice.exe')
-                        elif  os.path.exists(os.path.join(root,name,'ltspice.exe')):
-                            cmd = os.path.join(root,name,'ltspice.exe')
-                        return cmd
-    except:
-        pass
-    return cmd
-
 def _find_installed_software():
-    system = platform.system()
-    commands = {}
-    commands['ltspice']      =  _find_LTspice_wine()
-    commands['kicad']        = 'kicad-cli'
-    commands['geda']         = 'gnetlist'
-    commands['lepton-eda']   = 'lepton-cli'
-    commands['ngspice']      = 'ngspice'
-    if system               != "Linux":
-        commands['kicad']    = '/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli'
-    for key in commands.keys():
-        if key != "ltspice":
-            cmd = "which " + commands[key]
-            found = os.system(cmd)
-            if found == 256:
-                commands[key] = ""
-    if system != 'Windows' and commands['lepton-eda'] != '':
-        commands['geda'] = 'lepton-netlist'
-    # print not installed packages
-    not_installed = []
-    for key in commands.keys():
-        if commands[key] == '':
-            not_installed.append(key)
-    if len(not_installed) > 0:
-        print("The following apps have not been installed:")
-        for app in not_installed:
-            print("-", app)
-        print("After installation of missing apps, delete the '~/SLiCAP.ini' " +
-              "file. It will be recreated with the next SLiCAP import.")
+    """Best-effort, NON-INTERACTIVE detection of external-tool commands.
+
+    External schematic tools (KiCad, gEDA/lepton, LTspice) are DEPRECATED —
+    schematic capture is done in the SLiCAP GUI; only NGspice matters. Nothing
+    is scanned or prompted: commands found on the PATH are picked up. On Windows
+    NGspice is an unpacked zip (not on the PATH), so the standard download
+    location (``C:\\Spice64\\bin``) is probed too. Anything not found is left an
+    empty string, for the user to set in the GUI.
+    """
+    names = {'kicad': 'kicad-cli', 'geda': 'gnetlist',
+             'lepton-eda': 'lepton-cli', 'ngspice': 'ngspice',
+             'ltspice': 'ltspice'}
+    commands = {key: (shutil.which(cmd) or '') for key, cmd in names.items()}
+    if commands['lepton-eda']:
+        commands['geda'] = shutil.which('lepton-netlist') or commands['geda']
+    if not commands['ngspice']:
+        commands['ngspice'] = _find_ngspice_fallback()
     return commands
+
+def _ngspice_std_locations():
+    """Standard NGspice executable locations per OS (used when it is not on the
+    PATH): Windows unpacked zip, macOS Homebrew, Linux."""
+    system = platform.system()
+    if system == 'Windows':
+        b = os.path.join('C:\\', 'Spice64', 'bin')
+        return [os.path.join(b, 'ngspice_con.exe'),   # console build: batch runs
+                os.path.join(b, 'ngspice.exe')]
+    if system == 'Darwin':
+        return ['/opt/homebrew/bin/ngspice',          # Apple Silicon Homebrew
+                '/usr/local/bin/ngspice']             # Intel Homebrew
+    return ['/usr/bin/ngspice', '/usr/local/bin/ngspice']
+
+def _find_ngspice_fallback():
+    """NGspice is not always on the PATH — a Windows unpacked zip, or a macOS
+    GUI launched with a truncated PATH. Probe the standard install locations;
+    '' when none exist (the user sets it in the GUI)."""
+    for cand in _ngspice_std_locations():
+        if os.path.isfile(cand):
+            return cand
+    return ''
 
 def _generate_project_config():
     project_paths = {"html"          : 'html/',
@@ -248,6 +114,7 @@ def _generate_project_config():
                      "txt"           : 'txt/',
                      "img"           : 'img/',
                      "sch"           : 'sch/',
+                     "results"       : 'results/',
                      "sphinx"        : 'sphinx/',
                      "tex"           : 'tex/',
                      "tex_snippets"  : 'tex/SLiCAPdata/',
@@ -260,14 +127,13 @@ def _generate_project_config():
     project_config = configparser.ConfigParser()
     project_config['math']         = {"laplace"               : "s",
                                     "frequency"             : "f",
-                                    "numer"                 : "ME",
-                                    "denom"                 : "ME",
+                                    "numer"                 : "MECPP",
+                                    "denom"                 : "MECPP",
                                     "lambdify"              : "numpy",
                                     "stepfunction"          : True,
                                     "factor"                : True,
                                     "maxrecsubst"           : 15,
                                     "reducematrix"          : True,
-    #                                "reducecircuit"         : True
                                     }
     project_config['balancing']    = {"update_srcnames"       : True,
                                     "pair_ext"              : "P,N",
@@ -292,6 +158,10 @@ def _generate_project_config():
                                     "ideal"                 : "c",
                                     "vi"                    : "c"
                                     }
+    # GUI/schematic settings: sch_scale = scene units per millimeter.
+    # Default 2 (resistor pin-to-pin = 50 units = 25 mm); book projects
+    # targeting narrow LaTeX figure widths use 4-5 (Anton, 2026-07-15).
+    project_config['gui']          = {'sch_scale'             : 2.0}
     project_config['display']      = {'Hz'                    : True,
                                     'Digits'                : 4,
                                     'notebook'              : False,
@@ -335,13 +205,15 @@ def _generate_main_config():
                      "sphinxfiles" : os.path.join(install_path, 'SLiCAP/files/sphinx/'),
                      }
     
-    if platform.system() == 'Windows':
-        commands = _find_installed_windows_software()
-    else:
-        commands =  _find_installed_software()
+    commands = _find_installed_software()
+    # Optional fast determinant engine (see SLiCAP_GiNAC.md); empty = not
+    # installed, det(method='MECPP') then falls back to the Python 'ME'.
+    commands.setdefault('slicap_det', shutil.which('slicap_det') or '')
     main_config = configparser.ConfigParser()
+    # The latest release is fetched on demand only (check_for_updates());
+    # generating the configuration must work offline.
     main_config['version']      = {"install_version" : INSTALLVERSION,
-                                     "latest_version" : _check_version()}
+                                     "latest_version" : "Unknown"}
     main_config['installpaths'] = install_paths
     main_config['commands']     = commands
     return main_config
@@ -364,37 +236,97 @@ def _generate_default_config():
                                   'kicad'            : '',
                                   'geda'             : '',
                                   'lepton-eda'       : '',
-                                  'ngspice'          : ''}
+                                  'ngspice'          : '',
+                                  'slicap_det'       : ''}
                       }
     return default_config
 
 def _get_home_path():
     slicap_home  = expanduser("~").replace('\\', '/') + '/'
     return slicap_home
-    
+
+def main_config_path():
+    """Location of the MAIN configuration file: ~/SLiCAP/SLiCAP.ini.
+
+    The main configuration lives in its own folder so it can never collide
+    with a project's SLiCAP.ini (decided 2026-07-15: with the old location
+    ~/SLiCAP.ini, a project in the home directory silently destroyed the
+    main configuration). A visible folder — not a hidden dot-folder — for
+    Windows friendliness. A pre-existing main configuration at the legacy
+    location is migrated automatically by _read_main_config().
+    """
+    return os.path.join(expanduser("~"), "SLiCAP", "SLiCAP.ini")
+
+def _cwd_is_main_config_dir():
+    """True when the current working directory is the main-configuration
+    folder (~/SLiCAP): a project there would collide with the main
+    SLiCAP.ini — the folder is reserved (found 2026-07-15 while closing
+    the home-directory collision)."""
+    return (os.path.abspath(os.getcwd())
+            == os.path.abspath(os.path.dirname(main_config_path())))
+
 def _read_project_config():
     try:
+        if _cwd_is_main_config_dir():
+            print("Warning: " + os.path.dirname(main_config_path()) +
+                  " holds the main configuration and cannot be a SLiCAP "
+                  "project directory. Using default project settings; "
+                  "start SLiCAP from a project folder.")
+            return _generate_project_config()
         if os.path.isfile("./SLiCAP.ini"):
-            config_dict = configparser.ConfigParser()
+            # strict=False tolerates duplicate option keys — an outside
+            # run can leave a malformed [labels]/[html] section that would
+            # otherwise raise DuplicateOptionError (Anton, 2026-07-16).
+            config_dict = configparser.ConfigParser(strict=False)
             with open("SLiCAP.ini") as f:
                 config_dict.read_file(f)
         else:
             print("Generating project configuration file: SLiCAP.ini.\n")
             config_dict = _generate_project_config()
             _write_project_config(config_dict)
-    except:
-        config_dict = configparser.ConfigParser()
+    except Exception:
+        # A corrupt project ini self-heals to defaults instead of returning
+        # an empty config that then crashes downstream with missing keys
+        # (inherited-fragility quick fix; the real fix is to stop storing
+        # html/label RUN STATE in the project config — big TODO).
+        print("Warning: project SLiCAP.ini could not be read; "
+              "regenerating default project settings.")
+        config_dict = _generate_project_config()
     return config_dict
+
+def _migrate_legacy_main_config(path):
+    """One-time migration of a MAIN configuration from the legacy location
+    ~/SLiCAP.ini to ~/SLiCAP/SLiCAP.ini (preserves hand-edited command
+    paths). A legacy file WITHOUT main-config sections is a project file
+    of a project living in the home directory — left untouched."""
+    legacy = _get_home_path() + "SLiCAP.ini"
+    if not os.path.isfile(legacy):
+        return False
+    probe = configparser.ConfigParser(strict=False)
+    try:
+        with open(legacy) as f:
+            probe.read_file(f)
+    except Exception:
+        return False
+    if not (probe.has_section("commands")
+            or probe.has_section("installpaths")):
+        return False
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    os.replace(legacy, path)
+    print("Main configuration file moved to: " + path + "\n")
+    return True
 
 def _read_main_config():
     try:
-        path = _get_home_path() + "SLiCAP.ini"
+        path = main_config_path()
+        if not os.path.isfile(path):
+            _migrate_legacy_main_config(path)
         if  os.path.isfile(path):
-            config_dict = configparser.ConfigParser()
+            config_dict = configparser.ConfigParser(strict=False)
             with open(path) as f:
                 config_dict.read_file(f)
         else:
-            print("Generating main configuration file: ~/SLiCAP.ini.\n")
+            print("Generating main configuration file: " + path + "\n")
             config_dict = _generate_main_config()
             _write_main_config(config_dict)
     except:
@@ -402,11 +334,17 @@ def _read_main_config():
     return config_dict
 
 def _write_project_config(config_dict):
+    if _cwd_is_main_config_dir():
+        # ~/SLiCAP/SLiCAP.ini is the MAIN configuration — never write a
+        # project configuration over it (see _cwd_is_main_config_dir)
+        return
     with open("SLiCAP.ini", "w") as f:
         config_dict.write(f)
 
 def _write_main_config(config_dict):
-    with open(_get_home_path() + "SLiCAP.ini", "w") as f:
+    path = main_config_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
         config_dict.write(f)
         
 def _update_project_config():
@@ -444,8 +382,14 @@ def _update_ini_files():
         main_config = _generate_main_config()
         main_keys   = main_config.keys()   # refresh so del loop targets the new config
 
+    # Keep the last known latest release; the network check runs only on
+    # demand via check_for_updates(), so importing SLiCAP works offline.
+    try:
+        known_latest = main_config['version']['latest_version'] or "Unknown"
+    except Exception:
+        known_latest = "Unknown"
     main_config['version']      = {"install_version" : INSTALLVERSION,
-                                   "latest_version" : _check_version()}
+                                   "latest_version" : known_latest}
     # Remove unused entries
     del_keys = []
     for key in main_keys:
@@ -537,7 +481,8 @@ def dump(section="all"):
         print('ini.gnetlist               =', gnetlist)
         print('ini.lepton_eda             =', lepton_eda)
         print('ini.ngspice                =', ngspice)
-    if section == 'ALL' or section == "PROJECT":    
+        print('ini.slicap_det             =', slicap_det)
+    if section == 'ALL' or section == "PROJECT":
         print("\nPROJECT")
         print("-------")
         print('ini.project_title          =', project_title)
@@ -552,6 +497,7 @@ def dump(section="all"):
         print('ini.cir_path               =', cir_path)
         print('ini.img_path               =', img_path)
         print('ini.csv_path               =', csv_path)
+        print('ini.results_path           =', results_path)
         print('ini.txt_path               =', txt_path)
         print('ini.tex_path               =', tex_path)
         print('ini.user_lib_path          =', user_lib_path)
@@ -649,6 +595,7 @@ ltspice               = main_config['commands']['ltspice']
 gnetlist              = main_config['commands']['geda']
 lepton_eda            = main_config['commands']['lepton-eda']
 ngspice               = main_config['commands']['ngspice']
+slicap_det            = main_config['commands'].get('slicap_det', '')
 
 project_title         = project_config['project']['title']
 author                = project_config['project']['author']
@@ -664,6 +611,9 @@ txt_path              = project_config['projectpaths']['txt']
 tex_path              = project_config['projectpaths']['tex']
 user_lib_path         = project_config['projectpaths']['lib']
 schematic_path        = project_config['projectpaths'].get('sch', 'sch/')
+# design-data manifest + result artifacts (SLNG.md "Design data panel");
+# .get(): projects created before this key existed keep working
+results_path          = project_config['projectpaths'].get('results', 'results/')
 sphinx_path           = project_config['projectpaths']['sphinx']
 tex_snippets          = project_config['projectpaths']['tex_snippets']
 html_snippets         = project_config['projectpaths']['html_snippets']
@@ -695,6 +645,7 @@ laplace               = Symbol(project_config['math']['laplace'])
 frequency             = Symbol(project_config['math']['frequency'])
 numer                 = project_config['math']['numer']
 denom                 = project_config['math']['denom']
+sch_scale             = float(project_config['gui']['sch_scale'])
 lambdify              = project_config['math']['lambdify']
 step_function         = eval(project_config['math']['stepfunction'])
 factor                = eval(project_config['math']['factor'])

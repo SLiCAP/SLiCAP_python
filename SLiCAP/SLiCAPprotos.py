@@ -641,6 +641,7 @@ _FORMATS: dict[str, tuple[str, str]] = {
     "myst"  : _Entry(ini.myst_snippets, ".md"),
     "md"    : _Entry(ini.md_snippets,   ".md"),
     "html"  : _Entry(ini.html_snippets, ".html"),
+    "txt"   : _Entry(ini.txt_path,      ".txt"),
 }
 
 class Snippet:
@@ -729,6 +730,11 @@ class Snippet:
                 filePath = self._prefix + filenameOrPath + self._suffix
             with open(filePath, self.mode) as f:
                 f.write(self.snippet)
+            self.saved_path = filePath
+        # fluent: NAME = ltx.eqn(...).save("name") binds the Snippet, so
+        # named snippets appear in the Design data panel via the run
+        # manifest (Anton, 2026-07-15)
+        return self
         
 class _BaseFormatter:
     """

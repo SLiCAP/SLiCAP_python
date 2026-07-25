@@ -1,12 +1,8 @@
-import weakref
-
 from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 
-from .config import snap
-
-_live_latex_items: weakref.WeakSet = weakref.WeakSet()
+from .config import snap, style_of
 
 _PLACEHOLDER_COLOR = QColor(240, 240, 180)   # light yellow
 _PLACEHOLDER_TEXT  = "LaTeX\n(not rendered)"
@@ -67,23 +63,21 @@ class LatexFragmentItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self._renderer = None
-        _live_latex_items.add(self)
         self._load_renderer()
-
-    def rescale(self, ratio: float) -> None:
-        self.prepareGeometryChange()
-        self.display_width  = max(1, round(self.display_width  * ratio))
-        self.display_height = max(1, round(self.display_height * ratio))
-        self.update()
 
     # ── loading ───────────────────────────────────────────────────────────────
 
     def _load_renderer(self) -> None:
         self._renderer = None
-        from .latex_label import LATEX_AVAILABLE
-        if LATEX_AVAILABLE and self.latex_code:
-            from .latex_label import render_latex_raw
-            svg, _err = render_latex_raw(self.latex_code, self.preamble_path)
+        from .latex_label import LATEX_INSTALLED
+        # Fresh rendering needs the tools AND the owning schematic's preference;
+        # before the item is in a scene only stored bytes are used (the scene-
+        # entry hook re-runs this with the real style).
+        if (self.scene() is not None and LATEX_INSTALLED
+                and style_of(self).LATEX_RENDERING_ENABLED and self.latex_code):
+            from .latex_label import cache_dir_of, render_latex_raw
+            svg, _err = render_latex_raw(self.latex_code, self.preamble_path,
+                                         cache_dir=cache_dir_of(self))
             if svg:
                 self._svg_bytes = svg
         if self._svg_bytes:
@@ -116,6 +110,10 @@ class LatexFragmentItem(QGraphicsItem):
             _draw_selection(painter, sel_r)
 
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
+            self.prepareGeometryChange()
+            self._load_renderer()
+            self.update()
         if change == QGraphicsItem.ItemPositionChange:
             return snap(value)
         return super().itemChange(change, value)
