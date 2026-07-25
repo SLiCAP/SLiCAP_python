@@ -1,0 +1,18 @@
+# Mirrors pyproject.toml [project] dependencies.
+# Kept for the CI doc build (BuildSite.yml runs: pip install -r requirements.txt).
+# Keep in sync with pyproject.toml, or switch that CI step to `pip install .`.
+numpy>=2.4
+sympy>=1.13
+scipy>=1.14
+ply>=3.11
+matplotlib>=3.9.0
+svgelements>=1.9.6
+svglib>=1.5.1
+reportlab>=3.6
+pytexit>=0.4.0
+IPython>=8.19
+docutils>=0.18
+sphinx>=7.0
+sphinx-rtd-theme>=1.2.0
+PySide6>=6.4
+requests>=2.25
