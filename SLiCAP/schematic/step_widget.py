@@ -34,6 +34,12 @@ class StepWidget(QGroupBox):
         self._style = key_style
         self._numeric_only = key_style == "ngspice"
         self._candidates = [str(p) for p in param_candidates]
+        # TEMP is a whole-circuit property in NGspice (swept via `option temp`,
+        # not a .param) — offer it as a ready-made choice so the reserved name
+        # is never mistyped.  SLiCAP's symbolic back-end has no such step.
+        if self._style == "ngspice" and not any(
+                c.lower() == "temp" for c in self._candidates):
+            self._candidates.append("TEMP")
         self.setCheckable(True)
         self.setChecked(False)
         self.toggled.connect(lambda *_: self.changed.emit())

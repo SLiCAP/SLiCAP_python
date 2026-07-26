@@ -107,9 +107,17 @@ def build_netlist(
 
     # ── library includes ──────────────────────────────────────────────────────
     if libs:
+        from . import project
+        try:
+            root = project.project_root()
+        except Exception:
+            root = None
         lines.append("")
         for lib_item in libs:
-            lines.extend(lib_item.netlist_lines())
+            for _d, path, _c, exists in lib_item.resolved_entries(root):
+                if not exists:
+                    print(f"WARNING: library file not found: {path}")
+            lines.extend(lib_item.netlist_lines(root))
 
     # ── model definitions ─────────────────────────────────────────────────────
     if model_defs:

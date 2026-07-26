@@ -44,8 +44,28 @@ class Analysis:
 
 # ── parser ────────────────────────────────────────────────────────────────────
 
-_BINARY_MARKER = b"Binary:\n"
-_VALUES_MARKER = b"Values:\n"
+_BINARY_MARKER = b"Binary:"
+_VALUES_MARKER = b"Values:"
+
+
+def _find_raw_marker(raw: bytes, marker: bytes, start: int):
+    """Find *marker* on its own line at/after *start*, tolerant of LF and CRLF
+    (NGspice on Windows writes the raw header with CRLF, so ``b"Binary:\\n"``
+    would miss ``Binary:\\r\\n`` — the Windows-only bias-annotation failure).
+    Returns (marker_start, data_start), or (-1, -1) when absent."""
+    pos = start
+    while True:
+        i = raw.find(marker, pos)
+        if i == -1:
+            return -1, -1
+        end = i + len(marker)
+        if end < len(raw) and raw[end:end + 1] in (b"\r", b"\n"):
+            if raw[end:end + 1] == b"\r":
+                end += 1
+            if raw[end:end + 1] == b"\n":
+                end += 1
+            return i, end
+        pos = i + len(marker)
 
 
 class RawFile:
@@ -76,15 +96,15 @@ class RawFile:
 
         Returns (Analysis, next_start) or None when no more blocks exist.
         """
-        bi = raw.find(_BINARY_MARKER, start)
-        vi = raw.find(_VALUES_MARKER, start)
+        bi, bi_end = _find_raw_marker(raw, _BINARY_MARKER, start)
+        vi, vi_end = _find_raw_marker(raw, _VALUES_MARKER, start)
 
         if bi == -1 and vi == -1:
             return None
 
-        is_binary = (bi != -1) and (vi == -1 or bi <= vi)
+        is_binary  = (bi != -1) and (vi == -1 or bi <= vi)
         marker_pos = bi if is_binary else vi
-        marker_end = marker_pos + (len(_BINARY_MARKER) if is_binary else len(_VALUES_MARKER))
+        marker_end = bi_end if is_binary else vi_end
 
         header_text = raw[start:marker_pos].decode("ascii", errors="replace")
         hdr = RawFile._parse_header(header_text)
@@ -234,7 +254,16 @@ class RawFile:
                 continue
 
             try:
-                val = complex(val_str) if is_complex else float(val_str)
+                if is_complex:
+                    # NGspice ASCII complex is "real,imag" (comma-separated), NOT
+                    # Python's "real+imagj" — complex(val_str) raises here and the
+                    # value would be silently dropped as 0.  This is the Windows
+                    # bug: that build writes ASCII raws (Linux writes binary), so
+                    # a stepped AC there parsed as all-zeros.
+                    re_s, _, im_s = val_str.partition(",")
+                    val = complex(float(re_s), float(im_s) if im_s else 0.0)
+                else:
+                    val = float(val_str)
             except ValueError:
                 continue
 

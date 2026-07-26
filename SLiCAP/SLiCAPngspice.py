@@ -23,8 +23,29 @@ from pathlib import Path
 # Nutmeg raw-file parser
 # =============================================================================
 
-_BINARY_MARKER = b"Binary:\n"
-_VALUES_MARKER  = b"Values:\n"
+_BINARY_MARKER = b"Binary:"
+_VALUES_MARKER  = b"Values:"
+
+
+def _find_raw_marker(raw, marker, start):
+    """Find *marker* on its own line at/after *start*, tolerant of LF and CRLF
+    line endings (NGspice on Windows writes the raw header with CRLF, so a
+    ``b"Binary:\\n"`` search would miss ``Binary:\\r\\n`` — the Windows-only
+    "Missing trace data" bug).  Returns (marker_start, data_start), or (-1, -1)
+    when absent; *data_start* is the first byte past the marker's line ending."""
+    pos = start
+    while True:
+        i = raw.find(marker, pos)
+        if i == -1:
+            return -1, -1
+        end = i + len(marker)
+        if end < len(raw) and raw[end:end + 1] in (b"\r", b"\n"):
+            if raw[end:end + 1] == b"\r":
+                end += 1
+            if raw[end:end + 1] == b"\n":
+                end += 1
+            return i, end
+        pos = i + len(marker)
 
 
 @dataclass
@@ -82,15 +103,15 @@ class RawFile:
 
     @staticmethod
     def _parse_block(raw, start):
-        bi = raw.find(_BINARY_MARKER, start)
-        vi = raw.find(_VALUES_MARKER, start)
+        bi, bi_end = _find_raw_marker(raw, _BINARY_MARKER, start)
+        vi, vi_end = _find_raw_marker(raw, _VALUES_MARKER, start)
 
         if bi == -1 and vi == -1:
             return None
 
-        is_binary = (bi != -1) and (vi == -1 or bi <= vi)
+        is_binary  = (bi != -1) and (vi == -1 or bi <= vi)
         marker_pos = bi if is_binary else vi
-        marker_end = marker_pos + (len(_BINARY_MARKER) if is_binary else len(_VALUES_MARKER))
+        marker_end = bi_end if is_binary else vi_end
 
         header_text = raw[start:marker_pos].decode("ascii", errors="replace")
         hdr = RawFile._parse_header(header_text)
@@ -203,7 +224,16 @@ class RawFile:
             if not val_str:
                 continue
             try:
-                val = complex(val_str) if is_complex else float(val_str)
+                if is_complex:
+                    # NGspice ASCII complex is "real,imag" (comma-separated), NOT
+                    # Python's "real+imagj" — complex(val_str) raises here and the
+                    # value would be silently dropped as 0.  This is the Windows
+                    # bug: that build writes ASCII raws (Linux writes binary), so
+                    # a stepped AC there parsed as all-zeros.
+                    re_s, _, im_s = val_str.partition(",")
+                    val = complex(float(re_s), float(im_s) if im_s else 0.0)
+                else:
+                    val = float(val_str)
             except ValueError:
                 continue
             if pt >= 0 and col < n_vars:
@@ -539,7 +569,12 @@ def _run_ngspice(args, stdout_path=None, timeout=None):
     """
     out = open(stdout_path, 'w') if stdout_path is not None else None
     try:
-        subprocess.run(args, stdout=out, timeout=timeout)
+        # Windows: ngspice_con.exe is a console app, so each run pops up a
+        # console window — visible, and slow to create/destroy (worst on the
+        # parallel stepped runs). CREATE_NO_WINDOW suppresses it; the flag is
+        # Windows-only, hence getattr → 0 elsewhere (Anton, Win10).
+        subprocess.run(args, stdout=out, timeout=timeout,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         return True
     except subprocess.TimeoutExpired:
         print("ERROR: NGspice exceeded the {} s time limit and was terminated.".format(timeout))
@@ -1177,7 +1212,9 @@ def _control_block(analysis_cmd, raw_path, options=None, noise=False,
     spectrum the current plot, so the write then stores the spectrum;
     ``fourier`` prints its harmonics table to stdout).
     """
-    lines = [".control", "save all"]
+    # Force binary raws: some ngspice builds (notably Windows) default to ASCII,
+    # which is larger, slower to parse, and needs the "real,imag" complex path.
+    lines = [".control", "set filetype=binary", "save all"]
     if extra_saves:
         lines.append("save " + " ".join(extra_saves))
     if noise:
@@ -1195,43 +1232,73 @@ def _control_block(analysis_cmd, raw_path, options=None, noise=False,
     return "\n".join(lines)
 
 
-def _inject_overrides(netlist_text, param_override, option_override):
-    """Replace parameter / option values in the netlist text in-place.
+def _ng_number(v) -> str:
+    """Format a step value as an NGspice numeric literal."""
+    return f"{float(v):.12g}"
 
-    The SLiCAP NGspice netlist uses a multi-line format::
 
-        .param
-        + Cc={100e-12}
+def _stepped_control_block(analysis_cmd, raw_path, step_param, step_vals,
+                           options=None, noise=False, extra_saves=None,
+                           post_lines=None):
+    """One ``.control`` block that sweeps one OR several parameters over
+    *step_vals* in ONE NGspice process (the design-doc approach; see
+    NGspice_simulator.md).  A counter (``dowhile``) walks per-parameter value
+    arrays (``compose``); each run alters the parameters and re-runs, APPENDING
+    its analysis to *raw_path* — ``RawFile.load`` reads the N appended blocks as
+    the stepped result.  No per-step files, no N processes.
 
-    so the target tokens appear on ``+`` continuation lines, not on the
-    ``.param`` line itself.  Appending a second ``.param`` at the end does not
-    work because NGspice honours the *first* definition it encounters.
-    Replacing the existing token in-place is the only reliable approach.
+    Ordering matters (verified against ngspice):
+      * a ``.param`` is set as a SCALAR *before* ``reset`` — ``alterparam P =
+        $&x`` — the ``$&`` dereference that avoids the vector pitfall (SLNG.md);
+      * ``TEMP`` is set *after* ``reset`` — ``option temp = $&x`` — the only
+        order ngspice honours (``set temp`` before reset is ignored).
 
-    If a name is not found in the netlist (e.g. the user added the step
-    parameter after generating the netlist) it is appended at the end.
+    *step_param* may be a str (single) or list (array/multi); *step_vals* is
+    then 1-D or 2-D ``(n_runs, n_params)``.
     """
-    for pname, pval in (param_override or {}).items():
-        pat = re.compile(
-            r'\b' + re.escape(pname) + r'\s*=\s*(?:\{[^}]*\}|\S+)',
-            re.IGNORECASE,
-        )
-        netlist_text, n = pat.subn(f'{pname} = {{{pval}}}', netlist_text)
-        if n == 0:
-            print(f"WARNING: step parameter '{pname}' not found in netlist - "
-                  f"check that the name matches the .param definition exactly.")
-            netlist_text = netlist_text.rstrip('\n') + f'\n.param {pname} = {{{pval}}}\n'
+    if isinstance(step_param, list):
+        params = list(step_param)
+        rows   = [[step_vals[i][j] for j in range(len(params))]
+                  for i in range(len(step_vals))]
+    else:
+        params = [step_param]
+        rows   = [[v] for v in step_vals]
+    n = len(rows)
 
-    for oname, oval in (option_override or {}).items():
-        pat = re.compile(
-            r'\b' + re.escape(oname) + r'\s*=\s*\S+',
-            re.IGNORECASE,
-        )
-        netlist_text, n = pat.subn(f'{oname} = {oval}', netlist_text)
-        if n == 0:
-            netlist_text = netlist_text.rstrip('\n') + f'\n.options {oname} = {oval}\n'
+    lines = [".control", "set filetype=binary", "set appendwrite"]
+    for j, _p in enumerate(params):
+        vs = " ".join(_ng_number(rows[i][j]) for i in range(n))
+        lines.append(f"compose __a{j} values {vs}")
+    lines += [f"let __n = {n}", "let __i = 0", "dowhile __i < __n"]
 
-    return netlist_text
+    temp_idx = None
+    for j, p in enumerate(params):
+        lines.append(f"  let __v{j} = __a{j}[__i]")
+        if str(p).lower() == "temp":
+            temp_idx = j                      # applied AFTER reset (below)
+        else:
+            lines.append(f"  alterparam {p} = $&__v{j}")
+    lines.append("  reset")
+    if temp_idx is not None:
+        lines.append(f"  option temp = $&__v{temp_idx}")
+    lines.append("  save all")
+    if extra_saves:
+        lines.append("  save " + " ".join(extra_saves))
+    if noise:
+        lines.append("  set sqrnoise")
+    if options:
+        for k, v in options.items():
+            lines.append(f"  option {k} = {v}" if v is not None else f"  option {k}")
+    lines.append("  " + analysis_cmd)
+    if noise:
+        lines.append("  setplot noise1")
+    if post_lines:
+        lines.extend("  " + pl for pl in post_lines)
+    lines.append(f"  write {Path(raw_path).as_posix()}")
+    lines.append("  let __i = __i + 1")
+    lines.append("end")
+    lines.append(".endc")
+    return "\n".join(lines)
 
 
 def _apply_instr_params(netlist_text, params):
@@ -1294,21 +1361,20 @@ def _apply_stimuli(netlist_text, stimuli):
 
 
 def _run_raw(cirFile, control_section, behavior, timeout,
-             param_override=None, option_override=None, sim_file=None,
              instr_params=None, stimuli=None):
     """Append control_section to cirFile.cir, run NGspice; return True on success.
 
-    *sim_file*: path of the ``.sp`` input file written for this run.  Defaults
-    to ``<cir_path>/<cirFile>_sim.sp`` — one file set per circuit, overwritten
-    on every run (``_sim`` because ``<cirFile>.sp`` is the GUI's netlist-export
-    target).  Pass a unique path per step when running steps in parallel so
-    the files don't overwrite each other.
+    Writes ONE self-contained ngspice deck ``<cir_path>/<cirFile>.sp``: the
+    ``<cirFile>.cir`` netlist followed by the analysis ``.control`` section
+    (which sits at the end and does not affect the netlist above it).  It is
+    regenerated on every run and doubles as the GUI's "Export NGspice Netlist"
+    file — one file is enough.  The sibling ``.log`` (ngspice ``-o``) and
+    ``.txt`` (console) share its base name.
 
     *instr_params*: ordered list of ``(name, value)`` tuples — per-instruction
-    parameter definitions, applied before the step overrides.
+    parameter definitions applied to the netlist before the run.
     """
-    if sim_file is None:
-        sim_file = ini.cir_path + cirFile + '_sim.sp'
+    sim_file = ini.cir_path + cirFile + '.sp'
     sim_path = Path(sim_file)
     log_file = str(sim_path.with_suffix('.log'))
     stdout_file = str(sim_path.with_suffix('.txt'))
@@ -1318,19 +1384,42 @@ def _run_raw(cirFile, control_section, behavior, timeout,
     stripped = "\n".join(l for l in netlist.splitlines()
                          if l.strip().upper() != '.END')
     if instr_params:
-        # Per-instruction definitions first; a stepped parameter is then
-        # overridden per step by _inject_overrides below.
         stripped = _apply_instr_params(stripped, instr_params)
     if stimuli:
         stripped = _apply_stimuli(stripped, stimuli)
-    if param_override or option_override:
-        stripped = _inject_overrides(stripped, param_override, option_override)
     with open(sim_file, 'w') as f:
         f.write(stripped + "\n" + control_section + "\n.end\n")
     args = [ini.ngspice, '-b', sim_file, '-o', log_file]
     if behavior:
         args += ['-D', f'ngbehavior={behavior}']
     return _run_ngspice(args, stdout_path=stdout_file, timeout=timeout)
+
+
+def _clean_run_outputs(cirFile, raw_path, stepped):
+    """Start-of-run cleanup: remove THIS circuit's transient outputs from the
+    PREVIOUS run before this run produces anything.  So no run inherits stale
+    leftovers (e.g. per-step files from a run with more steps), and everything
+    left after a run belongs to that run — useful for debugging.  Only
+    prior-run files are removed, up front, so the current data flow is never
+    corrupted.
+
+    A run only clears the raw files it will REGENERATE:
+      * always the per-step raws (``<stem>_s*.raw``);
+      * the base raw (``<stem>.raw`` / ``<stem>_op.raw``) ONLY when *stepped* is
+        False — an unstepped run rewrites it, a stepped run does not.
+    So an unstepped ``op`` run's ``<stem>_op.raw`` survives a later STEPPED op
+    and any ``ac``/``tran``/… run — exactly what the bias annotation reads.
+    """
+    cir  = Path(ini.cir_path)
+    base = Path(raw_path)
+    for pattern in (f"{cirFile}_sim.sp",   f"{cirFile}_sim.log",   f"{cirFile}_sim.txt",
+                    f"{cirFile}_sim_s*.sp", f"{cirFile}_sim_s*.log", f"{cirFile}_sim_s*.txt"):
+        for old in cir.glob(pattern):
+            old.unlink(missing_ok=True)
+    for old in base.parent.glob(base.stem + "_s*.raw"):   # per-step raws (regenerated)
+        old.unlink(missing_ok=True)
+    if not stepped:                                       # unstepped run rewrites the base raw
+        base.unlink(missing_ok=True)
 
 
 def _run_stepped(cirFile, analysis_cmd, raw_path, step_param, step_vals,
@@ -1340,32 +1429,27 @@ def _run_stepped(cirFile, analysis_cmd, raw_path, step_param, step_vals,
     """Run NGspice and return a list of raw-file paths, or None on error.
 
     - Non-stepped: single run, returns ``[raw_path]``.
-    - Stepped: all N step values run as independent NGspice subprocesses in
-      parallel (``ThreadPoolExecutor``).  Each step uses its own ``.sp`` input
-      file and writes to its own ``*_sN.raw`` output file.
+    - Stepped: ONE ngspice process sweeps every step value (see
+      :func:`_stepped_control_block`) and APPENDS its N analyses to a single
+      ``*_step.raw``, returned as a one-element list.  Both single-parameter
+      and array/multi-parameter sweeps use this path -- ``alterparam`` (before
+      ``reset``) for a ``.param``, ``option temp`` (after ``reset``, the ngspice
+      temperature model, manual sec.1.3) for TEMP.  ``NGspiceRaw2dict`` reads
+      the N-block raw for both single and array stepping.
 
-    ``alterparam`` in a shared .control block does not work because NGspice
-    evaluates element expressions once at parse time; without ``reset`` the
-    value never changes, and ``reset`` re-reads the original netlist from disk.
-    Injecting the value directly into the per-step netlist text is the only
-    reliable approach, and it is trivially parallelisable.
+    (Earlier this fanned out to N parallel subprocesses writing ``*_sN.raw``;
+    ngspice's own control-section stepping does it in one process -- fewer
+    files, no per-step netlist injection.)
     """
-    from concurrent.futures import ThreadPoolExecutor
-
     base = Path(raw_path)
 
-    # One file set per circuit, overwritten on every run: remove this
-    # circuit's per-step files from earlier runs first, so a run with fewer
-    # (or no) steps leaves no stale *_sN leftovers behind.
-    for pattern in (f"{cirFile}_sim_s*.sp", f"{cirFile}_sim_s*.log",
-                    f"{cirFile}_sim_s*.txt"):
-        for old in Path(ini.cir_path).glob(pattern):
-            old.unlink(missing_ok=True)
-    for old in base.parent.glob(base.stem + "_s*.raw"):
-        old.unlink(missing_ok=True)
+    # Clear this circuit's transient outputs from the previous run before this
+    # one writes anything (see _clean_run_outputs): no run inherits stale
+    # leftovers, everything left afterwards belongs to this run, and _op.raw
+    # survives non-op runs for the bias annotation.
+    _clean_run_outputs(cirFile, raw_path, step_vals is not None)
 
     if step_vals is None:
-        base.unlink(missing_ok=True)
         ctrl = _control_block(analysis_cmd, str(base), options, noise,
                               extra_saves, post_lines)
         if not _run_raw(cirFile, ctrl, behavior, timeout,
@@ -1373,41 +1457,16 @@ def _run_stepped(cirFile, analysis_cmd, raw_path, step_param, step_vals,
             return None
         return [str(base)]
 
-    n = len(step_vals)
-    step_raws     = [base.with_name(base.stem + f"_s{i}.raw")   for i in range(n)]
-    step_simfiles = [ini.cir_path + f"{cirFile}_sim_s{i}.sp"    for i in range(n)]
-
-    def _one_step(i):
-        step_raw = step_raws[i]
-        ctrl = _control_block(analysis_cmd, str(step_raw), options, noise,
-                              extra_saves, post_lines)
-        param_override = {}
-        option_override = {}
-        if isinstance(step_param, list):
-            for j, pname in enumerate(step_param):
-                val = step_vals[i, j]
-                if pname.lower() == "temp":
-                    option_override["TEMP"] = val
-                else:
-                    param_override[pname] = val
-        elif step_param:
-            val = step_vals[i]
-            if step_param.lower() == "temp":
-                option_override["TEMP"] = val
-            else:
-                param_override[step_param] = val
-        return _run_raw(cirFile, ctrl, behavior, timeout,
-                        param_override=param_override or None,
-                        option_override=option_override or None,
-                        sim_file=step_simfiles[i],
-                        instr_params=instr_params, stimuli=stimuli)
-
-    with ThreadPoolExecutor() as pool:
-        ok = list(pool.map(_one_step, range(n)))
-
-    if not all(ok):
+    # Every sweep -> ONE ngspice process: N analyses appended to one raw.
+    stepped_raw = base.with_name(base.stem + "_step.raw")
+    stepped_raw.unlink(missing_ok=True)              # fresh appendwrite target
+    ctrl = _stepped_control_block(analysis_cmd, str(stepped_raw), step_param,
+                                  list(step_vals), options, noise,
+                                  extra_saves, post_lines)
+    if not _run_raw(cirFile, ctrl, behavior, timeout,
+                    instr_params=instr_params, stimuli=stimuli):
         return None
-    return [str(p) for p in step_raws]
+    return [str(stepped_raw)]
 
 
 def _apply_names(result, names, x_name, step_key):
@@ -1566,6 +1625,7 @@ def make_netlist(filename, title=None, force=False):
         [sys.executable, "-m", "SLiCAP.schematic.cli", "netlist",
          str(sch_path.resolve())] + title_args,
         capture_output=True, text=True,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),  # no console flash on Windows
     )
     if result.stdout:
         print(result.stdout, end="")

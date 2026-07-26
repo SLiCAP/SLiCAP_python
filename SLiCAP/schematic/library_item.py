@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from PySide6.QtWidgets import QGraphicsItem, QStyle
@@ -70,17 +71,35 @@ class LibraryItem(QGraphicsItem):
             })
         return out
 
-    def netlist_lines(self) -> list:
-        """SLiCAP netlist lines: ``.{directive} {path} {corner}`` per entry
-        (WITH the leading dot; the path is quoted when it contains a space)."""
-        lines = []
+    def resolved_entries(self, project_root=None) -> list:
+        """[(directive, path, corner, exists), ...].  The path is emitted AS
+        STORED: a project-relative reference stays relative so ngspice/SLiCAP
+        resolve it relative to the run directory — turning it absolute broke
+        Linux<->Windows (a stored relative path became a foreign absolute path).
+        *exists* is a best-effort check (as-is, else joined to *project_root*)
+        that only drives the "library not found" warning, never the emitted
+        path."""
+        out = []
         for e in self._display_entries():
-            path = e["file"]
+            f = e["file"]
+            if os.path.isfile(f):
+                exists = True
+            elif project_root and not os.path.isabs(f):
+                exists = os.path.isfile(str(Path(project_root) / f))
+            else:
+                exists = False
+            out.append((e["directive"], f, e["corner"], exists))
+        return out
+
+    def netlist_lines(self, project_root=None) -> list:
+        """SLiCAP netlist lines: ``.{directive} {path} {corner}`` per entry
+        (leading dot; path quoted when it contains a space; relative files
+        resolved against *project_root*)."""
+        lines = []
+        for directive, path, corner, _exists in self.resolved_entries(project_root):
             if " " in path:
                 path = f'"{path}"'
-            parts = ["." + e["directive"], path]
-            if e["corner"]:
-                parts.append(e["corner"])
+            parts = ["." + directive, path] + ([corner] if corner else [])
             lines.append(" ".join(parts))
         return lines
 

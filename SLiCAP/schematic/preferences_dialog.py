@@ -24,6 +24,7 @@ _COLOR_W  = 56   # fixed width for colour buttons
 class _ColorButton(QPushButton):
     def __init__(self, color: QColor, parent=None):
         super().__init__(parent, Qt.Window)
+        self.setObjectName("slicapColorBtn")   # lets the stylesheet target ONLY this button
         self._color = QColor(color)
         self.setFixedWidth(_COLOR_W)
         self._refresh()
@@ -33,15 +34,20 @@ class _ColorButton(QPushButton):
         return self._color
 
     def _pick(self):
-        c = QColorDialog.getColor(self._color, self)
+        # Parent to the top-level window, NOT this button: a QColorDialog
+        # parented to the colour swatch inherited its background-color on
+        # Windows and rendered the whole picker in that colour (Anton, Win10).
+        c = QColorDialog.getColor(self._color, self.window())
         if c.isValid():
             self._color = c
             self._refresh()
 
     def _refresh(self):
+        # Scope the rule to this button by object-name; a bare
+        # "background-color: ..." cascades to child widgets (the picker dialog).
         self.setStyleSheet(
-            f"background-color: {self._color.name()};"
-            "border: 1px solid #888;"
+            "#slicapColorBtn { background-color: %s; border: 1px solid #888; }"
+            % self._color.name()
         )
         self.setText("")
 

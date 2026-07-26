@@ -1,8 +1,26 @@
+from pathlib import Path
+
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QScrollArea, QWidget, QLabel,
     QLineEdit, QComboBox, QCheckBox, QPushButton, QDialogButtonBox, QFileDialog,
 )
 from PySide6.QtCore import Qt
+
+
+def _project_relative(path: str) -> str:
+    """Store a library reference relative to the project root (POSIX) when it
+    lives inside the project tree, so it stays portable when the same project is
+    opened on another machine (Linux/Windows share drives differ, e.g. Z: vs
+    /home/…); an external file is kept absolute."""
+    try:
+        from . import project
+        root = Path(project.project_root()).resolve()
+        p = Path(path).resolve()
+        if p.is_relative_to(root):
+            return p.relative_to(root).as_posix()
+    except Exception:
+        pass
+    return path
 
 
 class _LibRow(QWidget):
@@ -58,7 +76,7 @@ class _LibRow(QWidget):
             self._file.text() or self._browse_dir,
             "Library Files (*.lib *.spi *.sp *.inc);;All Files (*)")
         if path:
-            self._file.setText(path)
+            self._file.setText(_project_relative(path))
 
     def value(self) -> dict:
         directive = self._dir.currentText().lstrip(".") if self._dir else "lib"

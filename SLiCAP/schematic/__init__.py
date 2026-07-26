@@ -72,6 +72,7 @@ def make_schematic(sch_path, cir_title=None, force=False):
         [sys.executable, "-m", "SLiCAP.schematic.cli", "export",
          str(sch_path)] + title_args,
         capture_output=True, text=True,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),  # no console flash on Windows
     )
     if result.stdout:
         print(result.stdout, end="")

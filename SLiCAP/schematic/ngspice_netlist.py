@@ -209,10 +209,20 @@ def build_ngspice_netlist(
     lines: list[str] = [title_line]
 
     if libs:
+        from . import project
+        try:
+            root = project.project_root()
+        except Exception:
+            root = None
         lines.append("")
         for lib_item in libs:
-            for e in lib_item._display_entries():
-                lines.append(f'.include "{e["file"]}"')
+            # NGspice netlists go straight to ngspice (no SLiCAPyacc parse, so no
+            # "cannot find library" backstop) — resolve to an absolute path for
+            # THIS machine and warn here if it is missing.
+            for _d, path, _c, exists in lib_item.resolved_entries(root):
+                if not exists:
+                    print(f"WARNING: library file not found: {path}")
+                lines.append(f'.include "{path}"')
 
     if params:
         for param_item in params:
