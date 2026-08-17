@@ -262,6 +262,23 @@ _DEFAULT_LABEL_STEP = 10   # line spacing (scene units) between attribute labels
 _LABEL_MARGIN       = 5    # gap between symbol right edge and first label column
 
 
+def _discard_label(lbl) -> None:
+    """Delete a property label for good.
+
+    ``setParentItem(None)`` does NOT remove an item from the scene - it
+    re-parents it to the TOP LEVEL, where the scene keeps owning it and it
+    keeps painting.  Rebuilding the labels therefore left a GHOST behind: an
+    old label lingering at its old position.  It stayed invisible while the
+    re-rendered label was identical, and became visible the moment the
+    rendering changed - which is why a value with a syntax error showed up
+    twice (Anton, 2026-08-16).  The scene must remove it explicitly.
+    """
+    scene = lbl.scene()
+    lbl.setParentItem(None)
+    if scene is not None:
+        scene.removeItem(lbl)
+
+
 class _PropertyLabel(QGraphicsItem):
     """
     Movable label for one component property — supports plain text and SVG modes.
@@ -516,9 +533,9 @@ class ComponentItem(_ViewBoxSvgItem):
         # and "?" reminders set it, e.g. data-model="?|1").
         if self.model:
             self.prop_display["model"] = (symbol.model_show, False)
-        # Power symbols (ground/port) carry a net-name field, shown by default.
-        if symbol.name in ("0", "port"):
-            self.prop_display["name"] = (True, False)
+        # Ground/port net-name visibility now comes from the symbol's
+        # data-params (name|default|show_name|show_value), like every other
+        # field — no hardcoded override here.
         self.prop_offsets: dict[str, tuple[float, float]] = {}
         self.h_flip: bool = False
         self.v_flip: bool = False
@@ -678,7 +695,7 @@ class ComponentItem(_ViewBoxSvgItem):
         self._save_label_offsets()
 
         for lbl in list(self._labels.values()):
-            lbl.setParentItem(None)
+            _discard_label(lbl)
         self._labels.clear()
 
         # Ensure a default offset exists for every known property.

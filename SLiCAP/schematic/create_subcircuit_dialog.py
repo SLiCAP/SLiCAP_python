@@ -3,8 +3,11 @@ Create-subcircuit dialog (File → Save with the "Subcircuit" box ticked).
 
 Shows the subcircuit name (the document title), the ordered list of port nodes
 (reorderable — the order here *is* the .subckt node order), and an editable
-table of overridable parameters.  The window writes ``<title>.slicap_sch`` to
-``sch/`` and ``<title>.lib`` to ``lib/`` of the project on accept.
+table of overridable parameters.  On accept the window writes the schematic and
+the subcircuit library, type-tagged so a SLiCAP and an NGspice device of the
+same name don't collide: ``<title>.slicap_sch`` + ``<title>.slicap_lib`` for
+SLiCAP schematics, ``<title>.spice_sch`` + ``<title>.spice_lib`` for NGspice
+(with ``build_ngspice_subckt`` and a ``*``-commented title for the latter).
 """
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout,

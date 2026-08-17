@@ -28,7 +28,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 CLI = os.path.join(HERE, "slicap_det")
-CIR_DIR = os.path.join(REPO, "docs", "cir")
+CIR_DIR = os.path.join(REPO, "docs", "API", "cir")
 WORK = os.path.join(HERE, "work")
 
 CIRCUITS = [

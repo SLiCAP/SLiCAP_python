@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Schematic diagram of BJTdiffAmp.kicad_sch</h2>
+<figure><a id="fig_BJTdiffAmp.kicad_sch"></a><img src="img/BJTdiffAmp.svg" alt="Circuit diagram of BJTdiffAmp." style="width:500px">
+<figcaption>Figure: BJTdiffAmp.svg<br>Circuit diagram of BJTdiffAmp.</figcaption>
+</figure>
+<h2><a id="netlist_BJTdiffAmp"></a>Netlist: BJTdiffAmp.cir</h2>
+<pre>"BJT differential amplifier"
+.lib myBJTamp.lib
+R1N srcN inN R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R1P srcP inP R value={R_s} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+R2 fbP fbN R value={R_a} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1N srcN 0 V value=0 noise=0 dc=0 dcvar=0
+V1P srcP 0 V value=0 noise=0 dc=0 dcvar=0
+X1N inN outN fbN myBJTamp
+X1P inP outP fbP myBJTamp
+.end</pre>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="BJT-differential-amplifier_index.html">BJT-differential-amplifier_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 5.1.0 &copy 2009-2025 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2026-08-16 22:47:18</p>
+</div></body></html>

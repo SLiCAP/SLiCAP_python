@@ -3,6 +3,7 @@
 """
 SLiCAP module with math functions.
 """
+import numbers
 import sys
 import subprocess
 import sympy as sp
@@ -2004,23 +2005,41 @@ def float2rational(expr):
     """
     Converts floats in expr into rational numbers.
 
-    :param expr: Sympy expression in which floats need to be converterd into
-                 rational numbers.
-    :type expr: sympy.Expression
+    A float is read as the DECIMAL number it displays as: 0.1 becomes 1/10,
+    not the binary value a double actually holds
+    (3602879701896397/36028797018963968).  Only literal floats are converted;
+    symbolic constants and exact numbers are left alone, so
+    ``sqrt(2)*x + 0.1*pi + 1/3`` becomes ``sqrt(2)*x + pi/10 + 1/3``.
+
+    :param expr: Sympy expression, matrix, or number in which floats need to
+                 be converted into rational numbers.
+    :type expr: sympy.Expression, sympy.Matrix, int, float
 
     :return: expression in which floats have been replaced with rational numbers.
     :rtype:  sympy.Expression
     """
-    if type(expr) == int:
+    # ONE reading of a float, whichever way it arrives. A bare number used to
+    # go through sp.Rational(float) - the exact BINARY value - while floats
+    # inside an expression were read from their printed decimal, so the same
+    # 0.1 gave two rationals differing by 1/180143985094819840 and did not
+    # cancel. Nothing in SLiCAP hit that branch (sympy sympifies every matrix
+    # entry), but exact rank decisions - state-space reduction, pole-zero
+    # analysis - are only meaningful with a single definition of "exact"
+    # (Anton, 2026-08-16).
+    if isinstance(expr, bool):          # bool is a subclass of int
+        return expr
+    if isinstance(expr, numbers.Integral):
+        return expr                     # ints are exact already
+    if isinstance(expr, numbers.Real) and not isinstance(expr, sp.Basic):
+        # Python and numpy floats: sympify FIRST, so a bare float and a sympy
+        # Float of the same value read the same text (repr() of a Python float
+        # prints one digit more than sympy's Float, which would disagree).
+        return sp.Rational(str(sp.Float(expr)))
+    try:
+        expr = expr.xreplace({n: sp.Rational(str(n))
+                             for n in expr.atoms(sp.Float)})
+    except AttributeError:
         pass
-    elif type(expr) == float:
-        expr = sp.Rational(expr)
-    else:
-        try:
-            expr = expr.xreplace({n: sp.Rational(str(n))
-                                 for n in expr.atoms(sp.Float)})
-        except AttributeError:
-            pass
     return expr
 
 def rational2float(expr):
@@ -2769,7 +2788,7 @@ def mag(data, f=None):
     - numpy array (AC result or noise ASD): returns ``np.abs(data)``.
       Works element-wise on 2D stepped results (shape n_steps × n_sweep).
     - sympy Laplace expression: evaluates ``|H(j·2π·f)|`` at the frequencies
-      in *f* using :func:`_magFunc_f`.
+      in *f*.
 
     :param data: Complex numpy array or sympy Laplace expression.
     :type data: numpy.ndarray, sympy.Expr
@@ -2803,7 +2822,7 @@ def dB(data, f=None, power=False):
       Works element-wise on 2D stepped results (shape n_steps × n_sweep).
 
     - sympy Laplace expression: always uses ``20·log₁₀|H(j·2π·f)|``
-      via :func:`_dB_magFunc_f`; the *power* flag is ignored.
+      in *f*; the *power* flag is ignored.
 
     :param data: Complex numpy array or sympy Laplace expression.
     :type data: numpy.ndarray, sympy.Expr
@@ -2832,7 +2851,7 @@ def phase(data, f=None, deg=True):
       stepped results (shape n_steps × n_sweep) are handled row-wise.
       Returns degrees when *deg* is ``True`` (default), radians otherwise.
     - sympy Laplace expression: evaluates ``∠H(j·2π·f)`` at *f* via
-      :func:`_phaseFunc_f` (always returns degrees when ``ini.hz`` is True).
+      in *f* (always returns degrees when ``ini.hz`` is True).
 
     :param data: Complex numpy array or sympy Laplace expression.
     :type data: numpy.ndarray, sympy.Expr
@@ -2859,7 +2878,7 @@ def delay(data, f):
 
     - numpy array: ``-d(phase)/d(ω)`` computed via ``np.gradient`` along
       ``axis=-1``. Works on 2D stepped results (shape n_steps × n_sweep).
-    - sympy Laplace expression: evaluates via :func:`_delayFunc_f`.
+    - sympy Laplace expression: evaluated numerically in *f*.
 
     :param data: Complex numpy array or sympy Laplace expression.
     :type data: numpy.ndarray, sympy.Expr
@@ -2871,9 +2890,7 @@ def delay(data, f):
     :rtype: numpy.ndarray, list
     """
     if isinstance(data, np.ndarray):
-        ph    = np.unwrap(np.angle(data), axis=-1)
-        omega = 2 * np.pi * np.asarray(f, dtype=float)
-        return -np.gradient(ph, omega, axis=-1)
+        return groupDelay(f, np.real(data), np.imag(data), Hz=ini.hz)
     return _delayFunc_f(data, f)
 
 
@@ -3127,12 +3144,12 @@ class WeightingFilter(object):
 
 
 def noiseWeighting(filters_dict):
-    """
+    r"""
     Build the combined squared-magnitude noise weighting function from a dict
     of cascaded weighting filters.
 
     The result is a sympy expression in ini.frequency that evaluates to
-    |H_1(f)|^2 * |H_2(f)|^2 * ... for all cascaded filters. Pass this to
+    \|H_1(f)\|^2 * \|H_2(f)\|^2 * ... for all cascaded filters. Pass this to
     weightedRMS() to integrate a NGspice noise spectrum with weighting.
 
     Supported filter-dict keys:
@@ -3269,9 +3286,14 @@ def groupDelay(frequency, realPart, imagPart, Hz=True):
     if len(f) < 2:
         return np.zeros_like(f)
     w   = 2*np.pi*f if Hz else f
-    phi = np.unwrap(np.arctan2(im, re))
-    tau = -np.diff(phi)/np.diff(w)
-    return np.append(tau, tau[-1])
+    phi = np.unwrap(np.arctan2(im, re), axis=-1)
+    # np.gradient, NOT np.diff (Anton, 2026-08-01): a difference quotient
+    # belongs BETWEEN two samples, so np.diff shortens the array and the old
+    # code duplicated the last point to hide it. np.gradient returns a value
+    # AT every sample - central differences inside, one-sided at the ends -
+    # and stays second-order accurate on the NON-UNIFORM grid of a decade
+    # sweep, which is what SLiCAP sweeps look like.
+    return -np.gradient(phi, w, axis=-1)
 
 def goal_rms(x, y):
     """RMS of *y* integrated over *x*: ``sqrt(trapz(y², x) / (x[-1] - x[0]))``.
@@ -3407,51 +3429,58 @@ def goal_x_at_nth_y(y0, n=1):
     return _goal
 
 
-def apply_goal(goal_fn, x, Y):
-    """
-    Applies a goal function to each row of a 2-D array (pure math — the
-    back-end trace converters only supply their data in this shape).
+def goal_int(x, y):
+    """Integral of *y* over the sweep, :math:`\\int y \\, dx` (trapezoidal).
 
-    :param goal_fn: Goal function ``f(x, y) -> float``.
-    :type goal_fn: callable
-
-    :param x: Sweep values, shape (n_sweep,).
+    :param x: 1-D sweep-axis array.
     :type x: numpy.ndarray
 
-    :param Y: Row-per-step data, shape (n_steps, n_sweep).
-    :type Y: numpy.ndarray
+    :param y: 1-D signal array.
+    :type y: numpy.ndarray
 
-    :return: Goal value per row, shape (n_steps,).
-    :rtype: numpy.ndarray
+    :return: the integral.
+    :rtype: float
     """
-    Y = np.asarray(Y)
-    return np.array([goal_fn(x, Y[i]) for i in range(Y.shape[0])])
+    x = np.asarray(x, dtype=float)
+    y = np.real(np.asarray(y, dtype=float))
+    return float(np.trapezoid(y, x))
 
 
-# NOTE (Anton, 2026-07-11): the definitions of the goal functions above are
-# PROVISIONAL, pending a dedicated definition round (see SLNG.md "Goal
-# functions in the plot wizard"). goal_bandwidth was REMOVED in that round
-# (Anton, 2026-07-15) because it was not well-defined (high-frequency
-# cutoff relative to the peak — a special case for low-pass shapes, not a
-# true band WIDTH) — do not reintroduce it without a proper definition.
-# Interpolation vs nearest-point must become an explicit choice for the
-# at-x/at-y functions. The REGISTRY MECHANISM below is stable; only the
-# function definitions may change.
-#
-# Registry of the goal functions above, for GUI discovery (Anton's plan,
-# 2026-07-11): the GUI builds its goal-function drop-down from this list and
-# applies the chosen function to the per-run 1-D arrays, so a new goal
-# function added here automatically appears in the GUI. Each entry:
-#
-#     (display name, function, [(parameter label, default), …])
-#
-# - empty parameter list: the function is a goal function itself,
-#   ``f(x, y) -> float``;
-# - non-empty: the function is a FACTORY — ``f(p1, p2, …)`` returns the
-#   goal function; the GUI shows one input field per parameter, in order
-#   (goal_x_at_nth_y needs two — the schema is a list for that reason).
+def goal_sum(x, y):
+    """Sum of the values of *y* (the sweep axis is not used)."""
+    return float(np.sum(np.real(np.asarray(y, dtype=float))))
+
+
+def goal_rms_noise(x, y):
+    """RMS noise from a SQUARED spectral density: :math:`\\sqrt{\\int S\\,df}`.
+
+    The total noise over the simulated band, computed from the spectrum
+    itself rather than from NGspice's ``onoise_total``:
+    NGspice computes the input-referred total alongside it, which fails when
+    the transfer has transmission zeros. NGspice noise runs always set
+    ``sqrnoise``, so ``onoise_spectrum`` is in V^2/Hz and this is the RMS
+    output noise in V.
+
+    Integration is trapezoidal over the frequency points as simulated, so a
+    decade sweep needs enough points per decade to be accurate.
+
+    :param x: 1-D frequency array.
+    :type x: numpy.ndarray
+
+    :param y: 1-D SQUARED spectral density (V^2/Hz or A^2/Hz).
+    :type y: numpy.ndarray
+
+    :return: RMS value over the band.
+    :rtype: float
+    """
+    return float(np.sqrt(max(goal_int(x, y), 0.0)))
+
+
 _GOAL_FUNCTIONS = [
     ("rms",            goal_rms,        []),
+    ("rms noise",      goal_rms_noise,  []),
+    ("int",            goal_int,        []),
+    ("sum",            goal_sum,        []),
     ("mean",           goal_mean,       []),
     ("max",            goal_max,        []),
     ("min",            goal_min,        []),

@@ -1,3 +1,0 @@
-.. math::
-
-    A_{v oo} = \frac{- \frac{0.5 c_{c} s}{R_{s}} - \frac{1}{R_{b} R_{s}} - \frac{1}{R_{a} R_{s}}}{- \frac{0.5 c_{c} s}{R_{a}} - \frac{1}{R_{a} R_{s}}}

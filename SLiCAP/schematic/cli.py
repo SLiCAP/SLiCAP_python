@@ -52,22 +52,37 @@ def _load_scene(input_path: Path):
     ``.slicap_sch`` → SLiCAP symbols; ``.spice_sch`` → NGspice symbols.
     """
     from .schematic_data import SchematicData
-    from .symbol_library import SymbolLibrary
+    from .symbol_library import build_library
     from .canvas import SchematicScene
     from . import project
 
     is_ngspice = input_path.suffix.lower() == ".spice_sch"
-    symbols_svg = _NGSPICE_SYMBOLS_SVG if is_ngspice else _SYMBOLS_SVG
 
     project.set_current(input_path)   # project-root fallback + sidecar migration
     from .config import Style
     data    = SchematicData.load(input_path)
-    library = SymbolLibrary(symbols_svg)
-    library.add_bundle(project.symbols_path_for(input_path))  # frozen symbols
+    # The SAME library the editor builds (symbol_library.build_library): the
+    # netlister used to load the system symbols plus the frozen bundle ONLY,
+    # so it could not see Symbols-extended.svg - where OV lives - nor the
+    # project's lib/. A symbol's pin ORDER then came from the frozen bundle
+    # instead of the library, and deleting that cache left the netlister
+    # unable to find the symbol at all (Anton, 2026-08-03).
+    library = build_library(input_path,
+                            sch_type="ngspice" if is_ngspice else "slicap")
     scene   = SchematicScene()
     scene.style = Style(project.ini_path_for(input_path))     # saved style
     scene.cache_dir = project.cache_path_for(input_path)      # render cache
-    scene.from_data(data, library)
+    missing = scene.from_data(data, library)
+    if missing:
+        # NEVER silently: a component whose symbol cannot be found used to be
+        # skipped, and the netlist came out without that device.
+        raise SystemExit(
+            "Error: no symbol definition for: {0}. The netlist would be "
+            "missing {1}. Check the symbol libraries (files/symbols, the "
+            "project lib/) and the schematic's .symbols cache."
+            .format(", ".join(sorted(set(missing))),
+                    "that device" if len(set(missing)) == 1 else
+                    "those devices"))
     return scene, data
 
 

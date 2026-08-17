@@ -17,13 +17,29 @@ SLiCAP/files/kicad/*.bak
 
 # Simulation / export outputs from test runs
 lib/
-docs/cir/
+docs/API/cir/*.sp
+docs/API/cir/*.raw
+docs/API/cir/*.pkl
 docs/csv/
-docs/html/
-docs/txt/
+docs/API/txt/*.log
 schematic/sch/
 schematic/lib/
 schematic/__pycache__/
+
+# Project scaffolding created by running SLiCAP from the wrong directory
+# (a project belongs in its own folder, never in the repository or the
+# package). Fixed at the source 2026-08-16; these keep the repo clean.
+/html/
+/sphinx/
+/tex/
+/cir/
+/csv/
+/img/
+/results/
+/sch/
+SLiCAP/html/
+SLiCAP/sphinx/
+SLiCAP/tex/
 
 # AI communication
 SLNG.md

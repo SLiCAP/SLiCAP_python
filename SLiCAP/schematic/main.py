@@ -138,16 +138,13 @@ def main():
 
     schematic_only = args.schematic_only or resolve_schematic_only_mode(sys.argv)
 
-    if not schematic_only:
-        # The GUI is a regular SLiCAP process: initProject() compiles the
-        # built-in libraries (model expansion prototypes such as OV live in
-        # SLiCAPmodels.lib) and initializes the project configuration in the
-        # working directory.  Without it, makeCircuit() from the instruction
-        # dialog cannot expand library-based models.  The *generated* project
-        # keeps its own initProject() in main.py (see SLNG.md) — this call
-        # only initializes the GUI process itself.
-        import SLiCAP as sl
-        sl.initProject("GUI")
+    # NOTHING is initialised here (Anton, 2026-08-16). Starting the GUI used
+    # to call initProject("GUI"), which created a whole project tree in
+    # whatever directory the user happened to type `slicap` in - and renamed
+    # any project later opened to "GUI". A project is created by
+    # File -> New project (initProject) and opened by File -> Select project
+    # folder (loadProject); the schematic-only editor needs neither, because
+    # it cannot build a circuit object.
 
     # Avoid using the desktop-native menu integration so menus render
     # inside the application window (helpful on GNOME/Ubuntu).

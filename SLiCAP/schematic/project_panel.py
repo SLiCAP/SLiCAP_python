@@ -307,12 +307,16 @@ class ProjectPanel(QDockWidget):
         self.open_path(Path(self._model.filePath(src)))
 
     def open_path(self, path: Path) -> None:
-        """Schematics open in a canvas panel; everything else opens with the
-        desktop's default application."""
+        """Schematics open in a canvas panel, Python files in the
+        instruction editor; everything else opens with the desktop's
+        default application."""
         if path.is_dir():
             return
-        if path.suffix.lower() in _SCHEMATIC_SUFFIXES:
+        suffix = path.suffix.lower()
+        if suffix in _SCHEMATIC_SUFFIXES:
             self._main_win.load_file(path)
+        elif suffix == ".py":
+            self._main_win.open_instruction_file(path)
         else:
             open_with_default_app(path)
 

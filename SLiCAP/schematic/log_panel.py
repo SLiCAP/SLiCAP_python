@@ -95,7 +95,13 @@ class LogPanel(QDockWidget):
     # -- closable-panel protocol (dirty-check on close) -----------------------
 
     def panel_dirty(self) -> bool:
-        return self._dirty and bool(self._edit.toPlainText())
+        """Always False: the log is DERIVED output, regenerated on every run
+        (it is even cleared at run start). Treating appended lines as unsaved
+        work made the close button ask "Save before closing?" and Close
+        Project sweep the log along with real documents (Anton, 2026-08-03:
+        "closing the log panel behaves differently from the others").
+        "Save log..." is an export convenience, not persistence."""
+        return False
 
     def panel_name(self) -> str:
         return self.windowTitle() or "Log"

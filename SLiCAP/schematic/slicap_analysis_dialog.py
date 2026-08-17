@@ -133,12 +133,18 @@ class SLiCAPAnalysisDialog(QDialog):
 
     def __init__(self, cir_var: str = "cir", sources=(), detectors=(),
                  lgrefs=(), par_defs: dict | None = None,
-                 undefined_params=(), existing_text: str = "", parent=None):
-        super().__init__(parent)
+                 undefined_params=(), existing_text: str = "", parent=None,
+                 circuits=()):
+        super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit SLiCAP Instruction")
         self.setMinimumWidth(560)
 
         self._existing = existing_text or ""
+        # The circuit objects of the schematic being edited (the GUI never
+        # authors across schematics - Anton, 2026-08-16).  They are all built
+        # from the same drawing, so ONE set of signal and parameter lists
+        # describes every one of them.
+        self._circuits = {c["name"]: c.get("path", "") for c in circuits}
         par_defs = {str(k): str(v) for k, v in (par_defs or {}).items()}
         param_names = list(par_defs.keys()) + [
             str(p) for p in undefined_params if str(p) not in par_defs]
@@ -154,8 +160,14 @@ class SLiCAPAnalysisDialog(QDialog):
         layout.addWidget(help_lbl)
 
         # ── load existing (append-only editing, SLNG.md) ──────────────────────
+        # Only instructions of THIS schematic's circuit objects may be
+        # edited here: an instruction belonging to another schematic is
+        # edited from that schematic's tab (Anton, 2026-08-16).  With no
+        # circuit objects given (older callers, tests) nothing is filtered.
         self._defined = [c for c in parse_calls(self._existing)
-                         if c["func"] in _RULES]
+                         if c["func"] in _RULES
+                         and (not self._circuits
+                              or self._circuit_of(c) in self._circuits)]
         load_row = QHBoxLayout()
         load_row.addWidget(QLabel("Edit existing:"))
         self._load = QComboBox()
@@ -185,10 +197,27 @@ class SLiCAPAnalysisDialog(QDialog):
             "Python variable that holds the circuit object — the instruction "
             'file contains  cir = sl.makeCircuit("<schematic>").')
         top.addWidget(cir_lbl, 1, 0, Qt.AlignmentFlag.AlignRight)
-        self._cir_var = QLineEdit(cir_var)
+        # A drop-down of the circuit objects the instruction file DEFINES
+        # (cir = sl.makeCircuit(...)), not a free-text field guessed right
+        # (Anton, 2026-08-03). Editable, so a name defined some other way
+        # can still be typed; with no makeCircuit in the file the default
+        # 'cir' is offered.
+        self._cir_var = QComboBox()
+        names = list(self._circuits) or [c["name"] for c in parse_calls(
+            self._existing) if c["func"] == "makeCircuit" and c["assigned"]]
+        # NOT editable: an instruction can only be composed for a circuit
+        # object that EXISTS, so that the lists shown and the call emitted
+        # always describe the same circuit (Anton, 2026-08-16).
+        self._cir_var.addItems(names or [cir_var])
+        if cir_var in names:
+            self._cir_var.setCurrentText(cir_var)
         self._cir_var.setMaximumWidth(120)
         self._cir_var.setToolTip(cir_lbl.toolTip())
+        self._cir_var.currentTextChanged.connect(lambda *_: self._update())
         top.addWidget(self._cir_var, 1, 1)
+        self._cir_of = QLabel(self._circuits.get(self._cir_var.currentText(), ""))
+        self._cir_of.setStyleSheet("color: #666; font-size: 9pt;")
+        top.addWidget(self._cir_of, 2, 4)
         top.addWidget(QLabel("Result variable:"), 1, 2,
                       Qt.AlignmentFlag.AlignRight)
         self._result_var = QLineEdit()
@@ -367,7 +396,7 @@ class SLiCAPAnalysisDialog(QDialog):
                 break
         self._func.setCurrentText(func)
         if entry["args"]:
-            self._cir_var.setText(entry["args"][0])
+            self._cir_var.setCurrentText(entry["args"][0])
         kw = entry["kwargs"]
         transfer = lit(kw.get("transfer"), "__absent__")
         if transfer is None:
@@ -469,11 +498,17 @@ class SLiCAPAnalysisDialog(QDialog):
             return f"{key}=['{v1}', '{v2}']"
         return f"{key}='{v1}'"
 
+    @staticmethod
+    def _circuit_of(call: dict) -> str:
+        """The circuit variable an instruction call addresses (its 1st arg)."""
+        args = call.get("args") or []
+        return args[0].strip() if args else ""
+
     def generated_snippet(self) -> str:
         """The composed ``<RESULT> = sl.<func>(<cir>, …)`` line."""
         func = self._func.currentText()
         rules = _RULES[func]
-        cirv = self._cir_var.text().strip() or "cir"
+        cirv = self._cir_var.currentText().strip() or "cir"
         res = (self._result_var.text().strip()
                or next_result_name(rules["base"], self._existing))
 

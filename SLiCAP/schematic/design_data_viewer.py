@@ -153,15 +153,34 @@ class DesignDataViewer(QDialog):
         if kind == "array":
             info.append(f'shape: {entry.get("shape")}, '
                         f'dtype: {entry.get("dtype")}')
+        if kind == "trace":
+            # what the trace plots, in the words it was built with
+            info.append(f'{entry.get("y", "y")} vs {entry.get("x", "x")}')
+            if entry.get("value"):
+                info.append(entry["value"])
         if info:
             head = QLabel("   ".join(info))
             head.setWordWrap(True)
             lay.addWidget(head)
 
+        if kind == "circuit":
+            if entry.get("title"):
+                info.append(f'title: {entry["title"]}')
+            if entry.get("value"):
+                info.append(entry["value"])
+            if entry.get("errors"):
+                info.append(f'errors: {entry["errors"]}')
+
         rendered = False
         self._render_error = ""
         latex = entry.get("latex", "")
-        if latex:
+        if entry.get("sections"):
+            # A circuit is not ONE table: element data, parameter
+            # definitions and undefined parameters are shown in sequence,
+            # each typeset when LaTeX is available and as plain text
+            # otherwise (Anton, 2026-08-16).
+            rendered = self._add_sections(lay, entry)
+        elif latex:
             rendered = self._add_latex(lay, latex)
         elif kind == "snippet" and entry.get("format") == "latex" \
                 and entry.get("value"):
@@ -271,6 +290,34 @@ class DesignDataViewer(QDialog):
         except Exception as exc:
             QMessageBox.warning(self, "Save snippet",
                                 f"Could not save the snippet:\n{exc}")
+
+    def _add_sections(self, lay, entry: dict) -> bool:
+        """Render the entry's tables one below the other, each with its
+        heading: typeset when LaTeX is available, plain text otherwise.
+        Returns True when at least one section produced content."""
+        from PySide6.QtWidgets import QPlainTextEdit
+        preamble = ""
+        root = self._project_root
+        if root is not None:
+            p = Path(root) / "tex" / "preambuleSLiCAP.tex"
+            if p.is_file():
+                preamble = str(p)
+        shown = False
+        for sec in entry["sections"]:
+            head = QLabel(f'<b>{sec.get("title", "")}</b>')
+            lay.addWidget(head)
+            done = False
+            if sec.get("latex"):
+                done = self._add_latex(lay, sec["latex"], raw=True,
+                                       preamble=preamble)
+            if not done:
+                text = sec.get("text") or "(none)"
+                view = QPlainTextEdit(text)
+                view.setReadOnly(True)
+                view.setFont(QFont("Monospace"))
+                lay.addWidget(view, 1)
+            shown = True
+        return shown
 
     def _add_latex(self, lay, latex: str, raw: bool = False,
                    preamble: str = "") -> bool:

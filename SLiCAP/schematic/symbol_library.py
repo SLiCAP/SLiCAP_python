@@ -413,3 +413,93 @@ class SymbolLibrary:
     def svg_bytes(self, name: str) -> bytes | None:
         sym = self._symbols.get(name)
         return sym.svg if sym else None
+
+
+# ── the ONE way a library is built (Anton, 2026-08-03) ────────────────────────
+
+SLICAP_SVG   = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "Symbols.svg"
+NGSPICE_SVG  = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.svg"
+
+# overlay=NO_BUNDLE: build WITHOUT any frozen bundle.  Distinct from
+# overlay=None (which means "the schematic's own bundle"): the reload actions
+# need a library that is NOT contaminated by the very bundle the user is
+# trying to replace.  Passing None there re-overlaid the stale bundle and made
+# "Load symbols from library" a silent no-op (Anton, 2026-08-05).
+NO_BUNDLE = object()
+
+
+def build_library(schematic_path=None, sch_type="slicap", config=None,
+                  overlay=None, exclude_stems=()):
+    """The symbol library for a schematic, built the SAME way everywhere.
+
+    The editor and the netlister used to build it differently: the editor
+    loaded the system symbols, the other SVGs beside them (``OV`` lives in
+    ``Symbols-extended.svg``) and the project's ``lib/``, while the netlister
+    loaded only the system symbols plus the frozen bundle. A schematic could
+    therefore be drawn with a symbol the netlister could not find, and the
+    op-amp's pin ORDER came from the frozen bundle rather than the library
+    (Anton, 2026-08-03: "deleting the symbol cache should be sufficient").
+
+    The frozen bundle is a CACHE: it is overlaid last, so a symbol that is no
+    longer in any library still renders, but deleting it simply falls back to
+    the current library - which is what a cache must mean.
+
+    Making the bundle supply GEOMETRY ONLY - with the pin order, prefix and
+    model always taken from the library - was proposed and REJECTED (Anton,
+    2026-08-03). A stale bundle can therefore still carry old electrical
+    metadata; the cure is "Tools -> Load symbols from library" on the
+    affected symbols, which replaces them from the library and rewrites the
+    bundle on save. That is how the op-amp pin order was repaired on
+    2026-08-03. (Since 2026-08-04 subcircuit block symbols load from the
+    project lib/ as well, so the bundle is a true cache for them too.)
+
+    :param schematic_path: the schematic the library is for; its project's
+                           ``lib/`` is loaded and its frozen bundle overlaid.
+    :type schematic_path: pathlib.Path, str, NoneType
+
+    :param sch_type: 'slicap' or 'ngspice' - which system symbols to load.
+    :type sch_type: str
+
+    :param config: 'basic' loads the system symbols only (no extras).
+    :type config: str, NoneType
+
+    :param overlay: frozen bundle to overlay; None means the schematic's own,
+                    NO_BUNDLE means no bundle at all (used by the reload
+                    actions, which must see the pure library).
+    :type overlay: pathlib.Path, str, NoneType, NO_BUNDLE
+
+    :param exclude_stems: library stems to skip (generated subcircuit
+                          symbols, which are placed through their own dialog).
+    :type exclude_stems: set, tuple
+
+    :return: the library.
+    :rtype: SymbolLibrary
+    """
+    from . import project
+    if sch_type == "ngspice":
+        library = SymbolLibrary(NGSPICE_SVG)
+    else:
+        library = SymbolLibrary(SLICAP_SVG)
+        if config != "basic":
+            # every other SVG beside the system one: Symbols-extended.svg
+            library.add_user_library(SLICAP_SVG.parent,
+                                     exclude_stems={"Symbols"})
+    if schematic_path is not None:
+        libdir = project.subdir_for(schematic_path, "lib")
+        stems = set(exclude_stems)
+        # Subcircuit block symbols of THIS schematic type LOAD from lib/
+        # (Anton, 2026-08-04): they are palette citizens of the project, the
+        # frozen bundle is a cache over them - deleting it falls back here -
+        # and "Load symbols from library" heals them like any symbol.
+        # Excluding them was a PALETTE concern implemented at the library
+        # level, and it made the bundle the only carrier. Only the OTHER
+        # type's block symbols stay out.
+        other = ("*_slicap_symbol.svg" if sch_type == "ngspice"
+                 else "*_spice_symbol.svg")
+        stems |= {p.stem for p in libdir.glob(other)}
+        library.add_user_library(libdir, exclude_stems=stems)
+    if overlay is None and schematic_path is not None:
+        overlay = project.symbols_path_for(schematic_path)
+    if overlay is not None and overlay is not NO_BUNDLE:
+        library.add_bundle(overlay)
+    return library

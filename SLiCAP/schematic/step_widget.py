@@ -16,11 +16,15 @@ literal follows the back-end's key convention:
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
+
+from .value_fields import watch
 from PySide6.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
     QComboBox, QStackedWidget, QWidget, QPushButton, QTableWidget,
     QTableWidgetItem, QAbstractItemView, QHeaderView,
 )
+
+from .param_table import PARAM_NAME_WIDTH
 
 
 class StepWidget(QGroupBox):
@@ -81,6 +85,10 @@ class StepWidget(QGroupBox):
             edit.setPlaceholderText(ph)
             edit.setMaximumWidth(120)
             edit.textChanged.connect(lambda *_: self.changed.emit())
+            # marked while the text is not a number in SLiCAP notation; the
+            # value was already refused by dict_literal(), this makes the
+            # refusal visible where it happens (value_fields)
+            watch(edit, "number")
             rg.addWidget(edit, r, 1)
         rg.setColumnStretch(2, 1)
         rg.setRowStretch(3, 1)              # keep the rows together at the top
@@ -94,6 +102,7 @@ class StepWidget(QGroupBox):
         self._values = QLineEdit()
         self._values.setPlaceholderText("space-separated, e.g. 100 200 500 1000")
         self._values.textChanged.connect(lambda *_: self.changed.emit())
+        watch(self._values, "numbers")
         ll.addWidget(self._values)
         lv.addLayout(ll)
         lv.addStretch(1)
@@ -105,8 +114,10 @@ class StepWidget(QGroupBox):
         self._array = QTableWidget(0, 2)
         self._array.setHorizontalHeaderLabels(
             ["Parameter", "Values (space-separated, one per run)"])
-        self._array.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self._array.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        hh = self._array.horizontalHeader()
+        hh.setSectionResizeMode(0, QHeaderView.Interactive)   # user-resizable
+        hh.setSectionResizeMode(1, QHeaderView.Stretch)
+        self._array.setColumnWidth(0, PARAM_NAME_WIDTH)
         self._array.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._array.setMinimumHeight(90)
         self._array.itemChanged.connect(lambda *_: self.changed.emit())

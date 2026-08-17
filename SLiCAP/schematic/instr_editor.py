@@ -7,8 +7,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QFont
 
-# A fresh instruction file starts empty; "Add … instruction" seeds the header
-# (import SLiCAP, and for a SLiCAP schematic the `cir = sl.makeCircuit(...)` line).
+# A fresh instruction file starts empty; the header (import SLiCAP as sl) is
+# seeded on the first insert. Circuit objects are created explicitly, one per
+# schematic, and appended (Anton, 2026-08-16).
 _TEMPLATE = ""
 
 
@@ -59,7 +60,7 @@ class InstrEditor(QDockWidget):
 
         self.setWidget(container)
 
-        self._btn_open.clicked.connect(self._on_open_dialog)
+        self._btn_open.clicked.connect(self.open_dialog)
         self._btn_save.clicked.connect(self._on_save_dialog)
         self._btn_run.clicked.connect(self.run_requested)
         self._btn_stop.clicked.connect(self.stop_requested)
@@ -86,12 +87,13 @@ class InstrEditor(QDockWidget):
         self._editor.setPlainText(_TEMPLATE)
         self._editor.document().setModified(False)
 
-    def ensure_header(self, sch_type: str, schematic_relpath: str | None) -> None:
-        """Prepend the instruction-file header (import, and for SLiCAP the
-        ``cir = sl.makeCircuit(...)`` line) if it is not already present."""
+    def ensure_header(self, sch_type: str = "") -> None:
+        """Prepend the instruction-file header (``import SLiCAP as sl``) if it
+        is not already present.  Circuit objects are NOT seeded here - they
+        are created explicitly and appended (Anton, 2026-08-16)."""
         from .instr_file import ensure_header
         cur = self._editor.toPlainText()
-        new = ensure_header(cur, sch_type, schematic_relpath)
+        new = ensure_header(cur, sch_type)
         if new != cur:
             self._editor.setPlainText(new)
 
@@ -111,22 +113,30 @@ class InstrEditor(QDockWidget):
             cursor.insertText("\n")
         self._editor.setTextCursor(cursor)
 
-    def _on_open_dialog(self) -> None:
+    def maybe_save(self) -> bool:
+        """Offer to save unsaved edits before the buffer is replaced (open,
+        project switch, tree double-click).  False when the user cancels."""
+        if not self.panel_dirty():
+            return True
+        resp = QMessageBox.question(
+            self, "Unsaved changes",
+            "The instruction editor has unsaved changes.\n"
+            "Save them before opening another file?",
+            QMessageBox.StandardButton.Save
+            | QMessageBox.StandardButton.Discard
+            | QMessageBox.StandardButton.Cancel)
+        if resp == QMessageBox.StandardButton.Cancel:
+            return False
+        if (resp == QMessageBox.StandardButton.Save
+                and not self.panel_save()):
+            return False
+        return True
+
+    def open_dialog(self) -> None:
         """Open an existing instruction file; newly added instructions are
         appended to it."""
-        if self.panel_dirty():
-            resp = QMessageBox.question(
-                self, "Unsaved changes",
-                "The instruction editor has unsaved changes.\n"
-                "Save them before opening another file?",
-                QMessageBox.StandardButton.Save
-                | QMessageBox.StandardButton.Discard
-                | QMessageBox.StandardButton.Cancel)
-            if resp == QMessageBox.StandardButton.Cancel:
-                return
-            if (resp == QMessageBox.StandardButton.Save
-                    and not self.panel_save()):
-                return
+        if not self.maybe_save():
+            return
         start = str(self._path.parent) if self._path else ""
         if not start:
             try:

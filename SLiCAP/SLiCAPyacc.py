@@ -182,7 +182,14 @@ def _compileUSERLibrary(fileName):
     key   = _userLibFileKey(fileName)
     cache = _getUserLibCache()
     entry = cache.get(fileName)
-    if entry is not None and entry.get('key') == key:
+    if (entry is not None and entry.get('key') == key
+            and (entry.get('circuits') or entry.get('models')
+                 or entry.get('params'))):
+        # an ALL-EMPTY entry is a cached FAILURE (a compile that harvested
+        # nothing was stored and then served forever, because neither the
+        # file nor the version changed - Anton, 2026-08-04: "missing
+        # definition of subcircuit" on every run); it is treated as a miss,
+        # so existing poisoned caches heal themselves
         print("Loading library from cache: " + fileName + ".")
         _USERCIRCUITS.update(entry['circuits'])
         _USERMODELS.update(entry['models'])
@@ -209,14 +216,21 @@ def _compileUSERLibrary(fileName):
     for cir in _USERCIRCUITS.keys():
         _checkReferences(_USERCIRCUITS[cir])
 
-    # Store only the delta contributed by this file
-    cache[fileName] = {
+    # Store only the delta contributed by this file - and only when the
+    # compile HARVESTED something: caching an empty result poisons every
+    # later run until the file's mtime changes (Anton, 2026-08-04)
+    delta = {
         'key'     : key,
         'circuits': {k: v for k, v in _USERCIRCUITS.items() if k not in cirs_before},
         'models'  : {k: v for k, v in _USERMODELS.items()   if k not in models_before},
         'params'  : {k: v for k, v in _USERPARAMS.items()   if k not in params_before},
     }
-    _saveUserLibCache()
+    if delta['circuits'] or delta['models'] or delta['params']:
+        cache[fileName] = delta
+        _saveUserLibCache()
+    else:
+        print("Warning: library " + fileName + " yielded no circuits, "
+              "models or parameters; not cached.")
 
 def _parseNetlist(netlist, name, cirType):
     """

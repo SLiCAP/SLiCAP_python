@@ -19,11 +19,20 @@ Python literals).
 from __future__ import annotations
 
 from PySide6.QtCore import Signal
+
+from .value_fields import is_value
 from PySide6.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView,
     QComboBox,
 )
+
+
+# Default width of a parameter-name column/field, shared by every widget in the
+# instruction dialogs (this table, the step widget's array table, the output-
+# variable name fields) so the name columns line up.  Interactive columns keep
+# this as their starting width; the user can drag them wider.
+PARAM_NAME_WIDTH = 120
 
 
 class ParamTable(QGroupBox):
@@ -47,11 +56,13 @@ class ParamTable(QGroupBox):
 
         self._table = QTableWidget(0, 2)
         self._table.setHorizontalHeaderLabels(["Parameter", "Value"])
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        hh = self._table.horizontalHeader()
+        hh.setSectionResizeMode(0, QHeaderView.Interactive)   # user-resizable
+        hh.setSectionResizeMode(1, QHeaderView.Stretch)
+        self._table.setColumnWidth(0, PARAM_NAME_WIDTH)
         self._table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._table.setMinimumHeight(110)
-        self._table.itemChanged.connect(lambda *_: self.changed.emit())
+        self._table.itemChanged.connect(lambda *_: self._on_item_changed())
         outer.addWidget(self._table)
 
         btn_row = QHBoxLayout()
@@ -122,6 +133,18 @@ class ParamTable(QGroupBox):
         w = self._table.cellWidget(row, 0)
         return w.currentText().strip() if w else ""
 
+    def _on_item_changed(self) -> None:
+        """Mark a value cell whose text is not usable, then report."""
+        from PySide6.QtGui import QBrush, QColor
+        for r in range(self._table.rowCount()):
+            item = self._table.item(r, 1)
+            if item is None:
+                continue
+            ok = is_value(item.text())
+            item.setBackground(QBrush(QColor("#ffe0e0")) if not ok
+                               else QBrush())
+        self.changed.emit()
+
     def _row_value(self, row: int) -> str:
         it = self._table.item(row, 1)
         return it.text().strip() if it else ""
@@ -177,12 +200,19 @@ class ParamTable(QGroupBox):
         return dups
 
     def is_valid(self) -> bool:
-        """When active: at least one complete row, no duplicate names."""
+        """When active: at least one complete row, no duplicate names, and
+        every value readable as SLiCAP notation.
+
+        A parameter value MAY be an expression - it goes into the deck in
+        braces for NGspice to resolve - but not NGspice notation: '1MEG' or
+        '10K' would mean something else there (value_fields).
+        """
         if not self.active():
             return True
         entries = self.entries()
         return (bool(entries) and not self.duplicate_names()
-                and all(v for _, v in entries))
+                and all(v for _, v in entries)
+                and all(is_value(v) for _, v in entries))
 
     # ── emission ──────────────────────────────────────────────────────────────
 

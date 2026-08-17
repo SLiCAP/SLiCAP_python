@@ -83,7 +83,7 @@ class SourceStimuliDialog(QDialog):
     def __init__(self, params, prop_display=None, *, is_current: bool = False,
                  domains=("dc", "ac", "tran"), show_display: bool = True,
                  title: str = None, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, Qt.Window)
         self._params = params
         self._prop_display = prop_display if prop_display is not None else {}
         self._is_current = is_current

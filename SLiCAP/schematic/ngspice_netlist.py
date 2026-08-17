@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QPointF
 
-from SLiCAP.SLiCAPlex import _to_ngspice
+from SLiCAP.SLiCAPlex import _replaceScaleFactors
 
 from .connectivity import resolve_nets, _rpt
 from .netlist import NetlistError
@@ -43,23 +43,47 @@ _NO_BRACES = {"noisy", "off"}
 _SKIP_PARAMS = {"onoff"}
 
 
+def _convert_braced(text: str) -> str:
+    """Convert every ``{…}`` group of a composed waveform string.
+
+    A stimulus is built as ``PULSE({0} {0.3} {1n} …)`` - the values are the
+    user's SLiCAP notation, so they need the same boundary conversion as any
+    other value. ``1n`` happens to mean the same in both notations, but
+    ``1M`` would reach NGspice as 1 milli (Anton, 2026-08-16).
+    """
+    import re
+    from SLiCAP.SLiCAPngspice import _deck_expr
+    return re.sub(r"\{([^{}]*)\}",
+                  lambda m: _deck_expr(m.group(1), "stimulus"), text)
+
+
+def _param_text(value: str) -> str:
+    """A ``.param`` / ``.subckt`` default as deck text (same converter)."""
+    from SLiCAP.SLiCAPngspice import _deck_expr
+    return _deck_expr(value, "parameter")
+
+
 def _wrap(value: str, key: str = "") -> str:
-    """Wrap a bare value in {} for NGspice parameter substitution.
+    """A value as NGspice deck text.
 
-    Values use SLiCAP notation ('M' = mega) and are translated to NGspice
-    notation here ('1M' → '1Meg'); NGspice reads scale factors
-    case-insensitively, so untranslated '1M' would mean 1 milli. Hand-written
-    {expressions} are passed through untouched — numeric literals inside them
-    must use NGspice notation or plain exponents.
+    Values are written in SLiCAP notation and converted at THIS boundary by
+    the one shared converter (:func:`SLiCAP.SLiCAPngspice._deck_expr`): scale
+    factors are expanded, constants such as ``pi`` are evaluated, symbols are
+    kept in braces for NGspice to resolve from its own ``.param``, and
+    anything that is not SLiCAP notation is refused with a message.
 
-    Skips wrapping when the value is already wrapped or the key is a known
-    boolean / integer flag (listed in _NO_BRACES)."""
+    Braced expressions used to be passed through untouched, so a ``1M``
+    inside ``{2*1M}`` reached NGspice as 1 milli - silently wrong by a factor
+    of a million; and ``pi`` in a value aborted the run from the log file
+    rather than at the user's screen (Anton, 2026-08-16).
+
+    Skips conversion when the key is a known boolean / integer flag
+    (listed in _NO_BRACES)."""
+    from SLiCAP.SLiCAPngspice import _deck_expr
     v = value.strip()
     if not v or key in _NO_BRACES:
-        return _to_ngspice(v)
-    if v.startswith("{") and v.endswith("}"):
-        return v
-    return f"{{{_to_ngspice(v)}}}"
+        return _replaceScaleFactors(v)
+    return _deck_expr(v, key or "value")
 
 
 def _node_resolver(components: list, wires: list):
@@ -82,7 +106,9 @@ def _expand_pwl(params: dict) -> str:
         raise NetlistError([f"Cannot read PWL file '{path}': {exc}"]) from exc
     if len(tokens) % 2 != 0:
         raise NetlistError([f"PWL file '{path}' has an odd number of tokens (need T V pairs)."])
-    inner = " ".join(f"{{{_to_ngspice(tokens[i])}}} {{{_to_ngspice(tokens[i+1])}}}"
+    from SLiCAP.SLiCAPngspice import _deck_expr
+    inner = " ".join("{0} {1}".format(_deck_expr(tokens[i], "PWL time"),
+                                      _deck_expr(tokens[i + 1], "PWL value"))
                      for i in range(0, len(tokens), 2))
     r  = params.get("_pwl_r",  "").strip()
     td = params.get("_pwl_td", "").strip()
@@ -116,7 +142,9 @@ def _format_params(prefix: str, params: dict) -> list[str]:
         if tran.strip() == "_PWL_":
             parts.append(_expand_pwl(params))
         elif tran.strip():
-            parts.append(tran)   # PULSE(...) / SIN(...) etc. already wrapped by dialog
+            # PULSE(...) / SIN(...) composed by the dialog: its {values} are
+            # SLiCAP notation and are converted here, at the one boundary.
+            parts.append(_convert_braced(tran.strip()))
 
     elif prefix == "B":
         for k, v in params.items():
@@ -226,7 +254,7 @@ def build_ngspice_netlist(
 
     if params:
         for param_item in params:
-            param_lines = param_item.param_lines(value_fn=_to_ngspice)
+            param_lines = param_item.param_lines(value_fn=_param_text)
             if param_lines:
                 lines.append("")
                 lines.extend(param_lines)
@@ -245,4 +273,89 @@ def build_ngspice_netlist(
         lines.append(".endc")
 
     lines += ["", ".end"]
+    return "\n".join(lines)
+
+
+def build_ngspice_subckt(
+    components:   list,        # list[ComponentItem]
+    wires:        list,        # list[WireItem]
+    name:         str,         # subcircuit (.subckt) name
+    ports:        list,        # ordered node names exposed to the parent
+    params:       list = None, # list[(name, default)] overridable parameters
+    params_items: list = None, # list[ParameterItem] — internal .param definitions
+    libs:         list = None, # list[LibraryItem]  (.include lines, e.g. models)
+) -> str:
+    """Build an NGspice subcircuit library (``.spice_lib``) — one ``.subckt``.
+
+    Mirrors :func:`SLiCAP.schematic.netlist.build_subcircuit`, but emits SPICE
+    element lines (this module's :func:`_element_lines`) and **comments the
+    title line**: ngspice parses the first line of an ``.include``d file as an
+    element, so a bare title would be a syntax error — ``* <name>`` makes it a
+    comment.  Ports are emitted in the given order (the parent wires to these
+    named nets); a ground (node 0) stays global and is never a port.
+    """
+    _node = _node_resolver(components, wires)
+
+    title_line = f"* {name}"
+    # The banner is DOCUMENTATION for the human opening the file: the
+    # names are the CONVENTION the tools derive, and nothing ever parses
+    # these lines back (Anton, 2026-08-04) - a renamed file must not be
+    # able to lie to a tool.
+    banner = ["*" * 50,
+              "* NGspice subcircuit definition",
+              f"* Subcircuit symbol: {name}_spice_symbol.svg",
+              f"* Subcircuit schematic: {name}.spice_sch",
+              "*" * 50]
+
+    subckt = f".subckt {name}"
+    if ports:
+        subckt += " " + " ".join(ports)
+    if params:
+        # .subckt defaults are bare (the body references them as {name}); only
+        # the SLiCAP->NGspice scale-factor notation needs translating here.
+        subckt += " " + " ".join(f"{k}={_param_text(str(v).strip())}"
+                                 for k, v in params if str(k).strip())
+
+    lines: list[str] = [title_line, *banner]
+
+    # Library includes from the subcircuit schematic (device models, nested
+    # subcircuits).  Without them the definition is incomplete: BJTamp's Q1/Q2
+    # lost their BC847 model because "inc BC847.lib" was dropped here (Anton,
+    # 2026-08-05).  Emitted OUTSIDE the .subckt — .include is a file-level
+    # directive and models are global in ngspice.  Same path resolution as
+    # build_ngspice_netlist (relative paths resolve against the project root,
+    # which is the working directory of every run).
+    if libs:
+        from . import project
+        try:
+            root = project.project_root()
+        except Exception:
+            root = None
+        lines.append("")
+        for lib_item in libs:
+            for _d, path, _c, exists in lib_item.resolved_entries(root):
+                if not exists:
+                    print(f"WARNING: library file not found: {path}")
+                lines.append(f'.include "{path}"')
+
+    lines += ["", subckt]
+
+    # Internal .param definitions (a param passed on the .subckt line wins).
+    passed = {str(k).strip().strip("{}") for k, _ in (params or [])}
+    if params_items:
+        for param_item in params_items:
+            param_lines = param_item.param_lines(exclude=passed, value_fn=_param_text)
+            if param_lines:
+                lines.append("")
+                lines.extend(param_lines)
+
+    lines.append("")
+    lines.extend(_element_lines(components, _node))
+
+    # NO ".end" here (Anton, 2026-08-05): this file is .include'd into a
+    # parent deck, and ngspice reads ".end" as end-of-NETLIST — it would
+    # truncate the including circuit.  The SLiCAP library keeps its ".end"
+    # (that dialect's file format requires it); this is one of the recorded
+    # dialect differences.
+    lines += ["", ".ends"]
     return "\n".join(lines)

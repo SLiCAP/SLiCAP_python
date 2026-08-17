@@ -45,9 +45,22 @@ MANIFEST_NAME = "design_data.json"
 # classified below is reported as kind "other" with its class name, so the
 # panel can COUNT it as hidden — nothing silently disappears — and the
 # preferences can enable it once it is added there.
-KNOWN_KINDS = ["result", "circuit", "figure", "traces", "expression",
-               "matrix", "snippet", "number", "array", "list", "text",
-               "other"]
+KNOWN_KINDS = ["result", "circuit", "figure", "traces", "measurements",
+               "expression", "matrix", "snippet", "number", "array", "list",
+               "text", "other"]
+
+# A lone object of a family is FILTERED as its family: `MEAS4 = sl.measure(...)`
+# is classified "measurement" (the dict form is "measurements") and a single
+# trace is "trace", but the view preferences offer one entry per CONCEPT.
+# Without this a single measurement fell through to "other", which is hidden
+# by default, so MEAS4 was silently absent from the panel (Anton, 2026-08-03).
+KIND_FAMILY = {"measurement": "measurements", "trace": "traces",
+               "axis": "figure"}
+
+
+def filter_kind(kind: str) -> str:
+    """The kind the view preferences filter on, for a possibly lone object."""
+    return KIND_FAMILY.get(kind, kind)
 
 # Result attributes worth exposing as expandable children of a result
 # entry (Anton, 2026-07-12: the reference documents these per instruction
@@ -74,12 +87,27 @@ def classify(value) -> str:
         return "circuit"
     if cname.endswith("SLiCAPplots.figure"):
         return "figure"
+    # An axis is a first-class object since phase 7 (AX1 = sl.traceAxis(...)),
+    # so it must not fall through to "other", which is hidden by default -
+    # four axes vanished from the panel that way (Anton, 2026-08-03). It is
+    # FILTERED with the figures (KIND_FAMILY): one entry per concept.
+    if cname.endswith("SLiCAPplots.axis"):
+        return "axis"
     if cname.endswith("SLiCAPprotos.Snippet"):
         return "snippet"
+    # A trace set: identified by the class, not by its module path - the
+    # trace class lives in SLiCAPtraces and is re-exported by SLiCAPplots.
+    from SLiCAP.SLiCAPtraces import trace as _trace, measurement as _meas
     if isinstance(value, dict) and value and all(
-            _class_name(v).endswith("SLiCAPplots.trace")
-            for v in value.values()):
+            isinstance(v, _trace) for v in value.values()):
         return "traces"
+    # a measured value, and a dict of them (the n x 1 case: several
+    # variables at one condition, e.g. an operating point)
+    if isinstance(value, _meas):
+        return "measurement"
+    if isinstance(value, dict) and value and all(
+            isinstance(v, _meas) for v in value.values()):
+        return "measurements"
     if isinstance(value, sp.MatrixBase):
         return "matrix"
     if isinstance(value, sp.Basic):
@@ -104,9 +132,9 @@ def _slicap_latex(expr) -> str:
     coefficients as giant exact rationals."""
     import sympy as sp
     try:
-        from SLiCAP.SLiCAPhtml import _latex_ENG
+        from SLiCAP.SLiCAPlatex import exprLatex
         from SLiCAP.SLiCAPlatex import sub2rm
-        s = _latex_ENG(expr)
+        s = exprLatex(expr)
         return sub2rm(s) if s else sp.latex(expr)
     except Exception:
         return sp.latex(expr)
@@ -149,6 +177,8 @@ def _preview(value, kind: str) -> dict:
             # (Anton, 2026-07-12 — poles/zeros/DCvalue etc. of a doPZ)
             out["attributes"] = _attr_entries(value)
             return out
+        if kind == "circuit":
+            return _circuit_preview(value)
         if kind == "snippet":
             return {"value": str(getattr(value, "snippet", value))[:5000],
                     "format": str(getattr(value, "format", "")),
@@ -170,7 +200,36 @@ def _preview(value, kind: str) -> dict:
                     "fileType": getattr(value, "fileType", ""),
                     "traces": list(getattr(value, "traceDict", {}))[:100]}
         if kind == "traces":
-            return {"labels": list(value)[:100]}
+            # expandable children, like a result's attributes: one row per
+            # TRACE, so the explorer shows what is in the dictionary instead
+            # of only its name (Anton, 2026-07-31)
+            return {"labels": list(value)[:100],
+                    "value": "{0} trace{1}".format(
+                        len(value), "" if len(value) == 1 else "s"),
+                    "attributes": _trace_entries(value)}
+        if kind == "axis":
+            # what it SHOWS and how: the traces on it, then its own
+            # attributes (scales, labels, limits) like a trace's
+            traces = list(getattr(value, "traces", []))
+            return {"value": "{0} trace{1} on {2}".format(
+                        len(traces), "" if len(traces) == 1 else "s",
+                        "a polar axis" if getattr(value, "polar", False)
+                        else "{0}/{1}".format(getattr(value, "xScale", "lin"),
+                                              getattr(value, "yScale", "lin"))),
+                    "labels": [str(getattr(t, "label", "")) for t in traces][:100],
+                    "attributes": _object_entries(value)}
+        if kind == "measurement":
+            return {"value": "{0:.6g}{1}".format(
+                        value.value, " " + value.units if value.units else ""),
+                    "units": value.units}
+        if kind == "measurements":
+            return {"value": "{0} measurement{1}".format(
+                        len(value), "" if len(value) == 1 else "s"),
+                    "attributes": [
+                        dict({"name": str(k), "kind": "measurement",
+                              "class": _class_name(v)},
+                             **_preview(v, "measurement"))
+                        for k, v in list(value.items())[:100]]}
         if kind == "number":
             return {"value": repr(value)}
         if kind == "array":
@@ -183,6 +242,172 @@ def _preview(value, kind: str) -> dict:
     except Exception as e:               # preview must never kill the run
         return {"error": str(e)[:200]}
     return {}
+
+
+def _circuit_preview(cir) -> dict:
+    """Manifest preview for a circuit: the SAME tables the report shows.
+
+    The tables come from SLiCAP's own LaTeX formatter (``elementData``,
+    ``parDefs``, ``params``) — the panel and the report then show the same
+    thing, from the same functions (Anton, 2026-08-16).  They are generated
+    HERE, at manifest-write time, because that is where the circuit OBJECT
+    lives: the GUI only ever reads the manifest, so a viewer could not call
+    them.  Only strings are built (no pdflatex), and checking a circuit
+    "never takes more than a second or so, even with transistor subcircuits"
+    (Anton), so this is done eagerly.
+
+    ``color=None``: no ``\\rowcolor``, so the tables need no colour
+    definitions from a preamble.  A plain-text version of each table is
+    stored alongside, so the viewer stays useful without a TeX installation.
+    """
+    from SLiCAP.SLiCAPlatex import LaTeXformatter
+
+    def _txt(rows) -> str:
+        if not rows:
+            return "(none)"
+        width = max(len(str(k)) for k, _v in rows)
+        return "\n".join("{0}  {1}".format(str(k).ljust(width), v)
+                         for k, v in rows)
+
+    ltx = LaTeXformatter()
+    sections = []
+    for title, method, rows in (
+            ("Element data", "elementData", _circuit_element_rows(cir)),
+            ("Parameter definitions", "parDefs",
+             [(k, v) for k, v in getattr(cir, "parDefs", {}).items()]),
+            ("Undefined parameters", "params",
+             [(p, "") for p in _circuit_undefined(cir)])):
+        try:
+            latex = str(getattr(ltx, method)(cir, color=None))
+        except Exception as exc:                 # a table must never kill a run
+            latex = ""
+            rows = rows or [("error", str(exc)[:200])]
+        sections.append({"title": title, "latex": latex, "text": _txt(rows)})
+
+    elements = getattr(cir, "elements", {}) or {}
+    nodes = getattr(cir, "nodes", []) or []
+    errors = getattr(cir, "errors", 0)
+    return {
+        "title": str(getattr(cir, "title", "") or ""),
+        "value": "{0} element{1}, {2} node{3}".format(
+            len(elements), "" if len(elements) == 1 else "s",
+            len(nodes), "" if len(nodes) == 1 else "s"),
+        "errors": int(errors) if isinstance(errors, int) else 0,
+        "sections": sections,
+        # What the instruction dialogs validate against: the legal sources,
+        # detectors and loop-gain references of THIS circuit.
+        "attributes": _circuit_interface_entries(cir),
+        "pprint": "\n\n".join("{0}\n{1}\n{2}".format(
+            s["title"], "-" * len(s["title"]), s["text"]) for s in sections),
+    }
+
+
+def _circuit_element_rows(cir) -> list:
+    """(refdes, model + nodes) rows — the plain-text element table."""
+    rows = []
+    for name, el in (getattr(cir, "elements", {}) or {}).items():
+        nodes = " ".join(str(n) for n in (getattr(el, "nodes", []) or []))
+        model = str(getattr(el, "model", "") or "")
+        rows.append((str(name), (model + "  " + nodes).strip()))
+    return rows
+
+
+def _circuit_undefined(cir) -> list:
+    """Names of the parameters that have no definition."""
+    params = getattr(cir, "params", None)
+    if isinstance(params, dict):
+        return [str(p) for p in params.keys()]
+    if params:
+        return [str(p) for p in params]
+    return []
+
+
+def _circuit_interface_entries(cir) -> list[dict]:
+    """Child rows: the circuit's legal sources, detectors and lgrefs."""
+    out = []
+    try:
+        detectors = sorted(str(d) for d in cir.depVars())
+    except Exception:
+        detectors = []
+    for label, names in (("sources", sorted(str(s) for s in
+                                            getattr(cir, "indepVars", []) or [])),
+                         ("detectors", detectors),
+                         ("loop-gain references",
+                          sorted(str(c) for c in
+                                 getattr(cir, "controlled", []) or []))):
+        out.append({"name": label, "kind": "list", "class": "list",
+                    "value": "{0} item{1}".format(
+                        len(names), "" if len(names) == 1 else "s"),
+                    "pprint": "\n".join(names[:200]) or "(none)"})
+    return out
+
+
+def _object_entries(obj) -> list[dict]:
+    """Child entries for every attribute an object carries, in class order.
+
+    ``vars(obj)`` keeps the order the attributes were assigned in
+    ``__init__``, which for a trace is the order of the class documentation:
+    the data first, then the names, then how it is drawn. An attribute still
+    at its default (``False`` or ``''``) is reported as *not set* rather than
+    dropped: for a trace that is information - no colour means the axis
+    assigns one from the ini cycle.
+    """
+    out = []
+    for name, value in vars(obj).items():
+        if name.startswith("_"):
+            continue
+        # 'False' and '' are the trace class's own "unset" markers; test them
+        # without == , which on a numpy array returns an ARRAY
+        if value is False or (isinstance(value, str) and not value.strip()):
+            out.append({"name": str(name), "kind": "unset",
+                        "value": "not set"})
+            continue
+        kind = classify(value)
+        child = {"name": str(name), "kind": kind, "class": _class_name(value)}
+        child.update(_preview(value, kind))
+        out.append(child)
+    return out
+
+
+def _trace_entries(traces) -> list[dict]:
+    """Child entries of a trace dictionary: one row per trace.
+
+    A trace is x/y data plus what it is called and how it is drawn, so the
+    row carries the axis headings (``xName``/``yName`` - the two expressions
+    it was built from), the number of points, the colour when one was chosen,
+    and the first values of both arrays, formatted like an array row.
+    """
+    import numpy as np
+    out = []
+    for label, tr in list(traces.items())[:100]:
+        x_data = np.asarray(getattr(tr, "xData", []))
+        y_data = np.asarray(getattr(tr, "yData", []))
+        info = ["{0} points".format(len(y_data))]
+        colour = getattr(tr, "color", False)
+        if colour:
+            info.append("color: {0}".format(colour))
+        entry = {"name": str(label), "kind": "trace",
+                 "class": _class_name(tr),
+                 "x": str(getattr(tr, "xName", "x")),
+                 "y": str(getattr(tr, "yName", "y")),
+                 "value": ", ".join(info)}
+        # EVERY attribute of the trace object as a child row, in the order the
+        # class defines them (Anton, 2026-07-31: "why not all the attributes?"
+        # - a result lists all of its non-empty ones, so a trace should too).
+        # The arrays can be opened and read like any other array; an attribute
+        # left at its default is shown as "not set", because for a trace that
+        # is meaningful: no colour means the axis assigns one.
+        entry["attributes"] = _object_entries(tr)
+        try:
+            entry["pprint"] = "{0} = {1}\n{2} = {3}".format(
+                entry["x"], np.array2string(x_data, precision=4,
+                                            threshold=12)[:900],
+                entry["y"], np.array2string(y_data, precision=4,
+                                            threshold=12)[:900])
+        except Exception:
+            pass
+        out.append(entry)
+    return out
 
 
 def _attr_entries(result) -> list[dict]:

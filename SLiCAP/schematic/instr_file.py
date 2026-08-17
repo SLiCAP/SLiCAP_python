@@ -104,24 +104,50 @@ def _has_import(lines) -> bool:
     return any(l.strip() == _IMPORT_LINE for l in lines)
 
 
-def _has_circuit(lines) -> bool:
-    return any("makeCircuit(" in l for l in lines)
+def circuit_objects(text: str) -> list:
+    """Every circuit object the instruction file DEFINES, in file order:
+    ``[{"name": "cir", "path": "sch/Vamp.slicap_sch"}, …]``.
+
+    The instruction file - not the set of open tabs - is the authority on
+    which circuit objects exist and which schematic each one was built from
+    (Anton, 2026-08-16).  It is also what actually runs, so an instruction
+    can only reference a circuit defined here.
+    """
+    out = []
+    for call in parse_calls(text):
+        if call["func"] != "makeCircuit" or not call["assigned"]:
+            continue
+        arg = (call["args"] or [""])[0].strip()
+        if len(arg) >= 2 and arg[0] in "\"'" and arg[-1] == arg[0]:
+            arg = arg[1:-1]
+        out.append({"name": call["name"], "path": arg})
+    return out
 
 
-def ensure_header(text: str, sch_type: str, schematic_relpath: str | None) -> str:
+def assigned_names(text: str) -> set:
+    """Every name the instruction file assigns to - the namespace a new
+    circuit object must not silently collide with."""
+    return {c["name"] for c in parse_calls(text) if c["assigned"]}
+
+
+def ensure_header(text: str, sch_type: str = "") -> str:
     """Return *text* with the instruction-file header prepended if missing.
 
-    Idempotent: adds ``import SLiCAP as sl`` if absent, and — for a SLiCAP
-    schematic — ``cir = sl.makeCircuit("<schematic_relpath>")`` if no
-    ``makeCircuit(...)`` line is present yet.  NGspice instruction files only get
-    the import (they reference the netlist by stem, not a circuit object).
+    Idempotent: adds ``import SLiCAP as sl`` if absent.
+
+    It no longer seeds ``cir = sl.makeCircuit(...)``: creating a circuit
+    object is a SEPARATE, explicit action (Anton, 2026-08-16).  The old
+    behaviour bound the one name 'cir' to whichever schematic happened to be
+    active first, and then - because it only checked whether ANY makeCircuit
+    line existed - composed instructions for other schematics against that
+    same circuit.  A circuit object is also APPENDED where it is created,
+    never prepended: prepending a second one would silently change the
+    meaning of every instruction already in the file.
     """
     lines  = text.splitlines()
     prefix = []
     if not _has_import(lines):
         prefix.append(_IMPORT_LINE)
-    if sch_type == "slicap" and schematic_relpath and not _has_circuit(lines):
-        prefix.append(f'cir = sl.makeCircuit("{schematic_relpath}")')
     if not prefix:
         return text
     # Each header line is newline-terminated so the header is a complete block,

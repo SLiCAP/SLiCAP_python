@@ -1444,9 +1444,20 @@ class instruction(object):
 
         Called by **instruction.check()** and by **instruction.setLGref(<lgRef>)**.
         """
-        if self.lgRef == [None, None]:
+        # A circuit WITHOUT a .lgref line has circuit.lgRef = None, and the
+        # shell copies that straight onto the instruction. The missing-value
+        # test only knew the pair form [None, None], so the loop below then
+        # tried to iterate None and the check died with "TypeError: 'NoneType'
+        # object is not iterable" - a legitimate mistake (asking for the
+        # asymptotic gain of a circuit that defines no loop gain reference)
+        # crashed instead of being reported (Anton, 2026-08-03).
+        if not self.lgRef or self.lgRef == [None, None]:
             self.errors += 1
-            print("Error: missing loop gain reference definition.")
+            print("Error: missing loop gain reference definition. Gain types "
+                  "'asymptotic', 'loopgain', 'servo' and 'direct' need one: "
+                  "put a loop gain reference on the schematic (or a '.lgref' "
+                  "line in the netlist), or pass lgref=<name>.")
+            return
         for lgRef in self.lgRef:
             if lgRef != None and lgRef not in self.circuit.controlled:
                 self.errors += 1

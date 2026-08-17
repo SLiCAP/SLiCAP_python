@@ -99,12 +99,13 @@ def _summary(flat) -> str:
 
 
 class SourceStimuliTable(QGroupBox):
-    """Checkable "Source stimuli (stimuli=)" table (see the module docstring)."""
+    """Checkable source-stimulus table (see the module docstring)."""
 
     changed = Signal()
 
     def __init__(self, sources=(), domain: str = "dc", parent=None):
-        super().__init__("Source stimuli (stimuli=)", parent)
+        super().__init__(
+            "Source stimuli (stimuli=; unchecked = netlist stimuli)", parent)
         self._sources = [str(s) for s in sources]
         self._domain = domain
         self.setCheckable(True)

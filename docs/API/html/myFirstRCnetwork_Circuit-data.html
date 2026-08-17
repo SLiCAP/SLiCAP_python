@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Schematic diagram of myFirstRCnetwork.kicad_sch</h2>
+<figure><a id="fig_myFirstRCnetwork.kicad_sch"></a><img src="img/myFirstRCnetwork.svg" alt="Circuit diagram of myFirstRCnetwork." style="width:500px">
+<figcaption>Figure: myFirstRCnetwork.svg<br>Circuit diagram of myFirstRCnetwork.</figcaption>
+</figure>
+<h2><a id="netlist_myFirstRCnetwork"></a>Netlist: myFirstRCnetwork.cir</h2>
+<pre>"myFirstRCnetwork"
+.param R=1k C={1/(2*pi*R*f_c)} f_c=1k
+.source V1
+.detector V_out
+C1 0 out C value={C} vinit=0
+R1 out in R value={R} noisetemp=0 noiseflow=0 dcvar=0 dcvarlot=0
+V1 in 0 V value={V_s} noise=0 dc=0 dcvar=0
+.end</pre>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="myFirstRCnetwork_index.html">myFirstRCnetwork_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 5.1.0 &copy 2009-2025 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2026-08-16 22:46:57</p>
+</div></body></html>

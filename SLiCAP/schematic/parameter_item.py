@@ -77,10 +77,18 @@ class ParameterItem(QGraphicsItem):
         if (self.scene() is not None and LATEX_INSTALLED
                 and style_of(self).LATEX_RENDERING_ENABLED):
             from .latex_label import cache_dir_of, render_latex_raw
-            svg, err = render_latex_raw(self.build_latex(self.params),
-                                        self.preamble_path,
-                                        cache_dir=cache_dir_of(self))
-            self._render_error = err or ""
+            latex = self.build_latex(self.params)
+            if latex is None:
+                # An entry is not a valid SLiCAP expression: no render at all.
+                self._render_error = (
+                    "A parameter name or value is not a valid SLiCAP "
+                    "expression (see the log for which one).")
+                self._svg_bytes = b""
+                svg = None
+            else:
+                svg, err = render_latex_raw(latex, self.preamble_path,
+                                            cache_dir=cache_dir_of(self))
+                self._render_error = err or ""
             if svg:
                 self._svg_bytes = svg  # keep stored bytes up to date
         if self._svg_bytes:
@@ -212,32 +220,34 @@ class ParameterItem(QGraphicsItem):
     # ── static helpers ────────────────────────────────────────────────────────
 
     @staticmethod
-    def build_latex(params: list) -> str:
-        from .latex_label import expression_to_latex
+    def build_latex(params: list) -> "str | None":
+        """LaTeX for the parameter table, or None when a name or value is not
+        a valid SLiCAP expression — an unparsable entry is never rendered
+        (Anton, 2026-08-16); the item then shows plain text and says why.
+
+        The table is built by SLiCAP's own LaTeX formatter (latex_label.
+        slicap_table → LaTeXformatter.nestedLists): this passes SYMPY OBJECTS
+        and lets the formatter decide maths-vs-text and do the escaping,
+        instead of concatenating LaTeX here — a component property is not a
+        LaTeX fragment and must never be treated as one (Anton, 2026-08-16).
+        """
+        from .latex_label import expression_sympy, slicap_table
         if not params:
             return r"$\emptyset$"
 
-        def _value_texify(s: str) -> str:
-            """Run value through SLiCAP expression pipeline; fall back to raw LaTeX."""
-            s = s.strip()
+        def _cell(s: str):
+            """Sympy object for an entry; None = does not parse (no render)."""
+            s = (s or "").strip()
             if not s:
-                return ""
+                return ""                       # empty cell: plain text
             if not (s.startswith("{") and s.endswith("}")):
                 s = "{" + s + "}"
-            return expression_to_latex(s)
+            return expression_sympy(s)
 
-        rows = " \\\\\n".join(
-            f"  {_value_texify(name)} & {_value_texify(value)}"
-            for name, value in params
-        )
-        return (
-            r"\["                                                    "\n"
-            r"\begin{array}{r@{\;=\;}l}"                            "\n"
-            r"\multicolumn{2}{c}{\textbf{Parameters}} \\"          "\n"
-            + rows + "\n"
-            r"\end{array}"                                          "\n"
-            r"\]"
-        )
+        rows = [[_cell(name), _cell(value)] for name, value in params]
+        if any(cell is None for row in rows for cell in row):
+            return None
+        return slicap_table(["", ""], rows, title="Parameters")
 
     def param_lines(self, exclude=None, value_fn=None) -> list:
         """Return SPICE .param lines for netlist export.

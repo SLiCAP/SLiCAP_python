@@ -11,7 +11,8 @@ from .component_item import ComponentItem
 class PowerSymbolDialog(QDialog):
     """
     Minimal properties dialog for power symbols (ground, port).
-    Only exposes the net name and orientation — no refdes, no model, no params.
+    Only exposes the net name, its visibility and the orientation —
+    no refdes, no model, no params.
     """
 
     def __init__(self, item: ComponentItem, parent=None):
@@ -30,6 +31,17 @@ class PowerSymbolDialog(QDialog):
         self._name_edit = QLineEdit(_name)
         name_grid.addWidget(QLabel("Net name"), 0, 0)
         name_grid.addWidget(self._name_edit, 0, 1)
+
+        # Instance-level escape hatch: a port placed (or pasted) while its
+        # symbol metadata was stale is saved with the name label hidden, and
+        # this dialog is the only one reachable for power symbols — without
+        # the checkbox such an instance could never be made visible again
+        # (Anton, 2026-08-05).
+        self._show_cb = QCheckBox()
+        self._show_cb.setChecked(
+            item.prop_display.get("name", (False, False))[0])
+        name_grid.addWidget(QLabel("Show net name"), 1, 0)
+        name_grid.addWidget(self._show_cb, 1, 1)
         outer.addLayout(name_grid)
 
         # ── orientation ───────────────────────────────────────────────────────
@@ -65,6 +77,8 @@ class PowerSymbolDialog(QDialog):
 
     def apply(self) -> None:
         self._item.params["name"] = self._name_edit.text().strip()
+        _, show_name = self._item.prop_display.get("name", (False, False))
+        self._item.prop_display["name"] = (self._show_cb.isChecked(), show_name)
 
         self._item.setRotation(self._rotation_combo.currentIndex() * 90)
         self._item.h_flip = self._hflip_cb.isChecked()

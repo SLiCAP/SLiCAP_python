@@ -6,6 +6,7 @@ value and its on-canvas visibility — a focused alternative to the full
 PropertiesDialog.
 """
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QGridLayout, QLineEdit, QCheckBox,
     QDialogButtonBox, QLabel,
@@ -18,7 +19,7 @@ class AttributeDialog(QDialog):
     """Edit one attribute (value + show-value/show-name) of a ComponentItem."""
 
     def __init__(self, item: ComponentItem, prop_key: str, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, Qt.Window)
         self._item = item
         self._key = prop_key
         self.setWindowTitle(f"{prop_key} — {item.instance_id}")

@@ -18,24 +18,33 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
     QLabel, QLineEdit, QComboBox, QTabWidget, QWidget,
     QDialogButtonBox, QPushButton,
-    QButtonGroup, QRadioButton, QScrollArea,
+    QButtonGroup, QRadioButton, QScrollArea, QCheckBox, QMenu,
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QGuiApplication
 
-from .param_table import ParamTable
+from .param_table import ParamTable, PARAM_NAME_WIDTH
 from .source_stimuli_table import SourceStimuliTable, _ANALYSIS_DOMAIN
 from .step_widget import StepWidget
 from .instr_file import next_result_name, parse_calls
+from .value_fields import watch, all_valid
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-def _field(label: str, placeholder: str = "", width: int = 120) -> tuple[QLabel, QLineEdit]:
+def _field(label: str, placeholder: str = "", width: int = 120,
+           kind: str = "number") -> tuple[QLabel, QLineEdit]:
+    """A labelled field. *kind* 'number' is watched: the field is marked while
+    its text is not a number in SLiCAP notation, and the dialog refuses to
+    build an instruction from it (value_fields). Fields that hold a NAME - a
+    source, a node - pass kind='name' and are not checked."""
     lbl  = QLabel(label)
     edit = QLineEdit()
     if placeholder:
         edit.setPlaceholderText(placeholder)
     edit.setMaximumWidth(width)
+    if kind == "number":
+        watch(edit, "number")
     return lbl, edit
 
 
@@ -62,19 +71,20 @@ def _lit(src, default=None):
 def _py_num(value: str) -> str:
     """Field text → Python literal for the generated sl.*() call.
 
-    Plain numbers stay bare; NGspice notation like ``1n`` or ``10k`` is
-    quoted — the sim functions paste these into the NGspice command line,
-    which understands them natively, but unquoted they are Python syntax
-    errors in the instruction file."""
+    Plain numbers stay bare; a value with a scale factor (``1n``, ``10k``,
+    ``10M``) is quoted, because unquoted it is a Python syntax error in the
+    instruction file.
+
+    The value keeps the SLiCAP notation the user typed: ONE notation for
+    numbers (Anton, 2026-07-31), converted where it crosses into NGspice -
+    the netlist and the control section - and nowhere earlier. The
+    instruction file is SLiCAP's own, so '1n' stays '1n' there.
+    """
     value = value.strip()
     try:
         float(value)
         return value
     except ValueError:
-        # SLiCAP notation ('M' = mega) → NGspice notation ('Meg'): NGspice
-        # reads suffixes case-insensitively, so '1M' would mean 1 milli.
-        from SLiCAP.SLiCAPlex import _to_ngspice
-        value = _to_ngspice(value)
         return '"' + value.replace('"', "'") + '"'
 
 
@@ -109,89 +119,111 @@ class _BehaviorSelector(QGroupBox):
         self._group.button(self._MODES.index(mode)).setChecked(True)
 
 
-# ── output variables (names= kwarg) ──────────────────────────────────────────
+# ── saved signals (save= kwarg) ──────────────────────────────────────────────
 
-class _NamesWidget(QGroupBox):
-    """Editable list of (Python name, NGspice expression) pairs.
+class _SaveWidget(QGroupBox):
+    """The SIGNALS the simulator writes: ONE editable, comma-separated list.
 
-    An empty list omits the names= kwarg (NGspice saves all signals).
+    A signal is named numeric data coming out of the simulation - what NGspice
+    calls a vector, and the word this GUI uses everywhere (TRACES.md section
+    1). The analysis call speaks NGspice only; Python names for these signals
+    are chosen afterwards, in the Traces dialog, so this widget has one column
+    and no name field.
+
+    Empty means the default set: node voltages, including subcircuit nodes,
+    and voltage-source branch currents (NGspice manual 15.6.1). A non-empty
+    list saves ONLY what it lists, so ``all`` must be listed alongside an
+    internal parameter: ``all, @q1[gm]``.
+
+    One line, not a stack of rows (Anton, 2026-08-01): a name is INSERTED from
+    the select menu and REMOVED by deleting it from the text, and explanatory
+    text sits above the field, never below the buttons.
     """
 
     def __init__(self, output_vars: list[str], parent=None):
-        super().__init__("Output variables  (empty = save all)", parent)
-        self._output_vars = output_vars
-        self._rows: list[tuple[QLineEdit, QLineEdit, QWidget]] = []
+        super().__init__("Signals to save", parent)
+        self._output_vars = list(output_vars)
 
-        self._body = QVBoxLayout()
+        hint = QLabel("Insert comma separated NGspice vectors.\n"
+                      "Empty saves all node voltages and dependent currents.\n"
+                      'For internal parameters, always add "all".')
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color: grey; font-size: 9pt;")
 
-        btn_row = QHBoxLayout()
-        add_btn = QPushButton("Add row")
-        add_btn.clicked.connect(self._add_row)
-        rem_btn = QPushButton("Remove last")
-        rem_btn.clicked.connect(self._remove_last)
-        btn_row.addWidget(add_btn)
-        btn_row.addWidget(rem_btn)
-        btn_row.addStretch()
+        self._signals = QLineEdit()
+        self._signals.setPlaceholderText(
+            "e.g. v(out), i(v1), all, @q1[gm]")
+
+        self._insert = QPushButton("Insert Signal")
+        self._insert.setMenu(QMenu(self))
+
+        self._currents = QCheckBox(
+            "Device currents  (.options savecurrents; op, dc and tran only)")
+        self._currents.setToolTip(
+            "Terminal currents of R, C, L, M, J, Q, D, … including devices "
+            "inside subcircuits. NGspice manual 15.7.3: not available for AC "
+            "or noise, where the signals come back empty.")
+
+        actions = QHBoxLayout()
+        actions.addWidget(self._insert)
+        actions.addWidget(self._currents)
+        actions.addStretch(1)
 
         outer = QVBoxLayout(self)
-        outer.addLayout(self._body)
-        outer.addLayout(btn_row)
+        outer.addWidget(hint)              # text ABOVE the field it explains
+        outer.addWidget(self._signals)
+        outer.addLayout(actions)           # actions last
 
-    def _add_row(self):
-        row_w = QWidget()
-        lay = QHBoxLayout(row_w)
-        lay.setContentsMargins(0, 0, 0, 0)
-        name_edit = QLineEdit()
-        name_edit.setPlaceholderText("Python name")
-        name_edit.setMaximumWidth(120)
-        # Editable combo: dropdown offers the netlist's output variables,
-        # typing allows any NGspice expression.
-        expr_edit = QComboBox()
-        expr_edit.setEditable(True)
-        expr_edit.addItems([""] + list(self._output_vars))
-        expr_edit.setCurrentText("")
-        expr_edit.lineEdit().setPlaceholderText("NGspice expression")
-        expr_edit.setMinimumWidth(180)
-        # Picking from the dropdown auto-derives the Python name if empty.
-        expr_edit.activated.connect(
-            lambda _i, n=name_edit, e=expr_edit: self._auto_name(n, e))
-        lay.addWidget(name_edit)
-        lay.addWidget(QLabel("="))
-        lay.addWidget(expr_edit, 1)
-        self._body.addWidget(row_w)
-        self._rows.append((name_edit, expr_edit, row_w))
+        self.set_output_vars(output_vars)
 
-    @staticmethod
-    def _auto_name(name_edit: QLineEdit, expr_edit: QComboBox) -> None:
-        var = expr_edit.currentText().strip()
-        if var and not name_edit.text().strip():
-            name = var.replace("(", "_").replace(")", "").upper().strip("_")
-            name_edit.setText(name)
+    # ── the select menu ───────────────────────────────────────────────────
 
-    def _remove_last(self):
-        if self._rows:
-            _, _, w = self._rows.pop()
-            self._body.removeWidget(w)
-            w.deleteLater()
+    def set_output_vars(self, output_vars) -> None:
+        """Offer another set of signals - a NOISE run has spectra where the
+        others have node voltages."""
+        self._output_vars = list(output_vars)
+        menu = self._insert.menu()
+        menu.clear()
+        for name in self._output_vars:
+            menu.addAction(name, lambda n=name: self._insert_signal(n))
+        self._insert.setEnabled(bool(self._output_vars))
 
-    def set_pairs(self, pairs: dict | None) -> None:
-        """Prefill from a parsed names= dict (append-only editing)."""
-        while self._rows:
-            self._remove_last()
-        for name, expr in (pairs or {}).items():
-            self._add_row()
-            name_edit, expr_edit, _ = self._rows[-1]
-            name_edit.setText(str(name))
-            expr_edit.setCurrentText(str(expr))
+    def _insert_signal(self, name: str) -> None:
+        """Append a signal to the list, unless it is already there."""
+        current = self.signals()
+        if name not in current:
+            current.append(name)
+        self._signals.setText(", ".join(current))
+
+    def set_currents_enabled(self, enabled: bool) -> None:
+        """AC and noise cannot deliver device currents (manual 15.7.3)."""
+        self._currents.setEnabled(enabled)
+        if not enabled:
+            self._currents.setChecked(False)
+
+    def set_from(self, save, savecurrents) -> None:
+        """Prefill from an existing instruction."""
+        self._signals.setText(", ".join(str(s) for s in (save or [])))
+        self._currents.setChecked(bool(savecurrents))
+
+    # ── emission ──────────────────────────────────────────────────────────
+
+    def signals(self) -> list[str]:
+        out = []
+        for name in self._signals.text().split(","):
+            name = name.strip()
+            if name and name not in out:
+                out.append(name)
+        return out
 
     def kwarg(self) -> str:
-        pairs = [(n.text().strip(), e.currentText().strip())
-                 for n, e, _ in self._rows]
-        pairs = [(n, e) for n, e in pairs if n and e]
-        if not pairs:
-            return ""
-        inner = ", ".join(f'"{k}": "{v}"' for k, v in pairs)
-        return f", names={{{inner}}}"
+        parts = ""
+        signals = self.signals()
+        if signals:
+            parts += ", save=[" + ", ".join(_q(s) for s in signals) + "]"
+        if self._currents.isChecked() and self._currents.isEnabled():
+            parts += ", savecurrents=True"
+        return parts
 
 
 # ── base tab ──────────────────────────────────────────────────────────────────
@@ -426,7 +458,7 @@ class _DcTab(_AnalysisTab):
     def _setup_fields(self, parent):
         grid = QGridLayout(parent)
         grid.setAlignment(Qt.AlignmentFlag.AlignTop)
-        lbl0, self._src   = _field("Source",    "e.g. V1")
+        lbl0, self._src   = _field("Source",    "e.g. V1", kind="name")
         lbl1, self._start = _field("Start",     "e.g. 0")
         lbl2, self._stop  = _field("Stop",      "e.g. 5")
         lbl3, self._incr  = _field("Increment", "e.g. 0.1")
@@ -499,8 +531,8 @@ class _NoiseTab(_AnalysisTab):
     def _setup_fields(self, parent):
         grid = QGridLayout(parent)
         grid.setAlignment(Qt.AlignmentFlag.AlignTop)
-        lbl0, self._out    = _field("Output node",   "e.g. v(out)")
-        lbl1, self._src    = _field("Input source",  "e.g. V1")
+        lbl0, self._out    = _field("Output node",   "e.g. v(out)", kind="name")
+        lbl1, self._src    = _field("Input source",  "e.g. V1", kind="name")
         lbl2 = QLabel("Sweep type")
         self._sweep = QComboBox()
         self._sweep.addItems(["dec", "oct", "lin"])
@@ -520,9 +552,17 @@ class _NoiseTab(_AnalysisTab):
         grid.addWidget(self._fstart, 4, 1)
         grid.addWidget(lbl5,         5, 0, Qt.AlignmentFlag.AlignRight)
         grid.addWidget(self._fstop,  5, 1)
+        # The noise BUDGET: one spectrum per noisy element, in the same
+        # V^2/Hz as the total, so the dominant contributor is visible
+        # (Anton, 2026-07-31). NGspice computes them only when the noise
+        # command carries its summary-interval argument.
+        self._contrib = QCheckBox("Noise contributions per source "
+                                  "(onoise_<refdes>, …)")
+        grid.addWidget(self._contrib, 6, 1)
 
     def snippet(self, cir_stem, varname, extra_kwargs=""):
         step = self._step_kwarg()
+        contrib = ", contributions=True" if self._contrib.isChecked() else ""
         return (
             f'{varname} = sl.noise('
             f'"{cir_stem}", "{self._out.text().strip()}", '
@@ -531,7 +571,7 @@ class _NoiseTab(_AnalysisTab):
             f'{_py_num(self._pts.text())}, '
             f'{_py_num(self._fstart.text())}, '
             f'{_py_num(self._fstop.text())}'
-            f'{step}{extra_kwargs})'
+            f'{contrib}{step}{extra_kwargs})'
         )
 
     def prefill(self, args, kwargs):
@@ -544,6 +584,7 @@ class _NoiseTab(_AnalysisTab):
         for i, field in ((4, self._pts), (5, self._fstart), (6, self._fstop)):
             if len(args) > i:
                 field.setText(str(_lit(args[i], args[i])))
+        self._contrib.setChecked(bool(_lit(kwargs.get("contributions"))))
 
 
 # ── dialog ────────────────────────────────────────────────────────────────────
@@ -573,13 +614,13 @@ class NGspiceAnalysisDialog(QDialog):
     """
 
     def __init__(self, cir_stem: str, output_vars: list[str] = (),
+                 noise_vars: list[str] = (),
                  param_names: list[str] = (), existing_text: str = "",
                  sources: list[str] = (), parent=None):
-        super().__init__(parent)
+        super().__init__(parent, Qt.Window)
         self._cir_stem = cir_stem
         self._existing_text = existing_text or ""
         self.setWindowTitle("Create / Edit NGspice Instruction")
-        self.resize(880, 700)
 
         # The two-column body still lives in a QScrollArea: it keeps the
         # dialog's own layout free of heightForWidth (the word-wrapped hint
@@ -632,10 +673,13 @@ class NGspiceAnalysisDialog(QDialog):
         # single column stacked these ~1350px tall, burying the stimulus editor
         # off-screen (Anton, 2026-07-16).
         columns = QHBoxLayout()
-        left  = QVBoxLayout()
-        right = QVBoxLayout()
-        columns.addLayout(left, 1)
-        columns.addLayout(right, 1)
+        left_panel, right_panel = QWidget(), QWidget()
+        left  = QVBoxLayout(left_panel)
+        right = QVBoxLayout(right_panel)
+        left.setContentsMargins(0, 0, 0, 0)
+        right.setContentsMargins(0, 0, 0, 0)
+        columns.addWidget(left_panel, 1)
+        columns.addWidget(right_panel, 1)
         layout.addLayout(columns)
 
         # ── analysis tabs (left) ──────────────────────────────────────────────
@@ -644,6 +688,9 @@ class NGspiceAnalysisDialog(QDialog):
         for cls in _TAB_CLASSES:
             tab = cls(list(param_names))
             tab._step.changed.connect(self._update)
+            if hasattr(tab, "_contrib"):        # noise: contributions switch
+                tab._contrib.toggled.connect(self._update)
+                tab._contrib.toggled.connect(self._refresh_output_vars)
             self._tabs.append(tab)
             self._tab_widget.addTab(tab, cls.label)
         self._tab_widget.currentChanged.connect(self._on_tab_changed)
@@ -655,12 +702,17 @@ class NGspiceAnalysisDialog(QDialog):
         right.addWidget(self._behavior)
 
         # ── output variables (right) ──────────────────────────────────────────
-        self._names = _NamesWidget(list(output_vars))
-        right.addWidget(self._names)
+        self._output_vars = list(output_vars)
+        # what a NOISE run delivers instead of node voltages; the totals are
+        # always there, the per-source ones only with contributions=True
+        self._noise_vars = list(noise_vars)
+        self._save = _SaveWidget(list(output_vars))
+        right.addWidget(self._save)
 
         # ── per-instruction circuit parameters (params=, right) ───────────────
         self._params_table = ParamTable(
-            "Circuit parameters (params=)", key_candidates=param_names,
+            "Circuit parameters (params=; unchecked = netlist definitions)",
+            key_candidates=param_names,
             ordered=True, checkable=True,
             hint="Definitions are applied in order — each parameter must be "
                  "numerically evaluable when defined; NGspice errors on "
@@ -690,14 +742,57 @@ class NGspiceAnalysisDialog(QDialog):
         buttons.setContentsMargins(9, 6, 9, 9)
         outer.addWidget(buttons)
 
+        self._refresh_output_vars()   # the tab the dialog OPENS on
         self._update()
+        self._set_default_size(left_panel, right_panel)
+
+    def _set_default_size(self, left_panel, right_panel) -> None:
+        """Open wide enough to show every field in full, tabs excepted.
+
+        A hard-coded 880 px cut into the right column: the saved-signals line,
+        its hint and the parameter-table hint wrapped or clipped (Anton,
+        2026-08-02). The width is therefore taken from the columns' own size
+        hints, so a larger font or a longer label still fits, and is capped by
+        the screen. The ANALYSIS TABS are deliberately not allowed to widen
+        the window beyond that cap - a tab scrolls, a field must not.
+        """
+        m = self.layout().contentsMargins()
+        spacing = 6 * 2 + 24            # column spacing + the scroll bar
+        width = (left_panel.sizeHint().width() + right_panel.sizeHint().width()
+                 + m.left() + m.right() + spacing)
+        height = 700
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if screen is not None:
+            available = screen.availableGeometry()
+            width  = min(width, int(available.width() * 0.95))
+            height = min(height, int(available.height() * 0.9))
+        self.resize(width, height)
 
     def _on_tab_changed(self, idx: int):
         key = _TAB_CLASSES[idx].key if idx < len(_TAB_CLASSES) else "op"
         base = _VARNAME_BASES.get(key, "RES")
         self._varname.setText(next_result_name(base, self._existing_text))
         self._stimuli_table.set_domain(_ANALYSIS_DOMAIN.get(key, "dc"))
+        self._refresh_output_vars()
         self._update()
+
+    def _refresh_output_vars(self, *_args) -> None:
+        """Offer the signals the ACTIVE analysis produces: a noise run has
+        ``onoise_spectrum`` / ``inoise_spectrum`` - and one spectrum per
+        element when contributions are asked for - where the others have
+        ``v(node)`` and ``i(Vxxx)``."""
+        idx = self._tab_widget.currentIndex()
+        tab = self._tabs[idx] if 0 <= idx < len(self._tabs) else None
+        if tab is not None and tab.key == "noise":
+            names = self._noise_vars or ["onoise_spectrum", "inoise_spectrum"]
+            if not getattr(tab, "_contrib", None) or not tab._contrib.isChecked():
+                names = [n for n in names if n.endswith("_spectrum")]
+        else:
+            names = self._output_vars
+        self._save.set_output_vars(names)
+        # device currents exist for op, dc and tran only (manual 15.7.3)
+        self._save.set_currents_enabled(
+            tab is not None and tab.key in ("op", "dc", "tran"))
 
     def _on_load_existing(self, idx: int):
         """Prefill from an existing instruction (append-only editing): the
@@ -717,13 +812,18 @@ class NGspiceAnalysisDialog(QDialog):
         tab.prefill(entry["args"], entry["kwargs"])
         kw = entry["kwargs"]
         tab._step.set_from_dict(_lit(kw.get("step")))
-        self._names.set_pairs(_lit(kw.get("names")) or {})
+        self._save.set_from(_lit(kw.get("save")),
+                             _lit(kw.get("savecurrents")))
         params = _lit(kw.get("params"))
         self._params_table.set_entries(params or [], active=bool(params))
         stimuli = _lit(kw.get("stimuli")) or {}
         self._stimuli_table.set_stimuli(stimuli, active=bool(stimuli))
         self._behavior.set_mode(_lit(kw.get("behavior")))
         self._varname.setText(entry["name"])
+        # prefill may select the tab that was ALREADY current, so no
+        # currentChanged signal fires and the drop-down would keep the
+        # previous analysis's signals (Anton, 2026-08-01)
+        self._refresh_output_vars()
         self._update()
 
     def _update(self, *_args):
@@ -733,6 +833,8 @@ class NGspiceAnalysisDialog(QDialog):
         ok = bool(self._varname.text().strip())
         if tab is not None and not tab._step.is_valid():
             ok = False
+        if tab is not None and not all_valid(tab):
+            ok = False              # a marked field cannot become a netlist
         if not self._params_table.is_valid():
             ok = False
         if not self._stimuli_table.is_valid():
@@ -763,6 +865,6 @@ class NGspiceAnalysisDialog(QDialog):
             return ""
         tab     = self._tabs[idx]
         varname = self._varname.text().strip() or "RES1"
-        extra   = (self._names.kwarg() + self._params_kwarg()
+        extra   = (self._save.kwarg() + self._params_kwarg()
                    + self._stimuli_kwarg() + self._behavior.kwarg())
         return tab.snippet(self._cir_stem, varname, extra)

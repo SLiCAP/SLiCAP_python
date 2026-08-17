@@ -7,7 +7,7 @@ and included in other LaTeX files.
 """
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
-from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX
+from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX, ENG
 from pathlib import PureWindowsPath
 from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
 import re
@@ -167,47 +167,29 @@ class LaTeXformatter(_BaseFormatter):
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
         
-        headerList = ["ID", "Nodes", "Refs", "Model", "Param", "Symbolic",
-                      "Numeric"]
-        alignstring= '[c]{lllllll}'
-        linesList   = []
-        for key in circuitObject.elements.keys():
-            el = circuitObject.elements[key]
-            line = [key]
-            lineItem = ''
-            for node in el.nodes:
-                lineItem += node + ' '
-            line.append(lineItem)
-    
-            lineItem = ''
-            for ref in el.refs:
-                lineItem += ref + ' '
-            line.append(lineItem)
-            line.append(el.model)
-            if len(el.params.keys()) == 0:
-                line += ['','','']
-            else:
-                keys = list(el.params.keys())
-                for i in range(len(keys)):
-                    if i == 0:
-                        line.append(keys[i])
-                        line.append(el.params[keys[i]])
-                        line.append(fullSubs(el.params[keys[i]], 
-                                             circuitObject.parDefs))
-                        linesList.append(line)
-                    else:
-                        line = ['','','','']
-                        line.append(keys[i])
-                        line.append(el.params[keys[i]])
-                        line.append(fullSubs(el.params[keys[i]], 
-                                             circuitObject.parDefs))
-                        linesList.append(line)
-        TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
-                                 label=label, caption=caption, color=color)
+        # WAS A COPY OF elementData(): it listed the ELEMENTS instead of the
+        # parameter definitions, so every report calling parDefs() got the
+        # wrong table. Rebuilt after the RST/HTML formatters, which have
+        # always been correct (Anton, 2026-08-16).
+        if len(circuitObject.parDefs) > 0:
+            headerList  = ["Name", "Symbolic", "Numeric"]
+            alignstring = '[c]{lll}'
+            linesList   = []
+            for parName in circuitObject.parDefs.keys():
+                linesList.append([parName,
+                                  circuitObject.parDefs[parName],
+                                  fullSubs(circuitObject.parDefs[parName],
+                                           circuitObject.parDefs)])
+            TEX = _TEXcreateCSVtable(headerList, linesList, alignstring,
+                                     label=label, caption=caption,
+                                     color=color)
+        else:
+            TEX = ('{\\textbf{No parameter definitions in: '
+                   + circuitObject.title + '}}\n\n')
         return Snippet(TEX, self.format)
 
     def dictTable(self, dct, head=None, label="", caption="", 
-                  color="myyellow"):
+                  color="myyellow", value_fn=None, title=None):
         """
         Creates a table from a dictionary; optionally with a header.
         If no label AND no caption are given this method returns a LaTeX
@@ -258,7 +240,8 @@ class LaTeXformatter(_BaseFormatter):
                 linesList.append(line)
             TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
                                      label=label, caption=caption, 
-                                     color=color)
+                                     color=color, value_fn=value_fn,
+                                     title=title)
         return Snippet(TEX, self.format)
     
     def params(self, circuitObject, label="", caption="", color="myyellow"):
@@ -825,7 +808,7 @@ class LaTeXformatter(_BaseFormatter):
         return Snippet(TEX, self.format)
 
     def nestedLists(self, headerList, linesList, unitpos=None, caption='', 
-                    label='', color="myyellow"):
+                    label='', color="myyellow", value_fn=None, title=None):
         """
         Creates and returns a LaTeX table snippet that can be included in a 
         LaTeX document. Each list is converted into a table row and
@@ -861,7 +844,8 @@ class LaTeXformatter(_BaseFormatter):
             alignstring += "l"
         alignstring += "}"
         TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
-                                 unitpos, caption, label, color)
+                                 unitpos, caption, label, color,
+                                 value_fn=value_fn, title=title)
         return Snippet(TEX, self.format)
 
 def sub2rm(textext):
@@ -890,6 +874,56 @@ def sub2rm(textext):
     return out
 
 
+# The single "expression -> display LaTeX" chokepoint. Moved here from
+# SLiCAPhtml and made public on 2026-08-16 (Anton): the GUI reached into the
+# HTML module for it, which is how the GUI and the reports drifted apart.
+def exprLatex(expr):
+    """
+    Renders a sympy object as a LaTeX math string, in SLiCAP's display
+    notation: scale factors or engineering notation as set by
+    ``ini.scalefactors`` / ``ini.eng_notation``, rounded to ``ini.disp``
+    digits.
+
+    The report formatters (HTML, LaTeX, RST) and the schematic editor all
+    typeset values through this function, so a value looks the same in a
+    report and on a schematic. Its counterpart for identifiers is
+    :func:`symbolLatex`.
+
+    Use :func:`sub2rm` on the result (or on a finished snippet) for IEEE
+    upright subscripts.
+
+    :param expr: sympy object (or number) to be rendered.
+    :type expr: sympy.Basic, int, float
+
+    :return: LaTeX math string (without $ delimiters)
+    :rtype: str
+
+    :example:
+
+    >>> import sympy as sp
+    >>> import SLiCAP as sl
+    >>> sl.exprLatex(sp.sympify("2700"))
+    '2.700\\cdot 10^{3}'
+    """
+    if ini.scalefactors or ini.eng_notation:
+        expr, exp = ENG(expr, scaleFactors=ini.scalefactors)
+        expr = roundN(expr)
+        if exp != None:
+            if ini.scalefactors:
+                expr = str(expr) + '\\, \\mathrm{' + str(exp) + '}'
+            else:
+                expr = str(expr) + '\\cdot 10^{' + str(exp) + '}'
+        else:
+            expr = sp.latex(expr)
+    else:
+        expr = sp.latex(roundN(expr))
+    return expr
+
+
+# Historic private name (used by the HTML formatter and the GUI).
+_latex_ENG = exprLatex
+
+
 def symbolLatex(name):
     """
     Renders an identifier (reference designator, detector name, ...) as a LaTeX
@@ -911,7 +945,7 @@ def symbolLatex(name):
 
 # Non-public functions for creating table snippets
 
-def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label='', color="myyellow"):
+def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label='', color="myyellow", value_fn=None, title=None):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
 
@@ -939,7 +973,20 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
                  'preambuleSLiCAP.tex' defaults to 'myyellow'. Use None for
                  no background color.
     :type color: str
-        
+
+    :param title: Optional heading, set bold and CENTERED ACROSS ALL COLUMNS
+                  (\\multicolumn) above the header row. Use it for a table
+                  title that must not widen the first column. An all-empty
+                  headerList emits no header row at all.
+    :type title: str, NoneType
+
+    :param value_fn: Optional formatter for non-string (sympy) fields; it
+                     receives the sympy object and returns a LaTeX math
+                     string (without the $ delimiters). Defaults to None:
+                     numeric evaluation and rounding. Pass :func:`exprLatex`
+                     to get SLiCAP's engineering notation instead.
+    :type value_fn: callable, NoneType
+
     :return: LaTeX snippet to be included in a LaTeX document
     :rtype: str
     """
@@ -948,12 +995,18 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
     else:
         TEX = ''
     TEX += '\\begin{tabular}' + alignstring + '\n'
-    for field in headerList:
-        if type(field) == str:
-            TEX += '\\textbf{' + field + '} & '
-        else:
-            TEX += '$\\mathbf{' + sp.latex(roundN(field)) + '}$ & '
-    TEX = TEX[:-2] + '\\\\ \n'
+    if title:
+        TEX += ('\\multicolumn{%d}{c}{\\textbf{%s}} \\\\ \n'
+                % (len(headerList), title))
+    # An all-empty header list means NO header row (an empty bold row just
+    # wasted a line); dictTable's "optionally with a header" now holds.
+    if any(str(field).strip() for field in headerList):
+        for field in headerList:
+            if type(field) == str:
+                TEX += '\\textbf{' + field + '} & '
+            else:
+                TEX += '$\\mathbf{' + sp.latex(roundN(field)) + '}$ & '
+        TEX = TEX[:-2] + '\\\\ \n'
     j = 0
     for line in linesList:
         i = 0
@@ -967,6 +1020,8 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
                     TEX +=  '\\small{' + field.replace('_', '\\_') + '} &'
                 else:
                     TEX += ' &'
+            elif value_fn is not None:
+                TEX += '$' + value_fn(field) + '$ &'
             else:
                 TEX += '$' + sp.latex(roundN(sp.N(field))) + '$ &'
             i += 1

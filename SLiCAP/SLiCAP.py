@@ -19,15 +19,16 @@ from scipy.integrate import quad
 from SLiCAP.SLiCAPdesignData import *
 from SLiCAP.SLiCAPinstruction import instruction
 from SLiCAP.SLiCAPmath import *
+from SLiCAP.SLiCAPtraces import *
 from SLiCAP.SLiCAPplots import *
 from SLiCAP.SLiCAPrst import RSTformatter
-from SLiCAP.SLiCAPlatex import LaTeXformatter, sub2rm
+from SLiCAP.SLiCAPlatex import LaTeXformatter, sub2rm, exprLatex, symbolLatex
 from SLiCAP.SLiCAPtxt import TXTformatter
 from SLiCAP.SLiCAPngspice import (MOS, ngspice2traces, selectTraces,
                                    make_netlist,
                                    op, ac, dc, tran, noise, ngspice_control,
                                    NGspiceRaw2dict, RawFile, Analysis,
-                                   ngspice_dict2traces, ngspice_instr2traces)
+                                   instr2dataset)
 from SLiCAP.SLiCAPshell import *
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
@@ -136,6 +137,56 @@ def _makeDir(dirName):
     if not os.path.exists(dirName):
         os.makedirs(dirName)
     return
+
+def loadProject(notebook=False):
+    """
+    Opens an EXISTING SLiCAP project: reads its configuration, compiles the
+    libraries and creates any missing project directories.
+
+    Unlike :func:`initProject` it changes nothing about the project itself -
+    not its name, not its author, and not the state of a report that has
+    already been built (the page list, the index and the labels are left as
+    they are). Use it to work on a project that exists; use
+    :func:`initProject` to create one or to start a fresh project run.
+
+    Missing directories ARE created: a project handed over or cloned from a
+    repository arrives without its empty ones (``results``, ``sch``), and the
+    first write into them would fail.
+
+    :param notebook: True for a Jupyter notebook session, see
+                     :func:`initProject`.
+    :type notebook: bool
+
+    :return: None
+    :rtype: NoneType
+
+    :example:
+
+    >>> import SLiCAP as sl
+    >>> sl.loadProject()          # in the project folder
+    """
+    project_config = ini._read_project_config()
+    ini.notebook = notebook
+    if notebook:
+        ini.axis_width    = 4
+        ini.axis_height   = 3
+        ini.plot_fontsize = 9
+        ini.line_width    = 1
+    # The project keeps its own identity; only the timestamp moves.
+    ini.project_title = project_config['project']['title']
+    ini.author        = project_config['project']['author']
+    ini.last_updated  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    project_config['project']['last_updated'] = ini.last_updated
+    # Create the project directories that are missing, change nothing else.
+    for path in (ini.cir_path, ini.img_path, ini.txt_path, ini.csv_path,
+                 ini.results_path, ini.schematic_path, ini.html_path,
+                 ini.sphinx_path, ini.user_lib_path, ini.tex_path):
+        _makeDir(path)
+    # Compile the libraries and drop any circuits of a previously opened
+    # project. Safe here and nowhere else: at project-open nothing has been
+    # parsed yet, so no user library can be lost (Anton, 2026-08-16).
+    _initializeParser()
+
 
 def initProject(name, notebook=False, report_dirs=True, author=None):
     """

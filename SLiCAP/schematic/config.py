@@ -111,14 +111,14 @@ class Style:
 
         # Symbol colours
         self.SYMBOL_STROKE_COLOR = self._c("symbol", "stroke_color", "#000000")
-        self.SYMBOL_TEXT_COLOR   = self._c("symbol", "text_color",   "#000000")
+        self.SYMBOL_TEXT_COLOR   = self._c("symbol", "text_color",   "#0000cc")
 
         # Wire
         self.WIRE_COLOR = self._c("wire", "color", "#000000")
         self.WIRE_WIDTH = self._f("wire", "width", 1.0)
 
         # Net labels
-        self.NET_LABEL_COLOR     = self._c("net_label", "color",     "#0055BB")
+        self.NET_LABEL_COLOR     = self._c("net_label", "color",     "#26a269")
         self.NET_LABEL_FONT_SIZE = self._i("net_label", "font_size", 7)
         self.NET_LABEL_FONT      = QFont("sans-serif", self.NET_LABEL_FONT_SIZE)
 
@@ -128,20 +128,20 @@ class Style:
         self.COMP_REFDES_FONT_FAMILY = self._s("component_label", "font_family", "sans-serif")
         self.COMP_LABEL_COLOR        = self._c("component_label", "color",       "#000000")
         self.COMP_LABEL_FONT_SIZE    = self._i("component_label", "font_size",   7)
-        self.COMP_LABEL_LATEX_SCALE  = self._i("component_label", "latex_scale", 100)
-        self.COMP_LABEL_LATEX        = self._b("component_label", "latex",       False)
-        self.COMP_LABEL_LATEX_BOLD   = self._b("component_label", "latex_bold",  False)
+        self.COMP_LABEL_LATEX_SCALE  = self._i("component_label", "latex_scale", 30)
+        self.COMP_LABEL_LATEX        = self._b("component_label", "latex",       True)
+        self.COMP_LABEL_LATEX_BOLD   = self._b("component_label", "latex_bold",  True)
         self.COMP_LABEL_SVG_HEIGHT   = self.COMP_LABEL_LATEX_SCALE / 100.0 * 20.0
         self.COMP_LABEL_FONT         = QFont(self.COMP_REFDES_FONT_FAMILY,
                                              self.COMP_LABEL_FONT_SIZE)
 
         # Component parameter labels (value, noisetemp, …)
-        self.COMP_PARAM_FONT_FAMILY = self._s("component_param", "font_family", "sans-serif")
-        self.COMP_PARAM_FONT_SIZE   = self._i("component_param", "font_size",   7)
-        self.COMP_PARAM_COLOR       = self._c("component_param", "color",       "#0055BB")
+        self.COMP_PARAM_FONT_FAMILY = self._s("component_param", "font_family", "monospace")
+        self.COMP_PARAM_FONT_SIZE   = self._i("component_param", "font_size",   6)
+        self.COMP_PARAM_COLOR       = self._c("component_param", "color",       "#000000")
         self.COMP_PARAM_FONT        = QFont(self.COMP_PARAM_FONT_FAMILY,
                                             self.COMP_PARAM_FONT_SIZE)
-        self.COMP_PARAM_LATEX_SCALE = self._i("component_param", "latex_scale", 60)
+        self.COMP_PARAM_LATEX_SCALE = self._i("component_param", "latex_scale", 30)
         self.COMP_PARAM_SVG_HEIGHT  = self.COMP_PARAM_LATEX_SCALE / 100.0 * 20.0
 
         # Grid
@@ -149,13 +149,13 @@ class Style:
         self.GRID_MAJOR_COLOR = self._c("grid", "major_color", "#B4B4B4")
 
         # Wire vertex handles + unconnected-pin connection markers
-        self.HANDLE_COLOR     = self._c("handles", "color", "#0078D7")
+        self.HANDLE_COLOR     = self._c("handles", "color", "#3d3846")
         self.HANDLE_SIZE      = self._f("handles", "size",  4.0)
         self.CONNECTION_COLOR = self._c("handles", "connection_color", "#888888")
 
         # Junctions
         self.JUNCTION_COLOR  = self._c("junctions", "color",  "#000000")
-        self.JUNCTION_RADIUS = self._f("junctions", "radius", 3.0)
+        self.JUNCTION_RADIUS = self._f("junctions", "radius", 2.0)
 
         # Free text annotations
         self.FREE_TEXT_COLOR     = self._c("free_text", "color",     "#333333")
@@ -169,13 +169,13 @@ class Style:
 
         # Text annotations
         self.TEXT_FONT_FAMILY = self._s("text", "font_family", "sans-serif")
-        self.TEXT_FONT_SIZE   = self._i("text", "font_size",   8)
+        self.TEXT_FONT_SIZE   = self._i("text", "font_size",   7)
         self.TEXT_COLOR       = self._c("text", "color",       "#333333")
         self.TEXT_FONT        = QFont(self.TEXT_FONT_FAMILY, self.TEXT_FONT_SIZE)
 
         # Hyperlinks
         self.HYPERLINK_FONT_FAMILY = self._s("hyperlink", "font_family", "sans-serif")
-        self.HYPERLINK_FONT_SIZE   = self._i("hyperlink", "font_size",   8)
+        self.HYPERLINK_FONT_SIZE   = self._i("hyperlink", "font_size",   7)
         self.HYPERLINK_COLOR       = self._c("hyperlink", "color",       "#0000cc")
         self.HYPERLINK_UNDERLINE   = self._b("hyperlink", "underline",   True)
         self.HYPERLINK_FONT        = QFont(self.HYPERLINK_FONT_FAMILY,
@@ -193,7 +193,7 @@ class Style:
         # Scale (%) of the parameter table / model definition blocks — the
         # single source for their on-canvas size (natural size × this value).
         # LaTeX fragments and images scale per instance in their dialogs.
-        self.SCALE_PARAMETER_TABLE = self._i("scales", "parameter_table", 100)
+        self.SCALE_PARAMETER_TABLE = self._i("scales", "parameter_table", 60)
 
     # -- Preferences-dialog protocol --------------------------------------------
 

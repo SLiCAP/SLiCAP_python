@@ -14,7 +14,7 @@ from .config import (
     GRID_SIZE, GRID_MAJOR, DEFAULT_ZOOM, snap,
     Z_WIRE, Z_WIRE_DRAG,
 )
-from .component_item import ComponentItem, make_ghost
+from .component_item import ComponentItem, make_ghost, _discard_label
 from .wire_item import WireItem
 from .junction_item import JunctionItem
 from .free_text_item import FreeTextItem
@@ -214,6 +214,15 @@ class SchematicScene(QGraphicsScene):
         self.op_netlist: "str | None" = None
         self.op_stale: bool = False
         self._op_fingerprint: "str | None" = None
+        # Borrowed op context for a SUBCIRCUIT schematic opened via descend:
+        # the values shown are the PARENT run's, for ONE instance (the one
+        # descended from — the definition/instance rule, Anton 2026-08-05).
+        # op_prefix is the dotted instance path ("x1", "x1.x2"); op_port_nets
+        # maps this schematic's port net names to the raw's names for the
+        # parent nets they connect to (inside a subckt the port nets ARE the
+        # parent nets — NGspice only dot-prefixes the internal ones).
+        self.op_prefix: "str | None" = None
+        self.op_port_nets: dict = {}
         self.data_changed.connect(self._mark_op_stale)
 
         self._mode            = _Mode.NORMAL
@@ -614,9 +623,30 @@ class SchematicScene(QGraphicsScene):
     def set_op_results(self, results: "dict | None",
                        netlist_text: "str | None" = None) -> None:
         """Install fresh op results (panel calls this after a run).
-        *netlist_text* is the .cir the raw was produced from."""
+        *netlist_text* is the .cir the raw was produced from.
+        An OWN run supersedes any context borrowed via descend."""
         self.op_results = results
         self.op_netlist = netlist_text
+        self.op_prefix = None
+        self.op_port_nets = {}
+        self.op_stale = False
+        self._op_fingerprint = self._netlist_fingerprint()
+        self.refresh_bias_annotations()
+
+    def adopt_op_context(self, results: "dict | None", lib_netlist: "str | None",
+                         prefix: "str | None", port_nets: "dict | None") -> None:
+        """Borrow a PARENT run's op results for one instance of this
+        subcircuit (set on descend; see the attribute comment in __init__).
+
+        *lib_netlist* is this subcircuit's own ``.lib`` text — the naming
+        authority for the internal nets, exactly as ``op_netlist`` is for a
+        top-level schematic (its element lines carry the node names the raw
+        dot-prefixes).  A COPY of *results* is stored, so the borrowed values
+        survive the parent panel being closed."""
+        self.op_results = dict(results) if results else None
+        self.op_netlist = lib_netlist
+        self.op_prefix = (prefix or None) if results else None
+        self.op_port_nets = dict(port_nets or {}) if results else {}
         self.op_stale = False
         self._op_fingerprint = self._netlist_fingerprint()
         self.refresh_bias_annotations()
@@ -690,20 +720,35 @@ class SchematicScene(QGraphicsScene):
                 comp.update_labels()
 
     def dc_voltage(self, net_name) -> "float | None":
-        """v(<net>) from the op results, or None when unavailable."""
+        """v(<net>) from the op results, or None when unavailable.
+
+        With a borrowed subcircuit context (op_prefix), an internal net is
+        dot-prefixed the way the raw names it (``v(x1.<net>)``); a PORT net
+        maps to the parent net it connects to (op_port_nets)."""
         if not self.op_results or not net_name:
             return None
         net = str(net_name).lower()
         r = self.op_results
+        if self.op_prefix:
+            mapped = self.op_port_nets.get(net)
+            net = mapped if mapped is not None else f"{self.op_prefix}.{net}"
         return r.get(f"v({net})", r.get(net))
 
     def dc_current(self, refdes) -> "float | None":
         """i(<refdes>) from the op results (NGspice sign convention:
-        measured INTO the + terminal), or None when unavailable."""
+        measured INTO the + terminal), or None when unavailable.
+
+        With a borrowed subcircuit context, NGspice names the branch vector
+        of a device inside an instance ``<type>.<path>.<refdes>#branch``
+        (e.g. ``v.x1.v1#branch``) — the type letter is repeated in front of
+        the dotted path."""
         if not self.op_results or not refdes:
             return None
         ref = str(refdes).lower()
         r = self.op_results
+        if self.op_prefix:
+            path = f"{ref[:1]}.{self.op_prefix}.{ref}"
+            return r.get(f"i({path})", r.get(f"{path}#branch"))
         return r.get(f"i({ref})", r.get(f"{ref}#branch"))
 
     def start_junction_placement(self):
@@ -1770,20 +1815,29 @@ class SchematicScene(QGraphicsScene):
                              hyperlinks=hyperlinks, shapes=shapes,
                              model_defs=model_defs)
 
-    def from_data(self, data, library) -> None:
-        """Populate the scene from a SchematicData object."""
+    def from_data(self, data, library) -> list:
+        """Populate the scene from a SchematicData object.
+
+        Returns the symbol names that could NOT be found, so a caller that
+        must be correct - the netlister - can refuse instead of writing a
+        netlist with a device missing (Anton, 2026-08-03).
+        """
         self._library = library
         self.reset()
+        missing: list[str] = []
         for cd in data.components:
             sym = library.symbol(cd.symbol_name)
             if sym is None:
+                # Reported, not swallowed: a dropped component means a netlist
+                # without that device (Anton, 2026-08-03).
+                missing.append(cd.symbol_name)
                 continue
             item = ComponentItem(sym, cd.instance_id)
             # __init__ creates a "refdes" label at the default position.
             # Clear it now so _save_label_offsets() inside update_labels()
             # below does not overwrite the prop_offsets we are about to restore.
             for _lbl in list(item._labels.values()):
-                _lbl.setParentItem(None)
+                _discard_label(_lbl)      # never orphan: see component_item
             item._labels.clear()
             item.setPos(QPointF(cd.x, cd.y))
             item.setRotation(cd.rotation)
@@ -1904,6 +1958,7 @@ class SchematicScene(QGraphicsScene):
         # Derived net names for 'Display net name' wires without a
         # user label (transient; netlist authority arrives after a run).
         self.refresh_bias_annotations()
+        return missing
 
     # ── scene events ─────────────────────────────────────────────────────────
 
@@ -2892,14 +2947,29 @@ class SchematicScene(QGraphicsScene):
                 dlg = PropertiesDialog(item,
                                        show_stimuli=show_stimuli,
                                        is_current=(prefix == "I"),
-                                       offer_dc_current=offer_dc)
+                                       offer_dc_current=offer_dc,
+                                       sch_ext=(".spice_sch"
+                                                if sch_type == 'ngspice'
+                                                else ".slicap_sch"))
                 result = dlg.exec()
                 if dlg.descend_path() is not None:
-                    # Open the subcircuit's schematic in a new editable window so
-                    # deeper hierarchies stay navigable.
-                    win = self.views()[0].window() if self.views() else None
-                    if win is not None and hasattr(win, "open_subschematic"):
-                        win.open_subschematic(dlg.descend_path())
+                    # Open the subcircuit's schematic so deeper hierarchies
+                    # stay navigable. open_subschematic lives on the
+                    # CanvasPanel (= view.parent(), computed above);
+                    # view.window() is the MAIN window, which never had it -
+                    # the old hasattr guard therefore ate the click
+                    # SILENTLY, and descending was dead from the day the
+                    # panels were docked (Anton, 2026-08-04).
+                    if panel is not None and hasattr(panel,
+                                                     "open_subschematic"):
+                        # from_item: the descended-from instance selects
+                        # WHICH instance's operating point the subcircuit
+                        # shows (last descent wins).
+                        panel.open_subschematic(dlg.descend_path(),
+                                                from_item=item)
+                    else:
+                        print("Error: cannot descend: no canvas panel "
+                              "owns this scene.")
                 elif result:
                     self._push_undo()
                     dlg.apply()

@@ -34,7 +34,8 @@ from .project_panel import type_key
 _KIND_LABELS = {"result":     "SLiCAP / NGspice results",
                 "circuit":    "Circuits",
                 "figure":     "Figures (plots)",
-                "traces":     "Trace dictionaries",
+                "traces":       "Trace dictionaries",
+                "measurements": "Measurements",
                 "expression": "Sympy expressions",
                 "matrix":     "Matrices",
                 "snippet":    "Report snippets (LaTeX/RST)",
@@ -96,7 +97,7 @@ class AppPreferencesDialog(QDialog):
     """Application preferences; call ``apply()`` after ``exec()`` is True."""
 
     def __init__(self, project_root=None, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, Qt.Window)
         self.setWindowTitle("Preferences")
         self.setMinimumWidth(440)
         lay = QVBoxLayout(self)

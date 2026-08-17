@@ -20,7 +20,7 @@ _VERSION = SLiCAP.__version__
 #os.system("python Manual.py") # Execute scripts that generate RST snippets 
                               # to be imported in this manual
 extensions = ['sphinx.ext.mathjax', 'sphinx.ext.autodoc', 
-              'sphinx.ext.autosummary']
+              'sphinx.ext.autosummary', 'sphinx.ext.todo']
 math_number_all = False
 numfig = True
 # Add any paths that contain templates here, relative to this directory.
@@ -52,7 +52,10 @@ language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'sphinx']
+# 'GUI' (and later 'API') hold SLiCAP PROJECTS whose scaffolding contains
+# its own sphinx/source/*.rst and conf.py; without excluding them the
+# manual build would pick those up (Anton, 2026-08-16).
+exclude_patterns = ['_build', 'API/sphinx', 'GUI/sphinx']
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).

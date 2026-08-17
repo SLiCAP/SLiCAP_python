@@ -52,6 +52,18 @@ SLiCAP can generate netlists from schematic files from:
 
 Preferred for all platforms is to install or upgrade to the latest version of Kicad, and install Inkscape.
 
+## LaTeX rendering of expressions (optional)
+
+The schematic editor can typeset component values, parameter/model definitions and design-data expressions with LaTeX. This is optional — there is a plain-text fallback — and requires a TeX distribution that provides **`pdflatex`** and **`dvisvgm`**:
+
+- **Linux:** install TeX Live (`texlive-latex-base` + `texlive-latex-extra`, or `texlive-full`). On some distributions `dvisvgm` is a separate package (e.g. `sudo apt install dvisvgm`).
+- **MSWindows:** install MiKTeX (bundles both `pdflatex` and `dvisvgm`).
+- **macOS:** install MacTeX.
+
+**Ghostscript is NOT required.** SLiCAP renders via DVI (`pdflatex -> DVI -> dvisvgm`), not via PDF, so the `dvisvgm --pdf` path that would need Ghostscript is never used.
+
+The `pdflatex` and `dvisvgm` locations are detected on first run and stored in `SLiCAP.ini`; they can be edited there manually. LaTeX rendering is enabled per schematic in **File -> Preferences**; the checkbox is disabled when the tools are not found.
+
 ## First Run
 
 On the first run:

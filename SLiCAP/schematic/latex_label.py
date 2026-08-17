@@ -5,9 +5,10 @@ Values wrapped in { } are treated as sympy-parseable expressions:
 
   1. Strip outer braces:  {1/(2*pi*R*C)}  →  1/(2*pi*R*C)
   2. SLiCAP._checkExpression(str)  →  sympy object
-  3. SLiCAP._latex_ENG(sympy_obj)  →  LaTeX string
-  4. Wrap in a minimal standalone LaTeX document and run pdflatex → PDF
-  5. dvisvgm --pdf  PDF → SVG
+  3. SLiCAP.exprLatex(sympy_obj)   →  LaTeX string
+  4. Wrap in a minimal standalone LaTeX document and run pdflatex → DVI
+     (``-output-format=dvi``)
+  5. dvisvgm  DVI → SVG   (DVI input needs no Ghostscript; ``--pdf`` would)
 
 SVG bytes are cached as <cache>/<sha256>.svg so each expression is rendered only
 once.  The cache directory is per-schematic (the ``<name>.cache`` sidecar,
@@ -167,11 +168,13 @@ _TEX_TEMPLATE = r"""\documentclass[preview,varwidth=true,border=2pt]{standalone}
 
 _slicap_ready: bool | None = None   # None = not yet attempted
 _slicap_check = None
-_slicap_latex = None
+_slicap_latex = None                # exprLatex + sub2rm (IEEE, single values)
+_slicap_latex_eng = None            # exprLatex alone (tables: sub2rm runs
+                                    # once over the finished snippet instead)
 
 
 def _ensure_slicap() -> bool:
-    global _slicap_ready, _slicap_check, _slicap_latex
+    global _slicap_ready, _slicap_check, _slicap_latex, _slicap_latex_eng
     if _slicap_ready is not None:
         return _slicap_ready
     orig = os.getcwd()
@@ -179,7 +182,7 @@ def _ensure_slicap() -> bool:
         os.chdir(session_cache_dir())
         with contextlib.redirect_stdout(io.StringIO()):
             from SLiCAP.SLiCAPmath import _checkExpression
-            from SLiCAP.SLiCAPhtml import _latex_ENG
+            from SLiCAP.SLiCAPlatex import exprLatex
             from SLiCAP.SLiCAPlatex import sub2rm
         _slicap_check = _checkExpression
         # IEEE typesetting: subscripts that are plain alphanumeric labels are set
@@ -189,9 +192,10 @@ def _ensure_slicap() -> bool:
         # consistently.  (Free-form user LaTeX fragments do not pass through here
         # and keep whatever formatting the user wrote.)
         def _latex_ieee(sympy_obj):
-            s = _latex_ENG(sympy_obj)
+            s = exprLatex(sympy_obj)
             return sub2rm(s) if s else s
         _slicap_latex = _latex_ieee
+        _slicap_latex_eng = exprLatex    # tables: sub2rm afterwards, once
         _slicap_ready = True
     except Exception:
         _slicap_ready = False
@@ -268,7 +272,7 @@ def render_stimuli_label(prefix: str, pairs: list, cache_dir=None) -> bytes | No
             val = "{" + val + "}"
         val_tex = expression_to_latex(val)
         if not val_tex:
-            val_tex = val[1:-1]
+            return None          # does not parse -> not rendered (plain text)
         rows.append(rf"\quad {{\footnotesize \textsf{{{safe_name}}}}} = {val_tex}")
     latex = r"\begin{array}{l}" + r" \\".join(rows) + r"\end{array}"
     return _render_latex_str(latex, cache_dir)
@@ -289,7 +293,7 @@ def render_name_eq_value(name: str, value_str: str, cache_dir=None) -> bytes | N
         val = "{" + val + "}"
     val_tex = expression_to_latex(val)
     if not val_tex:
-        val_tex = val[1:-1]
+        return None              # does not parse -> not rendered (plain text)
     return _render_latex_str(rf"{{\footnotesize \textsf{{{safe}}}}} = {val_tex}", cache_dir)
 
 
@@ -354,14 +358,114 @@ def render_expression(value_str: str, cache_dir=None) -> bytes | None:
     return _render_cached(expr_str, cache_dir)
 
 
-def expression_to_latex(value_str: str) -> str:
+# Parse results per expression string: LaTeX on success, None on failure.
+# Memoised because update_labels() runs on every repaint — without it a bad
+# expression is re-parsed (and re-reported) endlessly.
+_expr_latex_memo: dict = {}
+_expr_reported: set = set()
+
+
+def expression_sympy(value_str: str):
+    """The SYMPY OBJECT for a ``{…}`` value string, or None when it does not parse.
+
+    The typed handover: derived labels and tables pass sympy objects on to
+    SLiCAP's LaTeX formatter, which decides maths-vs-text BY TYPE and does its
+    own escaping.  A value that does not parse never becomes an object, so it
+    can never be typeset as maths - the rule is structural rather than a
+    convention at each call site (Anton, 2026-08-16).
+    """
+    if not is_expression(value_str):
+        return None
+    expr_str = value_str.strip()[1:-1].strip()
+    if _is_placeholder(expr_str):
+        return None
+    return _expression_parse(expr_str)[0]
+
+
+def _expression_parse(expr_str: str):
+    """``(sympy object, LaTeX)`` for an expression string; ``(None, None)`` when
+    it does not parse.  Memoised and reported once - see :func:`_expression_latex`."""
+    if expr_str in _expr_latex_memo:
+        return _expr_latex_memo[expr_str]
+    if not _ensure_slicap():
+        return (None, None)              # transient: do not memoise
+    result = (None, None)
+    try:
+        import sympy as sp
+        sympy_obj = _slicap_check(expr_str)
+        if isinstance(sympy_obj, sp.Basic):
+            latex = _slicap_latex(sympy_obj)
+            if latex:
+                result = (sympy_obj, latex)
+    except Exception:
+        result = (None, None)
+    _expr_latex_memo[expr_str] = result
+    if result[0] is None and expr_str not in _expr_reported:
+        _expr_reported.add(expr_str)
+        # ASCII only - this goes to the console/log on every platform.
+        print("Error: '{0}' is not a valid SLiCAP expression; it is NOT "
+              "rendered (the label shows the plain text).".format(expr_str))
+    return result
+
+
+def _expression_latex(expr_str: str) -> "str | None":
+    """The ONE SLiCAP expression -> LaTeX boundary.  None when it does not parse.
+
+    Rendering runs over SLiCAP: ``_checkExpression`` (SLiCAPmath) must yield a
+    SYMPY object, which ``exprLatex`` + ``sub2rm`` then typeset.  The result is
+    type-checked rather than trusted, because a failed parse does not raise:
+    ``_checkExpression`` prints its message and hands the RAW STRING back, and
+    an input like ``I(x)`` raises TypeError instead (``I`` is SymPy's imaginary
+    unit).  Both used to flow on into LaTeX, which typeset ``V_DS*(1+tanh(x))``
+    as "V_D S * (1 + tanh(x))" and SUCCEEDED - a silently wrong label.
+
+    A value that does not parse is NEVER rendered; the caller falls back to
+    plain text and the reason is reported once (Anton, 2026-08-16).
+    """
+    return _expression_parse(expr_str)[1]
+
+
+def slicap_table(header: list, rows: list, title=None) -> "str | None":
+    """A SLiCAP LaTeX table for canvas blocks (parameters, model definitions).
+
+    Built by SLiCAP's OWN formatter (``LaTeXformatter.nestedLists``) rather
+    than by concatenating LaTeX here: cells that are sympy objects are set as
+    maths, plain strings are set as escaped text, and the escaping is the
+    formatter's business.  ``color=None`` drops the alternating row colour
+    (the canvas has no preamble colour definitions), and ``sub2rm`` runs once
+    over the finished snippet for IEEE upright subscripts - it only rewrites
+    ``_{alphanumeric}``, is idempotent, and leaves escaped underscores in text
+    cells alone (Anton, 2026-08-16: "sub2rm can run afterwards on any LaTeX
+    object").  Values are formatted with SLiCAP's engineering notation so a
+    table matches the component labels beside it.
+
+    :param header: column headers; all-empty means no header row.
+    :param rows: list of ``[name, value]`` cells; sympy objects -> maths.
+    :param title: heading centred ACROSS the columns (so a long title does
+                  not widen the first column - Anton, 2026-08-16).
+    :return: LaTeX snippet, or None when SLiCAP is unavailable.
+    """
+    if not _ensure_slicap():
+        return None
+    from SLiCAP.SLiCAPlatex import LaTeXformatter, sub2rm
+    snippet = LaTeXformatter().nestedLists(header, rows, color=None,
+                                           value_fn=_slicap_latex_eng,
+                                           title=title)
+    return sub2rm(str(snippet))
+
+
+def expression_to_latex(value_str: str) -> "str | None":
     """
     Convert a value string to a LaTeX math string using the SLiCAP pipeline.
 
     If the value is a {…} expression, it is parsed by SLiCAP's
-    _checkExpression and converted to LaTeX via _latex_ENG — identical to how
+    _checkExpression and converted to LaTeX via exprLatex — identical to how
     component value labels are typeset.  Any other string is returned as-is
     (treated as raw LaTeX).
+
+    Returns **None** when a {…} expression does not parse: an invalid
+    expression must produce an error message, never a wrongly rendered label
+    (Anton, 2026-08-16).  Callers skip rendering and fall back to plain text.
 
     Used by ParameterItem.build_latex so parameter names and values are
     rendered with the same method as component values.
@@ -371,18 +475,7 @@ def expression_to_latex(value_str: str) -> str:
     expr_str = value_str.strip()[1:-1].strip()
     if _is_placeholder(expr_str):
         return expr_str                  # unset "?" reminder — render literally
-    if not _ensure_slicap():
-        return expr_str
-    try:
-        sympy_obj = _slicap_check(expr_str)
-        if sympy_obj is None:
-            return expr_str
-        result = _slicap_latex(sympy_obj)
-        if not result:
-            return expr_str
-        return result
-    except Exception:
-        return expr_str
+    return _expression_latex(expr_str)
 
 
 def symbol_to_latex(name: str) -> str:
@@ -436,14 +529,8 @@ def _render_fresh(expr_str: str, cache: Path) -> bytes | None:
         return None
     if _is_placeholder(expr_str):
         return None                      # unset "?" reminder — not an expression
-    try:
-        sympy_obj = _slicap_check(expr_str)
-        if sympy_obj is None:
-            return None
-        latex_str = _slicap_latex(sympy_obj)
-        if not latex_str:
-            return None
-    except Exception:
+    latex_str = _expression_latex(expr_str)      # the one parse boundary
+    if not latex_str:
         return None
     return _latex_to_svg(latex_str, cache)
 
@@ -466,7 +553,11 @@ def _render_latex_str(latex_str: str, cache_dir=None) -> bytes | None:
 
 
 def _latex_to_svg(latex_str: str, cache: Path) -> bytes | None:
-    """Compile a LaTeX math string to SVG via pdflatex + dvisvgm."""
+    """Compile a LaTeX math string to SVG via pdflatex (DVI) + dvisvgm.
+
+    pdflatex is run with ``-output-format=dvi`` so dvisvgm reads a DVI, not a
+    PDF.  DVI needs NO Ghostscript (``dvisvgm --pdf`` on a PDF would), so a
+    plain TeX distribution is the only prerequisite -- no extra packages."""
     with tempfile.TemporaryDirectory(dir=cache) as tmp:
         tmpdir   = Path(tmp)
         tex_file = tmpdir / "expr.tex"
@@ -475,17 +566,18 @@ def _latex_to_svg(latex_str: str, cache: Path) -> bytes | None:
             encoding="utf-8",
         )
         subprocess.run(
-            [_latex_tools()[0], "-interaction=batchmode", "expr.tex"],
+            [_latex_tools()[0], "-interaction=batchmode",
+             "-output-format=dvi", "expr.tex"],
             cwd=tmpdir,
             capture_output=True,
         )
-        pdf_file = tmpdir / "expr.pdf"
-        if not pdf_file.exists():
+        dvi_file = tmpdir / "expr.dvi"
+        if not dvi_file.exists():
             return None
 
         svg_file = tmpdir / "expr.svg"
         subprocess.run(
-            [_latex_tools()[1], "--pdf", "--no-fonts", "expr.pdf", "-o", "expr.svg"],
+            [_latex_tools()[1], "--no-fonts", "expr.dvi", "-o", "expr.svg"],
             cwd=tmpdir,
             capture_output=True,
         )
@@ -550,11 +642,12 @@ def render_latex_raw(latex_code: str,
         tex = tmpdir / "frag.tex"
         tex.write_text(doc, encoding="utf-8")
         subprocess.run(
-            [_latex_tools()[0], "-interaction=batchmode", "frag.tex"],
+            [_latex_tools()[0], "-interaction=batchmode",
+             "-output-format=dvi", "frag.tex"],
             cwd=tmpdir, capture_output=True,
         )
-        pdf = tmpdir / "frag.pdf"
-        if not pdf.exists():
+        dvi = tmpdir / "frag.dvi"
+        if not dvi.exists():
             log = tmpdir / "frag.log"
             if log.exists():
                 lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -563,7 +656,7 @@ def render_latex_raw(latex_code: str,
             return None, "pdflatex failed (no output)"
         svg = tmpdir / "frag.svg"
         subprocess.run(
-            [_latex_tools()[1], "--pdf", "--no-fonts", "frag.pdf", "-o", "frag.svg"],
+            [_latex_tools()[1], "--no-fonts", "frag.dvi", "-o", "frag.svg"],
             cwd=tmpdir, capture_output=True,
         )
         if not svg.exists():

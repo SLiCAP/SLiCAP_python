@@ -151,7 +151,11 @@ def _generate_project_config():
                                     "linewidth"             : 2,
                                     "markersize"            : 7,
                                     "linetype"              : "-",
-                                    "svgmargin"             : 1
+                                    "svgmargin"             : 1,
+                                    "cursorfontsize"        : 10,
+                                    "cursorbgcolor"         : "lightyellow",
+                                    "subplothspace"         : 0.45,
+                                    "subplotwspace"         : 0.3
                                     }                            
     project_config['gaincolors']   = {"asymptotic"            : "r",
                                     "gain"                  : "b",
@@ -254,7 +258,7 @@ def main_config_path():
     """Location of the MAIN configuration file: ~/SLiCAP/SLiCAP.ini.
 
     The main configuration lives in its own folder so it can never collide
-    with a project's SLiCAP.ini (decided 2026-07-15: with the old location
+    with a project's SLiCAP.ini (with the old location
     ~/SLiCAP.ini, a project in the home directory silently destroyed the
     main configuration). A visible folder — not a hidden dot-folder — for
     Windows friendliness. A pre-existing main configuration at the legacy
@@ -286,9 +290,14 @@ def _read_project_config():
             with open("SLiCAP.ini") as f:
                 config_dict.read_file(f)
         else:
-            print("Generating project configuration file: SLiCAP.ini.\n")
+            # NO project file is written here: importing SLiCAP must not turn
+            # whatever directory a script or the GUI happens to start in into
+            # a project. A project ini is created by initProject() alone
+            # (Anton, 2026-08-16). Until then the defaults are held in memory,
+            # which is what a bare `import SLiCAP` needs anyway. Writing here
+            # is what scaffolded phantom projects in cir/ and lib/, and what
+            # made `slicap` create a project tree in the terminal's folder.
             config_dict = _generate_project_config()
-            _write_project_config(config_dict)
     except Exception:
         # A corrupt project ini self-heals to defaults instead of returning
         # an empty config that then crashes downstream with missing keys
@@ -427,8 +436,12 @@ def _update_ini_files():
             del_keys.append(key)
     for key in del_keys:
         del project_config[key]
-    _write_project_config(project_config)
-    
+    # Only an EXISTING project file is updated (missing keys added, unused
+    # ones removed). A project is created by initProject(), never by an
+    # import: see _read_project_config (Anton, 2026-08-16).
+    if os.path.isfile("./SLiCAP.ini") and not _cwd_is_main_config_dir():
+        _write_project_config(project_config)
+
     return main_config, project_config    
 
 def dump(section="all"):
@@ -559,11 +572,15 @@ def dump(section="all"):
         print('ini.gain_colors_vi         =', gain_colors_vi)   
         print('ini.gain_colors_ideal      =', gain_colors_ideal)   
         print('ini.axis_height            =', axis_height)
+        print('ini.subplot_hspace         =', subplot_hspace)
+        print('ini.subplot_wspace         =', subplot_wspace)
         print('ini.axis_width             =', axis_width)
         print('ini.line_width             =', line_width)
         print('ini.line_type              =', line_type)
         print('ini.plot_fontsize          =', plot_fontsize)
         print('ini.marker_size            =', marker_size)
+        print('ini.cursor_fontsize       =', cursor_fontsize)
+        print('ini.cursor_bgcolor        =', cursor_bgcolor)
         print('ini.legend_loc             =', legend_loc)
         print('ini.default_colors         =', default_colors)
         print('ini.default_markers        =', default_markers)
@@ -673,6 +690,12 @@ gain_colors_vi        = project_config['gaincolors']['vi']
 
 axis_height           = eval(project_config['plot']['axisheight'])
 axis_width            = eval(project_config['plot']['axiswidth'])
+# vertical/horizontal room between the axes of a multi-axis figure; a
+# SHARED stack closes its gaps regardless (Anton, 2026-08-03)
+subplot_hspace        = eval(str(project_config['plot'].get('subplothspace',
+                                                            0.45)))
+subplot_wspace        = eval(str(project_config['plot'].get('subplotwspace',
+                                                            0.3)))
 line_width            = eval(project_config['plot']['linewidth'])
 line_type             = project_config['plot']['linetype']
 plot_fontsize         = eval(project_config['plot']['plotfontsize'])
@@ -684,6 +707,11 @@ default_markers       = project_config['plot']['defaultmarkers'].split(',')
 default_markers       = [mark.strip() for mark in default_markers]
 plot_file_type        = project_config['plot']['plotfiletype']
 svg_margin            = eval(project_config['plot']['svgmargin'])
+# Cursor read-out formatting; both cursor modes (A/B and crosshair) share
+# them. Read with a fallback: project ini files written before these keys
+# existed must keep working (the project config is not auto-upgraded).
+cursor_fontsize       = eval(project_config['plot'].get('cursorfontsize', '10'))
+cursor_bgcolor        = project_config['plot'].get('cursorbgcolor', 'lightyellow')
 
 pair_ext              = project_config['balancing']['pair_ext'].split(',') 
 pair_ext              = [ext.strip() for ext in pair_ext]

@@ -338,7 +338,8 @@
     
     <g id="0"
        data-prefix="GND" 
-       data-nodes="0" 
+       data-nodes="0"
+       data-params="name|0|0|0"
        data-description="Reference node (GND=0) connection">
 
        <!-- connection node: (0, 0) -->
@@ -351,7 +352,8 @@
 
     <g id="port"
        data-prefix="P" 
-       data-nodes="port" 
+       data-nodes="port"
+       data-params="name||0|1"
        data-description="Hierarchical connection">
 
        <!-- pentagon: pointed top at pin, rectangular body below -->

@@ -1,4 +1,5 @@
 import importlib
+import re
 import os
 from pathlib import Path
 from datetime import date as _date
@@ -95,6 +96,34 @@ def _check_ngspice(parent) -> bool:
 # ---------------------------------------------------------------------------
 # CanvasPanel — one schematic canvas with its own embedded menu bar
 # ---------------------------------------------------------------------------
+
+def instruction_run_context(instr_path, schematic_path=None,
+                            schematic_project=""):
+    """Where an instruction file runs, and under which project name.
+
+    The project is the one the INSTRUCTION FILE lives in - never whichever
+    schematic happens to be open. It used to come from the open schematic
+    (``project.project_root()``, derived from the app-wide current
+    schematic), so running a file belonging to another project wrote
+    ``main.py`` into the OLD project and ran it there; ``main.py`` then
+    imported a module that was not next to it and the run died with
+    ``ModuleNotFoundError`` (Anton, 2026-08-03). ``main.py`` imports the
+    instruction file, so it belongs beside it, and that settles the working
+    directory too.
+
+    The schematic's project NAME is used only when that schematic belongs to
+    the same project; otherwise the file's own stem names the project.
+    """
+    root = project.root_for(instr_path)
+    if schematic_path is not None and schematic_project:
+        try:
+            same = project.root_for(schematic_path).resolve() == root.resolve()
+        except OSError:
+            same = False
+        if same:
+            return root, schematic_project
+    return root, Path(instr_path).stem
+
 
 class CanvasPanel(QWidget):
     """A schematic canvas (SLiCAP or NGspice) with its own embedded menu bar.
@@ -347,7 +376,11 @@ class CanvasPanel(QWidget):
         act = QAction("&Library…", self)
         act.triggered.connect(self._on_place_library)
         menu.addAction(act)
-        act = QAction("Subcirc&uit…", self)
+        # "NEW subcircuit symbol": the dialog CREATES (or re-assigns) the
+        # block symbol and places the first instance; after that the symbol
+        # is a palette citizen of the project like any component (Anton,
+        # 2026-08-04).
+        act = QAction("New s&ubcircuit symbol…", self)
         act.triggered.connect(self._on_place_subcircuit)
         menu.addAction(act)
         act = QAction("&Image…", self)
@@ -381,6 +414,11 @@ class CanvasPanel(QWidget):
         if self._schematic_only:
             menu.setEnabled(False)
             return
+        act = QAction("Create circuit &object…", self)
+        act.setToolTip("Add  <name> = sl.makeCircuit(\"<this schematic>\")  "
+                       "to the instruction file")
+        act.triggered.connect(self._on_slicap_create_circuit)
+        menu.addAction(act)
         act = QAction("Create / edit &SLiCAP instruction…", self)
         act.triggered.connect(self._on_slicap_add_instruction)
         menu.addAction(act)
@@ -403,18 +441,15 @@ class CanvasPanel(QWidget):
     # -- library --------------------------------------------------------------
 
     def _make_library(self, overlay_path=None) -> SymbolLibrary:
-        if self._sch_type == 'ngspice':
-            lib = SymbolLibrary(_NGSPICE_SVG)
-        else:
-            lib = SymbolLibrary(_SLICAP_SVG)
-            if self._config != 'basic':
-                lib.add_user_library(_SLICAP_DIR, exclude_stems={"Symbols"})
-        libdir = (project.subdir_for(self._current_path, "lib")
-                  if self._current_path else project.subdir("lib"))
-        lib.add_user_library(libdir, exclude_stems={p.stem for p in libdir.glob("*.lib")})
-        if overlay_path is not None:
-            lib.add_bundle(overlay_path)
-        return lib
+        """The library for this panel - built by the ONE shared builder, so
+        the editor and the netlister cannot offer different symbols
+        (symbol_library.build_library; Anton, 2026-08-03)."""
+        from .symbol_library import build_library
+        path = self._current_path
+        if path is None:                      # a fresh, unsaved schematic
+            path = project.project_root() / "sch" / "untitled"
+        return build_library(path, sch_type=self._sch_type,
+                             config=self._config, overlay=overlay_path)
 
     def _build_library(self, overlay_path=None):
         lib = self._make_library(overlay_path)
@@ -440,7 +475,15 @@ class CanvasPanel(QWidget):
         self._scene.style = self._style
         self._scene.cache_dir = project.cache_path_for(path)
         self._build_library(project.symbols_path_for(path))
-        self._scene.from_data(data, self._library)
+        missing = self._scene.from_data(data, self._library)
+        if missing:
+            QMessageBox.warning(
+                self, "Missing symbols",
+                "No symbol definition was found for:\n\n    {0}\n\n"
+                "Those components are NOT on the canvas and will be missing "
+                "from the netlist. Check the symbol libraries and this "
+                "schematic's .symbols cache.".format(
+                    ", ".join(sorted(set(missing)))))
         self._scene.clear_history()
         self._doc_props = data.properties
         self._current_path = path
@@ -492,12 +535,14 @@ class CanvasPanel(QWidget):
         from .component_item import ComponentItem
         from .wire_item import WireItem
         from .parameter_item import ParameterItem
+        from .library_item import LibraryItem
         from .netlist import build_subcircuit, schematic_ports
         from .create_subcircuit_dialog import CreateSubcircuitDialog
         items = self._scene.items()
         comps = [i for i in items if isinstance(i, ComponentItem)]
         wires = [i for i in items if isinstance(i, WireItem)]
         prms  = [i for i in items if isinstance(i, ParameterItem)]
+        slibs = [i for i in items if isinstance(i, LibraryItem)]
         present       = schematic_ports(comps, wires)
         saved         = [p for p in self._doc_props.subcircuit_ports if p in present]
         ports_default = saved + [p for p in present if p not in saved]
@@ -506,23 +551,37 @@ class CanvasPanel(QWidget):
             return
         self._doc_props.subcircuit_ports  = dlg.ports()
         self._doc_props.subcircuit_params = dlg.params()
-        base = self._current_path
-        sch_path = (project.subdir_for(base, "sch") if base
-                    else project.subdir("sch")) / f"{title}.slicap_sch"
-        lib_path = (project.subdir_for(base, "lib") if base
-                    else project.subdir("lib")) / f"{title}.lib"
+        base    = self._current_path
+        is_ng   = self._sch_type == 'ngspice'
+        sch_ext = ".spice_sch" if is_ng else ".slicap_sch"
+        lib_ext = ".spice_lib" if is_ng else ".slicap_lib"
+        # The subcircuit package lives in lib/: the .lib, the block symbol
+        # AND the schematic, which is also LOADED from there (descend, pin
+        # placement) — one self-contained folder per subcircuit that survives
+        # being copied into another project (Anton, 2026-08-05).
+        libdir = (project.subdir_for(base, "lib") if base
+                  else project.subdir("lib"))
+        sch_path = libdir / f"{title}{sch_ext}"
+        lib_path = libdir / f"{title}{lib_ext}"
         self._save_to(sch_path)
         try:
-            lib_text = build_subcircuit(comps, wires, title,
-                                        self._doc_props.subcircuit_ports,
-                                        self._doc_props.subcircuit_params,
-                                        params_items=prms)
+            if is_ng:
+                from .ngspice_netlist import build_ngspice_subckt
+                lib_text = build_ngspice_subckt(comps, wires, title,
+                                                self._doc_props.subcircuit_ports,
+                                                self._doc_props.subcircuit_params,
+                                                params_items=prms, libs=slibs)
+            else:
+                lib_text = build_subcircuit(comps, wires, title,
+                                            self._doc_props.subcircuit_ports,
+                                            self._doc_props.subcircuit_params,
+                                            params_items=prms, libs=slibs)
             lib_path.write_text(lib_text, encoding="utf-8")
         except Exception as exc:
             QMessageBox.critical(self, "Subcircuit save failed", str(exc))
             return
         QMessageBox.information(self, "Subcircuit saved",
-                                f"Wrote:\n  sch/{sch_path.name}\n  lib/{lib_path.name}")
+                                f"Wrote:\n  lib/{sch_path.name}\n  lib/{lib_path.name}")
 
     def _save_to(self, path: Path):
         self._doc_props.last_modified = _date.today().isoformat()
@@ -622,6 +681,9 @@ class CanvasPanel(QWidget):
                 except OSError:
                     netlist_text = None
                 self._scene.set_op_results(results, netlist_text)
+                # Fresh results: live-update any open subcircuit views
+                # borrowing this panel's run (order-independent descend).
+                self._refresh_borrowing_children()
             return
 
     def _on_preferences(self):
@@ -829,14 +891,29 @@ class CanvasPanel(QWidget):
 
     def _on_place_subcircuit(self):
         from .place_subcircuit_dialog import PlaceSubcircuitDialog
-        from .subcircuit import box_symbol_svg
-        dlg = PlaceSubcircuitDialog(self)
+        from .subcircuit import box_symbol_svg, reskin_symbol_svg
+        dlg = PlaceSubcircuitDialog(self, sch_type=self._sch_type,
+                                    library=self._library)
         if not dlg.exec():
             return
         defn     = dlg.subckt_def()
-        lib_path = Path(dlg.lib_path())
-        svg_path = lib_path.with_name(f"{defn.name}.svg")
-        svg_path.write_text(box_symbol_svg(defn, dlg.placement(), *dlg.extra_size()), encoding="utf-8")
+        from .subcircuit import ensure_in_project_lib
+        libdir = (project.subdir_for(self._current_path, "lib")
+                  if self._current_path else project.subdir("lib"))
+        # a .lib browsed outside the project is COPIED in: the include and
+        # the symbol are referenced relatively, so the project must hold them
+        lib_path = ensure_in_project_lib(dlg.lib_path(), libdir)
+        sym_suffix = "_spice_symbol.svg" if self._sch_type == 'ngspice' else "_slicap_symbol.svg"
+        svg_path = lib_path.with_name(f"{defn.name}{sym_suffix}")
+        source = dlg._reskin_source()
+        if source is not None:
+            # an existing symbol's artwork, re-skinned as this subcircuit
+            svg_text = reskin_symbol_svg(self._library.symbol(source).g_xml,
+                                         defn, dlg.mapping())
+        else:
+            svg_text = box_symbol_svg(defn, dlg.placement(),
+                                      *dlg.extra_size())
+        svg_path.write_text(svg_text, encoding="utf-8")
         self._library.add_bundle(svg_path)
         svg = self._library.svg_bytes(defn.name)
         if svg is None:
@@ -848,14 +925,16 @@ class CanvasPanel(QWidget):
     def _ensure_library_include(self, lib_path):
         """Ensure the schematic's library block references lib_path (a symbol was
         loaded from it), adding a '.lib' entry if it is not already listed."""
-        target  = str(Path(lib_path).resolve())
+        target_name = Path(lib_path).name
         block   = self._scene.library_block()
         entries = list(block.entries) if block else []
         for e in entries:
             f = e.get("file")
-            if f and str(Path(f).resolve()) == target:
+            if f and Path(f).name == target_name:
                 return
-        entries.append({"directive": "lib", "file": str(lib_path), "corner": ""})
+        # Store a project-relative path ("lib/<file>") so the .include/.lib
+        # travels with the project — ngspice/SLiCAP resolve it from the run dir.
+        entries.append({"directive": "lib", "file": f"lib/{target_name}", "corner": ""})
         self._scene._push_undo()
         self._scene.apply_library_block(
             entries, block.show_on_schematic if block else True,
@@ -1026,7 +1105,12 @@ class CanvasPanel(QWidget):
                                f"Replace {', '.join(names)} with the library version?  Wire connections may break.",
                                QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
             return
-        fresh   = self._make_library(None)
+        # NO_BUNDLE, not None: None would re-overlay this schematic's own
+        # frozen bundle, so the "fresh" library carried the same stale symbol
+        # the user is replacing and the reload silently changed nothing
+        # (Anton, 2026-08-05).
+        from .symbol_library import NO_BUNDLE
+        fresh   = self._make_library(NO_BUNDLE)
         updated = self._library.update_symbols(fresh, names)
         if updated:
             for item in self._scene.items():
@@ -1046,7 +1130,8 @@ class CanvasPanel(QWidget):
                                "Reload all symbols from the system library?  Wire connections may break.",
                                QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
             return
-        self._build_library(None)
+        from .symbol_library import NO_BUNDLE
+        self._build_library(NO_BUNDLE)
         for item in self._scene.items():
             if isinstance(item, ComponentItem):
                 sym = self._library.symbol(item.symbol_name)
@@ -1062,20 +1147,140 @@ class CanvasPanel(QWidget):
 
     # -- instruction actions --------------------------------------------------
 
-    def _on_slicap_add_instruction(self):
-        if self._current_path is None:
+    def _schematic_relpath(self) -> str:
+        """This schematic, relative to its project root - how an instruction
+        file refers to it."""
+        return os.path.relpath(str(self._current_path),
+                               project.root_for(self._current_path))
+
+    def _on_slicap_create_circuit(self):
+        """Instruction -> Create circuit object: append
+        ``<name> = sl.makeCircuit("<this schematic>")`` to the instruction
+        file.
+
+        Creating the circuit object is DECOUPLED from creating an instruction
+        (Anton, 2026-08-16): the file - not whichever tab is active - decides
+        which circuit objects exist. A name already in use is never rebound
+        silently, and the line is APPENDED, so instructions already in the
+        file keep their meaning.
+        """
+        from PySide6.QtWidgets import QInputDialog
+        from .instr_file import circuit_objects, assigned_names
+        if self._current_path is None or self._main_win is None:
             return
+        editor = self._main_win._instr_editor
+        text = editor.text()
+        relpath = self._schematic_relpath()
+        existing = circuit_objects(text)
+
+        same = [c["name"] for c in existing if c["path"] == relpath]
+        if same:
+            if QMessageBox.question(
+                    self, "Circuit object",
+                    "This schematic already has a circuit object: "
+                    "{0}.\n\nCreate a SECOND one under a different name?"
+                    .format(", ".join(same)),
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No) != QMessageBox.Yes:
+                return
+
+        default = re.sub(r"\W", "_", Path(self._current_path).stem)
+        if not default or default[0].isdigit():
+            default = "cir_" + default
+        taken = assigned_names(text)
+        name = default
+        n = 2
+        while name in taken:
+            name, n = f"{default}{n}", n + 1
+
+        name, ok = QInputDialog.getText(
+            self, "Create circuit object",
+            "Variable name for the circuit object of\n{0}:".format(relpath),
+            text=name)
+        if not ok:
+            return
+        name = name.strip()
+        if not name.isidentifier():
+            QMessageBox.warning(self, "Create circuit object",
+                                f"'{name}' is not a valid Python name.")
+            return
+        if name in taken:
+            owner = next((c for c in existing if c["name"] == name), None)
+            if owner is None:
+                QMessageBox.warning(
+                    self, "Name in use",
+                    f"'{name}' is already used in the instruction file for "
+                    "something else. Choose another name.")
+                return
+            if QMessageBox.warning(
+                    self, "Name in use",
+                    "'{0}' is now the circuit of\n    {1}\n\nRe-using it "
+                    "for\n    {2}\nrebinds the name: instructions added "
+                    "AFTER this point will use the new circuit, those above "
+                    "keep the old one.\n\nContinue?".format(
+                        name, owner["path"], relpath),
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No) != QMessageBox.Yes:
+                return
+
+        editor.ensure_header('slicap')
+        editor.insert_snippet(f'{name} = sl.makeCircuit("{relpath}")')
+        editor.show()
+        editor.raise_()
+        self._status(f"Circuit object '{name}' added to the instruction file.")
+
+    def _circuit_data(self, path: str) -> dict:
+        """Signal and parameter lists of the circuit built from *path*
+        (project-relative), cached per run of the dialog."""
+        from SLiCAP.SLiCAPshell import makeCircuit
+        cache = getattr(self, "_cir_data_cache", None)
+        if cache is None:
+            cache = self._cir_data_cache = {}
+        if path in cache:
+            return cache[path]
+        full = project.root_for(self._current_path) / path
+        cir = makeCircuit(str(full))
+        data = {
+            "sources":   sorted(cir.indepVars),
+            "detectors": sorted(cir.depVars()),
+            "lgrefs":    sorted(cir.controlled),
+            "par_defs":  {str(k): str(v) for k, v in cir.parDefs.items()},
+            "undefined_params": sorted(
+                str(p) for p in (cir.params if isinstance(cir.params, list)
+                                 else cir.params.keys())),
+        }
+        cache[path] = data
+        return data
+
+    def _on_slicap_add_instruction(self):
+        """Compose an instruction for a circuit object of THIS schematic.
+
+        The GUI only ever authors for the ACTIVE schematic (Anton,
+        2026-08-16): the circuit it addresses is built from the drawing in
+        front of you, so what the dialog offers and what the call references
+        can never belong to different circuits.  The rest of the instruction
+        file is read for NAME CONFLICTS only - never to address or modify
+        instructions of another schematic.  The file itself stays
+        project-level and multi-schematic; hand-editing is unrestricted.
+        """
+        from .instr_file import circuit_objects
+        if self._current_path is None or self._main_win is None:
+            return
+        existing = self._main_win._instr_editor.text()
+        relpath = self._schematic_relpath()
+        mine = [c for c in circuit_objects(existing) if c["path"] == relpath]
+        if not mine:
+            QMessageBox.information(
+                self, "SLiCAP instruction",
+                "This schematic has no circuit object yet.\n\n"
+                "Use  Instruction -> Create circuit object…  first: an "
+                "instruction is always composed for a circuit object of the "
+                "schematic you are editing.")
+            return
+
         self._status("Parsing circuit…")
         try:
-            from SLiCAP.SLiCAPshell import makeCircuit
-            cir       = makeCircuit(str(self._current_path))
-            sources   = sorted(cir.indepVars)
-            detectors = sorted(cir.depVars())
-            lgrefs    = sorted(cir.controlled)
-            par_defs  = {str(k): str(v) for k, v in cir.parDefs.items()}
-            undefined = sorted(str(p) for p in
-                               (cir.params if isinstance(cir.params, list)
-                                else cir.params.keys()))
+            data = self._circuit_data(relpath)
         except (Exception, SystemExit) as exc:
             self._status("")
             QMessageBox.critical(
@@ -1084,19 +1289,20 @@ class CanvasPanel(QWidget):
                 f"{exc}\n\nFix the schematic (or its netlist) and try again.")
             return
         self._status("")
-        existing = self._main_win._instr_editor.text() if self._main_win else ""
+
         from .slicap_analysis_dialog import SLiCAPAnalysisDialog
-        dlg = SLiCAPAnalysisDialog(cir_var="cir", sources=sources,
-                                   detectors=detectors, lgrefs=lgrefs,
-                                   par_defs=par_defs,
-                                   undefined_params=undefined,
-                                   existing_text=existing, parent=self)
+        dlg = SLiCAPAnalysisDialog(cir_var=mine[0]["name"],
+                                   sources=data["sources"],
+                                   detectors=data["detectors"],
+                                   lgrefs=data["lgrefs"],
+                                   par_defs=data["par_defs"],
+                                   undefined_params=data["undefined_params"],
+                                   existing_text=existing, parent=self,
+                                   circuits=mine)
         if dlg.exec() and self._main_win:
             snippet = dlg.generated_snippet()
             if snippet:
-                relpath = os.path.relpath(str(self._current_path),
-                                          project.root_for(self._current_path))
-                self._main_win._instr_editor.ensure_header('slicap', relpath)
+                self._main_win._instr_editor.ensure_header('slicap')
                 self._main_win._instr_editor.insert_snippet(snippet)
 
     def _on_ngspice_add_instruction(self):
@@ -1128,6 +1334,8 @@ class CanvasPanel(QWidget):
                 f"{err}\n\nFix the schematic and try again.")
             return
         output_vars = _get_output_vars(netlist_text)
+        from SLiCAP.SLiCAPngspice import _get_noise_vars
+        noise_vars  = _get_noise_vars(netlist_text, contributions=True)
         param_names = _get_param_names(netlist_text)
         sources     = _indep_source_refs(cir_stem)
         existing = self._main_win._instr_editor.text() if self._main_win else ""
@@ -1142,6 +1350,7 @@ class CanvasPanel(QWidget):
             return
         from .ngspice_analysis_dialog import NGspiceAnalysisDialog
         dlg = NGspiceAnalysisDialog(cir_stem, output_vars=output_vars,
+                                    noise_vars=noise_vars,
                                     param_names=param_names,
                                     existing_text=existing, sources=sources,
                                     parent=self)
@@ -1152,7 +1361,7 @@ class CanvasPanel(QWidget):
                 return
             snippet = dlg.generated_snippet()
             if snippet:
-                self._main_win._instr_editor.ensure_header('ngspice', None)
+                self._main_win._instr_editor.ensure_header('ngspice')
                 self._main_win._instr_editor.insert_snippet(snippet)
 
         dlg.accepted.connect(_accept)
@@ -1179,7 +1388,7 @@ class CanvasPanel(QWidget):
         if dlg.exec():
             snippet = dlg.generated_snippet()
             if snippet:
-                self._main_win._instr_editor.ensure_header('ngspice', None)
+                self._main_win._instr_editor.ensure_header('ngspice')
                 self._main_win._instr_editor.insert_snippet(snippet)
 
     def _status(self, msg: str):
@@ -1191,17 +1400,96 @@ class CanvasPanel(QWidget):
 
     # -- subschematic descent -------------------------------------------------
 
-    def open_subschematic(self, path: Path):
+    def open_subschematic(self, path: Path, from_item=None):
         path = Path(path)
         if not path.is_file():
             QMessageBox.warning(self, "Descend into subcircuit", f"Schematic not found:\n{path}")
             return
         if self._main_win is not None:
-            self._main_win.load_file(path)
+            child = self._main_win.load_file(path)
         else:
             win = MainWindow()
-            win.load_file(path)
+            child = win.load_file(path)
             win.show()
+        if child is not None and from_item is not None:
+            # Remember WHO this view borrows from — also when the parent has
+            # no op results yet, so a run done AFTER descending live-updates
+            # the open view (order must not matter, Anton 2026-08-05).
+            child._op_source = (self, from_item.instance_id)
+            self._hand_down_op_context(child, from_item.instance_id, path)
+
+    def _hand_down_op_context(self, child, instance_id: str,
+                              sch_path: Path) -> None:
+        """Give the descended-into panel the parent run's op values for THIS
+        instance (definition/instance rule, Anton 2026-08-05: one editable
+        view per subcircuit; the annotation context follows the instance the
+        user descended from — the last descent wins).
+
+        On any failure — parent has no results, the library cannot be
+        parsed, the instance is absent from the netlist the run used — a
+        previously BORROWED context on the child is cleared (its values
+        belonged to another situation; blank is honest, wrong is not).  A
+        child's OWN run results (op_prefix is None) are left alone."""
+        from .subcircuit import parse_subckt, instance_port_map
+        parent = self._scene
+        cs = child._scene
+
+        def _fail(reason=None):
+            if reason:
+                print(f"Note: no operating-point context for "
+                      f"{instance_id}: {reason}")
+            if cs is not None and cs.op_prefix:
+                cs.adopt_op_context(None, None, None, None)
+
+        if not parent.op_results:
+            return _fail()
+        is_ng = sch_path.suffix.lower() == ".spice_sch"
+        lib_ext = ".spice_lib" if is_ng else ".slicap_lib"
+        lib_path = sch_path.with_suffix(lib_ext)
+        if not lib_path.is_file():      # legacy layout: schematic in sch/
+            lib_path = project.subdir_for(sch_path, "lib") / (sch_path.stem
+                                                              + lib_ext)
+        try:
+            defn = parse_subckt(lib_path)
+            lib_text = Path(lib_path).read_text(encoding="utf-8",
+                                                errors="replace")
+        except Exception as exc:
+            return _fail(exc)
+        port_nets = instance_port_map(parent.op_netlist, parent.op_prefix,
+                                      parent.op_port_nets, instance_id,
+                                      defn.ports)
+        if port_nets is None:
+            return _fail("instance not found in the netlist the op run "
+                         "used (re-run the analysis).")
+        inst = instance_id.lower()
+        prefix = f"{parent.op_prefix}.{inst}" if parent.op_prefix else inst
+        cs.adopt_op_context(parent.op_results, lib_text, prefix, port_nets)
+        child._set_dock_title(f"{sch_path.name} ({instance_id})")
+
+    def _refresh_borrowing_children(self, _seen=None) -> None:
+        """Live-update every open subcircuit view that borrows THIS panel's
+        op run (called after fresh results are installed).  Cascades one
+        level per borrowed hop so nested descents refresh too; the *seen*
+        set is a cycle guard (hierarchy loop detection is still planned)."""
+        if self._main_win is None:
+            return
+        seen = _seen if _seen is not None else set()
+        if id(self) in seen:
+            return
+        seen.add(id(self))
+        for dock in list(self._main_win._canvas_docks):
+            try:
+                child = dock.widget()
+                src = getattr(child, "_op_source", None)
+                if not src or src[0] is not self:
+                    continue
+                if child._current_path is None:
+                    continue
+                self._hand_down_op_context(child, src[1],
+                                           child._current_path)
+                child._refresh_borrowing_children(seen)
+            except RuntimeError:
+                continue    # dock/panel already deleted on the C++ side
 
 
 # ---------------------------------------------------------------------------
@@ -1422,7 +1710,21 @@ class MainWindow(QMainWindow):
         act_open.setShortcut(QKeySequence.Open)
         act_open.triggered.connect(self._on_open)
         m.addAction(act_open)
-        self._sch_menu_actions = [act_new_sl, act_new_ng, act_open]
+        # Instruction-file actions live here too (Anton, 2026-08-05): the
+        # File menu is the canonical home for file-level actions; the
+        # panel's Open…/Save buttons stay as proximity shortcuts.  Same
+        # project gating as the schematic actions — an instruction file
+        # without a project root has nowhere sensible to run.
+        act_new_instr = QAction("New &Instruction file", self)
+        act_new_instr.triggered.connect(self._on_new_instruction_file)
+        act_new_instr.setEnabled(not self._schematic_only)
+        m.addAction(act_new_instr)
+        act_open_instr = QAction("Open instruction &file…", self)
+        act_open_instr.triggered.connect(self._on_open_instruction_file)
+        act_open_instr.setEnabled(not self._schematic_only)
+        m.addAction(act_open_instr)
+        self._sch_menu_actions = [act_new_sl, act_new_ng, act_open,
+                                  act_new_instr, act_open_instr]
         m.addSeparator()
         act = QAction("P&references…", self)
         act.triggered.connect(self._on_preferences)
@@ -1439,8 +1741,14 @@ class MainWindow(QMainWindow):
         m.addAction(act)
 
         instr_menu = bar.addMenu("&Instruction")
-        act = QAction("Create / edit &plot…", self)
-        act.triggered.connect(self._on_create_plot)
+        act = QAction("Create / Edit &Traces and Measurements…", self)
+        act.triggered.connect(self._on_create_traces)
+        instr_menu.addAction(act)
+        act = QAction("Create / Edit &Axes…", self)
+        act.triggered.connect(self._on_create_axes)
+        instr_menu.addAction(act)
+        act = QAction("Create / Edit &Figures…", self)
+        act.triggered.connect(self._on_create_figure)
         instr_menu.addAction(act)
         # One generic snippet dialog per output format (add a SnippetTarget +
         # a line here for MyST / HTML / plain text later).
@@ -1457,6 +1765,11 @@ class MainWindow(QMainWindow):
         instr_menu.addSeparator()
         instr_menu.addAction(self._act_run)
         instr_menu.addAction(self._act_stop)
+        # The Instruction menu needs a project (it composes instructions for a
+        # circuit) and is greyed until one is open - like the schematic
+        # entries in File (Anton, 2026-08-16). It is also placed AFTER View,
+        # so the bar reads File - View - Instruction - Help.
+        self._instr_menu = instr_menu
         if self._schematic_only:
             instr_menu.setEnabled(False)
 
@@ -1483,6 +1796,12 @@ class MainWindow(QMainWindow):
             act.triggered.connect(self._on_reset_layout)
             view_menu.addAction(act)
 
+        # Order the bar File - View - Instruction - Help: Instruction is
+        # re-inserted after View (it was created earlier so its actions could
+        # be built alongside the File menu).
+        bar.removeAction(instr_menu.menuAction())
+        bar.addMenu(instr_menu)
+
         h = bar.addMenu("&Help")
         act = QAction("Show &HTML Documentation", self)
         act.setShortcut(QKeySequence.HelpContents)
@@ -1502,26 +1821,42 @@ class MainWindow(QMainWindow):
                 and bool(getattr(self._project_panel, "_root", "")))
 
     def _refresh_file_menu(self) -> None:
-        """Show the New/Open-schematic group only when a project is open (or
-        in the standalone schematic editor). Called on project open/close."""
-        show = self._schematic_only or self._project_is_open()
+        """Enable the schematic/instruction group only when a project is open
+        (or in the standalone schematic editor).
+
+        The entries stay VISIBLE and are greyed out (Anton, 2026-08-16): a
+        user then sees what becomes available once a project is created or
+        selected, instead of a menu that changes shape."""
+        enabled = self._schematic_only or self._project_is_open()
         if getattr(self, "_sch_menu_sep", None) is not None:
-            self._sch_menu_sep.setVisible(show)
+            self._sch_menu_sep.setVisible(True)
         for act in getattr(self, "_sch_menu_actions", []):
-            act.setVisible(show)
+            act.setVisible(True)
+            act.setEnabled(enabled)
+        # The whole Instruction menu needs a project too; in the standalone
+        # schematic editor it stays disabled regardless.
+        if getattr(self, "_instr_menu", None) is not None:
+            self._instr_menu.setEnabled(enabled and not self._schematic_only)
 
     def _on_show_documentation(self):
+        """Help -> Documentation: the INSTALLED documentation.
+
+        It must work WITHOUT an internet connection (Anton, 2026-08-16), so
+        the local copy shipped with the package is opened, never a web page
+        when one is present. ``ini.install_path`` points at whatever SLiCAP
+        was imported from - site-packages for an installed user, the source
+        tree for a checkout - so one path covers both. Only when that copy is
+        missing does it fall back to the web, and then to slicap.org (not the
+        github.io mirror).
+        """
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices
-        local = (Path(__file__).parent.parent.parent.parent
-                 / "docs" / "_build" / "html" / "schematics" / "index.html")
-        installed = Path(__file__).parent.parent / "docs" / "schematics" / "index.html"
-        online = "https://slicap.github.io/SLiCAP_python/schematics/index.html"
-        for path in (local, installed):
-            if path.is_file():
-                QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
-                return
-        QDesktopServices.openUrl(QUrl(online))
+        docs = (Path(ini.install_path) / "SLiCAP" / "docs" / "html"
+                / "index.html")
+        if docs.is_file():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(docs)))
+            return
+        QDesktopServices.openUrl(QUrl("https://slicap.org"))
 
     def _on_check_updates(self):
         from PySide6.QtWidgets import QApplication
@@ -1664,6 +1999,27 @@ class MainWindow(QMainWindow):
         return panel
 
     def load_file(self, path: Path) -> CanvasPanel:
+        path = Path(path)
+        # An already-open schematic is ACTIVATED, never opened twice - the
+        # old decision, restored for the docked-panel layout (Anton,
+        # 2026-08-04: "we just activate the tab that shows it"). Two editors
+        # on one file would silently fight over saves. Done HERE so every
+        # open path gets it: descend, the project panel, File -> Open.
+        for dock in self._canvas_docks:
+            panel = dock.widget()
+            if not isinstance(panel, CanvasPanel):
+                continue
+            current = getattr(panel, "_current_path", None)
+            try:
+                same = (current is not None
+                        and Path(current).resolve() == path.resolve())
+            except OSError:
+                same = False
+            if same:
+                dock.show()
+                dock.raise_()                 # the tab that shows it
+                panel.setFocus()
+                return panel
         sch_type = 'ngspice' if path.suffix.lower() == '.spice_sch' else 'slicap'
         # Honour the session capture mode so the symbol palette stays consistent
         # (basic mode → basic palette); the schematic's own symbols still load
@@ -1740,19 +2096,57 @@ class MainWindow(QMainWindow):
             folder = dlg.project_dir
         self._open_project(folder)
 
+    def open_instruction_file(self, path) -> None:
+        """Open *path* in the shared instruction editor (project-tree
+        double-click on a .py file, Anton 2026-08-05).  Unsaved editor
+        content prompts first; the panel is raised so the load is visible."""
+        if self._instr_editor is None:
+            return
+        if not self._instr_editor.maybe_save():
+            return
+        self._instr_editor.load(Path(path))
+        self._instr_editor.show()
+        self._instr_editor.raise_()
+
+    def _on_new_instruction_file(self) -> None:
+        """File → New Instruction file: an explicit fresh buffer (named at
+        first Save; Run also asks for a name first)."""
+        if self._instr_editor is None:
+            return
+        if not self._instr_editor.maybe_save():
+            return
+        self._instr_editor.unload()
+        self._instr_editor.show()
+        self._instr_editor.raise_()
+
+    def _on_open_instruction_file(self) -> None:
+        """File → Open instruction file…: same dialog as the panel button."""
+        if self._instr_editor is None:
+            return
+        self._instr_editor.show()
+        self._instr_editor.raise_()
+        self._instr_editor.open_dialog()
+
     def _open_project(self, folder) -> None:
         """Switch the application to the project in *folder*.
 
         One project at a time (Q8): applies Save-project semantics to the
         current one (prompt per dirty panel), closes all its schematics, then
         re-initialises SLiCAP for the new project directory."""
+        if (getattr(self, "_instr_editor", None) is not None
+                and not self._instr_editor.maybe_save()):
+            return                         # user cancelled the instr prompt
         if not self._close_project_panels():
             return                         # user cancelled a save prompt
         os.chdir(str(folder))
         project.set_app_root(folder)       # project_root() before any schematic opens
         importlib.reload(ini)
         import SLiCAP as sl
-        sl.initProject("GUI")
+        # An EXISTING project keeps its own name, author and report state;
+        # loadProject only reads it, compiles the libraries and creates
+        # missing directories (Anton, 2026-08-16). initProject here used to
+        # rewrite the project's title to "GUI".
+        sl.loadProject()
         self._watch_ini_files()
         if self._project_panel is not None:
             self._project_panel.set_root(folder)
@@ -1766,6 +2160,18 @@ class MainWindow(QMainWindow):
             # a script has been RUN in this session (Anton, 2026-07-11:
             # variables are shown only when they are actually available).
             self._design_panel.set_project_root(folder)
+        if getattr(self, "_log_panel", None) is not None:
+            # The log follows the same reset-on-project-switch rule as every
+            # other panel: a new project starts with an empty session log
+            # (Anton, 2026-08-05 — it was the one panel that kept the old
+            # project's content).
+            self._log_panel.clear()
+        if getattr(self, "_instr_editor", None) is not None:
+            # Same rule for the instruction editor: it kept the OLD
+            # project's file, so Open… started in the old project's folder
+            # ("takes the wrong path", Anton 2026-08-05).  Unloading also
+            # re-anchors the Open… dialog at the new project root.
+            self._instr_editor.unload()
         # Title stays the plain product name regardless of the open project
         # (Anton, 2026-07-16: no project-name suffix).
         self.setWindowTitle("Structured Electronic Design Environment")
@@ -1828,41 +2234,9 @@ class MainWindow(QMainWindow):
             f"Settings reloaded from {os.path.basename(path)} "
             f"({os.path.dirname(path) or '.'})", 5000)
 
-    def refresh_op_annotations(self) -> None:
-        """Load this circuit's most recent UNSTEPPED operating-point results
-        (<stem>_op.raw, written by sl.op()) into the scene's op store and
-        refresh the bias annotations.  NGspice schematics only; stepped op
-        runs write *_op_sN.raw and are deliberately excluded."""
-        if self._sch_type != 'ngspice' or self._current_path is None:
-            return
-        raw = (project.subdir_for(self._current_path, "cir")
-               / f"{self._current_path.stem}_op.raw")
-        if not raw.is_file():
-            return
-        from .raw_file import RawFile
-        try:
-            analyses = RawFile.load(raw)
-        except Exception:
-            return
-        for a in analyses:
-            if "operating point" not in a.name.lower():
-                continue
-            results = {}
-            if getattr(a, "x_data", None) is not None and a.x_data.size == 1:
-                results[a.x_name.lower()] = float(a.x_data[0].real)
-            for k, v in a.signals.items():
-                if v.size == 1:
-                    results[k.lower()] = float(v[0].real)
-            if results:
-                # The .cir the raw was produced from names the nets.
-                cir = raw.with_name(f"{self._current_path.stem}.cir")
-                try:
-                    netlist_text = cir.read_text(encoding="utf-8",
-                                                 errors="replace")
-                except OSError:
-                    netlist_text = None
-                self._scene.set_op_results(results, netlist_text)
-            return
+    # A duplicate of CanvasPanel.refresh_op_annotations lived here on
+    # MainWindow: dead code (it referenced panel attributes MainWindow
+    # does not have and had no callers). REMOVED 2026-08-05.
 
     def _on_preferences(self):
         """File → Preferences… (also reachable from both panels' footers and
@@ -1910,22 +2284,60 @@ class MainWindow(QMainWindow):
         import SLiCAP.SLiCAPconfigure as ini
         self._open_config_file(ini.main_config_path())
 
-    def _on_create_plot(self):
-        """Two-step plot wizard (SLNG.md plot dialog rework): step 1 picks
-        WHICH plot (new + source mode, or existing), step 2 is the tailored
-        editor. Plotting is post-processing common to both back-ends, so it
-        lives on the main window, not on a schematic panel. Append-only
-        editing."""
+    # The old plot wizard (plot_dialog.py) was RETIRED and DELETED on
+    # 2026-08-03 with its bridges (ngspice_instr2traces, ngspice_dict2traces,
+    # goal=/trace_type= on make_traces), after Anton walked through the
+    # replacements: Traces and Measurements -> Axes (with the automatic
+    # sweepAxis kind) -> Figures. Only the SCRIPT API keeps compatibility
+    # (ngspice2traces, plotSweep, plot, plotPZ).
+
+    def _on_create_traces(self):
+        """Instruction -> Create / Edit Traces… (TRACES.md phase 6).
+
+        A named trace set from ONE simulation result: the DATA layer of
+        Figure -> Axes -> Traces. Emits one assignment, so append-only
+        editing keeps working."""
         if self._instr_editor is None:
             return
-        from .plot_dialog import SelectPlotDialog, PlotDialog
-        text = self._instr_editor.text()
-        sel = SelectPlotDialog(existing_text=text, parent=self)
-        if not sel.exec():
+        import SLiCAP.SLiCAPconfigure as ini
+        from .traces_dialog import TracesDialog
+        dlg = TracesDialog(existing_text=self._instr_editor.text(),
+                           results_dir=ini.results_path, parent=self)
+        if dlg.exec():
+            snippet = dlg.generated_snippet()
+            if snippet:
+                self._instr_editor.insert_snippet(snippet)
+
+    def _on_create_axes(self):
+        """Instruction -> Create / Edit Axes… (TRACES.md phase 7).
+
+        The PRESENTATION layer of Figure -> Axes -> Traces: trace sets get an
+        axis type, labels, scale factors and units, or a SLiCAP result gets a
+        pole-zero axis. Emits one assignment, so append-only editing keeps
+        working."""
+        if self._instr_editor is None:
             return
-        mode, edit_name = sel.selection()
-        dlg = PlotDialog(existing_text=text, mode=mode,
-                         edit_name=edit_name, parent=self)
+        import SLiCAP.SLiCAPconfigure as ini
+        from .axes_dialog import AxesDialog
+        dlg = AxesDialog(existing_text=self._instr_editor.text(),
+                         results_dir=ini.results_path, parent=self)
+        if dlg.exec():
+            snippet = dlg.generated_snippet()
+            if snippet:
+                self._instr_editor.insert_snippet(snippet)
+
+    def _on_create_figure(self):
+        """Instruction -> Create / Edit Figures… (TRACES.md phase 7).
+
+        Places axes on a canvas: a grid of cells, a span written as the same
+        axis repeated in adjacent cells. Emits one assignment per object -
+        an axis made from a cell comes before the figure that uses it."""
+        if self._instr_editor is None:
+            return
+        import SLiCAP.SLiCAPconfigure as ini
+        from .figure_dialog import FigureDialog
+        dlg = FigureDialog(existing_text=self._instr_editor.text(),
+                           results_dir=ini.results_path, parent=self)
         if dlg.exec():
             snippet = dlg.generated_snippet()
             if snippet:
@@ -2054,11 +2466,13 @@ class MainWindow(QMainWindow):
         # and run THAT — keeps initProject out of the instruction file so the file
         # stays import-safe (see SLNG.md, "Instruction-file architecture").
         from . import instr_file
-        proj_root = project.project_root()
         p = Path(p)
-        project_name = ((active._doc_props.project
-                         if active is not None and active._doc_props.project
-                         else "") or p.stem)
+        proj_root, project_name = instruction_run_context(
+            p,
+            schematic_path=(active._current_path if active is not None
+                            else None),
+            schematic_project=(active._doc_props.project
+                               if active is not None else ""))
         main_path = instr_file.write_main_py(proj_root, project_name, p.stem)
         self._last_instr_source = f"{p.stem}.py"
         import time

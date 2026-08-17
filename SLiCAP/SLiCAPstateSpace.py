@@ -56,10 +56,17 @@ General remarks
    
      With matrix expansion we can build the full-rank state-space matrix.
      
-   - Circuit expansion
+   - Circuit expansion (preferred)
    
      With circuit expansion we can build the time-constant matrix and the 
      full-rank state-space matrix.
+     
+7. Numeric pole-zero analysis with or without parameter steppeing can possibly speed up:
+
+   1. Substitute parameter values reducing the C matrix (up to this point we have sympy rationals in the matrix
+   2. Replace the sympy rationals with rationals from fractions.py
+   3. Reduce C to full-rank using these rational numbers
+   4. Go to floats to calculate the state-space matrix and determine its eigenvalues.
 
 Procedure of the matrix modification
 ====================================

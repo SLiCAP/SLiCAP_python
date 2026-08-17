@@ -7,11 +7,15 @@ SLiCAP module for interfacing with NGspice.
 from __future__ import annotations
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import _checkExpression, groupDelay
-from SLiCAP.SLiCAPlex import _scale_float, _to_ngspice
+from SLiCAP.SLiCAPlex import (_scale_float, _replaceScaleFactors,
+                              _SCALEFACTORS)
 from os     import system, remove
 import subprocess
 from sympy  import Symbol
-from SLiCAP.SLiCAPplots import trace
+from SLiCAP.SLiCAPtraces import (trace, dataset, make_traces,
+                                 register_dataset_adapter,
+                                 register_units_hint,
+                                 _rename_signals)
 from numpy  import array, sqrt, arctan, pi, unwrap, log10, linspace, geomspace
 import numpy as np
 import re
@@ -1065,7 +1069,7 @@ def NGspiceRaw2dict(raw_path, step_param=None, step_values=None):
     :param raw_path: Path(s) to NGspice ``.raw`` file(s).  Pass a single
                      ``str``/``Path`` for a non-stepped run.  For stepped runs
                      pass the list of per-step raw-file paths returned by
-                     :func:`_control_block`; one ``Analysis`` block is read
+                     the deck's control block; one ``Analysis`` block is read
                      from each file and the step files are deleted afterwards.
     :type raw_path: str, pathlib.Path, list
 
@@ -1156,6 +1160,29 @@ def NGspiceRaw2dict(raw_path, step_param=None, step_values=None):
 # New simulation API — raw-file based, for-loop stepping
 # =============================================================================
 
+def _no_stepping(reason, hint=""):
+    """An incomplete step definition: report it and step nothing.
+
+    ``(None, None)`` is what a caller already reads as "not stepped", so an
+    incomplete definition takes the same route as ``step=None``.  Both places
+    that ask whether a run is stepped then agree: ``_run_stepped`` (on the
+    values) and ``_dict_to_instruction`` (on the parameter name).  Before
+    this, a definition without a parameter name ran N IDENTICAL simulations
+    and recorded no step data (Anton, 2026-07-29).
+
+    It is reported rather than dropped silently: the caller asked for N runs
+    and gets one, which changes what the traces mean.
+    """
+    print("Warning: " + reason + "; no stepping applied.")
+    if hint:
+        print("         " + hint)
+    return None, None
+
+
+_STEP_KEY_HINT = ('single-parameter stepping uses "param" (a name), the '
+                  '"array" method uses "params" (a list of names).')
+
+
 def _step_values(step):
     """Parse a step dict; return (param, vals) where:
 
@@ -1169,34 +1196,59 @@ def _step_values(step):
 
     Values may be numbers or strings with a SLiCAP scale factor ('5p', '2.2k').
 
-    Returns (None, None) when step is None.
+    Returns (None, None) when *step* is None, and likewise - with a message -
+    when the definition names no parameter or lacks its values: this is the
+    ONE place the step dict is interpreted (:func:`_no_stepping`).
     """
     if step is None:
         return None, None
     method = step.get("method", "list").lower()
-    if method == "lin":
-        vals = np.linspace(_scale_float(step["start"]),
-                           _scale_float(step["stop"]), int(step["num"]))
-        return step.get("param"), vals
-    elif method == "log":
-        vals = np.geomspace(_scale_float(step["start"]),
-                            _scale_float(step["stop"]), int(step["num"]))
-        return step.get("param"), vals
-    elif method == "list":
-        return step.get("param"), np.asarray(
-            [_scale_float(v) for v in step["values"]])
-    elif method == "array":
-        params = step.get("params")          # list[str] — one name per parameter
-        vals   = np.asarray([[_scale_float(v) for v in row]
-                             if isinstance(row, (list, tuple))
-                             else _scale_float(row)
-                             for row in step["values"]])  # (n_runs, n_params)
-        if vals.ndim == 1:
-            vals = vals.reshape(-1, 1)       # single param passed as flat list
-        return params, vals
-    else:
+    if method not in ("lin", "log", "list", "array"):
         raise ValueError(
             f"step method must be 'lin', 'log', 'list', or 'array'; got {method!r}")
+
+    # The parameter name(s): without one there is nothing to step.
+    if method == "array":
+        names = step.get("params")
+        if isinstance(names, str):
+            names = [names]
+        if not names:
+            return _no_stepping(
+                'step method "array" without "params"',
+                _STEP_KEY_HINT if step.get("param") else "")
+    else:
+        names = step.get("param")
+        if not names:
+            return _no_stepping(
+                'step definition without "param"',
+                _STEP_KEY_HINT if step.get("params") else "")
+
+    # The values: also required, and missing ones used to raise a bare KeyError.
+    if method in ("lin", "log"):
+        missing = [k for k in ("start", "stop", "num") if step.get(k) is None]
+        if missing:
+            return _no_stepping('step method "{0}" without {1}'.format(
+                method, ", ".join('"' + k + '"' for k in missing)))
+    elif not step.get("values"):
+        return _no_stepping('step method "{0}" without "values"'.format(method))
+
+    if method == "lin":
+        return names, np.linspace(_scale_float(step["start"]),
+                                  _scale_float(step["stop"]),
+                                  int(step["num"]))
+    if method == "log":
+        return names, np.geomspace(_scale_float(step["start"]),
+                                   _scale_float(step["stop"]),
+                                   int(step["num"]))
+    if method == "list":
+        return names, np.asarray([_scale_float(v) for v in step["values"]])
+    vals = np.asarray([[_scale_float(v) for v in row]
+                       if isinstance(row, (list, tuple))
+                       else _scale_float(row)
+                       for row in step["values"]])   # (n_runs, n_params)
+    if vals.ndim == 1:
+        vals = vals.reshape(-1, 1)       # single param passed as flat list
+    return names, vals
 
 
 def _control_block(analysis_cmd, raw_path, options=None, noise=False,
@@ -1214,17 +1266,26 @@ def _control_block(analysis_cmd, raw_path, options=None, noise=False,
     """
     # Force binary raws: some ngspice builds (notably Windows) default to ASCII,
     # which is larger, slower to parse, and needs the "real,imag" complex path.
-    lines = [".control", "set filetype=binary", "save all"]
-    if extra_saves:
-        lines.append("save " + " ".join(extra_saves))
+    # WHAT the simulator writes. An empty save list means everything
+    # (Anton, 2026-08-01: the analysis call speaks NGspice, the Python names
+    # are chosen afterwards in make_traces).
+    lines = [".control", "set filetype=binary"]
+    lines.append("save " + " ".join(extra_saves) if extra_saves else "save all")
     if noise:
         lines.append("set sqrnoise")
     if options:
         for k, v in options.items():
-            lines.append(f"option {k} = {v}" if v is not None else f"option {k}")
+            lines.append(f"option {k} = {_deck_value(v, k)}"
+                         if v is not None else f"option {k}")
     lines.append(analysis_cmd)
     if noise:
-        lines.append("setplot noise1")
+        # A noise run leaves TWO plots: <noiseN> with the spectral densities
+        # and <noiseN+1> with the integrated noise, the latter current. The
+        # spectra are therefore the PREVIOUS plot - not the absolute name
+        # "noise1", which in a stepped run is always the FIRST run's spectra,
+        # so every step wrote the same data (Anton, 2026-07-31: noise vs
+        # temperature came out constant).
+        lines.append("setplot previous")
     if post_lines:
         lines.extend(post_lines)
     lines.append(f"write {Path(raw_path).as_posix()}")
@@ -1281,17 +1342,17 @@ def _stepped_control_block(analysis_cmd, raw_path, step_param, step_vals,
     lines.append("  reset")
     if temp_idx is not None:
         lines.append(f"  option temp = $&__v{temp_idx}")
-    lines.append("  save all")
-    if extra_saves:
-        lines.append("  save " + " ".join(extra_saves))
+    lines.append("  save " + " ".join(extra_saves) if extra_saves
+                 else "  save all")
     if noise:
         lines.append("  set sqrnoise")
     if options:
         for k, v in options.items():
-            lines.append(f"  option {k} = {v}" if v is not None else f"  option {k}")
+            lines.append(f"  option {k} = {_deck_value(v, k)}"
+                         if v is not None else f"  option {k}")
     lines.append("  " + analysis_cmd)
     if noise:
-        lines.append("  setplot noise1")
+        lines.append("  setplot previous")   # this run's spectra, not run 1's
     if post_lines:
         lines.extend("  " + pl for pl in post_lines)
     lines.append(f"  write {Path(raw_path).as_posix()}")
@@ -1299,6 +1360,110 @@ def _stepped_control_block(analysis_cmd, raw_path, step_param, step_vals,
     lines.append("end")
     lines.append(".endc")
     return "\n".join(lines)
+
+
+def _deck_number(value, what):
+    """A NUMBER for NGspice input, or a ValueError naming the offender.
+
+    For positions where NGspice needs a plain number and no expression is
+    possible: the arguments of an analysis command, the fourier frequency.
+    The value is read in SLiCAP notation - a scale factor is exactly ONE
+    case-sensitive character - so the SPICE spellings are refused HERE rather
+    than reaching the simulator, where '10K' or '1MEG' would silently mean
+    something else or nothing at all (Anton, 2026-07-31).
+
+    :param value: the value as the user wrote it.
+    :type value: str, int, float
+
+    :param what: what is being converted, for the error message ('fstop', …).
+    :type what: str
+
+    :return: the number as deck text.
+    :rtype: str
+    """
+    text = _deck_expr(value, what)
+    if text.startswith("{"):
+        raise ValueError(
+            "{0} = '{1}' must be a number here; it still contains a symbol "
+            "({2}). An analysis argument cannot be resolved by NGspice from "
+            "a .param.".format(what, value, text))
+    return text
+
+
+def _eng_repr(number):
+    """A float as deck text, without an exponent Python would write as
+    '1e+06': NGspice reads 'e' notation, but a plain repr keeps the deck
+    readable for the user who opens it."""
+    text = repr(float(number))
+    return text[:-2] if text.endswith('.0') else text
+
+
+#: Names sympy owns that are ordinary netlist identifiers: without this the
+#: parameter E becomes Euler's number (silently!), I becomes the imaginary
+#: unit, and beta/gamma raise AttributeError instead of a clear message.
+#: 'lambda' cannot be rescued this way - it is a Python keyword - so it is
+#: refused by name (Anton, 2026-08-16).
+_NETLIST_NAMES = ("E", "I", "N", "O", "Q", "S", "beta", "gamma", "zeta")
+
+
+def _deck_expr(value, what):
+    """SLiCAP text -> NGspice deck text: constants evaluated, symbols kept.
+
+    ONE converter for everything that reaches a deck - component values,
+    ``.param`` definitions, subcircuit defaults, stimulus arguments and the
+    numeric arguments of an analysis. Scale factors are expanded, constants
+    such as ``pi`` and ``sqrt(2)`` are evaluated, and anything that is not
+    SLiCAP notation is refused HERE, where the message reaches the user, not
+    in the NGspice log.
+
+    NGspice's numparam parser knows neither SLiCAP's scale factors nor
+    ``pi``: ``R1 1 0 {2*pi*1k}`` aborts the run, and an untranslated ``1M``
+    is read as 1 milli - wrong by a factor of a million, silently. Both are
+    removed by evaluating here. Complex results are refused: NGspice has no
+    use for them.
+
+    :param value: the value as the user wrote it, braces optional.
+    :param what: what is being converted, for the error message.
+    :return: deck text - a plain number, or ``{expression}`` when a symbol
+             remains for NGspice to resolve from its own ``.param``.
+    :rtype: str
+    """
+    import sympy as sp
+    from SLiCAP.SLiCAPlex import _replaceScaleFactors
+    text = str(value).strip()
+    if text.startswith('{') and text.endswith('}'):
+        text = text[1:-1].strip()      # the braces are netlist syntax, not maths
+
+    def _refuse(why=""):
+        raise ValueError(
+            "{0} = '{1}' is not valid SLiCAP notation{2}. A scale factor is "
+            "ONE case-sensitive character: {3}. NGspice spellings ('1MEG', "
+            "'10K', '1kohm', '1uF', '1mil') are not accepted.".format(
+                what, value, why, " ".join(sorted(_SCALEFACTORS))))
+
+    if not text:
+        return text
+    try:
+        names = {n: sp.Symbol(n) for n in _NETLIST_NAMES}
+        evaluated = sp.N(sp.sympify(_replaceScaleFactors(text), locals=names))
+    except BaseException:
+        _refuse()
+    if evaluated is None:
+        _refuse()
+    if evaluated.has(sp.I) or evaluated.is_real is False:
+        _refuse(" (a complex or infinite value)")
+    # A numeric result is written as a plain number: sympy would print
+    # '1000.00000000000' for '1k', which is right but unreadable in a deck
+    # the user opens. One that kept symbols goes in braces, which is how
+    # NGspice resolves a parameter inside a netlist line.
+    if evaluated.is_number:
+        return _eng_repr(float(evaluated))
+    return "{" + str(evaluated) + "}"
+
+
+def _deck_value(value, what):
+    """A VALUE for NGspice input (expressions allowed) - see :func:`_deck_expr`."""
+    return _deck_expr(value, what)
 
 
 def _apply_instr_params(netlist_text, params):
@@ -1313,20 +1478,17 @@ def _apply_instr_params(netlist_text, params):
     the legacy ``ngspice2traces`` ``parList``).
     """
     for name, value in params or []:
-        sval = str(value).strip()
-        if sval.startswith('{') and sval.endswith('}'):
-            sval = sval[1:-1].strip()
-        # Values use SLiCAP notation ('M' = mega); NGspice reads scale
-        # factors case-insensitively, so translate ('1M' → '1Meg').
-        sval = _to_ngspice(sval)
+        # _deck_value reads the SLiCAP notation and returns deck-ready text:
+        # a plain number, or an expression in braces for NGspice to resolve.
+        sval = _deck_value(value, name)
         pat = re.compile(
             r'\b' + re.escape(str(name)) + r'\s*=\s*(?:\{[^}]*\}|\S+)',
             re.IGNORECASE,
         )
-        netlist_text, n = pat.subn(f'{name} = {{{sval}}}', netlist_text)
+        netlist_text, n = pat.subn(f'{name} = {sval}', netlist_text)
         if n == 0:
             netlist_text = (netlist_text.rstrip('\n')
-                            + f'\n.param {name} = {{{sval}}}\n')
+                            + f'\n.param {name} = {sval}\n')
     return netlist_text
 
 
@@ -1335,7 +1497,7 @@ def _format_stimulus(stim):
     tail of an NGspice source line: ``AC``/``DC`` → ``TYPE args``; function
     types (``SIN``/``PULSE``/``PWL``/``EXP``/…) → ``TYPE(args)``."""
     typ  = str(stim[0]).upper()
-    args = " ".join(str(a) for a in stim[1:])
+    args = " ".join(_deck_value(a, typ) for a in stim[1:])
     if typ in ("AC", "DC"):
         return f"{typ} {args}".strip()
     return f"{typ}({args})"
@@ -1360,8 +1522,29 @@ def _apply_stimuli(netlist_text, stimuli):
     return "\n".join(lines)
 
 
+def _sim_files(cirFile):
+    """The file names of one NGspice run: the deck, the ngspice ``-o`` log and
+    the captured console output.
+
+    ONE owner for the naming convention: the deck is ``<cir_path>/<cirFile>.sp``
+    and its siblings share that base name.  Callers that need to READ a run's
+    output (the ``fourier`` table is parsed from the log) ask here instead of
+    rebuilding the name, so the convention cannot drift again.
+
+    :param cirFile: circuit file name without extension.
+    :type cirFile: str
+
+    :return: ``(deck, log, stdout)`` paths.
+    :rtype: tuple
+    """
+    sim_path = Path(ini.cir_path + cirFile + '.sp')
+    return (str(sim_path),
+            str(sim_path.with_suffix('.log')),
+            str(sim_path.with_suffix('.txt')))
+
+
 def _run_raw(cirFile, control_section, behavior, timeout,
-             instr_params=None, stimuli=None):
+             instr_params=None, stimuli=None, savecurrents=False):
     """Append control_section to cirFile.cir, run NGspice; return True on success.
 
     Writes ONE self-contained ngspice deck ``<cir_path>/<cirFile>.sp``: the
@@ -1369,15 +1552,12 @@ def _run_raw(cirFile, control_section, behavior, timeout,
     (which sits at the end and does not affect the netlist above it).  It is
     regenerated on every run and doubles as the GUI's "Export NGspice Netlist"
     file — one file is enough.  The sibling ``.log`` (ngspice ``-o``) and
-    ``.txt`` (console) share its base name.
+    ``.txt`` (console) share its base name (:func:`_sim_files`).
 
     *instr_params*: ordered list of ``(name, value)`` tuples — per-instruction
     parameter definitions applied to the netlist before the run.
     """
-    sim_file = ini.cir_path + cirFile + '.sp'
-    sim_path = Path(sim_file)
-    log_file = str(sim_path.with_suffix('.log'))
-    stdout_file = str(sim_path.with_suffix('.txt'))
+    sim_file, log_file, stdout_file = _sim_files(cirFile)
 
     with open(ini.cir_path + cirFile + '.cir', 'r') as f:
         netlist = f.read()
@@ -1387,6 +1567,12 @@ def _run_raw(cirFile, control_section, behavior, timeout,
         stripped = _apply_instr_params(stripped, instr_params)
     if stimuli:
         stripped = _apply_stimuli(stripped, stimuli)
+    if savecurrents:
+        # Device currents, including those inside subcircuits (@r.x1.r1[i]).
+        # It must be set when the circuit is PARSED: "set savecurrents" in the
+        # control section, after the circuit is loaded, does nothing (measured
+        # 2026-08-01).
+        stripped = stripped.rstrip("\n") + "\n.options savecurrents\n"
     with open(sim_file, 'w') as f:
         f.write(stripped + "\n" + control_section + "\n.end\n")
     args = [ini.ngspice, '-b', sim_file, '-o', log_file]
@@ -1412,8 +1598,11 @@ def _clean_run_outputs(cirFile, raw_path, stepped):
     """
     cir  = Path(ini.cir_path)
     base = Path(raw_path)
-    for pattern in (f"{cirFile}_sim.sp",   f"{cirFile}_sim.log",   f"{cirFile}_sim.txt",
-                    f"{cirFile}_sim_s*.sp", f"{cirFile}_sim_s*.log", f"{cirFile}_sim_s*.txt"):
+    # The run's own deck and outputs (_sim_files) plus the per-step files of
+    # the pre-single-process era.  The log is REGENERATED by this run and is
+    # read back for the fourier table, so a stale one must not survive.
+    for pattern in (f"{cirFile}.sp",   f"{cirFile}.log",   f"{cirFile}.txt",
+                    f"{cirFile}_s*.sp", f"{cirFile}_s*.log", f"{cirFile}_s*.txt"):
         for old in cir.glob(pattern):
             old.unlink(missing_ok=True)
     for old in base.parent.glob(base.stem + "_s*.raw"):   # per-step raws (regenerated)
@@ -1425,7 +1614,7 @@ def _clean_run_outputs(cirFile, raw_path, stepped):
 def _run_stepped(cirFile, analysis_cmd, raw_path, step_param, step_vals,
                  options=None, noise=False, extra_saves=None, behavior=None,
                  timeout=None, instr_params=None, post_lines=None,
-                 stimuli=None):
+                 stimuli=None, savecurrents=False):
     """Run NGspice and return a list of raw-file paths, or None on error.
 
     - Non-stepped: single run, returns ``[raw_path]``.
@@ -1453,7 +1642,8 @@ def _run_stepped(cirFile, analysis_cmd, raw_path, step_param, step_vals,
         ctrl = _control_block(analysis_cmd, str(base), options, noise,
                               extra_saves, post_lines)
         if not _run_raw(cirFile, ctrl, behavior, timeout,
-                        instr_params=instr_params, stimuli=stimuli):
+                        instr_params=instr_params, stimuli=stimuli,
+                    savecurrents=savecurrents):
             return None
         return [str(base)]
 
@@ -1464,43 +1654,10 @@ def _run_stepped(cirFile, analysis_cmd, raw_path, step_param, step_vals,
                                   list(step_vals), options, noise,
                                   extra_saves, post_lines)
     if not _run_raw(cirFile, ctrl, behavior, timeout,
-                    instr_params=instr_params, stimuli=stimuli):
+                    instr_params=instr_params, stimuli=stimuli,
+                    savecurrents=savecurrents):
         return None
     return [str(stepped_raw)]
-
-
-def _apply_names(result, names, x_name, step_key):
-    """Rename / filter signal keys in *result* by *names* = {user_key: ngspice_expr}.
-
-    *x_name* (the sweep variable) and *step_key* are structural — always kept.
-
-    *step_key* may be:
-
-    - a ``str``  — single-parameter stepping (e.g. ``"step_R1"``)
-    - a ``set``  — array stepping (``{"run_1", "run_2", ...}``)
-    - ``None``   — no stepping
-
-    When *names* is ``None`` the result is returned unchanged.
-    """
-    if names is None:
-        return result
-    if isinstance(step_key, set):
-        structural = ({x_name} if x_name else set()) | step_key
-    else:
-        structural = {k for k in (x_name, step_key) if k}
-    out = {k: result[k] for k in structural if k in result}
-    for user_key, ngspice_expr in names.items():
-        # ``let`` lines (fft/fourier post-processing) create vectors under
-        # the USER key itself — prefer the direct match.
-        key_lo = user_key.lower()
-        expr_lo = ngspice_expr.lower()
-        for raw_key, val in result.items():
-            if raw_key in structural:
-                continue
-            if raw_key.lower() == key_lo or raw_key.lower() == expr_lo:
-                out[user_key] = val
-                break
-    return out
 
 
 def _get_output_vars(netlist: str) -> list[str]:
@@ -1548,6 +1705,61 @@ def _get_output_vars(netlist: str) -> list[str]:
     result = [f"v({nd})" for nd in sorted(nodes, key=lambda x: (x.isdigit(), x.lower()))]
     result += [f"i({v})" for v in vsources]
     return result
+
+
+#: NGspice's noise mechanisms per device kind, as they appear in the noise
+#: plot: ``onoise_<refdes>_<mechanism>``. Verified against ngspice for R and
+#: Q; other devices get their total only, and a mechanism can always be typed.
+_NOISE_MECHANISMS = {
+    'R': ("thermal", "1overf"),
+    'Q': ("rb", "rc", "re", "ib", "ic", "1overf"),
+}
+#: Elements that contribute noise; C, L and the sources do not.
+_NOISY_PREFIXES = "RQMDJ"
+
+
+def _get_noise_vars(netlist: str, contributions: bool = False) -> list[str]:
+    """Signal names a NOISE analysis produces, for the GUI's output-variable
+    drop-down.
+
+    A noise run does not deliver node voltages or branch currents but spectral
+    densities (Anton, 2026-07-31: the drop-down offered ``v(out)`` and
+    ``i(v1)``, which a noise result does not have). Always
+    ``onoise_spectrum`` and ``inoise_spectrum``; with *contributions* also one
+    total per noisy element - ``onoise_r1``, ``onoise_q1`` - and, where NGspice
+    splits them, the separate mechanisms.
+
+    :param netlist: NGspice netlist text.
+    :type netlist: str
+
+    :param contributions: include the per-source vectors, which NGspice
+                          computes only for ``sl.noise(..., contributions=True)``.
+    :type contributions: bool
+
+    :return: signal names, totals first.
+    :rtype: list
+    """
+    out = ["onoise_spectrum", "inoise_spectrum"]
+    if not contributions:
+        return out
+    lines: list[str] = []
+    for raw in netlist.splitlines():
+        s = raw.strip()
+        if s.startswith('+') and lines:
+            lines[-1] += ' ' + s[1:].strip()
+        else:
+            lines.append(s)
+    for line in lines:
+        if not line or line[0] in '*.':
+            continue
+        refdes = line.split()[0]
+        prefix = refdes[0].upper()
+        if prefix not in _NOISY_PREFIXES:
+            continue
+        out.append("onoise_" + refdes.lower())
+        for mechanism in _NOISE_MECHANISMS.get(prefix, ()):
+            out.append("onoise_{0}_{1}".format(refdes.lower(), mechanism))
+    return out
 
 
 def _get_param_names(netlist: str) -> list[str]:
@@ -1654,6 +1866,91 @@ def _indep_source_refs(cirFile):
     return refs
 
 
+_PARDEF = re.compile(r'([A-Za-z_][A-Za-z_0-9]*)\s*=\s*(\{[^}]*\}|\S+)')
+
+
+def _join_continuations(lines):
+    """Netlist lines with the SPICE continuations folded in: a line starting
+    with '+' continues the previous one.
+
+    The schematic netlister writes a parameter block that way::
+
+        .param
+        + C_c={18p}
+        + V_S={12}
+
+    so a reader that takes one line at a time sees a ``.param`` with no
+    definitions at all.
+    """
+    joined = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('+') and joined:
+            joined[-1] = joined[-1] + ' ' + stripped[1:].strip()
+        else:
+            joined.append(stripped)
+    return joined
+
+
+def _netlist_par_defs(cirFile, instr_params=None):
+    """Circuit parameters AS SIMULATED, as a SLiCAP ``parDefs`` dictionary.
+
+    The ``.param`` definitions of ``<cirFile>.cir`` in file order, with the
+    per-instruction ``params=`` overrides applied on top — the same
+    precedence NGspice sees in the deck (:func:`_apply_instr_params`).  The
+    values are read in SLiCAP notation ('1k', '2*R_a'), BEFORE the NGspice
+    translation, so nothing has to be parsed back from '1Meg'.
+
+    A definition in terms of other parameters is resolved with
+    :func:`SLiCAP.SLiCAPmath.fullSubs`, so the caller gets numbers wherever
+    the circuit is numeric.  A value NGspice can evaluate but SLiCAP cannot
+    (``agauss(…)``) is left out rather than guessed.
+
+    A STEPPED parameter keeps its netlist value here; its value per run
+    belongs to the step data (``stepList`` / ``stepArray``), which overrides
+    this in post-processing.
+
+    :param cirFile: circuit file name without extension.
+    :type cirFile: str
+
+    :param instr_params: ordered list of ``(name, value)`` tuples, the
+                         ``params=`` argument of the analysis.
+    :type instr_params: list, NoneType
+
+    :return: ``{sympy.Symbol: sympy expression or number}``
+    :rtype: dict
+    """
+    import sympy as sp
+    from SLiCAP.SLiCAPlex import _replaceScaleFactors
+    from SLiCAP.SLiCAPmath import fullSubs
+
+    definitions = {}
+    try:
+        lines = (Path(ini.cir_path) / (cirFile + ".cir")).read_text(
+            encoding="utf-8").splitlines()
+    except OSError:
+        lines = []
+    for line in _join_continuations(lines):
+        if not line.lower().startswith('.param'):
+            continue
+        for name, value in _PARDEF.findall(line[len('.param'):]):
+            definitions[name] = value
+    for name, value in instr_params or []:
+        definitions[str(name)] = str(value)
+
+    par_defs = {}
+    for name, text in definitions.items():
+        text = str(text).strip()
+        if text.startswith('{') and text.endswith('}'):
+            text = text[1:-1].strip()
+        try:
+            par_defs[Symbol(name)] = sp.sympify(_replaceScaleFactors(text))
+        except Exception:
+            continue                       # not SLiCAP-evaluable: leave it out
+    return {key: fullSubs(value, par_defs)
+            for key, value in par_defs.items()}
+
+
 def _dict_to_instruction(result, cmd, cirFile, x_name, step,
                          step_param, step_vals, source=None, detector=None,
                          params=None):
@@ -1704,6 +2001,10 @@ def _dict_to_instruction(result, cmd, cirFile, x_name, step,
     cir.title     = cirFile
     cir.indepVars = _indep_source_refs(cirFile)
     cir.dep_vars  = [k for k in result if k != x_name]
+    # Parameter values as SIMULATED, in the same place the SLiCAP back end
+    # keeps them (Anton, 2026-07-29), so post-processing can compute with a
+    # circuit parameter without knowing which simulator produced the data.
+    cir.parDefs   = _netlist_par_defs(cirFile, params)
     instr.circuit = cir
 
     setattr(instr, dataType, result)            # instr.op / instr.ac / ...
@@ -1711,8 +2012,27 @@ def _dict_to_instruction(result, cmd, cirFile, x_name, step,
     return instr
 
 
-def op(cirFile, names=None, step=None, params=None, options=None,
-       behavior=None, timeout=None, stimuli=None):
+def _no_currents_in(analysis, savecurrents):
+    """False, with a message, when device currents are asked for an analysis
+    that cannot deliver them.
+
+    The NGspice 42 manual, 15.7.3: savecurrents "is available only for op, dc
+    and tran simulation, not for ac", and "cannot be used in AC simulations,
+    because complex data are not supported. Vectors thus created will be empty
+    after an AC simulation". Measured the same: ``@r1[i]`` comes back
+    zero-length and the ``write`` then fails, so the run would end in "NGspice
+    produced no raw file" rather than simply lacking the currents.
+    """
+    if savecurrents:
+        print("Note: NGspice cannot write device currents in an {0} plot "
+              "(manual 15.7.3: not supported for AC, the vectors come back "
+              "empty and break the raw file); savecurrents is ignored "
+              "here.".format(analysis))
+    return False
+
+
+def op(cirFile, save=None, step=None, params=None, options=None,
+       behavior=None, timeout=None, stimuli=None, savecurrents=False):
     """
     Run an NGspice operating-point (``.op``) analysis.
 
@@ -1724,10 +2044,30 @@ def op(cirFile, names=None, step=None, params=None, options=None,
                     (file must be in ``ini.cir_path``).
     :type cirFile: str
 
-    :param names: Signal name mapping ``{user_key: ngspice_expr}``.
-                  ``None`` returns all available signals.
-                  Example: ``{"V_out": "v(out)", "I_in": "i(v1)"}``.
-    :type names: dict, NoneType
+    :param save: NGspice vectors to write, as NGspice writes them:
+                 ``["v(out)", "i(v1)"]``. ``None`` or an empty list saves the
+                 default set - node voltages (including subcircuit nodes such
+                 as ``v(x1.mid)``) and voltage-source branch currents.
+                 A non-empty list saves ONLY what it lists (manual 15.6.1:
+                 "If .SAVE lines are given, only those vectors specified are
+                 saved"), so to add an internal device parameter to
+                 everything else, list ``all`` with it:
+                 ``save=["all", "@q1[gm]"]``.
+                 Python names for these vectors are chosen afterwards, in
+                 ``sl.make_traces(..., names={...})`` - the analysis call
+                 speaks NGspice only.
+    :type save: list, NoneType
+
+    :param savecurrents: True adds ``.options savecurrents`` to the deck, so
+                         the terminal currents of M, J, Q, D, R, C, L, B, F,
+                         G, W, S and I devices are written as well, inside
+                         subcircuits too (``i(@r3[i])``,
+                         ``i(@r.x1.r1[i])`` - NGspice writes them with that
+                         ``i(...)`` wrapper). Manual 15.7.3: op, dc and tran
+                         only, NOT ac; and for MOS devices only a subset of
+                         the current parameters unless the model-specific
+                         options are used.
+    :type savecurrents: bool
 
     :param step: Parameter step dict::
 
@@ -1771,11 +2111,12 @@ def op(cirFile, names=None, step=None, params=None, options=None,
     # <cirFile>.raw) — the schematic back-annotation reads it after a run.
     raw_path = ini.cir_path + cirFile + '_op.raw'
     # Device operating-point params (e.g. @q1[gm]) need an explicit save directive.
-    extra_saves = [v for v in (names or {}).values() if v.startswith("@")]
+    extra_saves = list(save or [])
     raw_paths = _run_stepped(cirFile, "op", raw_path, step_param, step_vals,
                              options=options, extra_saves=extra_saves or None,
                              behavior=behavior, timeout=timeout,
-                             instr_params=params, stimuli=stimuli)
+                             instr_params=params, stimuli=stimuli,
+                             savecurrents=savecurrents)
     if raw_paths is None:
         return {}
     raw_arg = raw_paths if len(raw_paths) > 1 else raw_paths[0]
@@ -1787,14 +2128,13 @@ def op(cirFile, names=None, step=None, params=None, options=None,
     step_key = ({f"run_{i + 1}" for i in range(len(step_vals))}
                 if isinstance(step_param, list)
                 else (step_param if step_param else None))
-    result = _apply_names(result, names, None, step_key)
     return _dict_to_instruction(result, "op", cirFile, None, step,
                                 step_param, step_vals, params=params)
 
 
-def dc(cirFile, source, start, stop, incr, names=None,
+def dc(cirFile, source, start, stop, incr, save=None,
        step=None, params=None, options=None, behavior=None, timeout=None,
-       stimuli=None):
+       stimuli=None, savecurrents=False):
     """
     Run an NGspice DC sweep analysis.
 
@@ -1840,12 +2180,16 @@ def dc(cirFile, source, start, stop, incr, names=None,
         print("NGspice not configured.")
         return {}
     _ensure_netlist(cirFile)
-    cmd = f"dc {source} {start} {stop} {incr}"
+    cmd = (f"dc {source} {_deck_number(start, 'start')} "
+           f"{_deck_number(stop, 'stop')} "
+           f"{_deck_number(incr, 'incr')}")
     step_param, step_vals = _step_values(step)
     raw_path = ini.cir_path + cirFile + '.raw'
     raw_paths = _run_stepped(cirFile, cmd, raw_path, step_param, step_vals,
                              options=options, behavior=behavior, timeout=timeout,
-                             instr_params=params, stimuli=stimuli)
+                             instr_params=params, stimuli=stimuli,
+                             extra_saves=list(save or []),
+                             savecurrents=savecurrents)
     if raw_paths is None:
         return {}
     raw_arg = raw_paths if len(raw_paths) > 1 else raw_paths[0]
@@ -1858,14 +2202,13 @@ def dc(cirFile, source, start, stop, incr, names=None,
                 if isinstance(step_param, list)
                 else (step_param if step_param else None))
     x_name   = next(iter(result)) if result else None
-    result = _apply_names(result, names, x_name, step_key)
     return _dict_to_instruction(result, cmd, cirFile, x_name, step,
                                 step_param, step_vals, params=params)
 
 
-def ac(cirFile, method, n, fstart, fstop, names=None,
+def ac(cirFile, method, n, fstart, fstop, save=None,
        step=None, params=None, options=None, behavior=None, timeout=None,
-       stimuli=None):
+       stimuli=None, savecurrents=False):
     """
     Run an NGspice AC sweep analysis.
 
@@ -1916,12 +2259,17 @@ def ac(cirFile, method, n, fstart, fstop, names=None,
         print("NGspice not configured.")
         return {}
     _ensure_netlist(cirFile)
-    cmd = f"ac {method} {n} {fstart} {fstop}"
+    cmd = (f"ac {method} {_deck_number(n, 'n')} "
+           f"{_deck_number(fstart, 'fstart')} "
+           f"{_deck_number(fstop, 'fstop')}")
     step_param, step_vals = _step_values(step)
+    savecurrents = _no_currents_in("AC", savecurrents)
     raw_path = ini.cir_path + cirFile + '.raw'
     raw_paths = _run_stepped(cirFile, cmd, raw_path, step_param, step_vals,
                              options=options, behavior=behavior, timeout=timeout,
-                             instr_params=params, stimuli=stimuli)
+                             instr_params=params, stimuli=stimuli,
+                             extra_saves=list(save or []),
+                             savecurrents=savecurrents)
     if raw_paths is None:
         return {}
     raw_arg = raw_paths if len(raw_paths) > 1 else raw_paths[0]
@@ -1933,7 +2281,6 @@ def ac(cirFile, method, n, fstart, fstop, names=None,
     step_key = ({f"run_{i + 1}" for i in range(len(step_vals))}
                 if isinstance(step_param, list)
                 else (step_param if step_param else None))
-    result = _apply_names(result, names, "frequency", step_key)
     return _dict_to_instruction(result, cmd, cirFile, "frequency", step,
                                 step_param, step_vals, params=params)
 
@@ -1961,7 +2308,7 @@ def _fourier_post_args(fourier):
         nfreqs = int(fourier.get("nfreqs", 10))
     else:
         freq, nfreqs = fourier, 10
-    return _to_ngspice(str(freq)), nfreqs
+    return _deck_number(freq, "fourier frequency"), nfreqs
 
 
 def _parse_fourier_log(txt_path):
@@ -2023,9 +2370,9 @@ def _parse_fourier_log(txt_path):
     return out
 
 
-def tran(cirFile, tstep, tstop, tstart=0, names=None,
+def tran(cirFile, tstep, tstop, tstart=0, save=None,
          step=None, params=None, options=None, behavior=None, timeout=None,
-         fourier=None, fft=None, stimuli=None):
+         fourier=None, fft=None, stimuli=None, savecurrents=False):
     """
     Run an NGspice transient analysis, optionally with Fourier/FFT
     post-processing (the legacy ``ngspice2traces`` ``postProc`` semantics,
@@ -2042,7 +2389,7 @@ def tran(cirFile, tstep, tstop, tstart=0, names=None,
     ``specwindow``/``specwindoworder``) linearizes the transient and takes
     its FFT: the returned instruction is FREQUENCY-domain (``dataType
     'fft'``, complex arrays + ``"frequency"``), plotting like an ``ac``
-    result (dBmag/phase via ``ngspice_instr2traces``).
+    result.
 
     Both post-processing options REQUIRE ``names`` (the analysed vectors
     are created with ``let`` from the names entries, so derived
@@ -2086,11 +2433,9 @@ def tran(cirFile, tstep, tstop, tstart=0, names=None,
         print("NGspice not configured.")
         return {}
     _ensure_netlist(cirFile)
-    if (fourier is not None or fft) and not names:
-        print("ERROR: fourier/fft post-processing requires names= "
-              "(the analysed vectors).")
-        return {}
-    cmd = f"tran {tstep} {tstop} {tstart}"
+    cmd = (f"tran {_deck_number(tstep, 'tstep')} "
+           f"{_deck_number(tstop, 'tstop')} "
+           f"{_deck_number(tstart, 'tstart')}")
     step_param, step_vals = _step_values(step)
 
     # Post-processing control lines. ``let`` creates the analysed vectors
@@ -2103,8 +2448,15 @@ def tran(cirFile, tstep, tstop, tstart=0, names=None,
         # stack fails (Anton, 2026-07-12 — the sine stimulus exposed it).
         # linearize interpolates every run onto the common tstep grid.
         post_lines.append("linearize")
-    if fourier is not None or fft:
-        post_lines += [f"let {k} = {v}" for k, v in names.items()]
+    # fourier / fft transform the vectors the run SAVES, named as NGspice
+    # names them (Anton, 2026-08-01: the analysis call speaks NGspice; the
+    # Python names are chosen later, in make_traces). Without a save list
+    # there is nothing to name, so the analysed vectors must be listed.
+    analysed = list(save or [])
+    if (fourier is not None or fft) and not analysed:
+        print("ERROR: fourier= / fft= needs save=[...] naming the vectors to "
+              "transform, e.g. save=[\"v(out)\"].")
+        return {}
     if fourier is not None:
         if step_param is not None:
             print("ERROR: fourier= is not supported for stepped runs "
@@ -2112,7 +2464,7 @@ def tran(cirFile, tstep, tstop, tstart=0, names=None,
             return {}
         freq_text, nfreqs = _fourier_post_args(fourier)
         post_lines.append(f"set nfreqs={nfreqs}")
-        post_lines.append(f"fourier {freq_text} " + " ".join(names))
+        post_lines.append(f"fourier {freq_text} " + " ".join(analysed))
     if fft:
         window = "hanning"
         order = None
@@ -2123,12 +2475,14 @@ def tran(cirFile, tstep, tstop, tstart=0, names=None,
         post_lines.append(f"set specwindow={window}")
         if order is not None:
             post_lines.append(f"set specwindoworder={int(order)}")
-        post_lines.append("fft " + " ".join(names))
+        post_lines.append("fft " + " ".join(analysed))
 
     raw_path = ini.cir_path + cirFile + '.raw'
     raw_paths = _run_stepped(cirFile, cmd, raw_path, step_param, step_vals,
                              options=options, behavior=behavior, timeout=timeout,
-                             instr_params=params, post_lines=post_lines or None, stimuli=stimuli)
+                             instr_params=params, post_lines=post_lines or None, stimuli=stimuli,
+                             extra_saves=list(save or []),
+                             savecurrents=savecurrents)
     if raw_paths is None:
         return {}
     raw_arg = raw_paths if len(raw_paths) > 1 else raw_paths[0]
@@ -2141,30 +2495,31 @@ def tran(cirFile, tstep, tstop, tstart=0, names=None,
                 if isinstance(step_param, list)
                 else (step_param if step_param else None))
     x_name = "frequency" if fft else "time"
-    result = _apply_names(result, names, x_name, step_key)
     if fft:
         # Frequency-domain result: its own dataType; simArgs keep the tran
         # provenance.
-        instr = _dict_to_instruction(result, f"fft {tstep} {tstop} {tstart}",
+        instr = _dict_to_instruction(result,
+                                     f"fft {_deck_number(tstep, 'tstep')}"
+                                     f" {_deck_number(tstop, 'tstop')}"
+                                     f" {_deck_number(tstart, 'tstart')}",
                                      cirFile, "frequency", step,
                                      step_param, step_vals, params=params)
         if fourier is not None:
-            instr.fourier = _parse_fourier_log(
-                ini.cir_path + cirFile + '_sim.log')
+            instr.fourier = _parse_fourier_log(_sim_files(cirFile)[1])
         return instr
     instr = _dict_to_instruction(result, cmd, cirFile, "time", step,
                                 step_param, step_vals, params=params)
     if fourier is not None:
-        # Harmonics table from the run's stdout, attached alongside the
+        # Harmonics table from the run's log, attached alongside the
         # time-domain result (one run: waveform for plotting, table for
         # the design-data panel / report snippets).
-        instr.fourier = _parse_fourier_log(ini.cir_path + cirFile + '_sim.log')
+        instr.fourier = _parse_fourier_log(_sim_files(cirFile)[1])
     return instr
 
 
-def noise(cirFile, output, input_src, method, n, fstart, fstop, names=None,
+def noise(cirFile, output, input_src, method, n, fstart, fstop, save=None,
           step=None, params=None, options=None, behavior=None, timeout=None,
-          stimuli=None):
+          stimuli=None, contributions=False, savecurrents=False):
     """
     Run an NGspice noise analysis.  Results stored as V²/Hz PSD
     (``set sqrnoise`` is always active).
@@ -2221,12 +2576,22 @@ def noise(cirFile, output, input_src, method, n, fstart, fstop, names=None,
         print("NGspice not configured.")
         return {}
     _ensure_netlist(cirFile)
-    cmd = f"noise {output} {input_src} {method} {n} {fstart} {fstop}"
+    cmd = (f"noise {output} {input_src} {method} {n} "
+           f"{_deck_number(fstart, 'fstart')} "
+           f"{_deck_number(fstop, 'fstop')}")
+    if contributions:
+        # the summary interval: its VALUE only spaces NGspice's printed
+        # summaries, but giving it at all is what makes NGspice compute the
+        # per-source vectors, which is what we are after
+        cmd += " 1"
     step_param, step_vals = _step_values(step)
+    savecurrents = _no_currents_in("noise", savecurrents)
     raw_path = ini.cir_path + cirFile + '.raw'
     raw_paths = _run_stepped(cirFile, cmd, raw_path, step_param, step_vals,
                              options=options, noise=True, behavior=behavior,
-                             timeout=timeout, instr_params=params, stimuli=stimuli)
+                             timeout=timeout, instr_params=params, stimuli=stimuli,
+                                savecurrents=savecurrents,
+                             extra_saves=list(save or []))
     if raw_paths is None:
         return {}
     raw_arg = raw_paths if len(raw_paths) > 1 else raw_paths[0]
@@ -2238,7 +2603,6 @@ def noise(cirFile, output, input_src, method, n, fstart, fstop, names=None,
     step_key = ({f"run_{i + 1}" for i in range(len(step_vals))}
                 if isinstance(step_param, list)
                 else (step_param if step_param else None))
-    result = _apply_names(result, names, "frequency", step_key)
     return _dict_to_instruction(result, cmd, cirFile, "frequency", step,
                                 step_param, step_vals,
                                 source=input_src, detector=output,
@@ -2249,7 +2613,7 @@ def ngspice_control(cirFile, control, params=None, stimuli=None,
                     behavior=None, timeout=None):
     """
     Run NGspice with a USER-SUPPLIED control section — full-control / raw
-    mode (Anton, 2026-07-16).
+    mode.
 
     *control* is inserted VERBATIM as the ``.control … .endc`` block,
     replacing SLiCAP's auto-generated control. You are driving NGspice
@@ -2693,226 +3057,162 @@ def show():
     plt.show()
 
 
-def ngspice_dict2traces(result, x_key=None, y_keys=None, trace_type='real',
-                        goal_fn=None):
-    """Convert an NGspice result dictionary (from :func:`NGspiceRaw2dict`) into
-    a dictionary of :class:`~SLiCAPplots.trace` objects ready for
-    :func:`~SLiCAPplots.plot`.
+def instr2dataset(instr, x_key=None, y_keys=None):
+    """Convert an NGspice result *instruction* into a
+    :class:`~SLiCAP.SLiCAPtraces.dataset`.
 
-    **Supported layouts** (as returned by :func:`NGspiceRaw2dict`):
-
-    - **Sweep, un-stepped**: ``{"frequency": 1-D, "v(out)": 1-D, ...}``
-      → one trace per signal key.
-    - **Sweep, stepped**: ``{"frequency": 1-D, "R1": 1-D, "v(out)": 2-D, ...}``
-      → one trace per step for each 2-D signal (``goal_fn=None``), or one
-      *goal trace* per signal with step values on the x-axis (``goal_fn`` set).
-    - **OP, stepped**: ``{"R1": 1-D, "v(out)": 1-D, ...}``
-      → one trace per signal; x-axis is the step-parameter column.
-
-    OP results without stepping are scalar dicts — not convertible to traces;
-    pass them to ``print()`` instead.
-
-    :param result: Dictionary returned by :func:`NGspiceRaw2dict`.
-    :type result: dict
-
-    :param x_key: Key to use as the x-axis. If ``None`` the function picks
-                  ``"time"`` or ``"frequency"`` when present, otherwise the
-                  first key whose value is a 1-D array.
-    :type x_key: str or None
-
-    :param y_keys: Keys to convert to traces. If ``None`` every key that is
-                   not the x-axis and not a step-parameter column is used.
-    :type y_keys: list[str] or None
-
-    :param trace_type: How to handle complex-valued (AC) arrays:
-
-                       - ``'real'``   — real part
-                       - ``'imag'``   — imaginary part
-                       - ``'mag'``    — absolute magnitude
-                       - ``'dBmag'`` — 20·log₁₀(|value|)
-                       - ``'phase'`` — phase in degrees
-                       - ``'delay'`` — group delay in seconds,
-                         :func:`~SLiCAP.SLiCAPmath.groupDelay` (−dφ/dω,
-                         unwrapped phase; last point duplicated)
-
-                       Ignored for real-valued arrays.
-
-    :type trace_type: str
-
-    :param goal_fn: Optional callable ``f(x_sweep, y_sweep) → float`` applied
-                    to each step row of a 2-D stepped signal.  When provided,
-                    the returned trace has *step values* on the x-axis and the
-                    goal-function output on the y-axis — one trace per signal
-                    key.  Any ``f(x, y) -> float`` works; the built-in goal
-                    functions live in :mod:`SLiCAP.SLiCAPmath` (``goal_*`` —
-                    the single authoritative inventory is its
-                    ``_GOAL_FUNCTIONS`` registry, which also feeds the GUI).
-                    Ignored for 1-D (un-stepped) signals.
-    :type goal_fn: callable or None
-
-    :return: ``{label: trace_object}`` ready for :func:`~SLiCAPplots.plot`.
-    :rtype: dict
-
-    :Example:
-
-    >>> result = NGspiceRaw2dict("design.raw")
-    >>> traces = ngspice_dict2traces(result, trace_type='dBmag')
-    >>> sl.plot("bode_gain", "Gain", "semilogx", traces,
-    ...         xName="frequency", xUnits="Hz", yUnits="dB", show=True)
-
-    >>> # Goal function: dB magnitude at 1 MHz vs stepped parameter
-    >>> M1M = ngspice_dict2traces(AC1, trace_type='dBmag',
-    ...                           goal_fn=goal_y_at_x(1e6))
-    >>> sl.plot("mag_vs_R", "Magnitude at 1 MHz vs R", "lin", M1M,
-    ...         xUnits="Ω", yUnits="dB", show=True)
-
-    An NGspice result *instruction* (from :func:`op`/:func:`ac`/…) may also be
-    passed directly; it is delegated to :func:`ngspice_instr2traces`.
-    """
-    from SLiCAP.SLiCAPinstruction import instruction as _instruction
-    if isinstance(result, _instruction):
-        return ngspice_instr2traces(result, trace_type=trace_type, x_key=x_key,
-                                    y_keys=y_keys, goal_fn=goal_fn)
-    if not result:
-        return {}
-
-    # ── detect x_key ──────────────────────────────────────────────────────────
-    if x_key is None:
-        for candidate in ('frequency', 'time'):
-            if candidate in result:
-                x_key = candidate
-                break
-        if x_key is None:
-            # fall back to first 1-D array key
-            for k, v in result.items():
-                if isinstance(v, np.ndarray) and v.ndim == 1:
-                    x_key = k
-                    break
-        if x_key is None:
-            return {}
-
-    x_data = np.asarray(result[x_key])
-
-    # ── detect step-parameter columns (1-D but length ≠ x_data) ──────────────
-    step_keys = {
-        k for k, v in result.items()
-        if isinstance(v, np.ndarray) and v.ndim == 1 and k != x_key and len(v) != len(x_data)
-    }
-
-    # ── choose signal keys ────────────────────────────────────────────────────
-    if y_keys is None:
-        y_keys = [k for k in result if k != x_key and k not in step_keys]
-
-    # ── helper: apply trace_type to one 1-D array ─────────────────────────────
-    def _apply(arr):
-        arr = np.asarray(arr)
-        if not np.iscomplexobj(arr):
-            return arr
-        if trace_type == 'imag':
-            return np.imag(arr)
-        if trace_type == 'mag':
-            return np.abs(arr)
-        if trace_type == 'dBmag':
-            return 20.0 * log10(np.maximum(np.abs(arr), 1e-300))
-        if trace_type == 'phase':
-            return np.degrees(np.angle(arr))
-        if trace_type == 'delay':
-            # group delay -dφ/dω; NGspice raw AC frequency is in Hz
-            return groupDelay(x_data, np.real(arr), np.imag(arr))
-        return np.real(arr)   # default: 'real'
-
-    # ── step_values array (if any) ────────────────────────────────────────────
-    step_key   = next(iter(step_keys), None)
-    step_vals  = np.asarray(result[step_key]) if step_key else None
-
-    # ── build trace dict ──────────────────────────────────────────────────────
-    trace_dict = {}
-    for k in y_keys:
-        v = np.asarray(result[k])
-        if v.ndim == 1:
-            # Un-stepped signal (same length as x_data) or OP-stepped signal
-            t = trace([x_data, _apply(v)])
-            t.label = k
-            trace_dict[k] = t
-        elif v.ndim == 2:
-            # Stepped: shape (n_steps, n_sweep)
-            n_steps = v.shape[0]
-            if goal_fn is not None:
-                # Reduce each step row to a scalar (SLiCAPmath.apply_goal —
-                # the operation is pure math); x-axis = step values
-                from SLiCAP.SLiCAPmath import apply_goal
-                goal_vals = apply_goal(goal_fn, x_data,
-                                       np.array([_apply(v[i])
-                                                 for i in range(n_steps)]))
-                x_axis = step_vals if step_vals is not None else np.arange(n_steps)
-                t = trace([x_axis, goal_vals])
-                t.label = k
-                trace_dict[k] = t
-            else:
-                for i in range(n_steps):
-                    if step_vals is not None and i < len(step_vals):
-                        lbl = f"{k}  {step_key}={step_vals[i]:.4g}"
-                    else:
-                        lbl = f"{k}  step={i + 1}"
-                    t = trace([x_data, _apply(v[i])])
-                    t.label = lbl
-                    trace_dict[lbl] = t
-
-    return trace_dict
-
-
-def ngspice_instr2traces(instr, trace_type='real', x_key=None, y_keys=None,
-                         goal_fn=None):
-    """Convert an NGspice result *instruction* (from :func:`op`, :func:`ac`,
-    :func:`dc`, :func:`tran`, :func:`noise`) into a dict of
-    :class:`~SLiCAPplots.trace` objects, ready for :func:`~SLiCAPplots.plot`.
-
-    Same trace-formatting arguments as :func:`ngspice_dict2traces`
-    (``trace_type``, ``x_key``, ``y_keys``, ``goal_fn``), but the sweep/step
-    provenance is read from the instruction, so:
-
-    - ``x_key`` is **auto-derived** — the sweep variable for AC/TRAN/DC/NOISE,
-      or the step variable for a stepped OP;
-    - ``y_keys`` defaults to the dependent variables (``instr.circuit.dep_vars``).
-
-    Un-stepped OP results are scalars and yield ``{}`` (print them instead).
+    This is the NGspice PRODUCER ADAPTER: it states the provenance of the
+    numbers - which key is the sweep variable, which columns are step
+    parameters - and hands them to the backend-neutral post-processing layer
+    It is registered with
+    :func:`~SLiCAP.SLiCAPtraces.register_dataset_adapter`, so
+    :func:`~SLiCAP.SLiCAPtraces.make_traces` also accepts the result object
+    itself.
 
     :param instr: instruction returned by an NGspice analysis function.
     :type instr: SLiCAPinstruction.instruction
-    :return: ``{label: trace_object}`` ready for :func:`~SLiCAPplots.plot`.
-    :rtype: dict
+
+    :param x_key: sweep variable; None auto-derives it (the sweep variable
+                  for AC/TRAN/DC/NOISE, the step variable for a stepped OP).
+    :type x_key: str, NoneType
+
+    :param y_keys: signals to keep; None keeps the dependent variables.
+    :type y_keys: list, NoneType
+
+    :return: dataset, or None when the result holds no traceable data (an
+             un-stepped operating point is a set of scalars).
+    :rtype: SLiCAPtraces.dataset, NoneType
 
     :Example:
 
-    >>> AC1 = sl.ac("VampQspice", "dec", 50, 1e3, 100e6, names={"V_out": "v(out)"})
-    >>> BW  = sl.ngspice_instr2traces(AC1, trace_type='dBmag')
+    >>> TR = sl.tran("amp", "1n", "1u", names={"V_out": "v(out)"})
+    >>> D  = sl.instr2dataset(TR)
+    >>> T  = sl.make_traces(D, [{"y": "V_out * 2", "label": "twice"}])
     """
     data = getattr(instr, instr.dataType, None)
     if not isinstance(data, dict) or not data:
-        return {}
+        return None
     dep_vars = list(instr.circuit.dep_vars) if instr.circuit else []
-    result   = dict(data)
 
-    # Re-attach the step column(s) so the shared dict converter can label steps.
+    # Step column(s): one value per run.
+    step_params = {}
     if instr.step:
         if instr.stepVar is not None and instr.stepList is not None:
-            result[instr.stepVar] = np.asarray(instr.stepList)
-        elif instr.stepArray is not None:
-            for i, row in enumerate(instr.stepArray):
-                result[f"run_{i + 1}"] = np.asarray(row)
+            step_params[str(instr.stepVar)] = np.asarray(instr.stepList)
+        elif instr.stepArray is not None and len(instr.stepArray):
+            # stepArray holds one ROW per run, with the value of every step
+            # parameter; the dataset wants one entry PER PARAMETER with its
+            # value per run, so the array is transposed here (TRACES.md
+            # phase 4 - before this the columns were labelled run_1, run_2,
+            # which made the labeller index a run as if it were a parameter)
+            rows = np.asarray(instr.stepArray)
+            names = [str(v) for v in (instr.stepVars or [])]
+            for j, name in enumerate(names):
+                if j < rows.shape[1]:
+                    step_params[name] = rows[:, j]
 
-    # Auto-derive the x-axis key from the (original) result dict.
+    # Auto-derive the x-axis key from the result dict.
+    run_abscissa = False
     if x_key is None:
         sweep_keys = [k for k in data if k not in dep_vars]
         if sweep_keys:
-            x_key = sweep_keys[0]                 # AC/TRAN/DC/NOISE sweep variable
+            x_key = sweep_keys[0]                 # AC/TRAN/DC/NOISE sweep
         elif instr.step and instr.stepVar is not None:
-            x_key = instr.stepVar                 # stepped OP: x-axis = step values
+            x_key = str(instr.stepVar)            # stepped OP: x = step values
+        elif step_params:
+            # stepped OP with several step parameters: no single parameter
+            # to put on the abscissa, so the RUN NUMBER is the abscissa and
+            # run_table() carries the values (TRACES.md section 3)
+            x_key = "run"
+            run_abscissa = True
         else:
-            return {}                             # un-stepped OP scalars
+            return None                           # un-stepped OP scalars
 
+    if run_abscissa:
+        n_runs = max(len(np.atleast_1d(v)) for v in step_params.values())
+        x_data = np.arange(1, n_runs + 1)
+    else:
+        x_data = np.asarray(data[x_key]) if x_key in data else None
+    if x_data is None and x_key in step_params:
+        # stepped OP: the step column IS the abscissa, not a step parameter
+        x_data = step_params.pop(x_key)
     if y_keys is None:
-        y_keys = dep_vars or None
+        y_keys = dep_vars or [k for k in data if k != x_key]
+    signals = {k: data[k] for k in y_keys if k in data and k != x_key}
+    # NGspice's own spellings: v(out) is a voltage, i(v1) a current, the
+    # noise spectra are squared (the decks set sqrnoise). The units travel
+    # with the data so a trace knows them whatever axis shows it
+    # (Anton, 2026-08-02).
+    units = {}
+    for name in list(signals) + ([x_key] if x_key else []):
+        found = (_NG_SWEEP_UNITS.get(str(name).lower())
+                 or _ngspice_units_hint(name, instr))
+        if found:
+            units[name] = found
+    return dataset(x_name=x_key, x_data=x_data, signals=signals,
+                   step_params=step_params,
+                   params=_numeric_par_defs(instr), units=units)
 
-    return ngspice_dict2traces(result, x_key=x_key, y_keys=y_keys,
-                               trace_type=trace_type, goal_fn=goal_fn)
+
+def _numeric_par_defs(instr):
+    """``{name: float}`` of the result's circuit parameters.
+
+    The producer resolves the SYMBOLIC definitions (``instr.circuit.parDefs``,
+    sympy) into numbers here, because the post-processing layer is
+    backend-neutral and knows nothing about sympy (TRACES.md section 2).
+    Parameters that are not numeric after substitution are left out: an
+    expression cannot compute with them.
+    """
+    par_defs = getattr(getattr(instr, "circuit", None), "parDefs", None) or {}
+    numeric = {}
+    for key, value in par_defs.items():
+        try:
+            numeric[str(key)] = float(value)
+        except (TypeError, ValueError):
+            continue
+    return numeric
+
+
+def _ngspice_dataset_adapter(obj):
+    """Registered converter: an NGspice result object -> dataset."""
+    from SLiCAP.SLiCAPinstruction import instruction as _instruction
+    if not isinstance(obj, _instruction):
+        return None
+    return instr2dataset(obj)
+
+
+# What NGspice sweeps, in its own spelling - VERIFIED against runs, not
+# assumed: a voltage sweep writes the abscissa as `v(v-sweep)` (so the v(...)
+# rule already answers it) and a temperature sweep as `temp-sweep`, in
+# degrees Celsius (`option temp`).
+_NG_SWEEP_UNITS = {"frequency": "Hz", "time": "s", "temp-sweep": "degC"}
+
+
+def _ngspice_units_hint(name, result=None):
+    """Units of NGspice's own vector spellings.
+
+    ``v(out)`` is a voltage and ``i(v1)`` a current because NGspice says so -
+    the producer, not the neutral layer, knows this (TRACES.md phase 7).
+    Noise comes back SQUARED: the decks set ``sqrnoise``, which the manual
+    (variable ``sqrnoise``) defines as "V^2/Hz or A^2/Hz". The input-referred
+    spectrum follows the INPUT SOURCE - a current source makes it A^2/Hz -
+    and an internal device parameter (``@q1[gm]``) gets nothing: only the
+    device model knows what it is.
+    """
+    lower = str(name).lower()
+    if re.fullmatch(r"v\(.+\)", lower):
+        return "V"
+    if re.fullmatch(r"i\(.+\)", lower):
+        return "A"
+    if lower == "onoise_spectrum" or lower.startswith("onoise_"):
+        return "V^2/Hz"
+    if lower == "inoise_spectrum" or lower.startswith("inoise_"):
+        source = str(getattr(result, "source", "") or "")
+        return "A^2/Hz" if source[:1].lower() == "i" else "V^2/Hz"
+    return None
+
+
+register_units_hint(_ngspice_units_hint)
+
+
+register_dataset_adapter(_ngspice_dataset_adapter)

@@ -31,12 +31,13 @@ from typing import Callable
 
 from PySide6.QtCore import QFileSystemWatcher, Qt, Signal
 from PySide6.QtWidgets import (
-    QDockWidget, QLabel, QMenu, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-    QWidget,
+    QDockWidget, QHeaderView, QLabel, QMenu, QTreeWidget, QTreeWidgetItem,
+    QVBoxLayout, QWidget,
 )
 
 from . import app_prefs
-from .design_data import MANIFEST_NAME, read_manifest, section_is_stale
+from .design_data import (MANIFEST_NAME, read_manifest,
+                          section_is_stale, filter_kind)
 
 # Per-kind action registry: kind → [(label, callback(entry, panel)), …].
 # Double-click = first action; context menu = all of them. The default
@@ -71,6 +72,9 @@ ACTIONS.update({
     "matrix":     [("View", _act_view)],
     "circuit":    [("View", _act_view)],
     "traces":     [("View trace labels", _act_view)],
+    "trace":      [("View", _act_view)],
+    "measurements": [("View", _act_view)],
+    "measurement":  [("View", _act_view)],
     "snippet":    [("View", _act_view)],
     "number":     [("View", _act_view)],
     "text":       [("View", _act_view)],
@@ -134,6 +138,14 @@ class DesignDataPanel(QDockWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Variable", "Type"])
+        # The NAME is what is read; the type is one short word ("measurement"
+        # is the longest). So the type column takes only what it needs and
+        # the variable column gets the rest (Anton, 2026-08-03) - before this
+        # the two shared the width and names came out as "VampQs…".
+        header = self._tree.header()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setStretchLastSection(False)
         self._tree.setRootIsDecorated(True)
         self._tree.itemDoubleClicked.connect(self._on_double_click)
         self._tree.setContextMenuPolicy(
@@ -234,7 +246,7 @@ class DesignDataPanel(QDockWidget):
             shown = 0
             for entry in section.get("variables", []):
                 kind = entry.get("kind", "other")
-                if kind not in visible:
+                if filter_kind(kind) not in visible:
                     hidden_vars += 1
                     hidden_kinds.add(kind)
                     continue
@@ -247,14 +259,7 @@ class DesignDataPanel(QDockWidget):
                 # results expand into their return-value attributes
                 # (poles, zeros, DCvalue, matrices, … — Anton 2026-07-12);
                 # children are part of the result, not kind-filtered
-                for attr in entry.get("attributes", []):
-                    child = QTreeWidgetItem(
-                        [attr.get("name", "?"), attr.get("kind", "")])
-                    child.setData(0, Qt.ItemDataRole.UserRole, attr)
-                    if stale:
-                        child.setForeground(0, Qt.GlobalColor.gray)
-                        child.setForeground(1, Qt.GlobalColor.gray)
-                    item.addChild(child)
+                self._add_children(item, entry, stale)
                 top.addChild(item)
                 shown += 1
             if stale:
@@ -294,6 +299,25 @@ class DesignDataPanel(QDockWidget):
             file_item.setExpanded(True)
         self._tree.addTopLevelItem(top)
         top.setExpanded(True)
+
+    def _add_children(self, item: QTreeWidgetItem, entry: dict,
+                      stale: bool) -> None:
+        """Attach an entry's attributes, and THEIR attributes, recursively.
+
+        A trace dictionary holds traces and a trace holds its xData and yData
+        (Anton, 2026-07-31: "clicking on the xData or yData attribute should
+        show the array - then we can really check if the trace is ready for
+        plotting"), so one level of children is not enough.
+        """
+        for attr in entry.get("attributes", []):
+            child = QTreeWidgetItem(
+                [attr.get("name", "?"), attr.get("kind", "")])
+            child.setData(0, Qt.ItemDataRole.UserRole, attr)
+            if stale:
+                child.setForeground(0, Qt.GlobalColor.gray)
+                child.setForeground(1, Qt.GlobalColor.gray)
+            item.addChild(child)
+            self._add_children(child, attr, stale)
 
     # ── actions (prepared mechanism; registry ships empty) ─────────────────
 

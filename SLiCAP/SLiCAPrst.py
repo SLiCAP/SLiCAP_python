@@ -906,7 +906,7 @@ def snippet2html(rst_text, name="snippet", include_statement="",
     ``conf.py``, theme and ``_static``/``_templates``), the preview inherits
     that styling — the real report look, e.g. ``sphinx_book_theme`` — via a
     wrapper config, overriding only the math renderer to imgmath (see
-    :func:`_project_wrapper_conf`). Without a project source a minimal built-in
+    a generated wrapper). Without a project source a minimal built-in
     config is used. The build runs as a subprocess and is incremental (reused
     *workdir*).
 

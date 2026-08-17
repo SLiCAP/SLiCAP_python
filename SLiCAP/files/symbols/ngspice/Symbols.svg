@@ -194,6 +194,7 @@
 <g id="0"
    data-prefix="GND"
    data-nodes="0"
+   data-params="name|0|0|0"
    data-description="Ground (node 0)">
 
        <!-- connection node: (0, 0) -->
@@ -202,6 +203,19 @@
       
        <!-- Pins -->
        <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
+    </g>
+
+<g id="port"
+   data-prefix="P"
+   data-nodes="port"
+   data-params="name||0|1"
+   data-description="Hierarchical connection / net label">
+
+       <!-- pentagon: pointed top at pin, rectangular body below -->
+       <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1"/>
+
+       <!-- Pins -->
+       <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
     </g>
 
 <g id="BV"

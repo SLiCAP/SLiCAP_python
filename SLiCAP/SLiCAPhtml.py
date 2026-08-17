@@ -8,6 +8,7 @@ import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from shutil import copy2
 from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric, ENG, units2TeX, normalizeRational
+from SLiCAP.SLiCAPlatex import exprLatex, exprLatex as _latex_ENG
 from IPython.core.display import HTML
 
 _HTMLINSERT = '<!-- INSERT -->' # pattern to be replaced in html files
@@ -27,20 +28,10 @@ def _addLabel(label, fileName='', caption='', labelType=''):
         label = '<a id="' + label + '"></a>'
     return label
 
-def _latex_ENG(num):
-    if ini.scalefactors or ini.eng_notation:
-        num, exp = ENG(num, scaleFactors=ini.scalefactors)
-        num = roundN(num)
-        if exp != None:
-            if ini.scalefactors:
-                num = str(num) + '\\, \\mathrm{' + str(exp) + '}'
-            else:
-                num = str(num) + '\\cdot 10^{' + str(exp) + '}'
-        else:
-            num = sp.latex(num)
-    else:
-        num = sp.latex(roundN(num))
-    return num
+# _latex_ENG moved to SLiCAPlatex as the PUBLIC exprLatex(): it is the
+# one 'sympy object -> display LaTeX' chokepoint, shared by the report
+# formatters and the schematic editor (Anton, 2026-08-16). Imported
+# below; the old private name stays available for existing imports.
 
 def printHTMLinfo():
     """
@@ -382,9 +373,9 @@ def elementData2html(circuitObject, label='', caption=''):
         else:
             i = 0
             for param in parNames:
-                symValue = '$' + _latex_ENG(elmt.params[param]) + '$'
+                symValue = '$' + exprLatex(elmt.params[param]) + '$'
                 #symValue ='$' + sp.latex(roundN(elmt.params[param])) +'$'
-                numValue = '$' + _latex_ENG(sp.N(fullSubs(elmt.params[param], circuitObject.parDefs))) + '$'
+                numValue = '$' + exprLatex(sp.N(fullSubs(elmt.params[param], circuitObject.parDefs))) + '$'
                 #numValue = '$' + sp.latex(roundN(fullSubs(elmt.params[param], circuitObject.parDefs), numeric=True)) + '$'
                 if i == 0:
                     html += '<td class="left">' + param + '</td><td class="left">' + symValue + '</td><td class="left">' + numValue + '</td></tr>\n'
@@ -437,9 +428,9 @@ def params2html(circuitObject, label='', caption=''):
     for par in parNames:
         parName = '$' + sp.latex(par) + '$'
         try:
-            symValue = '$' + _latex_ENG(circuitObject.parDefs[par]) + '$'
+            symValue = '$' + exprLatex(circuitObject.parDefs[par]) + '$'
             #ymValue = '$' + sp.latex(roundN(circuitObject.parDefs[par], numeric=False)) + '$'
-            numValue = '$' + _latex_ENG(sp.N(fullSubs(circuitObject.parDefs[par], circuitObject.parDefs))) + '$'
+            numValue = '$' + exprLatex(sp.N(fullSubs(circuitObject.parDefs[par], circuitObject.parDefs))) + '$'
             #numValue = '$' + sp.latex(roundN(fullSubs(circuitObject.parDefs[par], circuitObject.parDefs), numeric=True)) + '$'
             html += '<tr><td class="left">' + parName +'</td><td class="left">' + symValue + '</td><td class="left">' + numValue + '</td></tr>\n'
         except:
@@ -543,7 +534,7 @@ def expr2html(expr, units=''):
     if isinstance(expr, sp.Basic):
         if units != '':
             units = '\\left[\\mathrm{' + units2TeX(units) + '}\\right]'
-        html = '$' + _latex_ENG(normalizeRational(expr)) + units + '$'
+        html = '$' + exprLatex(normalizeRational(expr)) + units + '$'
         #html = '$' + sp.latex(roundN(expr)) + units + '$'
         html = _insertHTML(ini.html_path + ini.html_page, html)
     else:
@@ -577,7 +568,7 @@ def eqn2html(arg1, arg2, units='', label='', labelText=''):
     if units != '':
         units = '\\,\\left[ \\mathrm{' + units2TeX(units) + '}\\right]'
     label = _addLabel(label, caption=labelText, labelType='eqn')
-    value = _latex_ENG(normalizeRational(arg2))
+    value = exprLatex(normalizeRational(arg2))
     #value =  sp.latex(roundN(arg2))    
     html = label + '\\begin{equation}\n' + sp.latex(roundN(arg1)) + '=' + value + units + '\n'
     html += '\\end{equation}\n'
@@ -689,13 +680,13 @@ def pz2html(instObj, label = '', labelText = ''):
                 frequency = sp.Abs(root)
                 Q         = frequency/(2*sp.Abs(realpart))
                 if imagpart != 0:
-                    Q        = "$" + _latex_ENG(sp.N(frequency/2/abs(realpart), ini.disp)) + "$"
-                    imagpart = "$" + _latex_ENG(sp.N(imagpart, ini.disp)) + "$"
+                    Q        = "$" + exprLatex(sp.N(frequency/2/abs(realpart), ini.disp)) + "$"
+                    imagpart = "$" + exprLatex(sp.N(imagpart, ini.disp)) + "$"
                 else:
                     Q        = ''
                     imagpart = ''
-                frequency  = "$" + _latex_ENG(sp.N(frequency, ini.disp)) + "$"
-                realpart   = "$" + _latex_ENG(sp.N(realpart, ini.disp)) + "$"
+                frequency  = "$" + exprLatex(sp.N(frequency, ini.disp)) + "$"
+                realpart   = "$" + exprLatex(sp.N(realpart, ini.disp)) + "$"
                 name = 'p<sub>' + str(i + 1) + '</sub>'
                 html += '<tr><td>' + name + '</td><td>' + realpart + '</td><td>' + imagpart + '</td><td>' + frequency + '</td><td>' + Q +'</td></tr>\n'
             html += '</table>\n'
@@ -722,13 +713,13 @@ def pz2html(instObj, label = '', labelText = ''):
                 frequency = sp.Abs(root)
                 Q         = frequency/(2*sp.Abs(realpart))
                 if imagpart != 0:
-                    Q        = "$" + _latex_ENG(sp.N(frequency/2/abs(realpart), ini.disp)) + "$"
-                    imagpart = "$" + _latex_ENG(sp.N(imagpart, ini.disp)) + "$"
+                    Q        = "$" + exprLatex(sp.N(frequency/2/abs(realpart), ini.disp)) + "$"
+                    imagpart = "$" + exprLatex(sp.N(imagpart, ini.disp)) + "$"
                 else:
                     Q        = ''
                     imagpart = ''
-                frequency  = "$" + _latex_ENG(sp.N(frequency, ini.disp)) + "$"
-                realpart   = "$" + _latex_ENG(sp.N(realpart, ini.disp)) + "$"
+                frequency  = "$" + exprLatex(sp.N(frequency, ini.disp)) + "$"
+                realpart   = "$" + exprLatex(sp.N(realpart, ini.disp)) + "$"
                 name = 'z<sub>' + str(i + 1) + '</sub>'
                 html += '<tr><td>' + name + '</td><td>' + realpart + '</td><td>' + imagpart + '</td><td>' + frequency + '</td><td>' + Q +'</td></tr>\n'
             html += '</table>\n'

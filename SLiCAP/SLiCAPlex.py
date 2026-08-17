@@ -54,33 +54,6 @@ def _eng_notation(value, digits=4):
     return mantissa + (suffix or "")
 
 
-# NGspice reads scale factors CASE-INSENSITIVELY: 'm' and 'M' are both
-# milli, and mega is 'Meg'. SLiCAP suffixes whose meaning differs must be
-# translated; suffixes NGspice does not know are expanded numerically.
-_NGSPICE_SUFFIX = {'M': 'Meg'}     # SLiCAP mega → NGspice mega
-_NGSPICE_EXPAND = set('yzaP')      # unknown to NGspice ('P' would read as pico)
-
-_NUMSUFFIX = re.compile(r'^([+-]?(?:\d+\.?\d*|\.\d+))([yzafpnumkMGTP])$')
-
-def _to_ngspice(value):
-    """SLiCAP numeric literal → NGspice-safe text.
-
-    ``'1M'`` → ``'1Meg'`` (NGspice would read '1M' as 1 milli!), ``'1P'`` →
-    ``'1e15'``; suffixes with identical meaning ('5p', '2.2k', '1m', '1G')
-    pass through. Plain numbers, expressions, and any other text are
-    returned unchanged."""
-    if not isinstance(value, str):
-        return value
-    m = _NUMSUFFIX.match(value.strip())
-    if m is None:
-        return value
-    num, suffix = m.groups()
-    if suffix in _NGSPICE_SUFFIX:
-        return num + _NGSPICE_SUFFIX[suffix]
-    if suffix in _NGSPICE_EXPAND:
-        return num + 'e' + _SCALEFACTORS[suffix]
-    return num + suffix
-
 def t_PARDEF(t):
     r"""[a-zA-Z]\w*\s*\=\s*({[\w\(\)\/*+-\^ .]*}
     |([+-]?\d+\.?\d*[eE][+-]?\d+)
@@ -251,7 +224,11 @@ def t_INT(t):
     return t
 
 def t_FNAME(t):
-    r'"?/?[^\s]+\.[a-zA-Z]+"?'
+    # the extension may hold underscores and digits: the type-tagged
+    # subcircuit libraries are .slicap_lib / .spice_lib, and
+    # ".lib lib/ACcoupler.slicap_lib" died on the underscore with
+    # "illegal character" (Anton, 2026-08-04)
+    r'"?/?[^\s]+\.[a-zA-Z][a-zA-Z0-9_]*"?'
     if t.value[0] == '"' and t.value[-1] == '"':
         t.value = t.value[1: -1]
     return t
@@ -278,7 +255,14 @@ def t_error(t):
 def _replaceScaleFactors(txt):
     """
     Replaces scale factors in expressions with their value in scientific
-    notation:
+    notation.
+
+    A SLiCAP scale factor is exactly ONE case-sensitive character from
+    ``_SCALEFACTORS`` (Anton, 2026-07-31). SPICE spellings - 'MEG', 'mil',
+    'K', or a trailing unit as in '1kohm' - are NOT read here: they are
+    refused before a value reaches NGspice, because '1M', '1K' and '1F' mean
+    different numbers in the two notations and a tolerant reader would have
+    to guess.
 
     :param txt: Expression or number with scale factors
     :type txt: str
@@ -290,7 +274,7 @@ def _replaceScaleFactors(txt):
     :Example:
 
     >>> _replaceScaleFactors('sin(2*pi*1M)')
-    'sin(2*pi*1E6)'
+    'sin(2*pi*1e6)'
     """
     pos = 0
     out = ''

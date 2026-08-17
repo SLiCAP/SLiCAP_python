@@ -9,7 +9,8 @@ Created on Fri Nov 18 13:24:17 2022
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import _checkExpression, roundN
-from SLiCAP.SLiCAPhtml import _insertHTML, _latex_ENG, units2TeX
+from SLiCAP.SLiCAPhtml import _insertHTML, units2TeX
+from SLiCAP.SLiCAPlatex import exprLatex
 
 class specItem(object):
     """
@@ -99,7 +100,7 @@ class specItem(object):
         :rtype: str
         """
         if self.value != '':
-            value = _latex_ENG(roundN(self.value))
+            value = exprLatex(roundN(self.value))
         else:
             self.value = ''
         # symbol

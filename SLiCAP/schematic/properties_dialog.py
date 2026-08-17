@@ -33,7 +33,8 @@ class PropertiesDialog(QDialog):
 
     def __init__(self, item: ComponentItem, parent=None,
                  show_stimuli: bool = False, is_current: bool = False,
-                 offer_dc_current: bool = False):
+                 offer_dc_current: bool = False,
+                 sch_ext=".slicap_sch"):
         super().__init__(parent, Qt.Window)
         self._item = item
         self._show_stimuli = show_stimuli
@@ -150,17 +151,22 @@ class PropertiesDialog(QDialog):
         outer.addLayout(orient)
 
         # ── descend hierarchy (subcircuit blocks only) ──────────────────────────
-        # An X block's source is sch/<model>.slicap_sch; descending opens it in a
-        # new editable window so the user can inspect and edit the subcircuit.
+        # An X block's source schematic is part of the subcircuit package in
+        # the project lib/ (legacy sch/ still searched — Anton, 2026-08-05);
+        # descending opens it in a new editable window.
         self._descend_path: Path | None = None
         if item.prefix == "X":
-            src = project.subdir("sch") / f"{item.model}.slicap_sch"
+            # the extension follows the schematic TYPE (Anton, 2026-08-04:
+            # subcircuits work for both dialects; only extensions differ)
+            from .subcircuit import find_subckt_schematic
+            src = find_subckt_schematic(item.model, sch_ext)
             btn = QPushButton("Descend into subcircuit")
-            if src.is_file():
+            if src is not None:
                 btn.clicked.connect(lambda: self._descend(src))
             else:
                 btn.setEnabled(False)
-                btn.setToolTip(f"Source schematic not found: sch/{src.name}")
+                btn.setToolTip("Source schematic not found: "
+                               f"lib/{item.model}{sch_ext}")
             outer.addWidget(btn)
 
         if show_stimuli:

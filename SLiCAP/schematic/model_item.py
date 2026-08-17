@@ -63,12 +63,19 @@ class ModelItem(QGraphicsItem):
         if (self.scene() is not None and LATEX_INSTALLED
                 and style_of(self).LATEX_RENDERING_ENABLED):
             from .latex_label import cache_dir_of, render_latex_raw
-            svg, err = render_latex_raw(
-                self.build_latex(self.model_name, self.model_type, self.params),
-                self.preamble_path,
-                cache_dir=cache_dir_of(self),
-            )
-            self._render_error = err or ""
+            latex = self.build_latex(self.model_name, self.model_type,
+                                     self.params)
+            if latex is None:
+                # A value is not a valid SLiCAP expression: no render at all.
+                self._render_error = (
+                    "A model parameter value is not a valid SLiCAP "
+                    "expression (see the log for which one).")
+                self._svg_bytes = b""
+                svg = None
+            else:
+                svg, err = render_latex_raw(latex, self.preamble_path,
+                                            cache_dir=cache_dir_of(self))
+                self._render_error = err or ""
             if svg:
                 self._svg_bytes = svg  # keep stored bytes up to date
         if self._svg_bytes:
@@ -197,40 +204,40 @@ class ModelItem(QGraphicsItem):
     # ── static helpers ────────────────────────────────────────────────────────
 
     @staticmethod
-    def build_latex(model_name: str, model_type: str, params: list) -> str:
-        from .latex_label import expression_to_latex
+    def build_latex(model_name: str, model_type: str, params: list) -> "str | None":
+        """LaTeX for the .model block, or None when a value is not a valid
+        SLiCAP expression (it is then not rendered at all — Anton,
+        2026-08-16).
 
-        def _escape(s: str) -> str:
-            return s.replace('_', r'\_').replace('^', r'\^{}')
+        Built by SLiCAP's own LaTeX formatter via latex_label.slicap_table:
+        SYMPY OBJECTS are handed over and the formatter decides maths-vs-text
+        and does the escaping.  The header holds only FIXED text; the model
+        name and type are DATA and therefore go in a row, where the formatter
+        escapes them - they are literal netlist identifiers, not maths (as
+        ``symbolLatex`` would render them: 'BC847' -> 'BC_847').
+        """
+        from .latex_label import expression_sympy, slicap_table
 
-        def _value_tex(s: str) -> str:
-            s = s.strip()
+        def _cell(s: str):
+            """Sympy object for a value; None = does not parse (no render)."""
+            s = (s or "").strip()
             if not s:
-                return r"\cdot"
+                return ""                       # empty cell: plain text
             if not (s.startswith("{") and s.endswith("}")):
                 s = "{" + s + "}"
-            return expression_to_latex(s)
+            return expression_sympy(s)
 
-        header = (r"\texttt{.model}"
-                  rf"\ \mathtt{{{_escape(model_name)}}}"
-                  rf"\ \mathtt{{{_escape(model_type)}}}")
+        header = ["", ""]
+        heading = r"\texttt{.model}"
+        title  = [str(model_name).strip(), str(model_type).strip()]
         filled = [(n.strip(), v) for n, v in params if n.strip()]
-
         if not filled:
-            return rf"\[ {header} \]"
+            return slicap_table(header, [title], title=heading)
 
-        rows = " \\\\\n".join(
-            rf"  {{\footnotesize \textsf{{{_escape(n)}}}}} & {_value_tex(v)}"
-            for n, v in filled
-        )
-        return (
-            r"\["                                           "\n"
-            r"\begin{array}{r@{\;=\;}l}"                   "\n"
-            rf"\multicolumn{{2}}{{l}}{{{header}}} \\"      "\n"
-            + rows + "\n"
-            r"\end{array}"                                  "\n"
-            r"\]"
-        )
+        rows = [[_cell(n), _cell(v)] for n, v in filled]
+        if any(cell is None for row in rows for cell in row):
+            return None
+        return slicap_table(header, [title] + rows, title=heading)
 
     def netlist_lines(self) -> list:
         """Return .model lines for netlist export; values are auto-wrapped in {}."""

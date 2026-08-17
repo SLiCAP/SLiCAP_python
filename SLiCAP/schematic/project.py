@@ -63,14 +63,16 @@ def set_app_root(path) -> None:
 def project_root() -> Path:
     """Directory holding the SLiCAP project subdirs (cir/ sch/ img/ lib/).
 
-    Derived from the open schematic — if it lives in a ``sch/`` directory the
-    root is that directory's parent — so a schematic opened from any project
-    resolves its netlists, images and libraries next to itself.  Falls back to
-    the app root when nothing is open (a brand-new, unsaved schematic).
+    Derived from the open schematic — if it lives in a ``sch/`` or ``lib/``
+    directory the root is that directory's parent (subcircuit schematics are
+    part of the package in ``lib/``, Anton 2026-08-05) — so a schematic
+    opened from any project resolves its netlists, images and libraries next
+    to itself.  Falls back to the app root when nothing is open (a brand-new,
+    unsaved schematic).
     """
     if _base is not None:
         parent = _base.parent
-        return parent.parent if parent.name == "sch" else parent
+        return parent.parent if parent.name in ("sch", "lib") else parent
     return APP_ROOT
 
 
@@ -83,9 +85,10 @@ def subdir(name: str) -> Path:
 
 def root_for(path) -> Path:
     """Project root derived from an explicit schematic ``path`` — independent
-    of the app-wide current schematic."""
+    of the app-wide current schematic.  A schematic may live in ``sch/`` or,
+    for subcircuit packages, in ``lib/``."""
     parent = Path(path).parent
-    return parent.parent if parent.name == "sch" else parent
+    return parent.parent if parent.name in ("sch", "lib") else parent
 
 
 def subdir_for(path, name: str) -> Path:

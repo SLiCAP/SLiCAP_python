@@ -158,6 +158,7 @@ def build_subcircuit(
     ports:      list,        # ordered node names exposed to the parent
     params:     list = None, # list[(name, default)] overridable parameters
     params_items: list = None,  # list[ParameterItem] — internal .param definitions
+    libs:       list = None, # list[LibraryItem]  (.lib/.include lines)
 ) -> str:
     """
     Build a SLiCAP library (`.lib`) file holding one subcircuit definition.
@@ -180,6 +181,15 @@ def build_subcircuit(
     never a port — grounding is the parent's job (it wires a port to 0).
     """
     title_line = f'"{name}"' if " " in name else name
+    # The banner is DOCUMENTATION for the human opening the file: the
+    # names are the CONVENTION the tools derive, and nothing ever parses
+    # these lines back (Anton, 2026-08-04) - a renamed file must not be
+    # able to lie to a tool.
+    banner = ["*" * 50,
+              "* SLiCAP subcircuit definition",
+              f"* Subcircuit symbol: {name}_slicap_symbol.svg",
+              f"* Subcircuit schematic: {name}.slicap_sch",
+              "*" * 50]
 
     _node = _node_resolver(components, wires)
 
@@ -187,9 +197,34 @@ def build_subcircuit(
     if ports:
         subckt += " " + " ".join(ports)
     if params:
-        subckt += " " + " ".join(f"{k}={v}" for k, v in params if str(k).strip())
+        # BRACED, like every SLiCAP parameter value: the lexer's PARDEF does
+        # not accept a bare identifier, so 'C_c=C_c' died with "illegal
+        # character" and the whole library compiled EMPTY (Anton,
+        # 2026-08-04). wrap_braces is idempotent, so an already-braced
+        # default passes through.
+        subckt += " " + " ".join(f"{k}={wrap_braces(str(v))}"
+                                 for k, v in params if str(k).strip())
 
-    lines: list[str] = [title_line, "", subckt]
+    lines: list[str] = [title_line, *banner]
+
+    # Library lines from the subcircuit schematic (models, nested
+    # subcircuits) — the SLiCAP compiler processes a .lib inside a library
+    # file recursively (verified 2026-08-05), so the definition stays
+    # complete when this library is used from another project.
+    if libs:
+        from . import project
+        try:
+            root = project.project_root()
+        except Exception:
+            root = None
+        lines.append("")
+        for lib_item in libs:
+            for _d, path, _c, exists in lib_item.resolved_entries(root):
+                if not exists:
+                    print(f"WARNING: library file not found: {path}")
+            lines.extend(lib_item.netlist_lines(root))
+
+    lines += ["", subckt]
 
     # ── internal parameter definitions ─────────────────────────────────────────
     # A parameter passed in through the .subckt line must NOT be redefined
