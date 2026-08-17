@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<meta name="Language" content="English"/>
+<title>"Circuit data"</title><link rel="stylesheet" href="css/slicap.css">
+<script>MathJax = {tex:{tags: 'ams', inlineMath:[['$','$'],]}, svg:{fontCache:'global'}};</script>
+<script type="text/javascript" id="MathJax-script" async  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head><body><div id="top"><h1>Circuit data</h1></div>
+<h2>Schematic diagram of VampQspice.kicad_sch</h2>
+<figure><a id="fig_VampQspice.kicad_sch"></a><img src="img/VampQspice.svg" alt="Circuit diagram of VampQspice." style="width:500px">
+<figcaption>Figure: VampQspice.svg<br>Circuit diagram of VampQspice.</figcaption>
+</figure>
+<h2><a id="netlist_VampQspice"></a>Netlist: VampQspice.cir</h2>
+<pre>"BJT voltage amplifier"
+.inc lib/BC847.lib
+.param C_c=18p
+C1 c2 out 1u
+C2 out 0 100p
+C3 e2 0 200u
+C4 in b1 1u
+C5 c2 e1 {C_c}
+Q1 c1 b1 e1 BC847
+Q2 c2 c1 e2 BC847
+R1 e2 0 1k noisy=1
+R2 cc c2 2.7k noisy=1
+R3 cc c1 82k noisy=1
+R4 b1 e2 100k noisy=1
+R5 out 0 10k noisy=1
+R6 e1 0 1k noisy=1
+R7 c2 e1 3k noisy=1
+R8 in 1 2k noisy=1
+V1 1 0 DC 0 AC 1 0 PULSE 0 0.3 0 1n 1n 499n 1u
+V2 cc 0 DC 12
+.end</pre>
+<!-- INSERT -->
+<div id="footnote">
+<p>Go to <a href="VampQspice_index.html">VampQspice_index</a></p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 5.1.0 &copy 2009-2025 SLiCAP development team</p>
+<p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
+<p>Last project update: 2026-08-16 22:47:18</p>
+</div></body></html>

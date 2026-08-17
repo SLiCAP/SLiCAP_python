@@ -1,0 +1,72 @@
+SCREENSHOTS STILL TO CAPTURE
+============================
+
+Drop the finished PNGs in docs/images/ under exactly these file names; the
+manual and the README then pick them up with no further edits.
+
+General rules
+-------------
+* Size the APPLICATION WINDOW to about 1600 x 1000 before capturing. A
+  2560-px-wide capture is displayed by GitHub at ~900 px, which makes every
+  label unreadable.
+* Capture the window, not the whole desktop (no panels, no wallpaper).
+* Use a project that looks like real work (Vamp / VampQspice), not an empty
+  sheet: values filled in, a parameter table present, nothing marked "?".
+* Light theme, default style, 100 % zoom unless a shot says otherwise.
+
+README (repository front page)
+------------------------------
+1. readme_hero.png
+   One realistic session, the "what is this" shot:
+   - a schematic open with a parameter table and typeset labels (Vamp),
+   - the Instructions panel showing a handful of real instructions,
+   - the Design data panel open on the right with a result expanded.
+   Caption: "Draw the circuit, compose the analysis, get a Python script."
+
+2. readme_plot.png     - a Figure window: two or three axes (magnitude/phase
+                         or a pole-zero plot) with a draggable cursor visible.
+3. readme_instruction_dialog.png
+                       - the Create / Edit SLiCAP Instruction dialog, filled
+                         in (transfer=loopgain, source/detector chosen).
+4. readme_hierarchy.png
+                       - a subcircuit descended into, showing the bias
+                         annotations borrowed from the parent run.
+
+Manual - chapters that already reference an image
+-------------------------------------------------
+5. overview_hearingloop.png     (index.rst)
+   A finished schematic exported as it appears in a report: components,
+   wires, net labels, parameter table, hyperlink annotation.
+
+6. flow_design_documentation.png   (was referenced by introduction.rst)
+   NO LONGER USED - the introduction is prose now. Delete this entry once
+   the file is gone, or reuse the name for a workflow diagram if you want
+   one (schematic -> circuit object -> instruction -> result -> figure).
+
+7. getting_started_window.png   (getting_started.rst)
+   The whole window with every panel visible and labelled in the caption:
+   Project tree, canvas, Instructions, Log, Design data.
+
+Manual - chapters that still need shots
+---------------------------------------
+8.  canvas_grid.png             - canvas with grid, snapping, a selected part.
+9.  place_symbol.png            - the symbol palette open, a symbol ghosted at
+                                  the cursor.
+10. properties_dialog.png       - component Properties with Show value /
+                                  Show name ticked, LaTeX label visible.
+11. wiring_junction.png         - a wire being drawn, junction dot, an
+                                  unconnected-pin marker.
+12. ports_parameters.png        - ports named, a parameter table, a model
+                                  definition block.
+13. subcircuit_symbol.png       - the New Subcircuit Symbol dialog with a
+                                  generated box preview and pin placement.
+14. traces_axes_figures.png     - the Axes dialog (or Figures dialog) with a
+                                  share-x/share-y matrix filled in.
+15. design_data_panel.png       - the Design data tree with a circuit entry
+                                  expanded (element data / parameter
+                                  definitions tables in the viewer).
+16. ngspice_instruction.png     - the NGspice instruction dialog with a source
+                                  stimulus defined.
+
+Captions are written in the .rst files; a shot only has to show the state
+described above.
