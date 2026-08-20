@@ -25,7 +25,7 @@ SLiCAP Manual
     
     Read more about the `Structured Electronic Design Environment <index.html#structured-electronic-design-environment>`_
 
-.. admonition:: Video Pres`ntation SLiCAP KiCON Europe 2025
+.. admonition:: Video Presentation SLiCAP KiCON Europe 2025
     :class: note
     
     .. image:: /API/img/SLiCAP_KiCON_2025.jpg
