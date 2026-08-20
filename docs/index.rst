@@ -4,15 +4,28 @@ SLiCAP Manual
     
 .. image:: /API/img/colorCode.svg
 
-Welcome to the version 5 manual of SLiCAP. This edition surpasses all previous versions and has been completely rewritten.
-
 - SLiCAP is a **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram, is designed to set up and solve equations for analog circuit design and automatically update design data in documentation.
 - SLiCAP is written in Python.
 - SLiCAP is distributed under the `MIT license <https://opensource.org/license/mit>`_
 - SLiCAP `statistics <https://pypistats.org/packages/slicap>`_
 - SLiCAP `training courses <https://montagne.nl/slicap>`_
 
-.. admonition:: Video Presentation SLiCAP KiCON Europe 2025
+.. admonition:: NEW! Structured Electronic Design Environment integrates SLiCAP and NGspice
+    :class: note
+
+    - **Analog design is complex.**
+    - **Systems engineering tells us how engineers solve complex problems.**
+    - **SLiCAP makes it doable.**
+    
+    .. image:: /API/img/GUI.png
+    
+    Project manager, Schematic Editor, Variables Explorer, etc. all integrated in the Structured Electronic Design Environment.
+
+    >>> pip install slicap        # then start the environment with:  slicap
+    
+    Read more about the `Structured Electronic Design Environment <index.html#structured-electronic-design-environment>`_
+
+.. admonition:: Video Pres`ntation SLiCAP KiCON Europe 2025
     :class: note
     
     .. image:: /API/img/SLiCAP_KiCON_2025.jpg
