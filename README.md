@@ -1,7 +1,7 @@
 # SLiCAP — more than symbolic SPICE
 
 **Analog design is complex.**\
-**Systems engineering is how engineers solve complex problems.**\
+**Systems engineering tells us how engineers solve complex problems.**\
 **SLiCAP makes it doable.**
 
 A simulator tells you what your circuit does — *after* you have chosen the
