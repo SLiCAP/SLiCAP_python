@@ -13,9 +13,6 @@ Since version 5.2 it comes with the **Structured Electronic Design Environment**
 which integrates SLiCAP and NGspice into one workspace. It keeps every design
 decision traceable — from the specification, through the budgets, to the final
 design report — so you can design **first-time-right**.
-
-![The Structured Electronic Design Environment](https://raw.githubusercontent.com/SLiCAP/SLiCAP_python/main/docs/GUI/img/readme_hero.png)
-
 ```
 pip install slicap        # then start the environment with:  slicap
 ```
