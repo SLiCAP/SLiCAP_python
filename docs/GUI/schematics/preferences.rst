@@ -20,7 +20,7 @@ Styling works on two levels:
   schematic.
 * When you change a setting in Preferences, it applies to the **current
   schematic** and is saved into its ``<name>.ini`` sidecar file (see
-  :doc:`/GUI/project/project_files`).  Re-opening that schematic restores exactly the look it
+  :doc:`/GUI/project/project`).  Re-opening that schematic restores exactly the look it
   was saved with — independent of the machine's global defaults.
 
 This is what lets a book or report keep a consistent house style across all its

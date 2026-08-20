@@ -92,7 +92,7 @@ What you can rely on
   the only place your design lives.
 * **Projects are self-contained.**  Everything a schematic references lives
   inside the project and is addressed relatively, so a project survives being
-  moved, archived or handed over (see :doc:`/GUI/project/project_files`).
+  moved, archived or handed over (see :doc:`/GUI/project/project`).
 * **Nothing is rewritten behind your back.**  Editing is append-only: the
   dialogs add statements, and existing ones are left as they are for you to
   keep or delete.
@@ -111,4 +111,4 @@ Where to go next
   file.
 * :doc:`/GUI/schematics/netlist_and_export` — netlists, SVG/PDF figures, the command line.
 * :doc:`/GUI/hierarchical_blocks` — subcircuits and descending into them.
-* :doc:`/GUI/project/project_files` — the project layout and what is stored where.
+* :doc:`/GUI/project/project` — the project layout and what is stored where.

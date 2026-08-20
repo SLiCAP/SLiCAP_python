@@ -4,7 +4,7 @@
 SLiCAP module with basic SLiCAP classes and functions.
 """
 
-from sympy import N
+import sympy as sp
 import sys
 import os
 from pathlib import Path
@@ -339,7 +339,7 @@ class circuit(object):
                         else:
                            parValues[par] = self.parDefs[key]
                         if numeric:
-                            parValues[par] = N(parValues[par])
+                            parValues[par] = sp.N(parValues[par])
         else:
             parName = Symbol(str(parNames))
             parValues = None
@@ -349,7 +349,7 @@ class circuit(object):
                 else:
                     parValues = self.parDefs[parName]
                 if numeric:
-                    parValues = N(parValues)
+                    parValues = sp.N(parValues)
             except BaseException:
                 exc_type, value, exc_traceback = sys.exc_info()
                 print('\n', value)
@@ -449,7 +449,7 @@ class circuit(object):
                         if substitute:
                             value = fullSubs(value, self.parDefs)
                         if numeric:
-                            value = N(value)
+                            value = sp.N(value)
                         elementValues[elID] = value
                     else:
                         print("Error: Parameter '{0}' undefined for element '{1}'.".format(param, elID))
@@ -463,7 +463,7 @@ class circuit(object):
                     if substitute:
                         value = fullSubs(value, self.parDefs)
                     if numeric:
-                        value = N(value)
+                        value = sp.N(value)
                     elementValues = value
                 else:
                     print("Error: Parameter '{0}' undefined for element '{1}'.".format(param, elementID))

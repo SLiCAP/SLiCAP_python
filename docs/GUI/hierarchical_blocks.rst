@@ -21,7 +21,7 @@ Design intent
 * A subcircuit is stored as a **package** in the project ``lib/`` folder: the
   compiled library (``.subckt`` definition), the block symbol, and the
   subcircuit's own editable schematic.  One folder holds everything the block
-  needs — see *Self-contained projects* in :doc:`/GUI/project/project_files`.
+  needs — see *Self-contained projects* in :doc:`/GUI/project/project`.
 
 Saving a schematic as a subcircuit
 ==================================

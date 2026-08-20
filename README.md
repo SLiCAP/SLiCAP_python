@@ -1,138 +1,90 @@
-# SLiCAP: more than SYMBOLIC SPICE
+# SLiCAP — more than symbolic SPICE
 
-## What it is
-- SLiCAP is an acronym for: **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram
-- SliCAP is a tool for **algorithm-based analog design automation**
-- SLiCAP is intended for setting up and solving **design equations** of electronic circuits
-- SLiCAP is a an **open source** application written in Python
-- SLiCAP is part of the tool set for teaching [Structured Electronics Design](https://analog-electronics.tudelft.nl) at the Delft University of Technology
+**Analog design is complex.**\
+**Systems engineering is how engineers solve complex problems.**\
+**SLiCAP makes it doable.**
 
-## Why you should use it
-- SLiCAP facilitates analog design automation and stepwise, hierachically-structured, analog design 
-- SLiCAP lets you relate circuit component and device geometry requirements to system performance requirements
-- SLiCAP makes complex symbolic circuit analysis doable
-- SLiCAP speeds up the circuit design process
-- SLiCAP integrates documentation and design ("one-click" update of HTML or PDF design reports)
-- SLiCAP facilitates design education and knowledge building
+A simulator tells you what your circuit does — *after* you have chosen the
+components. SLiCAP tells you what the components must be: it turns a circuit into
+**symbolic design equations**, so values follow from your requirements instead of
+from guessing and re-simulating.
 
-## Features
-- SLiCAP-compatible schematic capture program with LaTeX rendering of expressions, with cli export of netlist, svg image and pdf image
-- Accepts SPICE-like netlists as input and provides netlist generation from, amongst others, Kicad and LTspice schematic files.
-- Facilitates concurrent design and documentation
-- Supports and facilitates structured analog design
+Since version 5.2 it comes with the **Structured Electronic Design Environment**,
+which integrates SLiCAP and NGspice into one workspace. It keeps every design
+decision traceable — from the specification, through the budgets, to the final
+design report — so you can design **first-time-right**.
 
-## Capabilities
-- Conversion of hierarchically structured SPICE netlist into a mixed symbolic/numeric matrix equation
-- Symbolic and numeric noise analysis
-- Symbolic and numeric noise integration over frequency
-- Symbolic and numeric determination of transfer functions and polynomial coefficients of transfer functions
-- Symbolic and numeric inverse Laplace Transform
-- Symbolic and numeric determination of network solutions
-- Symbolic and numeric pole-zero analysis (symbolic pole-zero analysis for low-order systems only)
-- Symbolic and numeric Routh array
-- Order estimation of feedback circuits (numeric only)
-- Root-locus analysis with an arbitrarily selected circuit parameter as root locus variable
-- Symbolic and numeric DC and DC variance analysis for determination of budgets for resistor tolerances, offset, temperature effects, matching and tracking
-- Symbolic and numeric derivation and solution of design equations for bandwidh, frequency response, noise, dc variance, and temperature stability
+![The Structured Electronic Design Environment](https://raw.githubusercontent.com/SLiCAP/SLiCAP_python/main/docs/GUI/img/readme_hero.png)
 
-## Installing SLiCAP from pypi
+```
+pip install slicap        # then start the environment with:  slicap
+```
 
-1. Enter: 
+## From specification to design report, in one chain
 
-       pip install slicap
+- **Specification.** Functions, performance and cost requirements are written down as
+  project data — the reference every later decision is checked against, not a note in
+  the margin.
+- **Budgeting.** SLiCAP expresses performance and cost as explicit functions of your
+  device properties — you allocate each contribution its share of the requirement, and
+  solving the expression gives the value that property must have. Noise, DC variance,
+  tolerance, matching and temperature drift all budget the same way.
+- **Design and verification, one environment.** Create and solve design equations
+  with simple, solvable models, and verify your design with NGspice's full device
+  models.
+- **Report generation.** Create graphs, LaTeX and RST snippets from expressions,
+  tables and NGspice simulations. Put them in your LaTeX design documents and
+  Sphinx websites, and keep them up to date with one run.
 
-## Addidional software
+Nothing is locked in: the environment writes a plain Python script you can read,
+edit, run from the command line, or import from your own design code — and SLiCAP
+works perfectly well without the GUI.
 
-SLiCAP can generate netlists from schematic files from:
+SLiCAP is the tool set behind the open-access book
+**[Structured Electronic Design](https://books.open.tudelft.nl/home/catalog/book/162)**
+and the [analog electronics courses](https://analog-electronics.tudelft.nl) at Delft
+University of Technology.
 
-- Kicad (all platforms, preferred!)
-- LTspice (MSWindows: install LTspice on the system drive, Linux and MacOS: use MSwindows version and wine)
-- gschem (MSWindows: install gschem and its netlister on the system drive, Linux and MacOS: use lepton-eda)
-- lepton-eda (Linux and MacOS, MSWindows: use gSchem for windows)
+## What it looks like
 
-Preferred for all platforms is to install or upgrade to the latest version of Kicad, and install Inkscape.
+![GUI](GUI.png)
 
-## LaTeX rendering of expressions (optional)
+## What it can do
 
-The schematic editor can typeset component values, parameter/model definitions and design-data expressions with LaTeX. This is optional — there is a plain-text fallback — and requires a TeX distribution that provides **`pdflatex`** and **`dvisvgm`**:
+Symbolic and numeric analysis of linear, continuous-time circuits: transfer functions
+and their polynomial coefficients, poles and zeros, root-locus plots and Routh arrays,
+noise and noise integration, DC variance for tolerance, matching and temperature
+budgets, inverse Laplace and network solutions.
 
-- **Linux:** install TeX Live (`texlive-latex-base` + `texlive-latex-extra`, or `texlive-full`). On some distributions `dvisvgm` is a separate package (e.g. `sudo apt install dvisvgm`).
-- **MSWindows:** install MiKTeX (bundles both `pdflatex` and `dvisvgm`).
-- **macOS:** install MacTeX.
+Feedback circuits are analysed with the **asymptotic-gain model** — loop gain,
+asymptotic gain, servo function and direct transfer, each available on its own.
+Balanced circuits are converted into their **common-mode and differential-mode
+equivalent circuits**, so each mode is designed for what it must do.
 
-**Ghostscript is NOT required.** SLiCAP renders via DVI (`pdflatex -> DVI -> dvisvgm`), not via PDF, so the `dvisvgm --pdf` path that would need Ghostscript is never used.
+Out of all of it come the design equations for bandwidth, frequency response, noise,
+dc variance and temperature stability. Hierarchical netlists, parameter stepping, and
+NGspice for numeric verification.
 
-The `pdflatex` and `dvisvgm` locations are detected on first run and stored in `SLiCAP.ini`; they can be edited there manually. LaTeX rendering is enabled per schematic in **File -> Preferences**; the checkbox is disabled when the tools are not found.
+**→ Full documentation, tutorials and examples: [slicap.org](https://slicap.org)**
 
-## First Run
+## About
 
-On the first run:
+SLiCAP is an open-source Python program by
+[Anton J.M. Montagne](https://montagne.nl), created for and used in structured
+analog design practice, teaching and research.
 
-- SLiCAP searches for installed applications:
+**Two companions to install.** [NGspice](https://ngspice.sourceforge.io) is the
+verification half of the environment — install it and your design is simulated with full
+device models from inside the same project. A TeX distribution (`pdflatex` + `dvisvgm`)
+typesets the expressions on your schematics and builds your LaTeX design reports;
+without it SLiCAP falls back to plain text — readable, but not what you want in a
+document. Sphinx comes with SLiCAP, so design documentation as a website needs nothing
+extra.
 
-  - Kicad,
-  - LTspice
-  - NGspice
-  - gSchem (MSWindows only)
-  - lepton-eda (Linux and MacOS)
-  
-- SLiCAP creates a SLiCAP.ini file in the user home directory. This file contains initial setting and commands to start the above applications. It can be edited manually, and when deleted it will be recreated on the next run. Searching for applications on MSWindows may take a while!
-
-On the first run of a project, SLiCAP creates a SLiCAP.ini file in the project folder, each time you run the project this file is updated. It will be recreated after deletion.
-
-## Documentation
-
-    >>> Help()
-    
-Opens HTML documentation in your default browser. It can also be viewed at https://slicap.org
-
-## Schematic editor command-line usage
-
-The schematic editor can be launched from the command line with:
-
-    slicap
-
-This opens the full schematic editor window. For a lighter startup without the instruction panel and related simulation dock widgets, use:
-
-    slicap-schematics
-
-You can also open a schematic directly and let the program infer the schematic type from the file extension:
-
-    slicap mycircuit.slicap_sch
-    slicap mycircuit.spice_sch
-
-If you want to force the mode explicitly, use `--config`:
-
-    slicap-schematics --config slicap mycircuit.slicap_sch
-    slicap-schematics --config ngspice mycircuit.spice_sch
-
-The CLI also supports direct file export for schematic workflows:
-
-    python -m SLiCAP.schematic.cli netlist mycircuit.slicap_sch
-    python -m SLiCAP.schematic.cli svg mycircuit.slicap_sch
-    python -m SLiCAP.schematic.cli pdf mycircuit.slicap_sch
-
-## Setting up SLiCAP from source code
-
-1. Install Python 3.12+ (for MSwindows Anaconda installation is preferred)
-2. Download or clone the SLiCAP archive from github
-3. Extract it in some directory
-4. Open a terminal (or an Anaconda terminal if you run python from Anaconda) in the directory with pyproject.toml
-5. Install:
-
-       python -m pip install .
-
-   Don't forget the dot! This also installs all required packages, listed
-   in pyproject.toml.
-
-6. Make Documentation:
-
-       cd ./docs
-       make html
-       cd ..
+See [slicap.org](https://slicap.org) for installation details and for building
+from source.
 
 ## Contributing
-If you want to contribute to the development of SLiCAP, please [Email Us](mailto:anton@montagne.nl).
 
-### Bugs
-In case bugs are found, please report them to the 'Issues' page.
+Ideas and contributions are welcome — [email us](mailto:anton@montagne.nl).
+Found a bug? Please report it on the *Issues* page.

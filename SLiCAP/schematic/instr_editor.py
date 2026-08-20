@@ -153,6 +153,25 @@ class InstrEditor(QDockWidget):
     def _on_save_dialog(self) -> None:
         """Open a file-save dialog, write the editor content, update title."""
         default = str(self._path) if self._path else ""
+        if self._path is None or not self._path.exists():
+            # A fresh buffer - or a file moved/deleted behind our back - is
+            # offered in the PROJECT ROOT, never in the schematic's sch/
+            # folder: an instruction file is project-level and may carry
+            # instructions for several schematics, so it is not bound to one
+            # (Anton, 2026-08-19). Without an explicit directory the dialog
+            # reuses the folder last used - which is sch/, because that is
+            # where the schematic was opened.
+            try:
+                from . import project
+                if self._path is not None:
+                    # The project of the FILE, not of whichever schematic is
+                    # open - the rule instruction_run_context() follows too.
+                    default = str(project.root_for(self._path)
+                                  / self._path.name)
+                else:
+                    default = str(project.project_root())
+            except Exception:
+                pass
         path, _ = QFileDialog.getSaveFileName(
             self, "Save instruction file", default,
             "Python files (*.py);;All files (*)",
@@ -174,11 +193,19 @@ class InstrEditor(QDockWidget):
     def save(self) -> bool:
         """Write editor contents to the current path silently (used before Run).
 
-        Returns False if no path is set.
+        Asks where to save when the file has been moved or deleted outside the
+        editor; returns False if no path is set or the user cancelled.
         """
         if self._path is None:
             return False
-        self._path.parent.mkdir(parents=True, exist_ok=True)
+        if not self._path.exists():
+            # Moved or deleted behind our back. Do NOT recreate it at the old
+            # location: Run wrote the instruction file back into the
+            # schematic's sch/ folder every time, undoing the relocation
+            # (Anton, 2026-08-19). Ask instead - the dialog defaults to the
+            # project root.
+            self._on_save_dialog()
+            return self._path is not None and self._path.exists()
         self._path.write_text(self._editor.toPlainText(), encoding="utf-8")
         self._editor.document().setModified(False)
         return True

@@ -8,6 +8,7 @@ import SLiCAP.SLiCAPconfigure as ini
 import sympy as sp
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX
 from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
+from SLiCAP.SLiCAPlex import _sympify
 import os
 
 class RSTformatter(_BaseFormatter):
@@ -524,7 +525,7 @@ class RSTformatter(_BaseFormatter):
         RST = ''
         numVars = len(stepVars)
         numRuns = len(stepArray[0])
-        headerList = [sp.sympify(stepVar) for stepVar in stepVars]
+        headerList = [_sympify(stepVar) for stepVar in stepVars]
         linesList = []
         for i in range(numRuns):
             line = []

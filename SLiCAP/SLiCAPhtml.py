@@ -9,6 +9,7 @@ import SLiCAP.SLiCAPconfigure as ini
 from shutil import copy2
 from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric, ENG, units2TeX, normalizeRational
 from SLiCAP.SLiCAPlatex import exprLatex, exprLatex as _latex_ENG
+from SLiCAP.SLiCAPlex import _sympify
 from IPython.core.display import HTML
 
 _HTMLINSERT = '<!-- INSERT -->' # pattern to be replaced in html files
@@ -563,8 +564,8 @@ def eqn2html(arg1, arg2, units='', label='', labelText=''):
     """
     if arg1 == None or arg2 == None:
         return
-    arg1 = sp.sympify(str(arg1))
-    arg2 = sp.sympify(str(arg2))
+    arg1 = _sympify(str(arg1))
+    arg2 = _sympify(str(arg2))
     if units != '':
         units = '\\,\\left[ \\mathrm{' + units2TeX(units) + '}\\right]'
     label = _addLabel(label, caption=labelText, labelType='eqn')

@@ -39,7 +39,7 @@ Frozen copies travel with the schematic
 =======================================
 
 When you **save**, the symbols the schematic uses are copied into its
-``<name>.symbols`` sidecar (see :doc:`/GUI/project/project_files`).  When you **open** a
+``<name>.symbols`` sidecar (see :doc:`/GUI/project/project`).  When you **open** a
 schematic, those frozen copies are loaded *on top of* the system library, so the
 drawing always renders with the symbols it was created with — even if the
 shipped symbols change later.

@@ -10,6 +10,7 @@ import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX, ENG
 from pathlib import PureWindowsPath
 from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
+from SLiCAP.SLiCAPlex import _sympify
 import re
 
 class LaTeXformatter(_BaseFormatter):
@@ -549,9 +550,9 @@ class LaTeXformatter(_BaseFormatter):
         except:
             units = ''
         if type(LHS) == str:
-            LHS = sp.sympify(LHS)
+            LHS = _sympify(LHS)
         if type(RHS) == str:
-            RHS = sp.sympify(RHS)
+            RHS = _sympify(RHS)
         if multiline:
             TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), 
                                             terms_per_line=multiline)
@@ -797,9 +798,9 @@ class LaTeXformatter(_BaseFormatter):
         except:
             units = ''
         if type(LHS) == str:
-            LHS = sp.sympify(LHS)
+            LHS = _sympify(LHS)
         if type(RHS) == str:
-            RHS = sp.sympify(RHS)
+            RHS = _sympify(RHS)
         TEX = '$' + sp.latex(roundN(LHS)) + '=' + sp.latex(roundN(RHS))
         if units == '':
             TEX += '$ '

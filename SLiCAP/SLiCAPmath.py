@@ -16,7 +16,7 @@ from numpy.polynomial import Polynomial
 from numpy import trapezoid
 from scipy.integrate import quad
 from scipy.optimize import fsolve
-from SLiCAP.SLiCAPlex import _replaceScaleFactors
+from SLiCAP.SLiCAPlex import _replaceScaleFactors, _sympify
 from pytexit import py2tex
 from copy import deepcopy
 
@@ -230,8 +230,8 @@ def _detMECPP(M):
               "to 'ME'.".format(msg))
         return None
     try:
-        D = sp.sympify(r.stdout.strip().replace("^", "**"),
-                       locals={"Pi": sp.pi, "E": sp.E, "I": sp.I})
+        D = _sympify(r.stdout.strip().replace("^", "**"),
+                     locals={"Pi": sp.pi, "E": sp.E, "I": sp.I})
     except Exception:
         print("Warning: could not parse slicap_det output; falling back to 'ME'.")
         return None
@@ -666,14 +666,14 @@ def _checkExpression(expr):
     sym_in = []
     if type(expr) == str:
         try:
-            sym_in = sp.sympify(expr).atoms(sp.Symbol)
+            sym_in = _sympify(expr).atoms(sp.Symbol)
         except sp.SympifyError:
             pass
         out = _replaceScaleFactors(expr)
     else:
         out = str(expr)
     try:
-        out = sp.sympify(out, rational=True)
+        out = _sympify(out, rational=True)
         sym_out = out.atoms(sp.Symbol)
         for item in sym_in:
             if item not in sym_out:
@@ -717,7 +717,7 @@ def fullSubs(valExpr, parDefs):
                 # Every value takes the string round-trip below (a former
                 # sympy-value fast path compared a type against a bool and
                 # was dead; removed 2026-07-13, behavior unchanged).
-                symval = sp.sympify(str(parDefs[param]), rational=True)
+                symval = _sympify(str(parDefs[param]), rational=True)
                 if isinstance(symval, sp.Rational) and not isinstance(symval, sp.Integer):
                     # Non-integer rational (e.g. Rational(7293,10000)): use
                     # Float to prevent rational-power lockup in sp.N().
@@ -1661,7 +1661,7 @@ def _doVarNoiseData(noiseData, numeric, method, CDS, tau, fmin, fmax, points, wf
     """
     errors = False
     if type(wf) == int or type(wf) == float or type(wf) == str:
-        wf = sp.sympify(wf)
+        wf = _sympify(wf)
     if numeric == True:
         wf = sp.N(wf)
     if ini.laplace in wf.atoms(sp.Symbol):
@@ -1799,7 +1799,7 @@ def _varNoise(noiseResult, noise, fmin, fmax, source=None, CDS=False, tau=None,
             errors += 1
         else:
             try:
-                tau = sp.sympify(str(tau))
+                tau = _sympify(str(tau))
             except sp.SympifyError:
                 print("Error in expression: rmsNoise( ... , tau =", tau, ").")
                 errors += 1
@@ -2077,7 +2077,7 @@ def roundN(expr, numeric=False):
     """
     if not isinstance(expr, sp.core.Basic):
         try:
-            expr = sp.sympify(str(expr))
+            expr = _sympify(str(expr))
         except sp.SympifyError:
             print("Error in expression:", expr)
             return None
@@ -2187,7 +2187,7 @@ def ilt(expr, s, t, integrate=False):
     if type(expr) == float or type(expr) == int:
         expr = sp.N(expr)
     elif type(expr) == str:
-        expr = sp.sympify(expr)
+        expr = _sympify(expr)
     variables = sp.N(expr).atoms(sp.Symbol)
     if len(variables) == 0 or s not in variables:
         inv_laplace = sp.DiracDelta(t)*expr
@@ -3075,7 +3075,7 @@ class WeightingFilter(object):
             self.errors = True
         elif self.f_type == "custom":
             try:
-                self.expr = sp.sympify(self.expr)
+                self.expr = _sympify(self.expr)
             except sp.SympifyError:
                 print("WeightingFilter: error in custom expression.")
                 self.errors = True

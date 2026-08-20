@@ -7,6 +7,7 @@ SLiCAP _tokenizer for netlist files.
 import ply.lex as lex
 import sys
 import sympy as sp
+from sympy.parsing.sympy_parser import null as _null
 import re
 
 # list of token names
@@ -18,6 +19,55 @@ tokens = ('PARDEF', 'EXPR', 'SCALE', 'SCI', 'FLT', 'INT', 'CMD', 'FNAME',
 _SCALEFACTORS    =  {'y':'-24','z':'-21','a':'-18','f':'-15','p':'-12','n':'-9',
                     'u':'-6','m':'-3','k':'3','M':'6','G':'9','T':'12','P':'15'} #,
                     #'E':'18','Z':'21','Y':'24'}
+
+# Names that sympy claims in its own namespace, but that a circuit designer
+# needs as ordinary parameters: Q (quality factor), beta and gamma (device
+# parameters), N, O, S, zeta, Lambda. Listing them here gives them back to the
+# user: inside a SLiCAP expression such a name is a circuit variable, or - if
+# it is written with brackets - a function of the user's own. sympy's own
+# implementations stay reachable from Python code (sp.gamma(5) -> 24, sp.N()),
+# they are simply no longer claimed inside expression text.
+#
+# Within ONE expression a name is either a variable or a function: the first
+# occurrence decides, and 'beta*R + beta(2,3)' raises rather than mis-reading
+# either. Nothing leaks into the next expression - sympy restores the markers
+# (parse_expr does 'local_dict[i] = null' on both the success and error path),
+# so one shared dict per call is safe.
+#
+# NOT in this list, by decision (Anton, 2026-08-19): E, I and pi keep their
+# mathematical meaning (Euler, imaginary unit, 3.14...); a current is named
+# I_xx. 'lambda' is a Python keyword and cannot be rescued at all: the
+# tokenizer refuses it before sympy sees the name. Those four remain the
+# reserved symbols documented in the manual.
+#
+# Forcing plain Symbols (locals={name: sp.Symbol(name)}) was considered and
+# REJECTED (2026-08-19): it also removes beta(x), gamma(x) and the other
+# sympy functions from expressions. The _null marker below is sympy's own
+# mechanism for "this name is not yours to claim" and keeps both meanings.
+_SYMPY_NAMES = ("N", "O", "Q", "S", "beta", "gamma", "zeta", "Lambda")
+
+
+def _sympify(expr, rational=False, locals=None):
+    """
+    Returns the sympy expression of expr, with the names of _SYMPY_NAMES
+    read as circuit parameters instead of as sympy objects.
+
+    :param expr: expression to be converted
+    :type expr: str, sympy object, int, float
+
+    :param rational: if True, floats are converted into rational numbers
+    :type rational: bool
+
+    :param locals: extra name-to-object mapping passed to sympy
+    :type locals: dict, None
+
+    :return: sympy expression
+    :rtype: sympy object
+    """
+    names = {name: _null for name in _SYMPY_NAMES}
+    if locals is not None:
+        names.update(locals)
+    return sp.sympify(expr, locals=names, rational=rational)
 
 def _scale_float(value):
     """Float value of a SLiCAP numeric literal with an optional scale factor
@@ -68,7 +118,7 @@ def t_PARDEF(t):
     if t.value[1][0] == '{' and t.value[1][-1] == '}':
         # Do this for an expression
         try:
-            sym_in = sp.sympify(t.value[1][1:-1]).atoms(sp.Symbol)
+            sym_in = _sympify(t.value[1][1:-1]).atoms(sp.Symbol)
         except:
             sym_in = []
         pos = 1
@@ -77,7 +127,7 @@ def t_PARDEF(t):
             out += t.value[1][pos: m.end()-1] + 'e' + _SCALEFACTORS[m.group(0)[-1]]
             pos = m.end()
         out += t.value[1][pos:-1]
-        sym_out = sp.sympify(out).atoms(sp.Symbol)
+        sym_out = _sympify(out).atoms(sp.Symbol)
         for item in sym_in:
             if item not in sym_out:
                 _printError("Error in parameter name %s"%(str(item)), t)
@@ -90,7 +140,7 @@ def t_PARDEF(t):
         except KeyError:
             pass
     try:
-        value = sp.sympify(t.value[1], rational=True)
+        value = _sympify(t.value[1], rational=True)
         t.value[1] = value
     except TypeError:
         exc_type, value, exc_traceback = sys.exc_info()
@@ -161,7 +211,7 @@ def t_EXPR(t):
     out += t.value[pos:-1]
     t.value = out
     try:
-        t.value = sp.sympify(out, rational=True)
+        t.value = _sympify(out, rational=True)
     except TypeError:
         exc_type, value, exc_traceback = sys.exc_info()
         print('\n', value)

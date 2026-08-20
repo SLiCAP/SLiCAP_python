@@ -10,6 +10,7 @@ from SLiCAP.SLiCAPprotos import element
 from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector#, _reduceCircuit
 from SLiCAP.SLiCAPmath import float2rational, normalizeRational, det, _Roots 
 from SLiCAP.SLiCAPmath import _cancelPZ, _zeroValue, ilt, assumeRealParams
+from SLiCAP.SLiCAPlex import _sympify
 from SLiCAP.SLiCAPmath import  clearAssumptions, fullSubs
 
 def _doInstruction(instr):
@@ -773,7 +774,7 @@ def _addResNoiseSources(instr):
             if 'noisetemp' in params:
                 Temp = instr.circuit.elements[el].params['noisetemp']
                 if Temp != False and Temp != 0 and instr.circuit.elements[el].params['value'] != 0:
-                    spectrum = sp.sympify('4*k*' + str(Temp), rational=True)/instr.circuit.elements[el].params['value']
+                    spectrum = _sympify('4*k*' + str(Temp), rational=True)/instr.circuit.elements[el].params['value']
                     if 'noiseflow' in params:
                         flow = instr.circuit.elements[el].params['noiseflow']
                         if flow != False and flow != 0:
@@ -1225,7 +1226,7 @@ def _stepFunctions(stepDict, function):
         newFunction = function
         for j in range(len(stepVars)):
             newFunction = newFunction.xreplace({stepVars[j]: stepDict[stepVars[j]][i]})
-        newFunction = sp.sympify(str(sp.N(newFunction)), rational=True)
+        newFunction = _sympify(str(sp.N(newFunction)), rational=True)
         functions.append(newFunction)
     return functions
 

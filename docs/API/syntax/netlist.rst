@@ -58,24 +58,18 @@ Reserved symbols have a special meaning or value (within sympy). These symbols *
 +---------+-----------------------------------------------------------------+
 |I        | sympy.I =  :math:`\sqrt{-1}`                                    |
 +---------+-----------------------------------------------------------------+
-|N        | sympy.N function; evaluates the numeric value of an expression  |
-+---------+-----------------------------------------------------------------+
-|O        | sympy.O function                                                |
-+---------+-----------------------------------------------------------------+
-|S        | sympy.S function                                                |
-+---------+-----------------------------------------------------------------+
-|beta     | sympy.beta function                                             |
-+---------+-----------------------------------------------------------------+
-|gamma    | sympy.gamma function                                            |
-+---------+-----------------------------------------------------------------+
-|lambda   | sympy.lambda function                                           |
-+---------+-----------------------------------------------------------------+
-|Lambda   | sympy.Lambda function                                           |
-+---------+-----------------------------------------------------------------+
 |pi       | sympy.pi = :math:`3.1459265358979 \cdots`                       |
 +---------+-----------------------------------------------------------------+
-|zeta     | sympy.zeta function                                             |
+|lambda   | Python keyword; it cannot be used as a name at all              |
 +---------+-----------------------------------------------------------------+
+
+.. admonition:: Add a subscript
+    :class: tip
+
+    A subscript makes any of these names available again, and is good practice
+    anyway: write ``I_D`` for a drain current and ``E_g`` for a band-gap
+    energy. A subscript also keeps the name unambiguous when a circuit has
+    more than one of the same quantity.
 
 SLiCAP built-in variables are defined in the library file `SLiCAPmodels.lib <../../../../files/lib/SLiCAPmodels.lib>`_. These variables can be redefined by the user:
 
@@ -102,6 +96,69 @@ SLiCAP built-in variables are defined in the library file `SLiCAPmodels.lib <../
 +--------------+---------------------------------------------------------------------------------------------------------+
 | epsilon_SiO2 | SLiCAP built-in variable for the relative permittivity of :math:`SiO_2` : :math:`\epsilon_{SiO_2}=3.9`  |
 +--------------+---------------------------------------------------------------------------------------------------------+
+
+Other sympy names are available as circuit parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sympy claims more names than the four above: ``N``, ``O``, ``Q``, ``S``,
+``beta``, ``gamma``, ``zeta`` and ``Lambda`` are functions or objects in its
+own namespace. SLiCAP hands these back to you, so ``Q`` is the quality factor
+and ``beta`` and ``gamma`` are device parameters:
+
+.. code-block::
+
+    L1 1 out L value={Q*R/(2*pi*f_res)}
+    R2 out 0 R value={beta*gamma*R}
+
+Inside a SLiCAP expression such a name is **yours**: a variable, or - if you
+write brackets after it - a function of your own. Sympy's function of the same
+name is not used there. Within one expression a name is either a variable or a
+function; using both forms in a single expression is an error.
+
+Using sympy in your own scripts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The protection above applies to expressions that SLiCAP parses: netlist
+values, parameter definitions, schematic fields and ``pardefs`` given as
+strings. In your own Python code sympy's names are sympy's again, so:
+
+- **Create symbols explicitly.** Then no name is looked up and no conflict can
+  arise:
+
+  >>> import sympy as sp
+  >>> Q, R, f_res = sp.symbols("Q R f_res")
+  >>> Q*R/(2*sp.pi*f_res)
+
+- **Import each package in its own namespace**: ``import sympy as sp``,
+  ``import numpy as np``, ``import SLiCAP as sl``. Do **not** write
+  ``from sympy import N`` or ``from sympy import *``: that places sympy's
+  names in your own namespace, where they shadow your variables.
+
+- **If you convert a string yourself**, ``sp.sympify("Q*R")`` gives sympy's
+  ``Q``, not yours. Let SLiCAP read the expression instead - through the
+  netlist, or with ``sl.doLaplace(..., pardefs={...})`` - or create the
+  symbols explicitly as above.
+
+Expressions that come **out of** SLiCAP need no attention: they already
+contain the symbols you wrote.
+
+.. admonition:: sympy.N() still works
+    :class: note
+
+    Only names *inside expression text* are affected. ``sp.N(expr)`` in Python
+    code is a function call and never passes through the parser, so numeric
+    evaluation is unchanged - SLiCAP uses it itself. The two are different
+    things:
+
+    +--------------------------------+------------------------------------------+
+    |where                           | what ``N`` means                         |
+    +================================+==========================================+
+    |``sp.N(expr)`` in Python code   | sympy's numeric evaluation               |
+    +--------------------------------+------------------------------------------+
+    |``N`` in an expression          | a circuit variable named N               |
+    +--------------------------------+------------------------------------------+
+    |``N(x)`` in an expression       | your own function N, *not* sympy's       |
+    +--------------------------------+------------------------------------------+
 
 .. _title:
 

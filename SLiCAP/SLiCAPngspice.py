@@ -8,7 +8,7 @@ from __future__ import annotations
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import _checkExpression, groupDelay
 from SLiCAP.SLiCAPlex import (_scale_float, _replaceScaleFactors,
-                              _SCALEFACTORS)
+                              _SCALEFACTORS, _sympify)
 from os     import system, remove
 import subprocess
 from sympy  import Symbol
@@ -1398,12 +1398,14 @@ def _eng_repr(number):
     return text[:-2] if text.endswith('.0') else text
 
 
-#: Names sympy owns that are ordinary netlist identifiers: without this the
-#: parameter E becomes Euler's number (silently!), I becomes the imaginary
-#: unit, and beta/gamma raise AttributeError instead of a clear message.
-#: 'lambda' cannot be rescued this way - it is a Python keyword - so it is
-#: refused by name (Anton, 2026-08-16).
-_NETLIST_NAMES = ("E", "I", "N", "O", "Q", "S", "beta", "gamma", "zeta")
+#: Names sympy owns that are ordinary netlist identifiers are rescued by
+#: SLiCAP's own parser (:data:`SLiCAP.SLiCAPlex._SYMPY_NAMES`); a deck value
+#: is read with exactly the same rule as a SLiCAP value.
+#: E and I were dropped from this list on 2026-08-19: they keep their
+#: mathematical meaning everywhere in SLiCAP (Euler, imaginary unit), so a
+#: current is named I_xx. An expression that still evaluates to a complex
+#: number is refused below. 'lambda' cannot be rescued - it is a Python
+#: keyword - so it is refused by name (Anton, 2026-08-16).
 
 
 def _deck_expr(value, what):
@@ -1444,8 +1446,7 @@ def _deck_expr(value, what):
     if not text:
         return text
     try:
-        names = {n: sp.Symbol(n) for n in _NETLIST_NAMES}
-        evaluated = sp.N(sp.sympify(_replaceScaleFactors(text), locals=names))
+        evaluated = sp.N(_sympify(_replaceScaleFactors(text)))
     except BaseException:
         _refuse()
     if evaluated is None:
@@ -1944,7 +1945,7 @@ def _netlist_par_defs(cirFile, instr_params=None):
         if text.startswith('{') and text.endswith('}'):
             text = text[1:-1].strip()
         try:
-            par_defs[Symbol(name)] = sp.sympify(_replaceScaleFactors(text))
+            par_defs[Symbol(name)] = _sympify(_replaceScaleFactors(text))
         except Exception:
             continue                       # not SLiCAP-evaluable: leave it out
     return {key: fullSubs(value, par_defs)
