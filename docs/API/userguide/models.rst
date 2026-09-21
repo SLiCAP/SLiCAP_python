@@ -123,17 +123,17 @@ SLiCAP output displayed on this manual page, is generated with the script: ``mod
 Expanded circuit element data
 -----------------------------
 
-The script below creates the circuit object from the kicad schematic file:
+The script below creates the circuit object from the SLiCAP schematic file:
 
 .. literalinclude:: ../models.py
     :linenos:
     :lines: 13-14
     :lineno-start: 13    
     
-The figure below shows the KiCAD circuit diagram.
+The figure below shows the SLiCAP circuit diagram.
 
 .. image:: ../img/ZtoV.svg
-    :width: 500 px
+    :scale: 80 %
 
 The netlist of the circuit:
 
@@ -143,8 +143,8 @@ The sub circuit definition of the model ``OV`` is found in ``SLiCAPmodels.lib`` 
 
 .. literalinclude:: ../../../SLiCAP/files/lib/SLiCAPmodels.lib
     :linenos:
-    :lines: 110-119
-    :lineno-start: 110
+    :lines: 60-70
+    :lineno-start: 60
 
 The script below prints the expanded netlist.
 

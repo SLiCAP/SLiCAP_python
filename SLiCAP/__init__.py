@@ -4,4 +4,4 @@ Spyder Editor
 
 """
 from .SLiCAP import *
-__version__ = "5.2.1"
+__version__ = "6.0"

@@ -1,4 +1,4 @@
-.. csv-table:: Bias voltages
+.. csv-table:: Bias voltages and currents
     :header: "Name", "Value"
     :widths: auto
 

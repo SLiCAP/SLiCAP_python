@@ -459,6 +459,28 @@ def find_subckt_schematic(name, sch_ext, lib_path=None):
     return None
 
 
+def lib_path_for(sch_path, name, sch_type):
+    """The library file of the subcircuit package of ``sch_path``:
+    ``lib/<name>.slicap_lib`` (SLiCAP) or ``lib/<name>.spice_lib`` (NGspice)
+    in the project of the schematic. The GUI's Save-as-subcircuit and the
+    headless export (makeCircuit) write the SAME file (Anton, 2026-09-16)."""
+    from . import project
+    ext = ".spice_lib" if sch_type == "ngspice" else ".slicap_lib"
+    return project.subdir_for(sch_path, "lib") / f"{name}{ext}"
+
+
+def build_lib(sch_type, components, wires, name, ports, params=None,
+              params_items=None, libs=None, model_defs=None) -> str:
+    """The subcircuit library text in the dialect of ``sch_type``: one
+    builder call shared by the GUI and the headless export."""
+    if sch_type == "ngspice":
+        from .ngspice_netlist import build_ngspice_subckt as build
+    else:
+        from .netlist import build_subcircuit as build
+    return build(components, wires, name, ports, params,
+                 params_items=params_items, libs=libs, model_defs=model_defs)
+
+
 def reskin_symbol_svg(source_g_xml, defn, port_for_pin):
     """An EXISTING symbol's artwork as *defn*'s block symbol.
 

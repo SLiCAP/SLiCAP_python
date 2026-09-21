@@ -84,7 +84,7 @@ Structured Electronic Design Environment
 ========================================
 
 SLiCAP Version 5 adds a graphical environment on top of the analysis
-engine. It is documented in its own manual: `Structured Electronic Design
+engine. It is documented in its own `manual Structured Electronic Design
 Environment <GUI/index.html>`_.
 
 The GUI for creating SLiCAP instructions

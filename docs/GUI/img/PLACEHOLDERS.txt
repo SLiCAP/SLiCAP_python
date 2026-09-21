@@ -1,72 +1,119 @@
-SCREENSHOTS STILL TO CAPTURE
-============================
+SCREENSHOTS FOR THE GUI MANUAL AND THE README
+=============================================
 
-Drop the finished PNGs in docs/images/ under exactly these file names; the
-manual and the README then pick them up with no further edits.
+Updated 2026-09-21 against the pages that exist and the chapters still to
+be written (see GUI_INVENTORY.md, section 6). Drop the finished PNGs in
+docs/GUI/img/ under exactly these file names.
 
 General rules
 -------------
 * Size the APPLICATION WINDOW to about 1600 x 1000 before capturing. A
   2560-px-wide capture is displayed by GitHub at ~900 px, which makes every
   label unreadable.
-* Capture the window, not the whole desktop (no panels, no wallpaper).
-* Use a project that looks like real work (Vamp / VampQspice), not an empty
-  sheet: values filled in, a parameter table present, nothing marked "?".
+* Capture the window or the dialog, not the whole desktop.
+* Use a project that looks like real work (the manual's VampOV / VampQspice),
+  not an empty sheet: values filled in, a parameter table present, nothing
+  marked "?".
 * Light theme, default style, 100 % zoom unless a shot says otherwise.
+
+Present and referenced by a page (keep; recapture only if the look changed)
+--------------------------------------------------------------------------
+canvas_grid.png, export_netlist.png, latex_fragment.png, main_window.png,
+net_label.png, overview_hearingloop.png, parameter_table.png,
+pin_markers.png, place_symbol_dialog.png, preferences.png, wiring_draw.png
+
+Present but referenced by no page (reuse or delete)
+---------------------------------------------------
+flow_design_documentation.png, my_circuit.png, my_project.png,
+new_project.png, new_schematic.png, properties_dialog.png, RCcircuit.png,
+SEDE_GUI.png, SLiCAP_component-props.png
 
 README (repository front page)
 ------------------------------
 1. readme_hero.png
    One realistic session, the "what is this" shot:
-   - a schematic open with a parameter table and typeset labels (Vamp),
+   - a schematic open with a parameter table and typeset labels (VampOV),
    - the Instructions panel showing a handful of real instructions,
    - the Design data panel open on the right with a result expanded.
    Caption: "Draw the circuit, compose the analysis, get a Python script."
-
-2. readme_plot.png     - a Figure window: two or three axes (magnitude/phase
-                         or a pole-zero plot) with a draggable cursor visible.
+2. readme_plot.png           - a Figure window: two or three axes
+                               (magnitude/phase or a pole-zero plot) with a
+                               cursor visible.
 3. readme_instruction_dialog.png
-                       - the Create / Edit SLiCAP Instruction dialog, filled
-                         in (transfer=loopgain, source/detector chosen).
-4. readme_hierarchy.png
-                       - a subcircuit descended into, showing the bias
-                         annotations borrowed from the parent run.
+                             - the Create / Edit SLiCAP Instruction dialog,
+                               filled in (transfer=loopgain, source/detector
+                               chosen).
+4. readme_hierarchy.png      - a subcircuit descended into, showing the bias
+                               annotations borrowed from the parent run.
 
-Manual - chapters that already reference an image
--------------------------------------------------
-5. overview_hearingloop.png     (index.rst)
-   A finished schematic exported as it appears in a report: components,
-   wires, net labels, parameter table, hyperlink annotation.
+Existing chapters that still need a shot
+----------------------------------------
+5. getting_started_window.png   (introduction/getting_started)
+   The whole window with every panel visible: Project tree, canvas,
+   Instructions, Log, Design data.
+6. properties_dialog.png        (schematics/component_properties) - RECAPTURE:
+   Properties with Show value / Show name ticked, LaTeX label visible;
+   the present file predates the dialog's current layout.
+7. wiring_junction.png          (schematics/wiring) - a wire being drawn, a
+   junction dot, an unconnected-pin marker.
+8. ports_parameters.png         (schematics/labels_ports_parameters) - ports
+   named, a parameter table, a model definition block with the new
+   "myOpAmp OV" heading, the src/det/lgref block.
+9. analysis_dialog.png          (schematics/labels_ports_parameters) - the
+   Define src / det / lg ref dialog with the drop-down lists FILLED (the
+   schematic saved first), lgref showing E_O1.
+10. subcircuit_symbol.png       (hierarchical_blocks) - the New Subcircuit
+    Symbol dialog with a generated box preview and pin placement.
+11. label_selection.png         (schematics/schematic) - a text block of a
+    component selected as a group (blue boxes) before a drag.
 
-6. flow_design_documentation.png   (was referenced by introduction.rst)
-   NO LONGER USED - the introduction is prose now. Delete this entry once
-   the file is gone, or reuse the name for a workflow diagram if you want
-   one (schematic -> circuit object -> instruction -> result -> figure).
-
-7. getting_started_window.png   (getting_started.rst)
-   The whole window with every panel visible and labelled in the caption:
-   Project tree, canvas, Instructions, Log, Design data.
-
-Manual - chapters that still need shots
----------------------------------------
-8.  canvas_grid.png             - canvas with grid, snapping, a selected part.
-9.  place_symbol.png            - the symbol palette open, a symbol ghosted at
-                                  the cursor.
-10. properties_dialog.png       - component Properties with Show value /
-                                  Show name ticked, LaTeX label visible.
-11. wiring_junction.png         - a wire being drawn, junction dot, an
-                                  unconnected-pin marker.
-12. ports_parameters.png        - ports named, a parameter table, a model
-                                  definition block.
-13. subcircuit_symbol.png       - the New Subcircuit Symbol dialog with a
-                                  generated box preview and pin placement.
-14. traces_axes_figures.png     - the Axes dialog (or Figures dialog) with a
-                                  share-x/share-y matrix filled in.
-15. design_data_panel.png       - the Design data tree with a circuit entry
-                                  expanded (element data / parameter
-                                  definitions tables in the viewer).
-16. ngspice_instruction.png     - the NGspice instruction dialog with a source
-                                  stimulus defined.
+Chapters still to be written (order of the design flow)
+-------------------------------------------------------
+12. instruction_file.png        - the Instructions panel with a circuit
+    object and two instructions, the Run button, and the Log panel after a
+    run.
+13. slicap_instruction_dialog.png
+                                - the SLiCAP instruction dialog: analysis
+    type, transfer, source/detector/lgref, conversion type, pardefs/numeric,
+    the State space group with the method selector.
+14. slicap_instruction_stepping.png
+                                - the same dialog with a step definition.
+15. ngspice_instruction_tran.png
+                                - the NGspice instruction dialog, Transient
+    tab: time step, stop, start, max. time step, post-processing = FFT.
+16. ngspice_instruction_stimuli.png
+                                - the stimuli table with a SIN stimulus
+    replacing the schematic's PULSE for one run.
+17. ngspice_instruction_step.png
+                                - a parameter step (lin) on the AC tab.
+18. ngspice_control_dialog.png  - the control section dialog.
+19. op_annotations.png          - an NGspice schematic after an op run:
+    V: and I: annotations, one net greyed (stale) after an edit.
+20. design_data_panel.png       - the Design data tree with a circuit entry
+    expanded and a result viewer open (element data / parameter table).
+21. design_data_result.png      - a result entry (laplace) viewed as
+    typeset LaTeX.
+22. traces_dialog.png           - Create / Edit Traces and Measurements:
+    two trace specs with expressions (dB(V_out), phase(V_out)), the
+    variables mapping v(out) -> V_out, a goal-function measurement.
+23. axes_dialog.png             - Create / Edit Axes: quantity, scale
+    factor, units and the resulting axis label, limits.
+24. figures_dialog.png          - Create / Edit Figures: a 2 x 2 grid with a
+    merged cell.
+25. figure_window.png           - the resulting figure with a cursor
+    read-out.
+26. specifications_dialog.png   - the specifications CSV editor with
+    performance and design specs.
+27. specifications_viewer.png   - the specifications viewer (one table per
+    spec type) in the Design data panel.
+28. snippet_dialog_latex.png    - Create LaTeX snippet: a formatter method
+    chosen, arguments filled, the save name, the preview.
+29. snippet_dialog_rst.png      - the same for RST.
+30. report_files.png            - the project tree showing tex/SLiCAPdata
+    and sphinx/SLiCAPdata with generated snippets.
+31. app_preferences.png         - the application Preferences dialog (paths
+    to ngspice, pdflatex, dvisvgm; LaTeX rendering on/off).
+32. tools_menu.png              - Tools: Rename components dialog.
 
 Captions are written in the .rst files; a shot only has to show the state
 described above.

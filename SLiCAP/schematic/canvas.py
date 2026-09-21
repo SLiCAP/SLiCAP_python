@@ -14,7 +14,7 @@ from .config import (
     GRID_SIZE, GRID_MAJOR, DEFAULT_ZOOM, snap,
     Z_WIRE, Z_WIRE_DRAG,
 )
-from .component_item import ComponentItem, make_ghost, _discard_label
+from .component_item import ComponentItem, make_ghost, _discard_label, _PropertyLabel
 from .wire_item import WireItem
 from .junction_item import JunctionItem
 from .free_text_item import FreeTextItem
@@ -251,6 +251,7 @@ class SchematicScene(QGraphicsScene):
         # press, and an explicit grab misses the button-down bookkeeping
         # (the label "jumped off the pointer", Anton 2026-07-12).
         self._label_drag: "tuple | None" = None   # (label, orig_pos, press_scene_pos)
+        self._label_group_move_items: list = []   # [(label, orig scene pos)] in a group move
         self._wire_move_moved:     bool = False
         self._wire_move_rb:        list = []   # [(wire, {idx: orig_QPointF})]
         self._wire_move_junctions: list = []   # [(JunctionItem, orig_QPointF)]
@@ -295,6 +296,21 @@ class SchematicScene(QGraphicsScene):
         self._comp_group_move_moved  = False
 
     # ── copy / paste ──────────────────────────────────────────────────────────
+
+    def hide_label(self, label) -> None:
+        """Delete on a visible attribute label means HIDE (Anton, 2026-08-04):
+        clear the component's display flags for that attribute and rebuild
+        its labels. The attribute itself is untouched; the refdes label is
+        hidden the same way (Show refdes off). Never removes the item."""
+        comp = label.parentItem()
+        if not isinstance(comp, ComponentItem) or label.scene() is None:
+            return
+        key = label.prop_key
+        if key in comp.prop_display:
+            comp.prop_display[key] = (False, False)
+        label.setSelected(False)
+        comp.update_labels()
+        comp.update()
 
     def _copy_selection(self) -> None:
         from .component_item import ComponentItem
@@ -359,6 +375,31 @@ class SchematicScene(QGraphicsScene):
                     'y':     item.pos().y(),
                     'url':   item.url,
                     'label': item.label,
+                })
+            # Model definitions and parameter tables copy as they are, the
+            # model under the SAME name (Anton, 2026-09-20: renaming is the
+            # first edit after pasting; a duplicate .model line exists only
+            # until then).
+            elif isinstance(item, ModelItem):
+                self._clipboard.append({
+                    'kind':       'model',
+                    'x':          item.pos().x(),
+                    'y':          item.pos().y(),
+                    'model_name': item.model_name,
+                    'model_type': item.model_type,
+                    'simulator':  item.simulator,
+                    'params':     [tuple(p) for p in item.params],
+                    'preamble':   item.preamble_path,
+                    'show':       item.show_on_schematic,
+                })
+            elif isinstance(item, ParameterItem):
+                self._clipboard.append({
+                    'kind':     'parameters',
+                    'x':        item.pos().x(),
+                    'y':        item.pos().y(),
+                    'params':   [tuple(p) for p in item.params],
+                    'preamble': item.preamble_path,
+                    'show':     item.show_on_schematic,
                 })
 
     def _paste_clipboard(self) -> None:
@@ -432,6 +473,14 @@ class SchematicScene(QGraphicsScene):
                 self._paste_ghost_items.append(('point', ghost, QPointF(data['x'], data['y'])))
             elif kind == 'hyperlink':
                 ghost = _ST((data['label'] or data['url'])[:30])
+                ghost.setOpacity(0.4)
+                ghost.setAcceptedMouseButtons(Qt.NoButton)
+                ghost.setPos(QPointF(data['x'], data['y']))
+                self.addItem(ghost)
+                self._paste_ghost_items.append(('point', ghost, QPointF(data['x'], data['y'])))
+            elif kind in ('model', 'parameters'):
+                ghost = _ST(("%s %s" % (data['model_name'], data['model_type']))
+                            if kind == 'model' else "parameters")
                 ghost.setOpacity(0.4)
                 ghost.setAcceptedMouseButtons(Qt.NoButton)
                 ghost.setPos(QPointF(data['x'], data['y']))
@@ -516,6 +565,20 @@ class SchematicScene(QGraphicsScene):
                     data['url'], data['label'],
                     QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
                 )
+                self.addItem(item)
+                item.setSelected(True)
+            elif kind == 'model':
+                item = ModelItem(data['model_name'], data['model_type'],
+                                 data['simulator'], list(data['params']),
+                                 data['preamble'],
+                                 QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                 show=data['show'])
+                self.addItem(item)
+                item.setSelected(True)
+            elif kind == 'parameters':
+                item = ParameterItem(list(data['params']), data['preamble'],
+                                     QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                     show=data['show'])
                 self.addItem(item)
                 item.setSelected(True)
 
@@ -619,6 +682,45 @@ class SchematicScene(QGraphicsScene):
         return px
 
     # ── DC operating-point store (bias back-annotation) ───────────────────
+
+    def load_op_raw(self, sch_path) -> bool:
+        """Load the circuit's most recent UNSTEPPED operating-point results
+        (cir/<stem>_op.raw, written by sl.op()) into the op store and
+        refresh the bias annotations. Shared by the window (after a run)
+        and the headless export (2026-09-21: the exported SVG carries the
+        annotations). Stepped op runs write *_op_sN.raw and are excluded.
+        Returns True when results were installed."""
+        from pathlib import Path
+        from . import project
+        sch_path = Path(sch_path)
+        raw = project.subdir_for(sch_path, "cir") / f"{sch_path.stem}_op.raw"
+        if not raw.is_file():
+            return False
+        from .raw_file import RawFile
+        try:
+            analyses = RawFile.load(raw)
+        except Exception:
+            return False
+        for a in analyses:
+            if "operating point" not in a.name.lower():
+                continue
+            results = {}
+            if getattr(a, "x_data", None) is not None and a.x_data.size == 1:
+                results[a.x_name.lower()] = float(a.x_data[0].real)
+            for k, v in a.signals.items():
+                if v.size == 1:
+                    results[k.lower()] = float(v[0].real)
+            if not results:
+                return False
+            # The .cir the raw was produced from names the nets.
+            cir = raw.with_name(f"{sch_path.stem}.cir")
+            try:
+                netlist_text = cir.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                netlist_text = None
+            self.set_op_results(results, netlist_text)
+            return True
+        return False
 
     def set_op_results(self, results: "dict | None",
                        netlist_text: "str | None" = None) -> None:
@@ -2258,7 +2360,8 @@ class SchematicScene(QGraphicsScene):
                     if isinstance(i, (ComponentItem, FreeTextItem, CommandItem,
                                       JunctionItem, BorderItem,
                                       LibraryItem, ImageItem, LatexFragmentItem, ParameterItem,
-                                      AnalysisItem, HyperlinkItem, ModelItem))
+                                      AnalysisItem, HyperlinkItem, ModelItem,
+                                      _PropertyLabel))
                 }
                 # Custom group drag: intercept multi-item non-wire selections so
                 # rubber-banding runs after all items have moved (not per-item in itemChange).
@@ -2271,10 +2374,23 @@ class SchematicScene(QGraphicsScene):
                                           ImageItem, LatexFragmentItem, ParameterItem,
                                           AnalysisItem, HyperlinkItem, ShapeItem, ModelItem))
                     ]
-                    if len(non_wire_sel) > 1:
+                    # Selected attribute labels of components that are NOT
+                    # selected move with the group by the same scene delta;
+                    # a label of a selected component rides with its parent.
+                    loose_labels = [
+                        i for i in self.selectedItems()
+                        if isinstance(i, _PropertyLabel)
+                        and i.parentItem() is not None
+                        and not i.parentItem().isSelected()
+                    ]
+                    if len(non_wire_sel) + len(loose_labels) > 1 and non_wire_sel:
                         self._comp_group_move_start = snap(raw)
                         self._comp_group_move_items = [
                             (i, QPointF(i.pos())) for i in non_wire_sel
+                        ]
+                        self._label_group_move_items = [
+                            (lbl, lbl.parentItem().mapToScene(lbl.pos()))
+                            for lbl in loose_labels
                         ]
                         # Store original positions of every point of every selected wire
                         self._wire_group_move_data = [
@@ -2477,6 +2593,14 @@ class SchematicScene(QGraphicsScene):
             for itm, orig_pos in self._comp_group_move_items:
                 itm.setPos(snap(orig_pos + total_delta))
             self._group_drag_active = False
+            # Loose labels: same delta, unsnapped, in their parent's frame.
+            if self._comp_group_move_items:
+                ref_itm, ref_orig = self._comp_group_move_items[0]
+                label_delta = snap(ref_orig + total_delta) - ref_orig
+                for lbl, orig_scene in self._label_group_move_items:
+                    parent = lbl.parentItem()
+                    if parent is not None and parent.scene() is not None:
+                        lbl.setPos(parent.mapFromScene(orig_scene + label_delta))
 
             # Selected wires: recompute ALL points from their stored originals.
             if self._comp_group_move_items:
@@ -2663,6 +2787,7 @@ class SchematicScene(QGraphicsScene):
                     self._sync_junctions()
                 self._comp_group_move_start = None
                 self._comp_group_move_items = []
+                self._label_group_move_items = []
                 self._wire_group_move_data  = []
                 self._comp_group_move_moved = False
                 self._pre_drag_data = None
@@ -2685,7 +2810,7 @@ class SchematicScene(QGraphicsScene):
                     if isinstance(i, (ComponentItem, FreeTextItem, CommandItem,
                                       JunctionItem, BorderItem,
                                       LibraryItem, ImageItem, LatexFragmentItem, ParameterItem,
-                                      AnalysisItem, ModelItem))
+                                      AnalysisItem, ModelItem, _PropertyLabel))
                     and id(i) in self._pre_drag_pos
                 )
                 if moved:
@@ -3143,7 +3268,13 @@ class SchematicView(QGraphicsView):
         else:
             super().mouseMoveEvent(event)
             # Keep visual selection in sync with what the final post-filter will keep.
-            if (event.buttons() & Qt.LeftButton and self._rb_start is not None):
+            # Only while Qt is really drawing a rubber band: a press that an
+            # item accepted (a label, a component) is an item DRAG, and
+            # filtering the selection against the drag rectangle deselected
+            # every other selected label after 4 px, so only the label under
+            # the cursor kept moving (Anton, 2026-09-13).
+            if (event.buttons() & Qt.LeftButton and self._rb_start is not None
+                    and not self.rubberBandRect().isNull()):
                 dx = event.position().x() - self._rb_start.x()
                 dy = event.position().y() - self._rb_start.y()
                 if abs(dx) > 4 or abs(dy) > 4:
@@ -3163,6 +3294,9 @@ class SchematicView(QGraphicsView):
             rb_start = self._rb_start
             if event.button() == Qt.LeftButton:
                 self._rb_start = None
+            # Qt clears its rubber band inside the release: read it first.
+            if self.rubberBandRect().isNull():
+                rb_start = None          # an item drag, not a rubber band
             super().mouseReleaseEvent(event)
             # Post-filter for both drag directions: use tight per-type rects so that
             # label bounding boxes don't cause early/wrong selection.
@@ -3225,9 +3359,11 @@ class SchematicView(QGraphicsView):
         elif key == Qt.Key_Y and mods & Qt.ControlModifier:
             scene.redo()
         elif key == Qt.Key_R:
-            if scene.selectedItems():
+            rotatable = [i for i in scene.selectedItems()
+                         if not isinstance(i, _PropertyLabel)]
+            if rotatable:
                 scene._push_undo()
-            for item in scene.selectedItems():
+            for item in rotatable:
                 item.setRotation(item.rotation() + 90)
         elif key == Qt.Key_M:
             sel = [i for i in scene.selectedItems() if isinstance(i, ComponentItem)]
@@ -3249,6 +3385,8 @@ class SchematicView(QGraphicsView):
                         parent._user_net_name = ""
                         parent.display_name   = False
                         parent.update_label()
+                    elif isinstance(item, _PropertyLabel):
+                        scene.hide_label(item)
                     else:
                         scene.removeItem(item)
                 scene._sync_junctions()
@@ -3260,7 +3398,10 @@ class SchematicView(QGraphicsView):
                 scene._copy_selection()
                 scene._push_undo()
                 for item in sel:
-                    scene.removeItem(item)
+                    if isinstance(item, _PropertyLabel):
+                        scene.hide_label(item)
+                    else:
+                        scene.removeItem(item)
                 scene._sync_junctions()
         elif key == Qt.Key_V and mods & Qt.ControlModifier:
             scene._paste_clipboard()

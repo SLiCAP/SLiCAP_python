@@ -311,24 +311,31 @@ def refdes_to_latex(name: str, bold: bool = False) -> str:
     return r"\mathrm{" + tex + "}"
 
 
-def render_refdes(refdes: str, bold: bool = False, cache_dir=None) -> bytes | None:
+def render_refdes(refdes: str, bold: bool = False, cache_dir=None,
+                  name: str | None = None) -> bytes | None:
     """Render an element identifier as LaTeX for IEEE-style schematics
     (customer request via Anton, 2026-07-11).
 
     The refdes is rendered as a *symbol name* (sympy ``latex`` + IEEE ``sub2rm``
     upright subscripts: R1 → R_1), NOT number-parsed — so a refdes like ``I1P``
     stays ``I1P`` instead of being misread as I·peta (``I1e15``). *bold* wraps
-    the result in ``\\mathrm{\\mathbf{…}}``. Returns None when LaTeX is
-    unavailable or the refdes cannot be rendered — the caller falls back to text.
+    the result in ``\\mathrm{\\mathbf{…}}``. With *name* the label reads
+    ``name = refdes`` in the style of :func:`render_name_eq_value`, for the
+    referenced elements of F, H, HZ and K shown with their name (2026-09-13).
+    Returns None when LaTeX is unavailable or the refdes cannot be rendered —
+    the caller falls back to text.
     """
     if not _latex_installed():
         return None
-    name = refdes.strip()
-    if not name or _is_placeholder(name):
+    ident = refdes.strip()
+    if not ident or _is_placeholder(ident):
         return None
-    tex = refdes_to_latex(name, bold)
+    tex = refdes_to_latex(ident, bold)
     if not tex:
         return None
+    if name:
+        safe = name.replace('_', r'\_').replace('^', r'\^{}')
+        tex = rf"{{\footnotesize \textsf{{{safe}}}}} = {tex}"
     return _render_latex_str(tex, cache_dir)
 
 
@@ -425,7 +432,8 @@ def _expression_latex(expr_str: str) -> "str | None":
     return _expression_parse(expr_str)[1]
 
 
-def slicap_table(header: list, rows: list, title=None) -> "str | None":
+def slicap_table(header: list, rows: list, title=None, title_align="c",
+                 upright=None) -> "str | None":
     """A SLiCAP LaTeX table for canvas blocks (parameters, model definitions).
 
     Built by SLiCAP's OWN formatter (``LaTeXformatter.nestedLists``) rather
@@ -443,6 +451,10 @@ def slicap_table(header: list, rows: list, title=None) -> "str | None":
     :param rows: list of ``[name, value]`` cells; sympy objects -> maths.
     :param title: heading centred ACROSS the columns (so a long title does
                   not widen the first column - Anton, 2026-08-16).
+    :param title_align: 'c' (bold, centred) or 'l' (a heading line flush
+                        with the first column, not bold).
+    :param upright: index of a column whose string cells are identifiers
+                    set as ``$\\mathrm{...}$`` (model parameter names).
     :return: LaTeX snippet, or None when SLiCAP is unavailable.
     """
     if not _ensure_slicap():
@@ -450,7 +462,9 @@ def slicap_table(header: list, rows: list, title=None) -> "str | None":
     from SLiCAP.SLiCAPlatex import LaTeXformatter, sub2rm
     snippet = LaTeXformatter().nestedLists(header, rows, color=None,
                                            value_fn=_slicap_latex_eng,
-                                           title=title)
+                                           title=title,
+                                           title_align=title_align,
+                                           upright=upright)
     return sub2rm(str(snippet))
 
 

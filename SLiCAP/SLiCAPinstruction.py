@@ -15,7 +15,7 @@ _GAINTYPES = ['vi', 'gain', 'loopgain', 'servo', 'asymptotic', 'direct']
 _CONVTYPES = ['dd', 'dc', 'cd', 'cc', 'all']
 _DATATYPES = ['matrix', 'noise', 'solve', 'time', 'dc', 'dcvar', 'dcsolve', 'timesolve',
              'numer', 'denom', 'laplace', 'zeros', 'poles', 'pz', 'impulse',
-             'step', 'params']
+             'step', 'params', 'statespace']
 
 class instruction(object):
     """
@@ -137,6 +137,9 @@ class instruction(object):
         """
 
         self.A           = None
+        self.convVars    = None
+        self.stateSpace  = None
+        self.orthogonal  = None
         """
         Base conversion matrix (sympy.Matrix).
         """
@@ -209,6 +212,25 @@ class instruction(object):
         Defines the simulation data type.
 
         See **instruction.setDataType(<dataType>)** for specification of *instruction.dataType*.
+        """
+
+        self.method = None
+        """
+        Calculation method: 'det' uses determinants of the polynomial MNA
+        matrix; 'state' uses the first-order (expanded) MNA matrix. None
+        (default) is resolved at execution: ini.pz_method for the data types
+        'poles', 'zeros' and 'pz', 'det' for all other data types.
+        """
+
+        self.lgType = 'dd'
+        """
+        Loop gain type for TWO loop gain references without conversion type
+        (a balanced stage inside an unbalanced amplifier): 'dd', 'dc', 'cd'
+        or 'cc'; mixed-mode naming: first letter the response, the mode in
+        which the controlling quantities are detected, second letter the
+        stimulus, the mode applied to them (for a loop gain the stimulus is
+        the injection at the output of the references).
+        Ignored for a single reference or with a conversion type.
         """
 
         self.step = False
@@ -460,6 +482,9 @@ class instruction(object):
         self.Iv          = None
         self.M           = None
         self.A           = None
+        self.convVars    = None
+        self.stateSpace  = None
+        self.orthogonal  = None
         self.Dv          = None
         self.denom       = []
         self.numer       = []
@@ -698,6 +723,70 @@ class instruction(object):
                     print("Error: cannot pair unknown circuit: ", cirName)
                     errors += 1
         return errors
+
+    def setMethod(self, method):
+        """
+        Defines the calculation engine for the instruction.
+
+        :param method: None, 'det' or 'state'.
+
+                       - None (default): ini.pz_method decides for the data
+                         types 'poles', 'zeros' and 'pz'; every other data
+                         type uses the determinant.
+                       - 'det': numerator and denominator are determinants
+                         of the MNA matrix (ini.numer, ini.denom); poles and
+                         zeros are their roots.
+                       - 'state': the circuit is written as a first-order
+                         (expanded) MNA matrix; poles and zeros are the
+                         eigenvalues of its exact state-space realization.
+                         Stepped analyses and symbolic circuits use the
+                         determinant.
+        :type method: str, NoneType
+
+        :Example:
+
+        >>> my_instr = instruction()
+        >>> my_instr.setMethod('state')
+        """
+        if method in (None, 'det', 'state'):
+            self.method = method
+        else:
+            self.errors += 1
+            print("Error: unknown method '%s'; use None, 'det' or 'state'." % method)
+        return
+
+    def setLoopGainType(self, lgType):
+        """
+        Defines the loop gain type for an instruction with TWO loop gain
+        references and no conversion type: a balanced stage (e.g. the input
+        pair of an operational amplifier) inside an unbalanced amplifier.
+        The loop is opened at both references (injection); the controlling
+        quantities of the pair are driven in the mode of the SECOND letter
+        (the stimulus) and detected in the mode of the FIRST letter (the
+        response), with the differential-mode and common-mode definitions
+        of the conversion matrix - the mixed-mode naming of the conversion
+        types: 'dc' is the differential-mode return from a common-mode
+        injection.
+
+        :param lgType: 'dd' (default), 'dc', 'cd' or 'cc'. The servo
+                       function exists for 'dd' and 'cc'; 'dc' and 'cd' are
+                       mode conversions around the loop and have no servo
+                       function. Ignored for a single reference or with a
+                       conversion type.
+        :type lgType: str
+
+        :Example:
+
+        >>> my_instr = instruction()
+        >>> my_instr.setLGref(['Gm_Q1', 'Gm_Q2'])
+        >>> my_instr.setLoopGainType('cc')
+        """
+        if lgType in ('dd', 'dc', 'cd', 'cc'):
+            self.lgType = lgType
+        else:
+            self.errors += 1
+            print("Error: unknown loop gain type '%s'; use 'dd', 'dc', 'cd' or 'cc'." % lgType)
+        return
 
     def setDataType(self, dataType):
         """
@@ -1891,6 +1980,9 @@ class instruction(object):
                     elif self.dataType == 'timesolve':
                         # need nothing
                         pass
+                    elif self.dataType == 'statespace':
+                        # need nothing: every source is an input, every variable an output
+                        pass
                     else:
                         self.errors += 1
                         print("Error: dataType '{0}' not available for gainType: '{1}'.".format(self.dataType, self.gainType))
@@ -1921,6 +2013,9 @@ class instruction(object):
                         # need source and detector
                         self.checkDetector()
                         self.checkSource()
+                    elif self.dataType == 'statespace':
+                        self.errors += 1
+                        print("Error: dataType 'statespace' is the full (MIMO) realization; it requires gainType 'vi' (no transfer).")
                     elif self.dataType == 'poles':
                         # need numeric
                         # self._checkNumeric()

@@ -49,7 +49,7 @@ Create a circuit object
     :lineno-start: 10
     
 .. image:: /API/img/myPassiveNetwork.svg
-    :width: 700px
+    :scale: 80 %
        
 Obtain the Laplace Transform of the gain
 ----------------------------------------
@@ -76,7 +76,7 @@ The result is shown below.
 
 .. code-block:: text
 
-    R_ell*(C_b*L*s**2 + 1)/((R_ell + R_s)*(C_a*C_b*L*R_ell*R_s*s**3/(R_ell + R_s) + s**2*(C_a*L*R_ell + C_b*L*R_ell + C_b*L*R_s)/(R_ell + R_s) + s*(C_a*R_ell*R_s + L)/(R_ell + R_s) + 1))
+    (C_b*L*s**2/R_s + 1/R_s)/(C_a*C_b*L*s**3 + C_a*L*s**2/R_s + C_a*s + C_b*L*s**2/R_s + C_b*L*s**2/R_ell + L*s/(R_ell*R_s) + 1/R_s + 1/R_ell)
     
 This can be typesetted using the formatter. The script below shows how to create an RST snippet for the source of this help file.
 
@@ -98,7 +98,7 @@ Below the result.
     
 .. code-block:: text
 
-    (455945326390521*s**2/500000000000000000000000000000 + 9/10)/(455945326390521*s**3/400000000000000000000000000000000000 + 1175660591821169*s**2/50000000000000000000000000000 + 1127*s/1000000000 + 1)
+    (50660591821169*s**2/2500000000000000000000000000000 + 1/50)/(L*s**2/2000000000 + L*s/22500 + 50660591821169*s**3/2000000000000000000000000000000000000 + 50660591821169*s**2/2250000000000000000000000000000 + s/40000000 + 1/45)
 
     
 SLiCAP uses rational numbers. Typsetting functions convert them into float. The number of digits is set with ``ini.disp``

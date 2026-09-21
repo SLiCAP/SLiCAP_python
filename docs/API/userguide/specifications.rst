@@ -101,7 +101,7 @@ Below the netlist file created with the above script. It shows the expressions a
 Below the ``.svg`` image file created with the above script.
 
 .. image:: ../img/Transimpedance.svg
-    :width: 450px
+    :scale: 80 %
 
 The script lines below assign the specifications to circuit parameters and shows the results in the console.
 

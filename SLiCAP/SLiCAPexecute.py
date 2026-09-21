@@ -3,15 +3,54 @@
 SLiCAP scripts for execution of an instruction.
 """
 import sympy as sp
+import re
 from copy import deepcopy
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPyacc import _updateCirData
 from SLiCAP.SLiCAPprotos import element
-from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector#, _reduceCircuit
+from SLiCAP.SLiCAPmatrices import _makeMatrices, _makeSrcVector, _singleDetector
+from SLiCAP.SLiCAPstateSpace import StateSpace, _rootsExact, _reduce, _rank, physicalStates
 from SLiCAP.SLiCAPmath import float2rational, normalizeRational, det, _Roots 
 from SLiCAP.SLiCAPmath import _cancelPZ, _zeroValue, ilt, assumeRealParams
 from SLiCAP.SLiCAPlex import _sympify
 from SLiCAP.SLiCAPmath import  clearAssumptions, fullSubs
+
+_INJECTION_DATATYPES = ('laplace', 'numer', 'denom', 'poles', 'zeros', 'pz',
+                        'statespace', 'dc')
+
+
+def _resolveMethod(instr):
+    """
+    Returns the calculation engine for the instruction: an explicit 'det' or
+    'state' is kept; None follows ini.pz_method for the root-finding data
+    types (poles, zeros, pz) and is 'det' for every other data type (the
+    Laplace, numer and denom results are polynomials in s, which the
+    state engine does not produce).
+    """
+    if instr.method in ("det", "state"):
+        return instr.method
+    if instr.dataType in ("poles", "zeros", "pz") and ini.pz_method == "state":
+        return "state"
+    return "det"
+
+def _injectionApplies(instr):
+    """
+    True when the loop gain or servo function is computed by opening the
+    loop at the reference (injection): every loop gain and servo function of
+    the Laplace, pole-zero, state-space and DC data types. False only for
+    the data types that have no loop gain (noise, dcvar, time).
+    """
+    if instr.gainType not in ('loopgain', 'servo') or instr.lgRef is None:
+        return False
+    if instr.dataType not in _INJECTION_DATATYPES:
+        return False
+    # a single reference, a matched pair in a converted circuit (the loop is
+    # opened BEFORE the conversion with the mode pattern of the pair, the
+    # conversion does the rest) and two references without conversion type
+    # (the mode pattern and the modal detector of instr.lgType): all by
+    # injection (Anton, 2026-09-12)
+    return True
+
 
 def _doInstruction(instr):
     """
@@ -27,6 +66,7 @@ def _doInstruction(instr):
     if instr.errors == 0:
         instr = _makeInstrParDict(instr)
         instr.clear()
+        instr.method = _resolveMethod(instr)
         if instr.lgRef != None:
             oldLGrefElements = []
             oldVsources      = []
@@ -67,13 +107,16 @@ def _doInstruction(instr):
                         newLGrefElement.type = 'N'
                         newLGrefElement.refDes = instr.circuit.elements[instr.lgRef[i]].refDes
                         instr.circuit.elements[instr.lgRef[i]] = newLGrefElement
-                    elif instr.gainType == 'loopgain' or instr.gainType == 'servo' or instr.gainType == 'direct':
-                        # Store the value of the loop gain reference
+                    elif instr.gainType == 'direct':
+                        # Store the value of the loop gain reference and set it to zero
                         instr.lgValue[i] = instr.circuit.elements[instr.lgRef[i]].params['value']
-                        if instr.gainType == 'direct':
-                            instr.circuit.elements[instr.lgRef[i]].params['value'] = sp.N(0)
-                        else:
-                            instr.circuit.elements[instr.lgRef[i]].params['value'] = sp.Symbol("_LGREF_" + str(i+1))
+                        instr.circuit.elements[instr.lgRef[i]].params['value'] = sp.N(0)
+                    # loop gain and servo: the reference keeps its value, the
+                    # loop is opened in the matrix by _injectLoop (injection;
+                    # Bode's return difference with a _LGREF_ symbol was
+                    # REMOVED on 2026-09-12 when the injection covered every
+                    # case: single references, pairs with a conversion type,
+                    # two references without one - Anton)
                     instr.circuit = _updateCirData(instr.circuit)
         if instr.errors == 0:
             if instr.dataType == 'numer':
@@ -108,6 +151,8 @@ def _doInstruction(instr):
                 instr = _doTimeSolve(instr)
             elif instr.dataType == 'matrix':
                 instr = _doMatrix(instr)
+            elif instr.dataType == 'statespace':
+                instr = _doStateSpace(instr)
             elif instr.dataType == 'params':
                 pass
             else:
@@ -123,8 +168,8 @@ def _doInstruction(instr):
         elif instr.gainType == 'direct' or instr.gainType == 'loopgain' or instr.gainType == 'servo':
             # Restore the value of the loop gain reference
             for i in range(len(instr.lgRef)):
-                if instr.lgRef[i] != None:
-                    instr.circuit.elements[instr.lgRef[i]].params['value'] = instr.lgValue[i]           
+                if instr.lgRef[i] != None and instr.lgValue[i] is not None:
+                    instr.circuit.elements[instr.lgRef[i]].params['value'] = instr.lgValue[i]
     return instr
 
 def _doNumer(instr):
@@ -143,12 +188,8 @@ def _doNumer(instr):
     """
     if instr.step:
         if ini.step_function:
-            if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                instr = _makeAllMatrices(instr)
-                instr = _doPyLoopGainServo(instr)
-            else:
-                instr = _makeAllMatrices(instr)
-                instr = _doPyNumer(instr,instr)
+            instr = _makeAllMatrices(instr)
+            instr = _doPyNumer(instr,instr)
             numer  = instr.numer[0]
             instr.numer = _stepFunctions(instr.stepDict, numer)
         else:
@@ -157,20 +198,12 @@ def _doNumer(instr):
             for i in range(numSteps):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
-                if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                    instr = _makeAllMatrices(instr)
-                    instr = _doPyLoopGainServo(instr)
-                else:
-                    instr = _makeAllMatrices(instr)
-                    instr = _doPyNumer(instr)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyNumer(instr)
                 instr.numer[-1] = instr.numer[-1]
     else:
-        if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-            instr = _makeAllMatrices(instr)
-            instr = _doPyLoopGainServo(instr)
-        else:
-            instr = _makeAllMatrices(instr)
-            instr = _doPyNumer(instr)
+        instr = _makeAllMatrices(instr)
+        instr = _doPyNumer(instr)
         instr.numer = instr.numer[0]
     instr = _correctDMcurrentinstr(instr)
     return instr
@@ -191,12 +224,8 @@ def _doDenom(instr):
     """
     if instr.step:
         if ini.step_function:
-            if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                instr = _makeAllMatrices(instr)
-                instr = _doPyLoopGainServo(instr)
-            else:
-                instr = _makeAllMatrices(instr)
-                instr = _doPyDenom(instr)
+            instr = _makeAllMatrices(instr)
+            instr = _doPyDenom(instr)
             denom = instr.denom[0]
             instr.denom = _stepFunctions(instr.stepDict, denom)
         else:
@@ -205,21 +234,12 @@ def _doDenom(instr):
             for i in range(numSteps):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
-                if instr.gainType == 'loopgain' or instr.dataType == 'servo':
-                    instr = _makeAllMatrices(instr)
-                    instr = _doPyLoopGainServo(instr)
-                else:
-                    instr = _makeAllMatrices(instr)
-                    instr = _doPyDenom(instr)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyDenom(instr)
                 instr.denom[-1] = instr.denom[-1]
     else:
-        if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-            instr = _makeAllMatrices(instr)
-            instr = _doPyLoopGainServo(instr)
-            instr.denom[-1] = instr.denom[-1]
-        else:
-            instr = _makeAllMatrices(instr)
-            instr = _doPyDenom(instr)
+        instr = _makeAllMatrices(instr)
+        instr = _doPyDenom(instr)
         instr.denom = instr.denom[0]
     return instr
 
@@ -238,12 +258,8 @@ def _doLaplace(instr):
     """
     if instr.step:
         if ini.step_function:
-            if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                instr = _makeAllMatrices(instr)
-                instr = _doPyLoopGainServo(instr)
-            else:
-                instr = _makeAllMatrices(instr)
-                instr = _doPyLaplace(instr)
+            instr = _makeAllMatrices(instr)
+            instr = _doPyLaplace(instr)
             laplaceFunc = instr.laplace[0]
             instr.laplace = _stepFunctions(instr.stepDict, laplaceFunc)
             numerFunc = instr.numer[0]
@@ -256,25 +272,140 @@ def _doLaplace(instr):
             for i in range(numSteps):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
-                if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                    instr = _makeAllMatrices(instr)
-                    instr = _doPyLoopGainServo(instr)
-                else:
-                    instr = _makeAllMatrices(instr)
-                    instr = _doPyLaplace(instr)
+                instr = _makeAllMatrices(instr)
+                instr = _doPyLaplace(instr)
                 instr.laplace[-1] = instr.laplace[-1]
     else:
-        if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-            instr = _makeAllMatrices(instr)
-            instr = _doPyLoopGainServo(instr)
-        else:
-            instr = _makeAllMatrices(instr)
-            instr = _doPyLaplace(instr)
+        instr = _makeAllMatrices(instr)
+        instr = _doPyLaplace(instr)
         instr.laplace = instr.laplace[0]
         instr.numer = instr.numer[0]
         instr.denom = instr.denom[0]
     instr = _correctDMcurrentinstr(instr)
     return instr
+
+def _stateNumeric(instr):
+    """True when the matrix of instr is numeric apart from the Laplace variable."""
+    return instr.M.free_symbols <= {ini.laplace}
+
+
+def _statePolesZeros(instr, want):
+    """
+    Poles, zeros and gain from the first-order matrix by the exact numeric
+    engine (method 'state'): states = finite part of the pencil, sorted in
+    exact fractions, eigenvalues in floats. Returns (poles, zeros, DCvalue)
+    or None when the matrix is not numeric (the determinant path applies).
+
+    :param want: 'poles', 'zeros' or 'pz'
+    """
+    if not _stateNumeric(instr):
+        return None
+    poles = zeros = DCvalue = None
+    if want in ('poles', 'pz'):
+        poles = _rootsExact(instr.M)
+        if poles is None:
+            print("Error: the network has no unique solution.")
+            return None
+        poles = list(poles)
+    if want in ('zeros', 'pz'):
+        if instr.Iv.is_zero_matrix:
+            zeros, DCvalue = [], sp.N(0)
+        else:
+            detP, detN = _makeDetPos(instr)
+            Mc, col, sign = _singleDetector(instr.M, detP, detN)
+            Mn = Mc.copy()
+            Mn[:, col] = instr.Iv
+            zeros = _rootsExact(Mn)
+            zeros = [] if zeros is None else list(zeros)    # det == 0: transfer is zero
+            if want == 'pz':
+                # gain factor from ONE exact evaluation at a rational s0 that
+                # is neither a pole nor a zero: H(s) = K prod(s-z)/prod(s-p);
+                # DCvalue = lowest-order coefficient ratio (see _zeroValue)
+                # = K prod(-z, z != 0)/prod(-p, p != 0).
+                DCvalue = sp.N(0)
+                if not (zeros == [] and _rootsExact(Mn) is None):
+                    G, C = instr.M.subs(ini.laplace, 0), instr.M.diff(ini.laplace)
+                    N = G.rows
+                    H0 = 0
+                    for k in range(1, N + 2):
+                        s0 = sp.Integer(k)
+                        try:
+                            x = (G + s0*C).LUsolve(instr.Iv)          # exact rationals
+                        except (ValueError, sp.matrices.exceptions.NonInvertibleMatrixError):
+                            continue
+                        H0 = (x[detP] if detP is not None else 0) - (x[detN] if detN is not None else 0)
+                        if H0 != 0:
+                            break
+                    if H0 != 0:
+                        K = complex(H0)
+                        for pz in poles:
+                            K *= (float(s0) - pz)
+                        for z in zeros:
+                            K /= (float(s0) - z)
+                        for pz in poles:
+                            if abs(pz) > 1e-12*max(1.0, max(abs(q) for q in poles)):
+                                K /= -pz
+                        for z in zeros:
+                            if abs(z) > 1e-12*max(1.0, max(abs(q) for q in zeros)):
+                                K *= -z
+                        DCvalue = sp.N(K.real if abs(K.imag) <= 1e-9*abs(K) else K)
+    return poles, zeros, DCvalue
+
+
+def _stateLoop(instr, want):
+    """
+    Runs _statePolesZeros for the instruction. Returns the instruction, or
+    None when the determinant path must be used (a non-numeric matrix).
+
+    Stepped analyses never come here: running the exact-rational reduction
+    once per step was tried and REVERTED (Anton, 2026-09-11) - a 100-step
+    root locus on a class-AB amplifier test project (opamp model with a fifth-order gain, 22-row
+    expanded matrix) took 1 s per step against 0.02 s for a numeric MECPP
+    determinant. Stepping goes through the determinant path, whatever
+    ini.step_function says; the per-step code is kept for a future numeric
+    (float / C++) state engine.
+    """
+    results = []
+    if instr.step:
+        stepVars = list(instr.stepDict.keys())
+        numSteps = len(instr.stepDict[stepVars[0]])
+        for i in range(numSteps):
+            for j in range(len(stepVars)):
+                instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
+            instr = _makeAllMatrices(instr)
+            res = _statePolesZeros(instr, want)
+            if res is None:
+                return None
+            results.append(res)
+    else:
+        instr = _makeAllMatrices(instr)
+        res = _statePolesZeros(instr, want)
+        if res is None:
+            return None
+        results.append(res)
+    for poles, zeros, DCvalue in results:
+        if want == 'pz':
+            try:
+                poles, zeros = _cancelPZ(poles, zeros)
+            except Exception:
+                pass
+        if instr.step:
+            if poles is not None:
+                instr.poles.append(poles)
+            if zeros is not None:
+                instr.zeros.append(zeros)
+            if DCvalue is not None:
+                instr.DCvalue.append(DCvalue)
+        else:
+            if poles is not None:
+                instr.poles = poles
+            if zeros is not None:
+                instr.zeros = zeros
+            if DCvalue is not None:
+                instr.DCvalue = DCvalue
+    instr.dataType = want
+    return instr
+
 
 def _doPoles(instr):
     """
@@ -286,7 +417,10 @@ def _doPoles(instr):
     :return: instr of the execution of the instruction.
     :rtype: SLiCAPinstruction.instruction
     """
-    instr.dataType = "denom"
+    if instr.method == "state" and not instr.step:
+        done = _stateLoop(instr, 'poles')
+        if done is not None:
+            return done
     instr.dataType = "denom"
     instr = _doDenom(instr)
     if instr.step:
@@ -294,7 +428,6 @@ def _doPoles(instr):
             instr.poles.append(_Roots(poly, ini.laplace))
     else:
         instr.poles = _Roots(instr.denom, ini.laplace)
-    instr.dataType = "poles"
     instr.dataType = "poles"
     return instr
 
@@ -308,7 +441,10 @@ def _doZeros(instr):
     :return: instr of the execution of the instruction.
     :rtype: SLiCAPinstruction.instruction
     """
-    instr.dataType = "numer"
+    if instr.method == "state" and not instr.step:
+        done = _stateLoop(instr, 'zeros')
+        if done is not None:
+            return done
     instr.dataType = "numer"
     instr = _doNumer(instr)
     if instr.step:
@@ -316,7 +452,6 @@ def _doZeros(instr):
             instr.zeros.append(_Roots(poly, ini.laplace))
     else:
         instr.zeros = _Roots(instr.numer, ini.laplace)
-    instr.dataType = "zeros"
     instr.dataType = "zeros"
     return instr
 
@@ -330,7 +465,10 @@ def _doPZ(instr):
     :return: instr of the execution of the instruction.
     :rtype: SLiCAPinstruction.instruction
     """
-    instr.dataType = "laplace"
+    if instr.method == "state" and not instr.step:
+        done = _stateLoop(instr, 'pz')
+        if done is not None:
+            return done
     instr.dataType = "laplace"
     instr = _doLaplace(instr)
     if instr.step:
@@ -834,18 +972,11 @@ def _doDC(instr):
     """
     if instr.step:
         if ini.step_function:
-            if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                instr = _makeAllMatrices(instr, inductors=True)
-                instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
-                instr.M = instr.M.xreplace({ini.laplace: 0})
-                instr = _doPyLoopGainServo(instr)
-                dcFunc = instr.laplace[0]
-            else:
-                instr = _makeAllMatrices(instr, inductors=True)
-                instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
-                instr.M = instr.M.xreplace({ini.laplace: 0})
-                instr = _doPyLaplace(instr)
-                dcFunc = instr.laplace[0]
+            instr = _makeAllMatrices(instr, inductors=True)
+            instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+            instr.M = instr.M.xreplace({ini.laplace: 0})
+            instr = _doPyLaplace(instr)
+            dcFunc = instr.laplace[0]
             instr.laplace = _stepFunctions(instr.stepDict, dcFunc)
         else:
             stepVars = list(instr.stepDict.keys())
@@ -853,27 +984,15 @@ def _doDC(instr):
             for i in range(numSteps):
                 for j in range(len(stepVars)):
                     instr.parDefs[stepVars[j]] = instr.stepDict[stepVars[j]][i]
-                if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-                    instr = _makeAllMatrices(instr, inductors=True)
-                    instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
-                    instr.M = instr.M.xreplace({ini.laplace: 0})
-                    instr = _doPyLoopGainServo(instr)
-                else:
-                    instr = _makeAllMatrices(instr, inductors=True)
-                    instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
-                    instr.M = instr.M.xreplace({ini.laplace: 0})
-                    instr = _doPyLaplace(instr)
+                instr = _makeAllMatrices(instr, inductors=True)
+                instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+                instr.M = instr.M.xreplace({ini.laplace: 0})
+                instr = _doPyLaplace(instr)
     else:
-        if instr.gainType == 'loopgain' or instr.gainType == 'servo':
-            instr = _makeAllMatrices(instr, inductors=True)
-            instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
-            instr.M = instr.M.xreplace({ini.laplace: 0})
-            instr = _doPyLoopGainServo(instr)
-        else:
-            instr = _makeAllMatrices(instr, inductors=True)
-            instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
-            instr.M = instr.M.xreplace({ini.laplace: 0})
-            instr = _doPyLaplace(instr)
+        instr = _makeAllMatrices(instr, inductors=True)
+        instr.Iv = instr.Iv.xreplace({ini.laplace: 0})
+        instr.M = instr.M.xreplace({ini.laplace: 0})
+        instr = _doPyLaplace(instr)
         instr.laplace = instr.laplace[0]
         instr.numer = instr.numer[0]
         instr.denom = instr.denom[0]
@@ -1094,6 +1213,314 @@ def _doMatrix(instr):
     instr = _makeAllMatrices(instr)
     return instr
 
+def _doStateSpace(instr):
+    """
+    Adds the full state-space realization of the circuit to
+    instr.stateSpace: every independent source is an input and every network
+    variable an output (MIMO). Transfers, sources and detectors play no part;
+    a transfer is selected afterwards from the columns of B and D and the
+    rows of C and D. The SISO branch that once served loop gain and servo
+    realizations was REMOVED (Anton, 2026-09-11: "doStateSpace was only for
+    transfer = None"); poles and zeros of any transfer come from
+    _statePolesZeros with method='state'.
+
+    With a conversion type the input columns are converted with the same
+    matrix as the MNA matrix (A^T B) and the rows of the dd or cc block are
+    kept, so the inputs remain the independent sources and the outputs are
+    the converted variables.
+
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
+
+    :return: instr of the execution of the instruction.
+    :rtype: SLiCAPinstruction.instruction
+    """
+    instr.method = "state"                    # the first-order (expanded) matrix
+    if instr.step:
+        print("Error: doStateSpace() does not support parameter stepping.")
+        return instr
+    if instr.gainType != "vi":
+        print("Error: doStateSpace() gives the full (MIMO) realization; a transfer type does not apply.")
+        return instr
+    instr = _makeAllMatrices(instr)
+    if instr.circuit.errors:
+        return instr
+    N = instr.M.rows
+    cols, u = [], []
+    for name in instr.circuit.indepVars:
+        cols.append(_makeSrcVector(instr.circuit, instr.parDefs, name, value='id',
+                                   numeric=instr.numeric, substitute=instr.substitute))
+        u.append(sp.Symbol(name))
+    if instr.convType is None:
+        B = sp.Matrix.hstack(*cols) if cols else sp.zeros(N, 0)
+        B = B.col_join(sp.zeros(N - B.rows, B.cols))
+    else:
+        dim = instr.A.rows                    # variables before the block was cut out
+        B = sp.Matrix.hstack(*cols) if cols else sp.zeros(dim, 0)
+        B = instr.A.T * B.col_join(sp.zeros(dim - B.rows, B.cols))
+        names = [str(v) for v in instr.convVars]
+        B = B.extract([names.index(str(v)) for v in instr.Dv], list(range(B.cols)))
+    y = list(instr.Dv)
+    s = ini.laplace
+    G, C = instr.M.subs(s, 0), instr.M.diff(s)
+    if sp.expand(instr.M - G - s*C) != sp.zeros(*instr.M.shape):
+        print("Error: no state-space realization: the MNA matrix is not first order.")
+        return instr
+    try:
+        if _rank(C) == 0:                             # memoryless network
+            A, Pin, Pout, Dfull = sp.zeros(0, 0), sp.zeros(0, N), sp.zeros(N, 0), G.inv()
+            xnames = []
+        else:
+            A, Pin, Pout, Dfull = _reduce(G, C)
+            A, Pin, Pout, xnames = physicalStates(A, Pin, Pout, Dfull, _stateCandidates(instr))
+    except sp.matrices.exceptions.NonInvertibleMatrixError:
+        print("Error: no state-space realization: the network has no unique "
+              "solution (singular pencil).")
+        return instr
+    x = [sp.Symbol(name) for name in xnames]
+    if not instr.numeric:
+        # Symbolic entries come out of the reduction as unreduced products of
+        # the elimination steps; the canonical p/q form is what a reader
+        # expects (Anton, 2026-09-20: the manual's passive network). cancel()
+        # is exact and cheap at these sizes; numeric results stay as they are.
+        A, Pin, Pout, Dfull = (m.applyfunc(sp.cancel) for m in (A, Pin, Pout, Dfull))
+    instr.stateSpace = StateSpace(A, Pin*B, Pout, Dfull*B,
+                                  sp.Matrix(x) if x else sp.zeros(0, 1),
+                                  sp.Matrix(u) if u else sp.zeros(0, 1),
+                                  sp.Matrix(y))
+    return instr
+
+
+def _stateCandidates(instr):
+    """
+    Candidate state variables of doStateSpace(), in order of preference,
+    as (name, selection row vector on instr.Dv): the voltage across every
+    capacitor (V_<refDes>), the current through every inductor
+    (I_<refDes>), then the integrator-chain variables of the expanded
+    controlled sources (the internal states of the device models). With a
+    conversion type the candidates are the converted variables themselves.
+    """
+    names = [str(v) for v in instr.Dv]
+    n = len(names)
+
+    def sel(*pairs):
+        l = sp.zeros(1, n)
+        for var, val in pairs:
+            if var in names:
+                l[0, names.index(var)] += val
+        return l
+
+    out = []
+    if instr.convType is not None:
+        return [(nm, sel((nm, 1))) for nm in names]
+    els = instr.circuit.elements
+    for ref, el in els.items():
+        if el.type.upper() == 'C':
+            l = sel(('V_' + el.nodes[0], 1), ('V_' + el.nodes[1], -1))
+            if not l.is_zero_matrix:
+                out.append(('V_' + ref, l))
+    for ref, el in els.items():
+        if el.type.upper() == 'L' and 'I_' + ref in names:
+            out.append(('I_' + ref, sel(('I_' + ref, 1))))
+    for nm in names:
+        if re.match(r'^V_(\d+|zo)_', nm):
+            out.append((nm, sel((nm, 1))))
+    return out
+
+
+def _injectLoop(instr):
+    """
+    Opens the loop at the loop gain reference for the loop gain, or adds the
+    injection with the loop closed for the servo function.
+
+    The reference stays in the matrix as the (expanded) controlled source;
+    only its controlling input is disconnected (loop gain) and driven by an
+    applied unit. The detector becomes the controlling quantity (loop gain)
+    or minus the controlling quantity (servo).
+
+    Always on the UNCONVERTED matrix. A matched pair is driven with the
+    pattern of the stimulus mode, the SECOND letter of the conversion type
+    or of instr.lgType (mixed-mode naming: first letter the response, here
+    the detected controlling quantity, second the stimulus, here the
+    injection) - for a voltage-controlled pair +1/2, -1/2 (dd, cd, all) or
+    1, 1 (cc, dc), for a current-controlled pair +1, -1 or 1/2, 1/2 - so
+    that the converted controlling quantity is one; each
+    reference keeps its own gain in its stamp, and the conversion matrix
+    does the rest: the average gain lands in the dd/cc block, a gain
+    mismatch in the cd/dc blocks (Anton, 2026-09-12; an injection AFTER the
+    conversion into the dd/cc block was built and REPLACED the same day: it
+    needed an orthogonality test and hid the unbalance). The detector of a
+    pair is set after the conversion (_convertedControl). A pair without
+    conversion type is not done here (the joint return difference).
+
+    :param instr: SLiCAP instruction object that holds instruction data.
+    :type instr: SLiCAPinstruction.instruction
+
+    :return: instr with modified M, Iv and detector.
+    :rtype: SLiCAPinstruction.instruction
+    """
+    # Verified against the return-difference result, symbolically, for E and
+    # g references and for both the loop gain and the servo function
+    # (Anton/Claude, 2026-09-09, PZ.md section 0). The return-difference
+    # method (D0-DM)/D0 with a symbolic _LGREF_ (_doPyLoopGainServo) was
+    # REMOVED on 2026-09-12: the injection covers every case.
+    from SLiCAP.SLiCAPmatrices import _getValue
+    names = [str(v) for v in instr.Dv]
+    col   = lambda name: names.index(name) if name in names else None
+    refs  = [r for r in instr.lgRef if r is not None]
+    voltage_controlled = instr.circuit.elements[refs[0]].model in ('E', 'EZ', 'G', 'g')
+    # the mode applied to the controlling quantities of a pair: the
+    # conversion type, or for two references without conversion type the
+    # first letter of instr.lgType
+    if len(refs) == 1:
+        source_mode = None
+    elif instr.convType is not None:
+        source_mode = 'c' if instr.convType in ('cc', 'dc') else 'd'      # stimulus: second letter
+    else:
+        source_mode = instr.lgType[1]                                    # stimulus: second letter
+        if instr.gainType == 'servo' and instr.lgType in ('dc', 'cd'):
+            print("Error: the servo function is defined for the loop gain types "
+                  "'dd' and 'cc' only; '%s' is a mode conversion around the loop." % instr.lgType)
+            instr.circuit.errors += 1
+            return instr
+    if source_mode is None:
+        weights = [sp.Integer(1)]
+    elif source_mode == 'c':                                 # common-mode unit
+        weights = [1, 1] if voltage_controlled else [sp.Rational(1, 2)]*2
+    else:                                                    # differential unit
+        weights = [sp.Rational(1, 2), -sp.Rational(1, 2)] if voltage_controlled else [1, -1]
+    detector, units = None, 'V'
+    controls = []                                            # (c2, c3) per reference
+    for ref, w in zip(refs, weights):
+        el    = instr.circuit.elements[ref]
+        model = el.model
+        # controlling quantity: a node-voltage difference or a branch current
+        if model in ('E', 'EZ', 'G', 'g'):
+            c2, c3 = 'V_' + el.nodes[2], 'V_' + el.nodes[3]
+            ctrl = [col(c2), col(c3)]
+            units = 'V'
+        else:                                                # F, H, HZ
+            c2, c3 = 'I_' + el.refs[0], None
+            ctrl = [col(c2), None]
+            units = 'A'
+        controls.append((c2 if ctrl[0] is not None else None,
+                         c3 if ctrl[1] is not None else None))
+        if detector is None:                                 # the first reference names the detector
+            detector = list(controls[0])
+        # rows that carry the controlling coupling
+        chain = 'V_0_' + ref
+        if chain in names:
+            rows = [names.index(chain)]                      # expanded: the chain's input row
+        elif model == 'g':
+            rows = None                                      # nodal stamp, no row of its own
+        else:
+            rows = [names.index('I_' + ref)]
+        if rows is not None:
+            # The row belongs to the reference alone and reads
+            # ... + a*(controlling quantity) + ... = Iv[r]; replacing the
+            # quantity by the applied unit w moves the term a*w to the right
+            # side. The coefficient a is read from a column that carries ONLY
+            # the controlling term: a controlling node may coincide with an
+            # output node of the same reference (E1 3 0 2 3 - the
+            # RLvFollower_2 example), whose column then also holds the output
+            # term. Zeroing that entry destroyed the output term (bug found
+            # by Anton, 2026-09-11); the coupling is SUBTRACTED, never zeroed.
+            own = {col('V_' + el.nodes[0]), col('V_' + el.nodes[1]), col('I_' + ref)}
+            for r in rows:
+                if ctrl[0] is not None and ctrl[0] not in own:
+                    a = instr.M[r, ctrl[0]]
+                elif ctrl[1] is not None and ctrl[1] not in own:
+                    a = -instr.M[r, ctrl[1]]
+                else:
+                    print("Error: loop gain reference %s: its controlling port "
+                          "coincides with its output port." % ref)
+                    instr.circuit.errors += 1
+                    return instr
+                instr.Iv[r] -= a*w
+                if instr.gainType == 'loopgain':             # open the loop
+                    if ctrl[0] is not None:
+                        instr.M[r, ctrl[0]] -= a
+                    if ctrl[1] is not None:
+                        instr.M[r, ctrl[1]] += a
+        else:
+            # A g source stamps into the KCL rows of its output nodes, which
+            # it SHARES with other elements (VampQ: g_m_2 sits in one entry
+            # with -s*c_mu_2). Remove exactly the stamp, never the whole entry.
+            g = _getValue(el, 'value', instr.numeric, instr.parDefs, instr.substitute)
+            outs = [col('V_' + el.nodes[0]), col('V_' + el.nodes[1])]
+            for r, sign in zip(outs, (1, -1)):
+                if r is None:
+                    continue
+                instr.Iv[r] -= sign*g*w                      # current g*w from node 0 to node 1
+                if instr.gainType == 'loopgain':
+                    if ctrl[0] is not None:
+                        instr.M[r, ctrl[0]] -= sign*g
+                    if ctrl[1] is not None:
+                        instr.M[r, ctrl[1]] += sign*g
+    if len(refs) == 2 and instr.convType is None:
+        # two references without conversion type: the detector is the modal
+        # combination of the two controlling quantities (definitions of the
+        # conversion matrix), made a single matrix variable by a change of
+        # variables x' = P x, M' = M P^-1 (the column operations of the
+        # single-detector trick, generalised to any functional)
+        det_mode = instr.lgType[0]                                       # response: first letter
+        l = sp.zeros(1, len(names))
+        for k, (c2, c3) in enumerate(controls):
+            if voltage_controlled:
+                wk = sp.Rational(1, 2) if det_mode == 'c' else (1 if k == 0 else -1)
+            else:
+                wk = 1 if det_mode == 'c' else (sp.Rational(1, 2) if k == 0 else -sp.Rational(1, 2))
+            if c2 is not None:
+                l[0, col(c2)] += wk
+            if c3 is not None:
+                l[0, col(c3)] -= wk
+        if instr.gainType == 'servo':                        # minus the returned quantity
+            l = -l
+        pivot = next(j for j in range(len(names)) if l[0, j] != 0)
+        lk = l[0, pivot]
+        Mp = instr.M.copy()
+        for j in range(len(names)):
+            if j != pivot and l[0, j] != 0:
+                Mp[:, j] = instr.M[:, j] - (l[0, j]/lk)*instr.M[:, pivot]
+        Mp[:, pivot] = instr.M[:, pivot]/lk
+        instr.M = Mp
+        instr.detector = [names[pivot], None]
+        instr.detUnits = units
+        instr.detLabel = 'L_%s(%s)' % (instr.lgType, ', '.join(r for r in refs))
+        return instr
+    if instr.gainType == 'servo':                            # minus the returned quantity
+        detector = [detector[1], detector[0]]
+    instr.detector = detector
+    instr.detUnits = units
+    instr.detLabel = ' - '.join(d for d in detector if d)
+    return instr
+
+
+def _convertedControl(instr, control):
+    """
+    The detector of a loop gain or servo function of a reference pair after
+    the conversion: the controlling quantity of the pair (the unconverted
+    names in *control*) in the requested mode. A paired name V_x<P> becomes
+    V_x_D (dd, cd, all) or V_x_C (cc, dc); an unpaired node keeps its name;
+    a node absent from the block is a virtual ground there (None).
+    """
+    names = [str(v) for v in instr.Dv]
+    ext = instr.pairExt[0]
+    mode = 'C' if instr.convType in ('cc', 'cd') else 'D'                # response: first letter
+
+    def mapped(name):
+        if name is None:
+            return None
+        if name in names:
+            return name                                      # unpaired: own name
+        stem = name[:-len(ext)] if name.endswith(ext) else name
+        if stem[-1] != '_':
+            stem += '_'
+        cand = stem + mode
+        return cand if cand in names else None
+
+    return [mapped(d) for d in control]
+
 def _makeAllMatrices(instr, reduce=True, inductors=False):
     """
     Returns the instrs() object of which the following attributes have been
@@ -1140,7 +1567,7 @@ def _makeAllMatrices(instr, reduce=True, inductors=False):
                     if nodeP != '0':
                         pos = instr.depVars().index('V_' + nodeP)
 
-                        if instr.convType == 'cc' or instr.convType == 'cd':
+                        if instr.convType == 'cc' or instr.convType == 'dc':   # stimulus: second letter
                             instr.Iv[pos] -= 1/ns
                         else:
                             # differential input
@@ -1148,7 +1575,7 @@ def _makeAllMatrices(instr, reduce=True, inductors=False):
                     if nodeN != '0':
                         pos = instr.depVars().index('V_' + nodeN)
 
-                        if instr.convType == 'cc' or instr.convType == 'cd':
+                        if instr.convType == 'cc' or instr.convType == 'dc':   # stimulus: second letter
                             instr.Iv[pos] += 1/ns
                         else:
                             # differential input
@@ -1156,11 +1583,21 @@ def _makeAllMatrices(instr, reduce=True, inductors=False):
                 elif instr.source[i][0].upper() == 'V':
                     pos = instr.depVars().index('I_' + instr.source[i])
 
-                    if instr.convType == 'cc' or instr.convType == 'cd':
+                    if instr.convType == 'cc' or instr.convType == 'dc':   # stimulus: second letter
                         instr.Iv[pos] = 1
                     else:
                         # differential input
                         instr.Iv[pos] = ((-1)**i)/ns
+    if instr.Iv.rows < instr.M.rows:
+        # method 'state': the integrator-chain variables carry no source
+        instr.Iv = instr.Iv.col_join(sp.zeros(instr.M.rows - instr.Iv.rows, 1))
+    control = None
+    if _injectionApplies(instr):
+        instr = _injectLoop(instr)               # always on the unconverted matrix
+        if instr.convType != None:
+            # the controlling names are mapped AFTER the conversion; keep
+            # them away from the detector conversion of _convertMatrices
+            control, instr.detector = instr.detector, None
     # Apply conversion type
     if instr.convType != None:
         # Adapt instr.ParDefs for balancing
@@ -1169,10 +1606,14 @@ def _makeAllMatrices(instr, reduce=True, inductors=False):
             instr = _pairParams(instr)
         # Convert the matrices
         instr = _convertMatrices(instr)
+        if control is not None:
+            # the detector is the converted controlling quantity of the pair
+            instr.detector = _convertedControl(instr, control)
+            instr.detLabel = ' - '.join(d for d in instr.detector if d)
     instr.Iv = float2rational(instr.Iv)
     # If a detector is required, check it
     nodetGainTypes = ['loopgain', 'servo']
-    nodetDataTypes = ['poles', 'denom', 'solve', 'dcsolve', 'timesolve']
+    nodetDataTypes = ['poles', 'denom', 'solve', 'dcsolve', 'timesolve', 'statespace']
     if instr.gainType not in nodetGainTypes or instr.dataType not in nodetDataTypes:
         detector, errors = _checkDetector(instr.detector, list(instr.Dv.transpose()))
         instr.detector = detector
@@ -1311,8 +1752,10 @@ def _convertMatrices(instr):
 
         - 'dd' Diferential-mode transfer
         - 'cc' Common-mode transfer
-        - 'dc' Differential-mode to common-mode conversion
-        - 'cd' Common-mode to differential-mode conversion
+        - 'dc' Differential-mode response to a common-mode stimulus
+          (common-mode to differential-mode conversion; mixed-mode naming,
+          first letter the response)
+        - 'cd' Common-mode response to a differential-mode stimulus
         - 'all' The complete vectors with redefined and re-arranged common-mode
           and differential-mode quantities.
 
@@ -1336,8 +1779,15 @@ def _convertMatrices(instr):
     instr.M  = A.transpose() * instr.M * A
     instr.Iv = A.transpose() * instr.Iv
     instr.A  = A
+    instr.convVars = dmVars + cmVars       # the converted variables before the
+                                           # dd/cc block is cut out (_doStateSpace)
     dimDm = len(pairs)
     dimCm = dimDm + len(unPaired)
+    # Fully balanced: the DM and CM parts do not couple (both anti-diagonal
+    # blocks zero). Only then is the dd (cc) block a closed circuit whose
+    # loop can be opened by injection (Anton, 2026-09-11).
+    instr.orthogonal = (instr.M[:dimDm, dimDm:].is_zero_matrix
+                        and instr.M[dimDm:, :dimDm].is_zero_matrix)
     instr = _getSubMatrices(instr, dimDm, dimCm, instr.convType)
     #instr.detector = instr.detector
     instr.detector = _makeNewDetector(instr, pairs, dmVars, cmVars)
@@ -1350,7 +1800,7 @@ def _createConversionMatrices(instr):
     currents to common-mode and differential-mode equivalents.
     """
     pairs, unPaired, dmVars, cmVars = _pairVariables(instr)
-    depVars = [var for var in instr.depVars()]
+    depVars = [str(var) for var in instr.Dv]        # the matrix variables, chains included
     dim = len(depVars)
     A = sp.zeros(dim)
     n = len(pairs)
@@ -1386,8 +1836,8 @@ def _pairVariables(instr):
 
     Pairing is defined by the instr.pairedVars and instr.pairedCircuits.
     """
-    depVars = [var for var in instr.circuit.dep_vars]
-    paired = []
+    depVars = [str(var) for var in instr.Dv]        # was circuit.dep_vars: blind to the
+    paired = []                                       # expanded chain variables (2026-09-11)
     pairs = []
     unPaired = []
     dmVars = []
@@ -1426,7 +1876,48 @@ def _pairVariables(instr):
             else:
                 depVars.remove(var)
         cmVars += unPaired
+        _checkPairOrientation(instr, pairs, sub1, sub2)
     return pairs, unPaired, dmVars, cmVars
+
+_ORIENTATION_WARNED = set()      # (title, element, nodesP, nodesN) already reported
+
+def _checkPairOrientation(instr, pairs, sub1, sub2):
+    """
+    Warns, once per circuit and pair, when two paired elements that carry a
+    branch current are connected in opposite directions: their currents
+    then pair with opposite signs, the decomposition of a symmetric circuit
+    is not orthogonal and the differential-mode transfers vanish (Anton,
+    2026-09-20: three redrawn balanced schematics had the N-side source
+    upside down, 'V1N 0 srcN' against 'V1P srcP 0').
+    """
+    elements = instr.circuit.elements
+    warned = _ORIENTATION_WARNED           # instructions work on circuit copies
+
+    def partner(node):
+        if node.endswith(sub1):
+            return node[:-len(sub1)] + sub2
+        if node.endswith(sub2):
+            return node[:-len(sub2)] + sub1
+        return node                                  # shared node
+
+    for varP, varN in pairs:
+        if not (varP.startswith('I_') and varN.startswith('I_')):
+            continue
+        nameP, nameN = varP[2:], varN[2:]
+        if nameP not in elements or nameN not in elements:
+            continue
+        nodesP, nodesN = elements[nameP].nodes, elements[nameN].nodes
+        if len(nodesP) < 2 or len(nodesN) < 2:
+            continue
+        a, b = partner(nodesP[0]), partner(nodesP[1])
+        key = (instr.circuit.title, nameP, tuple(nodesP[:2]), tuple(nodesN[:2]))
+        if [a, b] == list(nodesN[1::-1]) and a != b and key not in warned:
+            warned.add(key)
+            print("Warning: %s and %s are connected in opposite directions "
+                  "(%s %s %s against %s %s %s); paired elements with a branch "
+                  "current must have the same orientation in both halves."
+                  % (nameP, nameN, nameP, nodesP[0], nodesP[1],
+                     nameN, nodesN[0], nodesN[1]))
 
 def _makeNewDetector(instr, pairs, dmVars, cmVars):
     old_detector = instr.detector
@@ -1439,21 +1930,21 @@ def _makeNewDetector(instr, pairs, dmVars, cmVars):
                 base_N = old_detector[0][0:-extLen]
                 if base_P == base_N:
                     baseName = base_P + "_"
-                    if instr.convType == 'dd' or instr.convType=='cd':
+                    if instr.convType == 'dd' or instr.convType=='dc':    # response: first letter
                         if baseName + "D" in dmVars:
                             instr.detector = baseName + "D"
                             print("Detector changed to:", instr.detector)
                             new_detector = True
-                    elif instr.convType == 'cc' or instr.convType=='dc':
+                    elif instr.convType == 'cc' or instr.convType=='cd':
                         if baseName + "C" in cmVars:
                             instr.detector = baseName + "C"
                             print("Detector changed to:", instr.detector)
                             new_detector = True
             elif old_detector[1] == None:
                 # Check if detector was already modified
-                if instr.convType == 'dd' or instr.convType=='cd' and old_detector[0] in dmVars:
+                if (instr.convType == 'dd' or instr.convType=='dc') and old_detector[0] in dmVars:
                         new_detector = True
-                elif instr.convType == 'dc' or instr.convType=='cc' and old_detector[0] in cmVars:
+                elif (instr.convType == 'cd' or instr.convType=='cc') and old_detector[0] in cmVars:
                         new_detector = True
     if not new_detector and instr.convType != "all" and old_detector != None:
         print("Warning: cannot create a new detector for conversion type: %s."%(instr.convType))
@@ -1470,13 +1961,18 @@ def _getSubMatrices(instr, dimDm, dimCm, convType):
         instr.Iv = sp.Matrix(instr.Iv[0: dimDm])
         instr.Dv = sp.Matrix(instr.Dv[0: dimDm])
     elif convType == 'dc':
-        instr.M  = instr.M.extract([i for i in range(0, dimDm)],[i for i in range(dimDm, dimDm + dimCm)])
-        instr.Iv = sp.Matrix(instr.Iv[0: dimDm])
-        instr.Dv = sp.Matrix(instr.Dv[dimDm: dimDm + dimCm])
-    elif convType == 'cd':
+        # differential-mode response (variables) to a common-mode stimulus
+        # (sources, equations): mixed-mode naming [response][stimulus]
+        # (Bockelman and Eisenstadt); the code followed the opposite reading
+        # until 2026-09-12 (Anton: make the code compliant with the manual)
         instr.M  = instr.M.extract([i for i in range(dimDm, dimDm+dimCm)], [i for i in range(0, dimDm)])
         instr.Iv = sp.Matrix(instr.Iv[dimDm: dimDm + dimCm])
         instr.Dv = sp.Matrix(instr.Dv[0: dimDm])
+    elif convType == 'cd':
+        # common-mode response to a differential-mode stimulus
+        instr.M  = instr.M.extract([i for i in range(0, dimDm)],[i for i in range(dimDm, dimDm + dimCm)])
+        instr.Iv = sp.Matrix(instr.Iv[0: dimDm])
+        instr.Dv = sp.Matrix(instr.Dv[dimDm: dimDm + dimCm])
     elif convType == 'cc':
         instr.M  = instr.M.extract([i for i in range(dimDm, dimDm+dimCm)], [i for i in range(dimDm, dimDm + dimCm)])
         instr.Iv = sp.Matrix(instr.Iv[dimDm: dimDm + dimCm])
@@ -1527,11 +2023,10 @@ def _doPyNumer(instr):
         instr.numer.append(sp.N(0))
     else:
         detP, detN = _makeDetPos(instr)
-        num = 0
-        if detP != None:
-            num += _doCramer(instr.M, instr.Iv, detP)
-        if detN != None:
-            num -= _doCramer(instr.M, instr.Iv, detN)
+        # A differential detector is ONE determinant (see _singleDetector);
+        # noise and dcvar call this once per source and gain the same.
+        M, col, sign = _singleDetector(instr.M, detP, detN)
+        num = sign * _doCramer(M, instr.Iv, col)
         num = sp.collect(num, ini.laplace)
         instr.numer.append(num)
     return instr
@@ -1548,57 +2043,6 @@ def _doPyLaplace(instr, normalize=False):
 
 def _doPySolve(instr):
     instr.solve.append(instr.M.LUsolve(instr.Iv))
-    return instr
-
-def _doPyLoopGainServo(instr):
-    if instr.lgValue[0] != None:
-        lg1 = instr.lgValue[0]
-    else:
-        lg1 = sp.N(0)
-    if instr.lgValue[1] != None:
-        lg2 = instr.lgValue[1]
-    else:
-        lg2 = sp.N(0)
-    if instr.convType !=None and instr.removePairSubName:
-        lenExt  = len(instr.pairExt[0])
-        params = list(set(list(lg1.atoms(sp.Symbol)) + list(lg2.atoms(sp.Symbol))))
-        substDict = {}
-        for param in params:
-            parName = str(param)
-            if len(parName) > lenExt:
-                if parName[-lenExt:] in instr.pairExt:
-                    substDict[param] = sp.Symbol(parName[:-lenExt])
-        lg1 = lg1.xreplace(substDict)
-        lg2 = lg2.xreplace(substDict)
-    if instr.substitute:
-        lg1 = fullSubs(lg1, instr.parDefs)
-        lg2 = fullSubs(lg2, instr.parDefs)
-    if instr.numeric:
-        lg1 = float2rational(sp.N(lg1))
-        lg2 = float2rational(sp.N(lg2))
-    _LGREF_1, _LGREF_2 = sp.symbols('_LGREF_1, _LGREF_2')
-    MD = instr.M
-    M0 = instr.M.xreplace({_LGREF_1: 0, _LGREF_2: 0})
-    DM = det(MD, method=ini.denom)
-    D0 = det(M0, method=ini.denom)
-    LG = (D0-DM)/D0
-    if instr.substitute:
-        LG = fullSubs(LG, instr.parDefs)
-    if instr.numeric:
-        LG = float2rational(sp.N(LG))
-    num, den = LG.as_numer_denom()
-    LG = sp.simplify(num/den).xreplace({_LGREF_1: lg1, _LGREF_2: lg2})
-    num, den = LG.as_numer_denom()
-    if instr.gainType == 'loopgain':
-        instr.laplace.append(LG)
-    elif instr.gainType == 'servo':
-        SVnum = - num
-        SVden = sp.expand(den - num)
-        num, den = SVnum, SVden
-        SV = num/den
-        instr.laplace.append(SV)
-    instr.numer.append(num)
-    instr.denom.append(den)
     return instr
 
 def _doPyNoise(instr):

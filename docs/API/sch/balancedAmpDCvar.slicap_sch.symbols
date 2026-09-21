@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+<g xmlns="http://www.w3.org/2000/svg" id="port" data-prefix="P" data-nodes="port" data-params="name||0|1" data-description="Hierarchical connection">
+
+       <!-- pentagon: pointed top at pin, rectangular body below -->
+       <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
+       
+       <!-- Pins -->
+       <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
+    </g>
+
+<g xmlns="http://www.w3.org/2000/svg" id="VCVS" data-prefix="E" data-nodes="outp outn inp inn" data-model="E|0" data-params="value|?|0|1" data-description="Voltage-controlled voltage source" data-info="https://www.slicap.org/syntax/devices.html#e-voltage-controlled-voltage-source">
+
+       <line x1="10" y1="-20" x2="10" y2="20" stroke="black" stroke-width="1" />
+       <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-20" y1="-20" x2="-10" y2="-20" stroke="black" stroke-width="1" />
+       <line x1="-20" y1="20" x2="-10" y2="20" stroke="black" stroke-width="1" />
+       <text x="-15" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="-15" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       <text x="15" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="15" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
+       <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
+       <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
+    </g>
+
+    
+<g xmlns="http://www.w3.org/2000/svg" id="R" data-prefix="R" data-nodes="pos neg" data-model="R|0" data-params="value|?|0|1; dcvar||0|0; dcvarlot||0|0; noisetemp||0|0; noiseflow||0|0" data-description="Resistor (nonzero resistance)" data-info="https://www.slicap.org/syntax/devices.html#r-resistor">
+
+       <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
+       <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
+
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+    </g>
+    
+    
+<g xmlns="http://www.w3.org/2000/svg" id="Odcvar" data-prefix="X" data-nodes="inp inn outp outn" data-model="O_dcvar|1" data-params="svo||0|0; sio||0|0; iib||0|0; sib||0|0" data-description="Nullor with input-referred bias and offset        \nvo: svo: standard deviation input offset voltage (zero mean) [V],         \nib: iib: mean value input bias current [A]        \nib: sib: standard deviation input bias current [A]        \nio: sio, standard deviation input offset current (zero mean) [A]" data-info="">
+       
+       <!-- Symbol outline -->
+       <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
+       <line x1="-45" y1="-10" x2="0" y2="-10" stroke="black" stroke-width="1" />
+       <line x1="-45" y1="10" x2="0" y2="10" stroke="black" stroke-width="1" />
+       <line x1="15" y1="20" x2="15" y2="10" stroke="black" stroke-width="1" />
+       <line x1="30" y1="0" x2="35" y2="0" stroke="black" stroke-width="1" />
+       <text x="5" y="-9.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="5" y="9.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- vo -->
+       <circle cx="-22.5" cy="-10" r="5" fill="none" stroke="black" stroke-width="1" />
+       <text x="-22.5" y="-18.9" dominant-baseline="middle" text-anchor="middle" font-size="6">vo</text>
+       
+       <!-- io -->
+       <circle cx="-35" cy="0" r="5" fill="none" stroke="black" stroke-width="1" />
+       <line x1="-40" y1="0" x2="-30" y2="0" stroke="black" stroke-width="1" />
+       <line x1="-35" y1="-10" x2="-35" y2="-5" stroke="black" stroke-width="1" />
+       <line x1="-35" y1="10" x2="-35" y2="5" stroke="black" stroke-width="1" />
+       <text x="-26" y="0.1" dominant-baseline="middle" text-anchor="middle" font-size="6">io</text>
+       
+       <!-- ib input bias currents -->
+       <line x1="-12.5" y1="-12.5" x2="-5" y2="-12.5" stroke="black" stroke-width="0.5" />
+       <polyline points="-2.5 -12.5 -5 -11.25 -5 -13.75 -2.5 -12.5" stroke="black" stroke-width="0" fill=" black" />
+       <text x="-10" y="-16.9" dominant-baseline="middle" text-anchor="middle" font-size="6">ib</text>
+       
+       <line x1="-12.5" y1="7.5" x2="-5" y2="7.5" stroke="black" stroke-width="0.5" />
+       <polyline points="-2.5 7.5 -5 6.25 -5 8.75 -2.5 7.5" stroke="black" stroke-width="0" fill=" black" />
+       <text x="-10" y="3.1" dominant-baseline="middle" text-anchor="middle" font-size="6">ib</text>
+       
+       <!-- Pins -->
+       <circle cx="-45" cy="-10" r="0.5" class="node" data-node="inp" />
+       <circle cx="-45" cy="10" r="0.5" class="node" data-node="inn" />
+       <circle cx="35" cy="0" r="0.5" class="node" data-node="outp" />
+       <circle cx="15" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+    
+<g xmlns="http://www.w3.org/2000/svg" id="0" data-prefix="GND" data-nodes="0" data-params="name|0|0|0" data-description="Reference node (GND=0) connection">
+
+       <!-- connection node: (0, 0) -->
+       <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
+       <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
+      
+       <!-- Pins -->
+       <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
+    </g>
+
+    
+<g xmlns="http://www.w3.org/2000/svg" id="V" data-prefix="V" data-nodes="outp outn" data-model="V|0" data-params="value|?|0|1; dc||0|0; dcvar||0|0; noise||0|0" data-description="Independent voltage source" data-info="https://www.slicap.org/syntax/devices.html#i-independent-voltage-source">
+
+       <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1" />
+       <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1" />
+       <text x="8" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="8" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+    
+  </defs>
+</svg>

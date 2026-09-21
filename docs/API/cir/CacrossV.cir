@@ -1,0 +1,6 @@
+"Capacitor across a voltage source"
+V1 1 0 V value=0
+C1 1 0 C value={C_1}
+R1 1 2 R value={R_1}
+C2 2 0 C value={C_2}
+.end

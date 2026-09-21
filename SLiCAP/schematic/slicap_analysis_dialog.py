@@ -56,6 +56,7 @@ _GROUPS = [
     ("Laplace / DC",        ["doLaplace", "doDC", "doNumer", "doDenom",
                              "doSolve", "doDCsolve"]),
     ("Poles / zeros",       ["doPoles", "doZeros", "doPZ"]),
+    ("State space",         ["doStateSpace"]),
     ("Noise / DC variance", ["doNoise", "doDCvar"]),
     ("Time",                ["doTime", "doImpulse", "doStep", "doTimeSolve"]),
 ]
@@ -72,15 +73,23 @@ _GROUPS = [
 #            "none"          — no refs at all
 # convtype:  "full" (doMatrix only, manual) or "dm-cm" (None/dd/cc)
 # base:      result-variable prefix (auto-incremented per instruction file)
+# method:    True — the instruction takes method=None|'det'|'state' (the
+#            engine for poles/zeros: ini.pz_method, determinant, or the
+#            exact state-space engine; for doMatrix 'state' gives the
+#            first-order expanded matrix). Absent: no selector.
+# step:      False — no parameter stepping (doStateSpace). Absent: stepping.
 _RULES = {
-    "doMatrix":    dict(transfers=None,         refs="none",          convtype="full",  base="MATRIX"),
+    "doMatrix":    dict(transfers=None,         refs="none",          convtype="full",  base="MATRIX", method=True),
     "doLaplace":   dict(transfers=_T_WITH_NONE, refs="per-transfer",  convtype="dm-cm", base="LAPLACE"),
     "doNumer":     dict(transfers=_T_WITH_NONE, refs="per-transfer",  convtype="dm-cm", base="NUMER"),
     "doDenom":     dict(transfers=_T_WITH_NONE, refs="lgref-only",    convtype="dm-cm", base="DENOM"),
     "doSolve":     dict(transfers=None,         refs="none",          convtype="dm-cm", base="SOLVE"),
-    "doPoles":     dict(transfers=_TRANSFERS,   refs="lgref-only",    convtype="dm-cm", base="POLES"),
-    "doZeros":     dict(transfers=_TRANSFERS,   refs="per-transfer",  convtype="dm-cm", base="ZEROS"),
-    "doPZ":        dict(transfers=_TRANSFERS,   refs="per-transfer",  convtype="dm-cm", base="PZ"),
+    "doPoles":     dict(transfers=_TRANSFERS,   refs="lgref-only",    convtype="dm-cm", base="POLES", method=True),
+    "doZeros":     dict(transfers=_TRANSFERS,   refs="per-transfer",  convtype="dm-cm", base="ZEROS", method=True),
+    "doPZ":        dict(transfers=_TRANSFERS,   refs="per-transfer",  convtype="dm-cm", base="PZ",    method=True),
+    # MIMO only: every source an input, every variable an output; no
+    # transfer, no references, no stepping (Anton, 2026-09-11)
+    "doStateSpace": dict(transfers=None,        refs="none",          convtype="dm-cm", base="SS",    step=False),
     "doNoise":     dict(transfers=None,         refs="noise",         convtype="dm-cm", base="NOISE"),
     "doTime":      dict(transfers=None,         refs="detector-only", convtype="dm-cm", base="TIME"),
     "doImpulse":   dict(transfers=_TRANSFERS,   refs="per-transfer",  convtype="dm-cm", base="IMPULSE"),
@@ -297,6 +306,20 @@ class SLiCAPAnalysisDialog(QDialog):
         orow.addWidget(QLabel("convtype:"))
         self._convtype = QComboBox()
         orow.addWidget(self._convtype)
+        orow.addSpacing(20)
+        self._method_lbl = QLabel("method:")
+        orow.addWidget(self._method_lbl)
+        self._method = QComboBox()
+        self._method.addItems(["default", "det", "state"])
+        self._method.setToolTip(
+            "Engine for the poles and zeros: 'default' follows ini.pz_method "
+            "of the project, 'det' takes the roots of the determinant "
+            "polynomials, 'state' the eigenvalues of the exact state-space "
+            "realization (numeric circuits only; symbolic ones fall back to "
+            "'det'). For doMatrix, 'state' shows the first-order (expanded) "
+            "MNA matrix.")
+        self._method.currentTextChanged.connect(self._update)
+        orow.addWidget(self._method)
         orow.addStretch(1)
         layout.addLayout(orow)
 
@@ -366,6 +389,8 @@ class SLiCAPAnalysisDialog(QDialog):
         self._convtype.addItems(_CONVTYPES[rules["convtype"]])
         self._convtype.blockSignals(False)
 
+        self._method.setCurrentText("default")
+
         # result-variable default
         self._result_var.setText(next_result_name(rules["base"], self._existing))
 
@@ -426,6 +451,8 @@ class SLiCAPAnalysisDialog(QDialog):
         self._on_pardefs_mode(mode)
         self._numeric.setChecked(bool(lit(kw.get("numeric"), False)))
         self._step.set_from_dict(lit(kw.get("stepdict")))
+        method = lit(kw.get("method"))
+        self._method.setCurrentText(method if method in ("det", "state") else "default")
         self._result_var.setText(entry["name"])
         self._update()
 
@@ -445,6 +472,10 @@ class SLiCAPAnalysisDialog(QDialog):
         has_transfer = bool(rules["transfers"])
         self._transfer_lbl.setVisible(has_transfer)
         self._transfer.setVisible(has_transfer)
+        has_method = bool(rules.get("method", False))
+        self._method_lbl.setVisible(has_method)
+        self._method.setVisible(has_method)
+        self._step.setVisible(rules.get("step", True))
 
         shown = _shown_refs(func, self._current_transfer())
         for key, w in self._refs.items():
@@ -464,7 +495,7 @@ class SLiCAPAnalysisDialog(QDialog):
 
         # stepping requires numeric results (symbolic stepping is not
         # implemented — SLiCAPinstruction._checkStep)
-        stepping = self._step.isChecked()
+        stepping = self._step.isChecked() and self._step.isVisibleTo(self)
         if stepping and not self._numeric.isChecked():
             self._numeric.setChecked(True)
         self._numeric.setEnabled(not stepping)
@@ -536,8 +567,13 @@ class SLiCAPAnalysisDialog(QDialog):
                 parts.append(f"pardefs={lit}")
         if self._numeric.isChecked():
             parts.append("numeric=True")
-        step_lit = self._step.dict_literal()
-        if step_lit:
-            parts.append(f"stepdict={step_lit}")
+        if rules.get("step", True):
+            step_lit = self._step.dict_literal()
+            if step_lit:
+                parts.append(f"stepdict={step_lit}")
+        if rules.get("method", False):
+            m = self._method.currentText()
+            if m in ("det", "state"):
+                parts.append(f"method='{m}'")
 
         return f"{res} = sl.{func}({', '.join([cirv] + parts)})"

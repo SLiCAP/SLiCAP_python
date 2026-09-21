@@ -59,6 +59,16 @@ The form is filled from the circuit itself: the *source*, *detector* and
 *loop-gain reference* drop-downs offer exactly the elements and nodes that
 circuit has, and the parameter fields offer its parameters.
 
+The analysis groups are *Network equations*, *Laplace / DC*, *Poles / zeros*,
+*State space*, *Noise / DC variance* and *Time*. The *State space* group
+composes ``sl.doStateSpace()``, the full realization with every source an
+input and every network variable an output; it takes no transfer, no
+references and no stepping, only the conversion type, the parameter
+substitution and the numeric flag. The *Poles / zeros* group (and
+``doMatrix()``) offers a *method* selector: *default* follows the project
+setting ``ini.pz_method``, *det* uses the determinant, *state* the exact
+state-space engine; only a non-default choice is written into the call.
+
 .. important::
 
    **The editor only composes instructions for the schematic you are editing.**

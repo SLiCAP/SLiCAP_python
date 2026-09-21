@@ -112,11 +112,13 @@ By default each schematic is displayed in a separate tab, but each open schemati
    * - **Draw**
      - Line, Rectangle, Circle, Text (:kbd:`T`), Hyperlink, LaTeX.
    * - **Tools**
-     - Rename Components.
+     - Rename Components, Load selected symbols from library, Update symbols
+       from library.
    * - **Place**
      - Symbol (:kbd:`S`), Wire (:kbd:`W`), Net Label (:kbd:`L`),
-       Junction (:kbd:`J`), Border (:kbd:`B`), Library, Image, Parameters,
-       Define src / det / lg ref.
+       Junction (:kbd:`J`), Border (:kbd:`B`), Library, New subcircuit
+       symbol (see :doc:`/GUI/hierarchical_blocks`), Image, Parameters,
+       Define src / det / lg ref, Model definition.
    * - **Instruction**
      - Create circuit object and Create / edit SLiCAP instruction (SLiCAP
        schematics), or Create / edit NGspice instruction and control section
@@ -133,8 +135,9 @@ Creating and opening schematics, and application-wide actions, live in the
      - Contents
    * - **File**
      - New project, Select project folder, Save project, Close project;
-       New SLiCAP Schematic, New NGspice Schematic, Open (:kbd:`Ctrl+O`);
-       Exit (:kbd:`Ctrl+Q`).
+       New SLiCAP Schematic, New NGspice Schematic, Open schematic
+       (:kbd:`Ctrl+O`), New Instruction file, Open instruction file;
+       Preferences, Edit main configuration file; Exit (:kbd:`Ctrl+Q`).
    * - **Instruction**
      - Create / edit Traces, Axes, Figures and specifications;
        Run (:kbd:`F5`), Stop (:kbd:`F6`).
@@ -160,11 +163,17 @@ A first schematic in five steps
 
 #. **Mark source and detector.**  Use
    :menuselection:`Place --> Define src / det / lg ref…` to designate the
-   independent source and the detector.
+   independent source and the detector. Do this as the last step, with the
+   schematic complete and saved: the dialog's drop-down lists come from the
+   parsed circuit, so elements added later are not offered until the dialog
+   is reopened (see :doc:`/GUI/schematics/labels_ports_parameters`).
 
 #. **Save and export.**  :menuselection:`File --> Save schematic` writes the
    ``.slicap_sch`` file; :menuselection:`File --> Export netlist…` produces a
    ``.cir`` netlist for SLiCAP.  See :doc:`/GUI/schematics/netlist_and_export`.
+
+A schematic can also be saved as a reusable **subcircuit** and placed as a
+block in other schematics; see :doc:`/GUI/hierarchical_blocks`.
    
    
 Below an example of a SLiCAP schematic with default preferences and LaTeX rendering enabled.

@@ -32,7 +32,8 @@ Ports
 
 A **port** symbol marks a named connection point.  Two ports with the **same
 name** are connected even when no wire runs between them, which keeps busy
-drawings readable and is the basis for hierarchical connections.
+drawings readable.  In a schematic saved as a subcircuit, the named ports are
+the **external nodes** of the block; see :doc:`/GUI/hierarchical_blocks`.
 
 Parameter definitions
 =====================
@@ -60,3 +61,19 @@ observe it:
    **loop-gain reference**.
 
 These are written as the corresponding SLiCAP commands in the netlist.
+
+.. important::
+
+   Define the source, the detector and the loop-gain reference **after the
+   schematic is complete**, and save it first. When the dialog opens, the
+   schematic is saved to a netlist and parsed with ``makeCircuit()``; the
+   drop-down lists are filled from that parsed circuit. This is the only way
+   to offer the names that exist after model expansion only, such as the
+   loop-gain reference ``E_O1`` inside an operational amplifier ``O1``. Elements you
+   add or rename afterwards are not in the lists until you reopen the dialog,
+   and an unsaved or incomplete schematic gives empty lists; you can still
+   type a name by hand. Editing the block later, through the same menu entry
+   or by double-clicking it, refreshes the lists.
+   
+   **Checking of the circuit make take some time. You may have to wait a few 
+   seconds before this dialog window pops up.**

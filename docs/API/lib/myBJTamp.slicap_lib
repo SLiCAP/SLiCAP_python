@@ -1,0 +1,19 @@
+myBJTamp
+**************************************************
+* SLiCAP subcircuit definition
+* Subcircuit symbol: myBJTamp_slicap_symbol.svg
+* Subcircuit schematic: myBJTamp.slicap_sch
+**************************************************
+
+.subckt myBJTamp in ref out
+
+.model myQ QV
++ gpi={g_m/beta_AC}
++ gm={g_m}
++ go={g_o}
+
+R1 out in R value={R_f}
+Q1 out in ref ref myQ
+
+.ends
+.end

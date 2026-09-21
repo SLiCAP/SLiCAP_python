@@ -67,7 +67,7 @@ We will use a simple RC network to demonstrate how to use parameters.
     :lineno-start: 13
 
 .. image:: ../img/myFirstRCnetwork.svg
-    :width: 350px
+    :scale: 80 %
     
 Get all circuit parameters
 --------------------------

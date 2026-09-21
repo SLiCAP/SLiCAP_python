@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+<g xmlns="http://www.w3.org/2000/svg" id="0" data-prefix="GND" data-nodes="0" data-params="name|0|0|0" data-description="Reference node (GND=0) connection">
+
+       <!-- connection node: (0, 0) -->
+       <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
+       <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
+      
+       <!-- Pins -->
+       <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
+    </g>
+
+    
+
+<g xmlns="http://www.w3.org/2000/svg" id="R" data-prefix="R" data-nodes="pos neg" data-model="R|0" data-params="value|?|0|1; dcvar||0|0; dcvarlot||0|0; noisetemp||0|0; noiseflow||0|0" data-description="Resistor (nonzero resistance)" data-info="https://www.slicap.org/syntax/devices.html#r-resistor">
+
+       <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
+       <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
+       <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
+
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+    </g>
+    
+    
+
+<g xmlns="http://www.w3.org/2000/svg" id="QV" data-prefix="Q" data-nodes="C B E S" data-model="QV|0" data-params="gm||0|0; go||0|0; gbc||0|0; gpi||0|0; rb||0|0; cpi||0|0; cbc||0|0; cbx||0|0" data-description="Small-signal model BJT" data-info="https://www.slicap.org/syntax/devices#parameters-model-qv">
+       
+       <!-- Symbol outline -->
+       <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
+       <polyline points="10 10 10 5 5 5 5 10 10 10" stroke="black" stroke-width="0" fill="black" />
+       <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2" />
+       <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1" />
+       <line x1="10" y1="0" x2="20" y2="0" stroke="black" stroke-width="1" />
+       
+       <!-- Pins -->
+       <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
+       <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
+       <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
+       <circle cx="20" cy="0" r="0.5" class="node" data-node="S" />
+    </g>
+    
+    
+
+<g xmlns="http://www.w3.org/2000/svg" id="V" data-prefix="V" data-nodes="outp outn" data-model="V|0" data-params="value|?|0|1; dc||0|0; dcvar||0|0; noise||0|0" data-description="Independent voltage source" data-info="https://www.slicap.org/syntax/devices.html#i-independent-voltage-source">
+
+       <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1" />
+       <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1" />
+       <text x="8" y="-12.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
+       <text x="8" y="12.4" dominant-baseline="middle" text-anchor="middle" font-size="8">-</text>
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
+    </g>
+
+    
+  
+<g xmlns="http://www.w3.org/2000/svg" id="port" data-prefix="P" data-nodes="port" data-params="name||0|1" data-description="Hierarchical connection">
+
+       <!-- pentagon: pointed top at pin, rectangular body below -->
+       <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
+       
+       <!-- Pins -->
+       <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
+    </g>
+
+
+<g xmlns="http://www.w3.org/2000/svg" id="C" data-prefix="C" data-nodes="pos neg" data-model="C|0" data-params="value|?|0|1; vinit||0|0" data-description="Capacitor" data-info="https://www.slicap.org/syntax/devices.html#c-capacitor">
+
+       <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2" />
+       <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
+       <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
+       <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
+       
+       <!-- Pins -->
+       <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
+       <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
+
+    </g>
+
+    
+
+  </defs>
+</svg>

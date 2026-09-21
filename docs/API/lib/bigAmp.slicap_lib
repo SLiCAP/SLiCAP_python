@@ -1,0 +1,17 @@
+bigAmp
+**************************************************
+* SLiCAP subcircuit definition
+* Subcircuit symbol: bigAmp_slicap_symbol.svg
+* Subcircuit schematic: bigAmp.slicap_sch
+**************************************************
+
+.lib lib/smallAmp.slicap_lib
+
+.subckt bigAmp inN inP outP outN A_i={30} R_o={30}
+
+X1 inN inP 0 1 smallAmp A_v={A_i} r_o={40}
+X2 0 1 outN outP smallAmp A_v={10} r_o={R_o}
+R1 inP inN R value={R_i}
+
+.ends
+.end

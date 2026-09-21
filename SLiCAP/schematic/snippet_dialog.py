@@ -39,6 +39,7 @@ _LAPLACE_FUNCS = {"doLaplace", "doNumer", "doDenom", "doDC"}
 _NOISE_FUNCS   = {"doNoise"}
 _DCVAR_FUNCS   = {"doDCvar"}
 _MATRIX_FUNCS  = {"doMatrix"}
+_SS_FUNCS      = {"doStateSpace"}
 
 KIND_TEXT, KIND_FILE, KIND_OBJECT, KIND_SPECS = range(4)
 
@@ -49,6 +50,7 @@ _TEXT_SOURCES = [
     ("Servo bandwidth",            "servoBandwidth", _LAPLACE_FUNCS),
     ("Phase margin",               "phaseMargin",    _LAPLACE_FUNCS),
     ("Free text",                  "text",           None),
+    ("State-space listing (listStateSpace)", "stateSpace", _SS_FUNCS),
 ]
 
 # Formatter methods offered, per UI kind: (method, label, result filter).
@@ -71,6 +73,7 @@ _OBJECT_METHODS = [
     ("params",        "params — undefined parameters table",   None),
     ("noiseContribs", "noiseContribs — noise contributions",   _NOISE_FUNCS),
     ("dcvarContribs", "dcvarContribs — dcvar contributions",   _DCVAR_FUNCS),
+    ("stateSpace",    "stateSpace — state-space realization",  _SS_FUNCS),
 ]
 
 # Signature parameter → the input widget that supplies it. Parameters not

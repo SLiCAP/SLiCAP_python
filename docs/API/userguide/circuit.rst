@@ -16,12 +16,13 @@ Netlist
 
 SLiCAP accepts SPICE-like netlists as input. SLiCAP can create netlist files from schematic files created with:
 
-- `KiCAD <https://www.kicad.org/>`_ (preferred)
+- **SLiCAP (preferred)**
+- `KiCAD <https://www.kicad.org/>`_
 - `LTspice <https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html>`_
 - `gSchem for MSWindows <https://elektroniq.iqo.uni-hannover.de/doku.php?id=english:geda_for_ms-windows>`_
 - `Lepton-EDA <https://github.com/lepton-eda/lepton-eda>`_
 
-To this end, SLiCAP provides symbol libraries for the above programs (see program sections below).
+To this end, SLiCAP provides symbol libraries for the above programs.
 
 Netlists files can also be created manually using a plain ascii editor. 
 
@@ -40,12 +41,12 @@ Below the netlist file created with the above script.
 
 .. literalinclude:: ../cir/Transimpedance.cir
 
-When using KiCAD or Lepton-EDA, drawing-size images in ``pdf`` and ``svg`` format are placed in the ``img/`` folder of the project directory.
+Drawing-size images in ``pdf`` and ``svg`` format are placed in the ``img/`` folder of the project directory.
 
 Below the ``svg`` image file created with the above script.
 
 .. image:: ../img/Transimpedance.svg
-    :width: 450px
+    :scale: 80 %
     
 SLiCAP selects the netlister from the file extension and the operating system. 
 
@@ -56,6 +57,9 @@ SLiCAP selects the netlister from the file extension and the operating system.
    * - File Extension
      - MSWindows netlister
      - Linux and MacOS netlister
+   * - .slicap_sch
+     - SLiCAP
+     - SLiCAP
    * - .kicad_sch
      - KiCAD
      - KiCAD
@@ -100,8 +104,6 @@ This library must be added to the KiCAD project.
 
 Since this library contains all symbols that can be handled by the netlister, it is good practice to deactivate other libraries. This is done in the 'Global Libraries' tab of the 'Symbol Libraries' Dialog Box.
 
-For more information see: `schematic capture with KiCAD <schematics.html#kicad>`__
-
 LTspice
 -------
 
@@ -120,33 +122,6 @@ LTspice
    This path must be added as LTspice symbol library path. 
 
 LTspice works with Windows and Linux (under Wine). A version for MAC is also available. The MAC version of LTspice differs from the windows version and netlist generation from within the SLiCAP (python) environment for this version is not supported. Netlists can also be generated manually. 
-
-Go to `LTspice <https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html>`_ for the latest version.
-
-For an overview of SLiCAP symbols for LTspice, please view the `LTSpice <../syntax/schematics.html#LTSpice>`__ section. 
-
-**Configure LTspice for use with SLiCAP**
-
-SLiCAP circuits should be made with SLiCAP symbols (and not with the default LTspice symbols). LTspice symbols for SLiCAP are placed in the ~/SLiCAP/LTspice folder. 
-
-#. Start LTspice
-#. On the menu bar click Tools > Control Panel. This will bring up the LTspice control panel:
-
-   .. image:: ../img/LTspiceControlPanel.png
-
-#. On this control panel select the Netlist Options tab and select the options as shown below:
-
-   .. image:: ../img/LTspiceControlPanelNetlistOptions.png
-
-#. Then select the ``Sym. & Lib. Search Paths`` tab and enter the full path to ~/SLiCAP/ltspice. This directory contains all the SLiCAP symbol definitions ('.asy' files) for LTspice:
-
-   .. image:: ../img/LTspiceControlPanelSymbolPath.png
-
-#. Then select the Drafting Options tab and change the font size and deselect the "Bold" checkbox as shown below. If you want, you can also select different colors for your schematics.
-
-   .. image:: ../img/LTspiceControlPanelFontSettings.png
-   
-More information about `schematic capture with LTspice <schematics.html#ltspice>`__
    
 gSchem
 ------
@@ -185,8 +160,6 @@ If you wish to have a light background you can create or modify the file ``gsche
     (load (build-path geda-rc-path "gschem-colormap-lightbg")) ; light background
 
 Be sure you save these two files ``gafrc`` and ``gschemrc`` without any file extension.
-   
-For more information see: `schematic capture with gSchem <schematics.html#gschem>`__
 
 Lepton-EDA
 ----------
@@ -231,8 +204,6 @@ This is how it should be done under Linux:
 .. code:: bash
 
     sudo lepton-cli config --system "netlist" "default-net-name" ""
-   
-For more information see: `schematic capture with Lepton-EDA <schematics.html#gschem>`__
     
 Reserved component names
 ========================
@@ -262,12 +233,25 @@ SLiCAP adds dc error current sources in parallel with resistors that have a nonz
 time analysis: doTime()
 -----------------------
 
-In future versions, SLiCAP will add current sources with the Laplace transform of the initial conditions in parallel with capacitors and inductors taht have nonzero initial conditions. These current sources obtain the reference designator ``I_init_<elID>``, where ``elID`` is the reference designator of the capacitor or inductor.
+In future versions, SLiCAP will add current sources with the Laplace transform of the initial conditions in parallel with capacitors and inductors that have nonzero initial conditions. These current sources obtain the reference designator ``I_init_<elID>``, where ``elID`` is the reference designator of the capacitor or inductor.
 
 .. admonition:: time analysis
    :class: warning
    
    In future versions, after time analysis ``doTime()``, all independent current sources with reference designators starting with ``I_init_`` will be removed from the circuit.
+   
+state space: doStateSpace()
+---------------------------
+
+For the state-space representation, SLiCAP expands controlled sources with a Laplace rational transfer into an integrator chain. The state voltages of this chain obtain the names ``V_<i>_<refDes>``, where ``refDes`` is the reference designator of the controlled source and ``i`` an integer:
+
+- Controlled sources, model E, F, G, and H, of which the "value" parameter is a Laplace rational function with a denominator of order :math:`n`, obtain the state voltages ``V_1_<refDes>`` ... ``V_n_<refDes>``.
+- Controlled sources, model EZ and HZ, of which the "zo" parameter is a Laplace rational function of order :math:`m`, obtain a second chain with the state voltages ``V_1_zo_<refDes>`` ... ``V_m_zo_<refDes>``, and the voltage ``V_zo_<refDes>`` across the output impedance.
+
+.. admonition:: state space representation
+    :class: warning
+    
+    Node names of the form ``<integer>_<refDes>`` and ``zo_<refDes>``, where ``refDes`` is the reference designator of a controlled source, conflict with the names of the state voltages and should be avoided.
    
 balanced circuits
 -----------------
@@ -280,7 +264,7 @@ SLiCAP can decompose balanced circuits into (unbalanced) differential-mode and c
     The use of the extensions ``_C`` and ``_D`` in node names and device names in combination with the instruction argument ``convtype!=None`` should be avoided. This conflicts with the built-in decomposition method. For more information see: `Work with Balanced circuits <balanced.html>`_.
 
 SLiCAP built-in parameters and Sympy reserved symbols
-=====================================================.
+=====================================================
 
 SLiCAP reserved variables
 -------------------------
@@ -330,29 +314,12 @@ Display schematics on html pages and in LaTeX reports
 
 Scalable Vector Graphics ``.svg`` images are preferred for displaying on HTML pages, while Portable Document Format ``.pdf`` is preferred for LaTeX reports.
 
-- With **KiCAD** or **Lepton-EDA** running under Linux or MacOS, drawing-size ``svg`` and ``pdf`` images are generated with makeCircuit(). These image files will be placed in the ``img/`` folder in the project directory.
-- With **KiCAD** running under Windows, drawing-size ``svg`` images are generated with makeCircuit().
-- With **LTspice** you can print schematics to a ``pdf`` file using a PDF printer. Printing and rescaling cannot be invoked by SLiCAP.
-- With **gSchem** running under **MSwindows** you can write your schematic file to a ``pdf`` file. Printing and rescaling cannot be invoked by SLiCAP.
+**makeCircuit()** generates drawing-size ``svg`` and ``pdf`` images of SLiCAP schematics (``.slicap_sch`` and ``.spice_sch`` file types), and places these image files in the ``img/`` folder in the project directory.
 
-Converting and scaling pdf images
----------------------------------
-
-When running under MSWindows, you can use `pdf2svg-1 <https://github.com/jalios/pdf2svg-windows>`_ or `pdf2svg-2 <https://www.pdftron.com/documentation/cli/download/windows/>`_ for PDF to SVG conversion. 
-Alternatively, on all platforms, you can use `Inkscape <https://inkscape.org/>`_ for this purpose. If you import ``pdf`` files with Inkscape use the import settings *Poppler/Cairo import*. With this selection, fonts are converted to *Bezier curves*.
-
-Inkscape can also be used to resize images from page size to drawing size. This is required for correct display on HTML pages (``svg`` or ``png`` format) or in LaTeX documents (``pdf`` format). With KiCAD, SLiCAP uses built-in scripts. Lepton-EDA has such capabilities by default.
-
-With **gschem** running under **Linux** or **Mac OS** you can write your schematic file to a ``eps`` file. These files can be converted into ``pdf`` files using the `epstopdf <https://www.systutorials.com/docs/linux/man/1-epstopdf/>`_ command. 
-
-Ghostscript is an alternative often available in the package manager of Linux distributions. Otherwise Ghostscript versions can be downloaded from: `Ghostscript <https://ghostscript.com/download>`_. 
-    
 Schematic file locations
 ========================
 
 A convenient way of working is to save your schematic circuit files in subfolders in the project folder. 
-
-If you create a KiCAD project in the SLiCAP project directory, the KiCAD schematic (file extension ``kicad_sch``) is by default placed in the KiCAD project subfolder in the SLiCAP project directory.
 
 Below a project directory structure according to this principle.
 
@@ -361,58 +328,27 @@ Below a project directory structure according to this principle.
    + project folder
    | - SLiCAP.ini
    | - myProject.py
-   +-+ kicad
-   | + kicad_circuit_1
-   | | - kicad_circuit_1.kicad_sch
-   | | - ...
-   | + kicad_circuit_2
-   |   - kicad_circuit_2.kicad_sch
+   +-- sch
+   |   - slicap_circuit_1.slicap_sch
+   |   - slicap_circuit_2.slicap_sch
    |   - ...
-   +-- ltspice
-   |   - ltspice_circuit_1.asc
-   |   - ltspice_circuit_2.asc
-   +-- lepton-eda
-   |   - lepton-eda_circuit_1.sch
-   |   - lepton-eda_circuit_2.sch
-   +-- gschem
-   |   - gschem_circuit_1.sch
-   |   - gschem_circuit_2.sch
    +-- cir
-   |   - kicad_circuit_1.cir      <-- created with: sl.makeCircuit("kicad/kicad_circuit_1/kicad_circuit_1.kicad_sch")
-   |   - kicad_circuit_2.cir      <-- created with: sl.makeCircuit("kicad/kicad_circuit_2/kicad_circuit_2.kicad_sch")
-   |   - ltspice_circuit_1.cir    <-- created with: sl.makeCircuit("ltspice/ltspice_circuit_1.asc")
-   |   - ltspice_circuit_2.cir    <-- created with: sl.makeCircuit("ltspice/ltspice_circuit_2.asc")
-   |   - lepton-eda_circuit_1.cir <-- created with: sl.makeCircuit("lepton-eda/lepton-eda_circuit_1.sch")
-   |   - lepton-eda_circuit_2.cir <-- created with: sl.makeCircuit("lepton-eda/lepton-eda_circuit_2.sch")
-   |   - gschem_circuit_1.cir     <-- created with: sl.makeCircuit("gschem/gschem_circuit_1.sch")
-   |   - gschem_circuit_2.cir     <-- created with: sl.makeCircuit("gschem/gschem_circuit_2.sch")
+   |   - slicap_circuit_1.cir     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
+   |   - slicap_circuit_2.cir     <-- created with: sl.makeCircuit("sch/slicap_circuit_2.slicap_sch")
    +-- lib
    +-- img
-       - kicad_circuit_1.svg      <-- created with: sl.makeCircuit("kicad/kicad_circuit_1/kicad_circuit_1.kicad_sch")
-       - kicad_circuit_1.pdf      <-- created with: sl.makeCircuit("kicad/kicad_circuit_1/kicad_circuit_1.kicad_sch")
-       - kicad_circuit_2.svg      <-- created with: sl.makeCircuit("kicad/kicad_circuit_2/kicad_circuit_2.kicad_sch")
-       - kicad_circuit_2.pdf      <-- created with: sl.makeCircuit("kicad/kicad_circuit_2/kicad_circuit_2.kicad_sch")
-       - lepton-eda_circuit_1.svg <-- created with: sl.makeCircuit("lepton-eda/lepton-eda_circuit_1.sch")
-       - lepton-eda_circuit_1.pdf <-- created with: sl.makeCircuit("lepton-eda/lepton-eda_circuit_1.sch")
-       - lepton-eda_circuit_2.svg <-- created with: sl.makeCircuit("lepton-eda/lepton-eda_circuit_2.sch")
-       - lepton-eda_circuit_2.pdf <-- created with: sl.makeCircuit("lepton-eda/lepton-eda_circuit_2.sch")
+       - slicap_circuit_1.svg     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
+       - slicap_circuit_1.pdf     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
        
-Netlist files (``.cir`` extension) and image files (``.svg`` and ``.pdf`` extensions) shown above, are created with ``makeCircuit()`` and by default placed in the ``cir`` folder and the ``img`` folder of the project directory, respectively.
+Netlist files (``.cir`` extension) and image files (``.svg`` and ``.pdf`` extensions) shown above, are created with **makeCircuit()** and by default placed in the ``cir`` folder and the ``img`` folder of the project directory, respectively.
 
-Below an example of creating a circuit object from a KiCAD schematic file. The project folder is ``/USR/myProject/``.
+Below an example of creating a circuit object from a SLiCAP schematic file. The project folder is ``/USR/myProject/``.
 
 .. code-block:: python
 
     >>> import SLiCAP as sl
     >>> sl.initProject("my project")
-    >>> cir = sl.makeCircuit("kicad/kicad_circuit_1/kicad_circuit_1.kicad_sch")
-    
-    Compiling library: SLiCAP.lib.
-    Compiling library: SLiCAPmodels.lib.
-    Creating netlist of kicad//kicad_circuit_1/kicad_circuit_1.kicad_sch using KiCAD
-    Creating drawing-size SVG and PDF images of kicad/kicad_circuit_1/kicad_circuit_1.kicad_sch
-    Plotted to '/USR/myProject/img/kicad_circuit_1.svg'.
-    Done.
+    >>> cir = sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
     
 Obtain circuit elements information
 ===================================

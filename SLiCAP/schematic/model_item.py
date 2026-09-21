@@ -159,16 +159,12 @@ class ModelItem(QGraphicsItem):
             painter.restore()
 
     def _text_display_lines(self) -> list:
-        lines = [f".model {self.model_name} {self.model_type}"]
+        lines = [f"{self.model_name} {self.model_type}"]
         for name, value in self.params:
-            n = name.strip()
-            if n:
-                v = value.strip()
-                if v:
-                    wrapped = v if (v.startswith("{") and v.endswith("}")) else "{" + v + "}"
-                    lines.append(f"{n} = {wrapped}")
-                else:
-                    lines.append(f"{n}")
+            n, v = name.strip(), value.strip()
+            if n and v:                      # undefined -> default, not shown
+                wrapped = v if (v.startswith("{") and v.endswith("}")) else "{" + v + "}"
+                lines.append(f"{n} = {wrapped}")
         return lines
 
     def _paint_text_fallback(self, painter: QPainter, r: QRectF) -> None:
@@ -209,35 +205,43 @@ class ModelItem(QGraphicsItem):
         SLiCAP expression (it is then not rendered at all — Anton,
         2026-08-16).
 
+        Layout (Anton, 2026-09-14): the first line is ``name type`` in
+        typewriter, flush left - the ``.model`` keyword is netlist syntax
+        and stays out of the drawing (netlist_lines writes it); below it one row per
+        parameter THE USER DEFINED, the name upright (``\\mathrm``), the
+        value as a maths expression. A parameter without a value is not
+        shown: it takes the model's default, in the netlist too.
+
         Built by SLiCAP's own LaTeX formatter via latex_label.slicap_table:
         SYMPY OBJECTS are handed over and the formatter decides maths-vs-text
-        and does the escaping.  The header holds only FIXED text; the model
-        name and type are DATA and therefore go in a row, where the formatter
-        escapes them - they are literal netlist identifiers, not maths (as
-        ``symbolLatex`` would render them: 'BC847' -> 'BC_847').
+        and does the escaping. The model name and type are literal netlist
+        identifiers, not maths (``symbolLatex`` would render 'BC847' as
+        'BC_847'), so they are escaped here for the typewriter heading.
         """
         from .latex_label import expression_sympy, slicap_table
 
         def _cell(s: str):
             """Sympy object for a value; None = does not parse (no render)."""
-            s = (s or "").strip()
-            if not s:
-                return ""                       # empty cell: plain text
+            s = s.strip()
             if not (s.startswith("{") and s.endswith("}")):
                 s = "{" + s + "}"
             return expression_sympy(s)
 
-        header = ["", ""]
-        heading = r"\texttt{.model}"
-        title  = [str(model_name).strip(), str(model_type).strip()]
-        filled = [(n.strip(), v) for n, v in params if n.strip()]
-        if not filled:
-            return slicap_table(header, [title], title=heading)
+        def _tt(s: str) -> str:
+            return str(s).strip().replace("_", r"\_")
 
-        rows = [[_cell(n), _cell(v)] for n, v in filled]
+        header = ["", ""]
+        heading = r"\texttt{%s %s}" % (_tt(model_name), _tt(model_type))
+        filled = [(n.strip(), v) for n, v in params
+                  if n.strip() and (v or "").strip()]
+        if not filled:
+            return slicap_table(header, [], title=heading, title_align="l")
+
+        rows = [[n, _cell(v)] for n, v in filled]
         if any(cell is None for row in rows for cell in row):
             return None
-        return slicap_table(header, [title] + rows, title=heading)
+        return slicap_table(header, rows, title=heading, title_align="l",
+                            upright=0)
 
     def netlist_lines(self) -> list:
         """Return .model lines for netlist export; values are auto-wrapped in {}."""
@@ -248,7 +252,10 @@ class ModelItem(QGraphicsItem):
             return v
 
         header = f".model {self.model_name} {self.model_type}"
-        filled = [(n.strip(), _wrap(v)) for n, v in self.params if n.strip()]
+        # A parameter without a value is left out: the model's default
+        # applies (Anton, 2026-09-14); '+ cd=' used to be written.
+        filled = [(n.strip(), _wrap(v)) for n, v in self.params
+                  if n.strip() and v.strip()]
         if filled:
             return [header] + [f"+ {n}={v}" for n, v in filled]
         return [header]

@@ -79,7 +79,7 @@ class specItem(object):
         description = self.description.replace(',', '&#44;')
         csv      += description + ','
         # value
-        if self.value != None:
+        if self.value != '':
             csv  += str(self.value) + ','
         else:
             csv  += ','
@@ -99,16 +99,15 @@ class specItem(object):
         :return: html code of this specitem
         :rtype: str
         """
-        if self.value != '':
-            value = exprLatex(roundN(self.value))
-        else:
-            self.value = ''
         # symbol
         html     = '<td class="left">$' + sp.latex(self.symbol) + '$</td>'
         # description
         html     += '<td class="left">' + self.description + '</td>'
         # value
-        html += '<td class="left">$' + value + '$</td>' # value
+        if self.value != '':
+            html += '<td class="left">$' + exprLatex(roundN(self.value)) + '$</td>'
+        else:
+            html += '<td></td>'
         # units
         if self.units == '':
             html += '<td></td></tr>\n'

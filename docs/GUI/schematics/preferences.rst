@@ -42,6 +42,13 @@ The dialog is grouped by element type, including:
   (see :doc:`wiring`).
 * **Junctions** — colour and radius.
 * **Rendering** — turn LaTeX typesetting of labels on or off.
+  Leave it **off in NGspice schematics**: a simulator expression is code, not
+  mathematics, and only the part of it that is also valid mathematics can be
+  typeset. A value that cannot be typeset is shown as plain text — it is never
+  rendered wrongly. If you want a typeset expression on an NGspice schematic,
+  either accept the generated form, or hide the value and place the formula
+  yourself with :menuselection:`Place --> LaTeX...`; such a snippet is for
+  display only and is not netlisted.
 * **Scaling defaults** — default sizes for parameter tables, LaTeX fragments and
   images.
 

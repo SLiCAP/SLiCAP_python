@@ -34,13 +34,13 @@ Obtain the matrix equation of the circuit
 The result is shown below:
 
 .. image:: /API/img/Transimpedance.svg
-    :width: 450 px
-    
+    :scale: 80 %
+
 .. code-block:: text
 
     Matrix([[0], [I_s], [0]])
     Matrix([[0, 1, 0], [0, C_s*s + 1/R_t, -1/R_t], [1, -1/R_t, 1/R_t]])
-    Matrix([[I_N1], [V_in], [V_out]])
+    Matrix([[I_N1], [V_1], [V_out]])
     
 Naming of the dependent variables
 =================================

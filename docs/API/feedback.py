@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-balanced.py: SLiCAP scripts for the HTML help file
+feedback.py: SLiCAP scripts for the HTML help file
 """
 import SLiCAP as sl
 import sympy as sp
@@ -11,10 +11,10 @@ import sympy as sp
 ###############################################################################
 
 # Circuit for ideal gain
-vamp_ideal = sl.makeCircuit("kicad/VampIdeal/VampIdeal.kicad_sch")
+vamp_ideal = sl.makeCircuit("sch/VampIdeal.slicap_sch")
 
 # Implementation of the controller with an operational amplifier
-vamp_opamp = sl.makeCircuit("kicad/VampOV/VampOV.kicad_sch")
+vamp_opamp = sl.makeCircuit("sch/VampOV.slicap_sch")
 
 # Ideal gain
 ideal_gain_sym = sl.doLaplace(vamp_ideal).laplace
@@ -36,17 +36,17 @@ servo_OV =  sl.doLaplace(vamp_opamp, transfer="servo").laplace
 direct_OV =  sl.doLaplace(vamp_opamp, transfer="direct").laplace
 
 # Gain OpAmp circuit
-gain_OV =  sp.simplify(sl.doLaplace(vamp_opamp).laplace)
+gain_OV =  sl.doLaplace(vamp_opamp).laplace
 
 # Show that MNA gives the same result as the asymptotic-gain model
 # Calculate gain according to the symptotic-gain model
-gain_fb = sp.simplify(asympt_gain_OV*servo_OV + direct_OV/(1-loop_gain_OV))
-# Take ratio of the two gains (must be unity)
-ratio = gain_OV/gain_fb
-# Calculate difference between expanded numerator and expanded denominator
-# This difference must be zero!
-numer, denom = ratio.as_numer_denom()
-diff = sp.expand(numer) - sp.expand(denom)
+gain_fb = asympt_gain_OV*servo_OV + direct_OV/(1-loop_gain_OV)
+# Take the difference of the two gains on a common denominator and expand
+# its numerator (simplify() of either gain first makes this far slower:
+# the gcd of multivariate polynomials in eleven symbols).
+# This numerator must be zero!
+numer, denom = sp.fraction(sp.together(gain_OV - gain_fb))
+diff = sp.expand(numer)
 
 if diff == 0:
     print("PERFECT: The two models give the same source-load transfer!")
@@ -79,7 +79,7 @@ sl.plotSweep("AvOVfb_phase", "Feedback model phase transfers",
              [IO, AO, LO, SO, DO, GO], 50, 50e6, 200, funcType="phase")
 
 # Implementation of the controller with bipolar transistors
-vamp_bjt   = sl.makeCircuit("kicad/VampQ/VampQ.kicad_sch")
+vamp_bjt   = sl.makeCircuit("sch/VampQ.slicap_sch")
 
 # Asymptotic_gain transistor circuit
 asympt_gain_QV =  sl.doLaplace(vamp_bjt, transfer="asymptotic").laplace

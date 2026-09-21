@@ -26,9 +26,9 @@ The decomposition itself is initiated by setting the argument ``convtype`` in an
 
 #. **"all"**: SLiCAP decomposes paired node voltages and paired branch currents into pairs of common-mode and differential-mode voltages and currents. Convertion type ``all`` can only be used for displaying the matrix equations; performing analysis is not implemented.
 #. **"dd"**: After the above decomposition, SLiCAP can perform all types of analysis using the differential-mode matrix equation.
-#. **"dc"** SLiCAP returns the differential-mode to common-mode matrix equation. Generally this involves a non-square matrix.
+#. **"dc"**: SLiCAP returns the differential-mode to common-mode matrix equation. Generally this involves a non-square matrix.
 #. **"cd"**: SLiCAP returns the common-mode to differential-mode matrix equation. Generally this involves a non-square matrix.
-#. **"cc"** After the above decomposition, SLiCAP can perform all types of analysis using the common-mode matrix equation.
+#. **"cc"**: After the above decomposition, SLiCAP can perform all types of analysis using the common-mode matrix equation.
 
 Pairing nodes, branches, and parameters
 =======================================
@@ -71,7 +71,7 @@ Balanced passive network
     :lineno-start: 14
 
 .. image:: /API/img/balancedNetwork.svg
-    :width: 400px
+    :scale: 80%
     
 .. admonition:: Important
     :class: note
@@ -206,7 +206,7 @@ Balanced circuit with models
     :lineno-start: 30
     
 .. image:: /API/img/balancedAmp.svg
-    :width: 550px
+    :scale: 80%
 
 .. admonition:: Important
     :class: note
@@ -240,12 +240,12 @@ Balanced circuit with sub circuits
 Below a balanced circuit built-up from two equal sub circuits.
 
 .. image:: /API/img/BJTdiffAmp.svg
-    :width: 400 px
+    :scale: 80%
 
 The figure below shows the sub circuit diagram.
 
 .. image:: /API/img/myBJTamp.svg
-    :width: 450 px
+    :scale: 80%
 
 .. literalinclude:: ../balanced.py  
     :linenos:
@@ -332,7 +332,7 @@ Balanced feedback
 =================
     
 .. image:: /API/img/balancedAmp.svg
-    :width: 550px
+    :scale: 80%
 
 .. literalinclude:: ../balanced.py  
     :linenos:
@@ -413,7 +413,7 @@ Balanced noise
 ==============
 
 .. image:: /API/img/balancedNoisyNetwork.svg
-    :width: 600px
+    :scale: 80%
 
 .. literalinclude:: ../balanced.py  
     :linenos:
@@ -502,7 +502,7 @@ Balanced dcvar
     :lineno-start: 160
     
 .. image:: /API/img/balancedAmpDCvar.svg
-    :width: 800px
+    :scale: 80%
 
 Differential output dc variance
 -------------------------------

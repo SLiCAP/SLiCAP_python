@@ -24,7 +24,7 @@ The **refdes** is the element's unique name on the schematic (``R1``, ``C3``,
 Model
 =====
 
-Each symbol carries a SLiCAP **model** name.  It is shown for reference and is
+Each SLiCAP symbol carries a SLiCAP **model** name.  It is shown for reference and is
 written into the netlist.
 
 Parameters
@@ -34,8 +34,8 @@ The parameter rows are the values you can set for the element — for example a
 resistor's ``value``, or a source's ``dc`` and ``noise``.  The available
 parameters come from the symbol itself.
 
-* Enter a **number** (``1k``, ``2.2e-9``) or a **symbolic expression**. Symbolic expression do not
-  need to be placed between curly brackets ``{}``
+* Enter a **number** (``1k``, ``2.2e-9``) or a **symbolic expression**. 
+  Symbolic expressions do not need to be placed between curly brackets ``{}``
 
 Value notation (scale factors)
 ==============================
@@ -63,7 +63,6 @@ of the instruction dialogs — use **SLiCAP notation**. Scale factors are
      -
      -
 
-
 .. admonition:: NGspice schematics
    :class: note
 
@@ -72,8 +71,8 @@ of the instruction dialogs — use **SLiCAP notation**. Scale factors are
    
    You **ALWAYS** enter SLiCAP notation —
    SLiCAP translates automatically wherever values are written into NGspice
-   input (netlists, ``.param`` lines, instruction arguments): all suffixes
-   are expanded numerically.
+   input (netlists, ``.param`` lines, instruction arguments): **all suffixes
+   are expanded numerically.**
 
 References
 ==========
@@ -115,9 +114,9 @@ Checking them places an ``I: <value>`` / ``V: <value>`` text on the canvas.
 
 The values come from the circuit's most recent *unstepped* operating-point
 run (``sl.op(...)`` in the instruction file, which writes
-``cir/<circuit>_op.raw``); they are updated after every run, shown greyed
+``cir/<circuit>_op.raw``). They are updated after every run, shown greyed
 and italic while no results are available (``V: —``) or after the schematic
-was edited (stale), and are **never stored in the schematic file** — only
+was edited (stale). They are **never stored in the schematic file** — only
 the check-box and the label position are.
 
 Currents follow the NGspice sign convention: ``I(V...)`` and ``I(L...)``

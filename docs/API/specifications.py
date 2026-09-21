@@ -66,7 +66,7 @@ for name in spec_dict.keys():
 # Assigning specifications to circuit parameters
 
 # Create a circuit object
-cir = sl.makeCircuit("kicad/Transimpedance/Transimpedance.kicad_sch", imgWidth=350)
+cir = sl.makeCircuit("sch/Transimpedance.slicap_sch", imgWidth=350)
 
 # Assign the specifications to circuit parameters
 sl.specs2circuit(specs, cir)

@@ -673,6 +673,31 @@ def as_dataset(obj):
     return None
 
 
+def axis_label(name, scale="", units=""):
+    """
+    The text of an axis label: ``name [scale units]``, with the units set as
+    text through :func:`SLiCAP.SLiCAPmath.units2text` (Ohm as the ohm sign,
+    the prefix u as the micro sign, exponents as superscripts). The ONE
+    builder of axis labels (2026-09-12): plotSweep, plotPZ, plot and the GUI
+    axes dialog all call it, so a script and the GUI write the same label.
+
+    :param name: quantity, may contain Matplotlib mathtext ('$V_{out}$').
+    :type name: str
+    :param scale: scale factor letter ('', 'k', 'u', ...).
+    :type scale: str
+    :param units: units in SLiCAP spelling ('V', 'V^2/Hz', 'rad/s', 'Ohm').
+    :type units: str
+    :return: the label, '' when name, scale and units are all empty.
+    :rtype: str
+    """
+    from SLiCAP.SLiCAPmath import units2text
+    name = str(name or "").strip()
+    bracket = units2text(str(scale or "") + str(units or ""))
+    if bracket:
+        return (name + " [" + bracket + "]").strip()
+    return name
+
+
 # Units follow the NAME where a convention says so, and stay empty where it
 # does not (Anton, 2026-07-30): 'frequency' is Hz, but abs(V_out)**2/R_a is W
 # and no naming convention can know that. SLiCAP's own conventions live here;

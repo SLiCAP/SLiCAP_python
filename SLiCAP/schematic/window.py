@@ -536,13 +536,15 @@ class CanvasPanel(QWidget):
         from .wire_item import WireItem
         from .parameter_item import ParameterItem
         from .library_item import LibraryItem
-        from .netlist import build_subcircuit, schematic_ports
+        from .model_item import ModelItem
+        from .netlist import schematic_ports
         from .create_subcircuit_dialog import CreateSubcircuitDialog
         items = self._scene.items()
         comps = [i for i in items if isinstance(i, ComponentItem)]
         wires = [i for i in items if isinstance(i, WireItem)]
         prms  = [i for i in items if isinstance(i, ParameterItem)]
         slibs = [i for i in items if isinstance(i, LibraryItem)]
+        mdefs = [i for i in items if isinstance(i, ModelItem)]
         present       = schematic_ports(comps, wires)
         saved         = [p for p in self._doc_props.subcircuit_ports if p in present]
         ports_default = saved + [p for p in present if p not in saved]
@@ -554,7 +556,6 @@ class CanvasPanel(QWidget):
         base    = self._current_path
         is_ng   = self._sch_type == 'ngspice'
         sch_ext = ".spice_sch" if is_ng else ".slicap_sch"
-        lib_ext = ".spice_lib" if is_ng else ".slicap_lib"
         # The subcircuit package lives in lib/: the .lib, the block symbol
         # AND the schematic, which is also LOADED from there (descend, pin
         # placement) — one self-contained folder per subcircuit that survives
@@ -562,20 +563,17 @@ class CanvasPanel(QWidget):
         libdir = (project.subdir_for(base, "lib") if base
                   else project.subdir("lib"))
         sch_path = libdir / f"{title}{sch_ext}"
-        lib_path = libdir / f"{title}{lib_ext}"
+        # The same builder and file as the headless export of a subcircuit
+        # schematic (schematic.cli, makeCircuit), 2026-09-16.
+        from .subcircuit import build_lib, lib_path_for
+        lib_path = lib_path_for(sch_path, title, self._sch_type)
         self._save_to(sch_path)
         try:
-            if is_ng:
-                from .ngspice_netlist import build_ngspice_subckt
-                lib_text = build_ngspice_subckt(comps, wires, title,
-                                                self._doc_props.subcircuit_ports,
-                                                self._doc_props.subcircuit_params,
-                                                params_items=prms, libs=slibs)
-            else:
-                lib_text = build_subcircuit(comps, wires, title,
-                                            self._doc_props.subcircuit_ports,
-                                            self._doc_props.subcircuit_params,
-                                            params_items=prms, libs=slibs)
+            lib_text = build_lib(self._sch_type, comps, wires, title,
+                                 self._doc_props.subcircuit_ports,
+                                 self._doc_props.subcircuit_params,
+                                 params_items=prms, libs=slibs,
+                                 model_defs=mdefs)
             lib_path.write_text(lib_text, encoding="utf-8")
         except Exception as exc:
             QMessageBox.critical(self, "Subcircuit save failed", str(exc))
@@ -654,37 +652,10 @@ class CanvasPanel(QWidget):
         runs write *_op_sN.raw and are deliberately excluded."""
         if self._sch_type != 'ngspice' or self._current_path is None:
             return
-        raw = (project.subdir_for(self._current_path, "cir")
-               / f"{self._current_path.stem}_op.raw")
-        if not raw.is_file():
-            return
-        from .raw_file import RawFile
-        try:
-            analyses = RawFile.load(raw)
-        except Exception:
-            return
-        for a in analyses:
-            if "operating point" not in a.name.lower():
-                continue
-            results = {}
-            if getattr(a, "x_data", None) is not None and a.x_data.size == 1:
-                results[a.x_name.lower()] = float(a.x_data[0].real)
-            for k, v in a.signals.items():
-                if v.size == 1:
-                    results[k.lower()] = float(v[0].real)
-            if results:
-                # The .cir the raw was produced from names the nets.
-                cir = raw.with_name(f"{self._current_path.stem}.cir")
-                try:
-                    netlist_text = cir.read_text(encoding="utf-8",
-                                                 errors="replace")
-                except OSError:
-                    netlist_text = None
-                self._scene.set_op_results(results, netlist_text)
-                # Fresh results: live-update any open subcircuit views
-                # borrowing this panel's run (order-independent descend).
-                self._refresh_borrowing_children()
-            return
+        if self._scene.load_op_raw(self._current_path):
+            # Fresh results: live-update any open subcircuit views
+            # borrowing this panel's run (order-independent descend).
+            self._refresh_borrowing_children()
 
     def _on_preferences(self):
         from .preferences_dialog import PreferencesDialog
@@ -723,7 +694,8 @@ class CanvasPanel(QWidget):
             # with the default style and placeholder annotations
             # (Anton, 2026-07-12). The SVG builder emits item geometry
             # only, so selection state cannot leak into the output.
-            export_svg(self._scene, p, title)
+            export_svg(self._scene, p, title,
+                       source=self._current_path.name if self._current_path else "")
         except Exception as exc:
             QMessageBox.critical(self, "Export SVG failed", str(exc))
 
@@ -737,7 +709,9 @@ class CanvasPanel(QWidget):
             p = p.with_suffix(".pdf")
         from .export import export_pdf
         try:
-            export_pdf(self._scene, p)
+            export_pdf(self._scene, p,
+                       source=self._current_path.name if self._current_path else "",
+                       title=self._doc_props.title or "")
         except Exception as exc:
             QMessageBox.critical(self, "Export PDF failed", str(exc))
 
@@ -781,7 +755,7 @@ class CanvasPanel(QWidget):
             text = build_netlist(comps, wires, cmds, title, libs=libs, params=prms, model_defs=models)
         except NetlistError as exc:
             QMessageBox.critical(self, "Netlist not generated",
-                                 "Unresolved “?” placeholders remain:\n\n" + "\n".join(exc.errors))
+                                 "The netlist was not generated:\n\n" + "\n".join(exc.errors))
             return
         try:
             p.write_text(text, encoding="utf-8")
@@ -815,7 +789,7 @@ class CanvasPanel(QWidget):
                                          control_section=self._doc_props.control_section)
         except NetlistError as exc:
             QMessageBox.critical(self, "Netlist not generated",
-                                 "Unresolved “?” placeholders remain:\n\n" + "\n".join(exc.errors))
+                                 "The netlist was not generated:\n\n" + "\n".join(exc.errors))
             return
         try:
             p.write_text(text, encoding="utf-8")

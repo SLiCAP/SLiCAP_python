@@ -6,7 +6,7 @@ pz.py: SLiCAP scripts for the HTML help file
 """
 import SLiCAP as sl
 
-pz_network = sl.makeCircuit("kicad/pzNetwork/pzNetwork.kicad_sch")
+pz_network = sl.makeCircuit("sch/pzNetwork.slicap_sch")
 
 pResult    = sl.doPoles(pz_network)
 print(pResult.poles)

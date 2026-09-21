@@ -13,6 +13,38 @@ from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
 from SLiCAP.SLiCAPlex import _sympify
 import re
 
+
+_STATESPACE_PARTS = ("x", "u", "y", "A", "B", "C", "D")
+
+
+def _stateSpaceLines(ss, parts=None):
+    """
+    Returns the lines of an aligned display of a state-space realization as a
+    list of (name, LHS, RHS) LaTeX strings: the vectors x, u, y as transposed
+    rows (one line each), the matrices A, B, C, D one per line. This is the
+    lay-out agreed for the book: one align environment, one object per line,
+    aligned on the equal sign, never the combined block [[A, B], [C, D]]
+    (Anton, 2026-09-11).
+
+    :param ss: state-space realization (SLiCAPstateSpace.StateSpace)
+    :param parts: objects to show, a subset of ("x", "u", "y", "A", "B", "C",
+                  "D"); defaults to all.
+    """
+    parts = _STATESPACE_PARTS if parts is None else tuple(parts)
+    for part in parts:
+        if part not in _STATESPACE_PARTS:
+            raise ValueError("unknown state-space part '%s'; use one of %s"
+                             % (part, ", ".join(_STATESPACE_PARTS)))
+    objs = {"x": ss.x, "u": ss.u, "y": ss.y, "A": ss.A, "B": ss.B, "C": ss.C, "D": ss.D}
+    lines = []
+    for part in parts:
+        if part in ("x", "u", "y"):
+            lines.append((part, "\\mathbf{%s}^T" % part, sp.latex(roundN(objs[part]).T)))
+        else:
+            lines.append((part, "\\mathbf{%s}" % part, sp.latex(roundN(objs[part]))))
+    return lines
+
+
 class LaTeXformatter(_BaseFormatter):
     """
     Latex formatter. The methods return LaTeX snippets.
@@ -356,7 +388,7 @@ class LaTeXformatter(_BaseFormatter):
                 if numeric:
                     linesList += _numRoots2TEX(resultObject.zeros, ini.hz, 'z')
                 else:
-                    linesList = _symRoots2TEX(resultObject.zeros, ini.hz, 'z')
+                    linesList += _symRoots2TEX(resultObject.zeros, ini.hz, 'z')
             TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, 
                                       label=label, caption=caption, 
                                       color=color)
@@ -563,13 +595,57 @@ class LaTeXformatter(_BaseFormatter):
             TEX += '\\,\\left[\\mathrm{' + units + '}\\right]\n'
         else:
             TEX = '\\begin{equation}'
-            TEX += '\n' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
+            TEX += '\n' + exprLatex(LHS) + ' = ' + exprLatex(RHS)
             if units != '':
                 TEX += '\\,\\left[\\mathrm{' + units + '}\\right]'
             TEX += '\n'
             if label != '':
                 TEX += '\\label{'+ label + '}\n'
             TEX += '\\end{equation}\n\n'
+        return Snippet(TEX, self.format)
+
+    def stateSpace(self, resultObject, label="", parts=None):
+        """
+        Creates an aligned display of the state-space realization of a
+        doStateSpace() result: dx/dt = A x + B u, y = C x + D u. One align
+        environment, one object per line aligned on the equal sign: the
+        vectors x (states), u (inputs) and y (outputs) as transposed rows,
+        then the matrices A, B, C and D. Every line carries its own label
+        <label>-x, <label>-u, ..., <label>-D.
+
+        :param resultObject: SLiCAP execution result of doStateSpace().
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
+
+        :param label: Reference label; each line gets <label>-<name>.
+                      Defaults to an empty string (no labels).
+        :type label: str
+
+        :param parts: Objects to show: an iterable with a subset of
+                      "x", "u", "y", "A", "B", "C", "D". Defaults to all.
+        :type parts: iterable, NoneType
+
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+
+        :example:
+
+        >>> import SLiCAP as sl
+        >>> ltx = sl.LaTeXformatter()
+        >>> ss  = sl.doStateSpace(cir)
+        >>> ltx.stateSpace(ss, label="ss-RC").save("ss_RC")
+        """
+        ss = getattr(resultObject, "stateSpace", None)
+        if ss is None:
+            print("Error: no state-space realization in the result.")
+            return Snippet("", self.format)
+        lines = _stateSpaceLines(ss, parts)
+        TEX = '\\begin{align}\n'
+        for k, (name, lhs, rhs) in enumerate(lines):
+            TEX += lhs + ' &= ' + rhs
+            if label != '':
+                TEX += '\\label{%s-%s}' % (label, name)
+            TEX += ' \\\\\n' if k < len(lines) - 1 else '\n'
+        TEX += '\\end{align}\n\n'
         return Snippet(TEX, self.format)
 
     def matrixEqn(self, Iv, M, Dv, label=""):
@@ -769,7 +845,7 @@ class LaTeXformatter(_BaseFormatter):
             units = units2TeX(units)
         except:
            units = ''
-        TEX = '$' + sp.latex(roundN(expr))
+        TEX = '$' + exprLatex(expr)
         if units == '':
             TEX += '$ '
         else:
@@ -801,7 +877,7 @@ class LaTeXformatter(_BaseFormatter):
             LHS = _sympify(LHS)
         if type(RHS) == str:
             RHS = _sympify(RHS)
-        TEX = '$' + sp.latex(roundN(LHS)) + '=' + sp.latex(roundN(RHS))
+        TEX = '$' + exprLatex(LHS) + '=' + exprLatex(RHS)
         if units == '':
             TEX += '$ '
         else:
@@ -809,7 +885,8 @@ class LaTeXformatter(_BaseFormatter):
         return Snippet(TEX, self.format)
 
     def nestedLists(self, headerList, linesList, unitpos=None, caption='', 
-                    label='', color="myyellow", value_fn=None, title=None):
+                    label='', color="myyellow", value_fn=None, title=None,
+                    title_align='c', upright=None):
         """
         Creates and returns a LaTeX table snippet that can be included in a 
         LaTeX document. Each list is converted into a table row and
@@ -846,7 +923,8 @@ class LaTeXformatter(_BaseFormatter):
         alignstring += "}"
         TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
                                  unitpos, caption, label, color,
-                                 value_fn=value_fn, title=title)
+                                 value_fn=value_fn, title=title,
+                                 title_align=title_align, upright=upright)
         return Snippet(TEX, self.format)
 
 def sub2rm(textext):
@@ -946,7 +1024,7 @@ def symbolLatex(name):
 
 # Non-public functions for creating table snippets
 
-def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label='', color="myyellow", value_fn=None, title=None):
+def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label='', color="myyellow", value_fn=None, title=None, title_align='c', upright=None):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
 
@@ -988,6 +1066,18 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
                      to get SLiCAP's engineering notation instead.
     :type value_fn: callable, NoneType
 
+    :param title_align: Alignment of the title across the columns: 'c'
+                        (default, bold and centered) or 'l' (flush with the
+                        first column, not bold: a heading LINE such as a
+                        netlist ``.model`` line).
+    :type title_align: str
+
+    :param upright: Index of a column whose STRING fields are identifiers
+                    set upright in maths mode (``$\\mathrm{name}$``), e.g.
+                    the parameter names of a model definition. Defaults to
+                    None: string fields are text.
+    :type upright: int, NoneType
+
     :return: LaTeX snippet to be included in a LaTeX document
     :rtype: str
     """
@@ -997,8 +1087,12 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
         TEX = ''
     TEX += '\\begin{tabular}' + alignstring + '\n'
     if title:
-        TEX += ('\\multicolumn{%d}{c}{\\textbf{%s}} \\\\ \n'
-                % (len(headerList), title))
+        if title_align == 'l':
+            TEX += ('\\multicolumn{%d}{l}{%s} \\\\ \n'
+                    % (len(headerList), title))
+        else:
+            TEX += ('\\multicolumn{%d}{c}{\\textbf{%s}} \\\\ \n'
+                    % (len(headerList), title))
     # An all-empty header list means NO header row (an empty bold row just
     # wasted a line); dictTable's "optionally with a header" now holds.
     if any(str(field).strip() for field in headerList):
@@ -1016,6 +1110,8 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
         for field in line:
             if unitpos != None and i == int(unitpos):
                 TEX += '$\\mathrm{' + units2TeX(field) + '}$ &'
+            elif upright != None and i == int(upright) and type(field) == str:
+                TEX += ('$\\mathrm{' + field + '}$ &') if field != '' else ' &'
             elif type(field) == str:
                 if field != '':
                     TEX +=  '\\small{' + field.replace('_', '\\_') + '} &'

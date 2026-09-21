@@ -1093,6 +1093,19 @@ def NGspiceRaw2dict(raw_path, step_param=None, step_values=None):
         analyses = RawFile.load(raw_path)
     if not analyses:
         return {}
+    # A run whose analysis failed (e.g. no operating-point convergence at one
+    # temperature of a TEMP step) leaves NGspice's 'constants' plot in place
+    # of the data; silently reading it gave a result full of 'boltz' and
+    # 'planck' (Anton's manual, 2026-09-21). Report it and return nothing.
+    failed = [k + 1 for k, a in enumerate(analyses)
+              if a.name.strip().lower() == "constants"]
+    if failed:
+        print("Error: NGspice produced no data for run%s %s of %d (see the "
+              "simulation log; a failed operating point at one of the step "
+              "values is the usual cause)."
+              % ("s" if len(failed) > 1 else "",
+                 ", ".join(str(k) for k in failed), len(analyses)))
+        return {}
 
     is_op        = all("operating point" in a.name.lower() for a in analyses)
     array_stepped = isinstance(step_param, list)
@@ -1303,15 +1316,22 @@ def _stepped_control_block(analysis_cmd, raw_path, step_param, step_vals,
                            post_lines=None):
     """One ``.control`` block that sweeps one OR several parameters over
     *step_vals* in ONE NGspice process (the design-doc approach; see
-    NGspice_simulator.md).  A counter (``dowhile``) walks per-parameter value
-    arrays (``compose``); each run alters the parameters and re-runs, APPENDING
-    its analysis to *raw_path* — ``RawFile.load`` reads the N appended blocks as
-    the stepped result.  No per-step files, no N processes.
+    NGspice_simulator.md): one UNROLLED run block per step value, each
+    altering the parameters and re-running, APPENDING its analysis to
+    *raw_path* — ``RawFile.load`` reads the N appended blocks as the stepped
+    result.  No per-step files, no N processes.
+
+    Unrolled with LITERAL values since 2026-09-21. The earlier loop
+    (``compose __a0 values ...`` + ``dowhile`` + ``$&__v0``) was REJECTED:
+    ngspice parses the value list of ``compose`` as an expression, so two
+    consecutive negative values ``-55 -25`` became the single value -80,
+    the array came out one short and its last value repeated - a
+    temperature sweep of the manual's amplifier ran at the wrong
+    temperatures from the second step on (Anton, 2026-09-21).
 
     Ordering matters (verified against ngspice):
-      * a ``.param`` is set as a SCALAR *before* ``reset`` — ``alterparam P =
-        $&x`` — the ``$&`` dereference that avoids the vector pitfall (SLNG.md);
-      * ``TEMP`` is set *after* ``reset`` — ``option temp = $&x`` — the only
+      * a ``.param`` is set as a SCALAR *before* ``reset`` — ``alterparam``;
+      * ``TEMP`` is set *after* ``reset`` — ``option temp`` — the only
         order ngspice honours (``set temp`` before reset is ignored).
 
     *step_param* may be a str (single) or list (array/multi); *step_vals* is
@@ -1324,40 +1344,32 @@ def _stepped_control_block(analysis_cmd, raw_path, step_param, step_vals,
     else:
         params = [step_param]
         rows   = [[v] for v in step_vals]
-    n = len(rows)
 
     lines = [".control", "set filetype=binary", "set appendwrite"]
-    for j, _p in enumerate(params):
-        vs = " ".join(_ng_number(rows[i][j]) for i in range(n))
-        lines.append(f"compose __a{j} values {vs}")
-    lines += [f"let __n = {n}", "let __i = 0", "dowhile __i < __n"]
-
-    temp_idx = None
-    for j, p in enumerate(params):
-        lines.append(f"  let __v{j} = __a{j}[__i]")
-        if str(p).lower() == "temp":
-            temp_idx = j                      # applied AFTER reset (below)
-        else:
-            lines.append(f"  alterparam {p} = $&__v{j}")
-    lines.append("  reset")
-    if temp_idx is not None:
-        lines.append(f"  option temp = $&__v{temp_idx}")
-    lines.append("  save " + " ".join(extra_saves) if extra_saves
-                 else "  save all")
-    if noise:
-        lines.append("  set sqrnoise")
-    if options:
-        for k, v in options.items():
-            lines.append(f"  option {k} = {_deck_value(v, k)}"
-                         if v is not None else f"  option {k}")
-    lines.append("  " + analysis_cmd)
-    if noise:
-        lines.append("  setplot previous")   # this run's spectra, not run 1's
-    if post_lines:
-        lines.extend("  " + pl for pl in post_lines)
-    lines.append(f"  write {Path(raw_path).as_posix()}")
-    lines.append("  let __i = __i + 1")
-    lines.append("end")
+    for row in rows:
+        temp_value = None
+        for p, v in zip(params, row):
+            if str(p).lower() == "temp":
+                temp_value = v                # applied AFTER reset (below)
+            else:
+                lines.append(f"alterparam {p} = {_ng_number(v)}")
+        lines.append("reset")
+        if temp_value is not None:
+            lines.append(f"option temp = {_ng_number(temp_value)}")
+        lines.append("save " + " ".join(extra_saves) if extra_saves
+                     else "save all")
+        if noise:
+            lines.append("set sqrnoise")
+        if options:
+            for k, v in options.items():
+                lines.append(f"option {k} = {_deck_value(v, k)}"
+                             if v is not None else f"option {k}")
+        lines.append(analysis_cmd)
+        if noise:
+            lines.append("setplot previous")   # this run's spectra, not run 1's
+        if post_lines:
+            lines.extend(post_lines)
+        lines.append(f"write {Path(raw_path).as_posix()}")
     lines.append(".endc")
     return "\n".join(lines)
 
@@ -1396,6 +1408,17 @@ def _eng_repr(number):
     readable for the user who opens it."""
     text = repr(float(number))
     return text[:-2] if text.endswith('.0') else text
+
+
+#: SPICE's own functions. In a deck ``I(V2)`` is the current through source
+#: V2 and ``V(3,0)`` a node-voltage difference - not maths - so the converter
+#: reads them as functions and passes them through untouched. Refusing them
+#: aborted netlist GENERATION, which left the user without a netlist and, on
+#: two of the three paths, without a message (Anton, 2026-08-19). A deck has
+#: no imaginary unit, so a bare ``I`` is not valid there and is still refused.
+#: This is the DECK converter only; rendering an NGspice expression as LaTeX
+#: is a separate, parked problem (TODO.md, "Version 6").
+_DECK_FUNCTIONS = ("I", "V")
 
 
 #: Names sympy owns that are ordinary netlist identifiers are rescued by
@@ -1446,7 +1469,8 @@ def _deck_expr(value, what):
     if not text:
         return text
     try:
-        evaluated = sp.N(_sympify(_replaceScaleFactors(text)))
+        names = {n: sp.Function(n) for n in _DECK_FUNCTIONS}
+        evaluated = sp.N(_sympify(_replaceScaleFactors(text), locals=names))
     except BaseException:
         _refuse()
     if evaluated is None:
@@ -2373,7 +2397,7 @@ def _parse_fourier_log(txt_path):
 
 def tran(cirFile, tstep, tstop, tstart=0, save=None,
          step=None, params=None, options=None, behavior=None, timeout=None,
-         fourier=None, fft=None, stimuli=None, savecurrents=False):
+         fourier=None, fft=None, stimuli=None, savecurrents=False, tmax=None):
     """
     Run an NGspice transient analysis, optionally with Fourier/FFT
     post-processing (the legacy ``ngspice2traces`` ``postProc`` semantics,
@@ -2392,9 +2416,11 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
     'fft'``, complex arrays + ``"frequency"``), plotting like an ``ac``
     result.
 
-    Both post-processing options REQUIRE ``names`` (the analysed vectors
-    are created with ``let`` from the names entries, so derived
-    expressions like ``"v(1)-v(2)"`` work).
+    Both post-processing options REQUIRE ``save`` naming the vectors to
+    transform. An entry ``"name = expression"`` creates a derived vector
+    with NGspice ``let`` after the transient, e.g.
+    ``save=["v_ac = v(out) - 4.3"]`` for the output with its operating
+    point removed; the transform then works on ``name``.
 
     :param cirFile: Circuit filename without the ``.cir`` extension.
     :type cirFile: str
@@ -2407,6 +2433,12 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
 
     :param tstart: Start time (default 0); data before this time is discarded.
     :type tstart: float, int
+
+    :param tmax: Maximum internal time step of the integration (the fourth
+                 argument of the NGspice ``tran`` command). Defaults to None:
+                 NGspice chooses it, at most ``tstep``. A small ``tmax``
+                 lowers the numerical noise floor of an FFT (2026-09-21).
+    :type tmax: float, int, str, NoneType
 
     :param names: ``{user_key: ngspice_expr}``.  ``None`` returns all signals.
     :type names: dict, NoneType
@@ -2437,6 +2469,8 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
     cmd = (f"tran {_deck_number(tstep, 'tstep')} "
            f"{_deck_number(tstop, 'tstop')} "
            f"{_deck_number(tstart, 'tstart')}")
+    if tmax is not None:
+        cmd += f" {_deck_number(tmax, 'tmax')}"
     step_param, step_vals = _step_values(step)
 
     # Post-processing control lines. ``let`` creates the analysed vectors
@@ -2453,7 +2487,21 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
     # names them (Anton, 2026-08-01: the analysis call speaks NGspice; the
     # Python names are chosen later, in make_traces). Without a save list
     # there is nothing to name, so the analysed vectors must be listed.
-    analysed = list(save or [])
+    # An entry "name = expression" defines a DERIVED vector with NGspice
+    # ``let`` after the transient, e.g. the output with its operating point
+    # removed before an FFT (2026-09-21: the manual's spectrum); the run
+    # then saves everything so the expression can be evaluated.
+    analysed, derived = [], []
+    for entry in list(save or []):
+        if "=" in str(entry):
+            name, expr = str(entry).split("=", 1)
+            derived.append(f"let {name.strip()} = {expr.strip()}")
+            analysed.append(name.strip())
+        else:
+            analysed.append(str(entry))
+    if derived:
+        post_lines = derived + post_lines
+        save = [e for e in save if "=" not in str(e)] or None
     if (fourier is not None or fft) and not analysed:
         print("ERROR: fourier= / fft= needs save=[...] naming the vectors to "
               "transform, e.g. save=[\"v(out)\"].")

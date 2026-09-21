@@ -13,7 +13,8 @@ The input may be a ``.slicap_sch`` (SLiCAP netlist) or a ``.spice_sch``
 
 Netlist and SVG/PDF export work without opening the GUI window.
 The grid is suppressed in SVG/PDF output.  When -o is omitted the output lands
-in the project's cir/ (netlist) or img/ (svg/pdf) directory.
+in the project's cir/ (netlist) or img/ (svg/pdf) directory. A subcircuit
+schematic yields its library in lib/ instead of a netlist.
 
 This CLI is invoked as a subprocess by ``SLiCAP.makeCircuit`` /
 ``make_schematic`` / ``SLiCAPngspice.make_netlist``; it is not the GUI
@@ -70,9 +71,12 @@ def _load_scene(input_path: Path):
     library = build_library(input_path,
                             sch_type="ngspice" if is_ngspice else "slicap")
     scene   = SchematicScene()
+    scene.sch_type = "ngspice" if is_ngspice else "slicap"    # as the editor sets it
     scene.style = Style(project.ini_path_for(input_path))     # saved style
     scene.cache_dir = project.cache_path_for(input_path)      # render cache
     missing = scene.from_data(data, library)
+    if is_ngspice and not missing:
+        scene.load_op_raw(input_path)     # bias annotations in the export
     if missing:
         # NEVER silently: a component whose symbol cannot be found used to be
         # skipped, and the netlist came out without that device.
@@ -100,20 +104,49 @@ def _default_output(input_path: Path, kind: str, suffix: str) -> Path:
 def _write_netlist(input_path, scene, data, output_path, title):
     """Build and write the netlist for an ALREADY-LOADED scene (the file
     extension selects the SLiCAP or NGspice builder). Shared by the
-    ``netlist`` and ``export`` commands so the scene is loaded once."""
+    ``netlist`` and ``export`` commands so the scene is loaded once.
+
+    A subcircuit schematic (Subcircuit checked in Schematic Properties)
+    gets its library, lib/<title>.slicap_lib or .spice_lib - the file the
+    GUI's Save-as-subcircuit writes - and NO circuit netlist: its internal
+    nodes have no ground, so the flat .cir that was written before only
+    failed makeCircuit's ground check (Anton, 2026-09-16). ``output_path``
+    None selects the default location, cir/ or lib/."""
     from .component_item import ComponentItem
     from .wire_item import WireItem
     from .library_item import LibraryItem
     from .parameter_item import ParameterItem
+    from .model_item import ModelItem
     from .netlist import NetlistError
 
-    items = scene.items()
-    comps = [i for i in items if isinstance(i, ComponentItem)]
-    wires = [i for i in items if isinstance(i, WireItem)]
-    libs  = [i for i in items if isinstance(i, LibraryItem)]
-    prms  = [i for i in items if isinstance(i, ParameterItem)]
+    items  = scene.items()
+    comps  = [i for i in items if isinstance(i, ComponentItem)]
+    wires  = [i for i in items if isinstance(i, WireItem)]
+    libs   = [i for i in items if isinstance(i, LibraryItem)]
+    prms   = [i for i in items if isinstance(i, ParameterItem)]
+    # .model blocks were missing from the HEADLESS netlist (only the
+    # window's Save-netlist passed them): makeCircuit() then failed on
+    # "missing definition of model" and the analysis dialog had no
+    # candidates to offer (Anton, 2026-09-14).
+    models = [i for i in items if isinstance(i, ModelItem)]
+    sch_type = "ngspice" if input_path.suffix.lower() == ".spice_sch" else "slicap"
+    props = getattr(data, "properties", None)
+    label = "Netlist "
     try:
-        if input_path.suffix.lower() == ".spice_sch":
+        if props is not None and props.is_subcircuit:
+            from .subcircuit import build_lib, lib_path_for
+            from .netlist import schematic_ports
+            # The saved port order, completed with ports added since - the
+            # default the GUI's Create-subcircuit dialog shows.
+            present = schematic_ports(comps, wires)
+            saved   = [p for p in props.subcircuit_ports if p in present]
+            ports   = saved + [p for p in present if p not in saved]
+            text = build_lib(sch_type, comps, wires, title, ports,
+                             props.subcircuit_params, params_items=prms,
+                             libs=libs, model_defs=models)
+            default = lib_path_for(input_path, title, sch_type)
+            label = "Library "
+        elif sch_type == "ngspice":
             from .ngspice_netlist import build_ngspice_netlist
             text = build_ngspice_netlist(
                 comps, wires, title, libs=libs, params=prms,
@@ -125,17 +158,19 @@ def _write_netlist(input_path, scene, data, output_path, title):
             cmds = [i for i in items
                     if isinstance(i, (CommandItem, AnalysisItem))]
             text = build_netlist(comps, wires, cmds, title,
-                                 libs=libs, params=prms)
+                                 libs=libs, params=prms, model_defs=models)
+        if props is None or not props.is_subcircuit:
+            default = _default_output(input_path, "cir", ".cir")
     except NetlistError as exc:
-        print("Netlist not generated - unresolved '?' placeholders remain:",
-              file=sys.stderr)
+        print("Netlist not generated:", file=sys.stderr)
         for err in exc.errors:
             print(f"  {err}", file=sys.stderr)
         sys.exit(1)
 
+    output_path = Path(output_path) if output_path else default
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(text, encoding="utf-8")
-    print(f"Netlist  --> {output_path}")
+    print(f"{label} --> {output_path}")
 
 
 def cmd_netlist(args):
@@ -143,8 +178,7 @@ def cmd_netlist(args):
     _qt_app()
     input_path  = Path(args.input)
     scene, data = _load_scene(input_path)
-    output_path = (Path(args.output) if args.output
-                   else _default_output(input_path, "cir", ".cir"))
+    output_path = Path(args.output) if args.output else None
     title = getattr(args, "title", None) or data.properties.title or input_path.stem
     _write_netlist(input_path, scene, data, output_path, title)
 
@@ -155,7 +189,8 @@ def cmd_svg(args):
     input_path  = Path(args.input)
     scene, data = _load_scene(input_path)
     output_path = Path(args.output) if args.output else _default_output(input_path, "img", ".svg")
-    export_svg(scene, output_path, data.properties.title or input_path.stem)
+    export_svg(scene, output_path, data.properties.title or input_path.stem,
+               source=input_path.name)
     print(f"SVG      --> {output_path}")
 
 
@@ -165,7 +200,8 @@ def cmd_pdf(args):
     input_path  = Path(args.input)
     scene, data = _load_scene(input_path)
     output_path = Path(args.output) if args.output else _default_output(input_path, "img", ".pdf")
-    export_pdf(scene, output_path)
+    export_pdf(scene, output_path, source=input_path.name,
+               title=data.properties.title or input_path.stem)
     print(f"PDF      --> {output_path}")
 
 
@@ -178,13 +214,13 @@ def cmd_export(args):
     input_path  = Path(args.input)
     scene, data = _load_scene(input_path)
     title = getattr(args, "title", None) or data.properties.title or input_path.stem
-    _write_netlist(input_path, scene, data,
-                   _default_output(input_path, "cir", ".cir"), title)
+    _write_netlist(input_path, scene, data, None, title)
     svg = _default_output(input_path, "img", ".svg")
-    export_svg(scene, svg, data.properties.title or input_path.stem)
+    export_svg(scene, svg, data.properties.title or input_path.stem,
+               source=input_path.name)
     print(f"SVG      --> {svg}")
     pdf = _default_output(input_path, "img", ".pdf")
-    export_pdf(scene, pdf)
+    export_pdf(scene, pdf, source=input_path.name, title=title)
     print(f"PDF      --> {pdf}")
 
 

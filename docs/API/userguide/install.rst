@@ -47,8 +47,9 @@ Other packages
     - SLiCAP netlist generation with `makeCircuit() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__
     - All functions from the `NGspice module <../reference/SLiCAPngspice.html>`__
     
-#. SLiCAP uses schematic capture programs for creating SLiCAP netlists from schematics:
+#. SLiCAP can create netlists from schematics created with:
 
+   - SLiCAP **preferred**
    - KiCAD
    - LTspice
    - Lepton-EDA
@@ -57,7 +58,7 @@ Other packages
 #. SLiCAP uses NGspice for:
 
    - obtaining operating-point information and creating model definitions for active devices
-   - integrating numeric simulation 
+   - numeric simulation 
    
 #. SLiCAP uses Sphinx for generating html reports (websites)
 
@@ -65,18 +66,20 @@ Other packages
 
 Schematic capture programs
 --------------------------
-    
-SLiCAP has symbol libraries for creating circuit diagrams with:
 
-- `KiCAD <https://www.kicad.org/>`_. This is the preferred package for working with SLiCAP
+Since version 5.1 SLiCAP has its own schematic capture program. With this schematic editor you can make publishing quality schematic diagrams and generate netlists for SLiCAP and NGspice.
+    
+SLiCAP also has symbol libraries for creating circuit diagrams with:
+
+- `KiCAD <https://www.kicad.org/>`_
 - `LTspice <https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html>`_
 - `gSchem for windows: gEDA-20130122.zip <https://analog-electronics.tudelft.nl/downloads/gEDA-20130122.zip>`_
 - `Lepton EDA <https://github.com/lepton-eda/lepton-eda>`_
 
-For these packages, SLiCAP also has built-in netlist generation with `makeCircuit() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__. SLiCAP also has built-in scripts for scaling of KiCAD ``.SVG`` images from page format to drawing format, and for converting them into ``.PDF`` images. For detaited information see `Schematic capture <schematics.html>`_.
+For these packages, SLiCAP also has built-in netlist generation with `makeCircuit() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__. SLiCAP also has built-in scripts for scaling of KiCAD ``.SVG`` images from page format to drawing format, and for converting them into ``.PDF`` images. 
 
-Integration with SPICE
-----------------------
+Integration with NGspice
+------------------------
 
 `NGspice <https://ngspice.sourceforge.io/>`_ is used for numeric SPICE simulations with more elaborate models.
 
@@ -121,7 +124,10 @@ Below an **example** of the command section for user "USR" under MS-Windows with
     kicad = C:\Program Files\KiCad\9.0\bin\kicad-cli.exe
     ltspice = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe
     geda = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe
-    ngspice = C:\Users\USR\ngspice\Spice64\bin\ngspice.exe
+    ngspice = C:\Users\USR\ngspice\Spice64\bin\ngspice.exe 
+    pdflatex = C:\Users\<USR>\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex.EXE
+    dvisvgm = C:\Users\<USR>\AppData\Local\Programs\MiKTeX\miktex\bin\x64\dvisvgm.EXE
+    slicap_det = 
 
 Below an **example** of the command section for user "USR" under **Linux** or **MacOS** with default installation of LTspice under *wine*. The main configuration file is located at: ~/SLiCAP.ini:
 
@@ -132,7 +138,10 @@ Below an **example** of the command section for user "USR" under **Linux** or **
     kicad = kicad-cli
     geda = lepton-netlist
     lepton-eda = lepton-cli
-    ngspice = ngspice
+    ngspice = ngspice 
+    pdflatex = /usr/bin/pdflatex
+    dvisvgm = /usr/bin/dvisvgm
+    slicap_det = /home/USR/.local/bin/slicap_det
     
 Display the main configuration settings
 ---------------------------------------
@@ -164,6 +173,7 @@ Below an example of showing some main configuration settings under Linux:
     ini.gnetlist               = lepton-netlist
     ini.lepton_eda             = lepton-cli
     ini.ngspice                = ngspice
+    ini.slicap_det             = /home/USR/.local/bin/slicap_det
 
 Project configuration
 =====================
@@ -194,16 +204,18 @@ Create a SLiCAP project
      | | - index.html          # Main html report page
      | +-- css                 # Default directory for standard SLiCAP html report CSS
      | |   - Grid.png          # Background for standard SLiCAP html report
-     | |   - SLiCAP.css        # CSS file for standard SLiCAP html report
+     | |   - slicap.css        # CSS file for standard SLiCAP html report
      | +-- img                 # Default directory for standard SLiCAP html report images
      +-- csv                   # Default directory for csv files generated or imported by SLiCAP
+     +-- results               # Inventory (design_data.json) of the variables created by the instruction file, used by the GUI
+     +-- sch                   # Default directory for SLiCAP .slicap_sch and spice_sch schematic files
      +-+ sphinx                # Root directory for Sphinx project report
      | | - make.bat            # MSWindows batch file for compiling Sphinx project report
      | | - Makefile            # Linux (MacOS) make file for compiling Sphinx project report
      | +-- SLiCAPdata          # Directory for storing SLiCAP generated rst snippets
      | +-+ source              # Directory for storing rst project report files
      |   | - conf.py           # Sphinx configuration file based on ``Sphinx book style``
-     |   | - index.rst         # Root rst project report file
+     |   | - index.rst         # Root rst project report fileschematic 
      |   +-- img               # Directory for storing rst project report images
      |   |   - colorCode.svg   # svg image with color-coded resistors
      |   +-- _static           # Sphinx directory for style information
@@ -242,44 +254,46 @@ The python script below (user=USR, python environment=ENV, os=LINUX) generates/u
     VERSION
     -------
     ini.install_version        = 6.0.0
-    ini.latest_version         = 6.0.0
+    ini.latest_version         = Unknown
 
     INSTALL
     -------
-    ini.install_path           = /home/USR/ENV/lib/python3.12/site-packages/
+    ini.install_path           = /home/USR/mySLiCAPproject/
     ini.home_path              = /home/USR/
-    ini.main_lib_path          = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/files/lib/
-    ini.doc_path               = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/docs/html/
-    ini.kicad_syms             = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/files/kicad/SLiCAP.kicad_sym
-    ini.ngspice_syms           = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/files/kicad/SPICE.kicad_sym
-    ini.ltspice_syms           = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/files/LTspice/
-    ini.gnetlist_syms          = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/files/gSchem/
-    ini.lepton_eda_syms        = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/files/lepton-eda/
-    ini.latex_files            = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/files/tex/
-    ini.sphinx_files           = /home/USR/ENV/lib/python3.12/site-packages/SLiCAP/files/sphinx/
+    ini.main_lib_path          = /home/USR/mySLiCAPproject/SLiCAP/files/lib/
+    ini.doc_path               = /home/USR/mySLiCAPproject/SLiCAP/docs/html/
+    ini.kicad_syms             = /home/USR/mySLiCAPproject/SLiCAP/files/kicad/SLiCAP.kicad_sym
+    ini.ngspice_syms           = /home/USR/mySLiCAPproject/SLiCAP/files/kicad/SPICE.kicad_sym
+    ini.ltspice_syms           = /home/USR/mySLiCAPproject/SLiCAP/files/LTspice/
+    ini.gnetlist_syms          = /home/USR/mySLiCAPproject/SLiCAP/files/gSchem/
+    ini.lepton_eda_syms        = /home/USR/mySLiCAPproject/SLiCAP/files/lepton-eda/
+    ini.latex_files            = /home/USR/mySLiCAPproject/SLiCAP/files/tex/
+    ini.sphinx_files           = /home/USR/mySLiCAPproject/SLiCAP/files/sphinx/
 
     COMMANDS
     --------
-    ini.kicad                  = kicad-cli
-    ini.ltspice                = /home/USR/.wine/drive_c/Program Files/ADI/LTspice/LTspice.exe
-    ini.gnetlist               = lepton-netlist
-    ini.lepton_eda             = lepton-cli
-    ini.ngspice                = ngspice
+    ini.kicad                  = /usr/bin/kicad-cli
+    ini.ltspice                = 
+    ini.gnetlist               = /usr/bin/lepton-netlist
+    ini.lepton_eda             = /usr/bin/lepton-cli
+    ini.ngspice                = /usr/bin/ngspice
+    ini.slicap_det             = /home/USR/.local/bin/slicap_det
 
     PROJECT
     -------
-    ini.project_title          = myProject
-    ini.author                 = user
-    ini.created                = 2025-06-30 23:10:04
-    ini.last_updated           = 2025-06-30 23:10:59
+    ini.project_title          = Manual
+    ini.author                 = USR
+    ini.created                = 2026-07-07 20:29:39
+    ini.last_updated           = 2026-09-13 12:38:20
 
     PATHS
     -----
-    ini.project_path           = /home/USR/myProject/
+    ini.project_path           = /home/USR/mySLiCAPproject/docs/
     ini.html_path              = html/
     ini.cir_path               = cir/
     ini.img_path               = img/
     ini.csv_path               = csv/
+    ini.results_path           = results/
     ini.txt_path               = txt/
     ini.tex_path               = tex/
     ini.user_lib_path          = lib/
@@ -293,12 +307,12 @@ The python script below (user=USR, python environment=ENV, os=LINUX) generates/u
     HTML
     ----
     ini.html_prefix            = 
-    ini.html_index             = 
-    ini.html_page              = 
+    ini.html_index             = index.html
+    ini.html_page              = index.html
     ini.html_pages
 	     index.html
     ini.html_labels
-    
+
     DISPLAY
     -------
     ini.hz                     = True
@@ -312,6 +326,7 @@ The python script below (user=USR, python environment=ENV, os=LINUX) generates/u
     ini.frequency              = f
     ini.numer                  = ME
     ini.denom                  = ME
+    ini.pz_method              = det
     ini.lambdify               = numpy
     ini.step_function          = True
     ini.factor                 = True
@@ -326,12 +341,17 @@ The python script below (user=USR, python environment=ENV, os=LINUX) generates/u
     ini.gain_colors_servo      = m
     ini.gain_colors_direct     = g
     ini.gain_colors_vi         = c
+    ini.gain_colors_ideal      = c
     ini.axis_height            = 5
+    ini.subplot_hspace         = 0.45
+    ini.subplot_wspace         = 0.3
     ini.axis_width             = 7
     ini.line_width             = 2
     ini.line_type              = -
     ini.plot_fontsize          = 12
     ini.marker_size            = 7
+    ini.cursor_fontsize       = 10
+    ini.cursor_bgcolor        = lightyellow
     ini.legend_loc             = best
     ini.default_colors         = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
     ini.default_markers        = ['']
@@ -343,8 +363,8 @@ The python script below (user=USR, python environment=ENV, os=LINUX) generates/u
     ini.pair_ext               = ['P', 'N']
     ini.update_srcnames        = True
     ini.remove_param_pair_ext  = True
-    
-We will discuss these settings later.
+
+These settings are discussed later.
 
 Change configuration settings
 -----------------------------
@@ -359,21 +379,24 @@ Change configuration settings
 .. code-block::
 
    import SLiCAP as sl
-   sl.ini.disp            = 3     # set the number of significant digits in reports and listings to 3
-   sl.ini.hz              = False # set the default frequency units to *rad/s*
-   sl.ini.max_rec_subst   = 20    # set the maximum number of recursive substitutions in expressions to 20
-   sl.ini.reduce_circuit  = False # Do NOT eliminate unused independent voltage sources from the circuit
-                                  # If True, the size of MNA matrices comprising independent voltage sources will be reduced
-                                  # by eliminating these sources if they are not used as signal source, 
-                                  # detector, or reference for CCCS and CCVS elements
-   sl.ini.reduce_matrix   = False # Do NOT eliminate variables and reduce the matrix size before calculating the determinant
-                                  # If True, the size of MNA matrices comprising will be reduced through division-free
-                                  # elimination of variables, before calculation of the determinant. 
-                                  # The elimination method is division-free in the Laplace variable
-   sl.ini.numer           = "BS"  # Use Bareiss division-free determinant calculation method for the numerator
-                                  # Default is ``ME``: recursive expansion of minors
-   sl.ini.denom           = "BS"  # Use Bareiss division-free determinant calculation method for the denominator
-                                  # Default is ``ME``: recursive expansion of minors
+   sl.ini.disp            = 3       # set the number of significant digits in reports and 
+                                    # listings to 3
+   sl.ini.hz              = False   # set the default frequency units to *rad/s*
+   sl.ini.max_rec_subst   = 20      # set the maximum number of recursive substitutions in 
+                                    # expressions to 20
+   sl.ini.reduce_matrix   = False   # Do NOT eliminate variables and reduce the matrix size 
+                                    # before calculating the determinant
+                                    # If True, the size of MNA matrices comprising will be 
+                                    # reduced through division-free elimination of variables, 
+                                    # before calculation of the determinant. 
+   sl.ini.numer           = "MECPP" # Use the C++ resursive Minor Expansion determinant 
+                                    # calculation method for the numerator (default Linux)
+                                    # with the SLiCAP "ME" resursive Minor Expansion determinant 
+                                    # calculation method as fall back method.
+   sl.ini.denom           = "MECPP" # Use the C++ resursive Minor Expansion determinant 
+                                    # calculation method for the denominator (default Linux) 
+                                    # with the SLiCAP "ME" resursive Minor Expansion determinant 
+                                    # calculation method as fall back method.
    
 Find SLiCAP schematic symbol libraries
 --------------------------------------

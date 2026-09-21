@@ -1,0 +1,14 @@
+smallAmp
+**************************************************
+* SLiCAP subcircuit definition
+* Subcircuit symbol: smallAmp_slicap_symbol.svg
+* Subcircuit schematic: smallAmp.slicap_sch
+**************************************************
+
+.subckt smallAmp inN inP outN outP A_v={A} r_o={R}
+
+E1 1 outN inP inN E value={A_v}
+R1 1 outP R value={r_o}
+
+.ends
+.end

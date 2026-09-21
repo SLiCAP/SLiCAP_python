@@ -4,6 +4,7 @@
 SLiCAP module with math functions.
 """
 import numbers
+import re
 import sys
 import subprocess
 import sympy as sp
@@ -16,8 +17,7 @@ from numpy.polynomial import Polynomial
 from numpy import trapezoid
 from scipy.integrate import quad
 from scipy.optimize import fsolve
-from SLiCAP.SLiCAPlex import _replaceScaleFactors, _sympify
-from pytexit import py2tex
+from SLiCAP.SLiCAPlex import _replaceScaleFactors, _sympify, _SCALEFACTORS
 from copy import deepcopy
 
 def det(M, method="ME"):
@@ -203,7 +203,7 @@ def _detMECPP(M):
         return None
     # The wire format carries only alias names (sym0, sym1, ...): sympy
     # symbol names may be unlexable for GiNaC (e.g. the leading underscore
-    # of _LGREF_1 in loop-gain analyses), and mapping the aliases back to
+    # of a user symbol such as _x), and mapping the aliases back to
     # the ORIGINAL symbol objects preserves assumptions exactly.
     syms = sorted(M.free_symbols, key=lambda x: x.name)
     fwd = {s: sp.Symbol("sym{}".format(k)) for k, s in enumerate(syms)}
@@ -511,6 +511,12 @@ def findServoBandwidth(loopgainRational):
     numZeros = len(zeros)
     numCornerFreqs = numPoles + numZeros
     gain, coeffsN, coeffsD = coeffsTransfer(loopgainRational)
+    # A loop gain without poles or zeros (e.g. resistive feedback around a
+    # frequency-independent controller) has a mid-band value and nothing
+    # else; the loop below never runs, so define the result here instead of
+    # failing with an unbound 'result' (2026-09-11).
+    result = {'mbv': np.abs(float(gain)), 'mbf': 0.0, 'lpf': None, 'lpo': None,
+              'hpf': None, 'hpo': None}
     freqsOrders = np.zeros((numCornerFreqs, 2), dtype='float64')
     for i in range(numZeros):
         freqsOrders[i, 0] = np.abs(zeros[i])
@@ -925,15 +931,79 @@ def _makeNumData(yFunc, xVar, x, normalize=False):
     else:
         yFunc = sp.N(yFunc)
     if xVar in yFunc.atoms(sp.Symbol):
-        # Check for Heaviside functions (not implemented in sp.lambdify)
-        if len(yFunc.atoms(sp.Heaviside)) != 0:
-            y = [sp.N(yFunc.xreplace({xVar: x[i]})).doit() for i in range(len(x))]
+        if yFunc.has(sp.Heaviside):
+            y = _evalHeavisideTerms(yFunc, xVar, np.asarray(x, dtype=float))
         else:
-            func = sp.lambdify(xVar, yFunc, ini.lambdify)
-            y = func(x)
+            # lambdify; the point-by-point substitution is the FALLBACK
+            # only: on the manual's periodic pulse response it cost 41 s
+            # against 0.02 s (Anton, 2026-09-21: "plots.py locks up").
+            try:
+                func = sp.lambdify(xVar, yFunc, ini.lambdify)
+                y = func(x)
+            except Exception:
+                y = [sp.N(yFunc.xreplace({xVar: x[i]})).doit() for i in range(len(x))]
     else:
         y = [sp.N(yFunc) for i in range(len(x))]
     return y
+
+def _evalHeavisideTerms(yFunc, xVar, x):
+    """
+    Evaluates a sum of terms f_i(x) * Heaviside(x - x_i) the way a designer
+    reads it (Anton, 2026-09-21): first the Heaviside, and the factor f_i
+    only where it is switched on. A time-domain response after the inverse
+    Laplace transform (step2PeriodicPulse, delayed responses) is such a sum;
+    the naive product evaluated f_i everywhere, and where the Heaviside is 0
+    the growing exponential of f_i overflowed to inf, 0 * inf = nan, and the
+    plot broke off. Terms without a Heaviside, or with one that is not a
+    step at a point, are evaluated as they are.
+
+    :param yFunc: expression in xVar (numeric coefficients)
+    :type yFunc: sympy.Expr
+    :param xVar: the variable
+    :type xVar: sympy.Symbol
+    :param x: the sample points
+    :type x: numpy.ndarray
+    :return: y values (complex if the expression is)
+    :rtype: numpy.ndarray
+    """
+    y = np.zeros(len(x), dtype=complex)
+    for term in sp.Add.make_args(yFunc):
+        steps = [h for h in term.atoms(sp.Heaviside) if h.args[0].has(xVar)]
+        a = b = None
+        if len(steps) == 1:
+            arg = steps[0].args[0]
+            a, b = sp.diff(arg, xVar), arg.xreplace({xVar: sp.Integer(0)})
+            if not (a.is_number and b.is_number and a != 0):
+                a = b = None                             # not a*x + b
+        if a is not None:
+            h = steps[0]
+            x0 = float(-b / a)
+            h0 = float(h.args[1]) if len(h.args) > 1 else 0.5
+            rising = float(a) > 0
+            at = np.isclose(x, x0, rtol=0.0, atol=1e-12 * max(1.0, abs(x0)))
+            on = ((x > x0) if rising else (x < x0)) & ~at
+            rest = term.xreplace({h: sp.Integer(1)})
+            # Evaluate the switched factor in the time SINCE the switch,
+            # u = x - x0 >= 0: sympy had written exp(-a*(x - x0)) as the
+            # number exp(a*x0) times exp(-a*x), and that number overflows
+            # in numpy for a large delay. With x = x0 + u the number is
+            # multiplied back out exactly and every exponential decays.
+            rest = sp.expand(rest.xreplace({xVar: xVar + x0}), power_exp=True)
+            f = sp.lambdify(xVar, rest, ini.lambdify)
+            if np.any(on):
+                y[on] += np.asarray(f(x[on] - x0), dtype=complex)
+            if np.any(at) and h0 != 0:
+                y[at] += h0 * np.asarray(f(x[at] - x0), dtype=complex)
+        else:
+            try:
+                f = sp.lambdify(xVar, term, ini.lambdify)
+                y += np.asarray(f(x), dtype=complex) * np.ones(len(x))
+            except Exception:
+                y += np.array([complex(sp.N(term.xreplace({xVar: xi})).doit()) for xi in x])
+    if np.all(np.imag(y) == 0):
+        y = np.real(y)
+    return y
+
 
 def _rational_coeffs_numeric(expr, var):
     """
@@ -1475,15 +1545,18 @@ def step2PeriodicPulse(ft, t_pulse, t_period, n_periods):
     :type t_period: int, float
 
     :param n_periods: Number of pulses
-    :typen_periods: int, float
+    :type n_periods: int
 
     :return: modified time function
     :rtype: sympy.Expr
     """
     t = sp.Symbol('t')
-    ft *= sp.Heaviside(t, 1)
+    # A step response from the inverse Laplace transform already carries its
+    # Heaviside(t); only a bare f(t) gets one (2026-09-21).
+    if not any(h.args[0] == t for h in ft.atoms(sp.Heaviside)):
+        ft *= sp.Heaviside(t, 1)
     ft_out = ft
-    n_edges = 2*n_periods - 1
+    n_edges = 2*int(n_periods) - 1
     t_delay = 0
     if t in ft.atoms(sp.Symbol):
         for i in range(n_edges):
@@ -2107,63 +2180,6 @@ def roundN(expr, numeric=False):
         pass
     return expr
 
-def _ilt_numeric_simple(numCoeffs, rootDict, t):
-    """
-    Returns the inverse Laplace transform for the all-simple-poles numeric
-    case as a real sympy expression, assembled directly from the numeric
-    residues:
-
-    Re(c*exp((sigma + j*omega)*t)) = exp(sigma*t)*(Re(c)*cos(omega*t) -
-    Im(c)*sin(omega*t))
-
-    summed over ALL roots — conjugate pairs add up correctly by
-    construction, so no pairing and no symbolic as_real_imag/trigsimp is
-    needed. Returns None when a residue is not finite in float arithmetic;
-    ilt() then uses the symbolic residue path.
-
-    :param numCoeffs: Numerator coefficients (numeric, decreasing order).
-    :type numCoeffs: list
-
-    :param rootDict: Denominator roots (all with multiplicity 1).
-    :type rootDict: dict
-
-    :param t: time variable
-    :type t: sympy.Symbol
-
-    :return: Inverse Laplace Transform f(t), or None.
-    :rtype: sympy.Expr, NoneType
-    """
-    rts = np.array(list(rootDict.keys()), dtype=complex)
-    try:
-        nc = np.array([complex(c) for c in numCoeffs], dtype=complex)
-    except (TypeError, OverflowError):
-        return None
-    if not np.all(np.isfinite(nc)):
-        return None
-    # spurious imaginary parts on real roots (numpy root finding) are
-    # chopped relative to the root scale; genuine high-Q pole pairs are
-    # far above this threshold
-    tol = 1e-10 * max(float(np.max(np.abs(rts))) if len(rts) else 0.0, 1.0)
-    terms = []
-    for k, rk in enumerate(rts):
-        denom = np.prod(rk - np.delete(rts, k))
-        if denom == 0:
-            return None
-        c = np.polyval(nc, rk) / denom
-        if not np.isfinite(c):
-            return None
-        sigma = float(rk.real)
-        omega = float(rk.imag)
-        if abs(omega) <= tol:
-            omega = 0.0
-        decay = sp.exp(sigma*t) if sigma != 0.0 else sp.S.One
-        if omega == 0.0:
-            terms.append(float(c.real) * decay)
-        else:
-            terms.append(decay * (float(c.real)*sp.cos(omega*t)
-                                  - float(c.imag)*sp.sin(omega*t)))
-    return sp.Add(*terms)
-
 def ilt(expr, s, t, integrate=False):
     """
     Returns the Inverse Laplace Transform f(t) of an expression F(s) for t > 0.
@@ -2198,7 +2214,7 @@ def ilt(expr, s, t, integrate=False):
             # factors (e.g. determinant ratios that are no longer
             # normalized at compute time) add spurious pole/zero pairs to
             # the result and can push the coefficient spread past the
-            # float64 range below (found via ASMPT-12, 2026-07-13).
+            # float64 range below (found in a test project, 2026-07-13).
             try:
                 num, den = sp.cancel(num/den).as_numer_denom()
             except sp.PolynomialError:
@@ -2225,14 +2241,42 @@ def ilt(expr, s, t, integrate=False):
             polyNum = sp.Poly(num, s)
             numCoeffs = polyNum.all_coeffs()
             numCoeffs = [sp.N(numCoeff/gainD) for numCoeff in numCoeffs]
-            if len(rootDict) and max(rootDict.values()) <= 1:
-                # all poles simple: assemble the real time function directly
-                # from numeric residues — no symbolic as_real_imag/trigsimp
-                inv_laplace = _ilt_numeric_simple(numCoeffs, rootDict, t)
-            if inv_laplace is None:
-                # repeated poles, or non-finite numeric residues:
-                # symbolic residue path
-                num = sp.Poly(numCoeffs, s)
+            # A numeric shortcut for simple poles (_ilt_numeric_simple,
+            # 2026-07-13) was tried and REMOVED on 2026-09-11: its float64
+            # residue chop flattened genuine pole pairs for two months, and
+            # once made accurate (mpmath) it was no faster than this path
+            # (0.91 s vs 0.67 s on a 17-pole driver). Anton: "maybe my ILT
+            # was slow, but scipy residues are wrong."
+            num = sp.Poly(numCoeffs, s)
+            if len(rootDict) and max(rootDict.values()) == 1:
+                # All poles simple. The residues are the ones of the general
+                # path below, c_k = num(p_k)/prod(p_k - p_j); the real time
+                # function is assembled term by term,
+                # Re(c e^(p t)) = e^(sigma t) (Re c cos(omega t) - Im c sin(omega t)),
+                # summed over ALL roots (a conjugate pair adds to its real
+                # part by construction). This replaces as_real_imag() on the
+                # whole sum, which took three quarters of the time on a
+                # 17-pole transfer (profiled 2026-09-11) without changing a
+                # number: same roots, same residues. Nothing is chopped: a
+                # real root of a real polynomial comes back with an exactly
+                # zero imaginary part (Anton, 2026-09-11).
+                terms = []
+                for root in rts:
+                    fs = num.as_expr()
+                    for rt in rts:
+                        if rt != root:
+                            fs /= (s-rt)
+                    c = complex(sp.N(fs.xreplace({s: root})))
+                    sigma, omega = float(sp.re(root)), float(sp.im(root))
+                    decay = sp.exp(sigma*t) if sigma != 0.0 else sp.S.One
+                    if omega == 0.0:
+                        terms.append(c.real*decay)
+                    else:
+                        terms.append(decay*(c.real*sp.cos(omega*t)
+                                            - c.imag*sp.sin(omega*t)))
+                inv_laplace = sp.Add(*terms)
+            else:
+                # repeated poles: residues by differentiation, real part symbolically
                 inv_laplace = 0
                 for root in rts:
                     # get root multiplicity
@@ -2394,6 +2438,30 @@ def ENG(number, scaleFactors=False):
     if exp == 0:
         exp = None
     return number, exp
+
+def listStateSpace(ssResult):
+    """
+    Prints the state-space realization of a doStateSpace() result:
+    dx/dt = A x + B u, y = C x + D u, followed by the vectors x (states),
+    u (inputs), y (outputs) and the matrices A, B, C and D. Plain ASCII.
+
+    :param ssResult: SLiCAP execution result of a doStateSpace() instruction.
+    :type ssResult: SLiCAP.SLiCAPinstruction.instruction
+
+    :return: None
+    """
+    ss = getattr(ssResult, "stateSpace", None)
+    if ss is None:
+        print("No state-space realization available.")
+        return
+    print("State-space realization: dx/dt = A x + B u, y = C x + D u")
+    for name, obj in (("x", ss.x), ("u", ss.u), ("y", ss.y)):
+        print("%s^T = %s" % (name, sp.pretty(roundN(obj).T, use_unicode=False)))
+    for name, obj in (("A", ss.A), ("B", ss.B), ("C", ss.C), ("D", ss.D)):
+        print("%s = " % name)
+        print(sp.pretty(roundN(obj), use_unicode=False))
+    return
+
 
 def listPZ(pzResult):
     """
@@ -2656,26 +2724,209 @@ def integrate_monomial_coeffs(expr, variables, x, x_lower, x_upper, doit=True,
                            for key in integratedCoeffs.keys())
     return integratedResult
 
+# ---------------------------------------------------------------------
+#  Units
+# ---------------------------------------------------------------------
+# One parser for unit strings, two renderers: LaTeX (formatters) and plain
+# text (Matplotlib axis labels, GUI). Until 2026-09-12 units2TeX handed each
+# token to the pytexit library, which turned 'V^2/Hz' into an xor operator
+# and 'kOhm' into 'kOmega' (Anton). pytexit was REMOVED from the
+# dependencies with this rewrite; it had no other user.
+#
+# Grammar (whitespace-insensitive, '*' and a space both multiply):
+#     units   := product ('/' product)*        left to right, as in 'V/A/s'
+#     product := factor (('*' | ' ') factor)*
+#     factor  := '(' units ')' | 'sqrt' '(' units ')' | atom [('^' | '**') int]
+#     atom    := number | [prefix] unit-name | any other identifier
+# A name is looked up as a unit first, then as SI prefix + unit, so 'm' is
+# the metre, 'mV' is a millivolt and 'Pa' is the pascal.
+
+_UNIT_NAMES = ('V', 'A', 'W', 'Ohm', 'F', 'H', 'S', 'Hz', 's', 'm', 'g', 'kg',
+               'K', 'J', 'C', 'N', 'Pa', 'T', 'Wb', 'rad', 'sr', 'deg', 'dB',
+               'dBm', 'dBV', 'mol', 'cd', 'eV', 'min', 'h', 'ppm', 'LSB', 'bit',
+               'Sa', 'sample', 'samples')
+_UNIT_TEX = {'Ohm': '\\Omega', 'deg': '{}^{\\circ}'}
+_UNIT_TXT = {'Ohm': 'Ω', 'deg': '°'}
+_PREFIX_TEX = {'u': '\\mu '}
+_PREFIX_TXT = {'u': 'µ'}
+_SUPERSCRIPT = str.maketrans('0123456789-', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
+
+class _UnitAtom(object):
+    """One factor of a unit expression: (prefix, name) with an integer
+    exponent; 'sqrt' halves the exponent (kept as a flag)."""
+    def __init__(self, prefix, name, exponent=1, root=False):
+        self.prefix = prefix
+        self.name = name
+        self.exponent = exponent
+        self.root = root
+
+def _splitUnitName(token):
+    if token in _UNIT_NAMES:
+        return '', token
+    if len(token) > 1 and token[0] in _SCALEFACTORS and token[1:] in _UNIT_NAMES:
+        return token[0], token[1:]
+    return '', token
+
+def _tokenizeUnits(units):
+    return re.findall(r'\*\*|[A-Za-z%]+|\d+|[()/^*\-]', units)
+
+def _parseUnits(units):
+    """Returns (numerator, denominator): two lists of _UnitAtom."""
+    tokens = _tokenizeUnits(units)
+    pos = [0]
+
+    def peek():
+        return tokens[pos[0]] if pos[0] < len(tokens) else None
+
+    def take():
+        pos[0] += 1
+        return tokens[pos[0] - 1]
+
+    def parse_units():
+        num, den = parse_product()
+        while peek() == '/':
+            take()
+            n2, d2 = parse_product()
+            num, den = num + d2, den + n2
+        return num, den
+
+    def parse_product():
+        num, den = parse_factor()
+        while peek() is not None and peek() not in ('/', ')'):
+            if peek() == '*':
+                take()
+            n2, d2 = parse_factor()
+            num, den = num + n2, den + d2
+        return num, den
+
+    def parse_factor():
+        tok = take()
+        if tok == 'sqrt' and peek() == '(':
+            take()
+            num, den = parse_units()
+            if peek() == ')':
+                take()
+            for atom in num + den:
+                atom.root = True
+            return num, den
+        if tok == '(':
+            num, den = parse_units()
+            if peek() == ')':
+                take()
+        elif tok is None:
+            return [], []
+        else:
+            prefix, name = _splitUnitName(tok)
+            num, den = [_UnitAtom(prefix, name)], []
+        if peek() in ('^', '**'):
+            take()
+            sign = 1
+            if peek() == '-':
+                take()
+                sign = -1
+            exponent = sign * int(take()) if (peek() or '').isdigit() else 1
+            for atom in num + den:
+                atom.exponent *= exponent
+        return num, den
+
+    num, den = parse_units()
+    # Negative exponents move the atom to the other side of the fraction
+    n2, d2 = [], []
+    for atom in num:
+        (d2 if atom.exponent < 0 else n2).append(atom)
+    for atom in den:
+        (n2 if atom.exponent < 0 else d2).append(atom)
+    for atom in n2 + d2:
+        atom.exponent = abs(atom.exponent)
+    return n2, d2
+
+def _renderAtom(atom, unitmap, prefixmap, tex):
+    name = unitmap.get(atom.name, atom.name)
+    text = prefixmap.get(atom.prefix, atom.prefix) + name
+    if atom.exponent != 1:
+        if atom.prefix:
+            text = '(' + text + ')'      # (uV)^2, as engineers read it
+        text += ('^{%d}' % atom.exponent) if tex else str(atom.exponent).translate(_SUPERSCRIPT)
+    if atom.root:
+        text = ('\\sqrt{%s}' % text) if tex else ('√' + text)
+    return text
+
+def _renderUnits(units, tex):
+    if type(units) != str or units.strip() == '':
+        return ''
+    units = units.strip()
+    if '\\' in units:
+        return units                     # already LaTeX (formatter-internal)
+    try:
+        num, den = _parseUnits(units)
+    except (ValueError, IndexError):
+        return units
+    unitmap, prefixmap = (_UNIT_TEX, _PREFIX_TEX) if tex else (_UNIT_TXT, _PREFIX_TXT)
+    num = [a for a in num if a.name != '1']
+    ntxt = [_renderAtom(a, unitmap, prefixmap, tex) for a in num]
+    dtxt = [_renderAtom(a, unitmap, prefixmap, tex) for a in den]
+    if tex:
+        n = '\\,'.join(ntxt) if ntxt else '1'
+        if dtxt:
+            return '\\frac{%s}{%s}' % (n, '\\,'.join(dtxt))
+        return n
+    n = '·'.join(ntxt) if ntxt else '1'
+    if dtxt:
+        d = '·'.join(dtxt)
+        return n + '/' + (('(%s)' % d) if len(dtxt) > 1 else d)
+    return n
+
 def units2TeX(units):
     """
-    Returns units in LaTeX format, without opening and closing '$'.
+    Returns units in LaTeX format, without opening and closing '$' and
+    without ``\\mathrm``: the formatters add the wrapper.
+
+    Prefixes and names are set upright by the caller's ``\\mathrm``; 'Ohm'
+    becomes ``\\Omega``, the prefix 'u' becomes ``\\mu``, 'deg' a degree
+    sign, exponents ('^' or '**') superscripts, '/' a ``\\frac``, and
+    'sqrt(...)' a root. A string that already contains a backslash is
+    returned unchanged.
 
     :param units: String representing an expression with units
     :type units: str
 
     :return: LaTeX code of 'units' without opening or closing tags.
     :rtype: str
+
+    :example:
+
+    >>> import SLiCAP as sl
+    >>> sl.units2TeX('V^2/Hz')
+    '\\\\frac{V^{2}}{Hz}'
+    >>> sl.units2TeX('kOhm')
+    'k\\\\Omega'
+    >>> sl.units2TeX('uV/sqrt(Hz)')
+    '\\\\frac{\\\\mu V}{\\\\sqrt{Hz}}'
     """
-    tex = " "
-    if type(units) == str and units != '':
-        replacements = {}
-        replacements['Ohm'] = 'Omega'
-        for key in replacements.keys():
-            units = units.replace(key, replacements[key])
-        for unitpart in units.split():
-            tex += py2tex(unitpart, print_latex=False,
-                          print_formula=False, simplify_output=False)[2:-2] + " "
-    return tex[:-1]
+    return _renderUnits(units, tex=True)
+
+def units2text(units):
+    """
+    Returns units as plain (Unicode) text for plot axis labels and GUI
+    fields: the same grammar as :func:`units2TeX`, with Ohm as the ohm sign,
+    the prefix 'u' as the micro sign, superscript digits for exponents and a
+    root sign for 'sqrt'.
+
+    :param units: String representing an expression with units
+    :type units: str
+
+    :return: units as text
+    :rtype: str
+
+    :example:
+
+    >>> import SLiCAP as sl
+    >>> sl.units2text('V^2/Hz')
+    'V²/Hz'
+    >>> sl.units2text('kOhm')
+    'kΩ'
+    """
+    return _renderUnits(units, tex=False)
 
 def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
     """

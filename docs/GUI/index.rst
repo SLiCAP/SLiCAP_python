@@ -37,7 +37,7 @@ two that must be kept in sync by hand.
    schematics/annotations
    schematics/preferences
    schematics/netlist_and_export
-   hierarchical_blocks
+   schematics/hierarchical_blocks
    instruction/instructions
    reference/symbol_libraries
    reference/design

@@ -1,7 +1,7 @@
 (export (version "E")
   (design
     (source "/home/anton/DATA/SLiCAP/SLiCAP_github/SLiCAP_python/docs/API/kicad/balancedNetwork/balancedNetwork.kicad_sch")
-    (date "2026-08-16T22:47:18+0200")
+    (date "2026-09-16T15:16:31+0200")
     (tool "Eeschema 9.0.9-9.0.9~ubuntu24.04.1")
     (sheet (number "1") (name "/") (tstamps "/")
       (title_block

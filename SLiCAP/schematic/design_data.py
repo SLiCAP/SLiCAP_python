@@ -55,7 +55,7 @@ KNOWN_KINDS = ["result", "circuit", "figure", "traces", "measurements",
 # Without this a single measurement fell through to "other", which is hidden
 # by default, so MEAS4 was silently absent from the panel (Anton, 2026-08-03).
 KIND_FAMILY = {"measurement": "measurements", "trace": "traces",
-               "axis": "figure"}
+               "axis": "figure", "statespace": "matrix"}
 
 
 def filter_kind(kind: str) -> str:
@@ -68,7 +68,8 @@ def filter_kind(kind: str) -> str:
 # Only attributes with a non-empty value are listed.
 _RESULT_ATTRS = ["laplace", "numer", "denom", "poles", "zeros", "DCvalue",
                  "dc", "dcSolve", "onoise", "inoise", "ovar", "ivar",
-                 "time", "impulse", "stepResp", "solve", "M", "Iv", "Dv"]
+                 "time", "impulse", "stepResp", "solve", "M", "Iv", "Dv",
+                 "stateSpace"]
 
 
 def _class_name(value) -> str:
@@ -95,6 +96,10 @@ def classify(value) -> str:
         return "axis"
     if cname.endswith("SLiCAPprotos.Snippet"):
         return "snippet"
+    # the realization of doStateSpace (a named tuple A, B, C, D, x, u, y);
+    # filtered with the matrices (KIND_FAMILY)
+    if cname.endswith("SLiCAPstateSpace.StateSpace"):
+        return "statespace"
     # A trace set: identified by the class, not by its module path - the
     # trace class lives in SLiCAPtraces and is re-exported by SLiCAPplots.
     from SLiCAP.SLiCAPtraces import trace as _trace, measurement as _meas
@@ -183,6 +188,13 @@ def _preview(value, kind: str) -> dict:
             return {"value": str(getattr(value, "snippet", value))[:5000],
                     "format": str(getattr(value, "format", "")),
                     "path": str(getattr(value, "saved_path", ""))}
+        if kind == "statespace":
+            r, m, p = value.A.rows, value.B.cols, value.C.rows
+            rows = ["x^T = " + sp.pretty(value.x.T, use_unicode=False),
+                    "u^T = " + sp.pretty(value.u.T, use_unicode=False),
+                    "y^T = " + sp.pretty(value.y.T, use_unicode=False)]
+            return {"value": f"{r} states, {m} inputs, {p} outputs",
+                    "pprint": "\n".join(rows)[:2000]}
         if kind == "list":
             items = list(value)[:6]
             parts = []

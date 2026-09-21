@@ -15,7 +15,7 @@ Design intent
   keeps the hierarchy (an ``X`` instance plus a ``.subckt`` definition);
   SLiCAP / NGspice perform the flattening at analysis time.  This keeps
   netlists small and readable and preserves the design hierarchy.
-* A subcircuit's **interface parameters** come from its ``.subckt`` definition
+* Subcircuit's **interface parameters** come from its ``.subckt`` definition
   (name and default value), not from the built-in device tables — matching
   standard SPICE practice.
 * A subcircuit is stored as a **package** in the project ``lib/`` folder: the
@@ -31,14 +31,25 @@ Any schematic can be turned into a reusable subcircuit:
 #. Add **port** symbols and name them — the names become the subcircuit's
    external nodes.  A ``ground`` (node 0) stays global and is never a port.
 #. In :menuselection:`File --> Schematic properties…`, tick **Save this
-   schematic as a subcircuit** and give the document a *Title* (the
-   subcircuit name).
+   schematic as a SLiCAP subcircuit (.lib)** and give the document a
+   *Title*: the subcircuit name, and the name of its files.
+
+   .. TODO screenshot: the Schematic Properties dialog with the subcircuit box ticked and a title
+
 #. :menuselection:`File --> Save schematic` opens the **Create Subcircuit**
-   dialog, where you set the **node order** (this order *is* the ``.subckt``
-   node list) and declare the **overridable parameters** (name and default).
-#. Saving writes the package to ``lib/``: the editable source
+   dialog. Its *Nodes* list holds the named ports; move them with **Up** and
+   **Down**, top to bottom is the left-to-right node order of the ``.subckt``
+   line, the order in which a parent connects the block. Under *Parameters*
+   declare the **overridable parameters** with their defaults; a parent may
+   pass a value for each of them. The dialog is a fixed part of saving a
+   subcircuit: it opens on every save, showing the previous choices.
+
+   .. TODO screenshot: the Create Subcircuit dialog for smallAmp (nodes inP, inN, outP, outN; parameters A_v, r_o)
+
+#. **Create Subcircuit** writes the package to ``lib/``: the editable source
    (``lib/<title>.slicap_sch`` or ``.spice_sch``) and the compiled library
-   (``lib/<title>.slicap_lib`` or ``.spice_lib``).
+   (``lib/<title>.slicap_lib`` or ``.spice_lib``). The schematic is saved in
+   ``lib/`` from then on, not in ``sch/``.
 
 The library file holds one ``.subckt`` definition; the ports appear in the
 chosen order, and a parameter passed in on the ``.subckt`` line is **not**
@@ -47,11 +58,33 @@ Library lines placed on the schematic (device models such as ``inc
 BC847.lib``) are carried into the generated library, so the definition is
 complete on its own.
 
+Regenerating the library from a script
+======================================
+
+The library is also written **without the GUI**. ``makeCircuit()`` and
+``make_schematic()`` recognise a subcircuit schematic by the box ticked in
+its properties and write the library instead of a circuit netlist:
+
+.. code-block:: python
+
+   import SLiCAP as sl
+   sl.initProject("My Design")
+   sl.makeCircuit("lib/smallAmp.slicap_sch")   # writes lib/smallAmp.slicap_lib, img/smallAmp.svg, img/smallAmp.pdf
+
+The call returns ``None``: a subcircuit is not a circuit, it does not need a ground
+node, and it cannot have source, detector, or loop gain reference. 
+No circuit object check is performed and no circuit object is created by ``makeCircuit()``. 
+The port order and the parameters come from the schematic
+properties, as saved from the Create Subcircuit dialog. A script that builds
+a project's documentation can therefore regenerate every subcircuit library
+and figure from the schematics, in the same way it regenerates the circuits.
+Unchanged schematics are not re-exported.
+
 .. note::
 
    **Libraries are always global** in SLiCAP: the contents of a ``.lib`` /
    ``.inc`` line go to one global namespace, wherever the line appears —
-   also inside a subcircuit definition.  Two libraries defining the *same*
+   also inside a subcircuit definition. Two libraries defining the *same*
    model name therefore conflict.  (Inline ``.model`` / ``.param``
    definitions inside a ``.subckt`` *are* local to it.)  The NGspice library
    is generated to behave the same way.
@@ -100,7 +133,7 @@ it is already open, its tab is activated instead of opening a second copy.
 Saving the subcircuit re-runs the Create Subcircuit dialog and regenerates
 the library, keeping schematic, symbol and ``.subckt`` definition in step.
 
-**Operating-point annotations follow the descent.**  When the parent
+**Operating-point annotations (NGspice) follow the descent.**  When the parent
 schematic holds the results of an op run, descending hands the subcircuit
 view the values of *that instance*: internal nets show their bias voltages,
 port nets show the parent nets they connect to, and the tab title names the

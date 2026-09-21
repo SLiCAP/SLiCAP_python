@@ -48,7 +48,11 @@ def _element_lines(components: list, node_fn) -> list[str]:
         pins   = comp.pin_positions()
         nodes  = [node_fn(comp, px, py) for px, py in pins]
         refs   = list(comp.refs)
-        model  = comp.model
+        # A schematic saved before its symbol declared a model keeps model ''
+        # (the frozen .symbols cache): fall back to the library's default,
+        # e.g. 'K' for the coupling factor, which SLiCAP requires on the
+        # line (Anton, 2026-09-20: "K1 L1P L1N value={k_c}" -> missing model).
+        model  = comp.model or _library_model(comp)
         params = [(k, v) for k, v in comp.params.items() if v.strip()]
 
         cid = comp.instance_id
@@ -76,6 +80,25 @@ def _element_lines(components: list, node_fn) -> list[str]:
     if errors:
         raise NetlistError(errors)
     return lines
+
+
+_DEFAULT_MODELS: dict | None = None
+
+
+def _library_model(comp) -> str:
+    """The default model of the component's symbol in the CURRENT system
+    library, '' when it declares none. Only consulted when the component
+    itself carries no model; the library is read once per process."""
+    global _DEFAULT_MODELS
+    if _DEFAULT_MODELS is None:
+        try:
+            from .symbol_library import build_library
+            lib = build_library(None, sch_type="slicap")
+            _DEFAULT_MODELS = {name: (lib.symbol(name).model or "")
+                               for name in lib._symbols}
+        except Exception:
+            _DEFAULT_MODELS = {}
+    return _DEFAULT_MODELS.get(comp.symbol_name, "")
 
 
 def build_netlist(
@@ -159,6 +182,7 @@ def build_subcircuit(
     params:     list = None, # list[(name, default)] overridable parameters
     params_items: list = None,  # list[ParameterItem] — internal .param definitions
     libs:       list = None, # list[LibraryItem]  (.lib/.include lines)
+    model_defs: list = None, # list[ModelItem]    (.model blocks INSIDE the .subckt)
 ) -> str:
     """
     Build a SLiCAP library (`.lib`) file holding one subcircuit definition.
@@ -236,6 +260,16 @@ def build_subcircuit(
             if param_lines:
                 lines.append("")
                 lines.extend(param_lines)
+
+    # Model definitions drawn on the subcircuit schematic belong to the
+    # subcircuit: without them its transistors had no model when the library
+    # was compiled ("missing definition of model: myQ", Anton, 2026-09-20).
+    if model_defs:
+        for model_item in model_defs:
+            model_lines = model_item.netlist_lines()
+            if model_lines:
+                lines.append("")
+                lines.extend(model_lines)
 
     # ── element lines ──────────────────────────────────────────────────────────
     lines.append("")

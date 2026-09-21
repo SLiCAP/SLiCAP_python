@@ -876,6 +876,11 @@ def _checkElementModelParams(circuitObject, el):
             basicModel = False
     # Assign basic model to element
     el.model = basicModel
+    if basicModel == False:
+        # The error is counted and reported by _checkCircuit; the parameter
+        # check below has no prototype to check against (it raised
+        # KeyError: False and hid the message, 2026-09-14).
+        return circuitObject
     # Check parameter names and complete the list of parameters with default values
     givenParams = el.params
     allParams   = _MODELS[basicModel].params
@@ -1374,7 +1379,14 @@ def _checkCircuit(fileName):
     if _CIRCUITS['main'].errors == 0:
         for key in _CIRCUITS.keys():
             _checkReferences(_CIRCUITS[key]) # Complete all data, include libraries and replace models and circuits to be expanded with thei prototype circuit
-        if _CIRCUITS[key].errors == 0:
+        # Errors in ANY circuit, a library subcircuit included, stop the
+        # expansion; only the last key was tested before, so a missing model
+        # in a subcircuit crashed _updateCirData with KeyError: False
+        # (Anton, 2026-09-20). The main circuit carries the count.
+        for key in _CIRCUITS.keys():
+            if key != 'main':
+                _CIRCUITS['main'].errors += _CIRCUITS[key].errors
+        if _CIRCUITS['main'].errors == 0:
             # PASS 3
             _CIRCUITS['main'] = _expandCircuit(_CIRCUITS['main']) # Expand subcircuits and models
             # PASS 4

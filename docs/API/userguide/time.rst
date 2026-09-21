@@ -27,7 +27,7 @@ SLiCAP output displayed on this manual page, is generated with the script: ``tti
 The circuit diagram of the circuit ``ACcoupling``:
     
 .. image:: /API/img/ACcoupling.svg
-    :width: 400
+    :scale: 80 %
     
 The source signal signal is a sinusoidal voltage with an amplitude of :math:`V_p` V and a frequency of :math:`f_s` Hz. It is specified with its Laplace Transform:
 

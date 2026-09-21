@@ -301,7 +301,13 @@ class _PropertyLabel(QGraphicsItem):
         self._prefix: str = ""              # plain text before the SVG
         self._prefix_w: float = 0.0         # cached width of prefix string
         self.setFlag(QGraphicsItem.ItemIsMovable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, False)
+        # Selectable like a component (Anton, 2026-09-13; designed 2026-08-04):
+        # a rubber band or a Ctrl-click collects labels, and Qt moves every
+        # selected movable item together - a label whose component is
+        # selected too is skipped by Qt, so nothing moves twice. The scene
+        # keeps the rules: Delete on a label HIDES it, labels never rotate,
+        # copy and cut ignore them, a label move is one undo step.
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setAcceptedMouseButtons(Qt.LeftButton)
 
@@ -413,6 +419,14 @@ class _PropertyLabel(QGraphicsItem):
     def paint(self, painter: QPainter, option, widget=None):
         hf = self._h_flipped()
         font, color = self._font_and_color()
+        if self.isSelected():
+            # Same selection mark as a net label: a thin blue box, no Qt
+            # default indicator (labels draw their own text/SVG).
+            painter.save()
+            painter.setPen(QPen(QColor(0, 120, 215), 0.8))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(self.boundingRect())
+            painter.restore()
         painter.setFont(font)
         painter.setPen(QPen(color))
         if self._svg_renderer is not None:
@@ -733,8 +747,13 @@ class ComponentItem(_ViewBoxSvgItem):
             lbl = _PropertyLabel(key, self)
 
             # V/I source stimuli labels: dc, ac, tran displayed as formatted labels
-            # generated on-the-fly from the canonical param values.
-            if self.symbol.prefix in ("V", "I") and key in ("dc", "ac", "tran"):
+            # generated on-the-fly from the canonical param values. NGspice
+            # schematics only: in a SLiCAP schematic 'dc' is an ordinary
+            # attribute like 'value', 'dcvar' and 'noise' and takes the generic
+            # name = value path below (Anton, 2026-09-13: the current source of
+            # the manual's transimpedance example showed 'dc: DC = -I_D').
+            ngspice = getattr(self.scene(), "sch_type", "slicap") == "ngspice"
+            if ngspice and self.symbol.prefix in ("V", "I") and key in ("dc", "ac", "tran"):
                 from .latex_label import render_stimuli_label
                 pfx, pairs = _vi_stimuli_display(key, self.params)
                 svg = (render_stimuli_label(pfx, pairs, cache_dir=cache)
@@ -767,13 +786,19 @@ class ComponentItem(_ViewBoxSvgItem):
                     lbl.set_svg(svg)
                 else:
                     lbl.set_text(self._prop_text(key))
-            elif key == "refdes" and style.COMP_LABEL_LATEX and use_latex:
+            elif ((key == "refdes" or key.startswith("ref "))
+                  and style.COMP_LABEL_LATEX and use_latex):
                 # IEEE-style element identifiers: refdes through the SLiCAP
                 # LaTeX chokepoint, optionally upright bold, tinted with the
                 # refdes colour preference (all from this schematic's style).
+                # The referenced elements of F, H, HZ and K ('ref n') are
+                # element identifiers too and take the same path, so every
+                # refdes on the canvas looks the same (Anton, 2026-09-13).
                 from .latex_label import recolor_svg, render_refdes
+                show_name = self.prop_display.get(key, (False, False))[1]
                 svg = render_refdes(raw_val, style.COMP_LABEL_LATEX_BOLD,
-                                    cache_dir=cache)
+                                    cache_dir=cache,
+                                    name=key if show_name else None)
                 if svg is not None:
                     lbl.set_svg(recolor_svg(
                         svg, style.COMP_LABEL_COLOR.name()))

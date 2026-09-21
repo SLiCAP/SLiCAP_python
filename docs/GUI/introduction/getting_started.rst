@@ -6,8 +6,8 @@ Requirements
 ============
 
 * Python 3.12 or newer
-* SLiCAP 5.1  or newer
-* For LaTeX-typeset labels and figure export: ``pdflatex`` and ``dvisvgm``
+* SLiCAP 6.0  or newer
+* For LaTeX-typeset labels: ``pdflatex`` and ``dvisvgm``
   (a TeX distribution such as TeX Live, or MikTeX).  These are optional — without them the
   editor falls back to plain-text labels.
   

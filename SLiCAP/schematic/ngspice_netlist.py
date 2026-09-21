@@ -196,7 +196,15 @@ def _element_lines(components: list, node_fn) -> list[str]:
         parts = [cid] + nodes + refs
         if model:
             parts.append(model)
-        parts.extend(_format_params(prefix, params))
+        try:
+            parts.extend(_format_params(prefix, params))
+        except ValueError as exc:
+            # A value the deck converter cannot read. It used to abort
+            # generation with a ValueError that only the terminal saw
+            # (Anton, 2026-08-19); it is a netlist error like any other, so
+            # it is collected WITH the element name and reported.
+            errors.append(f"{cid}: {exc}")
+            continue
 
         # Voltage- and current-controlled switches end with ON or OFF
         if prefix in ("S", "W"):
@@ -254,7 +262,10 @@ def build_ngspice_netlist(
 
     if params:
         for param_item in params:
-            param_lines = param_item.param_lines(value_fn=_param_text)
+            try:
+                param_lines = param_item.param_lines(value_fn=_param_text)
+            except ValueError as exc:
+                raise NetlistError([f"parameter block: {exc}"]) from exc
             if param_lines:
                 lines.append("")
                 lines.extend(param_lines)
@@ -284,6 +295,7 @@ def build_ngspice_subckt(
     params:       list = None, # list[(name, default)] overridable parameters
     params_items: list = None, # list[ParameterItem] — internal .param definitions
     libs:         list = None, # list[LibraryItem]  (.include lines, e.g. models)
+    model_defs:   list = None, # list[ModelItem]    (.model blocks inside the .subckt)
 ) -> str:
     """Build an NGspice subcircuit library (``.spice_lib``) — one ``.subckt``.
 
@@ -313,8 +325,11 @@ def build_ngspice_subckt(
     if params:
         # .subckt defaults are bare (the body references them as {name}); only
         # the SLiCAP->NGspice scale-factor notation needs translating here.
-        subckt += " " + " ".join(f"{k}={_param_text(str(v).strip())}"
-                                 for k, v in params if str(k).strip())
+        try:
+            subckt += " " + " ".join(f"{k}={_param_text(str(v).strip())}"
+                                     for k, v in params if str(k).strip())
+        except ValueError as exc:
+            raise NetlistError([f"subcircuit default: {exc}"]) from exc
 
     lines: list[str] = [title_line, *banner]
 
@@ -344,10 +359,21 @@ def build_ngspice_subckt(
     passed = {str(k).strip().strip("{}") for k, _ in (params or [])}
     if params_items:
         for param_item in params_items:
-            param_lines = param_item.param_lines(exclude=passed, value_fn=_param_text)
+            try:
+                param_lines = param_item.param_lines(exclude=passed, value_fn=_param_text)
+            except ValueError as exc:
+                raise NetlistError([f"parameter block: {exc}"]) from exc
             if param_lines:
                 lines.append("")
                 lines.extend(param_lines)
+
+    # .model blocks drawn on the subcircuit schematic (2026-09-20).
+    if model_defs:
+        for model_item in model_defs:
+            model_lines = model_item.netlist_lines()
+            if model_lines:
+                lines.append("")
+                lines.extend(model_lines)
 
     lines.append("")
     lines.extend(_element_lines(components, _node))

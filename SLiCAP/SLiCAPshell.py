@@ -234,6 +234,32 @@ specified with the circuit.
                      stepmethod: 'list' (list of lists of int, float, or str)
                      step values for stepmethod: 'array'. Each list applies to 
                      one step variable.
+
+:param method: Calculation engine of doMatrix(), doLaplace(), doNumer(), 
+               doDenom(), doPoles(), doZeros() and doPZ().
+
+               #. None: ini.pz_method ('det' or 'state') for doPoles(), 
+                  doZeros() and doPZ(); 'det' for the other instructions.
+               #. 'det': roots of the numerator and denominator polynomials 
+                  obtained from determinants of the MNA matrix (ini.numer, 
+                  ini.denom).
+               #. 'state': eigenvalues of the state matrix of the first-order 
+                  (expanded) MNA matrix; controlled sources with Laplace
+                  rational transfers are expanded with integrator chains.
+
+               Defaults to None
+
+:type method: str, NoneType
+
+:param loopgaintype: Loop gain type for an instruction with TWO loop gain
+                     references and no conversion type (a balanced stage in an
+                     unbalanced amplifier): 'dd', 'dc', 'cd' or 'cc'; first
+                     letter the response (the mode in which the controlling
+                     quantities are detected), second letter the stimulus
+                     (the mode injected at the references), as for convtype.
+                     'dc' and 'cd' have no servo function.
+                     Ignored otherwise. Defaults to 'dd'.
+:type loopgaintype: str
                                  
 ----
 """
@@ -270,8 +296,25 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
     elif cirType == "kicad_sch":
         netlist, subckt = _kicadNetlist(fileName, cirTitle, language=language)
     elif cirType == "slicap_sch":
-        from SLiCAP.schematic import make_schematic
+        from SLiCAP.schematic import make_schematic, schematic_properties
         make_schematic(fileName, cir_title=cirTitle)
+        if schematic_properties(fileName).is_subcircuit:
+            # The export wrote lib/<name>.slicap_lib and no circuit netlist.
+            # As with a KiCAD schematic carrying a .subckt directive,
+            # makeCircuit then skips the circuit check (a subcircuit has no
+            # ground node) and the HTML page (Anton, 2026-09-16).
+            subckt = cirTitle
+    elif cirType == "spice_sch":
+        # An NGspice schematic of the schematic editor: the same headless
+        # export as .slicap_sch writes cir/<name>.cir, the SVG and the PDF
+        # (with the operating-point annotations when cir/<name>_op.raw
+        # exists). As with a KiCad schematic and language="SPICE", the
+        # netlist text is returned (Anton, 2026-09-21).
+        from SLiCAP.schematic import make_schematic
+        cirPath = make_schematic(fileName, cir_title=cirTitle)
+        if language.upper() == "SPICE" and cirPath is not None:
+            with open(cirPath, "r", encoding="utf-8") as f:
+                netlist = f.read()
     elif cirType == "cir":
         pass
     else:
@@ -288,6 +331,10 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
          folder)
        - A native SLiCAP schematic file (".slicap_sch" file, made with the
          built-in schematic editor; full path or relative to project folder)
+       - A native SLiCAP subcircuit schematic ("Subcircuit" checked in its
+         Schematic Properties): writes the subcircuit library
+         "lib/<name>.slicap_lib" and the images, and returns None; no
+         circuit object is created
        - A KiCAD schematic file (".kicad_sch" file, full path or relative to
          project folder)
        - An LTspice schematic file (".asc" file, full path or relative to
@@ -350,11 +397,24 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
                         SLiCAP will look for this text file in the ini.txt
                         directory (default './txt/')
     :type description: str
+
+    :param language: "SLiCAP" (default) or "SPICE": the netlist language of
+                     a KiCAD schematic, which the file name cannot tell.
+                     Ignored for the schematics of the SLiCAP schematic
+                     editor: ".slicap_sch" is a SLiCAP schematic and
+                     ".spice_sch" an NGspice schematic (Anton, 2026-09-21).
+                     With "SPICE" no circuit object is built; the netlist
+                     text is returned.
+    :type language: str
     """
+    cirName, ext = fileName.replace('\\', '/').split('/')[-1].split('.')
+    if ext.lower() == "spice_sch":
+        language = "SPICE"
+    elif ext.lower() == "slicap_sch":
+        language = "SLiCAP"
     cir, subckt = _makeNetlist(fileName, cirTitle=cirTitle, language=language)
     if not subckt:
         language = language.upper()
-        cirName, ext = fileName.replace('\\', '/').split('/')[-1].split('.')
         if language == "SLICAP":
             cir = _checkCircuit(cirName + ".cir")
         elif language == "SPICE":
@@ -372,7 +432,10 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
                      label = 'fig_{}'.format(cirName + '.' + ext))
         netlist2html(cirName + ".cir", label = 'netlist_{}'.format(cirName), 
                      labelText='Netlist of {}.'.format(cirName + ".cir"))
-        if language == "SLiCAP":
+        # was 'language == "SLiCAP"' after language.upper(): never true, so
+        # the expanded netlist and the parameter table were never shown and
+        # the 'expansion' keyword did nothing (found 2026-09-21).
+        if language == "SLICAP" and expansion and not cir.errors:
             elementData2html(cir, label='elementdata_{}'.format(cirName), 
                              caption="Expanded netlist of {}.".format(cirName + ".cir"))
             params2html(cir, label='params_{}'.format(cirName), 
@@ -381,7 +444,7 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
 
 def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer=None, convtype=None, pardefs=None, numeric=False, 
-            stepdict=None):
+            stepdict=None, method=None, loopgaintype="dd"):
     """
     Returns the MNA matrix, the vector with dependent variables and the vector 
     with independent variables.
@@ -427,12 +490,62 @@ def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='matrix', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, method=method,
+                                 loopgaintype=loopgaintype)
     return result 
+
+def doStateSpace(cir, convtype=None, pardefs=None, numeric=False):
+    """
+    Returns the full state-space realization of a circuit: dx/dt = A x + B u,
+    y = C x + D u, with every independent source an input (u) and every
+    nodal voltage and branch current an output (y). A transfer from one
+    source to one detector is a column of B and D and a row of C and D.
+
+    With a conversion type ('dd' or 'cc') the outputs are the
+    differential-mode or common-mode variables and the inputs remain the
+    independent sources.
+
+    :return: SLiCAP results object of which the attribute **.stateSpace** is
+             set: a named tuple with the matrices A, B, C, D, the vectors x
+             (states), u (inputs) and y (outputs). The matrix D is a
+             polynomial in the Laplace variable when an output follows the
+             derivative of a source (an improper output). The state
+             variables are physical quantities wherever the network allows
+             it: the voltage across a capacitor (V_<refDes>, from its first
+             to its second node), the current through an inductor
+             (I_<refDes>), or an internal state of an expanded device model;
+             a state that is necessarily a combination of such quantities
+             keeps the name x_k.
+    :rtype: SLiCAP.SLiCAPinstruction.instruction object
+
+    **Parameters**
+
+    See section `General instruction format`_ for convtype, pardefs and
+    numeric. The parameters transfer, source, detector, lgref and stepdict do
+    not apply.
+
+    :Example:
+
+    .. code-block:: python
+
+        import SLiCAP as sl
+        sl.initProject("my_project")
+        cir = sl.makeCircuit("myFirstRCnetwork.cir")
+        ss  = sl.doStateSpace(cir).stateSpace
+        print(ss.x, ss.u, ss.y)
+        print(ss.A, ss.B, ss.C, ss.D)
+
+    """
+    result = _executeInstruction(cir, transfer=None, source=None,
+                                 detector=None, lgref=None,
+                                 convtype=convtype, datatype='statespace',
+                                 pardefs=pardefs, numeric=numeric,
+                                 stepdict=None, method="state")
+    return result
 
 def doLaplace(cir, source='circuit', detector='circuit', lgref='circuit', 
               transfer='gain', convtype=None, pardefs=None, numeric=False, 
-              stepdict=None):
+              stepdict=None, method=None, loopgaintype="dd"):
     """
     Returns a transfer function or a detector voltage or current.
     
@@ -476,12 +589,13 @@ def doLaplace(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='laplace', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, method=method,
+                                 loopgaintype=loopgaintype)
     return result
 
 def doDC(cir, source='circuit', detector='circuit', lgref='circuit', 
          transfer='gain', convtype=None, pardefs=None, numeric=False, 
-         stepdict=None):
+         stepdict=None, loopgaintype="dd"):
     """
     Returns the zero-frequency value (DC value) of a transfer or a detector
     voltge or current.
@@ -526,12 +640,12 @@ def doDC(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='dc', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
     return result
 
 def doNumer(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer='gain', convtype=None, pardefs=None, numeric=False, 
-            stepdict=None):
+            stepdict=None, method=None, loopgaintype="dd"):
     """
     Returns the numerator of a transfer or of a detector voltage or current.
     
@@ -571,12 +685,13 @@ def doNumer(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='numer', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, method=method,
+                                 loopgaintype=loopgaintype)
     return result
 
 def doDenom(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer='gain', convtype=None, pardefs=None, numeric=False, 
-            stepdict=None):
+            stepdict=None, method=None, loopgaintype="dd"):
     """
     Returns the denominator of a transfer or a detector voltage or current.
     
@@ -615,12 +730,13 @@ def doDenom(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='denom', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, method=method,
+                                 loopgaintype=loopgaintype)
     return result
 
 def doTime(cir, source='circuit', detector='circuit', lgref='circuit', 
            transfer=None, convtype=None, pardefs=None, numeric=False, 
-           stepdict=None):
+           stepdict=None, loopgaintype="dd"):
     """
     Returns the detector voltage or current (Inverse Laplace Transform).
     
@@ -672,12 +788,12 @@ def doTime(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='time', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
     return result
 
 def doImpulse(cir, source='circuit', detector='circuit', lgref='circuit', 
               transfer='gain', convtype=None, pardefs=None, numeric=False, 
-              stepdict=None):
+              stepdict=None, loopgaintype="dd"):
     """
     Returns the unit-impulse response of a transfer (ILT of a transfer 
     function). The argument 'transfer' will be set to gain if None is given.
@@ -728,12 +844,12 @@ def doImpulse(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='impulse', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
     return result
 
 def doStep(cir, source='circuit', detector='circuit', lgref='circuit', 
            transfer='gain', convtype=None, pardefs=None, numeric=False, 
-           stepdict=None):
+           stepdict=None, loopgaintype="dd"):
     """
     Returns the unit-step response of a transfer (based upon the ILT).  The 
     argument 'transfer' will be set to gain if None is given.
@@ -783,12 +899,12 @@ def doStep(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='step', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
     return result
 
 def doPoles(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer='gain', convtype=None, pardefs=None, numeric=False, 
-            stepdict=None):
+            stepdict=None, method=None, loopgaintype="dd"):
     """
     Returns the poles of a transfer function.
     
@@ -836,12 +952,13 @@ def doPoles(cir, source='circuit', detector='circuit', lgref='circuit',
     result = _executeInstruction(cir, transfer=transfer, lgref=lgref, 
                                  convtype=convtype, datatype='poles', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, method=method,
+                                 loopgaintype=loopgaintype)
     return result
 
 def doZeros(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer='gain', convtype=None, pardefs=None, numeric=False, 
-            stepdict=None):
+            stepdict=None, method=None, loopgaintype="dd"):
     """
     Returns the zeros of a transfer function.
     
@@ -891,12 +1008,13 @@ def doZeros(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='zeros', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, method=method,
+                                 loopgaintype=loopgaintype)
     return result
 
 def doPZ(cir, source='circuit', detector='circuit', lgref='circuit', 
          transfer='gain', convtype=None, pardefs=None, numeric=False, 
-         stepdict=None):
+         stepdict=None, method=None, loopgaintype="dd"):
     """
     Returns the DC value, the zeros, and the poles of a transfer function. 
     Poles and zeros that coincide within the diaplay accuracy (ini.disp) are
@@ -954,11 +1072,12 @@ def doPZ(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='pz', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, method=method,
+                                 loopgaintype=loopgaintype)
     return result
 
 def doSolve(cir, source=None, detector=None, lgref=None, transfer=None, 
-            convtype=None, pardefs=None, numeric=False, stepdict=None):
+            convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd"):
     """
     Returns the (Laplace) solution of the circuit.
     
@@ -1007,11 +1126,11 @@ def doSolve(cir, source=None, detector=None, lgref=None, transfer=None,
                                  detector=None, lgref=None, 
                                  convtype=convtype, datatype='solve', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
     return result
 
 def doDCsolve(cir, source=None, detector=None, lgref=None, transfer=None, 
-              convtype=None, pardefs=None, numeric=False, stepdict=None):
+              convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd"):
     """
     Returns the DC solution of the circuit.
     
@@ -1058,11 +1177,11 @@ def doDCsolve(cir, source=None, detector=None, lgref=None, transfer=None,
     result = _executeInstruction(cir, transfer=None, source=None, 
                                  detector=None, lgref=None,  convtype=convtype,
                                  datatype='dcsolve', pardefs=pardefs, 
-                                 numeric=numeric, stepdict=stepdict)
+                                 numeric=numeric, stepdict=stepdict, loopgaintype=loopgaintype)
     return result
 
 def doTimeSolve(cir, source=None, detector=None, lgref=None, transfer=None, 
-                convtype=None, pardefs=None, numeric=False, stepdict=None):
+                convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd"):
     """
     Returns the time-domain solution of the circuit, using the Inverse Laplace
     Transform.
@@ -1112,13 +1231,13 @@ def doTimeSolve(cir, source=None, detector=None, lgref=None, transfer=None,
                                  detector=None, lgref=None, 
                                  convtype=convtype, datatype='timesolve', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
     
     return result
 
 def doNoise(cir, source='circuit', detector='circuit', lgref=None, 
             transfer=None, convtype=None, pardefs=None, numeric=False, 
-            stepdict=None):
+            stepdict=None, loopgaintype="dd"):
     """
     Evaluates the detector noise spectral density and the individual 
     contributions of all noise sources to it. 
@@ -1178,13 +1297,13 @@ def doNoise(cir, source='circuit', detector='circuit', lgref=None,
                                  detector=detector, lgref=None, 
                                  convtype=convtype, datatype='noise', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
 
     return result
 
 def doDCvar(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer=None, convtype=None, pardefs=None, numeric=False, 
-            stepdict=None):
+            stepdict=None, loopgaintype="dd"):
     """
     Evaluates the variance of the detector DC voltage or current and the 
     individual contributions of all noise sources to it. 
@@ -1243,13 +1362,13 @@ def doDCvar(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=None, 
                                  convtype=convtype, datatype='dcvar', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
 
     return result
 
 def doParams(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer=None, convtype=None, pardefs='circuit', numeric=True, 
-            stepdict=None):
+            stepdict=None, loopgaintype="dd"):
     
     """
     This function is used in combination with plotSweep(funcType='param')
@@ -1261,13 +1380,13 @@ def doParams(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=None, lgref=None, 
                                  convtype=None, datatype='params', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict)
+                                 stepdict=stepdict, loopgaintype=loopgaintype)
     return result
     
 def _executeInstruction(cir, transfer=None, source='circuit', 
                         detector='circuit', lgref='circuit', convtype='circuit', 
                         datatype=None, pardefs='circuit', numeric=False, 
-                        stepdict=None):
+                        stepdict=None, method=None, loopgaintype="dd"):
     """
     Converts the shell instruction into a basic instruction object, executes it
     and returns the result.
@@ -1295,6 +1414,12 @@ def _executeInstruction(cir, transfer=None, source='circuit',
         i1.setGainType(transfer)
     i1.dataType    = datatype
     i1.numeric     = numeric
+    if method in (None, "det", "state"):
+        i1.method  = method         # None: resolved from ini.pz_method
+    else:
+        print("Error: unknown method '%s'; use None, 'det' or 'state'." % method)
+        i1.errors += 1
+    i1.setLoopGainType(loopgaintype)
     if convtype != None:
         i1.convType    = convtype.lower()
     else:

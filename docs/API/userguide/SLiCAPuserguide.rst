@@ -24,6 +24,7 @@ SLiCAP output displayed in this **SLiCAP user guide**, is generated with the scr
     matrices
     laplace
     pz
+    statespace
     time
     noise
     dcvar

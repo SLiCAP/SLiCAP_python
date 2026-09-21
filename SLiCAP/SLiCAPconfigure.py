@@ -132,6 +132,7 @@ def _generate_project_config():
                                     "frequency"             : "f",
                                     "numer"                 : "MECPP",
                                     "denom"                 : "MECPP",
+                                    "pz_method"             : "det",
                                     "lambdify"              : "numpy",
                                     "stepfunction"          : True,
                                     "factor"                : True,
@@ -555,6 +556,7 @@ def dump(section="all"):
         print('ini.frequency              =', frequency)
         print('ini.numer                  =', numer)
         print('ini.denom                  =', denom)
+        print('ini.pz_method              =', pz_method)
         print('ini.lambdify               =', lambdify)
         print('ini.step_function          =', step_function)
         print('ini.factor                 =', factor)
@@ -672,6 +674,17 @@ laplace               = Symbol(project_config['math']['laplace'])
 frequency             = Symbol(project_config['math']['frequency'])
 numer                 = project_config['math']['numer']
 denom                 = project_config['math']['denom']
+pz_method             = project_config['math']['pz_method']
+"""
+Engine for the poles, zeros and pz analyses when the instruction is executed
+with ``method=None`` (the default of the do*() shell functions): 'det' takes
+the roots of the determinant polynomials (ini.numer / ini.denom), 'state' the
+eigenvalues of the state matrix of the first-order (expanded) MNA matrix
+(SLiCAPstateSpace). All other analyses always use 'det'. Default 'det':
+the exact state engine was measured against the C++ determinant on the
+book examples and brought no speed gain (PZ.md, 2026-09-11); 'state' is
+available per instruction (method='state') and through this setting.
+"""
 sch_scale             = float(project_config['gui']['sch_scale'])
 lambdify              = project_config['math']['lambdify']
 step_function         = eval(project_config['math']['stepfunction'])

@@ -24,7 +24,7 @@ from contextlib import redirect_stdout
 
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
-from SLiCAP.SLiCAPmath import listPZ, phaseMargin, findServoBandwidth
+from SLiCAP.SLiCAPmath import listPZ, listStateSpace, phaseMargin, findServoBandwidth
 
 
 def _laplace_of(obj):
@@ -89,6 +89,19 @@ class TXTformatter(_BaseFormatter):
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
         return self.output(listPZ, resultObject)
+
+    def stateSpace(self, resultObject):
+        """
+        Text snippet with the state-space realization of *resultObject*
+        (the output of ``listStateSpace()``).
+
+        :param resultObject: SLiCAP execution result of doStateSpace().
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
+
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        return self.output(listStateSpace, resultObject)
 
     def servoBandwidth(self, loopgain):
         """

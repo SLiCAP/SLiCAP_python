@@ -7,7 +7,7 @@ import SLiCAP as sl
 import sympy as sp
 
 # Define the circuit
-cir = sl.makeCircuit("kicad/dcMatchingTracking/dcMatchingTracking.kicad_sch")
+cir = sl.makeCircuit("sch/dcMatchingTracking.slicap_sch")
 # Perform dc variance analysis
 dcvarResult = sl.doDCvar(cir, source="V1", detector="V_out", pardefs="circuit")
 

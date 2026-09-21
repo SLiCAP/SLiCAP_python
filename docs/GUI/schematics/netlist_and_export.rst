@@ -9,7 +9,7 @@ From the GUI
 ============
 
 * :menuselection:`File --> Export netlist…` (:kbd:`Ctrl+E`) writes a SLiCAP
-  ``.cir`` netlist.
+  or NGspice ``.cir`` netlist.
 * :menuselection:`File --> Export SVG…` writes a vector figure.
 * :menuselection:`File --> Export PDF…` writes a PDF figure.
 * :menuselection:`File --> Print schematic…` (:kbd:`Ctrl+P`) prints the drawing.
@@ -34,7 +34,10 @@ scripts and Makefiles:
 
 If ``-o <file>`` is omitted, the output takes the schematic's name with the
 appropriate extension and lands in the project's ``cir/`` (netlist) or
-``img/`` (SVG / PDF) directory automatically.
+``img/`` (SVG / PDF) directory automatically.  For a schematic saved as a
+subcircuit the ``netlist`` command writes the library
+``lib/<name>.slicap_lib`` instead of a ``.cir`` file (see
+:doc:`/GUI/hierarchical_blocks`).
 
 Running it in SLiCAP
 ====================
@@ -57,10 +60,18 @@ figures without re-running the analysis:
    from SLiCAP.schematic import make_schematic
    make_schematic("sch/my_circuit.slicap_sch")   # writes cir/ and img/
 
-See https://www.slicap.org for the full analysis workflow.
+For a subcircuit schematic both calls write the library in ``lib/`` and the
+figures, and ``makeCircuit()`` returns ``None``: a subcircuit dos not require
+a ground node ``0`` and is not parsed as a circuit.
+
+.. code-block:: python
+
+   sl.makeCircuit("lib/smallAmp.slicap_sch")   # writes lib/smallAmp.slicap_lib and img/smallAmp.svg, .pdf
 
 What the netlist looks like
 ===========================
+
+The first line is the title.
 
 Each element becomes one line — reference designator, nodes (in the symbol's
 node order), any references, the model and the parameters:

@@ -35,7 +35,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'SLiCAP'
-copyright = u'2025, SLiCAP development team'
+copyright = u'2026, SLiCAP development team'
 author = u'Anton Montagne'
 
 # The version info for the project you're documenting, acts as replacement for

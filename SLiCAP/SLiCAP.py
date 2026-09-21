@@ -33,7 +33,7 @@ from SLiCAP.SLiCAPshell import *
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
 from SLiCAP.SLiCAPkicad import backAnnotateSchematic
-from SLiCAP.SLiCAPstateSpace import doStateSpace
+import SLiCAP.SLiCAPstateSpace
 
 # Increase width for display of numpy arrays:
 np.set_printoptions(edgeitems=30, linewidth=1000,

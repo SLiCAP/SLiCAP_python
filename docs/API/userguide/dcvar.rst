@@ -110,7 +110,7 @@ At the beginning of a `doDCvar() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshe
     :lineno-start: 9
         
 .. image:: /API/img/dcMatchingTracking.svg
-    :width: 800
+    :scale: 80 %
     
 DC solution
 -----------

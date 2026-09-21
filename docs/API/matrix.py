@@ -7,7 +7,7 @@ matrix.py: SLiCAP scripts for the HTML help file
 import SLiCAP as sl
 
 # Create a circuit object
-cir    = sl.makeCircuit("kicad/Transimpedance/Transimpedance.kicad_sch", imgWidth=350)
+cir    = sl.makeCircuit("sch/Transimpedance.slicap_sch")
 result = sl.doMatrix(cir)
 
 Iv     = result.Iv # Vector with independent variables 

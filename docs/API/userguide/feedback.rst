@@ -50,11 +50,11 @@ SLiCAP has six built-in ``transfer`` types for `do<Instruction>() <../reference/
   
 - **loopgain**: the loop gain, defined above. 
 
-  SLiCAP calculates the loop gain from the return difference with the selected loop gain reference.
+  SLiCAP calculates the loop gain by injection with the selected loop gain reference.
   
 - **servo**: the *servo function*, defined as :math:`\frac{-L}{1-L}`. 
 
-  SLiCAP calculates the servo function from the return difference with the selected loop gain reference.
+  SLiCAP calculates the servo function from the loop gain.
   
   With a proper selection of the loop gain reference, the *servo function* is a measure for the discrepancy between the *ideal-gain* and the *gain*. As such, it contains important design information.
 
@@ -111,7 +111,7 @@ Amplifier feedback concept
 The figure below shows the concept of a non-inverting, passive-feedback voltage amplifier. The nullor models the ideal controller (see: `Structured Electronics Design <https://books.open.tudelft.nl/home/catalog/book/162>`_).
     
 .. image:: /API/img/VampIdeal.svg
-    :width: 350px
+    :scale: 80 %
 
 .. literalinclude:: ../feedback.py
     :linenos:
@@ -129,7 +129,7 @@ The figure below shows the above amplifier in which the controller is implemente
     :lineno-start: 16
     
 .. image:: /API/img/VampOV.svg
-    :width: 450px
+    :scale: 80 %
 
 Ideal gain
 ~~~~~~~~~~
@@ -255,7 +255,7 @@ The voltage amplifier with a two-stage bipolar transistor controller:
     :lineno-start: 81
     
 .. image:: /API/img/VampQ.svg
-    :width: 600px
+    :scale: 80 %
     
 Asymptotic-gain
 ~~~~~~~~~~~~~~~

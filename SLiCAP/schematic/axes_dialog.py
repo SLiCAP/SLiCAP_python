@@ -52,6 +52,7 @@ from .traces_dialog import (next_name, trace_entries, result_entries,
                             is_symbolic, _abscissa, _lit, _q)
 
 from SLiCAP.SLiCAPplots import _SCALEFACTORS
+from SLiCAP.SLiCAPtraces import axis_label
 
 # A pole-zero axis comes from a SLiCAP result: poles and zeros are treated in
 # their own way (markers, conjugate pairs) and NGspice does not deliver them,
@@ -987,9 +988,7 @@ class AxesDialog(QDialog):
         for widget, name, scale, units in (
                 (self._x_label, self._x_name, self._x_scale, self._x_units),
                 (self._y_label, self._y_name, self._y_scale, self._y_units)):
-            text = name.text().strip()
-            unit = scale.currentText() + units.text().strip()
-            widget.setText("{0} [{1}]".format(text, unit) if (text or unit)
-                           else "")
+            widget.setText(axis_label(name.text(), scale.currentText(),
+                                      units.text()))
         self._add_btn.setEnabled(bool(snippet)
                                  and bool(self._name.text().strip()))

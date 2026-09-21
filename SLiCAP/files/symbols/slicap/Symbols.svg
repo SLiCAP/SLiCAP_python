@@ -325,6 +325,7 @@
     
     <g id="K"
        data-prefix="K"
+       data-model="K|0"
        data-refs="L? L?"
        data-params="value|?|0|1"
        data-description="Mutual inductance coupling factor"

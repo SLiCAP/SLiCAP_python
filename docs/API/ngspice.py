@@ -5,158 +5,138 @@
 ngspice.py: SLiCAP scripts for the HTML help file
 """
 import SLiCAP as sl
-#sl.initProject("ngspice")
-# Create SPICE netlist
+
 fileName = "VampQspice"
-netlist  = sl.makeCircuit("kicad/" + fileName + "/" + fileName + ".kicad_sch", 
-                         language="SPICE")
 
-# DC sweep
-simCmd  = "DC V2 6 12 1"
-names   = {"V_c2": "V(c2)", "V_e2":"V(e2)"}
-DC, x_name, x_units = sl.ngspice2traces(fileName, simCmd, names)
+# Operating point: NGspice writes cir/VampQspice_op.raw, which the schematic
+# export reads for the bias annotations on the schematic
+OP = sl.op(fileName)
 
-# DC plot 
-sl.plot("VampQspiceDC", "DC voltages $V_{c2}$, $V_{e2}$ versus power supply", 
-        "lin", DC, xName=x_name, xUnits="V", yUnits="V")
+# Netlist, schematic image with the bias annotations, and HTML circuit page
+netlist = sl.makeCircuit("sch/" + fileName + ".spice_sch")
 
-# AC simulation, dBmag and phase, stepped
-simCmd  = "AC DEC 50 5 10MEG" 
-stepCmd = "C_c LIN 2p 20p 10"
-names   = {"V_out": "V(out)"}
-mag, phase, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, 
-                                                 names, stepCmd=stepCmd, 
-                                                 traceType='dBmagPhase')
-
-# dB magnitude plot
-sl.plot("VampQspiceM", "dBmag($V_{out}$)", "semilogx", mag , xName=x_name, 
-        xUnits=x_units, yUnits="dB")
-
-# Phase plot
-sl.plot("VampQspiceP", "arg($V_{out}$)", "semilogx", 
-        phase, xName=x_name, xUnits=x_units, yUnits="deg")
-
-# TRAN simumlation, stepped
-simCmd  = "TRAN 1n 1u"
-stepCmd = "C_c LIN 2p 20p 10"
-names   = {"V_out": "V(out)"}
-tran, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, names, 
-                                           stepCmd=stepCmd)
-# Time plot
-sl.plot("VampQspiceT1", "Pulse $V_{out}$, stepped $C_c$", "lin", 
-        tran, xName=x_name, xUnits=x_units, xScale="u", yUnits="V")
-
-# TRAN simumlation, multiple traces
-simCmd  = "TRAN 1n 1u"
-names   = {"V_out": "V(out)", "V_in": "V(in)", "V_c2": "V(c2)"}
-tran, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, names)
-
-# Time plot
-sl.plot("VampQspiceT2", "Pulse $V_{out}$, $C_c$=18pF", "lin", tran, 
-        xName=x_name, xUnits=x_units, xScale="u", yUnits="V")
-
-# Change the netlist: change pulse to sinewave with parameter V_p amplitude
-netlist = netlist.replace("PULSE 0 0.3 0 1n 1n 499n 1u", 
-                          "SIN 0 {V_p} 100k\n" +
-                          ".param V_p=1")
-f = open("cir/VampQspice.cir", "w")
-f.write(netlist)
-f.close()
-
-# TRAN simumlation, multiple traces and parameter stepping
-simCmd  = "TRAN 10n 20u"
-stepCmd = "V_p LIN 0.5 1 2"
-names   = {"V_out": "V(out)", "V_in": "V(in)", "V_c2": "V(c2)"}
-sine, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, 
-                                           names, stepCmd=stepCmd)
-
-# Time plot
-sl.plot("VampQspiceS", "Sine overdrive $V_{out}$, $C_c$=18pF", "lin", sine, 
-        xName=x_name, xUnits=x_units, xScale="u", yUnits="V")
-
-# DC TEMP sweep
-simCmd  = "DC TEMP -55 125 5"
-names   = {"V_c2": "V(c2)", "V_e2":"V(e2)"}
-TMP, x_name, x_units = sl.ngspice2traces(fileName, simCmd, names)
-
-# TEMP plot 
-sl.plot("VampQspiceTMP", "DC voltages $V_{c2}$, $V_{e2}$ versus temperature", 
-        "lin", TMP, xName=x_name, xUnits="Celsius", yUnits="V")
-
-# NOISE analysis
-simCmd  = "NOISE V(out) V1 dec 50 5 10MEG"
-names   = {"S_vo": "onoise_spectrum", "S_vi": "inoise_spectrum"}
-NOISE, x_name, x_units = sl.ngspice2traces(fileName, simCmd, names, 
-                                           squaredNoise=False)
-
-# NOISE plot 
-sl.plot("VampQspiceNOISE", "Noise input and output spectrum", 
-        "log", NOISE, xName=x_name, xUnits="Hz", yUnits="$V/\\sqrt{Hz}$")
-
-# Total noise versus temperature
-simCmd  = "NOISE V(out) V1 dec 50 5 10MEG"
-stepCmd = "TEMP LIN -55 125 50"
-names   = {"v_no": "onoise_total"}
-NOISETOT, x_name, x_units = sl.ngspice2traces(fileName, simCmd, names, 
-                                              stepCmd=stepCmd, 
-                                              squaredNoise=False)
-# TOTAL NOISE plot 
-sl.plot("VampQspiceNOISETOT", "Total output noise versus temperature", "lin", 
-        NOISETOT, xName=x_name, xUnits="Celsius", yUnits="V", yScale="u")
-
-# Operating point analysis
-simCmd  = "OP"
-names   = {"V_c1": "V(c1)",
-           "V_b1": "V(b1)",
-           "V_e1": "V(e1)",
-           "V_c2": "V(c2)",
-           "V_e2": "V(e2)", 
-           "I_V2": "I(V2)"}
-
-OPinfo  = sl.ngspice2traces(fileName, simCmd, names, stepCmd=None)
-
+# Operating point information: the result holds every saved NGspice vector
+# under its NGspice name; pick the ones of interest under names of your own
+opNames = {"V_c1": "v(1)", "V_b1": "v(indc)", "V_e1": "v(4)",
+           "V_c2": "v(outdc)", "V_e2": "v(2)", "I_V2": "i(v2)"}
+OPinfo  = {name: OP.op[vector] for name, vector in opNames.items()}
 for name in OPinfo.keys():
     print(name, ":", OPinfo[name])
-    
-rst = sl.RSTformatter()
+
+rst  = sl.RSTformatter()
 head = ["Name", "Value"]
-rst.dictTable(OPinfo, head=head, caption="Bias voltages").save("table-VampQ-opinfo")
+rst.dictTable(OPinfo, head=head,
+              caption="Bias voltages and currents").save("table-VampQ-opinfo")
 
-sl.backAnnotateSchematic("kicad/" + fileName + "/" + fileName + ".kicad_sch", 
-                         OPinfo)
+# DC sweep of the supply voltage
+DC = sl.dc(fileName, "V2", 6, 12, 1)
+DCtraces = sl.make_traces(DC, [{"y": "V_c2", "label": "$V_{c2}$"},
+                               {"y": "V_e2", "label": "$V_{e2}$"}],
+                          variables={"V_c2": "v(outdc)", "V_e2": "v(2)"})
+sl.plot("VampQspiceDC", "DC voltages $V_{c2}$, $V_{e2}$ versus power supply",
+        "lin", DCtraces, xName="$V_S$", xUnits="V", yUnits="V")
 
-# TRAN with parameter substitution
-simCmd   = "TRAN 0.1u 20u"
-params   = [("V_p", 0.5)]
-names    = {"V_out": "V(out)"}
-tran, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, names, parList=params)
-sl.plot("VampQspiceSIN", "$V_{out}$", "lin", tran , xName=x_name, xUnits=x_units,
-        yUnits="V")
+# AC analysis with parameter stepping
+AC = sl.ac(fileName, "dec", 50, 5, "10M",
+           step={"param": "C_c", "method": "lin",
+                 "start": "2p", "stop": "20p", "num": 10})
+mag = sl.make_traces(AC, [{"y": "dB(V_out)", "label": "$V_{out}$"}],
+                     variables={"V_out": "v(out)"})
+sl.plot("VampQspiceM", "dBmag($V_{out}$)", "semilogx", mag,
+        xName="frequency", xUnits="Hz", yUnits="dB")
+phs = sl.make_traces(AC, [{"y": "phase(V_out)", "label": "$V_{out}$"}],
+                     variables={"V_out": "v(out)"})
+sl.plot("VampQspiceP", "arg($V_{out}$)", "semilogx", phs,
+        xName="frequency", xUnits="Hz", yUnits="deg")
 
-# FFT
-simCmd   = "TRAN 1u 512u 64u 10n"
-params   = [("V_p", 0.5)]
-# Eliminate DC component from output
-names    = {"V_AC_rms": "V(c2)-{}".format(str(OPinfo['V_c2']))}
-postProc = """
-set specwindow=gaussian
-set specwindoworder=8
-FFT V_AC_rms
-"""
-options  = {"RELTOL": 1e-6}
-mag, phase, x_name, x_units  = sl.ngspice2traces(fileName, simCmd, names, 
-                                                 postProc=postProc, saveLog=True, 
-                                                 traceType='magPhase', 
-                                                 parList=params, optDict=options)
-sl.plot("VampQspiceFFT", "$V_{out}$", "log", mag , xName=x_name, xUnits=x_units, 
-        yUnits="V", xLim=[10e3, 1e6], yLim=[2e-7, 2])
+# Transient analysis with parameter stepping
+TR = sl.tran(fileName, "1n", "1u",
+             step={"param": "C_c", "method": "lin",
+                   "start": "2p", "stop": "20p", "num": 10})
+tran = sl.make_traces(TR, [{"y": "V_out", "label": "$V_{out}$"}],
+                      variables={"V_out": "v(out)"})
+sl.plot("VampQspiceT1", "Pulse $V_{out}$, stepped $C_c$", "lin", tran,
+        xName="time", xUnits="s", xScale="u", yUnits="V")
 
-# FOURIER
-simCmd   = "TRAN 1u 512u 64u 10n"
-params   = [("V_p", 0.5)]
-# Eliminate DC component from output
-names    = {"V_AC": "V(c2)-{}".format(str(OPinfo['V_c2']))}
-postProc = "FOURIER 100k V_AC"
-options  = {"RELTOL": 1e-6}
-results  = sl.ngspice2traces(fileName, simCmd, names, optDict=options, 
-                             postProc=postProc, saveLog=True, parList=params)
+# Transient analysis, several signals
+TR = sl.tran(fileName, "1n", "1u")
+tran = sl.make_traces(TR, [{"y": "V_out", "label": "$V_{out}$"},
+                           {"y": "V_in", "label": "$V_{in}$"},
+                           {"y": "V_c2", "label": "$V_{c2}$"}],
+                      variables={"V_out": "v(out)", "V_in": "v(5)",
+                                 "V_c2": "v(outdc)"})
+sl.plot("VampQspiceT2", "Pulse $V_{out}$, $C_c$=18pF", "lin", tran,
+        xName="time", xUnits="s", xScale="u", yUnits="V")
+
+# Change the stimulus of a source for one run: a sine with a stepped
+# amplitude instead of the pulse of the schematic
+TR = sl.tran(fileName, "10n", "20u",
+             stimuli={"V1": ["SIN", 0, "{V_p}", "100k"]},
+             params=[("V_p", 1)],
+             step={"param": "V_p", "method": "lin",
+                   "start": 0.5, "stop": 1, "num": 2})
+sine = sl.make_traces(TR, [{"y": "V_out", "label": "$V_{out}$"},
+                           {"y": "V_in", "label": "$V_{in}$"},
+                           {"y": "V_c2", "label": "$V_{c2}$"}],
+                      variables={"V_out": "v(out)", "V_in": "v(5)",
+                                 "V_c2": "v(outdc)"})
+sl.plot("VampQspiceS", "Sine overdrive $V_{out}$, $C_c$=18pF", "lin", sine,
+        xName="time", xUnits="s", xScale="u", yUnits="V")
+
+# DC temperature sweep
+TMP = sl.dc(fileName, "TEMP", -55, 125, 5)
+tmp = sl.make_traces(TMP, [{"y": "V_c2", "label": "$V_{c2}$"},
+                           {"y": "V_e2", "label": "$V_{e2}$"}],
+                     variables={"V_c2": "v(outdc)", "V_e2": "v(2)"})
+sl.plot("VampQspiceTMP", "DC voltages $V_{c2}$, $V_{e2}$ versus temperature",
+        "lin", tmp, xName="temperature", xUnits="Celsius", yUnits="V")
+
+# Noise analysis: NGspice returns the spectral densities in V^2/Hz
+NOISE = sl.noise(fileName, "V(out)", "V1", "dec", 50, 5, "10M")
+noise = sl.make_traces(NOISE, [{"y": "sqrt(S_vo)", "label": "$S_{vo}$"},
+                               {"y": "sqrt(S_vi)", "label": "$S_{vi}$"}],
+                       variables={"S_vo": "onoise_spectrum",
+                                  "S_vi": "inoise_spectrum"})
+sl.plot("VampQspiceNOISE", "Noise input and output spectrum", "log", noise,
+        xName="frequency", xUnits="Hz", yUnits="V/sqrt(Hz)")
+
+# Total output noise: the RMS_NOISE goal function integrates the spectrum
+v_no = sl.measure(NOISE, "RMS_NOISE(onoise_spectrum)", units="V")
+print("Total output noise:", v_no)
+
+# Total output noise versus temperature: a stepped noise analysis reduced
+# to one value per run gives a trace over the step values
+NOISE = sl.noise(fileName, "V(out)", "V1", "dec", 50, 5, "10M",
+                 step={"param": "TEMP", "method": "lin",
+                       "start": -55, "stop": 125, "num": 19})
+noisetot = sl.make_traces(NOISE, [{"y": "RMS_NOISE(S_vo)", "label": "$v_{no}$"}],
+                          variables={"S_vo": "onoise_spectrum"})
+sl.plot("VampQspiceNOISETOT", "Total output noise versus temperature", "lin",
+        noisetot, xName="temperature", xUnits="Celsius", yUnits="V", yScale="u")
+
+# Transient analysis with parameter substitution
+TR = sl.tran(fileName, "0.1u", "20u",
+             stimuli={"V1": ["SIN", 0, "{V_p}", "100k"]},
+             params=[("V_p", 0.5)])
+tran = sl.make_traces(TR, [{"y": "V_out", "label": "$V_{out}$"}],
+                      variables={"V_out": "v(out)"})
+sl.plot("VampQspiceSIN", "$V_{out}$", "lin", tran,
+        xName="time", xUnits="s", xScale="u", yUnits="V")
+
+# FFT of the collector voltage of Q2 with its operating point removed
+FFT = sl.tran(fileName, "0.5u", "512u", tstart="64u", tmax="10n",
+              stimuli={"V1": ["SIN", 0, "{V_p}", "100k"]}, params=[("V_p", 0.5)],
+              save=["v_ac = v(outdc) - {}".format(OPinfo["V_c2"])],
+              fft={"window": "gaussian", "order": 8}, options={"RELTOL": 1e-6})
+spectrum = sl.make_traces(FFT, [{"y": "V_c2", "label": "$V_{c2}$"}],
+                          variables={"V_c2": "v_ac"})
+sl.plot("VampQspiceFFT", "Spectrum of $V_{c2}$", "log", spectrum,
+        xName="frequency", xUnits="Hz", yUnits="V",
+        xLim=[10e3, 1e6], yLim=[2e-7, 2])
+
+# Fourier analysis of the collector voltage of Q2
+FOURIER = sl.tran(fileName, "1u", "512u", tstart="64u", tmax="10n",
+                  stimuli={"V1": ["SIN", 0, "{V_p}", "100k"]}, params=[("V_p", 0.5)],
+                  save=["v_ac = v(outdc) - {}".format(OPinfo["V_c2"])],
+                  fourier="100k", options={"RELTOL": 1e-6})
+print(FOURIER.fourier["table"])

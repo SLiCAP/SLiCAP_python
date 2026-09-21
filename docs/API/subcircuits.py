@@ -13,13 +13,13 @@ import SLiCAP as sl
 cir = sl.makeCircuit("hierarchy.cir")
 
 # Create a subcircuit library file: <sl.ini.user_lib_path>smallAmp.lib
-smallAmp = sl.makeCircuit("kicad/smallAmp/smallAmp.kicad_sch")
+smallAmp = sl.makeCircuit("lib/smallAmp.slicap_sch")
 
 # Create a subcircuit library file: <sl.ini.user_lib_path>bigAmp.lib
-bigAmp = sl.makeCircuit("kicad/bigAmp/bigAmp.kicad_sch")
+bigAmp = sl.makeCircuit("lib/bigAmp.slicap_sch")
 
 # Create the main circuit
-mainAmp = sl.makeCircuit("kicad/mainAmp/mainAmp.kicad_sch")
+mainAmp = sl.makeCircuit("sch/mainAmp.slicap_sch")
 
 # Generate RST snippets for the Help file
 rst = sl.RSTformatter()

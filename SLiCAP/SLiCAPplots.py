@@ -18,7 +18,7 @@ from SLiCAP.SLiCAPmath import _delayFunc_f, _checkNumber, fullSubs
 # _gain_colors lives in SLiCAPtraces: a colour is a TRACE attribute and
 # make_traces assigns it, so the map must not exist twice.
 from SLiCAP.SLiCAPtraces import (trace, register_units_hint,
-                                 _gain_colors)
+                                 _gain_colors, axis_label)
 
 plt.ioff() # Turn off the interactive mode for plotting
 
@@ -1831,14 +1831,14 @@ def sweepAxis(title, results, sweepStart, sweepStop, sweepNum,
     # Create the axis labels
     # For parameter plots: the parameter names with units and scalefactors
     if funcType == 'param':
-        ax.xLabel = '$' + sp.latex(sp.Symbol(xVar)) + '$ [' + xScale + xUnits + ']'
+        ax.xLabel = axis_label('$' + sp.latex(sp.Symbol(xVar)) + '$', xScale, xUnits)
         if type(yVar) != list:
             yVar = [yVar]
         names = '$'
         for i in range(len(yVar)):
             names += sp.latex(sp.Symbol(yVar[i])) + '\\,'
         names += '$'
-        ax.yLabel =  names + ' [' + yScale + yUnits + ']'
+        ax.yLabel = axis_label(names, yScale, yUnits)
     # For time frequency plots we use frequency 'Hz' or 'rad/s' along the x-axis
     elif result.dataType in freqTypes:
         if result.dataType == 'noise':
@@ -1846,34 +1846,34 @@ def sweepAxis(title, results, sweepStart, sweepStop, sweepNum,
                 yUnits = result.detUnits
             if funcType == 'inoise':
                 yUnits = result.srcUnits
-            ax.xLabel = 'frequency [' + sweepScale + 'Hz]'
+            ax.xLabel = axis_label('frequency', sweepScale, 'Hz')
         elif ini.hz == True:
-            ax.xLabel = 'frequency [' + sweepScale + 'Hz]'
+            ax.xLabel = axis_label('frequency', sweepScale, 'Hz')
         else:
-            ax.xLabel = 'frequency [' + sweepScale + 'rad/s]'
+            ax.xLabel = axis_label('frequency', sweepScale, 'rad/s')
     # For time plots we use time along the x-axis
     elif funcType in timeTypes:
-        ax.xLabel = 'time [' + sweepScale + 's]'
+        ax.xLabel = axis_label('time', sweepScale, 's')
         if yUnits == '':
             yUnits = result.detUnits
     # Create the y-label for other than parameter plots
     if funcType == 'mag':
-        ax.yLabel = 'magnitude [' + yScale + yUnits + ']'
+        ax.yLabel = axis_label('magnitude', yScale, yUnits)
     elif funcType == 'dBmag':
-        ax.yLabel = 'magnitude [' + yScale + 'dB]'
+        ax.yLabel = axis_label('magnitude', yScale, 'dB')
     elif funcType == 'phase':
         if ini.hz == True:
-            ax.yLabel = 'phase [' + yScale + 'deg]'
+            ax.yLabel = axis_label('phase', yScale, 'deg')
         else:
-            ax.yLabel = 'phase [' + yScale + 'rad]'
+            ax.yLabel = axis_label('phase', yScale, 'rad')
     elif funcType == 'delay':
-        ax.yLabel = 'group delay [' + yScale + 's]'
+        ax.yLabel = axis_label('group delay', yScale, 's')
     elif funcType == 'time':
-        ax.yLabel = '[' + yScale + yUnits + ']'
+        ax.yLabel = axis_label('', yScale, yUnits)
     elif funcType == 'onoise':
-        ax.yLabel = 'spectral density [$\\left(' + yScale + yUnits +'\\right)^2/Hz$]'
+        ax.yLabel = axis_label('spectral density', '', '(' + yScale + yUnits + ')^2/Hz')
     elif funcType == 'inoise':
-        ax.yLabel = 'spectral density [$\\left(' + yScale + yUnits +'\\right)^2/Hz$]'
+        ax.yLabel = axis_label('spectral density', '', '(' + yScale + yUnits + ')^2/Hz')
     # Create the sweep, lin or log depending on the x-axis type
     try:
         xScaleFactor = 10**int(_SCALEFACTORS[sweepScale])
@@ -2340,11 +2340,11 @@ def pzAxis(title, results, xmin = None, xmax = None, ymin = None,
     except:
         yScaleFactor = 1.
     if ini.hz == True:
-        pz.xLabel = 'Re [' + xscale + 'Hz]'
-        pz.yLabel = 'Im [' + yscale + 'Hz]'
+        pz.xLabel = axis_label('Re', xscale, 'Hz')
+        pz.yLabel = axis_label('Im', yscale, 'Hz')
     else:
-        pz.xLabel = 'Re [' + xscale + 'rad/s]'
-        pz.yLabel = 'Im [' + yscale + 'rad/s]'
+        pz.xLabel = axis_label('Re', xscale, 'rad/s')
+        pz.yLabel = axis_label('Im', yscale, 'rad/s')
     pzTraces = []
     if xmin != None and xmax != None:
         pz.xLim = [float(_checkNumber(xmin)), float(_checkNumber(xmax))]
@@ -2747,10 +2747,10 @@ def traceAxis(title, axisType, plotData, xName = '', xScale = '',
     ax.yLim = yLim
     ax.traces = []
     # Create the axis labels
-    if xName !="" or xScale != "" or xUnits != "":
-        ax.xLabel = xName + ' [' + xScale + xUnits + ']'
+    if xName != "" or xScale != "" or xUnits != "":
+        ax.xLabel = axis_label(xName, xScale, xUnits)
     if yName != "" or yScale != "" or yUnits != "":
-        ax.yLabel = yName + ' [' + yScale + yUnits + ']'
+        ax.yLabel = axis_label(yName, yScale, yUnits)
     for key, value in _trace_items(plotData):
         if type(value) is list:
             newTrace = trace(value)

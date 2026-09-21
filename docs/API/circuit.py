@@ -6,11 +6,11 @@ circuit.py: SLiCAP script for the HTML help file
 """
 import SLiCAP as sl
 
-# Create a SLiCAP circuit object from a kicad schematic file
-#############################################################
+# Create a SLiCAP circuit object from a schematic file
+######################################################
 
 # 'makeCircuit()`' also creates an HTML page with circuit data
-cir = sl.makeCircuit("kicad/Transimpedance/Transimpedance.kicad_sch", imgWidth=350)
+cir = sl.makeCircuit("sch/Transimpedance.slicap_sch", imgWidth=350)
 
 # Display information about the expanded netlist elements
 for element in cir.elements.keys():

@@ -1,22 +1,27 @@
-"BJT voltage amplifier"
-.inc lib/BC847.lib
-.param C_c=18p
-C1 c2 out 1u
-C2 out 0 100p
-C3 e2 0 200u
-C4 in b1 1u
-C5 c2 e1 {C_c}
-Q1 c1 b1 e1 BC847
-Q2 c2 c1 e2 BC847
-R1 e2 0 1k noisy=1
-R2 cc c2 2.7k noisy=1
-R3 cc c1 82k noisy=1
-R4 b1 e2 100k noisy=1
-R5 out 0 10k noisy=1
-R6 e1 0 1k noisy=1
-R7 c2 e1 3k noisy=1
-R8 in 1 2k noisy=1
-V1 1 0 DC 0 AC 1 0 SIN 0 {V_p} 100k
-.param V_p=1
-V2 cc 0 DC 12
+VampQspice
+
+.include "lib/BC847.lib"
+
+.param
++ C_c={1.8e-11}
++ V_S={12}
+
+C1 3 inDC 1e-06
+C2 outDC 4 {C_c}
+C3 2 0 0.0002
+C4 outDC out 1e-07
+C5 out 0 1e-10
+Q1 1 inDC 4 BC847
+Q2 outDC 1 2 BC847
+R1 3 5 R=2000 noisy=1
+R2 Supply 1 R=82000 noisy=1
+R3 outDC 4 R=3000 noisy=1
+R4 4 0 R=1000 noisy=1
+R5 Supply outDC R=2700 noisy=1
+R6 2 0 R=1000 noisy=1
+R7 out 0 R=10000 noisy=1
+R8 inDC 2 R=100000 noisy=1
+V1 5 0 dc 0 ac 1 0 PULSE(0 0.3 0 1e-09 1e-09 4.99e-07 1e-06)
+V2 Supply 0 dc {V_S}
+
 .end

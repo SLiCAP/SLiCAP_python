@@ -247,7 +247,11 @@ class ParameterItem(QGraphicsItem):
         rows = [[_cell(name), _cell(value)] for name, value in params]
         if any(cell is None for row in rows for cell in row):
             return None
-        return slicap_table(["", ""], rows, title="Parameters")
+        # Heading in the analysis block's keyword font, flush left, so the
+        # three canvas blocks read as one family (Anton, 2026-09-14).
+        return slicap_table(["", ""], rows,
+                            title=r"{\footnotesize \textsf{parameters}}",
+                            title_align="l")
 
     def param_lines(self, exclude=None, value_fn=None) -> list:
         """Return SPICE .param lines for netlist export.

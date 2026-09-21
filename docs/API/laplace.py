@@ -7,7 +7,7 @@ laplace.py: SLiCAP scripts for the HTML help file
 import SLiCAP as sl
 import sympy as sp
 
-passive_network = sl.makeCircuit("kicad/myPassiveNetwork/myPassiveNetwork.kicad_sch")
+passive_network = sl.makeCircuit("sch/myPassiveNetwork.slicap_sch")
 
 # Obtain the transfer from source to detector
 result = sl.doLaplace(passive_network)

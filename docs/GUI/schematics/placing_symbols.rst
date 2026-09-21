@@ -94,9 +94,11 @@ The figure below shows the "Place" drop-down menu with all NGspice symbols.
 Orienting a symbol
 ==================
 
-Open a placed component's **Properties** dialog (double-click it) to set its
-rotation (0/90/180/270°) and horizontal or vertical mirroring.  See
-:doc:`/GUI/schematics/component_properties`.
+#. Open a placed component's **Properties** dialog (double-click it) to set its
+   rotation (0/90/180/270°) and horizontal or vertical mirroring.  See
+   :doc:`/GUI/schematics/component_properties`.
+   
+#. Use (shortcut :kbd:`r`) for rotate and (shortcut :kbd:`m`) for mirror horizontally.
 
 Parameter defaults
 ==================

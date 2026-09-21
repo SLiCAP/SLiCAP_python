@@ -8,7 +8,7 @@ import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from shutil import copy2
 from SLiCAP.SLiCAPmath import roundN, fullSubs, _checkNumeric, ENG, units2TeX, normalizeRational
-from SLiCAP.SLiCAPlatex import exprLatex, exprLatex as _latex_ENG
+from SLiCAP.SLiCAPlatex import exprLatex, exprLatex as _latex_ENG, _stateSpaceLines
 from SLiCAP.SLiCAPlex import _sympify
 from IPython.core.display import HTML
 
@@ -519,6 +519,12 @@ def csv2html(fileName, label='', separator=',', caption=''):
     html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
+def _unitsBracket(units):
+    """Units in square brackets, upright, through the shared unit parser
+    (2026-09-12: replaces the hand-built fractions of the noise and
+    DC-variance pages)."""
+    return '\\left[\\mathrm{' + units2TeX(units) + '}\\right]'
+
 def expr2html(expr, units=''):
     """
     Inline display of an expression optional with units.
@@ -573,6 +579,48 @@ def eqn2html(arg1, arg2, units='', label='', labelText=''):
     #value =  sp.latex(roundN(arg2))    
     html = label + '\\begin{equation}\n' + sp.latex(roundN(arg1)) + '=' + value + units + '\n'
     html += '\\end{equation}\n'
+    html = _insertHTML(ini.html_path + ini.html_page, html)
+    return html
+
+def stateSpace2html(results, label='', labelText='', parts=None):
+    """
+    Displays the state-space realization dx/dt = A x + B u, y = C x + D u of
+    a doStateSpace() result on the active HTML page: one aligned display, the
+    vectors x, u, y as transposed rows and the matrices A, B, C, D one per
+    line.
+
+    :param results: Results of a doStateSpace() instruction.
+    :type results: SLiCAPinstruction.instruction
+
+    :param label: ID of the label assigned to this display; defaults to ''.
+    :type label: str
+
+    :param labelText: Label text displayed by **links2html()**; defaults to ''
+    :type labelText: str
+
+    :param parts: Objects to show, a subset of "x", "u", "y", "A", "B", "C",
+                  "D"; defaults to all.
+    :type parts: iterable, NoneType
+
+    :return: HTML string that will be placed on the page.
+    :rtype: str
+    """
+    if results.errors != 0:
+        print("Errors found during execution.")
+        return ''
+    ss = getattr(results, "stateSpace", None)
+    if ss is None:
+        print("No state-space realization available.")
+        return ''
+    lines = _stateSpaceLines(ss, parts)
+    label = _addLabel(label, caption=labelText, labelType='eqn')
+    html = '<h3>' + label + 'State-space realization: $\\dot{\\mathbf{x}} = '
+    html += '\\mathbf{A}\\mathbf{x} + \\mathbf{B}\\mathbf{u}$, $\\mathbf{y} = '
+    html += '\\mathbf{C}\\mathbf{x} + \\mathbf{D}\\mathbf{u}$</h3>\n'
+    html += '\\begin{align}\n'
+    for k, (name, lhs, rhs) in enumerate(lines):
+        html += lhs + ' &= ' + rhs + (' \\\\\n' if k < len(lines) - 1 else '\n')
+    html += '\\end{align}\n'
     html = _insertHTML(ini.html_path + ini.html_page, html)
     return html
 
@@ -697,7 +745,7 @@ def pz2html(instObj, label = '', labelText = ''):
                 p = poles[i]
                 if ini.hz == True:
                     p  = p/2/sp.pi
-                html += '\n<tr><td> $p_{' +str(i) + '}$</td><td>$' + sp.latex(roundN(p)) + '$</td></tr>\n'
+                html += '\n<tr><td> $p_{' +str(i + 1) + '}$</td><td>$' + sp.latex(roundN(p)) + '$</td></tr>\n'
             html += '</table>\n'
     elif instObj.dataType == 'poles' or instObj.dataType == 'pz':
         html += '<p>No poles found.</p>\n'
@@ -730,7 +778,7 @@ def pz2html(instObj, label = '', labelText = ''):
                 z = zeros[i]
                 if ini.hz == True:
                     z = sp.simplify(z/2/sp.pi)
-                html += '\n<tr><td> $z_{' +str(i) + '}$</td><td>$' + sp.latex(roundN(z)) + '$</td></tr>\n'
+                html += '\n<tr><td> $z_{' +str(i + 1) + '}$</td><td>$' + sp.latex(roundN(z)) + '$</td></tr>\n'
             html += '</table>\n'
     elif instObj.dataType == 'zeros' or instObj.dataType == 'pz':
         html += '<p>No zeros found.</p>\n'
@@ -767,12 +815,12 @@ def noise2html(instObj, label='', labelText=''):
         return html
     if label != '':
         label = _addLabel(label, caption=labelText, labeType="data")
-    detUnits = '\\mathrm{\\left[\\frac{%s^2}{Hz}\\right]}'%(instObj.detUnits)
+    detUnits = _unitsBracket(str(instObj.detUnits) + '^2/Hz')
     html = '<h2>Noise analysis results</h2>\n'
     html += '<h3>Detector-referred noise spectrum</h3>\n'
     html += '$$S_{out}=%s\\, %s$$\n'%(sp.latex(roundN(instObj.onoise, numeric = instObj.numeric)), detUnits)
     if instObj.srcUnits != None:
-        srcUnits = '\\mathrm{\\left[\\frac{%s^2}{Hz}\\right]}'%(instObj.srcUnits)
+        srcUnits = _unitsBracket(str(instObj.srcUnits) + '^2/Hz')
         html += '<h3>Source-referred noise spectrum</h3>\n'
         html += '$$S_{in}=%s\\, %s$$\n'%(sp.latex(roundN(instObj.inoise, numeric = instObj.numeric)), srcUnits)
     html += '<h3>Contributions of individual noise sources</h3><table>\n'
@@ -782,7 +830,7 @@ def noise2html(instObj, label='', labelText=''):
         nUnits = key[0].upper()
         if nUnits == 'I':
             nUnits = 'A'
-        nUnits = '\\mathrm{\\left[\\frac{%s^2}{Hz}\\right]}'%(nUnits)
+        nUnits = _unitsBracket(nUnits + '^2/Hz')
         html += '<th colspan = "3" class="center">Noise source: %s</th>'%(key)
         try:
             srcValue = instObj.snoiseTerms[key]
@@ -830,14 +878,14 @@ def dcVar2html(instObj, label = '', labelText = ''):
         return html
     if label != "":
         label = _addLabel(label, caption=labelText, labelType="data")
-    detUnits = '\\mathrm{\\left[ %s^2 \\right]}'%(instObj.detUnits)
+    detUnits = _unitsBracket(str(instObj.detUnits) + '^2')
     html = '<h2>Dcvar analysis results</h2>\n'
     html += '<h3>DC solution of the network</h3>\n'
     html += '$$%s=%s$$\n'%(sp.latex(roundN(instObj.Dv)), sp.latex(roundN(instObj.dcSolve, numeric = instObj.numeric)))
     html += '<h3>Detector-referred variance</h3>\n'
     html += '$$\\sigma_{out}^2=%s\\, %s$$\n'%(sp.latex(roundN(instObj.ovar, numeric = instObj.numeric)), detUnits)
     if instObj.srcUnits != None:
-        srcUnits = '\\mathrm{\\left[ %s^2 \\right]}'%(instObj.srcUnits)
+        srcUnits = _unitsBracket(str(instObj.srcUnits) + '^2')
         html += '<h3>Source-referred variance</h3>\n'
         html += '$$\\sigma_{in}^2=%s\\, %s$$\n'%(sp.latex(roundN(instObj.ivar, numeric = instObj.numeric)), srcUnits)
     html += '<h3>Contributions of individual component variances</h3><table>\n'
@@ -847,7 +895,7 @@ def dcVar2html(instObj, label = '', labelText = ''):
         nUnits = key[0].upper()
         if nUnits == 'I':
             nUnits = 'A'
-        nUnits = '\\mathrm{\\left[ %s^2 \\right]}'%(nUnits)
+        nUnits = _unitsBracket(nUnits + '^2')
         html += '<th colspan = "3" class="center">Variance of source: %s</th>'%(key)
         try:
             srcValue = instObj.svarTerms[key]

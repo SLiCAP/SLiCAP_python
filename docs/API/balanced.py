@@ -11,7 +11,7 @@ sl.initProject("balanced")
 # work with balanced circuits
 ###############################################################################
 
-balancedNetwork = sl.makeCircuit("kicad/balancedNetwork/balancedNetwork.kicad_sch")
+balancedNetwork = sl.makeCircuit("sch/balancedNetwork.slicap_sch")
 noneM = sl.doMatrix(balancedNetwork)
 allM  = sl.doMatrix(balancedNetwork, convtype="all")
 ddM   = sl.doMatrix(balancedNetwork, convtype="dd")
@@ -29,15 +29,15 @@ print(allM.A)
 
 # Use models
 # OpAmp circuit
-Vamp = sl.makeCircuit("kicad/balancedAmp/balancedAmp.kicad_sch")
+Vamp = sl.makeCircuit("sch/balancedAmp.slicap_sch")
 print(Vamp.elements['E_O1N'].params)
 print(Vamp.elements['E_O1P'].params)
 # Matrix equation
 VampAll = sl.doMatrix(Vamp, pardefs="circuit", numeric=True, convtype="all")
 
 # Use sub circuits
-subckt = sl.makeCircuit("kicad/myBJTamp/myBJTamp.kicad_sch")
-BJTdiffAmp = sl.makeCircuit("kicad/BJTdiffAmp/BJTdiffAmp.kicad_sch")
+subckt = sl.makeCircuit("lib/myBJTamp.slicap_sch")
+BJTdiffAmp = sl.makeCircuit("sch/BJTdiffAmp.slicap_sch")
 
 # Disable parameter pairing
 sl.ini.remove_param_pair_ext = False
@@ -121,7 +121,7 @@ sl.plotSweep("Vamp_cc_fb_phs", "Balanced voltage amplifier, common-mode",
              funcType="phase")
 
 # Balanced noise
-noisyCircuit = sl.makeCircuit("kicad/balancedNoisyNetwork/balancedNoisyNetwork.kicad_sch")
+noisyCircuit = sl.makeCircuit("sch/balancedNoisyNetwork.slicap_sch")
 
 # Differential-mode output noise (complete circuit)
 noiseResultD = sl.doNoise(noisyCircuit)
@@ -158,7 +158,7 @@ for src in CnoiseResult.onoiseTerms:
     print(src, ":", CnoiseResult.snoiseTerms[src])
 
 # Balanced dc variance analysis
-dcvarAmp  = sl.makeCircuit("kicad/balancedAmpDCvar/balancedAmpDCvar.kicad_sch")
+dcvarAmp  = sl.makeCircuit("sch/balancedAmpDCvar.slicap_sch")
 
 # Differential-mode output dc variance (complete circuit)
 dcvarD    = sl.doDCvar(dcvarAmp)

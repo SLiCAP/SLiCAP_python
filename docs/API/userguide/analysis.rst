@@ -15,7 +15,7 @@ The general instruction format is (with default keyword arguments):
 
     result = do<Instruction>(cir, transfer='gain', source='circuit', detector='circuit', 
                              lgref='circuit', convtype=None, pardefs=None, numeric=False, 
-                             stepdict=None)
+                             stepdict=None, method=None, loopgaintype='dd')
 
 where <Instruction> describes the analysis to be performed. 
 
@@ -291,6 +291,30 @@ The step dictionary can have the following key-value pairs:
   - (*list* with *int*, *float*, or *str*) step values for stepmethod: 'list', 
   - (*list* with *lists* with *int*, *float*, or *str*) step values for stepmethod: 'array'
 
+The calculation method
+----------------------
+
+**method**: None \| 'det' \| 'state'
+
+Applies to ``doMatrix()``, ``doLaplace()``, ``doNumer()``, ``doDenom()``, ``doPoles()``, ``doZeros()`` and ``doPZ()``.
+
+- None (default): ``ini.pz_method`` selects the engine for the data types poles, zeros and pz; all other data types use the determinant.
+- 'det': numerator and denominator are determinants of the MNA matrix (``ini.numer``, ``ini.denom``); poles and zeros are their roots.
+- 'state': the circuit is written as a first-order (expanded) MNA matrix; poles and zeros are the eigenvalues of its exact state-space realization, computed at 30 digits (see `SLiCAP state-space representation <statespace.html>`__ for the comparison of the two engines). Stepped analyses and symbolic circuits use the determinant.
+
+The loop gain type
+------------------
+
+**loopgaintype**: 'dd' \| 'dc' \| 'cd' \| 'cc'
+
+Applies to the transfers 'loopgain' and 'servo' when TWO loop gain references are given and no conversion type: a balanced stage, such as the input pair of an operational amplifier, inside an unbalanced amplifier. The loop gain is computed by injection at both references: each reference is replaced by an independent source of its own gain and the returned controlling quantity is detected. The letters follow the mixed-mode naming of the conversion types, first the response and second the stimulus: the controlling quantities of the pair are driven in the mode of the second letter (the injection at the outputs of the references) and detected in the mode of the first letter, with the differential-mode and common-mode definitions of the conversion matrix (differential-mode voltage :math:`V_P - V_N`, common-mode voltage :math:`(V_P + V_N)/2`, differential-mode current :math:`(I_P - I_N)/2`, common-mode current :math:`I_P + I_N`); each reference injects its own gain, so a gain mismatch is included.
+
+- 'dd' (default): the differential-mode loop gain
+- 'cc': the common-mode loop gain
+- 'dc' and 'cd': mode conversion around the loop; 'dc' is the differential-mode return from a common-mode injection, 'cd' the reverse. They should be small and have no associated servo function.
+
+For a balanced circuit 'dd' and 'cc' equal the loop gains with the conversion types 'dd' and 'cc', and 'dc' and 'cd' are zero.
+
 Predefined analysis types
 =========================
 
@@ -320,6 +344,12 @@ Complex frequency domain analysis: poles and zeros of transfer functions
 `doZeros() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.doZeros>`__: zeros of a transfer (complex frequency solutions of Numer)
 
 `doPZ() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.doPZ>`__: DC value, poles and zeros of a transfer (with pole-zero canceling: only controllable and observable poles)    
+
+State-space representation
+--------------------------
+
+`doStateSpace() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.doStateSpace>`__: state-space realization dx/dt = A x + B u, y = C x + D u with every independent source an input and every network variable an output (see `SLiCAP state-space representation <statespace.html>`__)
+
    
 Noise analysis
 --------------

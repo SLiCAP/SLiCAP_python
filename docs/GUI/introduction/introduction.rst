@@ -34,6 +34,8 @@ the root of your project.
 
 .. code-block:: python
 
+   # file: instructions.py
+   
    import SLiCAP as sl
 
    Vamp = sl.makeCircuit("sch/Vamp.slicap_sch")
@@ -50,31 +52,31 @@ simply import it and use the results:
 
    import instructions as instr
 
-   f_c   = sl.findServoBandwidth(instr.LG.laplace)["mid"]
+   f_c   = sl.findServoBandwidth(instr.LG.laplace)["hpf"]
    poles = instr.PZ1.poles
 
-That is the point of the whole environment.  The dialogs are a convenience; the
+That is the point of the whole environment.  The dialogs are a convenience, the
 script they write is the deliverable, and it puts the full symbolic and numeric
-analysis of your circuit at your disposal — for design automation, for
+analysis of your circuit at your disposal: for design automation, for
 verification, and for documentation that is generated rather than retyped.
 
 How the pieces fit together
 ===========================
 
-A **schematic** is drawn once and serves twice: it is the source of the netlist
-*and* the publication figure, so the circuit you analyse and the circuit in your
-report cannot drift apart.
+A **schematic** is the source of the netlist *and* the publication figure, 
+so the circuit you analyse and the circuit in your report cannot drift apart.
 
 From a schematic you create a **circuit object** — one explicit line in the
 instruction file — and for that object you compose **instructions**.  Running
 them produces **results**: symbolic expressions, poles and zeros, noise, time
 responses, operating points.
 
-Results become **traces**, traces are placed on **axes**, and axes are arranged
-into **figures**, each one statement in the same file.  Results, tables and
-figures are then exported as **report snippets** — LaTeX, RST or HTML — that a
-document includes directly.  Nothing is copied by hand, so a changed component
-value propagates from the drawing to the published figure in one run.
+Numeric results can be converted into **traces**, traces are placed on **axes**,
+and axes are arranged into **figures**, each one statement in the same file.  
+Results, tables and figures are then exported as **report snippets** — LaTeX, RST or HTML —
+to be imported directly.  Nothing is copied by hand, so a changed component
+value propagates from the drawing to ta published figure, a graph, a table, or 
+an expression in one run.
 
 Two analysis backends live in the same project.  **SLiCAP** answers the
 symbolic, design-oriented questions: what does this transfer look like in terms
@@ -99,16 +101,3 @@ What you can rely on
 * **The GUI is optional.**  Netlisting, export and every analysis are available
   from scripts and from the command line.  The environment makes the work
   easier; it never becomes a dependency of your design.
-
-Where to go next
-================
-
-* :doc:`getting_started` — install, first project, the parts of the window.
-* :doc:`/GUI/schematics/the_canvas`, :doc:`/GUI/schematics/placing_symbols`, :doc:`/GUI/schematics/wiring` — drawing a circuit.
-* :doc:`/GUI/schematics/component_properties`, :doc:`/GUI/schematics/labels_ports_parameters` — giving it
-  values, names and interfaces.
-* :doc:`/GUI/instruction/instructions` — circuit objects, composing analyses, the instruction
-  file.
-* :doc:`/GUI/schematics/netlist_and_export` — netlists, SVG/PDF figures, the command line.
-* :doc:`/GUI/hierarchical_blocks` — subcircuits and descending into them.
-* :doc:`/GUI/project/project` — the project layout and what is stored where.

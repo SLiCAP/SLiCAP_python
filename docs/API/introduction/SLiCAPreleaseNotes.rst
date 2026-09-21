@@ -4,25 +4,56 @@ SLiCAP release notes
 
 .. image:: /API/img/colorCode.svg
 
-SLiCAP Version 6.0 (planned)
-============================
+SLiCAP Version 6.0 release notes
+================================
 
 Version 6.0 will be the **tested** release: the design environment as it
 stands in the 5.x line, verified end to end, plus the following analysis
 work.
 
-#. **State-space representation** of the circuit equations.
+#. API part of the manual is updated now using SLiCAP schematics instead of KiCAD.
 
-#. **Time-constant matrix**.
+#. SLiCAP symbols for schematic capture with KiCAD, LTspice, gSchem, and Lepton-EDA
+   are provided and supported by makeCircuit(). Working with schematic
+   capture programs other than SLiCAP, however, is no longer documented. The last 
+   tested version of KiCAD remains 9.1. From version 6, the use of schematic capture
+   tools other than SLiCAP is deprecated.
 
-#. **Faster root-locus analysis.** Reduction of numeric matrices to full rank
-   will use Python's ``fractions`` module instead of sympy, which removes the
-   symbolic-object overhead from the numeric path.
+#. **State-space representation** of the circuit equations:
+   ``doStateSpace()`` returns the full (MIMO) realization dx/dt = A x + B u,
+   y = C x + D u, obtained from the first-order MNA matrix by an exact
+   reduction: the number of states equals the number of finite poles, also
+   for capacitor loops, inductor cut sets, ideally coupled inductors and
+   nullors. Improper outputs appear as a polynomial in the Laplace variable
+   in D. Formatter method ``stateSpace()`` (LaTeX, RST, TXT), ``stateSpace2html()``
+   and ``listStateSpace()``. A "State space" group in the GUI instruction
+   editor. See the user guide page *SLiCAP state-space representation*.
 
-A 6.0 release requires, besides the above: the full test suite green, the
-plot-regression baseline unchanged, every manual example re-run with its
-documentation regenerated, and a walk-through of the workflows described in
-the manual.
+#. **Physical state variables**: ``doStateSpace()`` names its states after
+   capacitor voltages, inductor currents and the internal states of device
+   models wherever the network allows it.
+   
+#. **Pole-zero analysis with the state-space engine.** The keyword
+   ``method='state'`` on ``doPoles()``, ``doZeros()`` and ``doPZ()`` (and on
+   ``doMatrix()``, ``doLaplace()``, ``doNumer()``, ``doDenom()`` for the
+   first-order matrix) and the project setting ``ini.pz_method``. The
+   default engine remains the determinant. 
+   
+#. Loop gain and servo function are computed by injection at the
+   reference: the reference is replaced by an independent source of its
+   own gain and its returned controlling quantity is detected (the loop
+   stays closed), instead of from the return difference. For a matched reference pair with a conversion type
+   each reference keeps its own gain, so that a gain mismatch shows up in 
+   the cd and dc blocks like any other unbalance. Two loop gain references 
+   without a conversion type, e.g. a balanced stage in
+   an unbalanced amplifier, give the four modal loop gains ``loopgaintype``
+   'dd', 'dc', 'cd', 'cc' (servo functions only for 'dd' and 'cc'). 
+   
+#. A separate exact core on Python's ``fractions`` module for the numeric
+   path was built, measured and REMOVED: sympy's rational matrices were
+   faster in every case.
+   
+#. Several bug fixes and speed improvements.
 
 .. _v5-development-line:
 
@@ -36,7 +67,6 @@ SLiCAP Version 5.x release notes
    dialogs, menus and the on-disk layout of new features (subcircuit
    packages, instruction files) may still change until 6.0.  Projects and
    scripts written with the analysis functions are unaffected.
-
 
 #. **Schematic capture GUI.** SLiCAP now includes its own schematic editor;
    KiCad, LTspice, gSchem, or Lepton-EDA are no longer required for drawing
@@ -58,8 +88,7 @@ SLiCAP Version 5.x release notes
    and per-instruction parameter overrides (``params=``).
    All values use SLiCAP notation (case-sensitive scale factors: ``m`` =
    milli, ``M`` = mega); SLiCAP translates automatically wherever values are
-   written into NGspice input (``1M`` → ``1Meg`` — NGspice reads suffixes
-   case-insensitively). See
+   written into NGspice input (``1M`` → ``1E6``). See
    `Value notation <../schematics/component_properties.html#value-notation-scale-factors>`_.
 
 #. **Instruction editing, traces, axes and figures.** Analyses are composed

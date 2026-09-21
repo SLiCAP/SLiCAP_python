@@ -128,14 +128,174 @@ def _makeMatrices(instr):
     numeric = instr.numeric
     substitute = instr.substitute
     varIndex = _createDepVarIndex(cir)
-    dim = len(list(varIndex.keys()))
-    Dv = sp.Matrix([0 for i in range(dim)])
+    names = list(cir.dep_vars)
+    # method 'state': controlled sources with a Laplace rational transfer are
+    # expanded into an integrator chain (book: "Matrix stamps of expanded
+    # transfer functions"), so that M is first order in s. The chain is sized
+    # HERE, after parameter substitution: a time constant that is zero drops
+    # the order, and an integrator kept for a vanished coefficient would be a
+    # state without a pole (Anton/Claude, 2026-09-09, PZ.md addendum E).
+    chains = {}          # chain key -> (a, b, columns)
+    expanded = {}        # refDes -> {"av": key|None, "zo": (kind, key|value)}
+    if getattr(instr, "method", "det") == "state":
+
+        def _coeffs(numer, denom):
+            a = sp.Poly(denom, ini.laplace).all_coeffs()          # highest first
+            b = sp.Poly(numer, ini.laplace).all_coeffs()
+            return a, [0]*(len(a) - len(b)) + b
+
+        def _newChain(key, a, b, tag):
+            cols = []
+            for i in range(len(a)):
+                cols.append(len(names))
+                names.append("V_%d_%s" % (i, tag))
+            chains[key] = (a, b, cols)
+            return key
+
+        for el in list(cir.elements.keys()):
+            elmt = cir.elements[el]
+            # Model 'g' is not expanded: its value may not contain the
+            # Laplace variable (SLiCAPprotos: {'value': False}), the parser
+            # rejects it. A 'g' branch here was dead code and was REMOVED
+            # (Anton, 2026-09-15).
+            if elmt.model not in ('E', 'F', 'G', 'H', 'EZ', 'HZ'):
+                continue
+            numer, denom = _getValues(elmt, 'value', numeric, parDefs, substitute)
+            info = {"av": None, "zo": None}
+            if ini.laplace in (numer + denom).atoms(sp.Symbol):
+                a, b = _coeffs(numer, denom)
+                if len(sp.Poly(numer, ini.laplace).all_coeffs()) > len(a):
+                    # A differentiator has no state; its polynomial stamp is
+                    # first order in s but index 2 (Anton, 2026-09-09).
+                    print("Warning: %s: transfer is not proper (numerator "
+                          "order > denominator order); polynomial stamp "
+                          "used, no state-space form." % elmt.refDes)
+                    continue
+                if len(a) > 1:
+                    info["av"] = _newChain(elmt.refDes, a, b, elmt.refDes)
+            if elmt.model in ('EZ', 'HZ'):
+                # Output impedance: its own states, independent of those of
+                # the transfer (OPA209: two chains). Z proper -> Z realised
+                # from the branch current; Z improper (inductive) -> 1/Z is
+                # proper and is realised from the voltage across it
+                # (Anton, 2026-09-09: "determine the order, then decide
+                # which model"). A constant zo needs no chain.
+                zoN, zoD = _getValues(elmt, 'zo', numeric, parDefs, substitute)
+                if ini.laplace in (zoN + zoD).atoms(sp.Symbol):
+                    if len(sp.Poly(zoN, ini.laplace).all_coeffs()) <= \
+                       len(sp.Poly(zoD, ini.laplace).all_coeffs()):
+                        a, b = _coeffs(zoN, zoD)
+                        kind = "Z"
+                    else:
+                        a, b = _coeffs(zoD, zoN)
+                        kind = "Y"
+                    key = _newChain(elmt.refDes + "_zo", a, b, "zo_" + elmt.refDes)
+                    names.append("V_zo_" + elmt.refDes)      # voltage across zo
+                    info["zo"] = (kind, key, len(names) - 1)
+                else:
+                    info["zo"] = ("const", zoN/zoD, None)
+            if info["av"] is not None or info["zo"] is not None:
+                expanded[elmt.refDes] = info
+    dim = len(names)
+    Dv = sp.Matrix([sp.Symbol(name) for name in names])
     M = sp.zeros(dim)
-    for i in range(len(cir.dep_vars)):
-        Dv[i] = sp.Symbol(cir.dep_vars[i])
+    s = ini.laplace
+
+    def _chain(refDes, vin, vout_row=None):
+        """Stamp the integrator chain of refDes: input row (sum a_j V_j =
+        controlling quantity), integrator rows (s V_i = V_{i-1}); returns the
+        list of (column, b_j) pairs for the output sum."""
+        a, b, cols = chains[refDes]
+        row0 = cols[0]                                # input row = row of V_0
+        for j, col in enumerate(cols):
+            M[row0, col] += a[j]
+        for (pos, sign) in vin:                       # controlling quantity
+            if pos is not None:
+                M[row0, pos] -= sign
+        for i in range(1, len(cols)):
+            M[cols[i], cols[i-1]] -= 1
+            M[cols[i], cols[i]]   += s
+        return list(zip(cols, b))
+
     for el in list(cir.elements.keys()):
         elmt = cir.elements[el]
-        if elmt.model == 'C':
+        if elmt.refDes in expanded:
+            refDes = elmt.refDes
+            info   = expanded[refDes]
+            model  = {'EZ': 'E', 'HZ': 'H'}.get(elmt.model, elmt.model)
+            numer, denom = _getValues(elmt, 'value', numeric, parDefs, substitute)
+
+            def _outputSum(vin):
+                """(column, coefficient) pairs of the transfer's output; a
+                constant gain has no chain and returns the gain itself."""
+                if info["av"] is not None:
+                    return _chain(refDes, vin), None
+                return [], numer/denom
+
+            def _zoTerm(dVarPos, row):
+                """Add the output-impedance voltage to the output row."""
+                kind, key, vz = info["zo"]
+                if kind == "const":
+                    M[row, dVarPos] -= key                 # (V0-V1) - av*Vin - zo*I = 0
+                    return
+                M[row, vz] -= 1                            # ... - V_zo = 0
+                if kind == "Z":                            # V_zo = Z(I): chain in = I
+                    for col, bj in _chain(key, [(dVarPos, 1)]):
+                        M[vz, col] -= bj
+                    M[vz, vz] += 1
+                else:                                      # I = Y(V_zo): chain in = V_zo
+                    for col, bj in _chain(key, [(vz, 1)]):
+                        M[vz, col] += bj
+                    M[vz, dVarPos] -= 1
+
+            if model == 'E':
+                dVarPos = varIndex['I_' + refDes]
+                pos0, pos1, pos2, pos3 = [varIndex[n] for n in elmt.nodes]
+                M[pos0, dVarPos] += 1
+                M[pos1, dVarPos] -= 1
+                M[dVarPos, pos0] += 1                 # (V0 - V1) - sum b_j V_j = 0
+                M[dVarPos, pos1] -= 1
+                pairs, gain = _outputSum([(pos2, 1), (pos3, -1)])
+                for col, bj in pairs:
+                    M[dVarPos, col] -= bj
+                if gain is not None:
+                    M[dVarPos, pos2] -= gain
+                    M[dVarPos, pos3] += gain
+                if info["zo"] is not None:
+                    _zoTerm(dVarPos, dVarPos)
+            elif model == 'G':
+                dVarPos = varIndex['I_' + refDes]
+                pos0, pos1, pos2, pos3 = [varIndex[n] for n in elmt.nodes]
+                M[pos0, dVarPos] += 1
+                M[pos1, dVarPos] -= 1
+                M[dVarPos, dVarPos] -= 1              # -I + sum b_j V_j = 0
+                for col, bj in _chain(refDes, [(pos2, 1), (pos3, -1)]):
+                    M[dVarPos, col] += bj
+            elif model == 'F':
+                dVarPosO = varIndex['I_' + refDes]
+                dVarPosI = varIndex['I_' + elmt.refs[0]]
+                pos0, pos1 = [varIndex[n] for n in elmt.nodes]
+                M[pos0, dVarPosO] += 1
+                M[pos1, dVarPosO] -= 1
+                M[dVarPosO, dVarPosO] -= 1            # -I_F + sum b_j V_j = 0
+                for col, bj in _chain(refDes, [(dVarPosI, 1)]):
+                    M[dVarPosO, col] += bj
+            elif model == 'H':
+                dVarPosO = varIndex['I_' + refDes]
+                dVarPosI = varIndex['I_' + elmt.refs[0]]
+                pos0, pos1 = [varIndex[n] for n in elmt.nodes]
+                M[pos0, dVarPosO] += 1
+                M[pos1, dVarPosO] -= 1
+                M[dVarPosO, pos0] += 1                # (V0 - V1) - sum b_j V_j = 0
+                M[dVarPosO, pos1] -= 1
+                pairs, gain = _outputSum([(dVarPosI, 1)])
+                for col, bj in pairs:
+                    M[dVarPosO, col] -= bj
+                if gain is not None:
+                    M[dVarPosO, dVarPosI] -= gain
+                if info["zo"] is not None:
+                    _zoTerm(dVarPosO, dVarPosO)
+        elif elmt.model == 'C':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
             value = _getValue(elmt, 'value', numeric, parDefs, substitute)
@@ -404,6 +564,46 @@ def _makeSrcVector(cir, parDefs, elid, value='id', numeric=True, substitute=True
     Iv = float2rational(sp.Matrix(Iv))
     Iv.row_del(gndPos)
     return Iv
+
+def _singleDetector(M, detP, detN):
+    """
+    Returns the MNA matrix in which a differential detector quantity is a
+    single variable, the column of that variable, and its sign.
+
+    :param M: MNA matrix
+    :type M: sympy.Matrix
+
+    :param detP: column of the positive detector variable, or None
+    :type detP: int, None
+
+    :param detN: column of the negative detector variable, or None
+    :type detN: int, None
+
+    :return: tuple (M, column, sign):
+
+             #. M (*sympy.Matrix*): the matrix in which the variable of
+                'column' is the detector quantity
+             #. column (*int*): column of the detector quantity
+             #. sign (*int*): 1, or -1 for a negative detector alone
+    :rtype: tuple
+    """
+    # A differential detector x_P - x_N used to cost TWO determinants,
+    # det(M_P) - det(M_N). A difference of determinants is not the determinant
+    # of any matrix, which blocked the single-matrix (eigenvalue) form of the
+    # numerator. Substituting x_P = x_D + x_N turns the difference into ONE
+    # variable by a column operation: col_N += col_P, after which slot P holds
+    # x_D. The operation is unimodular, so det(M) and every other variable are
+    # unchanged; verified symbolically on pzNetwork and balancedAmp
+    # (Anton/Claude, 2026-09-09; see PZ.md). The bordered-matrix and the E/H
+    # network-augmentation forms considered in July 2026 are SUPERSEDED by
+    # this: same dimension, no extra variables.
+    if detP is not None and detN is not None:
+        Ms = M.copy()
+        Ms[:, detN] = Ms[:, detN] + Ms[:, detP]
+        return Ms, detP, 1
+    if detP is not None:
+        return M, detP, 1
+    return M, detN, -1
 
 """
 def _reduceCircuit(M, Iv, Dv, source, detector, references, inductors):

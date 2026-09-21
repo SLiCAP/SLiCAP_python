@@ -6,7 +6,7 @@ ttime.py: SLiCAP scripts for the HTML help file
 import SLiCAP as sl
 import sympy as sp
 # Circuit definition
-ACcoupling = sl.makeCircuit("kicad/ACcoupling/ACcoupling.kicad_sch")
+ACcoupling = sl.makeCircuit("sch/ACcoupling.slicap_sch")
 
 # Define parameter values
 params = {"R_a": "1k",

@@ -420,7 +420,7 @@ def _get_input_line(token):
 lexer = lex.lex()
 
 if __name__ == '__main__':
-    fi = '/home/anton/DATA/SLiCAP/SLiCAP_python_tests/ASMPT-11/cir/classABamp.cir'
+    fi = 'cir/myFirstRCnetwork.cir'   # any netlist of the current project
     print(fi)
     f = open(fi, 'r')
     netlist = f.read()

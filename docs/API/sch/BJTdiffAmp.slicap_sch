@@ -1,0 +1,821 @@
+{
+  "components": [
+    {
+      "symbol_name": "port",
+      "instance_id": "P2",
+      "x": 85.0,
+      "y": 75.0,
+      "rotation": 270.0,
+      "h_flip": false,
+      "v_flip": false,
+      "params": {
+        "name": "outN"
+      },
+      "model": "",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          false,
+          false
+        ],
+        "name": [
+          true,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          11.0,
+          -10
+        ],
+        "name": [
+          -3.0,
+          22.0
+        ]
+      }
+    },
+    {
+      "symbol_name": "port",
+      "instance_id": "P1",
+      "x": 85.0,
+      "y": -35.0,
+      "rotation": 270.0,
+      "h_flip": false,
+      "v_flip": false,
+      "params": {
+        "name": "outP"
+      },
+      "model": "",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          false,
+          false
+        ],
+        "name": [
+          true,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          11.0,
+          -10
+        ],
+        "name": [
+          -2.5,
+          22.0
+        ]
+      }
+    },
+    {
+      "symbol_name": "0",
+      "instance_id": "GND1",
+      "x": -30.0,
+      "y": 20.0,
+      "rotation": 0.0,
+      "h_flip": false,
+      "v_flip": false,
+      "params": {
+        "name": "0"
+      },
+      "model": "",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          false,
+          false
+        ],
+        "name": [
+          false,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          9.0,
+          -10
+        ],
+        "name": [
+          9.0,
+          0
+        ]
+      }
+    },
+    {
+      "symbol_name": "V",
+      "instance_id": "V1N",
+      "x": -45.0,
+      "y": 55.0,
+      "rotation": 180.0,
+      "h_flip": false,
+      "v_flip": false,
+      "params": {
+        "value": "0",
+        "dc": "",
+        "dcvar": "",
+        "noise": ""
+      },
+      "model": "V",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          true,
+          false
+        ],
+        "model": [
+          false,
+          false
+        ],
+        "value": [
+          true,
+          false
+        ],
+        "dc": [
+          false,
+          false
+        ],
+        "dcvar": [
+          false,
+          false
+        ],
+        "noise": [
+          false,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          39.66199963141409,
+          0.5963878601751702
+        ],
+        "model": [
+          16.0,
+          0
+        ],
+        "value": [
+          20.568847014351746,
+          -9.587533638018051
+        ],
+        "dc": [
+          16.0,
+          20
+        ],
+        "dcvar": [
+          16.0,
+          30
+        ],
+        "noise": [
+          16.0,
+          40
+        ],
+        "dc_current": [
+          16.0,
+          50
+        ]
+      }
+    },
+    {
+      "symbol_name": "V",
+      "instance_id": "V1P",
+      "x": -45.0,
+      "y": -15.0,
+      "rotation": 0.0,
+      "h_flip": true,
+      "v_flip": false,
+      "params": {
+        "value": "0",
+        "dc": "",
+        "dcvar": "",
+        "noise": ""
+      },
+      "model": "V",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          true,
+          false
+        ],
+        "value": [
+          true,
+          false
+        ],
+        "dc": [
+          false,
+          false
+        ],
+        "dcvar": [
+          false,
+          false
+        ],
+        "noise": [
+          false,
+          false
+        ],
+        "model": [
+          false,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          15.243856332703217,
+          -0.9262759924385655
+        ],
+        "model": [
+          16.0,
+          0
+        ],
+        "value": [
+          15.621928166351609,
+          7.353497164461248
+        ],
+        "dc": [
+          16.0,
+          20
+        ],
+        "dcvar": [
+          16.0,
+          30
+        ],
+        "noise": [
+          16.0,
+          40
+        ],
+        "dc_current": [
+          16.0,
+          50
+        ]
+      }
+    },
+    {
+      "symbol_name": "R",
+      "instance_id": "R1N",
+      "x": -10.0,
+      "y": 75.0,
+      "rotation": 90.0,
+      "h_flip": true,
+      "v_flip": false,
+      "params": {
+        "value": "R_s",
+        "dcvar": "",
+        "dcvarlot": "",
+        "noisetemp": "",
+        "noiseflow": ""
+      },
+      "model": "R",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          true,
+          false
+        ],
+        "value": [
+          true,
+          false
+        ],
+        "dcvar": [
+          false,
+          false
+        ],
+        "dcvarlot": [
+          false,
+          false
+        ],
+        "noisetemp": [
+          false,
+          false
+        ],
+        "noiseflow": [
+          false,
+          false
+        ],
+        "model": [
+          false,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          -18.99153020589487,
+          14.399903026218198
+        ],
+        "model": [
+          11.0,
+          0
+        ],
+        "value": [
+          -8.440312521107643,
+          1.3848169648915416
+        ],
+        "dcvar": [
+          11.0,
+          20
+        ],
+        "dcvarlot": [
+          11.0,
+          30
+        ],
+        "noisetemp": [
+          11.0,
+          40
+        ],
+        "noiseflow": [
+          11.0,
+          50
+        ]
+      }
+    },
+    {
+      "symbol_name": "R",
+      "instance_id": "R1P",
+      "x": -10.0,
+      "y": -35.0,
+      "rotation": 90.0,
+      "h_flip": true,
+      "v_flip": false,
+      "params": {
+        "value": "R_s",
+        "dcvar": "",
+        "dcvarlot": "",
+        "noisetemp": "",
+        "noiseflow": ""
+      },
+      "model": "R",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          true,
+          false
+        ],
+        "value": [
+          true,
+          false
+        ],
+        "dcvar": [
+          false,
+          false
+        ],
+        "dcvarlot": [
+          false,
+          false
+        ],
+        "noisetemp": [
+          false,
+          false
+        ],
+        "noiseflow": [
+          false,
+          false
+        ],
+        "model": [
+          false,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          17.5,
+          13.5
+        ],
+        "model": [
+          11.0,
+          0
+        ],
+        "value": [
+          29.0,
+          1.5
+        ],
+        "dcvar": [
+          11.0,
+          20
+        ],
+        "dcvarlot": [
+          11.0,
+          30
+        ],
+        "noisetemp": [
+          11.0,
+          40
+        ],
+        "noiseflow": [
+          11.0,
+          50
+        ]
+      }
+    },
+    {
+      "symbol_name": "R",
+      "instance_id": "R1",
+      "x": 50.0,
+      "y": 20.0,
+      "rotation": 0.0,
+      "h_flip": false,
+      "v_flip": false,
+      "params": {
+        "value": "R_a",
+        "dcvar": "",
+        "dcvarlot": "",
+        "noisetemp": "",
+        "noiseflow": ""
+      },
+      "model": "R",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          true,
+          false
+        ],
+        "value": [
+          true,
+          false
+        ],
+        "dcvar": [
+          false,
+          false
+        ],
+        "dcvarlot": [
+          false,
+          false
+        ],
+        "noisetemp": [
+          false,
+          false
+        ],
+        "noiseflow": [
+          false,
+          false
+        ],
+        "model": [
+          false,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          9.743856332703213,
+          -1.292060491493384
+        ],
+        "model": [
+          11.0,
+          0
+        ],
+        "value": [
+          10.121928166351609,
+          8.926275992438562
+        ],
+        "dcvar": [
+          11.0,
+          20
+        ],
+        "dcvarlot": [
+          11.0,
+          30
+        ],
+        "noisetemp": [
+          11.0,
+          40
+        ],
+        "noiseflow": [
+          11.0,
+          50
+        ]
+      }
+    },
+    {
+      "symbol_name": "myBJTamp",
+      "instance_id": "X1N",
+      "x": 50.0,
+      "y": 75.0,
+      "rotation": 180.0,
+      "h_flip": true,
+      "v_flip": false,
+      "params": {},
+      "model": "myBJTamp",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          true,
+          false
+        ],
+        "model": [
+          true,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          -9.996672048861491,
+          -27.497781365907656
+        ],
+        "model": [
+          34.0,
+          -27.0
+        ]
+      }
+    },
+    {
+      "symbol_name": "myBJTamp",
+      "instance_id": "X1P",
+      "x": 50.0,
+      "y": -35.0,
+      "rotation": 0.0,
+      "h_flip": false,
+      "v_flip": false,
+      "params": {},
+      "model": "myBJTamp",
+      "refs": [],
+      "prop_display": {
+        "refdes": [
+          true,
+          false
+        ],
+        "model": [
+          true,
+          false
+        ]
+      },
+      "prop_offsets": {
+        "refdes": [
+          -34.521077023877226,
+          -22.505546585230846
+        ],
+        "model": [
+          -5.0,
+          -22.5
+        ]
+      }
+    }
+  ],
+  "wires": [
+    {
+      "points": [
+        [
+          15.0,
+          75.0
+        ],
+        [
+          10.0,
+          75.0
+        ]
+      ],
+      "net_name": "inN",
+      "display_name": true,
+      "label_offset": [
+        -9.532308998407899,
+        1.1162243402216063
+      ],
+      "net_locked": false,
+      "user_net_name": "inN",
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    },
+    {
+      "points": [
+        [
+          15.0,
+          -35.0
+        ],
+        [
+          10.0,
+          -35.0
+        ]
+      ],
+      "net_name": "inP",
+      "display_name": true,
+      "label_offset": [
+        -8.214224322319566,
+        -11.862715716186912
+      ],
+      "net_locked": false,
+      "user_net_name": "inP",
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    },
+    {
+      "points": [
+        [
+          50.0,
+          50.0
+        ],
+        [
+          50.0,
+          40.0
+        ]
+      ],
+      "net_name": "fbN",
+      "display_name": true,
+      "label_offset": [
+        4.9149338374291105,
+        -9.427221172022684
+      ],
+      "net_locked": false,
+      "user_net_name": "fbN",
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    },
+    {
+      "points": [
+        [
+          50.0,
+          0.0
+        ],
+        [
+          50.0,
+          -10.0
+        ]
+      ],
+      "net_name": "fbP",
+      "display_name": true,
+      "label_offset": [
+        4.9149338374291105,
+        -10.561436672967863
+      ],
+      "net_locked": false,
+      "user_net_name": "fbP",
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    },
+    {
+      "points": [
+        [
+          -45.0,
+          20.0
+        ],
+        [
+          -45.0,
+          35.0
+        ]
+      ],
+      "net_name": null,
+      "display_name": false,
+      "label_offset": [
+        0.0,
+        -3.0
+      ],
+      "net_locked": false,
+      "user_net_name": null,
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    },
+    {
+      "points": [
+        [
+          -45.0,
+          5.0
+        ],
+        [
+          -45.0,
+          20.0
+        ]
+      ],
+      "net_name": null,
+      "display_name": false,
+      "label_offset": [
+        0.0,
+        -3.0
+      ],
+      "net_locked": false,
+      "user_net_name": null,
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    },
+    {
+      "points": [
+        [
+          -30.0,
+          20.0
+        ],
+        [
+          -45.0,
+          20.0
+        ]
+      ],
+      "net_name": null,
+      "display_name": false,
+      "label_offset": [
+        0.0,
+        -3.0
+      ],
+      "net_locked": false,
+      "user_net_name": null,
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    },
+    {
+      "points": [
+        [
+          -30.0,
+          75.0
+        ],
+        [
+          -45.0,
+          75.0
+        ]
+      ],
+      "net_name": "srcN",
+      "display_name": true,
+      "label_offset": [
+        -15.381680429249116,
+        1.1162243402215921
+      ],
+      "net_locked": false,
+      "user_net_name": "srcN",
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    },
+    {
+      "points": [
+        [
+          -30.0,
+          -35.0
+        ],
+        [
+          -45.0,
+          -35.0
+        ]
+      ],
+      "net_name": "srcP",
+      "display_name": true,
+      "label_offset": [
+        -14.915302058948669,
+        -11.646551918231133
+      ],
+      "net_locked": false,
+      "user_net_name": "srcP",
+      "show_dc_voltage": false,
+      "dc_label_offset": [
+        0.0,
+        6.0
+      ]
+    }
+  ],
+  "junctions": [
+    {
+      "x": -45.0,
+      "y": 20.0
+    }
+  ],
+  "free_texts": [],
+  "hyperlinks": [],
+  "commands": [],
+  "libs": [
+    {
+      "x": -80.0,
+      "y": -80.0,
+      "entries": [
+        {
+          "directive": "lib",
+          "file": "lib/myBJTamp.slicap_lib",
+          "corner": ""
+        }
+      ],
+      "show": true
+    }
+  ],
+  "images": [],
+  "border": null,
+  "latex_fragments": [],
+  "parameters": [],
+  "analysis_items": [],
+  "shapes": [],
+  "model_defs": [],
+  "properties": {
+    "title": "",
+    "author": "",
+    "project": "",
+    "created": "2026-09-20",
+    "last_modified": "2026-09-20",
+    "page_size": "A4",
+    "page_width_mm": 210.0,
+    "page_height_mm": 297.0,
+    "is_subcircuit": false,
+    "subcircuit_ports": [],
+    "subcircuit_params": [],
+    "control_section": ""
+  }
+}

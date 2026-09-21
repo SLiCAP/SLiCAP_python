@@ -291,8 +291,18 @@ class _TranTab(_AnalysisTab):
         lbl1, self._tstep  = _field("Time step",         "e.g. 1n")
         lbl2, self._tstop  = _field("Stop time",         "e.g. 1u")
         lbl3, self._tstart = _field("Start time (opt.)", "e.g. 0")
+        # tmax: the NGspice tran command's fourth number, the maximum
+        # internal time step. Without it NGspice may step over rapid
+        # changes; for an FFT it sets the numerical noise floor (Anton,
+        # 2026-09-21).
+        lbl4, self._tmax   = _field("Max. time step (opt.)", "e.g. 10n")
+        self._tmax.setToolTip("Maximum internal time step of the integration "
+                              "(tran's fourth argument). Keep it small for an "
+                              "FFT and for fast edges; NGspice's own choice "
+                              "may step over rapid changes.")
         for row, (lbl, edit) in enumerate(
-            [(lbl1, self._tstep), (lbl2, self._tstop), (lbl3, self._tstart)]
+            [(lbl1, self._tstep), (lbl2, self._tstop), (lbl3, self._tstart),
+             (lbl4, self._tmax)]
         ):
             grid.addWidget(lbl,  row, 0, Qt.AlignmentFlag.AlignRight)
             grid.addWidget(edit, row, 1)
@@ -370,10 +380,13 @@ class _TranTab(_AnalysisTab):
         tstep  = _py_num(self._tstep.text())
         tstop  = _py_num(self._tstop.text())
         tstart = self._tstart.text().strip()
+        tmax   = self._tmax.text().strip()
         step   = self._step_kwarg()
         args   = f'"{cir_stem}", {tstep}, {tstop}'
         if tstart:
             args += f", tstart={_py_num(tstart)}"
+        if tmax:
+            args += f", tmax={_py_num(tmax)}"
         return (f'{varname} = sl.tran({args}{step}{extra_kwargs}'
                 f'{self._post_kwarg()})')
 
@@ -384,6 +397,8 @@ class _TranTab(_AnalysisTab):
             self._tstop.setText(str(_lit(args[2], args[2])))
         tstart = kwargs.get("tstart")
         self._tstart.setText("" if tstart is None else str(_lit(tstart, tstart)))
+        tmax = kwargs.get("tmax")
+        self._tmax.setText("" if tmax is None else str(_lit(tmax, tmax)))
         fft = _lit(kwargs.get("fft"), None) if "fft" in kwargs else None
         fourier = (_lit(kwargs.get("fourier"), None)
                    if "fourier" in kwargs else None)

@@ -6,6 +6,8 @@ SLiCAP pole-zero analysis
 
 Accurate pole-zero analysis is indispensible for investigating the stability of dynamic systems. SLiCAP supports both numeric and symbolic pole-zero analysis. Symbolic pole-zero analysis is supported for lower-order rational functions of the Laplace variable and for functions implemented in sympy. Numeric pole-zero analysis is implemented for Laplace rational functions of any order. SLiCAP uses numeric analysis if no other symbolic variables than the Laplace variable ``ini.laplace=s`` are found in the expression.
 
+Two engines are available for numeric pole-zero analysis: the determinant engine (roots of the numerator and denominator polynomials, the default) and the state-space engine (eigenvalues of the exact state matrix, keyword ``method='state'``); see `SLiCAP state-space representation <statespace.html>`__ for the differences.
+
 SLiCAP has three instructions related to pole-zero analysis:
 
 #. `doPoles() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.doPoles>`__ returns the solutions of the Laplace variable of the denominator of a transfer function.
@@ -37,7 +39,7 @@ The following circuit is used for this manual page:
     :lineno-start: 9
     
 .. image:: /API/img/pzNetwork.svg
-    :width: 600px
+    :scale: 80 %
     
 With a differential voltage detector between nodes (1) and (2), and the signal source set to ``V1``, the transfer has four poles and three zeros. Two zeros coincide with two poles:
 
@@ -168,14 +170,15 @@ The ``listPZ()`` function displays a table in the console output:
 
      n  Real part [Hz]  Imag part [Hz]  Frequency [Hz]     Q [-] 
     --  --------------  --------------  --------------  --------
-     0       -4.77e+03        1.59e+03        5.03e+03   5.27e-1
-     1       -4.77e+03       -1.59e+03        5.03e+03   5.27e-1
+     0       -4.77e+03        1.59e+03        5.03e+03  5.27e-01
+     1       -4.77e+03       -1.59e+03        5.03e+03  5.27e-01
 
     Zeros of gain:
 
      n  Real part [Hz]  Imag part [Hz]  Frequency [Hz]     Q [-] 
     --  --------------  --------------  --------------  --------
-     0       -5.07e+02        0.00e+00        5.07e+02
+     0       -3.18e+03        0.00e+00        3.18e+03
+
      
 Rendered with the formatter:
 

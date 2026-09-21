@@ -1,5 +1,5 @@
 ==================
-SLiCAP Version 5.0
+SLiCAP Version 6.0
 ==================
 
 .. image:: /API/img/colorCode.svg
@@ -7,10 +7,10 @@ SLiCAP Version 5.0
 - SLiCAP is an acronym for: **S** ymbolic **Li** near **C** ircuit **A** nalysis **P** rogram
 - SliCAP is a tool for **algorithmic analog design automation**
 - SLiCAP is intended for setting up and solving **design equations** of electronic circuits and **integrating design and documentation**
-- SLiCAP is a an **open source** application written in Python, originally created by `Anton J.M. Montagne <https://montagne.nl>`_
+- SLiCAP is a an **open source** application written in Python, created by `Anton J.M. Montagne <https://montagne.nl>`_
 - SLiCAP is part of the tool set for teaching `Structured Electronic Design <https://analog-electronics.tudelft.nl>`_ at the Delft University of Technology
 
-SLiCAP Version 5.0 is distributed under the `MIT license <https://opensource.org/license/mit>`_
+SLiCAP Version 6.0 is distributed under the `MIT license <https://opensource.org/license/mit>`_
 
 .. image:: /API/img/colorCode.svg
 

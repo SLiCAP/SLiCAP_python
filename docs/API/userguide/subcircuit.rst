@@ -125,26 +125,23 @@ Both methods can be done by manually editing circuit ``.cir`` files, the latter 
 
 The manual approach is elucidated above.
 
-Create subcircuits with KiCAD
------------------------------
+Create subcircuits with the GUI
+-------------------------------
 
-KiCAD supports hierarchical design, but the approach differs from the subcircuit approach outlined above. SLiCAP subcircuits must be created as follows:
-
-#. Create a KiCAD schematic for the subcircuit and put a command with the subcircuit decraration on the schematic. The subcircuit definition for "smallAmp" looks as depicted below.
+#. The "smallAmp" subcircuit created with the `GUI <../../GUI/index.html>`_ is shown below.
 
    .. image:: ../img/smallAmp.svg
-    :width: 350
     
-#. With the ``.subckt`` directive on the schematic, ``makeNetlist()`` creates a library file in the ``lib/`` folder in the project directory. The name of this file defaults to the subcircuit name with extension ``.lib``.
+#. The library file and the schematic are saved in the ``lib/`` folder in the project directory. The name of this file defaults to the subcircuit name with extension ``.slicap_lib``. On saving the subcircuit you can define the pin order and the parameters that can be passed to it.
 
    .. literalinclude:: ../subcircuits.py
        :linenos:
        :lines: 15-16
        :lineno-start: 15
    
-   The contents of ``lib/smallAmp.lib`` is:
+   The contents of ``lib/smallAmp.slicap_lib`` is:
    
-   .. literalinclude:: ../lib/smallAmp.lib
+   .. literalinclude:: ../lib/smallAmp.slicap_lib
        :linenos:
        
    .. admonition:: Important
@@ -152,38 +149,22 @@ KiCAD supports hierarchical design, but the approach differs from the subcircuit
        
        SLiCAP library files are like circuit netlists. The first line is taken as title and the last line must be ``.end``.
    
-#. Now create the subcircuit ``bigAmp``. Use a 4-pin subcircuit symbol for ``smallAmp``, or create a symbol yourself. Don't forget to include the library with ``smallAmp.lib``.
+#. Now create the subcircuit ``bigAmp`` and place the subcircuit ``smallAmp.slicap_sch``. You can use an existing symbol or generate one automatically.
 
    .. image:: ../img/bigAmp.svg
-    :width: 350
 
-   #. The subcircuit symbol must have four pins and the pin sequence must be according to the subcircuit definition: "inP", "inN", "outP", "outN". The SLiCAP KiCAD symbol ``Xamp4`` can be used for this purpose, it has the correct pin sequence.
+   #. Save the subcircuit ``bigAmp``.
    
-   #. Parameters to be passed to the subcircuit must added as *symbol properties*. The property *name* is the parameter name and the *value* can be any because it will be overruled by the definition in the ``.subckt`` directive.
+   The contents of ``lib/bigAmp.slicap_lib`` is:
    
-   The following instruction creates the ``bigAmp`` library file.
-   
-   .. literalinclude:: ../subcircuits.py
-       :linenos:
-       :lines: 18-19
-       :lineno-start: 18
-   
-   The contents of ``lib/bigAmp.lib`` is:
-   
-   .. literalinclude:: ../lib/bigAmp.lib
+   .. literalinclude:: ../lib/bigAmp.slicap_lib
        :linenos:
 
-#. Now create the main circuit and again use the ``Xamp4`` symbol for ``bigAmp``.
+#. Now create the main circuit and place ``bigAmp`` on it.
 
    .. image:: ../img/mainAmp.svg
-    :width: 300  
-   
-   The following instruction creates the main circuit object .
-   
-   .. literalinclude:: ../subcircuits.py
-       :linenos:
-       :lines: 21-22
-       :lineno-start: 17
+       :scale: 80 %
+
    
    The netlist of ``cir/mainAmp.cir`` is:
    

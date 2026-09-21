@@ -11,7 +11,7 @@ import SLiCAP as sl
 ###############################################################################
 
 # Define a circuit
-RC_cir = sl.makeCircuit("kicad/myFirstRCnetwork/myFirstRCnetwork.kicad_sch")
+RC_cir = sl.makeCircuit("sch/myFirstRCnetwork.slicap_sch")
 
 # Print the contents of the dictionary with circuit parameter definitions:
 if len(RC_cir.parDefs.keys()):

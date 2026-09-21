@@ -148,7 +148,14 @@ def resolve_nets(
     counter = [1]
 
     def _auto(root):
+        # Never reuse a name a label, port or ground already carries: a
+        # user label "1" on one net and the automatic "1" on another MERGED
+        # the two nets in the netlist (Anton, 2026-09-20: the manual's
+        # pole-zero network came out as a different circuit).
         if root not in root_name:
+            taken = set(root_name.values())
+            while str(counter[0]) in taken:
+                counter[0] += 1
             root_name[root] = str(counter[0])
             counter[0] += 1
 

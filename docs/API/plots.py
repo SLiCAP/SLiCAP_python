@@ -7,7 +7,7 @@ import SLiCAP as sl
 from copy import deepcopy
 import numpy as np
 
-cir = sl.makeCircuit("kicad/myPassiveNetwork/myPassiveNetwork.kicad_sch")
+cir = sl.makeCircuit("sch/myPassiveNetwork.slicap_sch")
 
 # Swept variable plots
 # Laplace analysis

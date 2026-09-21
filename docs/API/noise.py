@@ -8,7 +8,7 @@ import SLiCAP as sl
 import sympy as sp
 import numpy as np
 # Create a circuit object
-cir = sl.makeCircuit("kicad/noiseSources/noiseSources.kicad_sch")
+cir = sl.makeCircuit("sch/noiseSources.slicap_sch")
 
 for par in cir.parDefs:
     print(par, cir.parDefs[par])

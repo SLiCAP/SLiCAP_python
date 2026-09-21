@@ -9,6 +9,7 @@ import sympy as sp
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX
 from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
 from SLiCAP.SLiCAPlex import _sympify
+from SLiCAP.SLiCAPlatex import _stateSpaceLines, exprLatex
 import os
 
 class RSTformatter(_BaseFormatter):
@@ -469,9 +470,45 @@ class RSTformatter(_BaseFormatter):
             TEX = TEX.replace("\n", "\n    ")
             RST += TEX
         else:
-            RST += '    ' + sp.latex(roundN(LHS)) + ' = ' + sp.latex(roundN(RHS))
+            RST += '    ' + exprLatex(LHS) + ' = ' + exprLatex(RHS)
             if units != '':
                 RST += '\\,\\,\\left[\\mathrm{' + units + '}\\right]\n\n'
+        return Snippet(RST, self.format)
+
+    def stateSpace(self, resultObject, label="", parts=None):
+        """
+        Creates an aligned display of the state-space realization of a
+        doStateSpace() result: dx/dt = A x + B u, y = C x + D u. One math
+        directive with an aligned environment, one object per line aligned on
+        the equal sign: the vectors x (states), u (inputs) and y (outputs) as
+        transposed rows, then the matrices A, B, C and D.
+
+        :param resultObject: SLiCAP execution result of doStateSpace().
+        :type resultObject: SLiCAP.SLiCAPinstruction.instruction
+
+        :param label: Reference label for the display. Defaults to an empty
+                      string.
+        :type label: str
+
+        :param parts: Objects to show: an iterable with a subset of
+                      "x", "u", "y", "A", "B", "C", "D". Defaults to all.
+        :type parts: iterable, NoneType
+
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+        """
+        ss = getattr(resultObject, "stateSpace", None)
+        if ss is None:
+            print("Error: no state-space realization in the result.")
+            return Snippet("", self.format)
+        lines = _stateSpaceLines(ss, parts)
+        RST = '.. math::\n'
+        if label != '':
+            RST += '    :label: ' + label + '\n'
+        RST += '\n    \\begin{aligned}\n'
+        for k, (name, lhs, rhs) in enumerate(lines):
+            RST += '    ' + lhs + ' &= ' + rhs + (' \\\\\n' if k < len(lines) - 1 else '\n')
+        RST += '    \\end{aligned}\n\n'
         return Snippet(RST, self.format)
 
     def matrixEqn(self, Iv, M, Dv, label=""):
@@ -630,7 +667,7 @@ class RSTformatter(_BaseFormatter):
                 units = units2TeX(units)
             except:
                 pass
-            RST = ':math:`' + sp.latex(roundN(expr))
+            RST = ':math:`' + exprLatex(expr)
             if units != '':
                 RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
             else:
@@ -664,7 +701,7 @@ class RSTformatter(_BaseFormatter):
                 units = units2TeX(units)
             except:
                 pass
-            RST = ':math:`' + sp.latex(roundN(LHS)) + '=' + sp.latex(roundN(RHS))
+            RST = ':math:`' + exprLatex(LHS) + '=' + exprLatex(RHS)
             if units != '':
                 RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
             else:
@@ -779,6 +816,7 @@ def _numRoots2RST(roots, Hz, pz):
     lineList = []
     i = 0
     for root in roots:
+        i += 1
         if Hz:
             root  = sp.N(root/2/sp.pi)
         else:

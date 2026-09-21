@@ -5,10 +5,11 @@
 Manual.py: SLiCAP scripts for the HTML help file
 """
 
-from SLiCAP import initProject
+import SLiCAP as sl
 
-initProject("Manual")
+sl.initProject("Manual")
 # Import scripts for HTML help
+
 from circuit import *
 from specifications import *
 from parameters import *
@@ -17,6 +18,7 @@ from subcircuits import *
 from matrix import *
 from laplace import *
 from pz import *
+from statespace import *
 from ttime import *
 from noise import *
 from dcvar import *

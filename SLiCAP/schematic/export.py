@@ -80,15 +80,23 @@ def export_bounds(scene) -> QRectF:
     b = scene.itemsBoundingRect()
     if b.isEmpty():
         b = QRectF(0, 0, 200, 200)
-    return b   # tight to content; user adds padding via an (invisible) BorderItem
+    # A small margin (1.5 mm in scene units) around the content: the bounds
+    # were exactly tight to Qt's text metrics, so a renderer whose font is
+    # a fraction wider, or the overhang of the last glyph, was clipped at
+    # the edge ('inc BC847.lib' lost part of its b - Anton, 2026-09-21).
+    # A BorderItem (above) still sets the frame explicitly.
+    m = 1.5 * _units_per_mm()
+    return b.adjusted(-m, -m, m, m)
 
 
 def _qhex(c) -> str:
     return f"#{c.red():02x}{c.green():02x}{c.blue():02x}"
 
 
-def _build_svg(scene, title: str = "") -> bytes:
-    """Render all scene items to a vector SVG document, returning UTF-8 bytes."""
+def _build_svg(scene, title: str = "", source: str = "") -> bytes:
+    """Render all scene items to a vector SVG document, returning UTF-8 bytes.
+    *source* is the schematic file name, written as a provenance comment
+    (see :mod:`SLiCAP.schematic.provenance`)."""
     from .component_item import ComponentItem
     from .wire_item import WireItem
     from .junction_item import JunctionItem
@@ -125,6 +133,9 @@ def _build_svg(scene, title: str = "") -> bytes:
     upm = _units_per_mm()
     root.set("width",  f"{vw / upm:.3f}mm")
     root.set("height", f"{vh / upm:.3f}mm")
+    if source:
+        from .provenance import svg_marker
+        root.append(ET.Comment(svg_marker(source)))
     if title:
         ET.SubElement(root, f"{{{_SVG_NS}}}title").text = title
 
@@ -733,20 +744,25 @@ def _hyperlink_block(parent, item, color, fs, family, underline: bool):
     t.text = label
 
 
-def export_svg(scene, output_path: Path, title: str = "") -> None:
-    output_path.write_bytes(_build_svg(scene, title))
+def export_svg(scene, output_path: Path, title: str = "",
+               source: str = "") -> None:
+    output_path.write_bytes(_build_svg(scene, title, source))
 
 
-def export_pdf(scene, output_path: Path) -> None:
+def export_pdf(scene, output_path: Path, source: str = "",
+               title: str = "") -> None:
     """Render the schematic SVG to PDF with svglib + reportlab — the same
     pure-Python path used in SLiCAPkicad. No Cairo (dropped for its Windows
     trouble), and no Qt application required, so it works from the headless
     ``cli export`` subprocess or any non-GUI caller. The PDF inherits the SVG's
-    physical (mm) page size set in ``_build_svg``."""
+    physical (mm) page size set in ``_build_svg``. The creator and subject
+    fields name the export and *source* (provenance, 2026-09-13)."""
     import os
     import tempfile
     from svglib.svglib import svg2rlg
     from reportlab.graphics import renderPDF
+    from reportlab.pdfgen import canvas as rl_canvas
+    from .provenance import CREATOR
     with tempfile.NamedTemporaryFile("wb", suffix=".svg", delete=False) as tf:
         tf.write(_build_svg(scene))
         tmp = tf.name
@@ -754,7 +770,15 @@ def export_pdf(scene, output_path: Path) -> None:
         drawing = svg2rlg(tmp)
         if drawing is None:
             raise RuntimeError("Could not parse the schematic SVG for PDF export.")
-        renderPDF.drawToFile(drawing, str(output_path))
+        drawing = renderPDF.renderScaledDrawing(drawing)
+        c = rl_canvas.Canvas(str(output_path),
+                             pagesize=(drawing.width, drawing.height))
+        c.setCreator(CREATOR)
+        c.setSubject(source)
+        c.setTitle(title or source)
+        renderPDF.draw(drawing, c, 0, 0)
+        c.showPage()
+        c.save()
     finally:
         os.unlink(tmp)
 

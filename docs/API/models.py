@@ -11,7 +11,7 @@ import SLiCAP as sl
 ###############################################################################
 
 # Create a circuit object
-cir = sl.makeCircuit("kicad/ZtoV/ZtoV.kicad_sch")
+cir = sl.makeCircuit("sch/ZtoV.slicap_sch")
 
 # Display the expanded netlist
 print('"' + cir.title +'"')

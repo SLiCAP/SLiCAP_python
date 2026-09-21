@@ -1,0 +1,11 @@
+myBJTamp
+
+.model myQ QV
++ gpi={g_m/beta_AC}
++ gm={g_m}
++ go={g_o}
+
+Q1 out in ref ref myQ
+R1 out in R value={R_f}
+
+.end
