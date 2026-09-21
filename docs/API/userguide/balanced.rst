@@ -160,17 +160,17 @@ The matrix equation for ``convtype='all'`` is:
 
     \mathbf{I_{d,c}} = \mathbf{M^{\prime} \cdot D_{d,c}}
 
-where :math:`\mathbf{I_{d,c}}` is the vector with independent differential-mode and common-mode voltage and current sources, :math:`\mathbf{D_{d,c}}` the vector with unknown differential-mode and common-mode voltages and currents, and math:`\mathbf{M^{\prime}}` the converted MNA matrix.
+where :math:`\mathbf{I_{d,c}}` is the vector with independent differential-mode and common-mode voltage and current sources, :math:`\mathbf{D_{d,c}}` the vector with unknown differential-mode and common-mode voltages and currents, and :math:`\mathbf{M^{\prime}}` the converted MNA matrix.
 
 The converted matrices are obtained as:
 
 .. math::
 
-    \begin{align}
+    \begin{aligned}
     \mathbf{I_{d,c}}    &=\mathbf{A^T}\cdot\mathbf{I_{n,b}}\\
     \mathbf{M^{\prime}} &=\mathbf{A^T \cdot M \cdot A}\\
     \mathbf{D_{d,c}}    &=\mathbf{A^{-1} \cdot D_{n,b}}
-    \end{align}
+    \end{aligned}
     
 Where :math:`\mathbf{A}` is the conversion matrix, constricted such that:
 

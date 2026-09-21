@@ -461,11 +461,16 @@ class RSTformatter(_BaseFormatter):
         if multiline:
             TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), 
                                             terms_per_line=multiline)
-            TEX = TEX.replace('\\\\\n', '\\nonumber \\\\\n')
-            TEX = TEX.replace('{align*}', '{align}')
+            # 'aligned', not 'align': Sphinx wraps the content of a math
+            # directive in its own equation (and split) environment, and an
+            # align inside it is an "Erroneous nesting of equation
+            # structures" for MathJax 3 (slicap.org, 2026-09-22). aligned is
+            # the inner environment made for this; the directive's :label:
+            # numbers the whole display, so no \nonumber per line either.
+            TEX = TEX.replace('{align*}', '{aligned}')
             if units != '':
                 units = '\\,\\left[\\mathrm{' + units + '}\\right]'
-                TEX = TEX.replace('\\end{align}', '%s\n\\end{align}'%(units))
+                TEX = TEX.replace('\\end{aligned}', '%s\n\\end{aligned}'%(units))
             TEX += '\n'
             TEX = TEX.replace("\n", "\n    ")
             RST += TEX
