@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from .symbol_library import Symbol, SymbolError, SVG_NS, symbol_file_name
+from .sizing import chars
 
 
 def scan_symbol_file(path) -> list:
@@ -68,7 +69,7 @@ class ImportSymbolsDialog(QDialog):
         self.imported: list[Path] = []
         kind = "NGspice" if sch_type == "ngspice" else "SLiCAP"
         self.setWindowTitle(f"Import symbols from file ({kind} schematic)")
-        self.setMinimumWidth(640)
+        self.setMinimumWidth(chars(self, 91))
         lay = QVBoxLayout(self)
 
         row = QHBoxLayout()

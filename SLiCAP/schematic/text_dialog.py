@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit, QDialogButtonBox, QLayout,
 )
 from PySide6.QtCore import Qt
+from .sizing import chars
 
 
 class TextDialog(QDialog):
@@ -11,8 +12,7 @@ class TextDialog(QDialog):
     def __init__(self, text: str = "", style=None, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Text")
-        self.setMinimumWidth(360)
-
+        self.setMinimumWidth(chars(self, 51))
         from .config import default_style
         style = style or default_style()
 

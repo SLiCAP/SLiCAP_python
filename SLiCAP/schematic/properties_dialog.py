@@ -13,6 +13,7 @@ from . import project
 from .component_item import (
     ComponentItem, fixed_params_for_symbol, strip_braces,
 )
+from .sizing import cap_chars
 
 _HDR_ROW    = 0
 _SEP_ROW    = 1
@@ -54,7 +55,7 @@ class PropertiesDialog(QDialog):
             head.setTextFormat(Qt.RichText)
             head.setOpenExternalLinks(True)        # open the link in the browser
             head.setWordWrap(True)
-            head.setMaximumWidth(360)
+            cap_chars(head, 50)
             lines = []
             if desc:
                 from .symbol_library import description_to_html

@@ -287,12 +287,20 @@ class SchematicScene(QGraphicsScene):
 
         self._pre_drag_data      = None   # snapshot before vertex/component drag
         self._pre_drag_pos: dict = {}     # item positions at drag start
+        # wire points at drag start, by wire id: the release pass maps OLD
+        # anchor positions to new ones, and must read where a point WAS, not
+        # where live rubber-banding has already put it (see
+        # _reconnect_after_move).
+        self._pre_drag_wire_pts: dict = {}
         self._vdrag_moved        = False  # True once a vertex was actually moved
 
         self._group_drag_active      = False   # suppresses itemChange rubber-banding
         self._comp_group_move_start: QPointF | None = None
         self._comp_group_move_items: list = []   # [(item, orig_QPointF)]
         self._wire_group_move_data:  list = []   # [(wire, [orig_QPointF, ...])]
+        # Unselected wire points attached to the group at drag START, moved
+        # from their originals on every step: [(wire, idx, orig_QPointF)].
+        self._group_rb: list = []
         self._comp_group_move_moved  = False
 
     # ── copy / paste ──────────────────────────────────────────────────────────
@@ -314,7 +322,16 @@ class SchematicScene(QGraphicsScene):
 
     def _copy_selection(self) -> None:
         from .component_item import ComponentItem
-        sel = self.selectedItems()
+        # selectedItems() comes in hash order, which differs between runs;
+        # the paste reference is the FIRST clipboard entry, so the order is
+        # fixed here: top to bottom, left to right (wires by their first
+        # point).  Without it the item that lands under the cursor on paste
+        # was random (2026-09-25).
+        def _key(item):
+            pts = getattr(item, "points", None)
+            pos = pts[0] if pts else item.pos()
+            return (pos.y(), pos.x(), type(item).__name__)
+        sel = sorted(self.selectedItems(), key=_key)
         if not sel:
             return
         self._clipboard.clear()
@@ -1388,8 +1405,14 @@ class SchematicScene(QGraphicsScene):
           - Non-wire items moved inside a wire-body drag (_wire_move_others)
           - Selected wire endpoints that moved (_wire_group_move_data, _wire_move_wires)
 
-        Any unselected wire endpoint coinciding with an old anchor position is
-        moved to the new position.  Must be called before state variables are cleared.
+        Any unselected wire point that sat on an old anchor position AT DRAG
+        START (_pre_drag_wire_pts) is moved to the new position.  Reading the
+        point's CURRENT position instead was tried and REVERTED (2026-09-25):
+        live rubber-banding had already moved it to the new pin, and when that
+        new position equalled another pin's OLD position it was moved a second
+        time, e.g. a wire on the top pin of a resistor dragged down by its own
+        length ended on the bottom pin.  Must be called before state variables
+        are cleared.
         """
         from .component_item import ComponentItem
         from .wire_item import WireItem
@@ -1450,18 +1473,28 @@ class SchematicScene(QGraphicsScene):
         if not anchor_map:
             return
 
-        # Stretch unselected wire endpoints that sit on an old anchor position.
+        # Stretch unselected wire points that SAT on an old anchor position.
         for wire in self.items():
             if not isinstance(wire, WireItem) or id(wire) in moved_wire_ids:
                 continue
+            orig = self._pre_drag_wire_pts.get(id(wire))
+            if orig is None or len(orig) != len(wire.points):
+                orig = wire.points          # created during the drag: as it is
             changed = False
             for i, pt in enumerate(wire.points):
-                new_pt = anchor_map.get(_pt_key(pt))
-                if new_pt is not None:
+                new_pt = anchor_map.get(_pt_key(orig[i]))
+                if new_pt is not None and _pt_key(pt) != _pt_key(new_pt):
                     wire.points[i] = QPointF(new_pt)
                     changed = True
             if changed:
                 wire._rebuild()
+
+    def _record_pre_drag_wire_pts(self) -> None:
+        """Remember every wire's points at drag start (for _reconnect_after_move)."""
+        self._pre_drag_wire_pts = {
+            id(w): [QPointF(p) for p in w.points]
+            for w in self.items() if isinstance(w, WireItem)
+        }
 
     # ── junction sync ─────────────────────────────────────────────────────────
 
@@ -2263,6 +2296,7 @@ class SchematicScene(QGraphicsScene):
                         return
                     # Body click on a selected wire → move all selected items together
                     self._pre_drag_data = self.to_data()
+                    self._record_pre_drag_wire_pts()
                     sel = self.selectedItems()
                     self._wire_move_wires   = [i for i in sel if isinstance(i, WireItem)]
                     self._wire_move_origins = [
@@ -2354,6 +2388,7 @@ class SchematicScene(QGraphicsScene):
                             self._pin_anchors.append((others[pk], item, (lx, ly)))
                 # snapshot before potential component/text/junction/border move
                 self._pre_drag_data = self.to_data()
+                self._record_pre_drag_wire_pts()
                 self._pre_drag_pos  = {
                     id(i): (i.pos().x(), i.pos().y())
                     for i in self.items()
@@ -2400,6 +2435,30 @@ class SchematicScene(QGraphicsScene):
                         ]
                         self._comp_group_move_moved = False
                         self._pin_anchors = []   # group move: no bridge wires needed
+                        # Capture the unselected wire points that sit on the
+                        # group's pins, junctions and selected-wire points NOW.
+                        # They are moved from these originals on every step.
+                        # Re-detecting them per step against the CURRENT pin
+                        # positions was tried and REVERTED (2026-09-25): a pin
+                        # passing over any foreign wire end mid-drag stole that
+                        # wire, so a long drag connected the group to "almost
+                        # all nodes" and broke the nets it crossed.
+                        anchors: set[tuple] = set()
+                        for itm, _ in self._comp_group_move_items:
+                            if isinstance(itm, ComponentItem):
+                                anchors.update(_pt_key(p) for p in itm.pin_scene_pos())
+                            elif isinstance(itm, JunctionItem):
+                                anchors.add(_pt_key(itm.pos()))
+                        sel_wire_ids = {id(w) for w, _ in self._wire_group_move_data}
+                        for w, orig_pts in self._wire_group_move_data:
+                            anchors.update(_pt_key(p) for p in orig_pts)
+                        self._group_rb = [
+                            (w, i, QPointF(p))
+                            for w in self.items()
+                            if isinstance(w, WireItem) and id(w) not in sel_wire_ids
+                            and not getattr(w, "_preview", False)
+                            for i, p in enumerate(w.points) if _pt_key(p) in anchors
+                        ]
                         self.group_move_started.emit()
                         return
                 # Single-component drag off a pin-to-pin contact: show the
@@ -2576,18 +2635,6 @@ class SchematicScene(QGraphicsScene):
             total_delta = pos - self._comp_group_move_start
             if total_delta.x() != 0 or total_delta.y() != 0:
                 self._comp_group_move_moved = True
-            # Capture old anchor positions BEFORE moving (item.pos() is still old)
-            old_anchor_to_delta: dict = {}
-            for itm, orig_pos in self._comp_group_move_items:
-                new_pos = snap(orig_pos + total_delta)
-                step_delta = new_pos - itm.pos()
-                if not (step_delta.x() or step_delta.y()):
-                    continue
-                if isinstance(itm, ComponentItem):
-                    for pin_pt in itm.pin_scene_pos():
-                        old_anchor_to_delta[_pt_key(pin_pt)] = step_delta
-                elif isinstance(itm, JunctionItem):
-                    old_anchor_to_delta[_pt_key(itm.pos())] = step_delta
             # Move all items with rubber-banding suppressed in ItemPositionHasChanged
             self._group_drag_active = True
             for itm, orig_pos in self._comp_group_move_items:
@@ -2616,19 +2663,16 @@ class SchematicScene(QGraphicsScene):
                     w.points[i] = op + snap_delta
                 w._rebuild()
 
-            # Unselected wires: rubber-band endpoints at moving anchors.
-            sel_wire_ids = {id(w) for w, _ in self._wire_group_move_data}
-            for w in self.items():
-                if not isinstance(w, WireItem) or id(w) in sel_wire_ids:
+            # Unselected wires attached at drag start: their captured points
+            # follow the group from the ORIGINALS (see the press branch).
+            touched = set()
+            for w, i, op in self._group_rb:
+                if w.scene() is None or i >= len(w.points):
                     continue
-                changed = False
-                for i, pt in enumerate(w.points):
-                    delta = old_anchor_to_delta.get(_pt_key(pt))
-                    if delta is not None:
-                        w.points[i] = pt + delta
-                        changed = True
-                if changed:
-                    w._rebuild()
+                w.points[i] = op + snap_delta
+                touched.add(w)
+            for w in touched:
+                w._rebuild()
 
         else:
             super().mouseMoveEvent(event)
@@ -2789,9 +2833,11 @@ class SchematicScene(QGraphicsScene):
                 self._comp_group_move_items = []
                 self._label_group_move_items = []
                 self._wire_group_move_data  = []
+                self._group_rb              = []
                 self._comp_group_move_moved = False
                 self._pre_drag_data = None
                 self._pre_drag_pos  = {}
+                self._pre_drag_wire_pts = {}
                 self._pin_anchors   = []
                 self.group_move_ended.emit()
                 return
@@ -2848,6 +2894,7 @@ class SchematicScene(QGraphicsScene):
                 self._pin_anchors = []
             self._pre_drag_data = None
             self._pre_drag_pos  = {}
+            self._pre_drag_wire_pts = {}
 
     def mouseDoubleClickEvent(self, event):
         if self._mode == _Mode.DRAWING_LINE and event.button() == Qt.LeftButton:

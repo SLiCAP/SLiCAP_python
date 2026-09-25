@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QLineEdit, QCheckBox, QDialogButtonBox, QLabel,
 )
 from PySide6.QtCore import Qt
+from .sizing import chars
 
 
 class NetLabelDialog(QDialog):
@@ -11,8 +12,7 @@ class NetLabelDialog(QDialog):
                  show_dc: bool = False, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Net Label")
-        self.setMinimumWidth(280)
-
+        self.setMinimumWidth(chars(self, 40))
         outer = QVBoxLayout()
         outer.setSizeConstraint(QLayout.SetFixedSize)
         self.setLayout(outer)

@@ -51,7 +51,7 @@ from PySide6.QtWidgets import (
 
 from .instr_file import parse_calls
 from .value_fields import watch, is_latex_safe, mark_item, LATEX_HINT
-from .param_table import PARAM_NAME_WIDTH
+from .sizing import name_width, cap_chars, chars
 
 from SLiCAP.SLiCAPtraces import (goal_names, function_names, reduces,
                                  units_of, automatic_color)
@@ -250,8 +250,7 @@ class TracesDialog(QDialog):
     def __init__(self, existing_text: str = "", results_dir=None, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit Traces and Measurements")
-        self.setMinimumWidth(720)
-
+        self.setMinimumWidth(chars(self, 103))
         calls = parse_calls(existing_text or "")
         self._results = result_entries(calls)
         self._existing = trace_entries(calls)
@@ -299,10 +298,10 @@ class TracesDialog(QDialog):
         self._sweep_start = QLineEdit("1")
         self._sweep_stop = QLineEdit("1M")
         self._sweep_num = QLineEdit("200")
-        for edit, width, tip in ((self._sweep_start, 90, "start"),
-                                 (self._sweep_stop, 90, "stop"),
-                                 (self._sweep_num, 70, "points")):
-            edit.setMaximumWidth(width)
+        for edit, width, tip in ((self._sweep_start, 12, "start"),
+                                 (self._sweep_stop, 12, "stop"),
+                                 (self._sweep_num, 9, "points")):
+            cap_chars(edit, width)
             edit.setPlaceholderText(tip)
             edit.textChanged.connect(self._update)
             watch(edit, "number")
@@ -340,7 +339,7 @@ class TracesDialog(QDialog):
         names_header = self._names_table.horizontalHeader()
         names_header.setSectionResizeMode(0, QHeaderView.Interactive)
         names_header.setSectionResizeMode(1, QHeaderView.Stretch)
-        self._names_table.setColumnWidth(0, PARAM_NAME_WIDTH)
+        self._names_table.setColumnWidth(0, name_width(self._names_table))
         self._names_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._names_table.setMaximumHeight(110)
         self._names_table.itemChanged.connect(lambda *_: self._update())
@@ -380,7 +379,7 @@ class TracesDialog(QDialog):
         trace_head.addWidget(self._edit, 0, 1)
         trace_head.addWidget(QLabel("Trace dictionary name:"), 1, 0)
         self._name = QLineEdit(next_name("TR", self._taken))
-        self._name.setMaximumWidth(PARAM_NAME_WIDTH)
+        self._name.setMaximumWidth(name_width(self._name))
         self._name.textChanged.connect(self._update)
         trace_head.addWidget(self._name, 1, 1)
         traces_lay.addWidget(QLabel(
@@ -449,7 +448,7 @@ class TracesDialog(QDialog):
         meas_header.setSectionResizeMode(_MEXPR, QHeaderView.Stretch)
         meas_header.setSectionResizeMode(_MCOND, QHeaderView.Interactive)
         meas_header.setSectionResizeMode(_MUNITS, QHeaderView.Interactive)
-        self._meas.setColumnWidth(_MNAME, PARAM_NAME_WIDTH)
+        self._meas.setColumnWidth(_MNAME, name_width(self._meas))
         self._meas.setColumnWidth(_MCOND, 160)
         self._meas.setColumnWidth(_MUNITS, 70)
         self._meas.setSelectionBehavior(QAbstractItemView.SelectRows)

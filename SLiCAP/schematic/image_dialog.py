@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QFileDialog, QDialogButtonBox, QLayout,
 )
 from PySide6.QtGui import QImageReader
+from .sizing import chars
 
 _FILE_FILTER = (
     "Images (*.svg *.pdf *.png *.jpg *.jpeg *.bmp *.gif *.tiff *.webp);;"
@@ -42,7 +43,7 @@ class ImageDialog(QDialog):
         file_row = QHBoxLayout()
         self._path_edit = QLineEdit(file_path)
         self._path_edit.setReadOnly(True)
-        self._path_edit.setMinimumWidth(300)
+        self._path_edit.setMinimumWidth(chars(self._path_edit, 43))
         browse_btn = QPushButton("Browse…")
         browse_btn.clicked.connect(self._browse)
         file_row.addWidget(self._path_edit)

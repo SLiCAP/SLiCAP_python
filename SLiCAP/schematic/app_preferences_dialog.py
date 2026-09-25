@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 from . import app_prefs
 from .design_data import KNOWN_KINDS
 from .project_panel import type_key
+from .sizing import chars
 
 _KIND_LABELS = {"result":     "SLiCAP / NGspice results",
                 "circuit":    "Circuits",
@@ -99,7 +100,7 @@ class AppPreferencesDialog(QDialog):
     def __init__(self, project_root=None, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Preferences")
-        self.setMinimumWidth(440)
+        self.setMinimumWidth(chars(self, 63))
         lay = QVBoxLayout(self)
 
         # ── Design data panel: visible object kinds ────────────────────────

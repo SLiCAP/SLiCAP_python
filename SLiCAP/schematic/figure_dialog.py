@@ -44,7 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from .instr_file import parse_calls
-from .param_table import PARAM_NAME_WIDTH
+from .sizing import name_width, fit_contents, chars
 from .traces_dialog import next_name, _lit, _q
 from .axes_dialog import axis_entries
 
@@ -149,8 +149,7 @@ class FigureDialog(QDialog):
         self.setWindowTitle("Create / Edit Figures")
         # a cell holds an axis NAME plus "Create new axis…": too narrow and
         # both are unreadable
-        self.setMinimumWidth(520)
-
+        self.setMinimumWidth(chars(self, 74))
         self._existing_text = existing_text or ""
         self._results_dir = results_dir
         calls = parse_calls(self._existing_text)
@@ -174,7 +173,7 @@ class FigureDialog(QDialog):
 
         head.addWidget(QLabel("Figure variable name:"), 1, 0)
         self._name = QLineEdit(next_name("FIG", self._taken))
-        self._name.setMaximumWidth(PARAM_NAME_WIDTH)
+        self._name.setMaximumWidth(name_width(self._name))
         self._name.textChanged.connect(self._update)
         head.addWidget(self._name, 1, 1)
 
@@ -301,7 +300,7 @@ class FigureDialog(QDialog):
         combo = self._cell_combo(current)
         button = QPushButton("Edit…")
         button.setToolTip("Edit the axis in this cell")
-        button.setMaximumWidth(60)
+        fit_contents(button)
         button.clicked.connect(lambda _c=False, c=combo: self._edit_axis_in(c))
         combo._edit_button = button
         combo.currentIndexChanged.connect(

@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox, QMessageBox,
 )
 from PySide6.QtCore import Qt
+from .sizing import chars
 
 
 class CreateSubcircuitDialog(QDialog):
@@ -22,8 +23,7 @@ class CreateSubcircuitDialog(QDialog):
                  params: list | None = None, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create Subcircuit")
-        self.setMinimumWidth(420)
-
+        self.setMinimumWidth(chars(self, 60))
         outer = QVBoxLayout(self)
 
         # ── name ───────────────────────────────────────────────────────────────

@@ -23,7 +23,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 
-from .param_table import ParamTable, PARAM_NAME_WIDTH
+from .param_table import ParamTable
+from .sizing import cap_chars, fit_contents
 from .source_stimuli_table import SourceStimuliTable, _ANALYSIS_DOMAIN
 from .step_widget import StepWidget
 from .instr_file import next_result_name, parse_calls
@@ -32,9 +33,10 @@ from .value_fields import watch, all_valid
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-def _field(label: str, placeholder: str = "", width: int = 120,
+def _field(label: str, placeholder: str = "", width: int = 16,
            kind: str = "number") -> tuple[QLabel, QLineEdit]:
-    """A labelled field. *kind* 'number' is watched: the field is marked while
+    """A labelled field, at most *width* digit widths wide (sizing.chars).
+    *kind* 'number' is watched: the field is marked while
     its text is not a number in SLiCAP notation, and the dialog refuses to
     build an instruction from it (value_fields). Fields that hold a NAME - a
     source, a node - pass kind='name' and are not checked."""
@@ -42,7 +44,7 @@ def _field(label: str, placeholder: str = "", width: int = 120,
     edit = QLineEdit()
     if placeholder:
         edit.setPlaceholderText(placeholder)
-    edit.setMaximumWidth(width)
+    cap_chars(edit, width)
     if kind == "number":
         watch(edit, "number")
     return lbl, edit
@@ -485,7 +487,7 @@ class _AcTab(_AnalysisTab):
         lbl0 = QLabel("Sweep type")
         self._sweep = QComboBox()
         self._sweep.addItems(["dec", "oct", "lin"])
-        self._sweep.setMaximumWidth(80)
+        fit_contents(self._sweep)
         lbl1, self._pts    = _field("Points/decade", "e.g. 50")
         lbl2, self._fstart = _field("F start",       "e.g. 1")
         lbl3, self._fstop  = _field("F stop",        "e.g. 10e6")
@@ -603,7 +605,7 @@ class _NoiseTab(_AnalysisTab):
         lbl2 = QLabel("Sweep type")
         self._sweep = QComboBox()
         self._sweep.addItems(["dec", "oct", "lin"])
-        self._sweep.setMaximumWidth(80)
+        fit_contents(self._sweep)
         lbl3, self._pts    = _field("Points/decade", "e.g. 50")
         lbl4, self._fstart = _field("F start",       "e.g. 1")
         lbl5, self._fstop  = _field("F stop",        "e.g. 10e6")
@@ -728,7 +730,7 @@ class NGspiceAnalysisDialog(QDialog):
         var_row = QHBoxLayout()
         var_row.addWidget(QLabel("Variable name:"))
         self._varname = QLineEdit(next_result_name("OP", self._existing_text))
-        self._varname.setMaximumWidth(120)
+        cap_chars(self._varname, 16)
         self._varname.textChanged.connect(self._update)
         var_row.addWidget(self._varname)
         var_row.addStretch()

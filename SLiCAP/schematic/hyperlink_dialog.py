@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
+from .sizing import chars
 
 
 class HyperlinkDialog(QDialog):
@@ -12,8 +13,7 @@ class HyperlinkDialog(QDialog):
     def __init__(self, url: str = "", label: str = "", style=None, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Hyperlink")
-        self.setMinimumWidth(380)
-
+        self.setMinimumWidth(chars(self, 54))
         from .config import default_style
         style = style or default_style()
 

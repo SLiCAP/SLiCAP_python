@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
 )
 from PySide6.QtCore import Qt
+from .sizing import chars
 
 
 def _find_slicap_preamble() -> str:
@@ -72,8 +73,7 @@ class ParameterDialog(QDialog):
         self._latex_ok = LATEX_INSTALLED and self._style.LATEX_RENDERING_ENABLED
         self._edit_mode = edit_mode
         self.setWindowTitle("Circuit Parameters")
-        self.setMinimumWidth(520)
-
+        self.setMinimumWidth(chars(self, 74))
         outer = QVBoxLayout(self)
         outer.setSizeConstraint(QLayout.SetMinimumSize)
 
@@ -83,7 +83,7 @@ class ParameterDialog(QDialog):
         self._preamble_edit = QLineEdit(preamble_path or _find_slicap_preamble())
         self._preamble_edit.setReadOnly(True)
         self._preamble_edit.setPlaceholderText("(default: amsmath + amssymb)")
-        self._preamble_edit.setMinimumWidth(260)
+        self._preamble_edit.setMinimumWidth(chars(self._preamble_edit, 37))
         browse_btn = QPushButton("Browse…")
         browse_btn.clicked.connect(self._browse_preamble)
         clear_btn  = QPushButton("Clear")

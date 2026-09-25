@@ -47,7 +47,7 @@ from PySide6.QtWidgets import (
 
 from .instr_file import parse_calls
 from .value_fields import watch
-from .param_table import PARAM_NAME_WIDTH
+from .sizing import name_width, cap_chars, fit_contents
 from .traces_dialog import (next_name, trace_entries, result_entries,
                             is_symbolic, _abscissa, _lit, _q)
 
@@ -234,7 +234,7 @@ class AxesDialog(QDialog):
 
         head.addWidget(QLabel("Axis variable name:"), 1, 0)
         self._name = QLineEdit(next_name("AX", self._taken))
-        self._name.setMaximumWidth(PARAM_NAME_WIDTH)
+        self._name.setMaximumWidth(name_width(self._name))
         self._name.textChanged.connect(self._update)
         head.addWidget(self._name, 1, 1)
 
@@ -279,10 +279,10 @@ class AxesDialog(QDialog):
         self._sweep_start = QLineEdit("1")
         self._sweep_stop = QLineEdit("1M")
         self._sweep_num = QLineEdit("200")
-        for edit, width, tip in ((self._sweep_start, 90, "start"),
-                                 (self._sweep_stop, 90, "stop"),
-                                 (self._sweep_num, 70, "points")):
-            edit.setMaximumWidth(width)
+        for edit, width, tip in ((self._sweep_start, 12, "start"),
+                                 (self._sweep_stop, 12, "stop"),
+                                 (self._sweep_num, 9, "points")):
+            cap_chars(edit, width)
             edit.setPlaceholderText(tip)
             edit.textChanged.connect(self._update)
             watch(edit, "number")
@@ -302,12 +302,12 @@ class AxesDialog(QDialog):
         param.setContentsMargins(0, 0, 0, 0)
         param.addWidget(QLabel("Sweep parameter:"))
         self._sweep_var = QLineEdit()
-        self._sweep_var.setMaximumWidth(PARAM_NAME_WIDTH)
+        self._sweep_var.setMaximumWidth(name_width(self._sweep_var))
         self._sweep_var.textChanged.connect(self._update)
         param.addWidget(self._sweep_var)
         param.addWidget(QLabel("Plot parameter:"))
         self._y_var = QLineEdit()
-        self._y_var.setMaximumWidth(PARAM_NAME_WIDTH)
+        self._y_var.setMaximumWidth(name_width(self._y_var))
         self._y_var.textChanged.connect(self._update)
         param.addWidget(self._y_var)
         param.addStretch(1)
@@ -399,16 +399,16 @@ class AxesDialog(QDialog):
     def _axis_row(self, grid, row, label):
         grid.addWidget(QLabel(label), row, 0)
         name = QLineEdit()
-        name.setMaximumWidth(PARAM_NAME_WIDTH)
+        name.setMaximumWidth(name_width(name))
         name.textChanged.connect(self._update)
         grid.addWidget(name, row, 1)
         scale = QComboBox()
         scale.addItems(_SCALES)
-        scale.setMaximumWidth(70)
+        fit_contents(scale)
         scale.currentIndexChanged.connect(self._update)
         grid.addWidget(scale, row, 2)
         units = QLineEdit()
-        units.setMaximumWidth(80)
+        cap_chars(units, 10)
         units.textChanged.connect(self._update)
         grid.addWidget(units, row, 3)
         return name, scale, units
@@ -416,7 +416,7 @@ class AxesDialog(QDialog):
     def _limit_fields(self, grid, row):
         low, high = QLineEdit(), QLineEdit()
         for edit, column in ((low, 5), (high, 6)):
-            edit.setMaximumWidth(80)
+            cap_chars(edit, 10)
             edit.setPlaceholderText("auto")
             watch(edit, "number")
             edit.textChanged.connect(self._update)

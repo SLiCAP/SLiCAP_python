@@ -8,6 +8,7 @@ from PySide6.QtGui import QColor
 
 from .border_item import (DEFAULT_LINE_COLOR, DEFAULT_LINE_WIDTH,
                           DEFAULT_BG_COLOR)
+from .sizing import fix_chars
 
 def _units_per() -> dict:
     """Scene units per physical unit — from the project setting
@@ -23,7 +24,7 @@ class _ColorButton(QPushButton):
 
     def __init__(self, color: str, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(48)
+        fix_chars(self, 6)
         self._color = color
         self._apply()
         self.clicked.connect(self._pick)

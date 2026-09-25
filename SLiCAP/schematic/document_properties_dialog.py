@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from .schematic_data import DocumentProperties
+from .sizing import chars
 
 _PAGE_SIZES = ["A4", "A3", "A2", "A1", "Letter", "Legal", "Tabloid", "Custom"]
 
@@ -13,8 +14,7 @@ class DocumentPropertiesDialog(QDialog):
     def __init__(self, props: DocumentProperties, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Schematic Properties")
-        self.setMinimumWidth(360)
-
+        self.setMinimumWidth(chars(self, 51))
         layout = QFormLayout(self)
         layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
 

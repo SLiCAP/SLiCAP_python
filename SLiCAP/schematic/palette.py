@@ -4,6 +4,7 @@ from PySide6.QtGui import QPixmap, QPainter, QIcon
 from PySide6.QtCore import Qt, QByteArray, QSize, Signal
 
 from .symbol_library import SymbolLibrary
+from .sizing import fix_chars
 
 _ICON_PX = 64       # rendered icon size in pixels
 _GRID_PX = 80       # grid cell size (icon + label)
@@ -25,7 +26,7 @@ class SymbolPalette(QListWidget):
         self.setResizeMode(QListWidget.Adjust)
         self.setWordWrap(True)
         self.setSpacing(4)
-        self.setFixedWidth(200)
+        fix_chars(self, 28)
 
         self._populate(library)
         self.itemClicked.connect(

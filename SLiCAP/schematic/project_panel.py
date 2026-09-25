@@ -48,6 +48,7 @@ def open_with_default_app(path) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(path))
 from . import app_prefs
 from .instr_file import write_main_py
+from .sizing import chars
 
 _SCHEMATIC_SUFFIXES = ('.slicap_sch', '.spice_sch')
 
@@ -140,7 +141,7 @@ class ProjectPanel(QDockWidget):
         self._tree = QTreeView(self)
         self._tree.setModel(self._proxy)
         self._tree.setHeaderHidden(True)
-        self._tree.setMinimumWidth(120)
+        self._tree.setMinimumWidth(chars(self._tree, 17))
         # Only the name column; size/type/date add noise at panel width.
         for col in range(1, self._model.columnCount()):
             self._tree.hideColumn(col)
@@ -330,7 +331,7 @@ class NewProjectDialog(QDialog):
     def __init__(self, parent=None, directory: str | None = None):
         super().__init__(parent)
         self.setWindowTitle("New SLiCAP Project")
-        self.setMinimumWidth(420)
+        self.setMinimumWidth(chars(self, 60))
         self.project_dir: str | None = None
 
         layout = QFormLayout(self)

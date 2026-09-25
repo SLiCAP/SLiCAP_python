@@ -5,6 +5,7 @@ Sections shown / hidden depending on shape kind:
   fill      : rect, circle only
   line ends : line only
 """
+from .sizing import fix_chars, fit_contents
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
     QDoubleSpinBox, QComboBox, QPushButton, QDialogButtonBox, QLabel,
@@ -24,7 +25,7 @@ _FILL_STYLES = ["none", "solid"]
 class _ColorButton(QPushButton):
     def __init__(self, color: str, parent=None):
         super().__init__(parent, Qt.Window)
-        self.setFixedWidth(56)
+        fix_chars(self, 7)
         self._color = QColor(color)
         self._refresh()
         self.clicked.connect(self._pick)
@@ -65,7 +66,7 @@ class ShapeDialog(QDialog):
         self._width_spin.setSingleStep(0.25)
         self._width_spin.setDecimals(2)
         self._width_spin.setValue(item.line_width)
-        self._width_spin.setFixedWidth(80)
+        fit_contents(self._width_spin)
         sf.addRow("Width:", self._width_spin)
 
         self._style_combo = QComboBox()

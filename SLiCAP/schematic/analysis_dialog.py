@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QComboBox, QCheckBox, QDialogButtonBox, QFormLayout,
 )
+from .sizing import chars
 
 
 def _ref_combo(items, placeholder: str) -> QComboBox:
@@ -42,7 +43,7 @@ class AnalysisDialog(QDialog):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Add / Edit Source / Detector / Loop Gain "
                             "Reference")
-        self.setMinimumWidth(440)
+        self.setMinimumWidth(chars(self, 63))
         self._det_v_refs = [str(r) for r in det_v_refs]
         self._det_i_refs = [str(r) for r in det_i_refs]
 

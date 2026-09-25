@@ -21,6 +21,7 @@ from __future__ import annotations
 from PySide6.QtCore import Signal
 
 from .value_fields import is_value
+from .sizing import name_width
 from PySide6.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView,
@@ -49,11 +50,9 @@ def collapsible_body(group: QGroupBox) -> QVBoxLayout:
     return layout
 
 
-# Default width of a parameter-name column/field, shared by every widget in the
-# instruction dialogs (this table, the step widget's array table, the output-
-# variable name fields) so the name columns line up.  Interactive columns keep
-# this as their starting width; the user can drag them wider.
-PARAM_NAME_WIDTH = 120
+# The parameter-name column/field width shared by the instruction dialogs so
+# the name columns line up: sizing.name_width (NAME_CHARS digit widths in the
+# widget's font).  A pixel constant sat here until 2026-09-25.
 
 
 class ParamTable(QGroupBox):
@@ -84,7 +83,7 @@ class ParamTable(QGroupBox):
         hh = self._table.horizontalHeader()
         hh.setSectionResizeMode(0, QHeaderView.Interactive)   # user-resizable
         hh.setSectionResizeMode(1, QHeaderView.Stretch)
-        self._table.setColumnWidth(0, PARAM_NAME_WIDTH)
+        self._table.setColumnWidth(0, name_width(self._table))
         self._table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._table.setMinimumHeight(110)
         self._table.itemChanged.connect(lambda *_: self._on_item_changed())

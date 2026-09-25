@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import configparser
 
+from .sizing import chars, fix_chars, fit_contents
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
     QLabel, QPushButton, QDoubleSpinBox, QSpinBox,
@@ -16,9 +17,10 @@ _FONT_FAMILIES = [
     "Arial", "Helvetica", "Times New Roman", "Courier New", "Georgia",
 ]
 
-_SPIN_W   = 65   # fixed width for all spinboxes
-_COMBO_W  = 130  # fixed width for font-family combos
-_COLOR_W  = 56   # fixed width for colour buttons
+# Widths come from the font (sizing.py); the pixel constants 65/130/56 that
+# sat here cut off two-digit sizes and long font names on Windows
+# (Anton, 2026-09-25).
+_COLOR_CHARS = 7   # colour swatch buttons
 
 
 class _ColorButton(QPushButton):
@@ -26,7 +28,7 @@ class _ColorButton(QPushButton):
         super().__init__(parent, Qt.Window)
         self.setObjectName("slicapColorBtn")   # lets the stylesheet target ONLY this button
         self._color = QColor(color)
-        self.setFixedWidth(_COLOR_W)
+        fix_chars(self, _COLOR_CHARS)
         self._refresh()
         self.clicked.connect(self._pick)
 
@@ -58,7 +60,7 @@ class PreferencesDialog(QDialog):
     def __init__(self, style, parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Preferences")
-        self.setMinimumWidth(520)
+        self.setMinimumWidth(chars(self, 72))
 
         self._style = style
         self._widgets: dict[tuple[str, str], object] = {}
@@ -88,14 +90,14 @@ class PreferencesDialog(QDialog):
             sb.setSingleStep(step)
             sb.setDecimals(dec)
             sb.setValue(val)
-            sb.setFixedWidth(_SPIN_W)
+            fit_contents(sb)
             return sb
 
         def ispin(val, lo=1, hi=500) -> QSpinBox:
             sb = QSpinBox()
             sb.setRange(lo, hi)
             sb.setValue(val)
-            sb.setFixedWidth(_SPIN_W)
+            fit_contents(sb)
             return sb
 
         def combo(current: str) -> QComboBox:
@@ -107,7 +109,7 @@ class PreferencesDialog(QDialog):
                 cb.setCurrentIndex(idx)
             else:
                 cb.setCurrentText(current)
-            cb.setFixedWidth(_COMBO_W)
+            fit_contents(cb)
             return cb
 
         def check(checked: bool) -> QCheckBox:

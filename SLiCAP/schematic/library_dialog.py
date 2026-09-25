@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from .sizing import fit_contents, fix_chars, chars
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QScrollArea, QWidget, QLabel,
     QLineEdit, QComboBox, QCheckBox, QPushButton, QDialogButtonBox, QFileDialog,
@@ -43,7 +44,7 @@ class _LibRow(QWidget):
             self._dir = QComboBox()
             self._dir.addItems([".lib", ".inc"])
             self._dir.setCurrentText("." + (entry.get("directive") or "lib"))
-            self._dir.setFixedWidth(70)
+            fit_contents(self._dir)
             row.addWidget(self._dir)
 
         self._file = QLineEdit(entry.get("file", ""))
@@ -57,7 +58,7 @@ class _LibRow(QWidget):
         if spice:
             self._corner = QLineEdit(entry.get("corner", ""))
             self._corner.setPlaceholderText("corner")
-            self._corner.setFixedWidth(90)
+            fix_chars(self._corner, 12)
             row.addWidget(self._corner)
             self._dir.currentTextChanged.connect(self._sync_corner)
             self._sync_corner()
@@ -96,8 +97,7 @@ class LibraryDialog(QDialog):
         super().__init__(parent, Qt.Window)
         self._spice = (sch_type == "ngspice")
         self.setWindowTitle("Add / Edit libraries")
-        self.setMinimumWidth(560)
-
+        self.setMinimumWidth(chars(self, 80))
         from . import project
         try:
             self._browse_dir = str(project.subdir("lib"))

@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 from .param_table import ParamTable
 from .step_widget import StepWidget
 from .instr_file import next_result_name, parse_calls
+from .sizing import cap_chars, chars
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -146,8 +147,7 @@ class SLiCAPAnalysisDialog(QDialog):
                  circuits=()):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit SLiCAP Instruction")
-        self.setMinimumWidth(560)
-
+        self.setMinimumWidth(chars(self, 80))
         self._existing = existing_text or ""
         # The circuit objects of the schematic being edited (the GUI never
         # authors across schematics - Anton, 2026-08-16).  They are all built
@@ -198,7 +198,7 @@ class SLiCAPAnalysisDialog(QDialog):
         top.addWidget(QLabel("Instruction:"), 0, 2,
                       Qt.AlignmentFlag.AlignRight)
         self._func = QComboBox()
-        self._func.setMinimumWidth(130)
+        self._func.setMinimumWidth(chars(self._func, 19))
         top.addWidget(self._func, 0, 3)
 
         cir_lbl = QLabel("Circuit variable:")
@@ -220,7 +220,7 @@ class SLiCAPAnalysisDialog(QDialog):
         self._cir_var.addItems(names or [cir_var])
         if cir_var in names:
             self._cir_var.setCurrentText(cir_var)
-        self._cir_var.setMaximumWidth(120)
+        cap_chars(self._cir_var, 16)
         self._cir_var.setToolTip(cir_lbl.toolTip())
         self._cir_var.currentTextChanged.connect(lambda *_: self._update())
         top.addWidget(self._cir_var, 1, 1)
@@ -230,7 +230,7 @@ class SLiCAPAnalysisDialog(QDialog):
         top.addWidget(QLabel("Result variable:"), 1, 2,
                       Qt.AlignmentFlag.AlignRight)
         self._result_var = QLineEdit()
-        self._result_var.setMaximumWidth(130)
+        cap_chars(self._result_var, 18)
         self._result_var.textChanged.connect(self._update)
         top.addWidget(self._result_var, 1, 3)
         self._name_warn = QLabel("")
@@ -256,12 +256,12 @@ class SLiCAPAnalysisDialog(QDialog):
             lbl = QLabel(key)
             c1 = QComboBox()
             c1.setEditable(True)
-            c1.setMinimumWidth(140)
+            c1.setMinimumWidth(chars(c1, 20))
             c1.currentTextChanged.connect(self._update)
             pair_lbl = QLabel("2nd (differential):")
             c2 = QComboBox()
             c2.setEditable(True)
-            c2.setMinimumWidth(140)
+            c2.setMinimumWidth(chars(c2, 20))
             c2.currentTextChanged.connect(self._update)
             grid.addWidget(lbl, r, 0, Qt.AlignmentFlag.AlignRight)
             grid.addWidget(c1, r, 1)

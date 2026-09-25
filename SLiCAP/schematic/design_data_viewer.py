@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QMessageBox, QPlainTextEdit, QPushButton,
     QVBoxLayout,
 )
+from .sizing import chars
 
 
 _DISPLAY_ENV = re.compile(
@@ -138,7 +139,7 @@ class DesignDataViewer(QDialog):
         kind = entry.get("kind", "other")
         name = entry.get("name", "?")
         self.setWindowTitle(f"{name}  —  {_KIND_TITLES.get(kind, kind)}")
-        self.setMinimumWidth(380)
+        self.setMinimumWidth(chars(self, 54))
         lay = QVBoxLayout(self)
 
         info = []

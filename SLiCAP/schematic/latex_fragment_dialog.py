@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPixmap, QPainter
+from .sizing import chars
 
 
 def _find_slicap_preamble() -> str:
@@ -56,7 +57,7 @@ class LatexFragmentDialog(QDialog):
         from .config import default_style
         self._style = style or default_style()
         self.setWindowTitle("LaTeX Fragment")
-        self.setMinimumWidth(560)
+        self.setMinimumWidth(chars(self, 80))
         self._svg_bytes: bytes | None = svg_bytes
         self._natural_w: int | None = None
         self._natural_h: int | None = None
@@ -70,7 +71,7 @@ class LatexFragmentDialog(QDialog):
         self._preamble_edit = QLineEdit(preamble_path or _find_slicap_preamble())
         self._preamble_edit.setReadOnly(True)
         self._preamble_edit.setPlaceholderText("(default: amsmath + amssymb)")
-        self._preamble_edit.setMinimumWidth(280)
+        self._preamble_edit.setMinimumWidth(chars(self._preamble_edit, 40))
         browse_btn = QPushButton("Browse…")
         browse_btn.clicked.connect(self._browse_preamble)
         clear_btn  = QPushButton("Clear")

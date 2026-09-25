@@ -30,6 +30,7 @@ from .subcircuit import (parse_subckt, box_symbol_svg, reskin_symbol_svg,
                          find_subckt_schematic, _normalize_placement, _FLOOR)
 from .symbol_library import Symbol
 from .component_item import draw_subckt_pin_names, _apply_symbol_colors
+from .sizing import chars
 
 _SVG_NS = "{http://www.w3.org/2000/svg}"
 
@@ -87,8 +88,7 @@ class PlaceSubcircuitDialog(QDialog):
         super().__init__(parent, Qt.Window)
         self._library = library
         self.setWindowTitle("New Subcircuit Symbol")
-        self.setMinimumWidth(560)
-
+        self.setMinimumWidth(chars(self, 80))
         # Type-tagged names keep a SLiCAP and an NGspice subcircuit of the same
         # device from colliding (mirrors .slicap_sch / .spice_sch).
         self._lib_ext    = ".spice_lib" if sch_type == 'ngspice' else ".slicap_lib"

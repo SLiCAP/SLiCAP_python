@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from SLiCAP.SLiCAPtraces import goal_names, function_names
+from .sizing import chars
 
 # {expression name: [(parameter label, default), …]}
 _GOALS = goal_names()
@@ -69,7 +70,7 @@ class ExpressionDialog(QDialog):
                  parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit Expression")
-        self.setMinimumWidth(560)
+        self.setMinimumWidth(chars(self, 80))
         self._on_signal = on_signal
 
         outer = QVBoxLayout(self)

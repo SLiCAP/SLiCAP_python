@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt, QByteArray, QSize
 from PySide6.QtGui import QPalette
 
 from .config import DEFAULT_ZOOM, GRID_SIZE
+from .sizing import fix_chars
 
 # Breathing space around the largest symbol inside the fixed preview area,
 # measured in grid units at canvas scale (so it matches what 5 grid squares look
@@ -41,7 +42,7 @@ class PlaceSymbolDialog(QDialog):
         list_col = QVBoxLayout()
         list_col.addWidget(QLabel("Select a symbol:"))
         self._list = QListWidget()
-        self._list.setFixedWidth(160)
+        fix_chars(self._list, 22)
         for name in sorted(library.names):
             self._list.addItem(QListWidgetItem(name))
         list_col.addWidget(self._list)

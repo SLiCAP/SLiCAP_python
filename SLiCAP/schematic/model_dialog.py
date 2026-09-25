@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QFileDialog, QApplication, QLayout,
 )
 from PySide6.QtCore import Qt
+from .sizing import chars
 
 
 def _slicap_model_types() -> list:
@@ -67,7 +68,7 @@ class ModelDialog(QDialog):
         self._latex_ok = LATEX_INSTALLED and self._style.LATEX_RENDERING_ENABLED
         self._edit_mode = edit_mode
         self.setWindowTitle("Add / Edit Model Definition")
-        self.setMinimumWidth(520)
+        self.setMinimumWidth(chars(self, 74))
         self._is_editing = bool(params)
 
         outer = QVBoxLayout(self)
@@ -90,7 +91,7 @@ class ModelDialog(QDialog):
         self._preamble_edit = QLineEdit(preamble_path or _find_slicap_preamble())
         self._preamble_edit.setReadOnly(True)
         self._preamble_edit.setPlaceholderText("(default: amsmath + amssymb)")
-        self._preamble_edit.setMinimumWidth(260)
+        self._preamble_edit.setMinimumWidth(chars(self._preamble_edit, 37))
         browse_btn = QPushButton("Browse…")
         browse_btn.clicked.connect(self._browse_preamble)
         clear_btn  = QPushButton("Clear")

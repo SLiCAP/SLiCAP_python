@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem, QAbstractItemView, QHeaderView,
 )
 
-from .param_table import PARAM_NAME_WIDTH
+from .sizing import name_width, cap_chars, fit_contents, chars
 
 
 class StepWidget(QGroupBox):
@@ -55,7 +55,7 @@ class StepWidget(QGroupBox):
         self._method = QComboBox()
         self._method.addItems(list(methods))
         self._method.currentIndexChanged.connect(self._on_method)
-        self._method.setMaximumWidth(80)
+        fit_contents(self._method)
         row.addWidget(self._method)
         self._param_lbl = QLabel("Parameter")
         row.addSpacing(12)
@@ -64,7 +64,7 @@ class StepWidget(QGroupBox):
         self._param.setEditable(True)
         self._param.addItems(self._candidates)
         self._param.setCurrentText("")
-        self._param.setMinimumWidth(120)
+        self._param.setMinimumWidth(chars(self._param, 17))
         self._param.currentTextChanged.connect(lambda *_: self.changed.emit())
         row.addWidget(self._param)
         row.addStretch(1)
@@ -83,7 +83,7 @@ class StepWidget(QGroupBox):
                                              ("Num", self._num, "e.g. 11")]):
             rg.addWidget(QLabel(lbl), r, 0, Qt.AlignmentFlag.AlignRight)
             edit.setPlaceholderText(ph)
-            edit.setMaximumWidth(120)
+            cap_chars(edit, 16)
             edit.textChanged.connect(lambda *_: self.changed.emit())
             # marked while the text is not a number in SLiCAP notation; the
             # value was already refused by dict_literal(), this makes the
@@ -117,7 +117,7 @@ class StepWidget(QGroupBox):
         hh = self._array.horizontalHeader()
         hh.setSectionResizeMode(0, QHeaderView.Interactive)   # user-resizable
         hh.setSectionResizeMode(1, QHeaderView.Stretch)
-        self._array.setColumnWidth(0, PARAM_NAME_WIDTH)
+        self._array.setColumnWidth(0, name_width(self._array))
         self._array.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._array.setMinimumHeight(90)
         self._array.itemChanged.connect(lambda *_: self.changed.emit())

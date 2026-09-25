@@ -314,6 +314,12 @@ class _PropertyLabel(QGraphicsItem):
     def itemChange(self, change, value):
         p = self.parentItem()
         if p is not None:
+            if change == QGraphicsItem.ItemPositionChange:
+                # The parent's boundingRect includes this label and the
+                # leader line to it; Qt must learn that BEFORE the move, or
+                # it erases only the old rectangle and a fast drag leaves
+                # the leader's picture behind (Anton, 2026-09-25).
+                p.prepareGeometryChange()
             if change in (QGraphicsItem.ItemPositionChange,
                           QGraphicsItem.ItemPositionHasChanged):
                 p.update()
