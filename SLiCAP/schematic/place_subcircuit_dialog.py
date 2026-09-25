@@ -93,7 +93,7 @@ class PlaceSubcircuitDialog(QDialog):
         # device from colliding (mirrors .slicap_sch / .spice_sch).
         self._lib_ext    = ".spice_lib" if sch_type == 'ngspice' else ".slicap_lib"
         self._sch_ext    = ".spice_sch" if sch_type == 'ngspice' else ".slicap_sch"
-        self._sym_suffix = "_spice_symbol.svg" if sch_type == 'ngspice' else "_slicap_symbol.svg"
+        self._sch_type   = sch_type
         self._defn: SubcktDef | None = None
         self._lib_path: str | None = None
         self._source_pins: list[str] = []
@@ -249,7 +249,8 @@ class PlaceSubcircuitDialog(QDialog):
         semantically (not by mtime), so harmless internal edits don't trip it.
         Placing regenerates the symbol, so this is informational."""
         self._stale.setVisible(False)
-        svg_path = lib_path.with_name(f"{defn.name}{self._sym_suffix}")
+        from .symbol_library import symbol_path_in
+        svg_path = symbol_path_in(lib_path.parent, defn.name, self._sch_type)
         if not svg_path.is_file():
             return
         try:

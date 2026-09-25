@@ -42,10 +42,14 @@ class ParamTable(QGroupBox):
 
     def __init__(self, title: str, key_candidates=(), ordered: bool = False,
                  load_values: dict | None = None, hint: str = "",
-                 checkable: bool = False, parent=None):
+                 checkable: bool = False, allow_empty: bool = False,
+                 parent=None):
+        """*allow_empty*: a row with a name and no value is valid and is
+        emitted as ``None`` (an NGspice option flag such as ``noopiter``)."""
         super().__init__(title, parent)
         self._candidates = [str(k) for k in key_candidates]
         self._ordered = bool(ordered)
+        self._allow_empty = bool(allow_empty)
         self._load_values = dict(load_values) if load_values else None
         if checkable:
             self.setCheckable(True)
@@ -115,7 +119,7 @@ class ParamTable(QGroupBox):
         pairs = list(entries.items()) if isinstance(entries, dict) \
             else list(entries or [])
         for name, value in pairs:
-            self.add_row(str(name), str(value))
+            self.add_row(str(name), "" if value is None else str(value))
         if self.isCheckable():
             self.setChecked(active and bool(pairs))
         self.changed.emit()
@@ -211,7 +215,7 @@ class ParamTable(QGroupBox):
             return True
         entries = self.entries()
         return (bool(entries) and not self.duplicate_names()
-                and all(v for _, v in entries)
+                and (self._allow_empty or all(v for _, v in entries))
                 and all(is_value(v) for _, v in entries))
 
     # ── emission ──────────────────────────────────────────────────────────────
@@ -225,7 +229,9 @@ class ParamTable(QGroupBox):
         entries = self.entries()
         if not entries:
             return None
-        items = [f"{self._q(n)}: {self._q(v)}" for n, v in entries]
+        items = [f"{self._q(n)}: " + ("None" if self._allow_empty and not v
+                                       else self._q(v))
+                 for n, v in entries]
         if len(items) <= 2:
             return "{" + ", ".join(items) + "}"
         return "{\n    " + ",\n    ".join(items) + "}"

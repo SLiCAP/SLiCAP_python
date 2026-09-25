@@ -109,3 +109,23 @@ composes its call directly, and
 :menuselection:`Instruction --> Create / edit NGspice control section…`
 adds a ``.control`` block.  Everything above about the instruction file, the
 append-only editing and running through ``main.py`` applies unchanged.
+
+The dialog's **Compatibility (behavior)** check boxes select NGspice's
+compatibility flags for the run, PSpice, LTspice, HSPICE, Spectre, Spice3,
+KiCad, EAGLE, and "whole netlist (a)".  Without the last one a syntax flag
+applies to included libraries only; a model in PSpice syntax inside the
+circuit needs PSpice together with "whole netlist", which becomes
+``behavior="psa"`` in the instruction file.  See `Compatibility mode
+<../../API/userguide/ngspice.html#compatibility-mode>`_ in the API manual.
+
+The **NGspice options** table sets simulator options for this instruction
+only: convergence aids, tolerances, iteration limits, the integration method.
+Each row becomes an ``option name = value`` command in the control section,
+and the dialog writes them as ``options={"rshunt": "1e12"}``.  A row with an
+empty value is a flag, such as ``noopiter``.  Vendor macro-models of op-amps
+often have internal nodes without a DC path to ground; NGspice then reports
+"singular matrix" and every operating-point method fails.  A shunt resistance
+of ``1e12`` ohm from every node to ground (``rshunt``), or a minimum
+conductance of ``1e-10`` (``gmin``), gives such a model an operating point
+without disturbing the results.  See `Simulator options
+<../../API/userguide/ngspice.html#simulator-options>`_ in the API manual.

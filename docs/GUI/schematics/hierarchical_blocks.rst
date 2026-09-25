@@ -107,8 +107,8 @@ subcircuit's block symbol and places its first instance:
    read from the port's rotation and mirror settings.  Without a schematic
    the pins are spread clockwise from the top-left in node order.  Pin
    *sides* are visual only; the netlist node order never changes.
-#. The symbol is written to ``lib/<name>_slicap_symbol.svg`` (or
-   ``_spice_symbol.svg``) and becomes a **palette citizen** of the project:
+#. The symbol is written to ``lib/<name>.slicap_sym`` (or
+   ``lib/<name>.spice_sym``) and becomes a **palette citizen** of the project:
    a second instance is placed from the palette like any other component,
    no dialog involved.
 #. The block's library is added to the schematic as an include

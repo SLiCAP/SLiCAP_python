@@ -33,7 +33,7 @@ Ports
 A **port** symbol marks a named connection point.  Two ports with the **same
 name** are connected even when no wire runs between them, which keeps busy
 drawings readable.  In a schematic saved as a subcircuit, the named ports are
-the **external nodes** of the block; see :doc:`/GUI/hierarchical_blocks`.
+the **external nodes** of the block; see :doc:`/GUI/schematics/hierarchical_blocks`.
 
 Parameter definitions
 =====================

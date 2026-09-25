@@ -343,12 +343,14 @@ def _lib_companions(lib_path) -> list:
     """The sidecar files that travel with a subcircuit ``.lib``: the block
     symbol SVG and the subcircuit's own schematic, per the type-tagged naming
     convention (names are the CONVENTION, never stored paths)."""
+    from .symbol_library import SYMBOL_EXT, LEGACY_SUFFIX
     lib_path = Path(lib_path)
-    is_ng = lib_path.suffix == ".spice_lib"
+    kind  = "ngspice" if lib_path.suffix == ".spice_lib" else "slicap"
     stem  = lib_path.stem
     return [
-        lib_path.with_name(f"{stem}_{'spice' if is_ng else 'slicap'}_symbol.svg"),
-        lib_path.with_name(f"{stem}{'.spice_sch' if is_ng else '.slicap_sch'}"),
+        lib_path.with_name(stem + SYMBOL_EXT[kind]),
+        lib_path.with_name(stem + LEGACY_SUFFIX[kind]),      # still read
+        lib_path.with_name(f"{stem}{'.spice_sch' if kind == 'ngspice' else '.slicap_sch'}"),
     ]
 
 
@@ -357,7 +359,7 @@ def ensure_in_project_lib(lib_path, libdir):
     it was browsed from elsewhere.
 
     A placed subcircuit is referenced RELATIVELY (``lib/<name>.slicap_lib``
-    in the netlist include, ``lib/<name>_<type>_symbol.svg`` for the block
+    in the netlist include, ``lib/<name>.slicap_sym`` or ``.spice_sym`` for the block
     symbol), so the project must physically hold both - a project is
     self-contained and survives being moved or handed over (Anton,
     2026-08-04). Storing the foreign path instead was considered and

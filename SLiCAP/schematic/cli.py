@@ -25,8 +25,8 @@ import os
 import sys
 from pathlib import Path
 
-_SYMBOLS_SVG         = Path(__file__).parent.parent / "files" / "symbols" / "slicap"  / "Symbols.svg"
-_NGSPICE_SYMBOLS_SVG = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.svg"
+_SYMBOLS_SVG         = Path(__file__).parent.parent / "files" / "symbols" / "slicap"  / "Symbols.slicap_sym"
+_NGSPICE_SYMBOLS_SVG = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.spice_sym"
 
 
 # ── Qt bootstrap ─────────────────────────────────────────────────────────────

@@ -37,7 +37,7 @@ appropriate extension and lands in the project's ``cir/`` (netlist) or
 ``img/`` (SVG / PDF) directory automatically.  For a schematic saved as a
 subcircuit the ``netlist`` command writes the library
 ``lib/<name>.slicap_lib`` instead of a ``.cir`` file (see
-:doc:`/GUI/hierarchical_blocks`).
+:doc:`/GUI/schematics/hierarchical_blocks`).
 
 Running it in SLiCAP
 ====================

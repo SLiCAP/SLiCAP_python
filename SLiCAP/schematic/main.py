@@ -89,7 +89,7 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
             "  config   symbol set            schematic type\n"
             "  -------  --------------------  ----------------\n"
             "  (none)   chosen per schematic  SLiCAP + NGspice\n"
-            "  basic    Symbols.svg only      SLiCAP only\n"
+            "  basic    Symbols.slicap_sym    SLiCAP only\n"
             "  slicap   full SLiCAP library   SLiCAP only\n"
             "  ngspice  NGspice library       NGspice only\n"
             "\n"
@@ -150,6 +150,16 @@ def main():
     # inside the application window (helpful on GNOME/Ubuntu).
     try:
         QCoreApplication.setAttribute(_Qt.AA_DontUseNativeMenuBar, True)
+    except Exception:
+        pass
+    # Qt's own file (and colour/font) dialogs everywhere, one switch for
+    # all 23 call sites: the native GTK chooser thumbnails every SVG in a
+    # folder, and a symbol file has no width/height on its root (it is a
+    # definition), so GdkPixbuf printed an assertion per symbol file. One
+    # look for every dialog was preferred over per-dialog options (Anton,
+    # 2026-09-25).
+    try:
+        QCoreApplication.setAttribute(_Qt.AA_DontUseNativeDialogs, True)
     except Exception:
         pass
     # Some Linux desktops inject GTK modules into every process via

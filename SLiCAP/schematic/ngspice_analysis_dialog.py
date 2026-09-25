@@ -50,6 +50,18 @@ def _field(label: str, placeholder: str = "", width: int = 120,
 
 _NGSPICE_FUNCS = {"op", "tran", "ac", "dc", "noise"}
 
+# NGspice simulator options offered in the options table (NGspice 42 manual,
+# chapter 11 "Simulation options"); any other name can be typed.  Flags
+# without a value (noopiter, keepopinfo, ...) are entered with an empty value
+# and written as ``None`` (Anton, 2026-09-25: a vendor op-amp macro-model
+# with floating internal nodes needed rshunt=1e12 to find an operating point).
+_NGSPICE_OPTIONS = [
+    "rshunt", "gmin", "reltol", "abstol", "vntol", "chgtol", "trtol",
+    "pivrel", "pivtol", "itl1", "itl2", "itl4", "itl6", "gminsteps",
+    "srcsteps", "noopiter", "keepopinfo", "method", "maxord", "cshunt",
+    "temp", "tnom",
+]
+
 
 def _q(text: str) -> str:
     """Python double-quoted string literal."""
@@ -91,32 +103,72 @@ def _py_num(value: str) -> str:
 # ── behavior selector ─────────────────────────────────────────────────────────
 
 class _BehaviorSelector(QGroupBox):
-    """Radio button row for the behavior= kwarg."""
+    """Check boxes for the behavior= kwarg: NGspice's compatibility FLAGS
+    (manual 12.11.1, table 12.2). NGspice reads the keyword by scanning it
+    for the two-letter flags, so any combination is one word: 'ltpsa' is
+    lt + ps + a. Flag 'a' transforms the WHOLE netlist; without it a flag
+    applies to .include'd libraries only - which is why 'psa' cures what
+    'ps' does not (a user's convergence problem, Anton, 2026-09-24). ps and
+    hs are mutually exclusive (NGspice warns and switches to ps). Not
+    offered: 'll' (unused), 'mc' (NGspice's own make check), 'xs'
+    (undocumented). The former radio row knew ps/hs/lt only, plus 'spec'
+    (worked by accident, it contains 'spe') and 'ng' (did nothing).
+    """
 
-    _MODES = ["none", "ps", "hs", "lt", "spec", "ng"]
+    # (flag, label, tooltip) in the order the keyword is assembled
+    _FLAGS = [
+        ("lt",  "LTspice",  "LTSPICE syntax (manual 12.11.6)"),
+        ("ps",  "PSpice",   "PSPICE syntax (manual 12.11.5); excludes HSPICE"),
+        ("hs",  "HSPICE",   "HSPICE syntax (manual 12.11.10); excludes PSpice"),
+        ("spe", "Spectre",  "Spectre syntax (manual 12.11.9)"),
+        ("s3",  "Spice3",   "Spice3 behaviour: disables some ngspice extensions"),
+        ("ki",  "KiCad",    "KiCad vector names containing '/' (manual 12.11.8)"),
+        ("eg",  "EAGLE",    "EAGLE compatible voltage vector output"),
+        ("a",   "whole netlist (a)",
+         "Transform the WHOLE netlist. Without it the selected syntax "
+         "applies to .include'd libraries only."),
+    ]
+    _EXCLUSIVE = (("ps", "hs"),)
 
     def __init__(self, parent=None):
-        super().__init__("Behavior", parent)
+        super().__init__("Compatibility (behavior)", parent)
         lay = QHBoxLayout(self)
-        self._group = QButtonGroup(self)
-        for i, mode in enumerate(self._MODES):
-            rb = QRadioButton(mode.upper() if mode != "none" else "(none)")
-            self._group.addButton(rb, i)
-            lay.addWidget(rb)
-            if mode == "none":
-                rb.setChecked(True)
+        self._boxes = {}
+        for flag, label, tip in self._FLAGS:
+            cb = QCheckBox(label)
+            cb.setToolTip(tip)
+            cb.toggled.connect(lambda on, f=flag: self._on_toggled(f, on))
+            self._boxes[flag] = cb
+            lay.addWidget(cb)
         lay.addStretch()
 
+    def _on_toggled(self, flag, on):
+        if not on:
+            return
+        for pair in self._EXCLUSIVE:
+            if flag in pair:
+                other = pair[1] if pair[0] == flag else pair[0]
+                self._boxes[other].setChecked(False)
+
+    def mode(self) -> str:
+        """The keyword NGspice gets, '' for none."""
+        return "".join(f for f, _l, _t in self._FLAGS if self._boxes[f].isChecked())
+
     def kwarg(self) -> str:
-        idx = self._group.checkedId()
-        mode = self._MODES[idx] if idx >= 0 else "none"
-        return f', behavior="{mode}"' if mode != "none" else ""
+        mode = self.mode()
+        return f', behavior="{mode}"' if mode else ""
 
     def set_mode(self, mode: str | None) -> None:
-        mode = (mode or "none").lower()
-        if mode not in self._MODES:
-            mode = "none"
-        self._group.button(self._MODES.index(mode)).setChecked(True)
+        """Tick the flags found in *mode* the way NGspice reads it: by
+        substring. 'spec' (the old radio label) thus ticks Spectre, 'ng'
+        ticks nothing."""
+        text = (mode or "").lower()
+        for flag, _l, _t in self._FLAGS:
+            self._boxes[flag].blockSignals(True)
+            self._boxes[flag].setChecked(flag in text)
+            self._boxes[flag].blockSignals(False)
+        if self._boxes["ps"].isChecked() and self._boxes["hs"].isChecked():
+            self._boxes["hs"].setChecked(False)       # as NGspice does
 
 
 # ── saved signals (save= kwarg) ──────────────────────────────────────────────
@@ -313,27 +365,27 @@ class _TranTab(_AnalysisTab):
         # names= (enforced by sl.tran; the dialog's output-variables row
         # provides them).
         from PySide6.QtWidgets import QComboBox, QLabel, QSpinBox
-        grid.addWidget(QLabel("Post-processing"), 3, 0,
+        grid.addWidget(QLabel("Post-processing"), 4, 0,
                        Qt.AlignmentFlag.AlignRight)
         self._post = QComboBox()
         self._post.addItems(["None", "FFT (spectrum)", "Fourier (harmonics)"])
         self._post.currentIndexChanged.connect(self._on_post_changed)
-        grid.addWidget(self._post, 3, 1)
+        grid.addWidget(self._post, 4, 1)
 
         self._lbl_window = QLabel("FFT window")
         self._fft_window = QComboBox()
         self._fft_window.addItems(self._WINDOWS)
         self._fft_window.currentTextChanged.connect(
             lambda w: self._fft_order.setEnabled(w == "gaussian"))
-        grid.addWidget(self._lbl_window, 4, 0, Qt.AlignmentFlag.AlignRight)
-        grid.addWidget(self._fft_window, 4, 1)
+        grid.addWidget(self._lbl_window, 5, 0, Qt.AlignmentFlag.AlignRight)
+        grid.addWidget(self._fft_window, 5, 1)
         self._lbl_order = QLabel("Gaussian order")
         self._fft_order = QSpinBox()
         self._fft_order.setRange(2, 32)
         self._fft_order.setValue(8)
         self._fft_order.setEnabled(False)
-        grid.addWidget(self._lbl_order, 5, 0, Qt.AlignmentFlag.AlignRight)
-        grid.addWidget(self._fft_order, 5, 1)
+        grid.addWidget(self._lbl_order, 6, 0, Qt.AlignmentFlag.AlignRight)
+        grid.addWidget(self._fft_order, 6, 1)
 
         self._lbl_ffreq, self._four_freq = _field("Fundamental freq.",
                                                   "e.g. 100k")
@@ -341,10 +393,10 @@ class _TranTab(_AnalysisTab):
         self._four_n = QSpinBox()
         self._four_n.setRange(2, 100)
         self._four_n.setValue(10)
-        grid.addWidget(self._lbl_ffreq, 4, 2, Qt.AlignmentFlag.AlignRight)
-        grid.addWidget(self._four_freq, 4, 3)
-        grid.addWidget(self._lbl_nfreq, 5, 2, Qt.AlignmentFlag.AlignRight)
-        grid.addWidget(self._four_n, 5, 3)
+        grid.addWidget(self._lbl_ffreq, 5, 2, Qt.AlignmentFlag.AlignRight)
+        grid.addWidget(self._four_freq, 5, 3)
+        grid.addWidget(self._lbl_nfreq, 6, 2, Qt.AlignmentFlag.AlignRight)
+        grid.addWidget(self._four_n, 6, 3)
         self._on_post_changed()
 
     def _on_post_changed(self, *_):
@@ -736,6 +788,17 @@ class NGspiceAnalysisDialog(QDialog):
         self._params_table.changed.connect(self._update)
         right.addWidget(self._params_table)
 
+        # ── per-instruction simulator options (options=, right) ───────────────
+        self._options_table = ParamTable(
+            "NGspice options (options=; unchecked = NGspice defaults)",
+            key_candidates=_NGSPICE_OPTIONS, checkable=True, allow_empty=True,
+            hint="Written as 'option name = value' before the analysis, for "
+                 "this instruction only. Leave the value empty for a flag "
+                 "(noopiter). Convergence aids for vendor macro-models: "
+                 "rshunt = 1e12 or gmin = 1e-10.")
+        self._options_table.changed.connect(self._update)
+        right.addWidget(self._options_table)
+
         # ── per-run source stimuli (stimuli=, right) ──────────────────────────
         # One stimulus per source, entered with the canvas SourceStimuliDialog
         # filtered to the analysis's domain (op/dc → DC, ac/noise → AC,
@@ -831,6 +894,8 @@ class NGspiceAnalysisDialog(QDialog):
                              _lit(kw.get("savecurrents")))
         params = _lit(kw.get("params"))
         self._params_table.set_entries(params or [], active=bool(params))
+        options = _lit(kw.get("options"))
+        self._options_table.set_entries(options or {}, active=bool(options))
         stimuli = _lit(kw.get("stimuli")) or {}
         self._stimuli_table.set_stimuli(stimuli, active=bool(stimuli))
         self._behavior.set_mode(_lit(kw.get("behavior")))
@@ -852,6 +917,8 @@ class NGspiceAnalysisDialog(QDialog):
             ok = False              # a marked field cannot become a netlist
         if not self._params_table.is_valid():
             ok = False
+        if not self._options_table.is_valid():
+            ok = False
         if not self._stimuli_table.is_valid():
             ok = False
         self._add_btn.setEnabled(ok)
@@ -861,6 +928,12 @@ class NGspiceAnalysisDialog(QDialog):
             return ""
         lit = self._params_table.list_literal()
         return f", params={lit}" if lit else ""
+
+    def _options_kwarg(self) -> str:
+        if not self._options_table.active():
+            return ""
+        lit = self._options_table.dict_literal()
+        return f", options={lit}" if lit else ""
 
     def _stimuli_kwarg(self) -> str:
         """Build ``, stimuli={"V1": ["SIN", "{A}", "1MEG"], …}`` from the
@@ -881,5 +954,6 @@ class NGspiceAnalysisDialog(QDialog):
         tab     = self._tabs[idx]
         varname = self._varname.text().strip() or "RES1"
         extra   = (self._save.kwarg() + self._params_kwarg()
-                   + self._stimuli_kwarg() + self._behavior.kwarg())
+                   + self._options_kwarg() + self._stimuli_kwarg()
+                   + self._behavior.kwarg())
         return tab.snippet(self._cir_stem, varname, extra)

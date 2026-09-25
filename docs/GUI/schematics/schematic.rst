@@ -53,7 +53,7 @@ restricts which schematic type may be created or opened:
      - chosen per schematic
      - both SLiCAP and NGspice allowed
    * - ``'basic'``
-     - ``Symbols.svg`` only (basic IEC/SLiCAP symbols only)
+     - ``Symbols.slicap_sym`` only (basic IEC/SLiCAP symbols only)
      - SLiCAP only (NGspice disabled)
    * - ``'slicap'``
      - the complete SLiCAP library (all SVG files in the system symbols directory)
@@ -117,7 +117,7 @@ By default each schematic is displayed in a separate tab, but each open schemati
    * - **Place**
      - Symbol (:kbd:`S`), Wire (:kbd:`W`), Net Label (:kbd:`L`),
        Junction (:kbd:`J`), Border (:kbd:`B`), Library, New subcircuit
-       symbol (see :doc:`/GUI/hierarchical_blocks`), Image, Parameters,
+       symbol (see :doc:`/GUI/schematics/hierarchical_blocks`), Image, Parameters,
        Define src / det / lg ref, Model definition.
    * - **Instruction**
      - Create circuit object and Create / edit SLiCAP instruction (SLiCAP
@@ -173,7 +173,7 @@ A first schematic in five steps
    ``.cir`` netlist for SLiCAP.  See :doc:`/GUI/schematics/netlist_and_export`.
 
 A schematic can also be saved as a reusable **subcircuit** and placed as a
-block in other schematics; see :doc:`/GUI/hierarchical_blocks`.
+block in other schematics; see :doc:`/GUI/schematics/hierarchical_blocks`.
    
    
 Below an example of a SLiCAP schematic with default preferences and LaTeX rendering enabled.

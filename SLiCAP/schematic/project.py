@@ -163,6 +163,10 @@ def set_current(path: "Path | str | None") -> None:
         # Rename to the new full-filename form if only the old one exists.
         for ext in (".cache", ".ini", ".symbols"):
             _migrate_sidecar(_base.with_suffix(ext), _sidecar(ext))
+        # Legacy '<name>_<type>_symbol.svg' project symbols -> '<name>.<type>_sym'
+        # (2026-09-25), once, when a schematic of the project is opened.
+        from .symbol_library import migrate_symbol_files
+        migrate_symbol_files(subdir_for(_base, "lib"))
 
     # Point terminal-output logging at txt/<name>.<ext>.log for this schematic
     # (or terminal only when unsaved).  subdir() creates txt/ only if missing.

@@ -18,9 +18,9 @@ from .symbol_library import SymbolLibrary
 from .schematic_data import DocumentProperties
 from . import project
 
-_SLICAP_SVG        = Path(__file__).parent.parent / "files" / "symbols" / "slicap"  / "Symbols.svg"
+_SLICAP_SVG        = Path(__file__).parent.parent / "files" / "symbols" / "slicap"  / "Symbols.slicap_sym"
 _SLICAP_DIR        = _SLICAP_SVG.parent
-_NGSPICE_SVG       = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.svg"
+_NGSPICE_SVG       = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.spice_sym"
 
 _FILTER_SLICAP      = "SLiCAP Schematic (*.slicap_sch)"
 _FILTER_NGSPICE     = "NGspice Schematic (*.spice_sch)"
@@ -407,6 +407,10 @@ class CanvasPanel(QWidget):
         menu.addAction(act)
         act = QAction("&Update symbols from library", self)
         act.triggered.connect(self._on_update_symbols_from_library)
+        menu.addAction(act)
+        menu.addSeparator()
+        act = QAction("&Import symbols from file…", self)
+        act.triggered.connect(self._on_import_symbols)
         menu.addAction(act)
 
     def _build_slicap_instr_menu(self):
@@ -877,8 +881,8 @@ class CanvasPanel(QWidget):
         # a .lib browsed outside the project is COPIED in: the include and
         # the symbol are referenced relatively, so the project must hold them
         lib_path = ensure_in_project_lib(dlg.lib_path(), libdir)
-        sym_suffix = "_spice_symbol.svg" if self._sch_type == 'ngspice' else "_slicap_symbol.svg"
-        svg_path = lib_path.with_name(f"{defn.name}{sym_suffix}")
+        from .symbol_library import symbol_file_name
+        svg_path = lib_path.with_name(symbol_file_name(defn.name, self._sch_type))
         source = dlg._reskin_source()
         if source is not None:
             # an existing symbol's artwork, re-skinned as this subcircuit
@@ -1097,6 +1101,22 @@ class CanvasPanel(QWidget):
         missing = [n for n in names if n not in updated]
         if missing:
             QMessageBox.warning(self, "Load symbols from library", f"Not found in library:\n\n    {', '.join(missing)}")
+
+    def _on_import_symbols(self):
+        """Tools -> Import symbols from file...: user-drawn symbols into the
+        project lib/ under this schematic type's extension (2026-09-25)."""
+        from .import_symbols_dialog import ImportSymbolsDialog
+        libdir = (project.subdir_for(self._current_path, "lib")
+                  if self._current_path else project.subdir("lib"))
+        dlg = ImportSymbolsDialog(self, self._sch_type, self._library, libdir)
+        if dlg.exec() and dlg.imported:
+            self._build_library()
+            QMessageBox.information(
+                self, "Import symbols",
+                "Imported into lib/:\n  " + "\n  ".join(p.name for p in dlg.imported)
+                + "\n\nThe symbols are in Place -> Symbol of every "
+                + ("NGspice" if self._sch_type == "ngspice" else "SLiCAP")
+                + " schematic of this project.")
 
     def _on_update_symbols_from_library(self):
         from .component_item import ComponentItem

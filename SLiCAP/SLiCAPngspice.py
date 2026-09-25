@@ -1264,6 +1264,27 @@ def _step_values(step):
     return names, vals
 
 
+def _option_lines(options):
+    """The ``option`` command lines of a control block for the ``options``
+    keyword of op/dc/ac/tran/noise.
+
+    *options* maps an NGspice option name onto its value: a number in SLiCAP
+    notation (``"1e12"``, ``"1p"``), a bare word (``method="gear"``), or
+    ``None`` for a flag without a value (``noopiter``).  Numbers pass the
+    notation boundary (:func:`_deck_expr`); a bare word is written as it is,
+    the ``option`` command does not resolve ``{...}`` parameters anyway.
+    """
+    lines = []
+    for k, v in (options or {}).items():
+        if v is None or str(v).strip() == "":
+            lines.append(f"option {k}")
+        elif re.fullmatch(r"[A-Za-z_]\w*", str(v).strip()):
+            lines.append(f"option {k} = {str(v).strip()}")
+        else:
+            lines.append(f"option {k} = {_deck_value(v, k)}")
+    return lines
+
+
 def _control_block(analysis_cmd, raw_path, options=None, noise=False,
                    extra_saves=None, post_lines=None):
     """Build the .control ... .endc section for a SINGLE run; return ctrl_str.
@@ -1286,10 +1307,7 @@ def _control_block(analysis_cmd, raw_path, options=None, noise=False,
     lines.append("save " + " ".join(extra_saves) if extra_saves else "save all")
     if noise:
         lines.append("set sqrnoise")
-    if options:
-        for k, v in options.items():
-            lines.append(f"option {k} = {_deck_value(v, k)}"
-                         if v is not None else f"option {k}")
+    lines.extend(_option_lines(options))
     lines.append(analysis_cmd)
     if noise:
         # A noise run leaves TWO plots: <noiseN> with the spectral densities
@@ -1360,10 +1378,7 @@ def _stepped_control_block(analysis_cmd, raw_path, step_param, step_vals,
                      else "save all")
         if noise:
             lines.append("set sqrnoise")
-        if options:
-            for k, v in options.items():
-                lines.append(f"option {k} = {_deck_value(v, k)}"
-                             if v is not None else f"option {k}")
+        lines.extend(_option_lines(options))
         lines.append(analysis_cmd)
         if noise:
             lines.append("setplot previous")   # this run's spectra, not run 1's
@@ -2113,10 +2128,20 @@ def op(cirFile, save=None, step=None, params=None, options=None,
                    ``[("R", "1k"), ("C", "1n"), ("tau", "{1/(R*C)}")]``.
     :type params: list, NoneType
 
-    :param options: NGspice ``.options`` key-value pairs, e.g. ``{"RELTOL": 1e-5}``.
+    :param options: NGspice simulator options for this run, written as
+                    ``option name = value`` commands before the analysis,
+                    e.g. ``{"rshunt": "1e12", "reltol": "1e-5"}``. A value
+                    of ``None`` writes a flag without a value
+                    (``{"noopiter": None}``). Convergence aids for vendor
+                    macro-models with floating internal nodes: ``rshunt``
+                    (1e12) or ``gmin`` (1e-10); see the NGspice manual,
+                    chapter "Simulation options".
     :type options: dict, NoneType
 
-    :param behavior: NGspice compatibility mode (e.g. ``"ltpsa"``).
+    :param behavior: NGspice compatibility flags as ONE word, e.g.
+                     ``"ltpsa"`` (lt + ps + a): ps, lt, hs, spe, s3, ki,
+                     eg, and a for the whole netlist (without a, the
+                     syntax flags apply to .include'd libraries only).
                      ``None`` = not set.
     :type behavior: str, NoneType
 
@@ -2189,7 +2214,14 @@ def dc(cirFile, source, start, stop, incr, save=None,
                    ``(name, value)`` tuples (see :func:`op`).
     :type params: list, NoneType
 
-    :param options: NGspice ``.options`` dict.
+    :param options: NGspice simulator options for this run, written as
+                    ``option name = value`` commands before the analysis,
+                    e.g. ``{"rshunt": "1e12", "reltol": "1e-5"}``. A value
+                    of ``None`` writes a flag without a value
+                    (``{"noopiter": None}``). Convergence aids for vendor
+                    macro-models with floating internal nodes: ``rshunt``
+                    (1e12) or ``gmin`` (1e-10); see the NGspice manual,
+                    chapter "Simulation options".
     :type options: dict, NoneType
 
     :param behavior: NGspice compatibility mode.
@@ -2268,7 +2300,14 @@ def ac(cirFile, method, n, fstart, fstop, save=None,
                    ``(name, value)`` tuples (see :func:`op`).
     :type params: list, NoneType
 
-    :param options: NGspice ``.options`` dict.
+    :param options: NGspice simulator options for this run, written as
+                    ``option name = value`` commands before the analysis,
+                    e.g. ``{"rshunt": "1e12", "reltol": "1e-5"}``. A value
+                    of ``None`` writes a flag without a value
+                    (``{"noopiter": None}``). Convergence aids for vendor
+                    macro-models with floating internal nodes: ``rshunt``
+                    (1e12) or ``gmin`` (1e-10); see the NGspice manual,
+                    chapter "Simulation options".
     :type options: dict, NoneType
 
     :param behavior: NGspice compatibility mode.
@@ -2450,7 +2489,14 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
                    ``(name, value)`` tuples (see :func:`op`).
     :type params: list, NoneType
 
-    :param options: NGspice ``.options`` dict.
+    :param options: NGspice simulator options for this run, written as
+                    ``option name = value`` commands before the analysis,
+                    e.g. ``{"rshunt": "1e12", "reltol": "1e-5"}``. A value
+                    of ``None`` writes a flag without a value
+                    (``{"noopiter": None}``). Convergence aids for vendor
+                    macro-models with floating internal nodes: ``rshunt``
+                    (1e12) or ``gmin`` (1e-10); see the NGspice manual,
+                    chapter "Simulation options".
     :type options: dict, NoneType
 
     :param behavior: NGspice compatibility mode.
@@ -2608,7 +2654,14 @@ def noise(cirFile, output, input_src, method, n, fstart, fstop, save=None,
                    ``(name, value)`` tuples (see :func:`op`).
     :type params: list, NoneType
 
-    :param options: NGspice ``.options`` dict.
+    :param options: NGspice simulator options for this run, written as
+                    ``option name = value`` commands before the analysis,
+                    e.g. ``{"rshunt": "1e12", "reltol": "1e-5"}``. A value
+                    of ``None`` writes a flag without a value
+                    (``{"noopiter": None}``). Convergence aids for vendor
+                    macro-models with floating internal nodes: ``rshunt``
+                    (1e12) or ``gmin`` (1e-10); see the NGspice manual,
+                    chapter "Simulation options".
     :type options: dict, NoneType
 
     :param behavior: NGspice compatibility mode.

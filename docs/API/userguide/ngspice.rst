@@ -28,6 +28,38 @@ All of them accept:
 
 Numbers are written in SLiCAP notation (``"10M"``, ``"2p"``), not in NGspice notation (``10MEG``).
 
+Compatibility mode
+------------------
+
+Netlists and device libraries written for other simulators use syntax that NGspice reads only in a compatibility mode. Every analysis function has the keyword ``behavior``, which is passed to NGspice as its variable ``ngbehavior`` (NGspice manual, section 12.11.1). NGspice reads the keyword by scanning it for the following two-letter flags, so a combination is written as one word: ``"ltpsa"`` is ``lt`` + ``ps`` + ``a``.
+
+.. csv-table::
+    :header: "Flag", "Meaning"
+    :widths: auto
+
+    "``ps``", "PSPICE syntax"
+    "``lt``", "LTSPICE syntax"
+    "``hs``", "HSPICE syntax (``ps`` and ``hs`` are mutually exclusive; NGspice switches to ``ps``)"
+    "``spe``", "Spectre syntax"
+    "``s3``", "Spice3 behaviour, disables some NGspice extensions"
+    "``ki``", "KiCad vector names that contain a slash"
+    "``eg``", "EAGLE compatible voltage vector output"
+    "``a``", "transform the **whole netlist**; without it the selected syntax applies to libraries added with ``.include`` only"
+
+The last flag is the one that matters in practice: a device model written in PSPICE syntax inside the circuit itself needs ``behavior="psa"``, and ``behavior="ps"`` leaves it untouched. In the schematic editor the flags are check boxes on the NGspice instruction dialog.
+
+Simulator options
+-----------------
+
+Every analysis function has the keyword ``options``: a dictionary of NGspice simulator options (NGspice manual, chapter 11) that holds for this run only. Each entry is written as an ``option name = value`` command before the analysis; a value of ``None`` writes a flag without a value. Numbers are written in SLiCAP notation.
+
+.. code-block:: python
+
+    OP1 = sl.op("myAmp", behavior="psa", options={"rshunt": "1e12"})
+    TR1 = sl.tran("myAmp", "1n", "1u", options={"method": "gear", "reltol": "1e-4"})
+
+The first line is the usual cure for a vendor macro-model that does not converge. Such models often have internal nodes without a DC path to ground (a node between two zener diodes, or between a current source and an inductor); NGspice then reports ``singular matrix`` and gmin stepping, source stepping and the transient operating point all fail. ``rshunt`` adds a resistance from every node to ground, ``gmin`` (``"1e-10"``) adds a conductance across every pn junction; both give the model an operating point without affecting the results. Loosening ``reltol`` or ``abstol`` does not help in this case. In the schematic editor the options are a table on the NGspice instruction dialog.
+
 The result objects are post-processed with the functions of the `trace model <plots.html#work-with-traces>`_: `make_traces() <../reference/SLiCAPtraces.html#SLiCAP.SLiCAPtraces.make_traces>`__ builds traces from expressions over the simulated vectors, `measure() <../reference/SLiCAPtraces.html#SLiCAP.SLiCAPtraces.measure>`__ reduces them to numbers with goal functions, and `plot() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.plot>`__ plots the traces. NGspice's own vector names, ``v(out)``, ``i(v2)``, ``onoise_spectrum``, are not Python identifiers; the keyword ``variables`` of these functions maps them onto names of your own.
 
 .. admonition:: Important

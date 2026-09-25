@@ -25,7 +25,7 @@ It follows a classic model–view split:
 The following diagram shows the main modules and their relationships::
 
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  symbol_library.py  ─── Symbols.svg + user lib/*.svg                │
+    │  symbol_library.py  ─── Symbols.slicap_sym + lib/*.slicap_sym                │
     │  (SymbolLibrary / Symbol)   reads: SVG <g id>; writes: component_item│
     │                             module dicts + SVG bytes for rendering   │
     └──────────────────────────────┬──────────────────────────────────────┘
@@ -76,7 +76,7 @@ Layer 1 — Symbol Definitions (``symbol_library.py``)
 
 **What it contains:**
 All schematic symbol definitions live in one SVG bundle file,
-``app/symbols/Symbols.svg``.  Each symbol is a single ``<g id="name">``
+``files/symbols/slicap/Symbols.slicap_sym``.  Each symbol is a single ``<g id="name">``
 element inside the SVG ``<defs>`` block.  User-defined symbols are individual
 ``*.svg`` files placed in the project's ``lib/`` directory; their ``<g>``
 elements are parsed by the same loader and added to (or override) the bundle.

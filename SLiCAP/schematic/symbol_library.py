@@ -349,19 +349,39 @@ class SymbolLibrary:
                     skipped.append(g.get("id"))
         return skipped
 
-    def add_user_library(self, directory, exclude_stems=()) -> None:
-        """Load user symbol libraries from a directory's ``*.svg`` files, AFTER
-        the system bundle, so they ADD new symbols or REDEFINE (override) system
-        ones.  Files whose stem is in ``exclude_stems`` are skipped — e.g. a
-        generated subcircuit block symbol, which pairs with a ``<name>.lib`` and
-        loads only when its block is placed, never into a fresh schematic."""
+    def add_user_library(self, directory, exclude_stems=(),
+                         sch_type="slicap") -> None:
+        """Load the symbol library files of *sch_type* from a directory, AFTER
+        the system bundle, so they ADD new symbols or REDEFINE (override)
+        system ones: ``*.slicap_sym`` for SLiCAP, ``*.spice_sym`` for
+        NGspice, plus the legacy ``*_<type>_symbol.svg`` of that dialect.
+        A plain ``*.svg`` carries no dialect and is loaded for BOTH, with a
+        warning (2026-09-25). Files whose stem is in ``exclude_stems`` are
+        skipped."""
         directory = Path(directory)
         if not directory.is_dir():
             return
-        parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
+        kind = "ngspice" if sch_type == "ngspice" else "slicap"
+        other = "slicap" if kind == "ngspice" else "ngspice"
+        files = sorted(directory.glob("*" + SYMBOL_EXT[kind]))
+        files += sorted(directory.glob("*" + LEGACY_SUFFIX[kind]))
         for svg_file in sorted(directory.glob("*.svg")):
+            if svg_file.name.endswith(LEGACY_SUFFIX[kind]):
+                continue                                  # counted above
+            if svg_file.name.endswith(LEGACY_SUFFIX[other]):
+                continue                                  # the other dialect
+            print("Warning: %s carries no dialect (.slicap_sym or "
+                  ".spice_sym) and is offered on every schematic type."
+                  % svg_file.name)
+            files.append(svg_file)
+        for svg_file in files:
             if svg_file.stem in exclude_stems:
                 continue
+            # One parser PER FILE: a TreeBuilder parser is consumed by its
+            # first parse and returns an empty tree afterwards, so with one
+            # parser for the loop only the first file loaded (found
+            # 2026-09-25 when a project lib/ first held several files).
+            parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
             try:
                 root = ET.parse(svg_file, parser).getroot()
             except ET.ParseError:
@@ -417,8 +437,54 @@ class SymbolLibrary:
 
 # ── the ONE way a library is built (Anton, 2026-08-03) ────────────────────────
 
-SLICAP_SVG   = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "Symbols.svg"
-NGSPICE_SVG  = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.svg"
+# Symbol library files carry their dialect in the EXTENSION, like schematics
+# (.slicap_sch / .spice_sch) and subcircuit libraries (.slicap_lib /
+# .spice_lib): a .slicap_sym or .spice_sym file is plain SVG inside (Anton,
+# 2026-09-25). Before that, project symbols were '<name>_slicap_symbol.svg'
+# and '<name>_spice_symbol.svg': still READ, and renamed on project load
+# (migrate_symbol_files).
+SYMBOL_EXT    = {"slicap": ".slicap_sym", "ngspice": ".spice_sym"}
+LEGACY_SUFFIX = {"slicap": "_slicap_symbol.svg", "ngspice": "_spice_symbol.svg"}
+SLICAP_SVG   = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "Symbols.slicap_sym"
+NGSPICE_SVG  = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.spice_sym"
+
+
+def symbol_file_name(name: str, sch_type: str) -> str:
+    """``<name>.slicap_sym`` or ``<name>.spice_sym``."""
+    return name + SYMBOL_EXT["ngspice" if sch_type == "ngspice" else "slicap"]
+
+
+def symbol_path_in(libdir, name: str, sch_type: str) -> Path:
+    """Where a project symbol *name* of *sch_type* lives in ``libdir``: the
+    current name, or the legacy one when only that exists."""
+    libdir = Path(libdir)
+    kind = "ngspice" if sch_type == "ngspice" else "slicap"
+    current = libdir / (name + SYMBOL_EXT[kind])
+    legacy = libdir / (name + LEGACY_SUFFIX[kind])
+    return legacy if (legacy.is_file() and not current.is_file()) else current
+
+
+def migrate_symbol_files(libdir) -> list:
+    """Rename legacy '<name>_<type>_symbol.svg' files in *libdir* to the
+    extension form. Returns the (old, new) pairs renamed; prints one note
+    per file. Nothing references the old names except the banner comment
+    of a generated subcircuit library, which is documentation."""
+    libdir = Path(libdir)
+    done = []
+    if not libdir.is_dir():
+        return done
+    for kind, suffix in LEGACY_SUFFIX.items():
+        for old in sorted(libdir.glob("*" + suffix)):
+            new = old.with_name(old.name[:-len(suffix)] + SYMBOL_EXT[kind])
+            if new.exists():
+                continue
+            try:
+                old.rename(new)
+            except OSError:
+                continue
+            print("Renamed symbol file %s -> %s" % (old.name, new.name))
+            done.append((old, new))
+    return done
 
 # overlay=NO_BUNDLE: build WITHOUT any frozen bundle.  Distinct from
 # overlay=None (which means "the schematic's own bundle"): the reload actions
@@ -481,9 +547,11 @@ def build_library(schematic_path=None, sch_type="slicap", config=None,
     else:
         library = SymbolLibrary(SLICAP_SVG)
         if config != "basic":
-            # every other SVG beside the system one: Symbols-extended.svg
+            # every other library file beside the system one:
+            # Symbols-extended.slicap_sym
             library.add_user_library(SLICAP_SVG.parent,
-                                     exclude_stems={"Symbols"})
+                                     exclude_stems={"Symbols"},
+                                     sch_type="slicap")
     if schematic_path is not None:
         libdir = project.subdir_for(schematic_path, "lib")
         stems = set(exclude_stems)
@@ -494,10 +562,8 @@ def build_library(schematic_path=None, sch_type="slicap", config=None,
         # Excluding them was a PALETTE concern implemented at the library
         # level, and it made the bundle the only carrier. Only the OTHER
         # type's block symbols stay out.
-        other = ("*_slicap_symbol.svg" if sch_type == "ngspice"
-                 else "*_spice_symbol.svg")
-        stems |= {p.stem for p in libdir.glob(other)}
-        library.add_user_library(libdir, exclude_stems=stems)
+        library.add_user_library(libdir, exclude_stems=stems,
+                                 sch_type=sch_type)
     if overlay is None and schematic_path is not None:
         overlay = project.symbols_path_for(schematic_path)
     if overlay is not None and overlay is not NO_BUNDLE:

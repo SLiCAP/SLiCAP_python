@@ -67,7 +67,7 @@ def startSchematic(config=None, file=None):
 
         - ``None`` *(default)*: both SLiCAP and NGspice schematics allowed;
           the symbol set is chosen per schematic.
-        - ``'basic'``: SLiCAP only, basic symbol library (``Symbols.svg``
+        - ``'basic'``: SLiCAP only, basic symbol library (``Symbols.slicap_sym``
           only).  Intended for external callers that embed the editor and
           want only the standard set.  "New NGspice Schematic" is disabled.
         - ``'slicap'``: SLiCAP only, full symbol library (all SVG files in

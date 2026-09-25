@@ -315,7 +315,7 @@ def build_ngspice_subckt(
     # able to lie to a tool.
     banner = ["*" * 50,
               "* NGspice subcircuit definition",
-              f"* Subcircuit symbol: {name}_spice_symbol.svg",
+              f"* Subcircuit symbol: {name}.spice_sym",
               f"* Subcircuit schematic: {name}.spice_sch",
               "*" * 50]
 

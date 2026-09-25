@@ -211,7 +211,7 @@ def build_subcircuit(
     # able to lie to a tool.
     banner = ["*" * 50,
               "* SLiCAP subcircuit definition",
-              f"* Subcircuit symbol: {name}_slicap_symbol.svg",
+              f"* Subcircuit symbol: {name}.slicap_sym",
               f"* Subcircuit schematic: {name}.slicap_sch",
               "*" * 50]
 
