@@ -822,10 +822,17 @@ class NGspiceAnalysisDialog(QDialog):
 
         self._refresh_output_vars()   # the tab the dialog OPENS on
         self._update()
-        self._set_default_size(left_panel, right_panel)
+        self._set_default_size(left_panel, right_panel, content, buttons)
 
-    def _set_default_size(self, left_panel, right_panel) -> None:
-        """Open wide enough to show every field in full, tabs excepted.
+    def _set_default_size(self, left_panel, right_panel, content,
+                          buttons) -> None:
+        """Open wide enough to show every field in full, tabs excepted, and
+        tall enough to show the whole body without scrolling.
+
+        The height was a fixed 700 px, which hid the lower groups of the
+        right column (Anton, 2026-09-25); it is now the body's own size hint,
+        with the optional groups collapsed to their title line
+        (collapsible_body), capped by the screen.
 
         A hard-coded 880 px cut into the right column: the saved-signals line,
         its hint and the parameter-table hint wrapped or clipped (Anton,
@@ -838,7 +845,8 @@ class NGspiceAnalysisDialog(QDialog):
         spacing = 6 * 2 + 24            # column spacing + the scroll bar
         width = (left_panel.sizeHint().width() + right_panel.sizeHint().width()
                  + m.left() + m.right() + spacing)
-        height = 700
+        height = (content.sizeHint().height() + buttons.sizeHint().height()
+                  + m.top() + m.bottom() + 12)
         screen = self.screen() or QGuiApplication.primaryScreen()
         if screen is not None:
             available = screen.availableGeometry()

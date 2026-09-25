@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from .component_item import strip_braces
+from .param_table import collapsible_body
 from .source_stimuli_dialog import (
     SourceStimuliDialog, _WAVEFORM_FIELDS, _param_key,
 )
@@ -112,7 +113,7 @@ class SourceStimuliTable(QGroupBox):
         self.setChecked(False)
         self.toggled.connect(lambda *_: self.changed.emit())
 
-        outer = QVBoxLayout(self)
+        outer = collapsible_body(self)
 
         self._table = QTableWidget(0, 2)
         self._table.setHorizontalHeaderLabels(["Source", "Stimulus"])

@@ -24,8 +24,29 @@ from .value_fields import is_value
 from PySide6.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView,
-    QComboBox,
+    QComboBox, QWidget,
 )
+
+
+def collapsible_body(group: QGroupBox) -> QVBoxLayout:
+    """The body layout of a checkable group box that is HIDDEN while the box
+    is unchecked, so an unused group costs one title line.
+
+    The instruction dialogs stack several optional tables; each empty table
+    with its buttons and hint took ~280 px, which pushed the lower groups off
+    a 700 px dialog (Anton, 2026-09-25).  Ticking the box expands the body in
+    place; a prefilled group (append-only editing) is checked and therefore
+    open.  For a non-checkable group the body is always visible.
+    """
+    outer = QVBoxLayout(group)
+    body = QWidget()
+    layout = QVBoxLayout(body)
+    layout.setContentsMargins(0, 0, 0, 0)
+    outer.addWidget(body)
+    if group.isCheckable():
+        body.setVisible(group.isChecked())
+        group.toggled.connect(body.setVisible)
+    return layout
 
 
 # Default width of a parameter-name column/field, shared by every widget in the
@@ -56,7 +77,7 @@ class ParamTable(QGroupBox):
             self.setChecked(False)
             self.toggled.connect(lambda *_: self.changed.emit())
 
-        outer = QVBoxLayout(self)
+        outer = collapsible_body(self)
 
         self._table = QTableWidget(0, 2)
         self._table.setHorizontalHeaderLabels(["Parameter", "Value"])
