@@ -195,6 +195,16 @@ class Style:
         # LaTeX fragments and images scale per instance in their dialogs.
         self.SCALE_PARAMETER_TABLE = self._i("scales", "parameter_table", 60)
 
+        # Border (export frame): the look a NEW border gets; each border then
+        # keeps its own values in the schematic file (Border dialog). A book
+        # sets its figure background here once, e.g. bg_color = #ecf3ff,
+        # bg_alpha = 100, show_line_in_export = false (Anton, 2026-09-26).
+        self.BORDER_LINE_COLOR = self._c("border", "line_color", "#5050b4")
+        self.BORDER_LINE_WIDTH = self._f("border", "line_width", 0.8)
+        self.BORDER_BG_COLOR   = self._c("border", "bg_color",   "#ffffff")
+        self.BORDER_BG_ALPHA   = self._i("border", "bg_alpha",   0)
+        self.BORDER_SHOW_LINE  = self._b("border", "show_line_in_export", True)
+
     # -- Preferences-dialog protocol --------------------------------------------
 
     def snapshot(self) -> configparser.ConfigParser:

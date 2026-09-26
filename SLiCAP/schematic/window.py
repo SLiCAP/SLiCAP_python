@@ -148,7 +148,6 @@ class CanvasPanel(QWidget):
         self._doc_props = DocumentProperties.new()
         self._dirty = False
         self._library = None
-        self._symbol_loop_name: str | None = None
         # This panel's own drawing style — a new schematic starts from the
         # style.ini defaults; _load_file replaces it with the file's sidecar
         # style.  Items resolve it through the scene (config.style_of), so
@@ -190,6 +189,7 @@ class CanvasPanel(QWidget):
         self._scene.sch_type = sch_type   # "slicap" | "ngspice"; the library editor reads it
         self._view  = SchematicView(self._scene)
         self._scene.data_changed.connect(lambda: setattr(self, '_dirty', True))
+        self._scene.placing_cancelled.connect(self._on_placement_cancelled)
         # The scene's double-click edit of an analysis block uses the same
         # candidate lists as Place → Define src / det / lg ref.
         self._scene.analysis_candidates = self._analysis_candidates
@@ -817,6 +817,13 @@ class CanvasPanel(QWidget):
                               bg_color=item.bg_color,
                               bg_alpha=item.bg_alpha)
                 break
+        if not kwargs:                    # a new border: the style's look
+            st = self._style
+            kwargs = dict(show_in_export=st.BORDER_SHOW_LINE,
+                          line_color=st.BORDER_LINE_COLOR.name(),
+                          line_width=st.BORDER_LINE_WIDTH,
+                          bg_color=st.BORDER_BG_COLOR.name(),
+                          bg_alpha=st.BORDER_BG_ALPHA)
         dlg = BorderDialog(parent=self, **kwargs)
         if dlg.exec():
             self._scene.start_border_placement(dlg.border_properties())
@@ -1044,22 +1051,31 @@ class CanvasPanel(QWidget):
             self._scene._open_net_label(wires[0])
 
     def _on_place_component(self, pre_select: str | None = None):
+        """Place -> Component...: pick a symbol and start placing it; every
+        click places one instance. When the user ends the placement with
+        Escape, the scene reports the symbol name through placing_cancelled
+        and _on_placement_cancelled offers it again. The loop keeps no state
+        here: the scene owns the name of the symbol being placed."""
         from .place_symbol_dialog import PlaceSymbolDialog
-        dlg = PlaceSymbolDialog(self._library, self, pre_select=pre_select)
+        dlg = PlaceSymbolDialog(self._library, self, pre_select=pre_select or None)
         if dlg.exec() and dlg.selected_name():
-            self._symbol_loop_name = dlg.selected_name()
-            svg = self._library.svg_bytes(self._symbol_loop_name)
+            name = dlg.selected_name()
+            svg = self._library.svg_bytes(name)
             if svg is not None:
-                self._scene.start_placement(self._symbol_loop_name, svg)
-            self._scene.placing_cancelled.connect(self._on_placement_esc)
-        else:
-            self._symbol_loop_name = None
+                self._scene.start_placement(name, svg)
 
-    def _on_placement_esc(self):
-        self._scene.placing_cancelled.disconnect(self._on_placement_esc)
-        last = self._symbol_loop_name
-        self._symbol_loop_name = None
-        self._on_place_component(pre_select=last)
+    def _on_placement_cancelled(self, name: str):
+        """The user ended a placement (Escape). A component placement comes
+        with its symbol name: offer it again. Other placements pass '', and
+        a placement superseded by another tool is reported as placing_ended,
+        not here, so no dialog appears for those.
+        (2026-09-26: replaces a connect/disconnect per placement, in which
+        the cancel inside start_placement reopened the dialog and nested a
+        second placement in the first; a deferred mode check in this
+        handler was tried the same day and REVERTED as a patch at the
+        wrong level.)"""
+        if name:
+            self._on_place_component(pre_select=name)
 
     # -- tools ----------------------------------------------------------------
 

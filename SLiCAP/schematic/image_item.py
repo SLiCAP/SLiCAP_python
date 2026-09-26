@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import Qt, QPointF, QSize, QRectF
 from PySide6.QtGui import QPixmap, QColor, QPainter, QPainterPath, QPen
 
-from .config import snap
 
 _PLACEHOLDER_COLOR = QColor(200, 200, 200)
 _SELECTED          = QStyle.State_Selected
@@ -26,6 +25,7 @@ class ImageItem(QGraphicsItem):
 
     Double-click opens a dialog to change the file or resize.
     """
+    SNAPS_TO_GRID = False   # an annotation: placed and dragged freely (canvas: group move, _FREE_PLACEMENT_MODES)
 
     def __init__(self, file_path: str, display_width: int, display_height: int,
                  pos: QPointF = QPointF(0, 0)):
@@ -129,6 +129,5 @@ class ImageItem(QGraphicsItem):
             painter.restore()
 
     def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemPositionChange:
-            return snap(value)
+        # No grid snap: an annotation (see canvas._FREE_PLACEMENT_MODES).
         return super().itemChange(change, value)

@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 
-from .config import snap, style_of
+from .config import style_of
 
 _PLACEHOLDER_COLOR = QColor(240, 240, 180)   # light yellow
 _PLACEHOLDER_TEXT  = "LaTeX\n(not rendered)"
@@ -48,6 +48,7 @@ class LatexFragmentItem(QGraphicsItem):
     display_width / display_height are in scene units.
     Double-click opens the LaTeX fragment dialog to edit and re-render.
     """
+    SNAPS_TO_GRID = False   # an annotation: placed and dragged freely (canvas: group move, _FREE_PLACEMENT_MODES)
 
     def __init__(self, latex_code: str, preamble_path: str,
                  display_width: int, display_height: int,
@@ -114,6 +115,5 @@ class LatexFragmentItem(QGraphicsItem):
             self.prepareGeometryChange()
             self._load_renderer()
             self.update()
-        if change == QGraphicsItem.ItemPositionChange:
-            return snap(value)
+        # No grid snap: an annotation (see canvas._FREE_PLACEMENT_MODES).
         return super().itemChange(change, value)

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QGridLayout, QLabel, QDoubleSpinBox, QComboBox,
     QCheckBox, QDialogButtonBox, QLayout, QPushButton, QSpinBox,
@@ -20,7 +20,10 @@ def _units_per() -> dict:
 
 
 class _ColorButton(QPushButton):
-    """Small swatch button opening a QColorDialog."""
+    """Small swatch button opening a QColorDialog. Emits ``changed`` with the
+    new colour name when the user picked one."""
+
+    changed = Signal(str)
 
     def __init__(self, color: str, parent=None):
         super().__init__(parent)
@@ -38,6 +41,7 @@ class _ColorButton(QPushButton):
         if c.isValid():
             self._color = c.name()
             self._apply()
+            self.changed.emit(self._color)
 
     def color(self) -> str:
         return self._color
@@ -136,6 +140,11 @@ class BorderDialog(QDialog):
             "(no background), 100 % = solid. The background is the "
             "bottom layer.")
         grid.addWidget(self._bg_alpha, 3, 2)
+        # A colour chosen at opacity 0 was invisible on the canvas and in the
+        # export, and looked like a bug (Anton, 2026-09-26): choosing a
+        # colour means showing it.
+        self._bg_color.changed.connect(
+            lambda _c: self._bg_alpha.setValue(100) if self._bg_alpha.value() == 0 else None)
 
         outer.addLayout(grid)
 

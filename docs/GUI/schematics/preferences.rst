@@ -53,3 +53,19 @@ The dialog is grouped by element type, including:
   images.
 
 Changes take effect immediately on the canvas.
+
+Border
+======
+
+The **Border** group sets the look that a *new* border gets when it is placed
+(Place > Border): line colour and width, background colour and opacity, and
+whether the dashed line is drawn in the exported SVG/PDF. An existing border
+keeps its own values, edited in the Border dialog. A background at opacity
+0 % is invisible; choosing a background colour in the Border dialog therefore
+sets the opacity to 100 % when it was 0 %.
+
+For figures in a document, set the background here once per schematic style,
+e.g. ``bg_color = #ecf3ff``, ``bg_alpha = 100``, ``show_line_in_export =
+false`` in the ``[border]`` section of the schematic's ``.ini`` sidecar, and
+give every border the width of the document column (see the ``sch_scale``
+setting under :doc:`/GUI/project/project`).

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem, QGraphicsSimpleTextItem,
 )
 from PySide6.QtCore import Qt, QPointF, QRectF, Signal, QTimer
-from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPainterPath, QTransform, QTextCursor
+from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPainterPath, QTransform, QTextCursor, QPixmap
 
 from . import config as _config
 from .config import (
@@ -49,6 +49,9 @@ class _Mode(Enum):
     DRAWING_LINE        = auto()
     DRAWING_RECT        = auto()
     DRAWING_CIRCLE      = auto()
+
+_FREE_PLACEMENT_MODES = (_Mode.PLACING_TEXT, _Mode.PLACING_HYPERLINK,
+                         _Mode.PLACING_IMAGE, _Mode.PLACING_LATEX)
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -168,10 +171,28 @@ def _find_junction_points(wires, components) -> set[tuple[int, int]]:
 
 # ── scene ─────────────────────────────────────────────────────────────────────
 
+# Annotations are placed and dragged FREELY; everything that connects or
+# aligns with wires (components, wires, junctions, border, shapes, the
+# parameter / analysis / model / library / command blocks) snaps to the
+# grid. Free text and LaTeX fragments used to snap while component labels
+# did not, which made captions such as "+", "-" and a voltage name
+# impossible to align with a symbol (Anton, 2026-09-26). The item classes
+# of these kinds do not snap in itemChange either. The set itself,
+# _FREE_PLACEMENT_MODES, is defined right after _Mode.
+
+
 class SchematicScene(QGraphicsScene):
 
-    placing_started   = Signal()
-    placing_cancelled = Signal()
+    # Placement signals, one meaning each (2026-09-26; before, placing_cancelled
+    # fired for EVERY way a placement ended, and the window read it as "the user
+    # cancelled": starting a new placement then reopened the symbol dialog).
+    placing_started   = Signal()      # a placing / drawing / paste mode became
+                                      # active (view: NoDrag, cross cursor)
+    placing_ended     = Signal()      # the scene left that mode, for any reason:
+                                      # placed, superseded, cancelled (view: normal)
+    placing_cancelled = Signal(str)   # the USER ended it (Escape): the symbol
+                                      # name of a component placement, '' otherwise
+                                      # (window: offer that symbol again)
     wire_mode_started = Signal()
     wire_mode_ended   = Signal()
     data_changed      = Signal()   # emitted on every new undo snapshot
@@ -296,6 +317,7 @@ class SchematicScene(QGraphicsScene):
 
         self._group_drag_active      = False   # suppresses itemChange rubber-banding
         self._comp_group_move_start: QPointF | None = None
+        self._comp_group_move_snaps  = True    # False: a group of annotations only
         self._comp_group_move_items: list = []   # [(item, orig_QPointF)]
         self._wire_group_move_data:  list = []   # [(wire, [orig_QPointF, ...])]
         # Unselected wire points attached to the group at drag START, moved
@@ -515,7 +537,7 @@ class SchematicScene(QGraphicsScene):
         self._paste_ghost_items.clear()
 
         self._mode = _Mode.NORMAL
-        self.placing_cancelled.emit()
+        self.placing_ended.emit()
 
         if not self._clipboard or self._paste_ref is None:
             self._paste_ref = None
@@ -617,7 +639,13 @@ class SchematicScene(QGraphicsScene):
         self.placing_started.emit()
 
     def cancel_placement(self):
+        """The user ends the current placement (Escape). Leaves the mode
+        first, then reports the cancel with the symbol name of a component
+        placement, so that a listener can offer that symbol again in a
+        scene that is already back in normal mode."""
+        name = self._placing_name if self._mode == _Mode.PLACING else None
         self._cancel_placement()
+        self.placing_cancelled.emit(name or "")
 
     def _cancel_placement(self):
         if self._ghost is not None:
@@ -647,7 +675,7 @@ class SchematicScene(QGraphicsScene):
         self._draw_anchor = None
         self._draw_pts    = []
         self._draw_kind   = None
-        self.placing_cancelled.emit()
+        self.placing_ended.emit()
 
     def _next_id(self, symbol_name: str) -> str:
         # Number per-PREFIX (not per-symbol): symbols that share a refdes prefix
@@ -671,11 +699,11 @@ class SchematicScene(QGraphicsScene):
                                         cache_dir=self.cache_dir)
         return svg_bytes
 
-    def _ghost_pixmap(self, svg_bytes) -> "QPixmap":
+    def _ghost_pixmap(self, svg_bytes) -> QPixmap:
         """Placement-ghost pixmap at the DERIVED display size (natural SVG
         size × the schematic's table-scale preference) — the size the placed
         item will actually get."""
-        from PySide6.QtGui import QPixmap, QPainter as _QPainter
+        from PySide6.QtGui import QPainter as _QPainter
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
         from .parameter_item import svg_scene_size
@@ -979,7 +1007,7 @@ class SchematicScene(QGraphicsScene):
     def start_image_placement(self, file_path: str, width: int, height: int):
         from pathlib import Path as _Path
         from PySide6.QtWidgets import QGraphicsPixmapItem
-        from PySide6.QtGui import QPixmap, QPainter as _QPainter
+        from PySide6.QtGui import QPainter as _QPainter
         self._end_wire(commit=False)
         self._cancel_placement()
         w, h = max(1, width), max(1, height)
@@ -1016,7 +1044,7 @@ class SchematicScene(QGraphicsScene):
     def start_latex_placement(self, latex_code: str, preamble_path: str,
                               width: int, height: int):
         from PySide6.QtWidgets import QGraphicsPixmapItem
-        from PySide6.QtGui import QPixmap, QPainter as _QPainter
+        from PySide6.QtGui import QPainter as _QPainter
         self._end_wire(commit=False)
         self._cancel_placement()
         svg_bytes = self._render_ghost_latex(latex_code, preamble_path)
@@ -1129,7 +1157,7 @@ class SchematicScene(QGraphicsScene):
         if self._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_RECT,
                            _Mode.DRAWING_CIRCLE):
             self._mode = _Mode.NORMAL
-            self.placing_cancelled.emit()
+            self.placing_ended.emit()
 
     def _update_draw_ghost(self, scene_pos: QPointF) -> None:
         from .shape_item import ShapeItem
@@ -2097,8 +2125,16 @@ class SchematicScene(QGraphicsScene):
 
     # ── scene events ─────────────────────────────────────────────────────────
 
+    def _place_pos(self, event) -> QPointF:
+        """Where a placed item goes: the raw pointer position for an
+        annotation, the grid point for everything else (see
+        _FREE_PLACEMENT_MODES)."""
+        if self._mode in _FREE_PLACEMENT_MODES:
+            return event.scenePos()
+        return snap(event.scenePos())
+
     def mousePressEvent(self, event):
-        pos = snap(event.scenePos())
+        pos = self._place_pos(event)
 
         if self._mode == _Mode.PLACING and event.button() == Qt.LeftButton:
             self._push_undo()
@@ -2419,10 +2455,19 @@ class SchematicScene(QGraphicsScene):
                         and not i.parentItem().isSelected()
                     ]
                     if len(non_wire_sel) + len(loose_labels) > 1 and non_wire_sel:
-                        self._comp_group_move_start = snap(raw)
                         self._comp_group_move_items = [
                             (i, QPointF(i.pos())) for i in non_wire_sel
                         ]
+                        # A group of annotations only (free text, LaTeX,
+                        # hyperlinks, images: SNAPS_TO_GRID = False) moves
+                        # freely; as soon as the group holds a grid item or
+                        # a wire, the delta is a grid multiple so that those
+                        # stay on grid while the annotations keep their
+                        # offsets (Anton, 2026-09-27).
+                        self._comp_group_move_snaps = (
+                            any(getattr(i, "SNAPS_TO_GRID", True) for i in non_wire_sel)
+                            or any(isinstance(w, WireItem) for w in self.selectedItems()))
+                        self._comp_group_move_start = snap(raw) if self._comp_group_move_snaps else QPointF(raw)
                         self._label_group_move_items = [
                             (lbl, lbl.parentItem().mapToScene(lbl.pos()))
                             for lbl in loose_labels
@@ -2572,7 +2617,7 @@ class SchematicScene(QGraphicsScene):
                            _Mode.PLACING_PARAMETER, _Mode.PLACING_ANALYSIS,
                            _Mode.PLACING_HYPERLINK, _Mode.PLACING_MODEL)
                 and self._ghost is not None):
-            self._ghost.setPos(pos)
+            self._ghost.setPos(self._place_pos(event))
 
         elif self._mode == _Mode.WIRING:
             self._refresh_preview(pos)
@@ -2609,7 +2654,7 @@ class SchematicScene(QGraphicsScene):
                 if junc.scene() is not None:
                     junc.setPos(orig_pos + delta)
             for other_item, ox, oy in self._wire_move_others:
-                other_item.setPos(snap(QPointF(ox + delta.x(), oy + delta.y())))
+                other_item.setPos(QPointF(ox + delta.x(), oy + delta.y()))   # delta is a grid multiple
             for (comp, local, wire, idx), pw in zip(self._wire_pin_anchors,
                                                      self._wire_pin_preview_wires):
                 if pw.scene() is None:
@@ -2632,29 +2677,31 @@ class SchematicScene(QGraphicsScene):
                 self._vdrag_pin_preview._rebuild()
 
         elif self._comp_group_move_start is not None:
-            total_delta = pos - self._comp_group_move_start
+            cur = pos if self._comp_group_move_snaps else event.scenePos()
+            total_delta = cur - self._comp_group_move_start
             if total_delta.x() != 0 or total_delta.y() != 0:
                 self._comp_group_move_moved = True
-            # Move all items with rubber-banding suppressed in ItemPositionHasChanged
+            # The group moves by ONE delta, applied as it is: start and
+            # pointer are both snapped, so the delta is a grid multiple and
+            # grid items stay on grid, while annotations (free text, LaTeX,
+            # hyperlinks, images) keep their fractional positions. Snapping
+            # each item's new position instead made every annotation in the
+            # group jump onto the grid at the first drag step (Anton,
+            # 2026-09-27; see _FREE_PLACEMENT_MODES).
             self._group_drag_active = True
             for itm, orig_pos in self._comp_group_move_items:
-                itm.setPos(snap(orig_pos + total_delta))
+                itm.setPos(orig_pos + total_delta)
             self._group_drag_active = False
-            # Loose labels: same delta, unsnapped, in their parent's frame.
+            # Loose labels: same delta, in their parent's frame.
             if self._comp_group_move_items:
-                ref_itm, ref_orig = self._comp_group_move_items[0]
-                label_delta = snap(ref_orig + total_delta) - ref_orig
+                label_delta = total_delta
                 for lbl, orig_scene in self._label_group_move_items:
                     parent = lbl.parentItem()
                     if parent is not None and parent.scene() is not None:
                         lbl.setPos(parent.mapFromScene(orig_scene + label_delta))
 
             # Selected wires: recompute ALL points from their stored originals.
-            if self._comp_group_move_items:
-                ref_itm, ref_orig = self._comp_group_move_items[0]
-                snap_delta = snap(ref_orig + total_delta) - ref_orig
-            else:
-                snap_delta = QPointF(0, 0)
+            snap_delta = total_delta if self._comp_group_move_items else QPointF(0, 0)
 
             for w, orig_pts in self._wire_group_move_data:
                 if w.scene() is None:
@@ -3110,7 +3157,6 @@ class SchematicScene(QGraphicsScene):
             else:
                 prefix   = item.prefix or "X"
                 view     = self.views()[0] if self.views() else None
-                win      = view.window() if view else None
                 panel    = view.parent() if view else None
                 sch_type = getattr(panel, '_sch_type', None)
                 show_stimuli = (sch_type == 'ngspice' and prefix in ("V", "I"))
@@ -3223,7 +3269,7 @@ class SchematicView(QGraphicsView):
         self.setMouseTracking(True)
 
         scene.placing_started.connect(self._on_active_mode)
-        scene.placing_cancelled.connect(self._on_normal_mode)
+        scene.placing_ended.connect(self._on_normal_mode)
         scene.wire_mode_started.connect(self._on_active_mode)
         scene.wire_mode_ended.connect(self._on_normal_mode)
         scene.group_move_started.connect(self._on_active_mode)

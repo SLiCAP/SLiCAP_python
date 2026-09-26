@@ -207,6 +207,13 @@ class PreferencesDialog(QDialog):
             ("Minor colour", "grid", "minor_color", cbtn(style.GRID_MINOR_COLOR)),
             ("Major colour", "grid", "major_color", cbtn(style.GRID_MAJOR_COLOR)),
         ])
+        group(right, "Border (new borders; the Border dialog edits an existing one)", [
+            ("Line colour",          "border", "line_color",          cbtn(style.BORDER_LINE_COLOR)),
+            ("Line width",           "border", "line_width",          fspin(style.BORDER_LINE_WIDTH, 0.2, 3.0)),
+            ("Background colour",    "border", "bg_color",            cbtn(style.BORDER_BG_COLOR)),
+            ("Background opacity %", "border", "bg_alpha",            ispin(style.BORDER_BG_ALPHA, 0, 100)),
+            ("Line in export",       "border", "show_line_in_export", check(style.BORDER_SHOW_LINE)),
+        ])
         group(right, "Wire handles / connections", [
             ("Handle colour",     "handles", "color",            cbtn(style.HANDLE_COLOR)),
             ("Handle size",       "handles", "size",             fspin(style.HANDLE_SIZE, 2.0, 12.0)),

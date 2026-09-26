@@ -55,3 +55,13 @@ Renaming components
 
 :menuselection:`Tools --> Rename Components…` renumbers reference designators in
 bulk — handy after a lot of editing.
+
+Placement and grid
+------------------
+
+Free text, LaTeX fragments, hyperlinks and images are annotations: they are
+placed and dragged freely, at any position, so that a caption such as a
+polarity sign or a voltage name can be aligned with a symbol. Everything that
+connects or aligns with wires (symbols, wires, junctions, the border, drawn
+shapes, and the parameter, analysis, model, library and command blocks) snaps
+to the grid.

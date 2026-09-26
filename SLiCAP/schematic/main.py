@@ -198,7 +198,7 @@ def main():
             f"{exc}\n\nPlease fix the symbol SVG file, then restart.",
         )
         sys.exit(1)
-    except Exception as exc:
+    except Exception:
         import traceback
         traceback.print_exc()
         sys.exit(1)

@@ -49,6 +49,21 @@ The created folders are: ::
     - SLiCAP.ini              # SLiCAP settings for the project
     - main.py                 # File that executes the instructions
     
+Schematic scale
+---------------
+
+The ``[gui]`` section of ``SLiCAP.ini`` holds ``sch_scale``, the number of
+scene units per millimetre. It fixes the physical size of an exported
+schematic (SVG and PDF) and of everything drawn in it: symbols have a fixed
+size in scene units (a resistor body is 10 x 20 units, the grid step is 5).
+The default is 3.5433 (90 / 25.4): one scene unit is one pixel of a 90 dpi
+Inkscape drawing, a resistor body prints 2.8 x 5.6 mm, and a border of 195
+units is 55 mm wide. The Border dialog takes the border size in mm or inch
+and converts with this value. Use the same value in every project of one
+document, so that symbols have the same size in all its figures. Projects
+created before September 2026 carry ``sch_scale = 2.0`` in their
+``SLiCAP.ini`` and keep their export size until the value is changed.
+
 Self-contained projects
 -----------------------
 

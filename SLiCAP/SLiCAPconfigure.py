@@ -167,9 +167,13 @@ def _generate_project_config():
                                     "vi"                    : "c"
                                     }
     # GUI/schematic settings: sch_scale = scene units per millimeter.
-    # Default 2 (resistor pin-to-pin = 50 units = 25 mm); book projects
-    # targeting narrow LaTeX figure widths use 4-5 (Anton, 2026-07-15).
-    project_config['gui']          = {'sch_scale'             : 2.0}
+    # Default 3.5433 = 90/25.4: one scene unit is one pixel of a 90 dpi
+    # Inkscape drawing, so a resistor body (10 x 20 units) prints 2.8 x 5.6 mm
+    # and a 55 mm margin figure is 195 units wide, like the SED book figures
+    # (Anton, 2026-09-26). The earlier default 2.0 (resistor 5 x 10 mm) stays
+    # in the SLiCAP.ini of projects created before; exports of those keep
+    # their size.
+    project_config['gui']          = {'sch_scale'             : 3.5433}
     project_config['display']      = {'Hz'                    : True,
                                     'Digits'                : 4,
                                     'notebook'              : False,
