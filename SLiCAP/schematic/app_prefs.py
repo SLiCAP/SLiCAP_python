@@ -126,3 +126,43 @@ def dir_excluded(name: str, excluded_dirs, rel_path: str | None = None) -> bool:
         elif name == e:
             return True
     return False
+
+
+# ── colour scheme (display theme) ─────────────────────────────────────────────
+
+COLOR_SCHEMES = ("system", "light", "dark")
+
+
+def get_color_scheme() -> str:
+    """'system' (follow the desktop), 'light' or 'dark'."""
+    cfg = _read()
+    try:
+        value = cfg["display"]["color_scheme"].strip().lower()
+    except KeyError:
+        return "system"
+    return value if value in COLOR_SCHEMES else "system"
+
+
+def set_color_scheme(value: str) -> None:
+    cfg = _read()
+    if "display" not in cfg:
+        cfg["display"] = {}
+    cfg["display"]["color_scheme"] = value if value in COLOR_SCHEMES else "system"
+    _write(cfg)
+
+
+def apply_color_scheme(app=None) -> None:
+    """Apply the preference to the running application's style hints (the
+    window chrome follows; the canvases follow through config.dark_theme_active)."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QGuiApplication
+    app = app or QGuiApplication.instance()
+    if app is None:
+        return
+    scheme = get_color_scheme()
+    target = {"light": Qt.ColorScheme.Light, "dark": Qt.ColorScheme.Dark}.get(scheme, Qt.ColorScheme.Unknown)
+    try:
+        app.styleHints().setColorScheme(target)
+    except Exception:
+        pass
+

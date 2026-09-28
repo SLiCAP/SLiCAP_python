@@ -1,9 +1,10 @@
 """
-Property dialog for ShapeItem — stroke, fill, line style, line ends.
+Property dialog for ShapeItem — stroke, fill, line style, line ends, rotation.
 
 Sections shown / hidden depending on shape kind:
-  fill      : rect, circle only
-  line ends : line only
+  fill      : rect, ellipse, polygon
+  line ends : line only (with the head width and length)
+  rotation  : rect, ellipse, polygon (a line is rotated by its points)
 """
 from .sizing import fix_chars, fit_contents
 from PySide6.QtWidgets import (
@@ -14,10 +15,11 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
-_KINDS_WITH_FILL     = {"rect", "circle"}
+_KINDS_WITH_FILL     = {"rect", "ellipse", "polygon"}
 _KINDS_WITH_LINEENDS = {"line"}
+_KINDS_WITH_ROTATION = {"rect", "ellipse", "polygon"}
 
-_LINE_STYLES = ["solid", "dashed", "dotted", "dash-dot"]
+_LINE_STYLES = ["none", "solid", "dashed", "dotted", "dash-dot"]
 _LINE_ENDS   = ["none", "arrow", "dot", "diamond"]
 _FILL_STYLES = ["none", "solid"]
 
@@ -91,10 +93,44 @@ class ShapeDialog(QDialog):
             self._end_end.setCurrentText(item.line_end_end)
             ef.addRow("End:", self._end_end)
 
+            self._head_width = QDoubleSpinBox()
+            self._head_width.setRange(0.5, 200.0)
+            self._head_width.setSingleStep(0.5)
+            self._head_width.setDecimals(1)
+            self._head_width.setValue(item.head_width)
+            fit_contents(self._head_width)
+            ef.addRow("Head width:", self._head_width)
+
+            self._head_length = QDoubleSpinBox()
+            self._head_length.setRange(0.5, 200.0)
+            self._head_length.setSingleStep(0.5)
+            self._head_length.setDecimals(1)
+            self._head_length.setValue(item.head_length)
+            fit_contents(self._head_length)
+            ef.addRow("Head length:", self._head_length)
+
             layout.addWidget(ends_box)
         else:
-            self._end_start = None
-            self._end_end   = None
+            self._end_start  = None
+            self._end_end    = None
+            self._head_width = None
+            self._head_length = None
+
+        # ── Rotation (rect / ellipse / polygon) ──────────────────────────────
+        if self._kind in _KINDS_WITH_ROTATION:
+            rot_box = QGroupBox("Rotation")
+            rf = QFormLayout(rot_box)
+            self._rotation = QDoubleSpinBox()
+            self._rotation.setRange(-360.0, 360.0)
+            self._rotation.setSingleStep(5.0)
+            self._rotation.setDecimals(1)
+            self._rotation.setSuffix(" deg")
+            self._rotation.setValue(item.rotation)
+            fit_contents(self._rotation)
+            rf.addRow("Angle:", self._rotation)
+            layout.addWidget(rot_box)
+        else:
+            self._rotation = None
 
         # ── Fill (rect / circle only) ─────────────────────────────────────────
         if self._kind in _KINDS_WITH_FILL:
@@ -147,3 +183,12 @@ class ShapeDialog(QDialog):
 
     def get_fill_color(self) -> str:
         return self._fill_btn.color() if self._fill_btn else "#ffffff"
+
+    def get_head_width(self) -> float:
+        return self._head_width.value() if self._head_width else 4.0
+
+    def get_head_length(self) -> float:
+        return self._head_length.value() if self._head_length else 6.0
+
+    def get_rotation(self) -> float:
+        return self._rotation.value() if self._rotation else 0.0

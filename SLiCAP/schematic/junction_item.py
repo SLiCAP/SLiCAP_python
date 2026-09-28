@@ -1,10 +1,10 @@
-from PySide6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem
+from PySide6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QStyle
 from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import QPen, QBrush, Qt
 
-from .config import snap, style_of, default_style, Z_JUNCTION
+from .config import snap, style_of, default_style, Z_JUNCTION, SELECTION_COLOR
 
-_SEL_PAD = 3.0  # extra space around the dot so the selection box appears around it
+_SEL_PAD = 3.0  # extra space around the dot: an easier click target
 
 
 def _pt_key(pt: QPointF) -> tuple:
@@ -12,6 +12,7 @@ def _pt_key(pt: QPointF) -> tuple:
 
 
 class JunctionItem(QGraphicsEllipseItem):
+    GRID_CRITICAL = True      # always snaps: connectivity (config.snap_pos)
     """
     Electrical junction dot — always user-managed.
 
@@ -39,6 +40,20 @@ class JunctionItem(QGraphicsEllipseItem):
     def boundingRect(self) -> QRectF:
         r = self._radius + _SEL_PAD
         return QRectF(-r, -r, 2.0 * r, 2.0 * r)
+
+    def paint(self, painter, option, widget=None):
+        # Selected: the dot itself in the selection colour, no box around it
+        # (like wires and shapes; Anton, 2026-09-27).
+        clean_option = option.__class__(option)
+        clean_option.state = option.state & ~QStyle.State_Selected
+        if option.state & QStyle.State_Selected:
+            painter.save()
+            painter.setPen(QPen(Qt.NoPen))
+            painter.setBrush(QBrush(SELECTION_COLOR))
+            painter.drawEllipse(self.rect())
+            painter.restore()
+        else:
+            super().paint(painter, clean_option, widget)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:

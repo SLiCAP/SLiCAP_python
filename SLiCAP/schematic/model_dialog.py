@@ -45,6 +45,15 @@ def _model_param_names(model_type: str) -> list:
     return []
 
 
+# NGspice device model types (ngspice manual, chapter "Model and device
+# parameters"): offered as suggestions, the field stays editable. Their
+# parameters are NOT prefilled: they differ per model level and are the
+# user's to take from the manual, unlike SLiCAP's fixed parameter sets
+# (Anton, 2026-09-28).
+_NGSPICE_MODEL_TYPES = ["D", "NPN", "PNP", "NJF", "PJF", "NMOS", "PMOS", "NMF", "PMF",
+                        "VDMOS", "R", "C", "L", "SW", "CSW", "URC", "LTRA"]
+
+
 def _find_slicap_preamble() -> str:
     from .parameter_dialog import _find_slicap_preamble as _find
     return _find()
@@ -59,8 +68,12 @@ class ModelDialog(QDialog):
                  show: bool = True,
                  edit_mode: bool = False,
                  style=None,
-                 parent=None):
+                 parent=None,
+                 sch_type: str = "slicap"):
         super().__init__(parent, Qt.Window)
+        # the dialect of the schematic the block belongs to: SLiCAP models
+        # have fixed parameter sets (prefilled), NGspice models do not
+        self._ngspice = (sch_type == "ngspice")
         from .config import default_style
         from .latex_label import LATEX_INSTALLED
         self._style = style or default_style()
@@ -104,6 +117,10 @@ class ModelDialog(QDialog):
         # ── parameter table ───────────────────────────────────────────────────
         outer.addWidget(QLabel("Parameters (name = value):"))
         self._table = QTableWidget(0, 2)
+        # an opaque cell editor: at a fractional display scale (Windows,
+        # 125 %) the editor's text sat a pixel off the cell's own text,
+        # showing as ghosting (a user's report, 2026-09-25)
+        self._table.setStyleSheet("QTableWidget QLineEdit { background: palette(base); }")
         self._table.setHorizontalHeaderLabels(["Name", "Value"])
         self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
@@ -151,15 +168,23 @@ class ModelDialog(QDialog):
     def _populate_type_combo(self, select: str = "") -> None:
         self._type_combo.blockSignals(True)
         self._type_combo.clear()
-        self._type_combo.addItems(_slicap_model_types())
+        if self._ngspice:
+            self._type_combo.setEditable(True)        # any NGspice model type
+            self._type_combo.addItems(_NGSPICE_MODEL_TYPES)
+        else:
+            self._type_combo.addItems(_slicap_model_types())
         if select:
             idx = self._type_combo.findText(select)
             if idx >= 0:
                 self._type_combo.setCurrentIndex(idx)
+            elif self._ngspice:
+                self._type_combo.setCurrentText(select)
         self._type_combo.blockSignals(False)
 
     def _refill_params(self) -> None:
         self._table.setRowCount(0)
+        if self._ngspice:
+            return                     # blank: the user adds the parameters
         for name in _model_param_names(self._type_combo.currentText()):
             self._add_row(name, "")
 
@@ -254,7 +279,7 @@ class ModelDialog(QDialog):
         return self._type_combo.currentText()
 
     def simulator(self) -> str:
-        return "SLiCAP"
+        return "SPICE" if self._ngspice else "SLiCAP"
 
     def get_params(self) -> list:
         return self._current_params()

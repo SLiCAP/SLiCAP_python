@@ -32,7 +32,7 @@ class PropertiesDialog(QDialog):
     "Show value" is also on (the checkbox is disabled otherwise).
     """
 
-    def __init__(self, item: ComponentItem, parent=None,
+    def __init__(self, item: ComponentItem, parent=None, library=None,
                  show_stimuli: bool = False, is_current: bool = False,
                  offer_dc_current: bool = False,
                  sch_ext=".slicap_sch"):
@@ -61,7 +61,9 @@ class PropertiesDialog(QDialog):
                 from .symbol_library import description_to_html
                 lines.append(description_to_html(desc))
             if info:
-                url = html.escape(info, quote=True)
+                from .doc_link import resolve_link
+                # a manual link opens the installed manual (doc_link)
+                url = html.escape(resolve_link(info), quote=True)
                 lines.append(f'<a href="{url}">{html.escape(info)}</a>')
             head.setText("<br>".join(lines))
             outer.addWidget(head)
@@ -156,6 +158,21 @@ class PropertiesDialog(QDialog):
         # the project lib/ (legacy sch/ still searched — Anton, 2026-08-05);
         # descending opens it in a new editable window.
         self._descend_path: Path | None = None
+        # ── another symbol for this component (Anton, 2026-09-27) ───────────
+        self._symbol_change: "tuple | None" = None
+        self._library = library
+        if library is not None:
+            from .change_symbol_dialog import candidates
+            others = [n for n in candidates(item, library) if n != item.symbol_name]
+            btn = QPushButton("Change symbol…")
+            if others:
+                btn.clicked.connect(self._change_symbol)
+            else:
+                btn.setEnabled(False)
+                btn.setToolTip("No other symbol with this number of pins"
+                               + ("" if item.prefix == "X" else " and this element type")
+                               + " in the library")
+            outer.addWidget(btn)
         if item.prefix == "X":
             # the extension follows the schematic TYPE (Anton, 2026-08-04:
             # subcircuits work for both dialects; only extensions differ)
@@ -195,6 +212,20 @@ class PropertiesDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
+
+    def _change_symbol(self) -> None:
+        from .change_symbol_dialog import ChangeSymbolDialog
+        dlg = ChangeSymbolDialog(self._item, self._library, self)
+        if dlg.exec():
+            sym = dlg.new_symbol()
+            if sym is not None:
+                self._symbol_change = (sym, dlg.reskinned_svg())
+
+    def symbol_change(self) -> "tuple | None":
+        """``(Symbol, svg_text)`` chosen with Change symbol…, or None. The
+        svg text is the re-skinned subcircuit symbol to persist (None for a
+        library symbol)."""
+        return self._symbol_change
 
     def _descend(self, src: Path) -> None:
         """Close the dialog and signal the caller to open ``src`` for editing."""

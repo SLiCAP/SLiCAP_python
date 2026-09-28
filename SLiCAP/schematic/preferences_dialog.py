@@ -206,6 +206,8 @@ class PreferencesDialog(QDialog):
         group(right, "Grid", [
             ("Minor colour", "grid", "minor_color", cbtn(style.GRID_MINOR_COLOR)),
             ("Major colour", "grid", "major_color", cbtn(style.GRID_MAJOR_COLOR)),
+            ("View subgrid (1/5 of the grid)", "grid", "subgrid", check(style.GRID_SUBGRID)),
+            ("Subgrid colour", "grid", "subgrid_color", cbtn(style.GRID_SUBGRID_COLOR)),
         ])
         group(right, "Border (new borders; the Border dialog edits an existing one)", [
             ("Line colour",          "border", "line_color",          cbtn(style.BORDER_LINE_COLOR)),

@@ -178,6 +178,8 @@ def main():
             if m and m not in ("xapp-gtk3-module", "gail", "atk-bridge"))
     os.environ.setdefault("NO_AT_BRIDGE", "1")
     app = QApplication(sys.argv)
+    from . import app_prefs
+    app_prefs.apply_color_scheme(app)
     for _k, _v in _saved.items():
         if _v is None:
             os.environ.pop(_k, None)

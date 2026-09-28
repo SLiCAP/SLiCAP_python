@@ -1,11 +1,11 @@
 ZtoV
 
+.param
++ R_s={50}
+
 .model myOpAmp OV
 + av={A_0/(1+s/(2*pi*p_1))}
 + zo={R_o}
-
-.param
-+ R_s={50}
 
 .source V1
 .detector V_out

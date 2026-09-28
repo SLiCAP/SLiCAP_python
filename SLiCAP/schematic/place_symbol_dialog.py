@@ -54,7 +54,7 @@ class PlaceSymbolDialog(QDialog):
         # lines up with the top of the list.
         preview_col.addWidget(QLabel("Preview:"))
 
-        # ── part 1: SVG graphic, centered in a fixed white preview area ───────
+        # ── part 1: SVG graphic, centered in a fixed preview area (canvas colour) ─
         # The widget is sized per symbol to the symbol's own extent × DEFAULT_ZOOM
         # (see _on_selection_changed), so it appears at the exact same pixels-per-
         # grid-unit as on the canvas at default zoom — never stretched or clipped.
@@ -66,7 +66,7 @@ class PlaceSymbolDialog(QDialog):
         # Its HEIGHT is its content's: the SVG widget (resized per symbol in
         # _on_selection_changed) plus the vertical margins below — 5 grid units of
         # clearance above and below every symbol.  No border line: the symbol
-        # simply sits on a white field.
+        # simply sits on a field in the canvas background colour.
         max_w = 0.0
         for n in library.names:
             sym = library.symbol(n)
@@ -81,8 +81,9 @@ class PlaceSymbolDialog(QDialog):
         preview_area = QWidget()
         preview_area.setFixedWidth(area_w)
         preview_area.setAutoFillBackground(True)
+        from .config import canvas_background
         pal = preview_area.palette()
-        pal.setColor(QPalette.Window, Qt.white)
+        pal.setColor(QPalette.Window, canvas_background())   # as the canvas
         preview_area.setPalette(pal)
         # The vertical margins ARE the clearance.  Because the area's height comes
         # from its content this way, its minimumSizeHint correctly reports
@@ -163,12 +164,15 @@ class PlaceSymbolDialog(QDialog):
             from PySide6.QtGui import QPixmap, QPainter
             from PySide6.QtCore import QRectF
             from .component_item import paint_symbol
+            from .config import display_style, default_style
             _x, _y, w, h = sym.select_box
             pw, ph = max(1, round(w * DEFAULT_ZOOM)), max(1, round(h * DEFAULT_ZOOM))
             pm = QPixmap(pw, ph)
             pm.fill(Qt.transparent)
             p = QPainter(pm)
-            paint_symbol(p, sym.svg, QRectF(0, 0, pw, ph))
+            # the display colours: the preview shows the symbol as placed
+            paint_symbol(p, sym.svg, QRectF(0, 0, pw, ph),
+                         style=display_style(default_style()))
             p.end()
             self._svg.setPixmap(pm)
             self._svg.setFixedSize(QSize(pw, ph))

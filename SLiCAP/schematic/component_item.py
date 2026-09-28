@@ -1,4 +1,5 @@
 import re
+import xml.etree.ElementTree as ET
 
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtSvgWidgets import QGraphicsSvgItem
@@ -80,6 +81,94 @@ def _counter_transform(rotation: float, h_flip: bool, v_flip: bool) -> "QTransfo
     return QTransform().rotate(-rotation).scale(sx, sy)
 
 
+
+def readable_transform(rotation: float, h_flip: bool, v_flip: bool) -> "QTransform":
+    """
+    The transform of a symbol's text or LaTeX label under the component's
+    rotation and flips: the technical-drawing rule that lettering is read
+    from the bottom or from the right of the sheet (Anton, 2026-09-27).
+
+    The label is never mirrored and turns only with the AXIS of the symbol:
+    a symbol rotated 0 or 180 degrees keeps its labels upright; a symbol
+    rotated +90 or -90 degrees turns them so that they read bottom-to-top.
+    The transform is applied about the label's centre, so the label stays
+    in place and only turns.
+    """
+    ct = _counter_transform(rotation, h_flip, v_flip)      # cancel everything
+    if round(rotation) % 180 == 90:
+        # Qt: positive angles are clockwise (y down); -90 reads bottom-to-top.
+        return QTransform().rotate(-90) * ct
+    return ct
+
+
+_LATEX_CLASS = "latex"
+
+
+def _split_symbol_latex(svg_bytes: bytes) -> tuple[bytes, list[dict]]:
+    """Split a symbol's SVG into (artwork_without_latex, latex_groups).
+
+    A LaTeX label baked by the symbol editor is a ``<g class="latex">`` with
+    ``data-x/-y/-w/-h`` (its box in symbol coordinates) whose children draw
+    it at rotation 0.  Like the embedded texts the groups are removed from
+    the artwork and redrawn by draw_symbol_latex under the readable-
+    orientation rule.  Each entry is {x, y, w, h, svg} with ``svg`` a
+    standalone SVG of the group (viewBox = its box, colours still literal).
+    Symbols without such a group are returned byte-identical."""
+    if b'class="latex"' not in svg_bytes and b"class='latex'" not in svg_bytes:
+        return svg_bytes, []
+    try:
+        root = ET.fromstring(svg_bytes)
+    except ET.ParseError:
+        return svg_bytes, []
+    ns = "{http://www.w3.org/2000/svg}"
+    frags: list[dict] = []
+    parents = {c: p for p in root.iter() for c in p}
+    for g in list(root.iter(f"{ns}g")):
+        if g.get("class") != _LATEX_CLASS:
+            continue
+        try:
+            x, y = float(g.get("data-x", 0)), float(g.get("data-y", 0))
+            w, h = float(g.get("data-w", 0)), float(g.get("data-h", 0))
+        except ValueError:
+            continue
+        if w <= 0 or h <= 0:
+            continue
+        ET.register_namespace("", ns[1:-1])
+        ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
+        body = ET.tostring(g, encoding="unicode")
+        svg = (f'<svg xmlns="{ns[1:-1]}" xmlns:xlink="http://www.w3.org/1999/xlink" '
+               f'viewBox="{x} {y} {w} {h}">{body}</svg>').encode()
+        frags.append({"x": x, "y": y, "w": w, "h": h, "svg": svg})
+        parents[g].remove(g)
+    ET.register_namespace("", ns[1:-1])
+    return ET.tostring(root, encoding="unicode").encode(), frags
+
+
+def draw_symbol_latex(painter, frags, rotation: float,
+                      h_flip: bool, v_flip: bool, style=None) -> None:
+    """Draw a symbol's baked LaTeX labels (see _split_symbol_latex) under the
+    readable-orientation rule, each turning about its own centre.  The
+    renderer of a fragment is cached on the fragment per stroke colour."""
+    if not frags:
+        return
+    style = style or default_style()
+    key = "_renderer_" + style.SYMBOL_STROKE_COLOR.name()
+    rt = readable_transform(rotation, h_flip, v_flip)
+    for f in frags:
+        r = f.get(key)
+        if r is None:
+            r = QSvgRenderer(QByteArray(_apply_symbol_colors(f["svg"], style)))
+            f[key] = r
+        if not r.isValid():
+            continue
+        w, h = f["w"], f["h"]
+        painter.save()
+        painter.translate(f["x"] + w / 2.0, f["y"] + h / 2.0)
+        painter.setTransform(rt, True)
+        r.render(painter, QRectF(-w / 2.0, -h / 2.0, w, h))
+        painter.restore()
+
+
 _TEXT_RE = re.compile(rb'<text\b([^>]*)>(.*?)</text>', re.S)
 
 
@@ -119,13 +208,13 @@ def _split_symbol_text(svg_bytes: bytes) -> tuple[bytes, list[dict]]:
 
 def draw_symbol_texts(painter, texts, rotation: float,
                       h_flip: bool, v_flip: bool, style=None) -> None:
-    """Draw a symbol's embedded text labels upright and unmirrored under any
-    rotation/flip (companion to draw_subckt_pin_names; used by ComponentItem and
-    the SVG/PDF exporter via the same text list)."""
+    """Draw a symbol's embedded text labels unmirrored and readable (see
+    readable_transform) under any rotation/flip (companion to
+    draw_subckt_pin_names; used by ComponentItem and the previews)."""
     if not texts:
         return
     style = style or default_style()
-    ct = _counter_transform(rotation, h_flip, v_flip)
+    ct = readable_transform(rotation, h_flip, v_flip)
     painter.save()
     painter.setPen(style.SYMBOL_TEXT_COLOR)
     for t in texts:
@@ -155,7 +244,8 @@ def paint_symbol(painter, svg_bytes: bytes, rect: QRectF, style=None) -> None:
     Shared by the palette icons and the place-symbol preview so they render the
     embedded text identically to the canvas (ComponentItem.paint)."""
     style = style or default_style()
-    stripped, texts = _split_symbol_text(svg_bytes)
+    stripped, frags = _split_symbol_latex(svg_bytes)
+    stripped, texts = _split_symbol_text(stripped)
     renderer = QSvgRenderer(QByteArray(_apply_symbol_colors(stripped, style)))
     vb = renderer.viewBoxF()
     if vb.width() <= 0 or vb.height() <= 0:
@@ -170,6 +260,7 @@ def paint_symbol(painter, svg_bytes: bytes, rect: QRectF, style=None) -> None:
     painter.scale(sc, sc)
     painter.translate(-vb.left(), -vb.top())
     draw_symbol_texts(painter, texts, 0.0, False, False, style=style)
+    draw_symbol_latex(painter, frags, 0.0, False, False, style=style)
     painter.restore()
 
 
@@ -352,7 +443,13 @@ class _PropertyLabel(QGraphicsItem):
         self.prepareGeometryChange()
 
     def set_svg(self, svg_bytes: bytes, prefix: str = "") -> None:
-        renderer = QSvgRenderer(QByteArray(svg_bytes))
+        # ``svg_bytes`` is the render in document black (kept for the export);
+        # on screen the label takes the colour of its kind from the display
+        # style (refdes: label colour, parameter: parameter colour), the one
+        # place where a LaTeX label is coloured (Anton, 2026-09-27).
+        from .latex_label import recolor_svg
+        _, color = self._font_and_color()
+        renderer = QSvgRenderer(QByteArray(recolor_svg(svg_bytes, color.name())))
         if not renderer.isValid():
             self._svg_renderer = None
             self._svg_bytes = b""
@@ -389,9 +486,11 @@ class _PropertyLabel(QGraphicsItem):
         p = self.parentItem()
         return p is not None and getattr(p, 'h_flip', False)
 
-    def _font_and_color(self):
-        """Return (font, color) appropriate for this label's property key."""
-        style = style_of(self)
+    def _font_and_color(self, style=None):
+        """Return (font, color) appropriate for this label's property key,
+        from the display style, or from *style* when given (the export
+        passes the document style)."""
+        style = style or style_of(self)
         if self.prop_key == "refdes":
             return style.COMP_LABEL_FONT, style.COMP_LABEL_COLOR
         if self.prop_key == "dc_current":
@@ -508,6 +607,7 @@ def make_ghost(svg_bytes: bytes, style=None) -> _ViewBoxSvgItem:
 
 
 class ComponentItem(_ViewBoxSvgItem):
+    GRID_CRITICAL = True      # always snaps: connectivity (config.snap_pos)
     """
     A single placed component on the schematic canvas.
 
@@ -526,14 +626,17 @@ class ComponentItem(_ViewBoxSvgItem):
         # open schematic's symbol definitions.
         if svg_bytes is None:
             svg_bytes = symbol.svg
-        stripped, texts = _split_symbol_text(svg_bytes)
+        stripped, frags = _split_symbol_latex(svg_bytes)
+        stripped, texts = _split_symbol_text(stripped)
         super().__init__(stripped)
         self.symbol       = symbol
         self.symbol_name  = symbol.name
         self.instance_id  = instance_id
         self._svg_bytes   = stripped
-        # Embedded symbol text, drawn upright in paint()/export (not in the artwork).
+        # Embedded symbol text and baked LaTeX labels, drawn in paint()/export
+        # under the readable-orientation rule (not in the artwork).
         self.symbol_texts = texts
+        self.symbol_latex = frags
         self.model: str   = symbol.model
         self.params: dict[str, str] = (dict(symbol.param_defaults)
                                        or fixed_params_for_symbol(symbol.name))
@@ -795,19 +898,18 @@ class ComponentItem(_ViewBoxSvgItem):
             elif ((key == "refdes" or key.startswith("ref "))
                   and style.COMP_LABEL_LATEX and use_latex):
                 # IEEE-style element identifiers: refdes through the SLiCAP
-                # LaTeX chokepoint, optionally upright bold, tinted with the
-                # refdes colour preference (all from this schematic's style).
+                # LaTeX chokepoint, optionally upright bold; the colour is
+                # applied in set_svg like for every LaTeX label.
                 # The referenced elements of F, H, HZ and K ('ref n') are
                 # element identifiers too and take the same path, so every
                 # refdes on the canvas looks the same (Anton, 2026-09-13).
-                from .latex_label import recolor_svg, render_refdes
+                from .latex_label import render_refdes
                 show_name = self.prop_display.get(key, (False, False))[1]
                 svg = render_refdes(raw_val, style.COMP_LABEL_LATEX_BOLD,
                                     cache_dir=cache,
                                     name=key if show_name else None)
                 if svg is not None:
-                    lbl.set_svg(recolor_svg(
-                        svg, style.COMP_LABEL_COLOR.name()))
+                    lbl.set_svg(svg)
                 else:
                     lbl.set_text(self._prop_text(key))
             else:
@@ -873,7 +975,8 @@ class ComponentItem(_ViewBoxSvgItem):
         self.prepareGeometryChange()
         self.symbol = symbol
         self.symbol_name = symbol.name
-        stripped, self.symbol_texts = _split_symbol_text(symbol.svg)
+        stripped, self.symbol_latex = _split_symbol_latex(symbol.svg)
+        stripped, self.symbol_texts = _split_symbol_text(stripped)
         self._svg_bytes = stripped
         self._renderer = QSvgRenderer(
             QByteArray(_apply_symbol_colors(stripped, style_of(self))))
@@ -954,9 +1057,11 @@ class ComponentItem(_ViewBoxSvgItem):
         super().paint(painter, option, widget)
         style = style_of(self)
 
-        # Embedded symbol text (+/- markers, noise labels …) — drawn on top of the
-        # artwork and kept upright/unmirrored under any rotation/flip.
+        # Embedded symbol text (+/- markers, noise labels …) and LaTeX labels —
+        # drawn on top of the artwork, unmirrored and readable (readable_transform).
         draw_symbol_texts(painter, self.symbol_texts,
+                          self.rotation(), self.h_flip, self.v_flip, style=style)
+        draw_symbol_latex(painter, self.symbol_latex,
                           self.rotation(), self.h_flip, self.v_flip, style=style)
 
         # Pin markers — small grey squares on UNCONNECTED pins; they disappear as

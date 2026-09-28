@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import configparser
+import copy
 from pathlib import Path
 
 from PySide6.QtCore import QPointF
@@ -34,6 +35,10 @@ def snap(pos: QPointF) -> QPointF:
 # not against unrelated top-level items.  The net label therefore also gets an
 # explicit pick in the canvas press handler.
 Z_BORDER    = -10   # frame, always behind everything
+# The colour in which a selected item shows itself (wires, junctions, shapes,
+# component select box): the item is drawn in this colour, no box around it.
+SELECTION_COLOR = QColor(0, 120, 215)
+
 Z_WIRE      = 0
 Z_WIRE_DRAG = 5     # a wire lifted above its rubber-band partners during a drag
 Z_COMPONENT = 10
@@ -104,6 +109,7 @@ class Style:
     # -- attribute computation -------------------------------------------------
 
     def _recompute(self) -> None:
+        self._dark_variant = None       # display variant is rebuilt on demand
         # LaTeX rendering preference of THIS schematic.  Whether LaTeX is
         # installed on this machine is a separate, global fact
         # (latex_label.LATEX_INSTALLED) — the only global in the LaTeX story.
@@ -147,6 +153,8 @@ class Style:
         # Grid
         self.GRID_MINOR_COLOR = self._c("grid", "minor_color", "#DCDCDC")
         self.GRID_MAJOR_COLOR = self._c("grid", "major_color", "#B4B4B4")
+        self.GRID_SUBGRID       = self._b("grid", "subgrid", False)   # dots at FINE_STEP
+        self.GRID_SUBGRID_COLOR = self._c("grid", "subgrid_color", "#B4B4B4")
 
         # Wire vertex handles + unconnected-pin connection markers
         self.HANDLE_COLOR     = self._c("handles", "color", "#3d3846")
@@ -240,8 +248,112 @@ def default_style() -> Style:
     return _default_style
 
 
+def shift_held() -> bool:
+    """Shift is down (queried outside an event, e.g. in itemChange)."""
+    try:
+        from PySide6.QtWidgets import QApplication
+        from PySide6.QtCore import Qt
+        return bool(QApplication.keyboardModifiers() & Qt.ShiftModifier)
+    except Exception:
+        return False
+
+
+FINE_STEP = GRID_SIZE / 5      # the fine grid under Shift: one symbol unit
+
+
+def snap_fine(pos):
+    """Snap to the fine grid (FINE_STEP): Shift held while dragging. Free
+    placement was tried and REJECTED (Anton, 2026-09-27): a line shorter
+    than a grid step could no longer be kept horizontal or vertical."""
+    return QPointF(round(pos.x() / FINE_STEP) * FINE_STEP,
+                   round(pos.y() / FINE_STEP) * FINE_STEP)
+
+
+def snap_pos(item, value):
+    """The one snapping rule for a moving item (Anton, 2026-09-27):
+    grid-critical items (components, wires, junctions, symbol pins:
+    ``GRID_CRITICAL = True``) always snap to the grid, because connectivity
+    is computed from their positions; annotations (``SNAPS_TO_GRID = False``)
+    never snap; everything else (shapes, border, the parameter / analysis /
+    model / library / command blocks) snaps to the grid, or to the fine grid
+    while Shift is held during the drag."""
+    if getattr(item, "GRID_CRITICAL", False):
+        return snap(value)
+    if not getattr(item, "SNAPS_TO_GRID", True):
+        return value
+    return snap_fine(value) if shift_held() else snap(value)
+
+
+def dark_theme_active() -> bool:
+    """True when the canvases must draw dark: the app preference 'colour
+    scheme' (~/SLiCAP_gui.ini) says 'dark', or says 'system' and the desktop
+    reports a dark scheme through Qt's style hints. The preference decides
+    first because a platform may not honour a requested scheme (the
+    offscreen platform does not, 2026-09-27)."""
+    try:
+        from .app_prefs import get_color_scheme
+        pref = get_color_scheme()
+    except Exception:
+        pref = "system"
+    if pref == "dark":
+        return True
+    if pref == "light":
+        return False
+    try:
+        from PySide6.QtGui import QGuiApplication
+        from PySide6.QtCore import Qt
+        app = QGuiApplication.instance()
+        return app is not None and app.styleHints().colorScheme() == Qt.ColorScheme.Dark
+    except Exception:
+        return False
+
+
+def _invert_lightness(c: QColor) -> QColor:
+    h, sat, l, a = c.getHslF()
+    out = QColor.fromHslF(max(0.0, h) if h >= 0 else 0.0, sat, 1.0 - l, a)
+    if h < 0:                       # achromatic: keep it achromatic
+        out = QColor.fromHslF(0.0, 0.0, 1.0 - l, a)
+    return out
+
+
+def display_color(c) -> QColor:
+    """A document colour as drawn on screen: itself in the light theme, its
+    lightness inverted in the dark theme, the rule of display_style applied
+    to a single colour (a shape's own stroke or fill; Anton, 2026-09-27)."""
+    c = QColor(c)
+    return _invert_lightness(c) if dark_theme_active() else c
+
+
+def canvas_background() -> QColor:
+    """The colour behind a drawing on screen: the canvas, and every preview
+    of a symbol (palette icon, Place Symbol dialog), which shows the symbol as
+    it will be placed (Anton, 2026-09-27)."""
+    return QColor(30, 30, 30) if dark_theme_active() else QColor(255, 255, 255)
+
+
+def display_style(style: Style) -> Style:
+    """The style to DRAW with on screen: the document style itself in the
+    light theme; in the dark theme a copy with every colour's lightness
+    inverted (black wires become white, white fills dark, red stays red).
+    The document style, and therefore every export, is never changed:
+    display and print are separated at this one point (Anton, 2026-09-27)."""
+    if not dark_theme_active():
+        return style
+    cached = getattr(style, "_dark_variant", None)
+    if cached is not None:
+        return cached
+    variant = copy.copy(style)
+    for name, value in vars(style).items():
+        if isinstance(value, QColor):
+            setattr(variant, name, _invert_lightness(value))
+    variant._dark_variant = variant
+    style._dark_variant = variant
+    return variant
+
+
 def style_of(item) -> Style:
-    """Resolve a QGraphicsItem's style through its scene (defaults when the
-    item is not in a scene, or is a duck-typed stand-in without one)."""
+    """Resolve a QGraphicsItem's DISPLAY style through its scene (defaults
+    when the item is not in a scene, or is a duck-typed stand-in without one).
+    Exports read ``scene.style`` directly and get the document colours."""
     scene = item.scene() if hasattr(item, "scene") else None
-    return getattr(scene, "style", None) or default_style()
+    return display_style(getattr(scene, "style", None) or default_style())

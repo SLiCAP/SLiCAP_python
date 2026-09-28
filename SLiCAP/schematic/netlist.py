@@ -101,6 +101,52 @@ def _library_model(comp) -> str:
     return _DEFAULT_MODELS.get(comp.symbol_name, "")
 
 
+def _project_root():
+    from . import project
+    try:
+        return project.project_root()
+    except Exception:
+        return None
+
+
+def library_lines(libs, dialect_lines) -> list[str]:
+    """The library lines of a netlist, for every dialect: *dialect_lines*
+    (``lib_item, root -> list[str]``) spells them the dialect's way; the
+    missing-file warning is the same everywhere."""
+    if not libs:
+        return []
+    root = _project_root()
+    lines: list[str] = [""]
+    for lib_item in libs:
+        for _d, path, _c, exists in lib_item.resolved_entries(root):
+            if not exists:
+                print(f"WARNING: library file not found: {path}")
+        lines.extend(dialect_lines(lib_item, root))
+    return lines
+
+
+def definition_lines(params, model_defs, param_lines) -> list[str]:
+    """The definition blocks of a netlist, for every dialect and in ONE
+    place: the parameter blocks, spelled by *param_lines*
+    (``param_item -> list[str]``, the dialect's value notation), then the
+    model blocks, whose lines are the block's own (ModelItem.netlist_lines)
+    in every dialect. Both are positional so that no builder can leave one
+    out: the top-level NGspice netlist had no model blocks at all while the
+    other three builders had (found by a Windows user, 2026-09-28)."""
+    lines: list[str] = []
+    for param_item in params or []:
+        block = param_lines(param_item)
+        if block:
+            lines.append("")
+            lines.extend(block)
+    for model_item in model_defs or []:
+        block = model_item.netlist_lines()
+        if block:
+            lines.append("")
+            lines.extend(block)
+    return lines
+
+
 def build_netlist(
     components: list,        # list[ComponentItem]
     wires:      list,        # list[WireItem]
@@ -128,35 +174,9 @@ def build_netlist(
 
     lines: list[str] = [title_line]
 
-    # ── library includes ──────────────────────────────────────────────────────
-    if libs:
-        from . import project
-        try:
-            root = project.project_root()
-        except Exception:
-            root = None
-        lines.append("")
-        for lib_item in libs:
-            for _d, path, _c, exists in lib_item.resolved_entries(root):
-                if not exists:
-                    print(f"WARNING: library file not found: {path}")
-            lines.extend(lib_item.netlist_lines(root))
-
-    # ── model definitions ─────────────────────────────────────────────────────
-    if model_defs:
-        for model_item in model_defs:
-            model_lines = model_item.netlist_lines()
-            if model_lines:
-                lines.append("")
-                lines.extend(model_lines)
-
-    # ── parameter blocks ──────────────────────────────────────────────────────
-    if params:
-        for param_item in params:
-            param_lines = param_item.param_lines()
-            if param_lines:
-                lines.append("")
-                lines.extend(param_lines)
+    # ── library lines, parameter and model blocks (shared writers) ────────────
+    lines.extend(library_lines(libs, lambda item, root: item.netlist_lines(root)))
+    lines.extend(definition_lines(params, model_defs, lambda item: item.param_lines()))
 
     # ── command blocks ────────────────────────────────────────────────────────
     cmd_lines: list[str] = []
@@ -235,41 +255,18 @@ def build_subcircuit(
     # subcircuits) — the SLiCAP compiler processes a .lib inside a library
     # file recursively (verified 2026-08-05), so the definition stays
     # complete when this library is used from another project.
-    if libs:
-        from . import project
-        try:
-            root = project.project_root()
-        except Exception:
-            root = None
-        lines.append("")
-        for lib_item in libs:
-            for _d, path, _c, exists in lib_item.resolved_entries(root):
-                if not exists:
-                    print(f"WARNING: library file not found: {path}")
-            lines.extend(lib_item.netlist_lines(root))
+    lines.extend(library_lines(libs, lambda item, root: item.netlist_lines(root)))
 
     lines += ["", subckt]
 
-    # ── internal parameter definitions ─────────────────────────────────────────
-    # A parameter passed in through the .subckt line must NOT be redefined
-    # internally — the passed value supersedes any local definition.
+    # Internal parameter definitions (a parameter passed in through the
+    # .subckt line must NOT be redefined: the passed value supersedes it)
+    # and the model definitions drawn on the subcircuit schematic, which
+    # belong to the subcircuit ("missing definition of model: myQ", Anton,
+    # 2026-09-20). Shared writers.
     passed = {str(k).strip().strip("{}") for k, _ in (params or [])}
-    if params_items:
-        for param_item in params_items:
-            param_lines = param_item.param_lines(exclude=passed)
-            if param_lines:
-                lines.append("")
-                lines.extend(param_lines)
-
-    # Model definitions drawn on the subcircuit schematic belong to the
-    # subcircuit: without them its transistors had no model when the library
-    # was compiled ("missing definition of model: myQ", Anton, 2026-09-20).
-    if model_defs:
-        for model_item in model_defs:
-            model_lines = model_item.netlist_lines()
-            if model_lines:
-                lines.append("")
-                lines.extend(model_lines)
+    lines.extend(definition_lines(params_items, model_defs,
+                                  lambda item: item.param_lines(exclude=passed)))
 
     # ── element lines ──────────────────────────────────────────────────────────
     lines.append("")

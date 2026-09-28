@@ -9,7 +9,7 @@ import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX, ENG
 from pathlib import PureWindowsPath
-from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
+from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet, upright_subscripts
 from SLiCAP.SLiCAPlex import _sympify
 import re
 
@@ -929,28 +929,27 @@ class LaTeXformatter(_BaseFormatter):
 
 def sub2rm(textext):
     """
-    Converts italic fonts LaTeX subscripts into mathrm fonts.
-    
+    Converts italic fonts LaTeX subscripts into mathrm fonts (IEEE upright
+    subscripts), digits included: identifiers such as a refdes ``R1`` become
+    ``R_{\\mathrm{1}}``. Since 2026-09-27 every :class:`Snippet` of a
+    math-carrying format sets the subscripts that hold a letter upright by
+    itself (:func:`SLiCAP.SLiCAPprotos.upright_subscripts`), leaving numeric
+    indices such as ``p_{1}`` alone; this function remains for identifiers
+    and for strings built by hand.
+
     :param textext: LaTeX snippet
-    :type textxt: str
-    
+    :type textext: str
+
     :return: Modified LaTeX snippet
     :rtype: str
-    
+
     :example:
-        
+
     >>> textext = "\\frac{V_{out}}{V_{in}}"
     >>> print(sub2rm(textext))
     \\frac{V_{\\mathrm{out}}}{V_{\\mathrm{in}}}
     """
-    pos = 0
-    out = ''
-    pattern = re.compile(r'_{([a-zA-Z0-9]+)}')
-    for m in re.finditer(pattern, textext):
-        out += textext[pos:m.start()+1]+'{\\mathrm'+textext[m.start()+1: m.end()]+'}'
-        pos = m.end()
-    out += textext[pos:]
-    return out
+    return upright_subscripts(textext, digits=True)
 
 
 # The single "expression -> display LaTeX" chokepoint. Moved here from

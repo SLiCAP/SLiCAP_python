@@ -1,17 +1,17 @@
 balancedAmp
 
-.model myOpAmp OV
-+ cd={5p}
-+ cc={2p}
-+ av={A_0/(1+s/(2*pi*f_p1))}
-+ zo={1k}
-
 .param
 + R_a={100k}
 + R_b={100}
 + R_s={1k}
 + R_L={200}
 + f_p1={50}
+
+.model myOpAmp OV
++ cd={5p}
++ cc={2p}
++ av={A_0/(1+s/(2*pi*f_p1))}
++ zo={1k}
 
 .source V1P V1N
 .detector V_outP V_outN

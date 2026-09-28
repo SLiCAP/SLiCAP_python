@@ -2,5 +2,5 @@
     :header: "Name"
     :widths: auto
 
-    :math:`V_{s}`
+    :math:`V_{\mathrm{s}}`
 

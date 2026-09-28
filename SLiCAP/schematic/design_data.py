@@ -537,7 +537,17 @@ def write_manifest(namespace: dict, source_name: str,
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=1)
-        os.replace(tmp, path)
+        # Windows refuses to replace a file another process has open; the
+        # GUI's Design data panel may be reading it at this very moment
+        # (a user saw WinError 5 on the first run, 2026-09-25): retry.
+        for attempt in range(20):
+            try:
+                os.replace(tmp, path)
+                break
+            except PermissionError:
+                if attempt == 19:
+                    raise
+                time.sleep(0.05)
     except BaseException:
         try:
             os.unlink(tmp)

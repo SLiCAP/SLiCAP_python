@@ -104,6 +104,16 @@ def _element_bbox(el) -> tuple | None:
     try:
         if tag == "text":
             bbox = _text_bbox(el, a)
+        elif tag == "g" and a.get("class") == "latex":
+            # A LaTeX label baked by the symbol editor: its box is declared,
+            # its children (glyph paths under a transform) are not measured.
+            x, y = float(a.get("data-x", 0)), float(a.get("data-y", 0))
+            w, h = float(a.get("data-w", 0)), float(a.get("data-h", 0))
+            bbox = (x, y, x + w, y + h)
+        elif tag == "image":
+            x, y = float(a.get("x", 0)), float(a.get("y", 0))
+            w, h = float(a.get("width", 0)), float(a.get("height", 0))
+            bbox = (x, y, x + w, y + h)
         elif tag == "line":
             x1, y1 = float(a.get("x1", 0)), float(a.get("y1", 0))
             x2, y2 = float(a.get("x2", 0)), float(a.get("y2", 0))
@@ -141,9 +151,20 @@ def _element_bbox(el) -> tuple | None:
 
 def _geometry_bbox(g_element) -> tuple | None:
     """Union bounding box of all drawable children, or None if there are none."""
-    boxes = [b for el in g_element.iter()
-             if el is not g_element and isinstance(el.tag, str)
-             for b in (_element_bbox(el),) if b is not None]
+    boxes: list = []
+
+    def walk(parent):
+        for el in parent:
+            if not isinstance(el.tag, str):
+                continue
+            b = _element_bbox(el)
+            if b is not None:
+                boxes.append(b)
+            if _local(el.tag) == "g" and el.get("class") == "latex":
+                continue            # declared box; children not measured
+            walk(el)
+
+    walk(g_element)
     if not boxes:
         return None
     return (min(b[0] for b in boxes), min(b[1] for b in boxes),
@@ -280,9 +301,14 @@ class Symbol:
         Comment nodes are dropped; canvas scale stays 1:1 because paint() always
         renders into the viewBox.
         """
+        # The pin markers (<circle class="node">) are metadata: they give the
+        # pin positions and the extent, and are not drawn. Rendered, a
+        # circle without fill is a black dot at every pin, invisible on a
+        # black wire and a gap in a white one (Anton, dark canvas 2026-09-27).
         children = "".join(
             ET.tostring(child, encoding="unicode")
-            for child in g_element if not callable(child.tag)
+            for child in g_element
+            if not callable(child.tag) and child.get("class") != "node"
         )
         return (
             f'<svg xmlns="{SVG_NS}" viewBox="{_vb_str(self.select_box)}">'
@@ -388,7 +414,13 @@ class SymbolLibrary:
                 continue
             for g in root.iter(f"{{{SVG_NS}}}g"):
                 if g.get("id") and g.get("data-prefix"):
-                    self._add_g(g, svg_file.name, override=True)
+                    try:
+                        self._add_g(g, svg_file.name, override=True)
+                    except SymbolError as exc:
+                        # a symbol without a drawing (saved as a named start
+                        # in the symbol editor) is not offered; it must not
+                        # block the project's schematics (Anton, 2026-09-27)
+                        print("Note: symbol not offered: {0}".format(exc))
 
     def write_bundle(self, names, path) -> None:
         """Write the given symbols' raw <g> definitions to a bundle SVG, so the

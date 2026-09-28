@@ -135,9 +135,15 @@ class CanvasPanel(QWidget):
 
     def __init__(self, sch_type: str, config: str | None = None,
                  main_win: "MainWindow | None" = None,
-                 schematic_only: bool = False):
+                 schematic_only: bool = False,
+                 symbol_mode: bool = False):
         super().__init__()
         self._sch_type   = sch_type
+        # Symbol editor (symbol_editor.py): the same panel with reduced
+        # menus, editing ONE symbol of a .slicap_sym / .spice_sym file.
+        self._symbol_mode = symbol_mode
+        self._symbol_file: Path | None = None
+        self._symbol_meta = None
         self._config     = config
         self._main_win   = main_win
         self._schematic_only = schematic_only
@@ -193,6 +199,9 @@ class CanvasPanel(QWidget):
         # The scene's double-click edit of an analysis block uses the same
         # candidate lists as Place → Define src / det / lg ref.
         self._scene.analysis_candidates = self._analysis_candidates
+        self._scene.show_origin = bool(getattr(self, "_symbol_mode", False))
+        if self._scene.show_origin:
+            self._scene.default_line_width = 1.0     # the symbol library's stroke width
         self.layout().addWidget(self._view)
         # Focus given to the panel lands on the canvas, so the panel-scoped
         # editor shortcuts (W, F, …) work without an extra click.
@@ -241,6 +250,13 @@ class CanvasPanel(QWidget):
             self.removeAction(act)
         self._shortcut_actions = []
         self._menu_bar.clear()
+        if self._symbol_mode:
+            self._build_symbol_file_menu()
+            self._build_edit_menu()
+            self._build_view_menu()
+            self._build_draw_menu()
+            self._build_symbol_place_menu()
+            return
         self._build_file_menu()
         self._build_edit_menu()
         self._build_view_menu()
@@ -251,6 +267,252 @@ class CanvasPanel(QWidget):
             self._build_ngspice_instr_menu()
         else:
             self._build_slicap_instr_menu()
+
+    # -- symbol editor (symbol_editor.py) --------------------------------------
+
+    def _build_symbol_file_menu(self):
+        menu = self._menu_bar.addMenu("&File")
+        for label, handler, keys in (
+                ("&New symbol", self._on_symbol_new, None),
+                ("&Open symbol…", self._on_symbol_open, QKeySequence.Open),
+                ("&Save symbol", self._on_symbol_save, QKeySequence.Save),
+                ("Save symbol &as…", self._on_symbol_save_as, QKeySequence.SaveAs)):
+            act = QAction(label, self)
+            act.triggered.connect(handler)
+            if keys is not None:
+                self._shortcut(act, keys)
+            menu.addAction(act)
+        menu.addSeparator()
+        act = QAction("Symbol &properties…", self)
+        act.triggered.connect(self._on_symbol_properties)
+        menu.addAction(act)
+        menu.addSeparator()
+        act = QAction("Export &SVG…", self)
+        act.triggered.connect(self._on_export_svg)
+        menu.addAction(act)
+        menu.addSeparator()
+        act = QAction("Schematic &drawing preferences…", self)
+        act.triggered.connect(self._on_preferences)
+        menu.addAction(act)
+
+    def _build_symbol_place_menu(self):
+        menu = self._menu_bar.addMenu("&Place")
+        act = QAction("&Pin…", self)
+        act.triggered.connect(self._on_symbol_place_pin)
+        self._shortcut(act, "P")
+        menu.addAction(act)
+        act = QAction("Symbol &text…", self)
+        act.triggered.connect(self._on_symbol_place_text)
+        self._shortcut(act, "T")
+        menu.addAction(act)
+        act = QAction("La&TeX…", self)
+        act.triggered.connect(self._on_place_latex)
+        menu.addAction(act)
+        act = QAction("&Image…", self)
+        act.triggered.connect(self._on_place_image)
+        menu.addAction(act)
+
+    def _symbol_dialect(self) -> str:
+        if self._symbol_file is not None and self._symbol_file.suffix.lower() == ".spice_sym":
+            return "ngspice"
+        return "slicap"
+
+    def _symbol_title(self) -> None:
+        name = self._symbol_meta.name if self._symbol_meta else "symbol"
+        where = f" ({self._symbol_file.name})" if self._symbol_file else ""
+        self._set_dock_title(f"Symbol {name}{where}")
+
+    def _symbol_confirm_discard(self) -> bool:
+        """Symbol mode: unsaved changes are saved, discarded or kept (cancel)."""
+        # An empty drawing has nothing to lose, whatever the dirty flag says
+        # (the properties dialog of a new symbol set it; Open then asked to
+        # save a symbol without pins, which cannot be saved: Anton, 2026-09-27).
+        if not self._dirty or not self._symbol_items():
+            return True
+        ans = QMessageBox.question(
+            self, "Symbol", "Save the changes to the current symbol?",
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel)
+        if ans == QMessageBox.StandardButton.Save:
+            self._on_symbol_save()
+            return not self._dirty
+        return ans == QMessageBox.StandardButton.Discard
+
+    def _on_symbol_new(self):
+        from .symbol_editor import SymbolMeta
+        if not self._symbol_confirm_discard():
+            return
+        self._scene.reset()
+        self._scene.clear_history()
+        self._symbol_meta = SymbolMeta()
+        self._symbol_file = None
+        self._symbol_loaded_name = None
+        self._scene.ensure_origin()
+        self._dirty = False
+        self._symbol_title()
+
+    def _symbol_lib_dir(self) -> str:
+        """The project's lib folder (created if missing), or the home folder
+        without a project."""
+        try:
+            if self._main_win is not None and self._main_win._project_is_open():
+                d = project.subdir("lib")
+                d.mkdir(parents=True, exist_ok=True)
+                return str(d)
+        except Exception:
+            pass
+        return str(Path.home())
+
+    def _on_symbol_open(self):
+        if not self._symbol_confirm_discard():
+            return
+        fname, _ = QFileDialog.getOpenFileName(
+            self, "Open symbol", self._symbol_lib_dir(),
+            "Symbol files (*.slicap_sym *.spice_sym *.svg);;All Files (*)")
+        if fname:
+            self.open_symbol_file(Path(fname))
+
+    def open_symbol_file(self, path: Path) -> bool:
+        """Load a symbol of *path*: the only one directly, one of several
+        after a choice. Also the project panel's double-click target."""
+        from PySide6.QtWidgets import QInputDialog
+        from .symbol_editor import read_symbol_file, g_to_items
+        try:
+            _tree, groups = read_symbol_file(path)
+        except Exception as exc:
+            QMessageBox.critical(self, "Open symbol", str(exc))
+            return False
+        if not groups:
+            QMessageBox.warning(self, "Open symbol", "No symbol (a <g> with data-prefix) in this file.")
+            return False
+        if len(groups) == 1:
+            name = next(iter(groups))
+        else:
+            name, ok = QInputDialog.getItem(self, "Open symbol", "Symbol:", sorted(groups), 0, False)
+            if not ok:
+                return False
+        meta, items = g_to_items(groups[name])
+        fname = str(path)
+        from .config import Style
+        self._style = Style(project.ini_path_for(path))     # the file's own style (sidecar .ini)
+        self._scene.style = self._style
+        self._scene.reset()
+        for it in items:
+            self._scene.addItem(it)
+        self._scene.ensure_origin()
+        self._scene.clear_history()
+        self._symbol_meta = meta
+        self._symbol_file = Path(fname)
+        self._symbol_loaded_name = name        # the group a save replaces
+        self._dirty = False
+        self._symbol_title()
+        QTimer.singleShot(50, self._view.zoom_fit)
+        return True
+
+    def _symbol_items(self):
+        from .shape_item import ShapeItem
+        from .symbol_editor import SymbolPinItem, SymbolTextItem, OpaqueSvgItem
+        from .latex_fragment_item import LatexFragmentItem
+        from .image_item import ImageItem
+        return [i for i in self._scene.items()
+                if isinstance(i, (ShapeItem, SymbolPinItem, SymbolTextItem, OpaqueSvgItem,
+                                  LatexFragmentItem, ImageItem))]
+
+    def _on_symbol_save(self):
+        if self._symbol_file is None:
+            self._on_symbol_save_as()
+        else:
+            self._symbol_save_to(self._symbol_file)
+
+    def _on_symbol_save_as(self):
+        start = self._symbol_lib_dir()
+        filters = "SLiCAP symbols (*.slicap_sym);;NGspice symbols (*.spice_sym)"
+        fname, chosen = QFileDialog.getSaveFileName(
+            self, "Save symbol into", start, filters,
+            # the current dialect is the default filter
+            "NGspice symbols (*.spice_sym)" if self._symbol_dialect() == "ngspice"
+            else "SLiCAP symbols (*.slicap_sym)",
+            options=QFileDialog.Option.DontConfirmOverwrite)
+        if not fname:
+            return
+        p = Path(fname)
+        if p.suffix.lower() not in (".slicap_sym", ".spice_sym"):
+            # a name without extension takes the dialect of the SELECTED
+            # filter (Anton, 2026-09-27: it always became .slicap_sym)
+            p = p.with_suffix(".spice_sym" if "spice" in (chosen or "") else ".slicap_sym")
+        self._symbol_save_to(p)
+
+    def _symbol_save_to(self, path: Path):
+        from .symbol_editor import SymbolMeta, items_to_g, validate, write_symbol
+        if self._symbol_meta is None:
+            self._symbol_meta = SymbolMeta()
+        items = self._symbol_items()
+        if (self._symbol_meta.name or "NEW") == "NEW":
+            # the placeholder name of a new symbol is not a symbol name: a
+            # symbol saved as <name>.<ext> IS <name> (Anton, 2026-09-27:
+            # every file collected a symbol called NEW)
+            self._symbol_meta.name = path.stem
+        errors = validate(self._symbol_meta, items)
+        if errors:
+            QMessageBox.warning(self, "Symbol not saved", "\n".join("- " + e for e in errors))
+            return
+        g, warnings = items_to_g(self._symbol_meta, items, self._scene.origin_pos())
+        same_file = False
+        if self._symbol_file is not None:
+            try:
+                same_file = path.resolve() == self._symbol_file.resolve()
+            except OSError:
+                same_file = False
+        try:
+            write_symbol(path, g, replace_id=(getattr(self, "_symbol_loaded_name", None)
+                                              if same_file else None))
+        except Exception as exc:
+            QMessageBox.critical(self, "Save symbol", str(exc))
+            return
+        self._symbol_file = path
+        self._symbol_loaded_name = self._symbol_meta.name
+        if not items:
+            warnings = list(warnings) + [
+                "saved without a drawing: the symbol is offered on schematics "
+                "once it has one"]
+        self._style.write(project.ini_path_for(path))
+        self._dirty = False
+        self._symbol_title()
+        # lib/ changed: the open schematics reload their libraries, so the
+        # new symbol is in Place > Symbol and Change symbol... at once
+        # (Anton, 2026-09-27); frozen copies of existing names stay.
+        if self._main_win is not None and hasattr(self._main_win, "refresh_libraries"):
+            self._main_win.refresh_libraries()
+        msg = f"Symbol '{self._symbol_meta.name}' written into {path.name}."
+        if warnings:
+            msg += "\n\nNotes:\n" + "\n".join("- " + w for w in warnings)
+        msg += ("\n\nA schematic that already uses this symbol keeps its frozen copy "
+                "until Tools > Load symbols from library.")
+        self._status(msg.splitlines()[0])
+        if warnings:
+            QMessageBox.information(self, "Symbol saved", msg)
+
+    def _on_symbol_properties(self):
+        from .symbol_editor import SymbolMeta, SymbolPropertiesDialog
+        if self._symbol_meta is None:
+            self._symbol_meta = SymbolMeta()
+        dlg = SymbolPropertiesDialog(self._symbol_meta, self._symbol_dialect(), self)
+        if dlg.exec():
+            self._symbol_meta = dlg.meta()
+            self._dirty = True
+            self._symbol_title()
+
+    def _on_symbol_place_pin(self):
+        from .symbol_editor import PinDialog, SymbolPinItem
+        pins = [i for i in self._scene.items() if isinstance(i, SymbolPinItem)]
+        dlg = PinDialog(f"p{len(pins) + 1}", len(pins) + 1, self)
+        if dlg.exec():
+            self._scene.start_item_placement(SymbolPinItem(dlg.name(), dlg.number()))
+
+    def _on_symbol_place_text(self):
+        from .symbol_editor import SymbolTextDialog, SymbolTextItem
+        dlg = SymbolTextDialog("+", 8.0, self)
+        if dlg.exec():
+            self._scene.start_item_placement(SymbolTextItem(dlg.content(), dlg.size()))
 
     def _build_file_menu(self):
         # Only actions on THIS schematic; creating/opening schematics and
@@ -330,7 +592,8 @@ class CanvasPanel(QWidget):
 
     def _build_draw_menu(self):
         menu = self._menu_bar.addMenu("&Draw")
-        for label, kind in [("&Line", "line"), ("&Rectangle", "rect"), ("&Circle", "circle")]:
+        for label, kind in [("&Line", "line"), ("&Rectangle", "rect"),
+                            ("&Ellipse", "ellipse"), ("&Polygon", "polygon")]:
             act = QAction(label, self)
             act.triggered.connect(lambda checked=False, k=kind: self._scene.start_drawing(k))
             menu.addAction(act)
@@ -506,6 +769,8 @@ class CanvasPanel(QWidget):
     # -- save -----------------------------------------------------------------
 
     def _on_save(self):
+        if self._symbol_mode:
+            self._on_symbol_save(); return
         if self._doc_props.is_subcircuit:
             self._save_subcircuit()
         elif self._current_path is None:
@@ -514,6 +779,8 @@ class CanvasPanel(QWidget):
             self._save_to(self._current_path)
 
     def _on_save_as(self):
+        if self._symbol_mode:
+            self._on_symbol_save_as(); return
         if self._doc_props.is_subcircuit:
             self._save_subcircuit()
             return
@@ -622,6 +889,11 @@ class CanvasPanel(QWidget):
             p = p.parent()
 
     def _ensure_saved(self) -> bool:
+        if self._symbol_mode:
+            if self._symbol_file is not None:
+                return True
+            self._on_save()
+            return self._symbol_file is not None
         if self._current_path is not None:
             return True
         self._on_save()
@@ -633,6 +905,8 @@ class CanvasPanel(QWidget):
         return self._dirty
 
     def panel_name(self) -> str:
+        if self._symbol_mode:
+            return str(self._symbol_file) if self._symbol_file else "(unsaved symbol)"
         return str(self._current_path) if self._current_path else "(unsaved schematic)"
 
     def panel_save(self) -> bool:
@@ -667,8 +941,9 @@ class CanvasPanel(QWidget):
         dlg = PreferencesDialog(self._style, self)
         if dlg.exec():
             self._style.apply_parser(dlg.result_parser())
-            if self._current_path is not None:
-                self._style.write(project.ini_path_for(self._current_path))
+            sidecar_owner = self._symbol_file if self._symbol_mode else self._current_path
+            if sidecar_owner is not None:
+                self._style.write(project.ini_path_for(sidecar_owner))
             # Rebuilding re-derives everything from the new style, including
             # the parameter-table/model sizes (natural size × scale pref).
             self._scene.from_data(self._scene.to_data(), self._library)
@@ -787,10 +1062,13 @@ class CanvasPanel(QWidget):
         wires = [i for i in items if isinstance(i, WireItem)]
         libs  = [i for i in items if isinstance(i, LibraryItem)]
         prms  = [i for i in items if isinstance(i, ParameterItem)]
+        from .model_item import ModelItem
+        models = [i for i in items if isinstance(i, ModelItem)]
         title = self._doc_props.title or self._current_path.stem
         try:
             text = build_ngspice_netlist(comps, wires, title, libs=libs, params=prms,
-                                         control_section=self._doc_props.control_section)
+                                         control_section=self._doc_props.control_section,
+                                         model_defs=models)
         except NetlistError as exc:
             QMessageBox.critical(self, "Netlist not generated",
                                  "The netlist was not generated:\n\n" + "\n".join(exc.errors))
@@ -846,7 +1124,7 @@ class CanvasPanel(QWidget):
     def _on_place_model_definition(self):
         from .model_dialog import ModelDialog
         from .model_item import ModelItem
-        dlg = ModelDialog(style=self._style, parent=self)
+        dlg = ModelDialog(style=self._style, parent=self, sch_type=self._sch_type)
         if not (dlg.exec() and dlg.model_name() and dlg.model_type()):
             return
         # Entering the name of an EXISTING model edits that definition in
@@ -873,6 +1151,19 @@ class CanvasPanel(QWidget):
             self._scene.addItem(ModelItem(dlg.model_name(), dlg.model_type(),
                                           dlg.simulator(), dlg.get_params(),
                                           dlg.preamble_path(), show=False))
+
+    def adopt_symbol(self, name: str, svg_text: str):
+        """Write a re-skinned subcircuit symbol (Change symbol…) into the
+        project's lib folder, as Place → Subcircuit does, and load it into
+        this schematic's library; returns the loaded Symbol."""
+        from .symbol_library import symbol_path_in
+        libdir = (project.subdir_for(self._current_path, "lib")
+                  if self._current_path else project.subdir("lib"))
+        libdir.mkdir(parents=True, exist_ok=True)
+        path = symbol_path_in(libdir, name, self._sch_type)
+        path.write_text(svg_text, encoding="utf-8")
+        self._library.add_bundle(path)
+        return self._library.symbol(name)
 
     def _on_place_subcircuit(self):
         from .place_subcircuit_dialog import PlaceSubcircuitDialog
@@ -1160,8 +1451,11 @@ class CanvasPanel(QWidget):
     def _schematic_relpath(self) -> str:
         """This schematic, relative to its project root - how an instruction
         file refers to it."""
-        return os.path.relpath(str(self._current_path),
-                               project.root_for(self._current_path))
+        # POSIX form: the path is written into a Python string literal of
+        # the instruction file, where a Windows backslash is an escape
+        # ("sch\Test.slicap_sch" -> SyntaxWarning, "\n…" worse; 2026-09-25)
+        return Path(os.path.relpath(str(self._current_path),
+                                    project.root_for(self._current_path))).as_posix()
 
     def _on_slicap_create_circuit(self):
         """Instruction -> Create circuit object: append
@@ -1644,6 +1938,14 @@ class MainWindow(QMainWindow):
         # a schematic via the File menu, which honours that mode.
         if file is not None:
             self.load_file(Path(file))
+        # The application owns the display theme: with the preference on
+        # "system" the desktop's scheme arrives from Qt AFTER the first canvas
+        # exists (Ubuntu, 2026-09-27: white background under a dark grid), and
+        # it may change while SLiCAP runs. Every change refreshes the canvases.
+        from PySide6.QtGui import QGuiApplication
+        app = QGuiApplication.instance()
+        if app is not None:
+            app.styleHints().colorSchemeChanged.connect(lambda _scheme: self.apply_theme())
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -1720,6 +2022,12 @@ class MainWindow(QMainWindow):
         act_open.setShortcut(QKeySequence.Open)
         act_open.triggered.connect(self._on_open)
         m.addAction(act_open)
+        act_sym_new = QAction("New s&ymbol", self)
+        act_sym_new.triggered.connect(lambda: self._on_symbol_editor(open_existing=False))
+        m.addAction(act_sym_new)
+        act_sym_edit = QAction("Edit s&ymbol…", self)
+        act_sym_edit.triggered.connect(lambda: self._on_symbol_editor(open_existing=True))
+        m.addAction(act_sym_edit)
         # Instruction-file actions live here too (Anton, 2026-08-05): the
         # File menu is the canonical home for file-level actions; the
         # panel's Open…/Save buttons stay as proximity shortcuts.  Same
@@ -1734,6 +2042,7 @@ class MainWindow(QMainWindow):
         act_open_instr.setEnabled(not self._schematic_only)
         m.addAction(act_open_instr)
         self._sch_menu_actions = [act_new_sl, act_new_ng, act_open,
+                                  act_sym_new, act_sym_edit,
                                   act_new_instr, act_open_instr]
         m.addSeparator()
         act = QAction("P&references…", self)
@@ -1940,14 +2249,72 @@ class MainWindow(QMainWindow):
         if _check_ngspice(self):
             self.add_canvas_panel('ngspice', config=self._config)
 
-    def add_canvas_panel(self, sch_type: str, config: str | None = None) -> CanvasPanel:
+    def _on_symbol_editor(self, open_existing: bool = False):
+        """File > New symbol / Edit symbol: a canvas panel in symbol mode
+        (symbol_editor.py), independent of the schematic panels. Like the
+        schematic entries it needs a project: the project's lib folder is
+        where symbols are opened from and saved into by default."""
+        panel = self.add_canvas_panel('slicap', config=self._config, symbol_mode=True)
+        panel._on_symbol_new()
+        if open_existing:
+            panel._on_symbol_open()
+        else:
+            panel._status("New symbol: draw it, then File > Symbol properties... names it; "
+                          "File > Save symbol writes it into the project's lib folder.")
+        return panel
+
+    def open_symbol_file(self, path: Path) -> CanvasPanel:
+        """Double-click on a .slicap_sym / .spice_sym in the project panel:
+        a symbol panel on that file (an open panel on the same file is
+        activated instead, as for schematics)."""
+        path = Path(path)
+        for dock in self._canvas_docks:
+            panel = dock.widget()
+            if isinstance(panel, CanvasPanel) and panel._symbol_mode and panel._symbol_file is not None:
+                try:
+                    same = panel._symbol_file.resolve() == path.resolve()
+                except OSError:
+                    same = False
+                if same:
+                    dock.show(); dock.raise_(); panel.setFocus()
+                    return panel
+        panel = self.add_canvas_panel('slicap', config=self._config, symbol_mode=True)
+        panel._on_symbol_new()
+        panel.open_symbol_file(path)
+        return panel
+
+    def refresh_libraries(self) -> None:
+        """Every open schematic rebuilds its symbol library from the system
+        symbols, the project's lib folder and its own frozen bundle (after a
+        symbol file was saved)."""
+        for dock in self._canvas_docks:
+            panel = dock.widget()
+            if (isinstance(panel, CanvasPanel) and not panel._symbol_mode
+                    and panel._scene is not None):
+                overlay = (project.symbols_path_for(panel._current_path)
+                           if panel._current_path else None)
+                panel._build_library(overlay)
+
+    def apply_theme(self) -> None:
+        """After the colour-scheme preference changed: every open canvas
+        takes the new background and rebuilds its items so that cached
+        display colours are re-resolved (config.display_style)."""
+        for dock in self._canvas_docks:
+            panel = dock.widget()
+            if isinstance(panel, CanvasPanel) and panel._scene is not None:
+                panel._scene.apply_theme()
+                panel._scene.from_data(panel._scene.to_data(), panel._library)
+
+    def add_canvas_panel(self, sch_type: str, config: str | None = None,
+                         symbol_mode: bool = False) -> CanvasPanel:
         panel = CanvasPanel(
             sch_type,
             config=config,
             main_win=self,
             schematic_only=self._schematic_only,
+            symbol_mode=symbol_mode,
         )
-        label = "NGspice" if sch_type == 'ngspice' else "SLiCAP"
+        label = "Symbol" if symbol_mode else ("NGspice" if sch_type == 'ngspice' else "SLiCAP")
         dock  = QDockWidget(label, self)
         dock.setWidget(panel)
         dock.setObjectName(f"canvas_dock_{len(self._canvas_docks)}")
@@ -2258,6 +2625,7 @@ class MainWindow(QMainWindow):
         dlg = AppPreferencesDialog(project_root=root, parent=self)
         if dlg.exec():
             dlg.apply()
+            self.apply_theme()
             if self._project_panel is not None:
                 self._project_panel.refresh_filters()
             if getattr(self, "_design_panel", None) is not None:
@@ -2431,16 +2799,31 @@ class MainWindow(QMainWindow):
                 return w
         return None
 
+    def _active_schematic_panel(self) -> "CanvasPanel | None":
+        """The schematic a run belongs to: the focused canvas when it is a
+        schematic, else the most recently opened schematic. A symbol editor
+        is never a run's context (Anton, 2026-09-27: Run with the symbol
+        editor focused saved the symbol and stopped without a word)."""
+        active = self._active_canvas_panel()
+        if active is not None and not active._symbol_mode:
+            return active
+        for dock in reversed(self._canvas_docks):
+            w = dock.widget()
+            if isinstance(w, CanvasPanel) and not w._symbol_mode:
+                return w
+        return None
+
     def _on_instr_run(self):
         if self._schematic_only or self._instr_runner.is_running():
             return
-        active = self._active_canvas_panel()
+        active = self._active_schematic_panel()
         if active is not None and not active._ensure_saved():
             return
         # Unsaved schematic edits are not in the netlists the instructions
         # regenerate from the files on disk — warn before running.
         dirty = [d.widget() for d in self._canvas_docks
                  if isinstance(d.widget(), CanvasPanel)
+                 and not d.widget()._symbol_mode
                  and d.widget().panel_dirty()]
         if dirty:
             names = "\n".join("  • " + Path(p.panel_name()).name

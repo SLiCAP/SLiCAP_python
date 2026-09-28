@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QFont, QFontMetricsF, QPen
 
-from .config import snap, style_of
+from .config import snap, snap_pos, style_of
 
 _BORDER_COLOR = QColor(60, 100, 140)
 _LINE_SPACING = 1.3
@@ -81,7 +81,8 @@ class ModelItem(QGraphicsItem):
         if self._svg_bytes:
             from PySide6.QtSvg import QSvgRenderer
             from PySide6.QtCore import QByteArray
-            r = QSvgRenderer(QByteArray(self._svg_bytes))
+            from .latex_label import display_svg
+            r = QSvgRenderer(QByteArray(display_svg(self._svg_bytes, self)))
             if r.isValid():
                 self._renderer = r
                 self._derive_size(r)
@@ -159,7 +160,9 @@ class ModelItem(QGraphicsItem):
             painter.restore()
 
     def _text_display_lines(self) -> list:
-        lines = [f"{self.model_name} {self.model_type}"]
+        # the block names itself, as the parameter block does: without a
+        # word a user did not recognise a model definition (2026-09-28)
+        lines = [f"model {self.model_name} {self.model_type}"]
         for name, value in self.params:
             n, v = name.strip(), value.strip()
             if n and v:                      # undefined -> default, not shown
@@ -194,7 +197,7 @@ class ModelItem(QGraphicsItem):
             self._load_renderer()
             self.update()
         if change == QGraphicsItem.ItemPositionChange:
-            return snap(value)
+            return snap_pos(self, value)   # Shift: free (config.snap_pos)
         return super().itemChange(change, value)
 
     # ── static helpers ────────────────────────────────────────────────────────
@@ -206,7 +209,7 @@ class ModelItem(QGraphicsItem):
         2026-08-16).
 
         Layout (Anton, 2026-09-14): the first line is ``name type`` in
-        typewriter, flush left - the ``.model`` keyword is netlist syntax
+        typewriter, flush left, with the ``.model`` keyword as in the netlist
         and stays out of the drawing (netlist_lines writes it); below it one row per
         parameter THE USER DEFINED, the name upright (``\\mathrm``), the
         value as a maths expression. A parameter without a value is not
@@ -231,7 +234,9 @@ class ModelItem(QGraphicsItem):
             return str(s).strip().replace("_", r"\_")
 
         header = ["", ""]
-        heading = r"\texttt{%s %s}" % (_tt(model_name), _tt(model_type))
+        # "model" in the face of the parameter block's "parameters", then the
+        # netlist line in typewriter (Anton, 2026-09-28)
+        heading = r"{\footnotesize \textsf{model}} \texttt{%s %s}" % (_tt(model_name), _tt(model_type))
         filled = [(n.strip(), v) for n, v in params
                   if n.strip() and (v or "").strip()]
         if not filled:

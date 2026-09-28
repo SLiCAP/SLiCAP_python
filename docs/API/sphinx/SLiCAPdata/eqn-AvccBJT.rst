@@ -1,3 +1,3 @@
 .. math::
 
-    A_{vcc} = 1
+    A_{\mathrm{vcc}} = 1

@@ -54,6 +54,15 @@ The dialog is grouped by element type, including:
 
 Changes take effect immediately on the canvas.
 
+Grid
+====
+
+Three grids: the minor lines (the grid step), the major lines (every
+eight minor cells) and the subgrid, a dot on every point of the fine grid,
+one fifth of the grid step, the grid that shapes snap to while Shift is
+held. Each has its colour; **View subgrid** switches the dots on, and they
+appear when the zoom keeps them apart.
+
 Border
 ======
 
@@ -69,3 +78,16 @@ e.g. ``bg_color = #ecf3ff``, ``bg_alpha = 100``, ``show_line_in_export =
 false`` in the ``[border]`` section of the schematic's ``.ini`` sidecar, and
 give every border the width of the document column (see the ``sch_scale``
 setting under :doc:`/GUI/project/project`).
+
+Colour scheme
+=============
+
+:menuselection:`File --> Preferences...` on the main window has a **Colour
+scheme**: *system* follows the desktop, *light* and *dark* force one. The
+window chrome follows through Qt. On a dark scheme the canvases draw on a
+dark background with every colour's lightness inverted for the screen only:
+black wires show white, white fills dark, red stays red; LaTeX renders
+(labels, parameter table, model and analysis blocks, fragments) show their
+black as white. A change of the desktop scheme while SLiCAP runs is followed
+at once. The schematic style, and therefore every SVG and PDF export, keeps
+the document colours.

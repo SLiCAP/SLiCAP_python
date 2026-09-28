@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QPointF, QRectF, QByteArray
 from PySide6.QtGui import QPainterPath, QFontMetricsF, QColor, QPen
 from PySide6.QtSvg import QSvgRenderer
 
-from .config import snap, style_of, default_style
+from .config import snap, snap_pos, style_of, default_style
 
 _SEL_PEN = QPen(QColor(0, 120, 215), 1.5, Qt.DashLine)
 _SEL_PEN.setCosmetic(True)
@@ -136,7 +136,8 @@ class LibraryItem(QGraphicsItem):
             from .latex_label import cache_dir_of, _render_latex_str
             svg = _render_latex_str(self._latex_block(), cache_dir=cache_dir_of(self))
             if svg:
-                r = QSvgRenderer(QByteArray(svg))
+                from .latex_label import display_svg
+                r = QSvgRenderer(QByteArray(display_svg(svg, self)))
                 if r.isValid():
                     self._renderer  = r
                     self._svg_bytes = svg
@@ -208,5 +209,5 @@ class LibraryItem(QGraphicsItem):
             self._load_renderer()
             self.update()
         if change == QGraphicsItem.ItemPositionChange:
-            return snap(value)
+            return snap_pos(self, value)   # Shift: free (config.snap_pos)
         return super().itemChange(change, value)

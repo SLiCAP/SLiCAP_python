@@ -4,6 +4,7 @@
 SLiCAP module with basic SLiCAP classes and functions.
 """
 
+import re
 import sympy as sp
 import sys
 import os
@@ -644,11 +645,41 @@ _FORMATS: dict[str, tuple[str, str]] = {
     "txt"   : _Entry(ini.txt_path,      ".txt"),
 }
 
+_SUBSCRIPT_NAME = re.compile(r"_\{([A-Za-z0-9]*[A-Za-z][A-Za-z0-9]*)\}")   # holds a letter
+_SUBSCRIPT_ANY  = re.compile(r"_\{([A-Za-z0-9]+)\}")                      # letters or digits
+_MATH_FORMATS = ("latex", "rst", "myst", "md", "html")
+
+
+def upright_subscripts(text: str, digits: bool = False) -> str:
+    """
+    Sets LaTeX subscripts ``_{name}`` upright: ``_{\\mathrm{name}}``.
+
+    In SLiCAP a subscript in a parameter or variable name is a NAME (R_a,
+    V_out, I_s), never an index, so the IEEE convention of upright subscripts
+    applies to every subscript that holds a letter. A purely numeric subscript
+    is an index in the reports (poles ``p_{1}``, matrix entries ``Y_{11}``)
+    and is left as it is, unless ``digits=True``: the schematic editor's
+    refdes pipeline sets ``R1`` as ``R_{\\mathrm{1}}`` through :func:`sub2rm`,
+    which passes ``digits=True``. A subscript that already holds a command is
+    never touched.
+
+    Applied by :class:`Snippet` (with ``digits=False``) to every report format
+    that carries math, so equations in reports and identifiers on schematics
+    use one convention (Anton, 2026-09-27).
+    """
+    pat = _SUBSCRIPT_ANY if digits else _SUBSCRIPT_NAME
+    return pat.sub(lambda m: "_{\\mathrm{" + m.group(1) + "}}", text)
+
+
 class Snippet:
     """
-    Text snippet created by the formatters.
+    Text snippet created by the formatters. For the formats that carry math
+    (LaTeX, RST, MyST, Markdown, HTML) alphabetic subscripts are set upright
+    on creation, see :func:`upright_subscripts`.
     """
     def __init__(self, snippet: str = "", format: None | str = None, mode="w") -> None:
+        if format in _MATH_FORMATS:
+            snippet = upright_subscripts(snippet)
         self._snippet = snippet
         self.mode     = mode
         if format is None:

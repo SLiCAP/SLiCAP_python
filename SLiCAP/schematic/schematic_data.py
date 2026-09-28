@@ -193,7 +193,8 @@ class LatexFragmentData:
 
 @dataclass
 class ShapeData:
-    kind:           str                       # "line" | "rect" | "circle"
+    kind:           str                       # "line" | "rect" | "ellipse" | "polygon"
+                                              # (legacy "circle" and "arrow" migrate in ShapeItem)
     x:              float                     # pos() anchor
     y:              float
     rel_points:     list[tuple[float, float]] # local coords relative to (x, y)
@@ -204,6 +205,35 @@ class ShapeData:
     line_end_start: str   = "none"            # "none"|"arrow"|"dot"|"diamond"
     line_end_end:   str   = "none"
     line_width:     float = 1.5
+    rotation:       float = 0.0               # degrees about the shape's centre
+    head_width:     float = 4.0               # arrow / diamond head, scene units
+    head_length:    float = 6.0
+
+
+@dataclass
+class PinData:
+    """Symbol editor: a pin (node marker) of the symbol being edited."""
+    x:      float
+    y:      float
+    name:   str
+    number: int
+
+
+@dataclass
+class SymbolTextData:
+    """Symbol editor: symbol text (drawn upright, centred on x, y)."""
+    x:       float
+    y:       float
+    content: str
+    size:    float = 8.0
+
+
+@dataclass
+class OpaqueData:
+    """Symbol editor: an SVG element kept verbatim (path, nested group)."""
+    x:   float
+    y:   float
+    xml: str
 
 
 @dataclass
@@ -222,6 +252,11 @@ class SchematicData:
     analysis_items:   list[AnalysisData]         = field(default_factory=list)
     shapes:           list[ShapeData]            = field(default_factory=list)
     model_defs:       list[ModelData]            = field(default_factory=list)
+    # symbol editor only (empty in schematics)
+    pins:             list[PinData]              = field(default_factory=list)
+    symbol_texts:     list[SymbolTextData]       = field(default_factory=list)
+    opaques:          list[OpaqueData]           = field(default_factory=list)
+    origin:           list | None                = None   # symbol editor: marker position
     properties:       DocumentProperties         = field(default_factory=DocumentProperties)
 
     def to_json(self) -> str:
@@ -346,9 +381,16 @@ class SchematicData:
                     "line_end_start": s.line_end_start,
                     "line_end_end":   s.line_end_end,
                     "line_width":     s.line_width,
+                    "rotation":       s.rotation,
+                    "head_width":     s.head_width,
+                    "head_length":    s.head_length,
                 }
                 for s in self.shapes
             ],
+            "pins": [{"x": p.x, "y": p.y, "name": p.name, "number": p.number} for p in self.pins],
+            "symbol_texts": [{"x": t.x, "y": t.y, "content": t.content, "size": t.size} for t in self.symbol_texts],
+            "opaques": [{"x": o.x, "y": o.y, "xml": o.xml} for o in self.opaques],
+            "origin": self.origin,
             "model_defs": [
                 {
                     "x": m.x, "y": m.y,
@@ -521,6 +563,9 @@ class SchematicData:
                 line_end_start=s.get("line_end_start", "none"),
                 line_end_end=s.get("line_end_end", "none"),
                 line_width=float(s.get("line_width", 1.5)),
+                rotation=float(s.get("rotation", 0.0)),
+                head_width=float(s.get("head_width", 4.0)),
+                head_length=float(s.get("head_length", 6.0)),
             )
             for s in data.get("shapes", [])
         ]
@@ -560,6 +605,12 @@ class SchematicData:
                    border=border, latex_fragments=latex_fragments,
                    parameters=parameters, analysis_items=analysis_items,
                    hyperlinks=hyperlinks, shapes=shapes,
+                   pins=[PinData(x=float(p["x"]), y=float(p["y"]), name=p.get("name", ""), number=int(p.get("number", 1)))
+                         for p in data.get("pins", [])],
+                   symbol_texts=[SymbolTextData(x=float(t["x"]), y=float(t["y"]), content=t.get("content", ""), size=float(t.get("size", 8.0)))
+                                 for t in data.get("symbol_texts", [])],
+                   opaques=[OpaqueData(x=float(o["x"]), y=float(o["y"]), xml=o.get("xml", "")) for o in data.get("opaques", [])],
+                   origin=(list(data["origin"]) if data.get("origin") else None),
                    model_defs=model_defs, properties=properties)
 
     def normalize_origin(self, grid_size: int = 5) -> None:

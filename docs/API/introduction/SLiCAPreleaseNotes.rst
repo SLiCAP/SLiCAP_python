@@ -4,6 +4,138 @@ SLiCAP release notes
 
 .. image:: /API/img/colorCode.svg
 
+SLiCAP version 6.1 release notes
+================================
+
+Version 6.1 combines the schematic capture for SLiCAP and NGspice with a
+simple **SVG editor** (``Draw`` menu) to illustrate schematics, and with a
+**symbol editor** for modifying and creating SLiCAP and NGspice symbols.
+
+#. **Symbol editor.** :menuselection:`File --> New symbol` and
+   :menuselection:`File --> Edit symbol...` on the main window open a canvas
+   in symbol mode: the schematic editor with reduced menus, editing one
+   symbol of a ``.slicap_sym`` or ``.spice_sym`` file in the project's
+   ``lib`` folder. A double click on such a file in the Project panel does
+   the same. The artwork is drawn with the Draw menu. The terminals are
+   placed with :menuselection:`Place --> Pin...`, decoration with
+   :menuselection:`Place --> Symbol text...`,
+   :menuselection:`Place --> LaTeX...` and :menuselection:`Place --> Image...`.
+   The element attributes (prefix, model, parameters with defaults,
+   description, info link) are set with
+   :menuselection:`File --> Symbol properties...`. A LaTeX label is compiled
+   once and stored in the symbol as plain paths together with its source.
+   An image is embedded. The symbol therefore renders on any machine, and
+   the label reopens for editing where LaTeX is installed. A saved symbol is
+   offered at once in :menuselection:`Place --> Symbol` of every open
+   schematic of the project. See :doc:`/GUI/schematics/symbol_editor`.
+
+#. **Drawing.** The Draw menu has lines, rectangles, ellipses and polygons.
+   Double-clicking a shape opens its properties: stroke colour, width and
+   style, fill, a rotation about the shape's centre and, for a line, the two
+   line ends (arrow heads with their own width and length). A selected shape
+   shows a handle at every vertex for reshaping. See
+   :doc:`/GUI/schematics/annotations`.
+
+#. **Shift + drag.** Items snap in three ways. Symbols, wires, junctions
+   and symbol pins always snap to the grid, because the connectivity is
+   computed from their positions. Text annotations never snap. Everything
+   else snaps to the grid, or to a fine grid of one fifth of the grid step
+   while **Shift** is held during the drag: the blocks of the Place menu
+   (parameters, model definitions, the source, detector and loop gain
+   reference definitions, library and command lines), the border, and the
+   drawn shapes, which snap the vertex nearest to the point where they were
+   grabbed. In the symbol editor the fine grid is one symbol unit, which
+   symbol artwork needs. **View subgrid** shows the fine grid as dots, with
+   its own colour in the drawing preferences. See
+   :doc:`/GUI/schematics/annotations` and :doc:`/GUI/schematics/preferences`.
+
+#. **Assigning symbols to components and subcircuits.** The component
+   Properties dialog has a **Change symbol...** button. It offers the
+   symbols with the same number of pins and, for a built-in element type,
+   the same prefix, also those of the project's ``lib`` folder. The wires
+   follow the pins to their new places. For a subcircuit block the ports are
+   assigned to the pins of the chosen symbol in a list with a preview. The
+   result is stored in the project's library as the block's symbol, so that
+   :menuselection:`Tools --> Update symbols from library` keeps it and other
+   schematics of the project can use it. See
+   :doc:`/GUI/schematics/component_properties`.
+
+#. **Orientation of symbol lettering.** The symbol texts and LaTeX labels of
+   a rotated or mirrored component are read from the bottom or from the right
+   of the sheet: upright at 0 and 180 degrees, bottom-to-top at 90 and 270
+   degrees, never mirrored. This holds on the canvas and in the SVG and PDF
+   exports.
+
+#. **Dark and light theme.** :menuselection:`File --> Preferences...` on the
+   main window has a colour scheme *system* (following the operating system),
+   *light* or *dark*. On a dark scheme the canvases, the symbol previews and
+   the Design data panel draw on a dark background with the lightness of
+   every colour inverted while its hue is kept, LaTeX renders included:
+   black shows white, white fills show dark, red stays red. A change of the
+   desktop scheme while SLiCAP runs is followed at once. The schematic
+   style, and therefore every SVG and PDF export, keeps the document
+   colours. See :doc:`/GUI/schematics/preferences`.
+
+#. **Wires and junctions.** A selected wire turns to the selection colour
+   with a dot on each vertex and a cross on the vertex being dragged, like a
+   selected shape. The bounding box is gone. Two crossing wires do not
+   connect. A junction placed on the crossing splits the wires there and
+   connects them, and the dot appears because a connection now exists. See
+   :doc:`/GUI/schematics/wiring`.
+
+#. **Copy and paste across canvases.** One clipboard serves all open
+   schematics and symbol editors. Components and wires paste from one
+   schematic into another. Shapes, LaTeX labels and images paste between
+   schematics and symbols. Pins and symbol texts paste between symbols, also
+   between the two dialects. Pasted and newly placed items follow the cursor
+   and are put down with a click. **R** and **M** rotate and mirror a
+   component while it is being placed.
+
+#. **NGspice schematics.** A ``.model`` block on a top-level NGspice
+   schematic is now written into the netlist (in a subcircuit it already
+   was). The SLiCAP and NGspice netlisters share one writer for the library,
+   parameter and model blocks. The model dialog of an NGspice schematic
+   offers the SPICE model types with empty parameter lines, because SPICE
+   model parameters depend on the model level and are taken from the NGspice
+   manual, not from SLiCAP. A voltage or current source with only a ``value``
+   is netlisted with that value as its ``dc`` value. Every NGspice run
+   reports in the log which netlist it uses and whether it was regenerated
+   from the schematic. The heading of a model block on the canvas reads
+   ``model`` in the font of the parameter block.
+
+#. **Upright subscripts in every report format.** Every LaTeX, RST, MyST,
+   Markdown and HTML snippet sets the subscripts that hold a letter upright
+   on creation (``R_\mathrm{a}``, ``V_\mathrm{out}``). A numeric index such
+   as ``p_1`` stays italic. The HTML report pages follow the same rule.
+   Schematic labels and reports now use one convention. Reports have to be
+   regenerated to pick it up.
+
+#. **MS-Windows.** Fixes reported by the first Windows users:
+
+   - The documentation links of the symbols and dialogs point to the current
+     layout of the manual. They open the local copy of the manual first.
+   - The instruction file writes paths with forward slashes. This removes
+     the ``SyntaxWarning`` for a path such as ``"sch\Test.slicap_sch"``.
+   - Writing the design-data manifest is retried while Windows still holds
+     the file (``WinError 5``).
+   - Table cells in the parameter and model dialogs are edited on an opaque
+     background.
+
+#. **GUI bug fixes.**
+
+   - Run (F5) always executes the instruction file, also while a symbol
+     editor has the focus.
+   - A symbol file with an unusable symbol is still loaded. The unusable
+     symbol is skipped with a note in the console.
+   - The pin markers of a symbol (the circles in the symbol file that give
+     the pin positions) are no longer drawn. They were rendered as black
+     dots, invisible on a black wire, but a gap in every wire on a dark
+     canvas.
+   - Pins, symbol texts and pasted items are placed under the cursor, not at
+     the origin.
+   - A new symbol saved without a name is named after its file.
+   - Save as writes the extension of the selected file type.
+
 SLiCAP Version 6.0 release notes
 ================================
 

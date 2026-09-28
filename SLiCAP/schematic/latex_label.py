@@ -339,6 +339,19 @@ def render_refdes(refdes: str, bold: bool = False, cache_dir=None,
     return _render_latex_str(tex, cache_dir)
 
 
+def display_svg(svg_bytes: bytes, item=None) -> bytes:
+    """The bytes an item renders ON SCREEN from a LaTeX render: unchanged in
+    the light theme; in the dark theme the LaTeX black is inverted to white,
+    the rule config.display_style applies to every style colour. Colour a
+    user wrote inside a fragment is left alone. The stored bytes and the
+    exports keep the document black (Anton, 2026-09-27)."""
+    from .config import dark_theme_active, _invert_lightness
+    from PySide6.QtGui import QColor
+    if not svg_bytes or not dark_theme_active():
+        return svg_bytes
+    return recolor_svg(svg_bytes, _invert_lightness(QColor("#000000")).name())
+
+
 def recolor_svg(svg_bytes: bytes, color: str) -> bytes:
     """Tint a rendered LaTeX SVG (pdf2svg output is black): explicit black
     fills/strokes are replaced, and a fill on the root element recolours

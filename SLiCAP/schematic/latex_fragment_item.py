@@ -84,7 +84,8 @@ class LatexFragmentItem(QGraphicsItem):
         if self._svg_bytes:
             from PySide6.QtSvg import QSvgRenderer
             from PySide6.QtCore import QByteArray
-            r = QSvgRenderer(QByteArray(self._svg_bytes))
+            from .latex_label import display_svg
+            r = QSvgRenderer(QByteArray(display_svg(self._svg_bytes, self)))
             if r.isValid():
                 self._renderer = r
 

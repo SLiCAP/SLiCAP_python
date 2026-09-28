@@ -57,12 +57,14 @@ class _SymbolPreview(QWidget):
         self.update()
 
     def paintEvent(self, _ev) -> None:
+        from .config import canvas_background, display_style, default_style
         p = QPainter(self)
-        p.fillRect(self.rect(), Qt.white)
+        p.fillRect(self.rect(), canvas_background())
         if self._sym is None:
             return
         p.setRenderHint(QPainter.Antialiasing)
-        renderer = QSvgRenderer(QByteArray(_apply_symbol_colors(self._sym.svg)))
+        renderer = QSvgRenderer(QByteArray(_apply_symbol_colors(
+            self._sym.svg, display_style(default_style()))))
         vb = renderer.viewBoxF()
         scale = min(self.width() / vb.width(), self.height() / vb.height()) * 0.7
         p.translate(self.width() / 2, self.height() / 2)
@@ -70,7 +72,8 @@ class _SymbolPreview(QWidget):
         p.translate(-vb.center().x(), -vb.center().y())
         renderer.render(p, vb)
         if self._sym.show_pinnames:
-            draw_subckt_pin_names(p, self._sym.nodes, self._sym.pins)
+            draw_subckt_pin_names(p, self._sym.nodes, self._sym.pins,
+                                  style=display_style(default_style()))
         p.end()
 
 

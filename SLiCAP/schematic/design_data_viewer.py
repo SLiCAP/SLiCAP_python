@@ -63,12 +63,17 @@ class _SvgZoomView(QGraphicsView):
 
     def __init__(self, svg_bytes: bytes, parent=None):
         super().__init__(parent)
-        self._renderer = QSvgRenderer(QByteArray(svg_bytes))  # keep alive
+        from .config import canvas_background
+        from .latex_label import display_svg
+        # shown as on the canvas: the display colour rule on the render
+        # (black to white in the dark theme) on the canvas background
+        self._renderer = QSvgRenderer(QByteArray(display_svg(svg_bytes)))  # keep alive
         item = QGraphicsSvgItem()
         item.setSharedRenderer(self._renderer)
         scene = QGraphicsScene(self)
         scene.addItem(item)
         self.setScene(scene)
+        self.setBackgroundBrush(canvas_background())
         self.setRenderHints(QPainter.RenderHint.Antialiasing
                             | QPainter.RenderHint.SmoothPixmapTransform)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)

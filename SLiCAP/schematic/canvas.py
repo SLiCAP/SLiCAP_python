@@ -7,11 +7,11 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem, QGraphicsSimpleTextItem,
 )
 from PySide6.QtCore import Qt, QPointF, QRectF, Signal, QTimer
-from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPainterPath, QTransform, QTextCursor, QPixmap
+from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPainterPath, QTransform, QTextCursor, QPixmap, QPolygonF
 
 from . import config as _config
 from .config import (
-    GRID_SIZE, GRID_MAJOR, DEFAULT_ZOOM, snap,
+    GRID_SIZE, GRID_MAJOR, DEFAULT_ZOOM, snap, snap_pos,
     Z_WIRE, Z_WIRE_DRAG,
 )
 from .component_item import ComponentItem, make_ghost, _discard_label, _PropertyLabel
@@ -45,16 +45,57 @@ class _Mode(Enum):
     PLACING_ANALYSIS    = auto()
     PLACING_HYPERLINK   = auto()
     PLACING_MODEL       = auto()
+    PLACING_ITEM        = auto()   # a prepared item follows the cursor (symbol pins, texts)
     PASTING             = auto()
     DRAWING_LINE        = auto()
     DRAWING_RECT        = auto()
-    DRAWING_CIRCLE      = auto()
+    DRAWING_ELLIPSE     = auto()
+    DRAWING_POLYGON     = auto()
 
 _FREE_PLACEMENT_MODES = (_Mode.PLACING_TEXT, _Mode.PLACING_HYPERLINK,
                          _Mode.PLACING_IMAGE, _Mode.PLACING_LATEX)
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
+
+def _shape_record(item):
+    """The data record of a shape (file, undo and clipboard share it)."""
+    from .schematic_data import ShapeData
+    return ShapeData(
+        kind=item.kind,
+        x=item.pos().x(), y=item.pos().y(),
+        rel_points=[(p.x(), p.y()) for p in item.rel_points],
+        stroke_color=item.stroke_color,
+        fill_color=item.fill_color,
+        fill_style=item.fill_style,
+        line_style=item.line_style,
+        line_end_start=item.line_end_start,
+        line_end_end=item.line_end_end,
+        line_width=item.line_width,
+        rotation=item.rotation,
+        head_width=item.head_width,
+        head_length=item.head_length,
+    )
+
+
+def _shape_from_record(sd, delta: QPointF = QPointF(0, 0)):
+    """A shape item from its record, shifted by *delta* (paste)."""
+    return ShapeItem(
+        kind=sd.kind,
+        rel_points=[QPointF(px, py) for px, py in sd.rel_points],
+        stroke_color=sd.stroke_color,
+        fill_color=sd.fill_color,
+        fill_style=sd.fill_style,
+        line_style=sd.line_style,
+        line_end_start=sd.line_end_start,
+        line_end_end=sd.line_end_end,
+        line_width=sd.line_width,
+        rotation=sd.rotation,
+        head_width=sd.head_width,
+        head_length=sd.head_length,
+        pos=QPointF(sd.x + delta.x(), sd.y + delta.y()),
+    )
+
 
 def _make_preview_pen() -> QPen:
     pen = QPen(Qt.black, 1.2)
@@ -181,6 +222,17 @@ def _find_junction_points(wires, components) -> set[tuple[int, int]]:
 # _FREE_PLACEMENT_MODES, is defined right after _Mode.
 
 
+# ONE clipboard for every scene of the process, so a selection copied on one
+# schematic or symbol pastes on another (Anton, 2026-09-27: a symbol drawing
+# had to be redrawn for the other dialect). What a scene can take from it is
+# decided at paste time (SchematicScene._pasteable).
+_SHARED_CLIPBOARD: list = []
+
+_SYMBOL_ONLY_KINDS = ("pin", "symbol_text", "opaque")
+_SCHEMATIC_ONLY_KINDS = ("component", "wire", "command", "free_text", "analysis",
+                         "hyperlink", "model", "parameters")
+
+
 class SchematicScene(QGraphicsScene):
 
     # Placement signals, one meaning each (2026-09-26; before, placing_cancelled
@@ -202,7 +254,12 @@ class SchematicScene(QGraphicsScene):
     def __init__(self):
         super().__init__()
         self.setSceneRect(-2000, -2000, 4000, 4000)
-        self.setBackgroundBrush(QColor(255, 255, 255))
+        self.show_origin = False          # symbol editor: an OriginItem
+        # stroke width of a NEW shape: 1.5 for annotations on a schematic,
+        # 1.0 in the symbol editor, the width of the library's symbols
+        # (Anton, 2026-09-27: an added emitter line was thicker than the rest)
+        self.default_line_width = 1.5
+        self.apply_theme()
 
         # Strong references to every top-level item (see addItem): shiboken
         # keeps a Python-created QGraphicsItem alive only through its Python
@@ -297,7 +354,6 @@ class SchematicScene(QGraphicsScene):
         self._draw_pts:    list             = []     # accumulated scene pts (polyline)
         self._draw_ghost:  object | None    = None   # preview ShapeItem
 
-        self._clipboard: list[dict] = []
         self._paste_ghost_items: list = []   # [(kind, item, base)]
         self._paste_ref: QPointF | None = None
         self._exporting: bool = False
@@ -356,6 +412,7 @@ class SchematicScene(QGraphicsScene):
         sel = sorted(self.selectedItems(), key=_key)
         if not sel:
             return
+        from .symbol_editor import SymbolPinItem, SymbolTextItem, OpaqueSvgItem
         self._clipboard.clear()
         self._paste_count = 0
         for item in sel:
@@ -440,16 +497,52 @@ class SchematicScene(QGraphicsScene):
                     'preamble': item.preamble_path,
                     'show':     item.show_on_schematic,
                 })
+            # Shapes, LaTeX labels, images and the symbol editor's items copy
+            # through their data records (Anton, 2026-09-27: Ctrl+C/V did
+            # nothing on a pin).
+            elif isinstance(item, ShapeItem):
+                self._clipboard.append({'kind': 'shape', 'x': item.pos().x(), 'y': item.pos().y(),
+                                        'record': _shape_record(item)})
+            elif isinstance(item, LatexFragmentItem):
+                self._clipboard.append({'kind': 'latex', 'x': item.pos().x(), 'y': item.pos().y(),
+                                        'latex_code': item.latex_code, 'preamble': item.preamble_path,
+                                        'w': item.display_width, 'h': item.display_height})
+            elif isinstance(item, ImageItem):
+                self._clipboard.append({'kind': 'image', 'x': item.pos().x(), 'y': item.pos().y(),
+                                        'file_path': item.file_path,
+                                        'w': item.display_width, 'h': item.display_height})
+            elif isinstance(item, SymbolPinItem):
+                self._clipboard.append({'kind': 'pin', 'x': item.pos().x(), 'y': item.pos().y(),
+                                        'name': item.name})
+            elif isinstance(item, SymbolTextItem):
+                self._clipboard.append({'kind': 'symbol_text', 'x': item.pos().x(), 'y': item.pos().y(),
+                                        'content': item.content, 'size': item.size})
+            elif isinstance(item, OpaqueSvgItem):
+                self._clipboard.append({'kind': 'opaque', 'x': item.pos().x(), 'y': item.pos().y(),
+                                        'xml': item.xml})
+
+    @property
+    def _clipboard(self) -> list:
+        return _SHARED_CLIPBOARD
+
+    def _pasteable(self) -> list:
+        """The clipboard entries this scene can take: a symbol drawing takes
+        no components or wires, a schematic takes no pins or symbol texts;
+        shapes, texts, LaTeX labels and images go anywhere."""
+        symbol_mode = bool(self.show_origin)
+        banned = _SCHEMATIC_ONLY_KINDS if symbol_mode else _SYMBOL_ONLY_KINDS
+        return [d for d in self._clipboard if d['kind'] not in banned]
 
     def _paste_clipboard(self) -> None:
-        if not self._clipboard:
+        if not self._pasteable():
             return
         self._start_paste_ghost()
 
     def _start_paste_ghost(self) -> None:
         """Enter paste-ghost mode: clipboard items follow the cursor, click to place."""
         from PySide6.QtWidgets import QGraphicsSimpleTextItem as _ST
-        if not self._clipboard:
+        entries = self._pasteable()
+        if not entries:
             return
         self._end_wire(commit=False)
         self._cancel_placement()   # clears any prior ghost / mode
@@ -458,13 +551,13 @@ class SchematicScene(QGraphicsScene):
         # Using a component origin guarantees delta = snapped_cursor - ref
         # is a multiple of GRID_SIZE, so all pasted components land on-grid.
         ref = None
-        for data in self._clipboard:
+        for data in entries:
             if data['kind'] == 'component':
                 ref = QPointF(data['x'], data['y'])
                 break
         if ref is None:
             # Clipboard has no components; fall back to first item position.
-            for data in self._clipboard:
+            for data in entries:
                 if 'x' in data and 'y' in data:
                     ref = QPointF(data['x'], data['y'])
                     break
@@ -476,7 +569,7 @@ class SchematicScene(QGraphicsScene):
             return
         self._paste_ref = ref
 
-        for data in self._clipboard:
+        for data in entries:
             kind = data['kind']
             if kind == 'component':
                 ghost = make_ghost(data['svg_bytes'], self.style)
@@ -525,6 +618,29 @@ class SchematicScene(QGraphicsScene):
                 ghost.setPos(QPointF(data['x'], data['y']))
                 self.addItem(ghost)
                 self._paste_ghost_items.append(('point', ghost, QPointF(data['x'], data['y'])))
+            elif kind in ('shape', 'latex', 'image', 'pin', 'symbol_text', 'opaque'):
+                from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsEllipseItem
+                from .symbol_editor import OpaqueSvgItem
+                base = QPointF(data['x'], data['y'])
+                if kind == 'shape':
+                    ghost = _shape_from_record(data['record'])
+                elif kind in ('latex', 'image'):
+                    ghost = QGraphicsRectItem(0, 0, data['w'], data['h'])
+                    ghost.setPen(QPen(Qt.gray, 0.5, Qt.DashLine))
+                elif kind == 'pin':
+                    ghost = QGraphicsEllipseItem(-2, -2, 4, 4)
+                    ghost.setBrush(QBrush(Qt.red)); ghost.setPen(QPen(Qt.NoPen))
+                elif kind == 'symbol_text':
+                    ghost = _ST(data['content'])
+                else:
+                    ghost = OpaqueSvgItem(data['xml'])
+                ghost.setFlag(QGraphicsItem.ItemIsSelectable, False)
+                ghost.setFlag(QGraphicsItem.ItemIsMovable, False)
+                ghost.setOpacity(0.4)
+                ghost.setAcceptedMouseButtons(Qt.NoButton)
+                ghost.setPos(base)
+                self.addItem(ghost)
+                self._paste_ghost_items.append(('point', ghost, base))
 
         self._mode = _Mode.PASTING
         self.placing_started.emit()
@@ -539,7 +655,8 @@ class SchematicScene(QGraphicsScene):
         self._mode = _Mode.NORMAL
         self.placing_ended.emit()
 
-        if not self._clipboard or self._paste_ref is None:
+        entries = self._pasteable()
+        if not entries or self._paste_ref is None:
             self._paste_ref = None
             return
 
@@ -549,7 +666,7 @@ class SchematicScene(QGraphicsScene):
         self._push_undo()
         self.clearSelection()
 
-        for data in self._clipboard:
+        for data in entries:
             kind = data['kind']
             if kind == 'component':
                 # Re-fetch the full symbol SVG from the library so embedded text
@@ -620,6 +737,42 @@ class SchematicScene(QGraphicsScene):
                                      show=data['show'])
                 self.addItem(item)
                 item.setSelected(True)
+            elif kind == 'shape':
+                item = _shape_from_record(data['record'], delta)
+                self.addItem(item)
+                item.setSelected(True)
+            elif kind == 'latex':
+                item = LatexFragmentItem(data['latex_code'], data['preamble'], data['w'], data['h'],
+                                         QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                self.addItem(item)
+                item.setSelected(True)
+            elif kind == 'image':
+                item = ImageItem(data['file_path'], data['w'], data['h'],
+                                 QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                self.addItem(item)
+                item.setSelected(True)
+            elif kind == 'pin':
+                # A pin copy gets the next pin number; its name is kept when
+                # free, otherwise the number is appended (b -> b3).
+                from .symbol_editor import SymbolPinItem
+                pins = [i for i in self.items() if isinstance(i, SymbolPinItem)]
+                number = max((p.number for p in pins), default=0) + 1
+                names = {p.name for p in pins}
+                name = data['name'] if data['name'] not in names else f"{data['name']}{number}"
+                item = SymbolPinItem(name, number, QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                self.addItem(item)
+                item.setSelected(True)
+            elif kind == 'symbol_text':
+                from .symbol_editor import SymbolTextItem
+                item = SymbolTextItem(data['content'], data['size'],
+                                      QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                self.addItem(item)
+                item.setSelected(True)
+            elif kind == 'opaque':
+                from .symbol_editor import OpaqueSvgItem
+                item = OpaqueSvgItem(data['xml'], QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                self.addItem(item)
+                item.setSelected(True)
 
         self._sync_junctions()
         self._remove_short_circuit_wires()
@@ -627,12 +780,45 @@ class SchematicScene(QGraphicsScene):
 
     # ── placement ─────────────────────────────────────────────────────────────
 
+    def start_item_placement(self, item) -> None:
+        """A prepared item (a symbol pin, a symbol text) follows the cursor
+        with its own snapping rule (config.snap_pos) and is placed with a
+        click; Escape removes it (Anton, 2026-09-27: pins appeared at a
+        fixed spot and had to be dragged from there)."""
+        self._end_wire(commit=False)
+        self._cancel_placement()
+        item.setOpacity(0.5)
+        item.setAcceptedMouseButtons(Qt.NoButton)
+        item.setPos(QPointF(-9999, -9999))
+        self._ghost = item
+        self.addItem(item)
+        self._mode = _Mode.PLACING_ITEM
+        self.placing_started.emit()
+
+    def rotate_ghost(self) -> bool:
+        """R while a component is being placed: the ghost turns, and the
+        component is placed as shown (a user found rotation possible only
+        after placement, 2026-09-25). Returns False outside a placement."""
+        if self._mode != _Mode.PLACING or self._ghost is None:
+            return False
+        self._ghost.setRotation(self._ghost.rotation() + 90)
+        return True
+
+    def mirror_ghost(self) -> bool:
+        """M while a component is being placed: the ghost mirrors."""
+        if self._mode != _Mode.PLACING or self._ghost is None:
+            return False
+        self._placing_hflip = not self._placing_hflip
+        self._ghost.setTransform(QTransform().scale(-1 if self._placing_hflip else 1, 1))
+        return True
+
     def start_placement(self, name: str, svg_bytes: bytes):
         self._end_wire(commit=False)
         self._cancel_placement()
         self._mode         = _Mode.PLACING
         self._placing_name = name
         self._placing_svg  = svg_bytes
+        self._placing_hflip = False
         self._ghost        = make_ghost(svg_bytes, self.style)
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
@@ -707,7 +893,8 @@ class SchematicScene(QGraphicsScene):
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
         from .parameter_item import svg_scene_size
-        renderer = QSvgRenderer(QByteArray(svg_bytes)) if svg_bytes else None
+        from .latex_label import display_svg
+        renderer = QSvgRenderer(QByteArray(display_svg(svg_bytes))) if svg_bytes else None
         if renderer and renderer.isValid():
             natural = svg_scene_size(renderer, self.style)
             pct = self.style.SCALE_PARAMETER_TABLE / 100.0
@@ -1050,7 +1237,8 @@ class SchematicScene(QGraphicsScene):
         svg_bytes = self._render_ghost_latex(latex_code, preamble_path)
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
-        renderer = QSvgRenderer(QByteArray(svg_bytes)) if svg_bytes else None
+        from .latex_label import display_svg
+        renderer = QSvgRenderer(QByteArray(display_svg(svg_bytes))) if svg_bytes else None
         w, h = max(1, width), max(1, height)
         if renderer and renderer.isValid():
             px = QPixmap(w, h)
@@ -1140,9 +1328,11 @@ class SchematicScene(QGraphicsScene):
         self._cancel_draw()
         self._draw_kind = kind
         mode_map = {
-            "line":   _Mode.DRAWING_LINE,
-            "rect":   _Mode.DRAWING_RECT,
-            "circle": _Mode.DRAWING_CIRCLE,
+            "line":    _Mode.DRAWING_LINE,
+            "rect":    _Mode.DRAWING_RECT,
+            "ellipse": _Mode.DRAWING_ELLIPSE,
+            "circle":  _Mode.DRAWING_ELLIPSE,    # legacy name
+            "polygon": _Mode.DRAWING_POLYGON,
         }
         self._mode = mode_map[kind]
         self.placing_started.emit()   # reuse signal: switches view to NoDrag
@@ -1155,7 +1345,7 @@ class SchematicScene(QGraphicsScene):
         self._draw_pts    = []
         self._draw_kind   = None
         if self._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_RECT,
-                           _Mode.DRAWING_CIRCLE):
+                           _Mode.DRAWING_ELLIPSE, _Mode.DRAWING_POLYGON):
             self._mode = _Mode.NORMAL
             self.placing_ended.emit()
 
@@ -1163,9 +1353,9 @@ class SchematicScene(QGraphicsScene):
         from .shape_item import ShapeItem
         from . import config as cfg
         color = "#000000"
-        lw    = 1.5
+        lw    = self.default_line_width
 
-        if self._mode == _Mode.DRAWING_LINE:
+        if self._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON):
             pts = self._draw_pts + [scene_pos]
             if len(pts) < 2:
                 if self._draw_ghost and self._draw_ghost.scene():
@@ -1174,7 +1364,8 @@ class SchematicScene(QGraphicsScene):
                 return
             anchor = pts[0]
             rel    = [QPointF(p.x() - anchor.x(), p.y() - anchor.y()) for p in pts]
-            kind_g = "line"
+            # a polygon preview with fewer than 3 points is its outline so far
+            kind_g = "polygon" if (self._mode == _Mode.DRAWING_POLYGON and len(pts) >= 3) else "line"
 
         elif self._mode == _Mode.DRAWING_RECT:
             if self._draw_anchor is None:
@@ -1185,14 +1376,14 @@ class SchematicScene(QGraphicsScene):
                               scene_pos.y() - anchor.y())]
             kind_g = "rect"
 
-        elif self._mode == _Mode.DRAWING_CIRCLE:
+        elif self._mode == _Mode.DRAWING_ELLIPSE:
             if self._draw_anchor is None:
                 return
             anchor = self._draw_anchor
             rel    = [QPointF(0, 0),
                       QPointF(scene_pos.x() - anchor.x(),
                               scene_pos.y() - anchor.y())]
-            kind_g = "circle"
+            kind_g = "ellipse"
         else:
             return
 
@@ -1211,11 +1402,14 @@ class SchematicScene(QGraphicsScene):
         """Finalise the current shape and add it to the scene."""
         kind = self._draw_kind
 
-        if kind == "line":
+        if kind in ("line", "polygon"):
             pts    = self._draw_pts
+            if kind == "polygon" and len(pts) < 3:
+                self._cancel_draw()
+                return
             anchor = pts[0]
             rel    = [QPointF(p.x() - anchor.x(), p.y() - anchor.y()) for p in pts]
-        elif kind in ("rect", "circle"):
+        elif kind in ("rect", "ellipse", "circle"):
             anchor = self._draw_anchor
             rel    = [QPointF(0, 0),
                       QPointF(scene_pos.x() - anchor.x(),
@@ -1224,7 +1418,7 @@ class SchematicScene(QGraphicsScene):
             return
 
         self._push_undo()
-        item = ShapeItem(kind, rel, pos=anchor)   # all style fields use defaults
+        item = ShapeItem(kind, rel, pos=anchor, line_width=self.default_line_width)
         self.addItem(item)
         self._cancel_draw()
         self.start_drawing(kind)
@@ -1358,6 +1552,24 @@ class SchematicScene(QGraphicsScene):
         self._redo_stack.clear()
 
     # ── wire splitting ────────────────────────────────────────────────────────
+
+    def _connect_wires_at(self, pos: QPointF) -> None:
+        """Place > Junction: CONNECT the wires that pass through *pos*.
+
+        Junction dots are derived from the wire topology (_sync_junctions),
+        so a dot placed by hand at a crossing used to vanish at the next sync
+        and connected nothing; a placement that changes nothing is useless
+        (Anton, 2026-09-27). A placed junction therefore changes the
+        topology: every wire whose interior passes through the point is
+        split there, the wire ends meet, the connectivity joins them, and
+        the dot follows from the ordinary rule and stays. On a single wire
+        the two halves are collinear and merge again: no connection, no dot.
+        In empty space nothing happens."""
+        pk = _pt_key(pos)
+        for wire in [i for i in self.items() if isinstance(i, WireItem)]:
+            if _on_wire_interior(pk, wire):
+                self._split_wire_at(wire, pk)
+        self._sync_junctions()
 
     def _split_through_wires(self) -> None:
         """Split any wire that is crossed by a wire endpoint or component pin."""
@@ -1847,10 +2059,20 @@ class SchematicScene(QGraphicsScene):
 
     def to_data(self):
         """Serialize the current scene to a SchematicData object."""
-        from .schematic_data import SchematicData, ComponentData, WireData, JunctionData, FreeTextData, CommandData, BorderData, LibraryData, ImageData, LatexFragmentData, ParameterData, AnalysisData, HyperlinkData, ModelData
+        from .schematic_data import SchematicData, ComponentData, WireData, JunctionData, FreeTextData, CommandData, BorderData, LibraryData, ImageData, LatexFragmentData, ParameterData, AnalysisData, HyperlinkData, ModelData, PinData, SymbolTextData, OpaqueData
+        from .symbol_editor import SymbolPinItem, SymbolTextItem, OpaqueSvgItem
         comps, wires, junctions, free_texts, commands, libs, images, latex_frags, param_items, analysis_items, hyperlinks, shapes, model_defs = [], [], [], [], [], [], [], [], [], [], [], [], []
+        pins, symbol_texts, opaques = [], [], []
         border_data = None
-        for item in self.items():
+        # bottom-to-top, so that from_data (which adds in list order) restores
+        # the stacking; top-first flipped the order on every undo (2026-09-27)
+        for item in reversed(self.items()):
+            if isinstance(item, SymbolPinItem):
+                pins.append(PinData(x=item.pos().x(), y=item.pos().y(), name=item.name, number=item.number)); continue
+            if isinstance(item, SymbolTextItem):
+                symbol_texts.append(SymbolTextData(x=item.pos().x(), y=item.pos().y(), content=item.content, size=item.size)); continue
+            if isinstance(item, OpaqueSvgItem):
+                opaques.append(OpaqueData(x=item.pos().x(), y=item.pos().y(), xml=item.xml)); continue
             if isinstance(item, ComponentItem):
                 item._save_label_offsets()
                 comps.append(ComponentData(
@@ -1958,25 +2180,17 @@ class SchematicScene(QGraphicsScene):
                 ))
             elif isinstance(item, ShapeItem):
                 from .schematic_data import ShapeData
-                shapes.append(ShapeData(
-                    kind=item.kind,
-                    x=item.pos().x(), y=item.pos().y(),
-                    rel_points=[(p.x(), p.y()) for p in item.rel_points],
-                    stroke_color=item.stroke_color,
-                    fill_color=item.fill_color,
-                    fill_style=item.fill_style,
-                    line_style=item.line_style,
-                    line_end_start=item.line_end_start,
-                    line_end_end=item.line_end_end,
-                    line_width=item.line_width,
-                ))
+                shapes.append(_shape_record(item))
         return SchematicData(components=comps, wires=wires,
                              junctions=junctions, free_texts=free_texts,
                              commands=commands, libs=libs, images=images,
                              border=border_data, latex_fragments=latex_frags,
                              parameters=param_items, analysis_items=analysis_items,
                              hyperlinks=hyperlinks, shapes=shapes,
-                             model_defs=model_defs)
+                             model_defs=model_defs, pins=pins,
+                             symbol_texts=symbol_texts, opaques=opaques,
+                             origin=([self.origin_pos().x(), self.origin_pos().y()]
+                                     if self.show_origin else None))
 
     def from_data(self, data, library) -> list:
         """Populate the scene from a SchematicData object.
@@ -2087,18 +2301,7 @@ class SchematicScene(QGraphicsScene):
             self.addItem(HyperlinkItem(hd.url, hd.label, QPointF(hd.x, hd.y)))
 
         for sd in data.shapes:
-            self.addItem(ShapeItem(
-                kind=sd.kind,
-                rel_points=[QPointF(px, py) for px, py in sd.rel_points],
-                stroke_color=sd.stroke_color,
-                fill_color=sd.fill_color,
-                fill_style=sd.fill_style,
-                line_style=sd.line_style,
-                line_end_start=sd.line_end_start,
-                line_end_end=sd.line_end_end,
-                line_width=sd.line_width,
-                pos=QPointF(sd.x, sd.y),
-            ))
+            self.addItem(_shape_from_record(sd))
 
         for md in data.model_defs:
             self.addItem(ModelItem(
@@ -2117,6 +2320,15 @@ class SchematicScene(QGraphicsScene):
                 line_color=bd.line_color, line_width=bd.line_width,
                 bg_color=bd.bg_color, bg_alpha=bd.bg_alpha))
 
+        from .symbol_editor import SymbolPinItem, SymbolTextItem, OpaqueSvgItem
+        for pd in getattr(data, "pins", []):
+            self.addItem(SymbolPinItem(pd.name, pd.number, QPointF(pd.x, pd.y)))
+        for td in getattr(data, "symbol_texts", []):
+            self.addItem(SymbolTextItem(td.content, td.size, QPointF(td.x, td.y)))
+        for od in getattr(data, "opaques", []):
+            self.addItem(OpaqueSvgItem(od.xml, QPointF(od.x, od.y)))
+        o = getattr(data, "origin", None)
+        self.ensure_origin(QPointF(o[0], o[1]) if o else None)
         self._sync_junctions()
         # Derived net names for 'Display net name' wires without a
         # user label (transient; netlist authority arrives after a run).
@@ -2131,6 +2343,8 @@ class SchematicScene(QGraphicsScene):
         _FREE_PLACEMENT_MODES)."""
         if self._mode in _FREE_PLACEMENT_MODES:
             return event.scenePos()
+        if self._mode == _Mode.PLACING_ITEM and self._ghost is not None:
+            return snap_pos(self._ghost, event.scenePos())
         return snap(event.scenePos())
 
     def mousePressEvent(self, event):
@@ -2144,6 +2358,10 @@ class SchematicScene(QGraphicsScene):
                 self._placing_svg,
             )
             item.setPos(pos)
+            if self._ghost is not None:           # as the ghost shows it
+                item.setRotation(self._ghost.rotation())
+                item.h_flip = bool(getattr(self, "_placing_hflip", False))
+                item.apply_transform()
             self.addItem(item)
             self._sync_junctions()
             self._remove_short_circuit_wires()
@@ -2151,12 +2369,21 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_JUNCTION and event.button() == Qt.LeftButton:
             self._push_undo()
-            self.addItem(JunctionItem(pos))
-            self._sync_junctions()
+            self._connect_wires_at(pos)
 
         elif self._mode == _Mode.PLACING_TEXT and event.button() == Qt.LeftButton:
             self._push_undo()
             item = FreeTextItem(self._placing_text or "Text", pos)
+            self.addItem(item)
+            self._cancel_placement()
+
+        elif self._mode == _Mode.PLACING_ITEM and event.button() == Qt.LeftButton:
+            item, self._ghost = self._ghost, None
+            self.removeItem(item)            # the snapshot is the scene without it
+            self._push_undo()
+            item.setOpacity(1.0)
+            item.setAcceptedMouseButtons(Qt.MouseButton.AllButtons)
+            item.setPos(pos)
             self.addItem(item)
             self._cancel_placement()
 
@@ -2217,13 +2444,13 @@ class SchematicScene(QGraphicsScene):
         elif self._mode == _Mode.PASTING and event.button() == Qt.LeftButton:
             self._commit_paste(pos)
 
-        elif self._mode in (_Mode.DRAWING_RECT, _Mode.DRAWING_CIRCLE) and event.button() == Qt.LeftButton:
+        elif self._mode in (_Mode.DRAWING_RECT, _Mode.DRAWING_ELLIPSE) and event.button() == Qt.LeftButton:
             if self._draw_anchor is None:
                 self._draw_anchor = snap(pos)
             else:
                 self._commit_shape(snap(pos))
 
-        elif self._mode == _Mode.DRAWING_LINE and event.button() == Qt.LeftButton:
+        elif self._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON) and event.button() == Qt.LeftButton:
             sp = snap(pos)
             if not self._draw_pts:
                 self._draw_pts = [sp]
@@ -2253,6 +2480,17 @@ class SchematicScene(QGraphicsScene):
                     if isinstance(it, ComponentItem):
                         it._drag_wires = None
                 item = self.itemAt(raw, QTransform())
+                handle_owner = next((i for i in self.items(raw) if isinstance(i, ShapeItem) and i.isSelected()
+                                     and i._handle_at(i.mapFromScene(raw)) is not None), None)
+                if handle_owner is not None:
+                    item = handle_owner
+                elif isinstance(item, ShapeItem) and not item.hit_exact(item.mapFromScene(raw)):
+                    # same preference as ShapeItem.mousePressEvent: a shape hit
+                    # on its real geometry beats one hit only by its band
+                    exact = next((i for i in self.items(raw)
+                                  if isinstance(i, ShapeItem) and i.hit_exact(i.mapFromScene(raw))), None)
+                    if exact is not None:
+                        item = exact
                 # A net label (and the DC bias annotation) is a wire child, so
                 # its high Z only orders it among siblings — other top-level
                 # items (junctions, crossing wires, components) can occlude it
@@ -2294,6 +2532,8 @@ class SchematicScene(QGraphicsScene):
                         self._vdrag_moved   = False
                         self._vdrag_wire = item
                         self._vdrag_idx  = v
+                        item.active_vertex = v
+                        item.update()
                         # Find wires sharing the dragged endpoint so they
                         # stretch with it (rubber-band partners).
                         dragged_key = _pt_key(item.points[v])
@@ -2427,12 +2667,7 @@ class SchematicScene(QGraphicsScene):
                 self._record_pre_drag_wire_pts()
                 self._pre_drag_pos  = {
                     id(i): (i.pos().x(), i.pos().y())
-                    for i in self.items()
-                    if isinstance(i, (ComponentItem, FreeTextItem, CommandItem,
-                                      JunctionItem, BorderItem,
-                                      LibraryItem, ImageItem, LatexFragmentItem, ParameterItem,
-                                      AnalysisItem, HyperlinkItem, ModelItem,
-                                      _PropertyLabel))
+                    for i in self.items() if _undo_tracked(i)
                 }
                 # Custom group drag: intercept multi-item non-wire selections so
                 # rubber-banding runs after all items have moved (not per-item in itemChange).
@@ -2440,10 +2675,7 @@ class SchematicScene(QGraphicsScene):
                         and not isinstance(item, WireItem)):
                     non_wire_sel = [
                         i for i in self.selectedItems()
-                        if isinstance(i, (ComponentItem, FreeTextItem, CommandItem,
-                                          JunctionItem, BorderItem, LibraryItem,
-                                          ImageItem, LatexFragmentItem, ParameterItem,
-                                          AnalysisItem, HyperlinkItem, ShapeItem, ModelItem))
+                        if _undo_tracked(i) and not isinstance(i, _PropertyLabel)
                     ]
                     # Selected attribute labels of components that are NOT
                     # selected move with the group by the same scene delta;
@@ -2464,10 +2696,17 @@ class SchematicScene(QGraphicsScene):
                         # a wire, the delta is a grid multiple so that those
                         # stay on grid while the annotations keep their
                         # offsets (Anton, 2026-09-27).
-                        self._comp_group_move_snaps = (
-                            any(getattr(i, "SNAPS_TO_GRID", True) for i in non_wire_sel)
-                            or any(isinstance(w, WireItem) for w in self.selectedItems()))
-                        self._comp_group_move_start = snap(raw) if self._comp_group_move_snaps else QPointF(raw)
+                        from .config import shift_held, snap_fine
+                        critical = (any(getattr(i, "GRID_CRITICAL", False) for i in non_wire_sel)
+                                    or any(isinstance(w, WireItem) for w in self.selectedItems()))
+                        gridded = any(getattr(i, "SNAPS_TO_GRID", True) for i in non_wire_sel)
+                        # grid: a critical item, or gridded items without Shift;
+                        # fine: gridded items under Shift; free: annotations only
+                        self._comp_group_move_mode = ("grid" if critical or (gridded and not shift_held())
+                                                      else "fine" if gridded else "free")
+                        self._comp_group_move_snaps = self._comp_group_move_mode == "grid"
+                        self._comp_group_move_start = {"grid": snap(raw), "fine": snap_fine(raw)}.get(
+                            self._comp_group_move_mode, QPointF(raw))
                         self._label_group_move_items = [
                             (lbl, lbl.parentItem().mapToScene(lbl.pos()))
                             for lbl in loose_labels
@@ -2615,7 +2854,8 @@ class SchematicScene(QGraphicsScene):
                            _Mode.PLACING_BORDER, _Mode.PLACING_LIBRARY,
                            _Mode.PLACING_IMAGE, _Mode.PLACING_LATEX,
                            _Mode.PLACING_PARAMETER, _Mode.PLACING_ANALYSIS,
-                           _Mode.PLACING_HYPERLINK, _Mode.PLACING_MODEL)
+                           _Mode.PLACING_HYPERLINK, _Mode.PLACING_MODEL,
+                           _Mode.PLACING_ITEM)
                 and self._ghost is not None):
             self._ghost.setPos(self._place_pos(event))
 
@@ -2623,7 +2863,7 @@ class SchematicScene(QGraphicsScene):
             self._refresh_preview(pos)
 
         elif self._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_RECT,
-                             _Mode.DRAWING_CIRCLE):
+                             _Mode.DRAWING_ELLIPSE, _Mode.DRAWING_POLYGON):
             self._update_draw_ghost(snap(event.scenePos()))
 
         elif self._mode == _Mode.PASTING:
@@ -2677,7 +2917,9 @@ class SchematicScene(QGraphicsScene):
                 self._vdrag_pin_preview._rebuild()
 
         elif self._comp_group_move_start is not None:
-            cur = pos if self._comp_group_move_snaps else event.scenePos()
+            from .config import snap_fine
+            mode = getattr(self, "_comp_group_move_mode", "grid" if self._comp_group_move_snaps else "free")
+            cur = pos if mode == "grid" else (snap_fine(event.scenePos()) if mode == "fine" else event.scenePos())
             total_delta = cur - self._comp_group_move_start
             if total_delta.x() != 0 or total_delta.y() != 0:
                 self._comp_group_move_moved = True
@@ -2858,6 +3100,9 @@ class SchematicScene(QGraphicsScene):
                     self.update()
                 self._pre_drag_data     = None
                 self._vdrag_moved       = False
+                if self._vdrag_wire is not None and self._vdrag_wire.scene() is self:
+                    self._vdrag_wire.active_vertex = None
+                    self._vdrag_wire.update()
                 self._vdrag_wire        = None
                 self._vdrag_idx         = None
                 self._vdrag_rb          = []
@@ -2900,11 +3145,7 @@ class SchematicScene(QGraphicsScene):
                 moved = any(
                     (i.pos().x(), i.pos().y()) != self._pre_drag_pos.get(id(i))
                     for i in self.items()
-                    if isinstance(i, (ComponentItem, FreeTextItem, CommandItem,
-                                      JunctionItem, BorderItem,
-                                      LibraryItem, ImageItem, LatexFragmentItem, ParameterItem,
-                                      AnalysisItem, ModelItem, _PropertyLabel))
-                    and id(i) in self._pre_drag_pos
+                    if _undo_tracked(i) and id(i) in self._pre_drag_pos
                 )
                 if moved:
                     self._push_snapshot(self._pre_drag_data)
@@ -2944,9 +3185,9 @@ class SchematicScene(QGraphicsScene):
             self._pre_drag_wire_pts = {}
 
     def mouseDoubleClickEvent(self, event):
-        if self._mode == _Mode.DRAWING_LINE and event.button() == Qt.LeftButton:
+        if self._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON) and event.button() == Qt.LeftButton:
             # The first click of the double-click already added the final point
-            # via mousePressEvent; commit if we have at least 2 points.
+            # via mousePressEvent; commit if we have enough points.
             if len(self._draw_pts) >= 2:
                 self._commit_shape(self._draw_pts[-1])
             return
@@ -3088,6 +3329,7 @@ class SchematicScene(QGraphicsScene):
                 show=item.show_on_schematic,
                 edit_mode=True,
                 style=self.style,
+                sch_type=getattr(self, "sch_type", "slicap"),
             )
             if dlg.exec():
                 self._push_undo()
@@ -3117,6 +3359,22 @@ class SchematicScene(QGraphicsScene):
                 item.label = dlg.label()
                 item.setText(item.label or item.url)
             return
+        from .symbol_editor import SymbolPinItem, SymbolTextItem, PinDialog, SymbolTextDialog
+        if isinstance(item, SymbolPinItem):
+            dlg = PinDialog(item.name, item.number)
+            if dlg.exec():
+                self._push_undo()
+                item.name, item.number = dlg.name(), dlg.number()
+                item.refresh()
+            return
+        if isinstance(item, SymbolTextItem):
+            dlg = SymbolTextDialog(item.content, item.size)
+            if dlg.exec():
+                self._push_undo()
+                item.prepareGeometryChange()
+                item.content, item.size = dlg.content(), dlg.size()
+                item.update()
+            return
         if isinstance(item, ShapeItem):
             from .shape_dialog import ShapeDialog
             dlg = ShapeDialog(item)
@@ -3129,6 +3387,10 @@ class SchematicScene(QGraphicsScene):
                 item.line_end_end   = dlg.get_line_end_end()
                 item.fill_style     = dlg.get_fill_style()
                 item.fill_color     = dlg.get_fill_color()
+                item.head_width     = dlg.get_head_width()
+                item.head_length    = dlg.get_head_length()
+                item.rotation       = dlg.get_rotation()
+                item.apply_rotation()
                 item.update()
             return
         if isinstance(item, WireItem):
@@ -3168,7 +3430,8 @@ class SchematicScene(QGraphicsScene):
                                        offer_dc_current=offer_dc,
                                        sch_ext=(".spice_sch"
                                                 if sch_type == 'ngspice'
-                                                else ".slicap_sch"))
+                                                else ".slicap_sch"),
+                                       library=getattr(self, "_library", None))
                 result = dlg.exec()
                 if dlg.descend_path() is not None:
                     # Open the subcircuit's schematic so deeper hierarchies
@@ -3191,23 +3454,84 @@ class SchematicScene(QGraphicsScene):
                 elif result:
                     self._push_undo()
                     dlg.apply()
+                    change = dlg.symbol_change()
+                    if change is not None:
+                        sym, svg_text = change
+                        if svg_text is not None and panel is not None \
+                                and hasattr(panel, "adopt_symbol"):
+                            sym = panel.adopt_symbol(sym.name, svg_text) or sym
+                        self.change_symbol(item, sym)
         else:
             super().mouseDoubleClickEvent(event)
 
+    def change_symbol(self, item, symbol) -> None:
+        """Give a placed component another symbol (Properties → Change
+        symbol…). The wires attached to its pins follow the pins to their
+        new places, so the net stays intact: the node order is the same
+        (same element type, or the port mapping is written into the
+        re-skinned subcircuit symbol), so pin i stays pin i."""
+        old = item.pin_scene_pos()
+        item.reload_symbol(symbol)
+        new = item.pin_scene_pos()
+        wires = [w for w in self.items()
+                 if isinstance(w, WireItem) and not getattr(w, "_preview", False)]
+        moves = []            # collected first: a pin swap must not chain
+        for o, n in zip(old, new):
+            if _pt_key(o) == _pt_key(n):
+                continue
+            for w in wires:
+                for idx in {0, len(w.points) - 1}:
+                    if _pt_key(w.points[idx]) == _pt_key(o):
+                        moves.append((w, idx, n - w.points[idx]))
+        for w, idx, delta in moves:
+            w.move_points({idx}, delta)
+        self._sync_junctions()
+        self._remove_short_circuit_wires()
+        self._sync_junctions()
+        self.data_changed.emit()
+
     # ── grid background ───────────────────────────────────────────────────────
+
+    def apply_theme(self) -> None:
+        """Canvas background for the display theme (config.dark_theme_active):
+        the document colours are untouched, items resolve their display
+        colours through config.style_of (2026-09-27)."""
+        from . import config as _config
+        self.setBackgroundBrush(_config.canvas_background())
+        self.update()
+
+    def ensure_origin(self, pos=None) -> None:
+        """Symbol editor: keep exactly one origin marker (after reset / undo)."""
+        from .symbol_editor import OriginItem
+        if not self.show_origin:
+            return
+        marker = next((i for i in self.items() if isinstance(i, OriginItem)), None)
+        if marker is None:
+            marker = OriginItem()
+            self.addItem(marker)
+        if pos is not None:
+            marker.setPos(pos)
+
+    def origin_pos(self) -> QPointF:
+        """Symbol editor: where the origin marker is (0,0 when absent)."""
+        from .symbol_editor import OriginItem
+        marker = next((i for i in self.items() if isinstance(i, OriginItem)), None)
+        return QPointF(marker.pos()) if marker is not None else QPointF(0, 0)
 
     def drawBackground(self, painter: QPainter, rect):
         super().drawBackground(painter, rect)
         if self._exporting:
             return
+        from . import config as _config
+        style = _config.display_style(self.style)
 
         left   = int(rect.left())   - (int(rect.left())   % GRID_SIZE)
         top    = int(rect.top())    - (int(rect.top())    % GRID_SIZE)
         right  = int(rect.right())
         bottom = int(rect.bottom())
 
-        minor_pen = QPen(self.style.GRID_MINOR_COLOR, 0)
-        major_pen = QPen(self.style.GRID_MAJOR_COLOR, 0)
+        minor_pen = QPen(style.GRID_MINOR_COLOR, 0)
+        major_pen = QPen(style.GRID_MAJOR_COLOR, 0)
 
         x = left
         while x <= right:
@@ -3220,6 +3544,59 @@ class SchematicScene(QGraphicsScene):
             painter.setPen(major_pen if (y // GRID_SIZE) % GRID_MAJOR == 0 else minor_pen)
             painter.drawLine(left, y, right, y)
             y += GRID_SIZE
+
+        # Subgrid (preference "View subgrid"): a dot on every fine-grid point
+        # (config.FINE_STEP, the Shift snap), drawn only when the zoom keeps
+        # the dots apart (>= 3 px) - closer they would be a grey wash.
+        if getattr(style, "GRID_SUBGRID", False):
+            from .config import FINE_STEP
+            scale = painter.worldTransform().m11()
+            if scale * FINE_STEP >= 3.0:
+                step = FINE_STEP
+                # dot size in device pixels grows with the zoom (1 px was
+                # invisible at high zoom, 2026-09-27); cosmetic pen = px
+                # Drawn in DEVICE pixels, rounded, so that the dots land on
+                # the same pixel columns as the pixel-snapped grid lines; at a
+                # fractional zoom antialiased scene-coordinate dots drifted
+                # off the lines (Anton, 2026-09-27).
+                size = max(1.0, min(3.0, scale * FINE_STEP / 4.0))
+                dot = QPen(style.GRID_SUBGRID_COLOR, size); dot.setCapStyle(Qt.RoundCap)
+                world = painter.worldTransform()
+                pts = []
+                sx = int(rect.left() // step) * step
+                sy = int(rect.top() // step) * step
+                x = sx
+                while x <= right:
+                    y = sy
+                    on_line_x = abs(x / GRID_SIZE - round(x / GRID_SIZE)) < 1e-6
+                    while y <= bottom:
+                        if not (on_line_x or abs(y / GRID_SIZE - round(y / GRID_SIZE)) < 1e-6):
+                            d = world.map(QPointF(x, y))
+                            pts.append(QPointF(round(d.x()) + 0.5, round(d.y()) + 0.5))
+                        y += step
+                    x += step
+                if pts:
+                    painter.save()
+                    painter.resetTransform()
+                    painter.setRenderHint(QPainter.Antialiasing, False)
+                    painter.setPen(dot)
+                    painter.drawPoints(QPolygonF(pts))
+                    painter.restore()
+
+
+def _undo_tracked(item) -> bool:
+    """A move of this item is an undo step: every top-level movable item
+    except wires (which have their own drag bookkeeping), plus the loose
+    property labels. Replaces three copies of an explicit kind list that
+    had to be extended for every new item kind and was not (shapes,
+    hyperlinks, the symbol editor's items had no undo for moves; Anton,
+    2026-09-27)."""
+    from .component_item import _PropertyLabel
+    from .wire_item import WireItem
+    if isinstance(item, _PropertyLabel):
+        return True
+    return (item.parentItem() is None and not isinstance(item, WireItem)
+            and bool(item.flags() & QGraphicsItem.ItemIsMovable))
 
 
 def _rb_keep_item(item, scene_rect: QRectF, contains: bool) -> bool:
@@ -3251,6 +3628,10 @@ def _rb_keep_item(item, scene_rect: QRectF, contains: bool) -> bool:
     if isinstance(item, ComponentItem):
         local_rect = QRectF(*item.symbol.select_box)
         item_rect = item.mapRectToScene(local_rect)
+        return scene_rect.contains(item_rect) if contains else scene_rect.intersects(item_rect)
+    # Shapes: their geometry (select_rect), not the painting margin
+    if hasattr(item, "select_rect"):
+        item_rect = item.mapRectToScene(item.select_rect())
         return scene_rect.contains(item_rect) if contains else scene_rect.intersects(item_rect)
     # JunctionItem, FreeTextItem, CommandItem, etc. — use actual bounding rect (no labels)
     item_rect = item.mapRectToScene(item.boundingRect())
@@ -3425,20 +3806,20 @@ class SchematicView(QGraphicsView):
         mods = event.modifiers()
 
         if key == Qt.Key_Escape:
-            if scene._mode == _Mode.DRAWING_LINE:
-                # Commit if we have a valid line; otherwise just cancel
+            if scene._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON):
+                # Commit if we have a valid shape; otherwise just cancel
                 if len(scene._draw_pts) >= 2:
                     scene._commit_shape(scene._draw_pts[-1])
                 else:
                     scene._cancel_draw()
-            elif scene._mode in (_Mode.DRAWING_RECT, _Mode.DRAWING_CIRCLE):
+            elif scene._mode in (_Mode.DRAWING_RECT, _Mode.DRAWING_ELLIPSE):
                 scene._cancel_draw()
             elif scene._mode == _Mode.WIRING:
                 scene.finish_wire()
             else:
                 scene.cancel_placement()
         elif key in (Qt.Key_Return, Qt.Key_Enter):
-            if scene._mode == _Mode.DRAWING_LINE and len(scene._draw_pts) >= 2:
+            if scene._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON) and len(scene._draw_pts) >= 2:
                 scene._commit_shape(scene._draw_pts[-1])
             else:
                 scene.finish_wire()
@@ -3452,6 +3833,8 @@ class SchematicView(QGraphicsView):
         elif key == Qt.Key_Y and mods & Qt.ControlModifier:
             scene.redo()
         elif key == Qt.Key_R:
+            if scene.rotate_ghost():
+                return                    # a component being placed turns
             rotatable = [i for i in scene.selectedItems()
                          if not isinstance(i, _PropertyLabel)]
             if rotatable:
@@ -3459,6 +3842,8 @@ class SchematicView(QGraphicsView):
             for item in rotatable:
                 item.setRotation(item.rotation() + 90)
         elif key == Qt.Key_M:
+            if scene.mirror_ghost():
+                return
             sel = [i for i in scene.selectedItems() if isinstance(i, ComponentItem)]
             if sel:
                 scene._push_undo()

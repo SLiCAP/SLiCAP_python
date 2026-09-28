@@ -27,7 +27,8 @@ class LatexPreviewDialog(QDialog):
 
         body = QLabel()
         body.setAlignment(Qt.AlignCenter)
-        body.setStyleSheet("background: white; padding: 6px;")
+        from .config import canvas_background
+        body.setStyleSheet(f"background: {canvas_background().name()}; padding: 6px;")
         if svg_bytes:
             px = self._render_pixmap(svg_bytes)
             if px is not None:
@@ -54,7 +55,9 @@ class LatexPreviewDialog(QDialog):
     def _render_pixmap(svg_bytes: bytes) -> "QPixmap | None":
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
-        renderer = QSvgRenderer(QByteArray(svg_bytes))
+        from .config import canvas_background
+        from .latex_label import display_svg
+        renderer = QSvgRenderer(QByteArray(display_svg(svg_bytes)))
         if not renderer.isValid():
             return None
         vb = renderer.viewBoxF()
@@ -64,7 +67,7 @@ class LatexPreviewDialog(QDialog):
             return None
         scale = min(_MAX_W / sw, _MAX_H / sh, 3.0)
         px = QPixmap(max(1, int(sw * scale)), max(1, int(sh * scale)))
-        px.fill(Qt.white)
+        px.fill(canvas_background())
         p = QPainter(px)
         renderer.render(p)
         p.end()

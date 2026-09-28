@@ -2356,12 +2356,20 @@ def _ensure_netlist(cirFile):
     silently not reach the simulation (Anton, 2026-07-12). No-op when no
     schematic exists (hand-written netlists) or the .cir is up to date."""
     cir = Path(ini.cir_path) / (cirFile + ".cir")
+    # One line per run says which netlist the simulation uses and where it
+    # came from, as makeCircuit reports "Checking netlist" for a SLiCAP
+    # circuit (Anton, 2026-09-28: an up-to-date NGspice netlist was used
+    # in silence). ASCII only: the Windows console.
     for ext in (".spice_sch", ".slicap_sch"):
         sch = Path(ini.schematic_path) / (cirFile + ext)
         if sch.is_file():
             if not cir.is_file() or sch.stat().st_mtime > cir.stat().st_mtime:
-                make_netlist(cirFile + ext)
+                make_netlist(cirFile + ext)        # prints "Netlist --> ..."
+            else:
+                print("Netlist  --> {0} (up to date with {1})".format(
+                    cir, sch.name))
             return
+    print("Netlist  --> {0} (no schematic; used as it is)".format(cir))
 
 
 def _fourier_post_args(fourier):

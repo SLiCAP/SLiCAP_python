@@ -51,6 +51,7 @@ from .instr_file import write_main_py
 from .sizing import chars
 
 _SCHEMATIC_SUFFIXES = ('.slicap_sch', '.spice_sch')
+_SYMBOL_SUFFIXES    = ('.slicap_sym', '.spice_sym')     # open in the symbol editor
 
 # Compound suffixes that must not be lumped with their plain suffix: a
 # schematic sidecar .slicap_sch.ini is a different type key than a user
@@ -316,6 +317,8 @@ class ProjectPanel(QDockWidget):
         suffix = path.suffix.lower()
         if suffix in _SCHEMATIC_SUFFIXES:
             self._main_win.load_file(path)
+        elif suffix in _SYMBOL_SUFFIXES:
+            self._main_win.open_symbol_file(path)
         elif suffix == ".py":
             self._main_win.open_instruction_file(path)
         else:

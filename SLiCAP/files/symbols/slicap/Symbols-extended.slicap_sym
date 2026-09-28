@@ -7,7 +7,7 @@
        data-model="D|0" 
        data-params="gd||0|0; cd||0|0; rs||0|0"
        data-description="Small-signal diode model"
-       data-info="https://www.slicap.org/syntax/devices#model-d">
+       data-info="https://www.slicap.org/API/syntax/devices.html#model-d">
        
        <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
        <polyline points="-7 -7 7 -7 0 0.5 -7 -7" stroke="black" stroke-width="0" fill="black" />
@@ -37,7 +37,7 @@
        data-model="J|0" 
        data-params="cgs||0|0; cdg||0|0; cdb||0|0; gm||0|0; go||0|0"
        data-description="Small-signal JFET model"
-       data-info="https://www.slicap.org/syntax/devices#model-j">
+       data-info="https://www.slicap.org/API/syntax/devices.html#model-j">
        
        <!-- Symbol outline -->
        <polyline points="10 -20 10 -10 0 -10" stroke="black" stroke-width="1" fill="none" />
@@ -79,7 +79,7 @@
        data-model="M|0" 
        data-params="cgs||0|0; cgb||0|0; cdg||0|0; cdb||0|0; csb||0|0; gm||0|0; gb||0|0; go||0|0"
        data-description="4-terminal small-signal MOS model"
-       data-info="https://www.slicap.org/syntax/devices.html#m-4-terminal-mos">
+       data-info="https://www.slicap.org/API/syntax/devices.html#m-4-terminal-mos">
        
        <!-- Symbol outline -->
        <polyline points="10 -20 10 -10 0 -10 0 -5" stroke="black" stroke-width="1" fill="none" />
@@ -235,7 +235,7 @@
        data-model="?|1" 
        data-params=""
        data-description="Operational amplifier (requires .model definition)"
-       data-info="https://www.slicap.org/syntax/devices#o-operational-amplifier">
+       data-info="https://www.slicap.org/API/syntax/devices.html#o-operational-amplifier">
        
        <!-- Symbol outline -->
        <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
@@ -259,7 +259,7 @@
        data-model="OV|0" 
        data-params="av||0|0; gd||0|0; gc||0|0; cd||0|0; cc||0|0; zo||0|0"
        data-description="Voltage feedback opamp"
-       data-info="https://www.slicap.org/syntax/devices#model-ov">
+       data-info="https://www.slicap.org/API/syntax/devices.html#model-ov">
        
        <!-- Symbol outline -->
        <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
@@ -283,7 +283,7 @@
        data-model="OC|0" 
        data-params="cp||0|0; gp||0|0; cpn||0|0; gnn||0|0; gm||0|0; zt||0|0; zo||0|0"
        data-description="Current feedback opamp"
-       data-info="https://www.slicap.org/syntax/devices#model-oc">
+       data-info="https://www.slicap.org/API/syntax/devices.html#model-oc">
        
        <!-- Symbol outline -->
        <polyline points="30 0 0 20 0 -20 30 0" stroke="black" stroke-width="1" fill="none" />
@@ -307,7 +307,7 @@
        data-model="QV|0" 
        data-params="gm||0|0; go||0|0; gbc||0|0; gpi||0|0; rb||0|0; cpi||0|0; cbc||0|0; cbx||0|0"
        data-description="Small-signal model BJT"
-       data-info="https://www.slicap.org/syntax/devices#parameters-model-qv">
+       data-info="https://www.slicap.org/API/syntax/devices.html#parameters-model-qv">
        
        <!-- Symbol outline -->
        <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
@@ -330,7 +330,7 @@
        data-model="QL|0" 
        data-params="gm||0|0; go||0|0; gbc||0|0; gpi||0|0; rb||0|0; cpi||0|0; cbc||0|0; cbx||0|0"
        data-description="Small-signal model lateral BJT"
-       data-info="https://www.slicap.org/syntax/devices#model-ql">
+       data-info="https://www.slicap.org/API/syntax/devices.html#model-ql">
        
        <!-- Symbol outline -->
        <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
@@ -353,7 +353,7 @@
        data-model="QD|0" 
        data-params="gm||0|0; gcc||0|0; gbc||0|0; gbb||0|0; rb||0|0; cbb||0|0; cbc||0|0; cbx||0|0"
        data-description="Small-signal differential pair BJT model"
-       data-info="https://www.slicap.org/syntax/devices#model-qd">
+       data-info="https://www.slicap.org/API/syntax/devices.html#model-qd">
        
        <!-- Symbol outline -->
        <polyline points="-10 -20 -10 -10 -20 0" stroke="black" stroke-width="1" fill="none" />

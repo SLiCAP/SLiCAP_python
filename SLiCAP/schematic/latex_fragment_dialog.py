@@ -104,8 +104,10 @@ class LatexFragmentDialog(QDialog):
         self._preview_lbl = QLabel("(click Preview to render)")
         self._preview_lbl.setAlignment(Qt.AlignCenter)
         self._preview_lbl.setMinimumHeight(120)
+        from .config import canvas_background
+        # the preview shows the fragment as it will appear on the canvas
         self._preview_lbl.setStyleSheet(
-            "border: 1px solid #999; background: white; padding: 4px;"
+            f"border: 1px solid #999; background: {canvas_background().name()}; padding: 4px;"
         )
         outer.addWidget(self._preview_lbl)
 
@@ -197,7 +199,9 @@ class LatexFragmentDialog(QDialog):
     def _show_svg(self, svg_bytes: bytes) -> None:
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
-        renderer = QSvgRenderer(QByteArray(svg_bytes))
+        from .config import canvas_background
+        from .latex_label import display_svg
+        renderer = QSvgRenderer(QByteArray(display_svg(svg_bytes)))
         if not renderer.isValid():
             self._preview_lbl.setText("(invalid SVG)")
             return
@@ -210,7 +214,7 @@ class LatexFragmentDialog(QDialog):
         scale = min(self._PREVIEW_MAX_W / sw, self._PREVIEW_MAX_H / sh, 3.0)
         pw, ph = max(1, int(sw * scale)), max(1, int(sh * scale))
         px = QPixmap(pw, ph)
-        px.fill(Qt.white)
+        px.fill(canvas_background())
         p = QPainter(px)
         renderer.render(p)
         p.end()

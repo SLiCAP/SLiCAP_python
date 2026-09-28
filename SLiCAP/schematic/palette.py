@@ -49,11 +49,15 @@ class SymbolPalette(QListWidget):
 def _render_icon(svg_bytes: bytes, size: int) -> QIcon:
     from PySide6.QtCore import QRectF
     from .component_item import paint_symbol
+    from .config import canvas_background, display_style, default_style
     pixmap = QPixmap(size, size)
-    pixmap.fill(Qt.transparent)
+    pixmap.fill(canvas_background())
     painter = QPainter(pixmap)
     # Render through the canvas' symbol path so embedded text is centred and
-    # matches a placed component (KeepAspectRatio is handled inside paint_symbol).
-    paint_symbol(painter, svg_bytes, QRectF(0, 0, size, size))
+    # matches a placed component (KeepAspectRatio is handled inside paint_symbol),
+    # in the display colours on the canvas background: the icon shows the
+    # symbol as it will be placed.
+    paint_symbol(painter, svg_bytes, QRectF(0, 0, size, size),
+                 style=display_style(default_style()))
     painter.end()
     return QIcon(pixmap)

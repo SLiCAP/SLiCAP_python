@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QPen, QBrush, QPainterPath, QPainterPathStroker, QPainter, QColor
 
-from .config import style_of, default_style, Z_WIRE, Z_NET_LABEL
+from .config import style_of, default_style, Z_WIRE, Z_NET_LABEL, SELECTION_COLOR
 
 _HIT_TOL          = 6.0   # click-to-wire tolerance in scene units
 _NET_LABEL_OFFSET = 3.0   # default y-offset above the first wire point
@@ -148,6 +148,7 @@ class _DCLabel(QGraphicsSimpleTextItem):
 
 
 class WireItem(QGraphicsPathItem):
+    GRID_CRITICAL = True      # always snaps: connectivity (config.snap_pos)
     """
     A committed wire on the schematic — an ordered polyline of grid-snapped points.
     Points are in scene coordinates (item pos is always (0,0)).
@@ -240,6 +241,10 @@ class WireItem(QGraphicsPathItem):
         self._dc_label.setPos(ref.x() + self.dc_label_offset.x(),
                               ref.y() + self.dc_label_offset.y())
 
+    #: index of the vertex being dragged (set by the scene for the duration of
+    #: the drag), drawn with a cross like a shape's active point
+    active_vertex: int | None = None
+
     def _apply_style(self, style) -> None:
         self._handle_size = style.HANDLE_SIZE
         self.setPen(QPen(style.WIRE_COLOR, style.WIRE_WIDTH))
@@ -318,7 +323,20 @@ class WireItem(QGraphicsPathItem):
     # ── visuals ───────────────────────────────────────────────────────────────
 
     def paint(self, painter: QPainter, option, widget=None):
-        super().paint(painter, option, widget)
+        # A selected wire shows itself in the selection colour with small dots
+        # on its vertices, as a shape in the symbol editor does; Qt's dashed
+        # box around the bounding rect (label and leader included) is not
+        # drawn (Anton, 2026-09-27).
+        selected = bool(option.state & QStyle.State_Selected)
+        clean_option = option.__class__(option)
+        clean_option.state = option.state & ~QStyle.State_Selected
+        if selected:
+            pen = QPen(self.pen()); pen.setColor(SELECTION_COLOR)
+            painter.save(); painter.setPen(pen)
+            painter.drawPath(self.path())
+            painter.restore()
+        else:
+            super().paint(painter, clean_option, widget)
         style = style_of(self)
 
         # Anchor dot + leader line — when wire or its label is active
@@ -353,14 +371,19 @@ class WireItem(QGraphicsPathItem):
             painter.drawEllipse(anchor, 2.0, 2.0)
             painter.restore()
 
-        if option.state & QStyle.State_Selected:
+        if selected:
             painter.save()
-            hs = style.HANDLE_SIZE
-            s = hs / 2
-            painter.setPen(QPen(style.HANDLE_COLOR, 0.8))
-            painter.setBrush(style.HANDLE_COLOR)
-            for pt in self.points:
-                painter.drawRect(QRectF(pt.x() - s, pt.y() - s, hs, hs))
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(SELECTION_COLOR))
+            for pt in self.points:              # vertex dots: drag one to reshape
+                painter.drawEllipse(pt, 1.0, 1.0)
+            v = self.active_vertex
+            if v is not None and v < len(self.points):   # the dragged vertex: a dark cross
+                a = self.points[v]
+                painter.setPen(QPen(QColor(30, 30, 30), 0.5))
+                painter.drawLine(QPointF(a.x() - 2.5, a.y()), QPointF(a.x() + 2.5, a.y()))
+                painter.drawLine(QPointF(a.x(), a.y() - 2.5), QPointF(a.x(), a.y() + 2.5))
             painter.restore()
 
     def _rebuild(self):

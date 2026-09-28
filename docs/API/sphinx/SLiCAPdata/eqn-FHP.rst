@@ -1,3 +1,3 @@
 .. math::
 
-    F_{HP} = \frac{0.25 s^{2}}{\pi^{2} f_{l}^{2} \left(1 + \frac{0.7071 s}{\pi f_{l}} + \frac{0.25 s^{2}}{\pi^{2} f_{l}^{2}}\right)}
+    F_{\mathrm{HP}} = \frac{0.25 s^{2}}{\pi^{2} f_{\mathrm{l}}^{2} \left(1 + \frac{0.7071 s}{\pi f_{\mathrm{l}}} + \frac{0.25 s^{2}}{\pi^{2} f_{\mathrm{l}}^{2}}\right)}

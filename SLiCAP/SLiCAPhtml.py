@@ -122,6 +122,14 @@ def _insertHTML(fileName, htmlInsert):
     :param htmlInsert: HTML that must be inserted in this file
     :type htmlInsert: str
     """
+    # The one chokepoint of the HTML report: every page function passes its
+    # content through here, so the IEEE upright subscripts of the report
+    # convention (see SLiCAPprotos.upright_subscripts, applied by every
+    # Snippet) hold for the HTML pages and the notebook display as well
+    # (Anton, 2026-09-27: the element-data table in the browser still
+    # showed italic subscripts).
+    from SLiCAP.SLiCAPprotos import upright_subscripts
+    htmlInsert = upright_subscripts(htmlInsert)
     if ini.notebook:
         htmlInsert = HTML(htmlInsert)
     else:

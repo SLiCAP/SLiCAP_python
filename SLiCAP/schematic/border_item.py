@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QPen, QBrush, QColor, QPainterPath, QPainterPathStroker
 
-from .config import snap, Z_BORDER
+from .config import snap, snap_pos, Z_BORDER
 
 DEFAULT_LINE_COLOR = "#5050b4"
 DEFAULT_LINE_WIDTH = 0.8
@@ -144,5 +144,5 @@ class BorderItem(QGraphicsRectItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange and self._resize is None:
-            return snap(value)
+            return snap_pos(self, value)   # Shift: free (config.snap_pos)
         return super().itemChange(change, value)

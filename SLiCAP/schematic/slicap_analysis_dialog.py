@@ -161,10 +161,12 @@ class SLiCAPAnalysisDialog(QDialog):
         layout = QVBoxLayout(self)
 
         # ── help link ─────────────────────────────────────────────────────────
+        from .doc_link import reference_url
         help_lbl = QLabel(
             'Composes a <code>sl.do…()</code> analysis call — '
-            '<a href="https://www.slicap.org/userguide/analysis'
-            '#general-instruction-format">help: general instruction format</a>')
+            '<a href="' + reference_url("API/userguide/analysis.html",
+                                        "general-instruction-format")
+            + '">help: general instruction format</a>')
         help_lbl.setOpenExternalLinks(True)
         layout.addWidget(help_lbl)
 

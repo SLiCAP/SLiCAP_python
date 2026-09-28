@@ -8,7 +8,7 @@
        data-model="C|0" 
        data-params="value|?|0|1; vinit||0|0"
        data-description="Capacitor"
-       data-info="https://www.slicap.org/syntax/devices.html#c-capacitor">
+       data-info="https://www.slicap.org/API/syntax/devices.html#c-capacitor">
 
        <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2"/>
        <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2"/>
@@ -27,7 +27,7 @@
        data-model="L|0" 
        data-params="value|?|0|1; iinit||0|0"
        data-description="Inductor"
-       data-info="https://www.slicap.org/syntax/devices.html#l-inductor">
+       data-info="https://www.slicap.org/API/syntax/devices.html#l-inductor">
 
        <!-- single path: lead + 3 right-side semicircular bumps + lead
             each arc: radius 4, clockwise sweep (0 0 1) passes through positive-x side -->
@@ -46,7 +46,7 @@
        data-model="R|0" 
        data-params="value|?|0|1; dcvar||0|0; dcvarlot||0|0; noisetemp||0|0; noiseflow||0|0"
        data-description="Resistor (nonzero resistance)"
-       data-info="https://www.slicap.org/syntax/devices.html#r-resistor">
+       data-info="https://www.slicap.org/API/syntax/devices.html#r-resistor">
 
        <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
        <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
@@ -63,7 +63,7 @@
        data-model="r|0" 
        data-params="value|?|0|1; dcvar||0|0; dcvarlot||0|0; noisetemp||0|0; noiseflow||0|0"
        data-description="Resistor (finite resistance; includes zero)"
-       data-info="https://www.slicap.org/syntax/devices.html#r-resistor">
+       data-info="https://www.slicap.org/API/syntax/devices.html#r-resistor">
 
        <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
        <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
@@ -81,7 +81,7 @@
        data-model="V|0" 
        data-params="value|?|0|1; dc||0|0; dcvar||0|0; noise||0|0"
        data-description="Independent voltage source"
-       data-info="https://www.slicap.org/syntax/devices.html#i-independent-voltage-source">
+       data-info="https://www.slicap.org/API/syntax/devices.html#i-independent-voltage-source">
 
        <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1"/>
        <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
@@ -99,7 +99,7 @@
        data-model="I|0" 
        data-params="value|?|0|1; dc||0|0; dcvar||0|0; noise||0|0"
        data-description="Independent current source"
-       data-info="https://www.slicap.org/syntax/devices.html#i-independent-current-source">
+       data-info="https://www.slicap.org/API/syntax/devices.html#i-independent-current-source">
 
        <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1"/>
        <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
@@ -119,7 +119,7 @@
        data-model="E|0" 
        data-params="value|?|0|1"
        data-description="Voltage-controlled voltage source"
-       data-info="https://www.slicap.org/syntax/devices.html#e-voltage-controlled-voltage-source">
+       data-info="https://www.slicap.org/API/syntax/devices.html#e-voltage-controlled-voltage-source">
 
        <line x1="10" y1="-20" x2="10" y2="20" stroke="black" stroke-width="1"/>
        <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
@@ -143,7 +143,7 @@
        data-model="EZ|0" 
        data-params="value|?|0|1; zo|?|0|1"
        data-description="Voltage-controlled voltage source with finite output impedance"
-       data-info="https://www.slicap.org/syntax/devices.html#e-voltage-controlled-voltage-source">
+       data-info="https://www.slicap.org/API/syntax/devices.html#e-voltage-controlled-voltage-source">
 
        <polyline points="20 -20 10 -20 10 20" stroke="black" stroke-width="1" fill="none" />
        <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
@@ -170,7 +170,7 @@
        data-model="F|0" 
        data-params="value|?|0|1"
        data-description="Current-controlled current source"
-       data-info="https://www.slicap.org/syntax/devices.html#f-current-controlled-current-source">
+       data-info="https://www.slicap.org/API/syntax/devices.html#f-current-controlled-current-source">
 
        <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
        <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1"/>
@@ -190,7 +190,7 @@
        data-model="G|0" 
        data-params="value|?|0|1"
        data-description="Voltage-controlled current source"
-       data-info="https://www.slicap.org/syntax/devices.html#g-voltage-controlled-current-source">
+       data-info="https://www.slicap.org/API/syntax/devices.html#g-voltage-controlled-current-source">
 
        <line x1="10" y1="-20" x2="10" y2="-10" stroke="black" stroke-width="1"/>
        <line x1="10" y1="20" x2="10" y2="10" stroke="black" stroke-width="1"/>
@@ -217,7 +217,7 @@
        data-model="H|0" 
        data-params="value|?|0|1"
        data-description="Current-controlled voltage source"
-       data-info="https://www.slicap.org/syntax/devices#model-h">
+       data-info="https://www.slicap.org/API/syntax/devices.html#model-h">
 
        <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
        <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
@@ -236,7 +236,7 @@
        data-model="HZ|0" 
        data-params="value|?|0|1; zo|?|0|1"
        data-description="Current-controlled voltage source with finite output impedance"
-       data-info="https://www.slicap.org/syntax/devices#model-hz">
+       data-info="https://www.slicap.org/API/syntax/devices.html#model-hz">
 
        <polyline points="10 -20 0 -20 0 20" stroke="black" stroke-width="1" fill="none" />
        <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
@@ -255,7 +255,7 @@
        data-nodes="outp outn inp inn"
        data-model="N|0" 
        data-description="Nullor"
-       data-info="https://www.slicap.org/syntax/devices.html#n-nullor">
+       data-info="https://www.slicap.org/API/syntax/devices.html#n-nullor">
       
        <!-- norator -->
        <circle cx="10" cy="5" r="5" fill="none" stroke="black" stroke-width="1"/>
@@ -282,7 +282,7 @@
        data-model="T|0" 
        data-params="value|?|0|1"
        data-description="Ideal transformer"
-       data-info="https://www.slicap.org/syntax/devices.html#t-ideal-transformer">
+       data-info="https://www.slicap.org/API/syntax/devices.html#t-ideal-transformer">
 
        <polyline points="-10 -20 -10 -12 -3 -8 -10 -4 -3 0 -10 4 -3 8 -10 12 -10 20" stroke="black" stroke-width="1" fill="none" />      
        <polyline points="10 -20 10 -12 3 -8 10 -4 3 0 10 4 3 8 10 12 10 20" stroke="black" stroke-width="1" fill="none" />               
@@ -305,7 +305,7 @@
        data-model="W|0" 
        data-params="value|?|0|1"
        data-description="Gyrator"
-       data-info="https://www.slicap.org/syntax/devices.html#w-gyrator">
+       data-info="https://www.slicap.org/API/syntax/devices.html#w-gyrator">
 
        <polyline points="-10 -20 -10 20" stroke="black" stroke-width="1" fill="none" />  
        <polyline points="10 -20 10 20" stroke="black" stroke-width="1" fill="none" />    
@@ -329,7 +329,7 @@
        data-refs="L? L?"
        data-params="value|?|0|1"
        data-description="Mutual inductance coupling factor"
-       data-info="https://www.slicap.org/syntax/devices.html#k-coupling-factor">
+       data-info="https://www.slicap.org/API/syntax/devices.html#k-coupling-factor">
 
        <!-- Symbol outline -->
        <line x1="-10" y1="0" x2="10" y2="0" stroke="black" stroke-width="1"/>

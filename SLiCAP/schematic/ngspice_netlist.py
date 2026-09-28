@@ -27,7 +27,7 @@ from PySide6.QtCore import QPointF
 from SLiCAP.SLiCAPlex import _replaceScaleFactors
 
 from .connectivity import resolve_nets, _rpt
-from .netlist import NetlistError
+from .netlist import library_lines, definition_lines, NetlistError
 
 
 _ANNOTATION = {"0", "port"}
@@ -132,7 +132,10 @@ def _format_params(prefix: str, params: dict) -> list[str]:
                 parts.append(f"{k}={_wrap(v, k)}")
 
     elif prefix in ("V", "I"):
-        dc = params.get("dc", "").strip()
+        # "dc" comes from the stimuli dialog; a source whose only entry is
+        # its plain value (the symbol's default field) is a DC source of
+        # that value (a Windows user's "V1 1 0" lost its 1 V, 2026-09-28)
+        dc = params.get("dc", "").strip() or params.get("value", "").strip()
         if dc:
             parts.append(f"dc {_wrap(dc)}")
         ac = params.get("ac", "").strip()
@@ -218,6 +221,23 @@ def _element_lines(components: list, node_fn) -> list[str]:
     return lines
 
 
+def _include_lines(lib_item, root) -> list[str]:
+    """NGspice netlists go straight to ngspice (no SLiCAPyacc parse, so no
+    "cannot find library" backstop): every library file as an absolute
+    ``.include`` for THIS machine."""
+    return [f'.include "{path}"'
+            for _d, path, _c, _exists in lib_item.resolved_entries(root)]
+
+
+def _ngspice_param_lines(param_item, exclude=None) -> list[str]:
+    """A parameter block in NGspice notation; a value the notation cannot
+    express is a netlist error, not a crash."""
+    try:
+        return param_item.param_lines(exclude=exclude, value_fn=_param_text)
+    except ValueError as exc:
+        raise NetlistError([f"parameter block: {exc}"]) from exc
+
+
 def build_ngspice_netlist(
     components:      list,       # list[ComponentItem]
     wires:           list,       # list[WireItem]
@@ -227,6 +247,7 @@ def build_ngspice_netlist(
     control_section: str  = "",   # body of .control…endc (without the wrapper)
     raw_path:        str  = "",   # path for explicit `write` at end of .control
     program_netlist: bool = False, # True → plain netlist, no .control block
+    model_defs:      list = None, # list[ModelItem]  (.model blocks on the schematic)
 ) -> str:
     """Build a NGspice SPICE netlist string.
 
@@ -244,31 +265,10 @@ def build_ngspice_netlist(
     title_line = f'"{title}"' if " " in title else title
     lines: list[str] = [title_line]
 
-    if libs:
-        from . import project
-        try:
-            root = project.project_root()
-        except Exception:
-            root = None
-        lines.append("")
-        for lib_item in libs:
-            # NGspice netlists go straight to ngspice (no SLiCAPyacc parse, so no
-            # "cannot find library" backstop) — resolve to an absolute path for
-            # THIS machine and warn here if it is missing.
-            for _d, path, _c, exists in lib_item.resolved_entries(root):
-                if not exists:
-                    print(f"WARNING: library file not found: {path}")
-                lines.append(f'.include "{path}"')
-
-    if params:
-        for param_item in params:
-            try:
-                param_lines = param_item.param_lines(value_fn=_param_text)
-            except ValueError as exc:
-                raise NetlistError([f"parameter block: {exc}"]) from exc
-            if param_lines:
-                lines.append("")
-                lines.extend(param_lines)
+    # library lines, parameter and model blocks: the shared writers of
+    # netlist.py, with this dialect's spelling of an include and of a value
+    lines.extend(library_lines(libs, _include_lines))
+    lines.extend(definition_lines(params, model_defs, _ngspice_param_lines))
 
     lines.append("")
     lines.extend(_element_lines(components, _node))
@@ -340,40 +340,17 @@ def build_ngspice_subckt(
     # directive and models are global in ngspice.  Same path resolution as
     # build_ngspice_netlist (relative paths resolve against the project root,
     # which is the working directory of every run).
-    if libs:
-        from . import project
-        try:
-            root = project.project_root()
-        except Exception:
-            root = None
-        lines.append("")
-        for lib_item in libs:
-            for _d, path, _c, exists in lib_item.resolved_entries(root):
-                if not exists:
-                    print(f"WARNING: library file not found: {path}")
-                lines.append(f'.include "{path}"')
+    lines.extend(library_lines(libs, _include_lines))
 
     lines += ["", subckt]
 
-    # Internal .param definitions (a param passed on the .subckt line wins).
+    # Internal .param definitions (a param passed on the .subckt line wins)
+    # and the .model blocks drawn on the subcircuit schematic (2026-09-20):
+    # the shared writers.
     passed = {str(k).strip().strip("{}") for k, _ in (params or [])}
-    if params_items:
-        for param_item in params_items:
-            try:
-                param_lines = param_item.param_lines(exclude=passed, value_fn=_param_text)
-            except ValueError as exc:
-                raise NetlistError([f"parameter block: {exc}"]) from exc
-            if param_lines:
-                lines.append("")
-                lines.extend(param_lines)
-
-    # .model blocks drawn on the subcircuit schematic (2026-09-20).
-    if model_defs:
-        for model_item in model_defs:
-            model_lines = model_item.netlist_lines()
-            if model_lines:
-                lines.append("")
-                lines.extend(model_lines)
+    lines.extend(definition_lines(
+        params_items, model_defs,
+        lambda item: _ngspice_param_lines(item, exclude=passed)))
 
     lines.append("")
     lines.extend(_element_lines(components, _node))

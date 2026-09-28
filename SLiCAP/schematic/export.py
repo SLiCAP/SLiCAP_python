@@ -169,7 +169,7 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
         elif isinstance(item, JunctionItem):
             _junction(root, item, junc_color, style.JUNCTION_RADIUS)
         elif isinstance(item, ComponentItem):
-            _component(root, defs, item, lbl_color, style.COMP_LABEL_FONT_SIZE)
+            _component(root, defs, item, lbl_color, style.COMP_LABEL_FONT_SIZE, style)
         elif isinstance(item, ImageItem):
             _image_svg(root, defs, item)
         elif isinstance(item, (LatexFragmentItem, ParameterItem, ModelItem)):
@@ -200,6 +200,8 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
                 "monospace" if is_cmd else style.TEXT_FONT_FAMILY,
                 style.COMMAND_FONT if is_cmd else style.TEXT_FONT,
             )
+        elif type(item).__name__ in ("SymbolPinItem", "SymbolTextItem", "OpaqueSvgItem"):
+            _symbol_item(root, item, style)
         elif isinstance(item, HyperlinkItem):
             _hyperlink_block(root, item, lnk_color,
                              style.HYPERLINK_FONT_SIZE, style.HYPERLINK_FONT_FAMILY,
@@ -245,8 +247,11 @@ def _wire(parent, item, stroke, width, net_color, net_fs):
     if (item.show_dc_voltage
             and item._dc_label is not None and item._dc_label.isVisible()):
         from PySide6.QtGui import QFontMetricsF
-        from .config import style_of
-        style = style_of(item)
+        from .config import default_style
+        scene = item.scene()
+        style = getattr(scene, "style", None)
+        if not hasattr(style, "BIAS_COLOR"):
+            style = default_style()
         lbl  = item._dc_label
         fm   = QFontMetricsF(lbl.font())
         t = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
@@ -311,21 +316,29 @@ def _image_svg(parent, defs, item) -> None:
         _inline_image_svg(parent, defs, svg_bytes, x, y, w, h)
         return
 
-    # Raster path (PNG, JPG, PDF rendered to pixmap, etc.)
-    px = item._pixmap
-    if px is None or px.isNull():
-        return
-    buf = QBuffer()
-    buf.open(QIODevice.WriteOnly)
-    px.save(buf, "PNG")
-    data = base64.b64encode(bytes(buf.data())).decode("ascii")
-    buf.close()
+    # Raster path: a PNG or JPEG file is embedded as it is, anything else
+    # (a PDF page) as the item's bitmap; both at the picture's own
+    # resolution, placed in the rect the picture fills on the canvas.
+    mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}.get(ext)
+    if mime and _Path(item.file_path).is_file():
+        raw = _Path(item.file_path).read_bytes()
+    else:
+        px = item._pixmap
+        if px is None or px.isNull():
+            return
+        buf = QBuffer()
+        buf.open(QIODevice.WriteOnly)
+        px.save(buf, "PNG")
+        raw, mime = bytes(buf.data()), "image/png"
+        buf.close()
+    data = base64.b64encode(raw).decode("ascii")
+    r = item.picture_rect()
     el = ET.SubElement(parent, f"{{{_SVG_NS}}}image")
-    el.set("x",      f"{x:.2f}")
-    el.set("y",      f"{y:.2f}")
-    el.set("width",  f"{px.width()}")
-    el.set("height", f"{px.height()}")
-    el.set("href",   f"data:image/png;base64,{data}")
+    el.set("x",      f"{x + r.x():.2f}")
+    el.set("y",      f"{y + r.y():.2f}")
+    el.set("width",  f"{r.width():.2f}")
+    el.set("height", f"{r.height():.2f}")
+    el.set("href",   f"data:{mime};base64,{data}")
 
 
 def _inline_image_svg(parent, defs, svg_bytes: bytes,
@@ -399,7 +412,11 @@ def _inline_image_svg(parent, defs, svg_bytes: bytes,
         g.append(child)
 
 
-def _component(parent, defs, item, lbl_color, lbl_fs):
+def _component(parent, defs, item, lbl_color, lbl_fs, style=None):
+    """*style* is the DOCUMENT style of the scene (never the display style:
+    an export from a dark canvas keeps the document colours)."""
+    from .config import default_style
+    style = style or default_style()
     px, py = item.pos().x(), item.pos().y()
     rot    = item.rotation()
     sx     = -1 if item.h_flip else 1
@@ -427,11 +444,13 @@ def _component(parent, defs, item, lbl_color, lbl_fs):
     for child in sym:
         g.append(child)
 
-    # Embedded symbol text was stripped from the artwork (item._svg_bytes); emit
-    # each piece upright at its transformed position so it stays readable under
-    # rotation/mirroring, matching the canvas.
-    from .config import style_of
-    symbol_text_color = style_of(item).SYMBOL_TEXT_COLOR
+    # Embedded symbol text and baked LaTeX labels were stripped from the
+    # artwork (item._svg_bytes); emit each at its transformed position under the
+    # readable-orientation rule of the canvas (component_item.readable_transform):
+    # unmirrored, upright for a symbol at 0/180 degrees, reading bottom-to-top
+    # for one at +/-90 degrees.
+    vertical = round(rot) % 180 == 90
+    symbol_text_color = style.SYMBOL_TEXT_COLOR
     for t in getattr(item, "symbol_texts", ()):
         content = t.get("content")
         if not content:
@@ -445,11 +464,31 @@ def _component(parent, defs, item, lbl_color, lbl_fs):
         te.set("text-anchor", "middle")        # centred horizontally and …
         te.set("dominant-baseline", "central")  # … vertically on the anchor point
         te.set("fill", _qhex(symbol_text_color))
+        if vertical:
+            te.set("transform", f"rotate(-90 {sp.x():.2f} {sp.y():.2f})")
         te.text = content
+    stroke_hex = _qhex(style.SYMBOL_STROKE_COLOR)
+    for f in getattr(item, "symbol_latex", ()):
+        try:
+            frag = ET.fromstring(f["svg"].decode("utf-8", errors="replace"))
+        except ET.ParseError:
+            continue
+        cx, cy = f["x"] + f["w"] / 2.0, f["y"] + f["h"] / 2.0
+        sp = item.mapToScene(QPointF(cx, cy))
+        tr = f"translate({sp.x():.3f},{sp.y():.3f})"
+        if vertical:
+            tr += " rotate(-90)"
+        tr += f" translate({-cx:.3f},{-cy:.3f})"
+        wrap = ET.SubElement(parent, f"{{{_SVG_NS}}}g")
+        wrap.set("transform", tr)
+        for child in list(frag):
+            if child.get("fill") == "black":
+                child.set("fill", stroke_hex)
+            wrap.append(child)
 
     for lbl in item._labels.values():
         sp = lbl.mapToScene(QPointF(0.0, 0.0))
-        font, color = lbl._font_and_color()
+        font, color = lbl._font_and_color(style)
         clr = _qhex(color)
         fs  = font.pointSizeF()
         if lbl._text:
@@ -512,7 +551,11 @@ def _latex_label(parent, defs, item, lbl, sp, lbl_color, lbl_fs):
         t.set("fill", lbl_color)
         t.text = lbl._prefix
 
-    _inline_latex_svg(parent, defs, svg_bytes, svg_x, sp.y(), svg_w, svg_h)
+    # The label's bytes are the render in document black; the document
+    # colour of its kind (refdes, parameter) is applied here, the export's
+    # own decision, as the canvas applies the display colour in set_svg.
+    from .latex_label import recolor_svg
+    _inline_latex_svg(parent, defs, recolor_svg(svg_bytes, lbl_color), svg_x, sp.y(), svg_w, svg_h)
 
 
 def _inline_latex_svg(parent, defs, svg_bytes, x, y, w, h):
@@ -562,6 +605,11 @@ def _inline_latex_svg(parent, defs, svg_bytes, x, y, w, h):
 
     g = ET.SubElement(parent, f"{{{_SVG_NS}}}g")
     g.set("transform", transform)
+    # The root of the render is dropped; its presentation attributes (the
+    # fill that recolor_svg sets, which the paths inherit) move to the group.
+    for attr in ("fill", "stroke"):
+        if sym.get(attr):
+            g.set(attr, sym.get(attr))
     for child in content:
         g.append(child)
 
@@ -630,32 +678,46 @@ _DASH_ARRAY = {
 
 
 def _shape(parent, item) -> None:
-    """Render a ShapeItem to SVG with full style support."""
-    import math
+    """Render a ShapeItem to SVG: line (polyline with filled heads), rect,
+    ellipse, polygon; stroke style "none" gives a fill without contour;
+    the rotation goes out as an SVG rotate about the shape's centre."""
+    from .shape_item import shaft_points, KINDS_WITH_FILL
+    from PySide6.QtCore import QPointF
     ox, oy = item.pos().x(), item.pos().y()
     pts    = [(ox + p.x(), oy + p.y()) for p in item.rel_points]
     lw     = item.line_width
-    fill   = item.fill_color if item.fill_style == "solid" else "none"
+    fill   = item.fill_color if (item.fill_style == "solid" and item.kind in KINDS_WITH_FILL) else "none"
 
-    stroke_attrs = {
-        "stroke":           item.stroke_color,
-        "stroke-width":     f"{lw:.2f}",
-        "fill":             fill,
-        "stroke-linecap":   "round",
-        "stroke-linejoin":  "round",
-    }
-    da = _DASH_ARRAY.get(item.line_style)
-    if da:
-        stroke_attrs["stroke-dasharray"] = da
+    if item.line_style == "none":
+        stroke_attrs = {"stroke": "none", "fill": fill}
+    else:
+        stroke_attrs = {
+            "stroke":           item.stroke_color,
+            "stroke-width":     f"{lw:.2f}",
+            "fill":             fill,
+            "stroke-linecap":   "round",
+            "stroke-linejoin":  "round",
+        }
+        da = _DASH_ARRAY.get(item.line_style)
+        if da:
+            stroke_attrs["stroke-dasharray"] = da
+    if item.rotation:
+        c = item.centre()
+        stroke_attrs["transform"] = f"rotate({item.rotation:.2f} {ox + c.x():.2f} {oy + c.y():.2f})"
+
+    def _pts(seq):
+        return " ".join(f"{x:.2f},{y:.2f}" for x, y in seq)
 
     if item.kind == "line" and len(pts) >= 2:
+        qpts = [QPointF(x, y) for x, y in pts]
+        shaft = shaft_points(qpts, item.line_end_start, item.line_end_end, item.head_length)
         el = ET.SubElement(parent, f"{{{_SVG_NS}}}polyline")
-        el.set("points", " ".join(f"{x:.2f},{y:.2f}" for x, y in pts))
+        el.set("points", _pts((p.x(), p.y()) for p in shaft))
         for k, v in stroke_attrs.items():
             el.set(k, v)
-        # line ends drawn as separate open geometry (no SVG markers needed)
-        _svg_line_end(parent, pts[1],  pts[0],  item.line_end_start, lw, item.stroke_color)
-        _svg_line_end(parent, pts[-2], pts[-1],  item.line_end_end,   lw, item.stroke_color)
+        el.set("fill", "none")
+        _svg_line_end(parent, qpts[1],  qpts[0],  item.line_end_start, item)
+        _svg_line_end(parent, qpts[-2], qpts[-1],  item.line_end_end,   item)
 
     elif item.kind == "rect" and len(pts) == 2:
         x0 = min(pts[0][0], pts[1][0]); y0 = min(pts[0][1], pts[1][1])
@@ -666,60 +728,67 @@ def _shape(parent, item) -> None:
         for k, v in stroke_attrs.items():
             el.set(k, v)
 
-    elif item.kind == "circle" and len(pts) == 2:
-        cx, cy = pts[0]
-        r = math.hypot(pts[1][0] - cx, pts[1][1] - cy)
-        el = ET.SubElement(parent, f"{{{_SVG_NS}}}circle")
+    elif item.kind == "ellipse" and len(pts) == 2:
+        cx = (pts[0][0] + pts[1][0]) / 2; cy = (pts[0][1] + pts[1][1]) / 2
+        rx = abs(pts[1][0] - pts[0][0]) / 2; ry = abs(pts[1][1] - pts[0][1]) / 2
+        el = ET.SubElement(parent, f"{{{_SVG_NS}}}ellipse")
         el.set("cx", f"{cx:.2f}"); el.set("cy", f"{cy:.2f}")
-        el.set("r",  f"{r:.2f}")
+        el.set("rx", f"{rx:.2f}"); el.set("ry", f"{ry:.2f}")
+        for k, v in stroke_attrs.items():
+            el.set(k, v)
+
+    elif item.kind == "polygon" and len(pts) >= 3:
+        el = ET.SubElement(parent, f"{{{_SVG_NS}}}polygon")
+        el.set("points", _pts(pts))
         for k, v in stroke_attrs.items():
             el.set(k, v)
 
 
-def _svg_line_end(parent, p_from, p_to, style: str, lw: float, color: str) -> None:
-    """Draw a line-end marker (arrow / dot / diamond) as plain SVG elements."""
-    import math
+def _svg_line_end(parent, p_from, p_to, style: str, item) -> None:
+    """Filled line-end head without contour, as in the canvas: arrow and
+    diamond as a polygon of the item's head width and length, dot as a
+    circle of the head width."""
+    from .shape_item import head_polygon
     if style == "none":
         return
-    dx, dy = p_to[0] - p_from[0], p_to[1] - p_from[1]
-    length = math.hypot(dx, dy)
-    if length < 1e-6:
-        return
-    size = max(16.0, lw * 6)
-    ux, uy = dx / length, dy / length
-    base = {"stroke": color, "stroke-width": f"{lw:.2f}",
-            "stroke-linecap": "round"}
-
-    if style == "arrow":
-        px_, py_ = -uy, ux
-        for side in (1, -1):
-            ax = p_to[0] - size * ux + side * size * 0.4 * px_
-            ay = p_to[1] - size * uy + side * size * 0.4 * py_
-            al = ET.SubElement(parent, f"{{{_SVG_NS}}}line")
-            al.set("x1", f"{p_to[0]:.2f}"); al.set("y1", f"{p_to[1]:.2f}")
-            al.set("x2", f"{ax:.2f}");       al.set("y2", f"{ay:.2f}")
-            al.set("fill", "none")
-            for k, v in base.items(): al.set(k, v)
-
-    elif style == "dot":
-        r = size * 0.35
+    color = item.stroke_color
+    if style == "dot":
         el = ET.SubElement(parent, f"{{{_SVG_NS}}}circle")
-        el.set("cx", f"{p_to[0]:.2f}"); el.set("cy", f"{p_to[1]:.2f}")
-        el.set("r",  f"{r:.2f}")
-        el.set("fill", color); el.set("stroke", "none")
-
-    elif style == "diamond":
-        h, w = size * 0.9, size * 0.4
-        px_, py_ = -uy, ux
-        tip  = p_to
-        back = (p_to[0] - h*ux,          p_to[1] - h*uy)
-        left = (p_to[0] - h/2*ux + w*px_, p_to[1] - h/2*uy + w*py_)
-        rght = (p_to[0] - h/2*ux - w*px_, p_to[1] - h/2*uy - w*py_)
-        pts_str = " ".join(f"{x:.2f},{y:.2f}"
-                           for x, y in [tip, left, back, rght])
+        el.set("cx", f"{p_to.x():.2f}"); el.set("cy", f"{p_to.y():.2f}")
+        el.set("r",  f"{item.head_width / 2:.2f}")
+    else:
+        poly = head_polygon(p_from, p_to, style, item.head_width, item.head_length)
+        if not poly:
+            return
         el = ET.SubElement(parent, f"{{{_SVG_NS}}}polygon")
-        el.set("points", pts_str)
-        el.set("fill", color); el.set("stroke", "none")
+        el.set("points", " ".join(f"{p.x():.2f},{p.y():.2f}" for p in poly))
+    el.set("fill", color); el.set("stroke", "none")
+
+
+def _symbol_item(parent, item, style) -> None:
+    """Symbol editor items in an SVG export of the symbol canvas: a pin as
+    a small marker, symbol text as text, an opaque element verbatim."""
+    from .symbol_editor import SymbolPinItem, SymbolTextItem
+    import xml.etree.ElementTree as _ET
+    x, y = item.pos().x(), item.pos().y()
+    if isinstance(item, SymbolPinItem):
+        el = _ET.SubElement(parent, f"{{{_SVG_NS}}}circle")
+        el.set("cx", f"{x:.2f}"); el.set("cy", f"{y:.2f}"); el.set("r", "2")
+        el.set("fill", _qhex(style.NET_LABEL_COLOR)); el.set("stroke", "none")
+    elif isinstance(item, SymbolTextItem):
+        el = _ET.SubElement(parent, f"{{{_SVG_NS}}}text")
+        el.set("x", f"{x:.2f}"); el.set("y", f"{y:.2f}")
+        el.set("font-size", f"{item.size:g}"); el.set("text-anchor", "middle")
+        el.set("dominant-baseline", "middle"); el.set("fill", _qhex(style.SYMBOL_TEXT_COLOR))
+        el.text = item.content
+    else:
+        try:
+            el = _ET.fromstring(item.xml)
+        except _ET.ParseError:
+            return
+        wrap = _ET.SubElement(parent, f"{{{_SVG_NS}}}g")
+        wrap.set("transform", f"translate({x:.2f} {y:.2f})")
+        wrap.append(el)
 
 
 def _hyperlink_block(parent, item, color, fs, family, underline: bool):

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-116.870 -111.000 233.072 222.000" width="116.536mm" height="111.000mm">
-  <!-- SLiCAP schematic export: balancedNetwork.slicap_sch, SLiCAP 6.0 -->
+  <!-- SLiCAP schematic export: balancedNetwork.slicap_sch, SLiCAP 6.0.3 -->
   <title>balancedNetwork</title>
   <defs>
     <path id="lt0-g1-49" d="M2.336239-4.435367C2.336239-4.623661 2.322291-4.630635 2.127024-4.630635C1.680697-4.191283 1.046077-4.184309 .760149-4.184309V-3.93325C.927522-3.93325 1.387796-3.93325 1.771357-4.128518V-.571856C1.771357-.341719 1.771357-.251059 1.073973-.251059H.808966V0C.934496-.006974 1.792279-.027895 2.050311-.027895C2.266501-.027895 3.145205-.006974 3.29863 0V-.251059H3.033624C2.336239-.251059 2.336239-.341719 2.336239-.571856V-4.435367Z" />
@@ -85,50 +85,46 @@
   <text x="-83.11" y="-4.11" font-family="sans-serif" font-size="7pt" fill="#26a269">1</text>
   <g transform="translate(50.00,100.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
   </g>
   <text x="72.00" y="103.00" font-family="monospace" font-size="6.0pt" fill="#000000">outN</text>
   <g transform="translate(50.00,-100.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
   </g>
   <text x="72.00" y="-97.50" font-family="monospace" font-size="6.0pt" fill="#000000">outP</text>
   <g transform="translate(90.00,40.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(55.00,40.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(75.00,-20.00)" font-size="7pt">
     <line x1="-10" y1="0" x2="10" y2="0" stroke="black" stroke-width="1" />
     <polyline points="16 0 10 -2 10 2 16 0" stroke="black" stroke-width="0" fill="black" />
     <polyline points="-16 0 -10 -2 -10 2 -16 0" stroke="black" stroke-width="0" fill="black" />
   </g>
-  <g transform="translate(69.000,-61.739) scale(1.049081,1.049081) translate(-0.000,6.656)">
+  <g transform="translate(69.000,-61.739) scale(1.049081,1.049081) translate(-0.000,6.656)" fill="#000000">
     <g id="lt0-page1">
       <use x="0" y=".179883" xlink:href="#lt0-g0-75" />
       <use x="8.980168" y="1.674264" xlink:href="#lt0-g1-49" />
     </g>
   </g>
-  <g transform="translate(69.000,-50.171) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(69.000,-50.171) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt1-page1">
       <use x="0" y=".927081" xlink:href="#lt1-g0-76" />
       <use x="6.890787" y=".927081" xlink:href="#lt1-g0-49" />
       <use x="12.619275" y=".927081" xlink:href="#lt1-g0-80" />
     </g>
   </g>
-  <g transform="translate(69.000,-40.171) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(69.000,-40.171) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt2-page1">
       <use x="0" y=".927081" xlink:href="#lt2-g0-76" />
       <use x="6.890787" y=".927081" xlink:href="#lt2-g0-49" />
       <use x="12.619275" y=".927081" xlink:href="#lt2-g0-78" />
     </g>
   </g>
-  <g transform="translate(69.000,-31.826) scale(1.049081,1.049081) translate(-0.000,6.697)">
+  <g transform="translate(69.000,-31.826) scale(1.049081,1.049081) translate(-0.000,6.697)" fill="#000000">
     <g id="lt3-page1">
       <use x="0" y=".221399" xlink:href="#lt3-g0-107" />
       <use x="5.186592" y="1.71578" xlink:href="#lt3-g1-99" />
@@ -136,18 +132,16 @@
   </g>
   <g transform="translate(10.00,20.00) scale(-1,1) rotate(180.000)" font-size="7pt">
     <path d="M 0 -20 L 0 -12 A 4 4 0 0 1 0 -4 A 4 4 0 0 1 0  4 A 4 4 0 0 1 0  12 L 0 20" fill="none" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="15.00" y="35.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
-  <g transform="translate(20.047,10.328) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(20.047,10.328) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt4-page1">
       <use x="0" y=".927081" xlink:href="#lt4-g0-76" />
       <use x="6.890787" y=".927081" xlink:href="#lt4-g0-49" />
       <use x="12.619275" y=".927081" xlink:href="#lt4-g0-78" />
     </g>
   </g>
-  <g transform="translate(20.479,20.147) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(20.479,20.147) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt5-page1">
       <use x="0" y=".166034" xlink:href="#lt5-g0-76" />
       <use x="6.780147" y="1.660415" xlink:href="#lt5-g1-97" />
@@ -155,18 +149,16 @@
   </g>
   <g transform="translate(10.00,-20.00)" font-size="7pt">
     <path d="M 0 -20 L 0 -12 A 4 4 0 0 1 0 -4 A 4 4 0 0 1 0  4 A 4 4 0 0 1 0  12 L 0 20" fill="none" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="15.00" y="-35.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
-  <g transform="translate(20.041,-29.738) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(20.041,-29.738) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt6-page1">
       <use x="0" y=".927081" xlink:href="#lt6-g0-76" />
       <use x="6.890787" y=".927081" xlink:href="#lt6-g0-49" />
       <use x="12.619275" y=".927081" xlink:href="#lt6-g0-80" />
     </g>
   </g>
-  <g transform="translate(20.327,-20.139) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(20.327,-20.139) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt7-page1">
       <use x="0" y=".166034" xlink:href="#lt7-g0-76" />
       <use x="6.780147" y="1.660415" xlink:href="#lt7-g1-97" />
@@ -177,16 +169,14 @@
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
-  <g transform="translate(100.355,9.838) scale(1.049081,1.049081) translate(-0.000,6.656)">
+  <g transform="translate(100.355,9.838) scale(1.049081,1.049081) translate(-0.000,6.656)" fill="#000000">
     <g id="lt8-page1">
       <use x="0" y=".179883" xlink:href="#lt8-g0-67" />
       <use x="8.274482" y="1.674264" xlink:href="#lt8-g1-49" />
     </g>
   </g>
-  <g transform="translate(100.355,21.290) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(100.355,21.290) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt9-page1">
       <use x="0" y=".166034" xlink:href="#lt9-g0-67" />
       <use x="7.120515" y="1.660415" xlink:href="#lt9-g1-97" />
@@ -196,16 +186,14 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
-  <g transform="translate(65.142,9.838) scale(1.049081,1.049081) translate(-0.000,6.656)">
+  <g transform="translate(65.142,9.838) scale(1.049081,1.049081) translate(-0.000,6.656)" fill="#000000">
     <g id="lt10-page1">
       <use x="0" y=".179883" xlink:href="#lt10-g0-82" />
       <use x="8.592731" y="1.674264" xlink:href="#lt10-g1-53" />
     </g>
   </g>
-  <g transform="translate(65.428,20.433) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(65.428,20.433) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt11-page1">
       <use x="0" y=".166034" xlink:href="#lt11-g0-82" />
       <use x="7.56453" y="1.660415" xlink:href="#lt11-g1-99" />
@@ -215,17 +203,15 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
-  <g transform="translate(21.038,69.671) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(21.038,69.671) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt12-page1">
       <use x="0" y=".927081" xlink:href="#lt12-g0-82" />
       <use x="8.592731" y=".927081" xlink:href="#lt12-g0-50" />
       <use x="14.321219" y=".927081" xlink:href="#lt12-g0-78" />
     </g>
   </g>
-  <g transform="translate(20.142,79.575) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(20.142,79.575) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt13-page1">
       <use x="0" y=".166034" xlink:href="#lt13-g0-82" />
       <use x="7.56453" y="1.660415" xlink:href="#lt13-g1-98" />
@@ -235,17 +221,15 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
-  <g transform="translate(-64.287,70.262) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(-64.287,70.262) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt14-page1">
       <use x="0" y=".927081" xlink:href="#lt14-g0-82" />
       <use x="8.592731" y=".927081" xlink:href="#lt14-g0-49" />
       <use x="14.321219" y=".927081" xlink:href="#lt14-g0-78" />
     </g>
   </g>
-  <g transform="translate(-52.244,79.575) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(-52.244,79.575) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt15-page1">
       <use x="0" y=".166034" xlink:href="#lt15-g0-82" />
       <use x="7.56453" y="1.660415" xlink:href="#lt15-g1-97" />
@@ -255,17 +239,15 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
-  <g transform="translate(20.003,-89.660) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(20.003,-89.660) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt16-page1">
       <use x="0" y=".927081" xlink:href="#lt16-g0-82" />
       <use x="8.592731" y=".927081" xlink:href="#lt16-g0-50" />
       <use x="14.321219" y=".927081" xlink:href="#lt16-g0-80" />
     </g>
   </g>
-  <g transform="translate(20.254,-80.201) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(20.254,-80.201) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt17-page1">
       <use x="0" y=".166034" xlink:href="#lt17-g0-82" />
       <use x="7.56453" y="1.660415" xlink:href="#lt17-g1-98" />
@@ -275,17 +257,15 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
-  <g transform="translate(-63.743,-90.210) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(-63.743,-90.210) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt18-page1">
       <use x="0" y=".927081" xlink:href="#lt18-g0-82" />
       <use x="8.592731" y=".927081" xlink:href="#lt18-g0-49" />
       <use x="14.321219" y=".927081" xlink:href="#lt18-g0-80" />
     </g>
   </g>
-  <g transform="translate(-52.356,-80.201) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(-52.356,-80.201) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt19-page1">
       <use x="0" y=".166034" xlink:href="#lt19-g0-82" />
       <use x="7.56453" y="1.660415" xlink:href="#lt19-g1-97" />
@@ -294,19 +274,17 @@
   <g transform="translate(-30.00,20.00) rotate(180.000)" font-size="7pt">
     <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
   </g>
   <text x="-38.00" y="32.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
   <text x="-38.00" y="7.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">-</text>
-  <g transform="translate(-69.645,15.329) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(-69.645,15.329) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt20-page1">
       <use x="0" y=".927081" xlink:href="#lt20-g0-86" />
       <use x="8.661919" y=".927081" xlink:href="#lt20-g0-49" />
       <use x="14.390406" y=".927081" xlink:href="#lt20-g0-78" />
     </g>
   </g>
-  <g transform="translate(-56.072,24.782) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(-56.072,24.782) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt21-page1">
       <use x="0" y=".166034" xlink:href="#lt21-g0-86" />
       <use x="5.811546" y="1.660415" xlink:href="#lt21-g1-98" />
@@ -315,19 +293,17 @@
   <g transform="translate(-30.00,-20.00) scale(-1,1)" font-size="7pt">
     <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
   </g>
   <text x="-38.00" y="-32.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
   <text x="-38.00" y="-7.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">-</text>
-  <g transform="translate(-68.935,-29.610) scale(1.049081,1.049081) translate(-0.000,5.908)">
+  <g transform="translate(-68.935,-29.610) scale(1.049081,1.049081) translate(-0.000,5.908)" fill="#000000">
     <g id="lt22-page1">
       <use x="0" y=".927081" xlink:href="#lt22-g0-86" />
       <use x="8.661919" y=".927081" xlink:href="#lt22-g0-49" />
       <use x="14.390406" y=".927081" xlink:href="#lt22-g0-80" />
     </g>
   </g>
-  <g transform="translate(-55.885,-20.600) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(-55.885,-20.600) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt23-page1">
       <use x="0" y=".166034" xlink:href="#lt23-g0-86" />
       <use x="5.811546" y="1.660415" xlink:href="#lt23-g1-97" />
@@ -340,16 +316,14 @@
     <line x1="-10" y1="0" x2="10" y2="0" stroke="black" stroke-width="1" />
     <line x1="15" y1="-10" x2="15" y2="10" stroke="black" stroke-width="1" />
     <polyline points="15 12 17 6 13 6 15 12" stroke="black" stroke-width="0" fill="black" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
   </g>
-  <g transform="translate(-113.870,9.734) scale(1.049081,1.049081) translate(-0.000,6.656)">
+  <g transform="translate(-113.870,9.734) scale(1.049081,1.049081) translate(-0.000,6.656)" fill="#000000">
     <g id="lt24-page1">
       <use x="0" y=".179883" xlink:href="#lt24-g0-73" />
       <use x="4.344802" y="1.674264" xlink:href="#lt24-g1-49" />
     </g>
   </g>
-  <g transform="translate(-113.158,19.832) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(-113.158,19.832) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt25-page1">
       <use x="0" y=".166034" xlink:href="#lt25-g0-73" />
       <use x="4.379424" y="1.660415" xlink:href="#lt25-g1-115" />
@@ -358,7 +332,6 @@
   <g transform="translate(-85.00,40.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <circle cx="55.00" cy="0.00" r="2.00" fill="#000000" />
   <circle cx="10.00" cy="100.00" r="2.00" fill="#000000" />

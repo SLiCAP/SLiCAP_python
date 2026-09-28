@@ -14,18 +14,18 @@
 <h2><a id="netlist_balancedAmp"></a>Netlist: balancedAmp.cir</h2>
 <pre>balancedAmp
 
-.model myOpAmp OV
-+ cd={5p}
-+ cc={2p}
-+ av={A_0/(1+s/(2*pi*f_p1))}
-+ zo={1k}
-
 .param
 + R_a={100k}
 + R_b={100}
 + R_s={1k}
 + R_L={200}
 + f_p1={50}
+
+.model myOpAmp OV
++ cd={5p}
++ cc={2p}
++ av={A_0/(1+s/(2*pi*f_p1))}
++ zo={1k}
 
 .source V1P V1N
 .detector V_outP V_outN
@@ -64,9 +64,9 @@ V1N srcN 0 V value={0}
 <td class="left">value</td><td class="left">$5\cdot 10^{-12}$</td><td class="left">$5\cdot 10^{-12}$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">vinit</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">E_O1N</td><td class = "left">int_O1N 0 inN fbN </td><td class = "left"></td><td class = "left">E</td>
-<td class="left">value</td><td class="left">$\frac{A_{0}}{1 + \frac{0.5 s}{\pi f_{p1}}}$</td><td class="left">$\frac{A_{0}}{0.003183 s + 1}$</td></tr>
+<td class="left">value</td><td class="left">$\frac{A_{0}}{1 + \frac{0.5 s}{\pi f_{\mathrm{p1}}}}$</td><td class="left">$\frac{A_{0}}{0.003183 s + 1}$</td></tr>
 <tr><td class="left">E_O1P</td><td class = "left">int_O1P 0 inP fbP </td><td class = "left"></td><td class = "left">E</td>
-<td class="left">value</td><td class="left">$\frac{A_{0}}{1 + \frac{0.5 s}{\pi f_{p1}}}$</td><td class="left">$\frac{A_{0}}{0.003183 s + 1}$</td></tr>
+<td class="left">value</td><td class="left">$\frac{A_{0}}{1 + \frac{0.5 s}{\pi f_{\mathrm{p1}}}}$</td><td class="left">$\frac{A_{0}}{0.003183 s + 1}$</td></tr>
 <tr><td class="left">Gc1_O1N</td><td class = "left">inN 0 inN 0 </td><td class = "left"></td><td class = "left">g</td>
 <td class="left">value</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">Gc1_O1P</td><td class = "left">inP 0 inP 0 </td><td class = "left"></td><td class = "left">g</td>
@@ -84,37 +84,37 @@ V1N srcN 0 V value={0}
 <tr><td class="left">H_O1P</td><td class = "left">outP int_O1P </td><td class = "left">H_O1P </td><td class = "left">H</td>
 <td class="left">value</td><td class="left">$1\cdot 10^{3}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
 <tr><td class="left">R1N</td><td class = "left">srcN inN </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{s}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+<td class="left">value</td><td class="left">$R_{\mathrm{s}}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R1P</td><td class = "left">srcP inP </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{s}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+<td class="left">value</td><td class="left">$R_{\mathrm{s}}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R2N</td><td class = "left">fbN outN </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
+<td class="left">value</td><td class="left">$R_{\mathrm{a}}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R2P</td><td class = "left">outP fbP </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{a}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
+<td class="left">value</td><td class="left">$R_{\mathrm{a}}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R3</td><td class = "left">fbP fbN </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{b}$</td><td class="left">$100$</td></tr>
+<td class="left">value</td><td class="left">$R_{\mathrm{b}}$</td><td class="left">$100$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvarlot</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td class="left">R4</td><td class = "left">outP outN </td><td class = "left"></td><td class = "left">R</td>
-<td class="left">value</td><td class="left">$R_{L}$</td><td class="left">$200$</td></tr>
+<td class="left">value</td><td class="left">$R_{\mathrm{L}}$</td><td class="left">$200$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">dcvar</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noisetemp</td><td class="left">$0$</td><td class="left">$0$</td></tr>
 <tr><td></td><td></td><td></td><td></td><td class="left">noiseflow</td><td class="left">$0$</td><td class="left">$0$</td></tr>
@@ -132,11 +132,11 @@ V1N srcN 0 V value={0}
 </table>
 <a id="params_balancedAmp"></a><table>Parameter definitions of balancedAmp.cir.
 <tr><th class="left">Name</th><th class="left">Symbolic</th><th class="left">Numeric</th></tr>
-<tr><td class="left">$R_{L}$</td><td class="left">$200$</td><td class="left">$200$</td></tr>
-<tr><td class="left">$R_{a}$</td><td class="left">$100\cdot 10^{3}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
-<tr><td class="left">$R_{b}$</td><td class="left">$100$</td><td class="left">$100$</td></tr>
-<tr><td class="left">$R_{s}$</td><td class="left">$1\cdot 10^{3}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
-<tr><td class="left">$f_{p1}$</td><td class="left">$50$</td><td class="left">$50$</td></tr>
+<tr><td class="left">$R_{\mathrm{L}}$</td><td class="left">$200$</td><td class="left">$200$</td></tr>
+<tr><td class="left">$R_{\mathrm{a}}$</td><td class="left">$100\cdot 10^{3}$</td><td class="left">$100\cdot 10^{3}$</td></tr>
+<tr><td class="left">$R_{\mathrm{b}}$</td><td class="left">$100$</td><td class="left">$100$</td></tr>
+<tr><td class="left">$R_{\mathrm{s}}$</td><td class="left">$1\cdot 10^{3}$</td><td class="left">$1\cdot 10^{3}$</td></tr>
+<tr><td class="left">$f_{\mathrm{p1}}$</td><td class="left">$50$</td><td class="left">$50$</td></tr>
 </table>
 <table><caption>Table: Parameters without definition in 'balancedAmp.</caption>
 
@@ -146,7 +146,7 @@ V1N srcN 0 V value={0}
 <!-- INSERT -->
 <div id="footnote">
 <p>Go to <a href="balancedAmp_index.html">balancedAmp_index</a></p>
-<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 6.0 &copy 2009-2025 SLiCAP development team</p>
+<p>SLiCAP: Symbolic Linear Circuit Analysis Program, Version 6.0.3 &copy 2009-2025 SLiCAP development team</p>
 <p>For documentation, examples, support, updates and courses please visit: <a href="https://analog-electronics.tudelft.nl">analog-electronics.tudelft.nl</a></p>
-<p>Last project update: 2026-09-21 23:38:10</p>
+<p>Last project update: 2026-09-28 14:48:56</p>
 </div></body></html>

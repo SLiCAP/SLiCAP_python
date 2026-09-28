@@ -1,3 +1,3 @@
 .. math::
 
-    A_{v Ideal} = - R_{a} R_{s} \left(- \frac{1}{R_{b} R_{s}} - \frac{1}{R_{a} R_{s}}\right)
+    A_{v Ideal} = - R_{\mathrm{a}} R_{\mathrm{s}} \left(- \frac{1}{R_{\mathrm{b}} R_{\mathrm{s}}} - \frac{1}{R_{\mathrm{a}} R_{\mathrm{s}}}\right)

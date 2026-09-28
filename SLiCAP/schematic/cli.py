@@ -150,7 +150,7 @@ def _write_netlist(input_path, scene, data, output_path, title):
             from .ngspice_netlist import build_ngspice_netlist
             text = build_ngspice_netlist(
                 comps, wires, title, libs=libs, params=prms,
-                program_netlist=True)
+                program_netlist=True, model_defs=models)
         else:
             from .command_item import CommandItem
             from .analysis_item import AnalysisItem

@@ -29,7 +29,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable
 
-from PySide6.QtCore import QFileSystemWatcher, Qt, Signal
+from PySide6.QtCore import QFileSystemWatcher, Qt, Signal, QTimer
 from PySide6.QtWidgets import (
     QDockWidget, QHeaderView, QLabel, QMenu, QTreeWidget, QTreeWidgetItem,
     QVBoxLayout, QWidget,
@@ -173,6 +173,15 @@ class DesignDataPanel(QDockWidget):
         self._watcher = QFileSystemWatcher(self)
         self._watcher.fileChanged.connect(self._on_fs_change)
         self._watcher.directoryChanged.connect(self._on_fs_change)
+        # The manifest is written as a temp file and renamed over the old
+        # one: two directory events in a row. Reading on the first one
+        # (the temp file) held the manifest open while the writer wanted
+        # to replace it, which Windows refuses (2026-09-25). Coalesce the
+        # events and read when the writer is done.
+        self._fs_timer = QTimer(self)
+        self._fs_timer.setSingleShot(True)
+        self._fs_timer.setInterval(200)
+        self._fs_timer.timeout.connect(self._on_fs_settled)
 
     manifest_updated = Signal()
 
@@ -210,6 +219,9 @@ class DesignDataPanel(QDockWidget):
                 self._watcher.addPath(str(p))
 
     def _on_fs_change(self, *_args) -> None:
+        self._fs_timer.start()
+
+    def _on_fs_settled(self) -> None:
         self._rearm_watcher()
         self.manifest_updated.emit()
         self.refresh()

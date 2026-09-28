@@ -8,6 +8,7 @@ nothing appears in the Design-data panel. The schematic-derived netlist is
 still SLiCAP's; only the control block is the user's.
 """
 import os
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -20,19 +21,7 @@ def _q(text: str) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def reference_url(page: str, anchor: str = "") -> str:
-    """URL of a reference/manual page — the LOCAL installed copy under
-    ``ini.doc_path`` (``…/SLiCAP/docs/html/``) when present, else the online
-    manual. Local is safer/offline and matches the installed version
-    (Anton, 2026-07-16)."""
-    from pathlib import Path
-    from PySide6.QtCore import QUrl
-    import SLiCAP.SLiCAPconfigure as ini
-    frag = f"#{anchor}" if anchor else ""
-    local = Path(getattr(ini, "doc_path", "")) / page
-    if local.is_file():
-        return QUrl.fromLocalFile(str(local)).toString() + frag
-    return "https://www.slicap.org/" + page + frag
+from .doc_link import reference_url   # noqa: E402  (shared resolver, 2026-09-28)
 
 
 class NGspiceControlDialog(QDialog):
@@ -45,7 +34,7 @@ class NGspiceControlDialog(QDialog):
         self._control_dir = control_dir
         outer = QVBoxLayout(self)
 
-        _page = "reference/SLiCAPngspice.html"
+        _page = "API/reference/SLiCAPngspice.html"   # the manual lives under API/ (2026-09-28)
         _raw2dict = reference_url(_page, "SLiCAP.SLiCAPngspice.NGspiceRaw2dict")
         _rawfile  = reference_url(_page, "SLiCAP.SLiCAPngspice.RawFile")
         intro = QLabel(
@@ -90,7 +79,11 @@ class NGspiceControlDialog(QDialog):
             # store project-relative when inside the project tree
             try:
                 rel = os.path.relpath(fn, os.getcwd())
-                self._file.setText(rel if not rel.startswith("..") else fn)
+                # the path lands in a Python string of the instruction
+                # file: forward slashes on every platform (a user's
+                # "sch\Test" raised SyntaxWarning on Windows, 2026-09-25)
+                self._file.setText(Path(rel).as_posix() if not rel.startswith("..")
+                                   else Path(fn).as_posix())
             except ValueError:
                 self._file.setText(fn)
 

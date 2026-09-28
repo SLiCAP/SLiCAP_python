@@ -102,6 +102,16 @@ class AppPreferencesDialog(QDialog):
         self.setWindowTitle("Preferences")
         self.setMinimumWidth(chars(self, 63))
         lay = QVBoxLayout(self)
+        # -- Display: colour scheme (chrome through Qt, canvases through
+        #    config.display_style; the document colours never change) --------
+        from PySide6.QtWidgets import QComboBox, QFormLayout
+        disp = QGroupBox("Display")
+        df = QFormLayout(disp)
+        self._scheme = QComboBox()
+        self._scheme.addItems(["system", "light", "dark"])
+        self._scheme.setCurrentText(app_prefs.get_color_scheme())
+        df.addRow("Colour scheme:", self._scheme)
+        lay.addWidget(disp)
 
         # ── Design data panel: visible object kinds ────────────────────────
         dd = QGroupBox("Design data panel — visible object types")
@@ -222,6 +232,8 @@ class AppPreferencesDialog(QDialog):
 
     def apply(self) -> None:
         """Persist the choices to the user ini (~/SLiCAP_gui.ini)."""
+        app_prefs.set_color_scheme(self._scheme.currentText())
+        app_prefs.apply_color_scheme()
         app_prefs.set_visible_kinds(
             [k for k, cb in self._kind_boxes.items() if cb.isChecked()])
         if not self._had_project:

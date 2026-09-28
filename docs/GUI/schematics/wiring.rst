@@ -24,9 +24,12 @@ Junctions
 =========
 
 Where three or more connections meet, a **junction dot** is added automatically
-so the crossing is unambiguous.  Two crossing wires that should *not* connect
-simply have no dot.  You can also place a junction explicitly with
-:menuselection:`Place --> Junction` (:kbd:`J`).
+so the crossing is unambiguous.  Two crossing wires do *not* connect and have
+no dot.  To connect them, place a junction on the crossing with
+:menuselection:`Place --> Junction` (:kbd:`J`): the wires passing through that
+point are split there, their ends meet, and the dot appears because a
+connection now exists.  A junction placed on a single wire or in empty space
+changes nothing.  Dots are never drawn by hand; they show connections.
 
 Unconnected-pin markers
 =======================
@@ -63,8 +66,10 @@ To actually *disconnect* something, delete the wire segment.
 Editing a wire
 ==============
 
-* **Select** a wire to show square handles at its vertices.
-* **Drag a vertex** to reshape a single corner.
+* **Select** a wire: it turns to the selection colour with a small dot on
+  each vertex; a selected junction turns to that colour too. No box is drawn.
+* **Drag a vertex** to reshape a single corner; the dragged vertex shows a
+  cross while it moves.
 * **Drag the body** of a selected wire to move a whole segment; adjacent wires
   rubber-band along so the net stays intact.
 

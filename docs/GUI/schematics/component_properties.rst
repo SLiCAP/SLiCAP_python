@@ -102,7 +102,25 @@ The lower part of the dialog sets:
 * **Rotation** — 0°, 90°, 180° or 270°.
 * **Mirror horizontal / vertical** — flip the symbol.
 
-Labels stay upright and readable regardless of the symbol's orientation.
+Labels stay upright and readable regardless of the symbol's orientation:
+a symbol rotated by 0 or 180 degrees shows them upright, one rotated by
+90 or 270 degrees turns them to read bottom-to-top, and a mirrored symbol
+never mirrors them.
+
+Change symbol
+=============
+
+**Change symbol…** gives the component another symbol of the schematic's
+library, for instance one drawn in the symbol editor. Offered are the
+symbols with the same number of pins and, for a built-in element type, the
+same prefix; the wires on the pins follow the pins to their new places.
+For a subcircuit block any symbol with the right number of pins is
+offered, with the subcircuit's ports assigned to the symbol's pins in a
+list (**Up** and **Down** move a port to another pin) and a preview. The
+result is written into the project's ``lib`` folder as the block's symbol,
+as :menuselection:`Place --> Subcircuit` does, so the netlist order of the
+ports is unchanged and other schematics of the project pick it up with
+:menuselection:`Tools --> Load symbols from library`.
 
 DC operating-point annotation (NGspice)
 =======================================

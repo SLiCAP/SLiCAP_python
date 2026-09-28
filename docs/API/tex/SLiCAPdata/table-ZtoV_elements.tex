@@ -9,29 +9,14 @@
  & & & &\small{dcvar} &$0$ &$0$ \\ 
  & & & &\small{noise} &$0$ &$0$ \\ 
 \rowcolor{myyellow}
-\small{R2} &\small{2 1 } & &\small{R} &\small{value} &$R_{s}$ &$50$ \\ 
+\small{R2} &\small{2 1 } & &\small{R} &\small{value} &$R_{\mathrm{s}}$ &$50$ \\ 
  & & & &\small{dcvar} &$0$ &$0$ \\ 
 \rowcolor{myyellow}
  & & & &\small{noisetemp} &$0$ &$0$ \\ 
  & & & &\small{noiseflow} &$0$ &$0$ \\ 
 \rowcolor{myyellow}
  & & & &\small{dcvarlot} &$0$ &$0$ \\ 
-\small{R4} &\small{3 5 } & &\small{R} &\small{value} &$R_{a} \left(A_{1} - 1\right)$ &$R_{a} \left(A_{1} - 1\right)$ \\ 
-\rowcolor{myyellow}
- & & & &\small{dcvar} &$0$ &$0$ \\ 
- & & & &\small{noisetemp} &$0$ &$0$ \\ 
-\rowcolor{myyellow}
- & & & &\small{noiseflow} &$0$ &$0$ \\ 
- & & & &\small{dcvarlot} &$0$ &$0$ \\ 
-\rowcolor{myyellow}
-\small{R6} &\small{5 0 } & &\small{R} &\small{value} &$R_{a}$ &$R_{a}$ \\ 
- & & & &\small{dcvar} &$0$ &$0$ \\ 
-\rowcolor{myyellow}
- & & & &\small{noisetemp} &$0$ &$0$ \\ 
- & & & &\small{noiseflow} &$0$ &$0$ \\ 
-\rowcolor{myyellow}
- & & & &\small{dcvarlot} &$0$ &$0$ \\ 
-\small{R3} &\small{3 4 } & &\small{R} &\small{value} &$R_{b}$ &$R_{b}$ \\ 
+\small{R4} &\small{3 5 } & &\small{R} &\small{value} &$R_{\mathrm{a}} \left(A_{1} - 1\right)$ &$R_{\mathrm{a}} \left(A_{1} - 1\right)$ \\ 
 \rowcolor{myyellow}
  & & & &\small{dcvar} &$0$ &$0$ \\ 
  & & & &\small{noisetemp} &$0$ &$0$ \\ 
@@ -39,14 +24,29 @@
  & & & &\small{noiseflow} &$0$ &$0$ \\ 
  & & & &\small{dcvarlot} &$0$ &$0$ \\ 
 \rowcolor{myyellow}
-\small{R5} &\small{4 out } & &\small{R} &\small{value} &$A_{2} R_{b}$ &$A_{2} R_{b}$ \\ 
+\small{R6} &\small{5 0 } & &\small{R} &\small{value} &$R_{\mathrm{a}}$ &$R_{\mathrm{a}}$ \\ 
  & & & &\small{dcvar} &$0$ &$0$ \\ 
 \rowcolor{myyellow}
  & & & &\small{noisetemp} &$0$ &$0$ \\ 
  & & & &\small{noiseflow} &$0$ &$0$ \\ 
 \rowcolor{myyellow}
  & & & &\small{dcvarlot} &$0$ &$0$ \\ 
-\small{R1} &\small{1 out } & &\small{R} &\small{value} &$R_{f}$ &$R_{f}$ \\ 
+\small{R3} &\small{3 4 } & &\small{R} &\small{value} &$R_{\mathrm{b}}$ &$R_{\mathrm{b}}$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+ & & & &\small{noisetemp} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+\small{R5} &\small{4 out } & &\small{R} &\small{value} &$A_{2} R_{\mathrm{b}}$ &$A_{2} R_{\mathrm{b}}$ \\ 
+ & & & &\small{dcvar} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{noisetemp} &$0$ &$0$ \\ 
+ & & & &\small{noiseflow} &$0$ &$0$ \\ 
+\rowcolor{myyellow}
+ & & & &\small{dcvarlot} &$0$ &$0$ \\ 
+\small{R1} &\small{1 out } & &\small{R} &\small{value} &$R_{\mathrm{f}}$ &$R_{\mathrm{f}}$ \\ 
 \rowcolor{myyellow}
  & & & &\small{dcvar} &$0$ &$0$ \\ 
  & & & &\small{noisetemp} &$0$ &$0$ \\ 
@@ -55,7 +55,7 @@
  & & & &\small{dcvarlot} &$0$ &$0$ \\ 
 \rowcolor{myyellow}
 \small{E\_O2} &\small{int\_O2 0 1 5 } & &\small{E} &\small{value} &$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$ &$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$ \\ 
-\small{H\_O2} &\small{3 int\_O2 } &\small{H\_O2 } &\small{H} &\small{value} &$R_{o}$ &$R_{o}$ \\ 
+\small{H\_O2} &\small{3 int\_O2 } &\small{H\_O2 } &\small{H} &\small{value} &$R_{\mathrm{o}}$ &$R_{\mathrm{o}}$ \\ 
 \rowcolor{myyellow}
 \small{Gd\_O2} &\small{1 5 1 5 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
 \small{Gc1\_O2} &\small{1 0 1 0 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
@@ -72,7 +72,7 @@
  & & & &\small{vinit} &$0$ &$0$ \\ 
 \small{E\_O1} &\small{int\_O1 0 0 4 } & &\small{E} &\small{value} &$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$ &$\frac{A_{0}}{1 + \frac{0.1592 s}{p_{1}}}$ \\ 
 \rowcolor{myyellow}
-\small{H\_O1} &\small{out int\_O1 } &\small{H\_O1 } &\small{H} &\small{value} &$R_{o}$ &$R_{o}$ \\ 
+\small{H\_O1} &\small{out int\_O1 } &\small{H\_O1 } &\small{H} &\small{value} &$R_{\mathrm{o}}$ &$R_{\mathrm{o}}$ \\ 
 \small{Gd\_O1} &\small{0 4 0 4 } & &\small{g} &\small{value} &$0$ &$0$ \\ 
 \rowcolor{myyellow}
 \small{Gc1\_O1} &\small{0 0 0 0 } & &\small{g} &\small{value} &$0$ &$0$ \\ 

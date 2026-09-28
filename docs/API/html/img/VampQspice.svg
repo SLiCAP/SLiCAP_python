@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-173.192 -128.124 356.473 261.501" width="178.236mm" height="130.751mm">
-  <!-- SLiCAP schematic export: VampQspice.spice_sch, SLiCAP 6.0 -->
+  <!-- SLiCAP schematic export: VampQspice.spice_sch, SLiCAP 6.0.3 -->
   <title>VampQspice</title>
   <defs />
   <rect x="-173.192" y="-128.124" width="356.473" height="261.501" fill="white" />
@@ -44,43 +44,34 @@
   <g transform="translate(-125.00,95.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(25.00,95.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(65.00,95.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(105.00,25.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(65.00,25.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(105.00,-70.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(-60.00,95.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="0" />
   </g>
   <g transform="translate(105.00,-90.00)" font-size="7pt">
     <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
   </g>
   <text x="113.00" y="-102.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
   <text x="113.00" y="-77.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">-</text>
@@ -90,8 +81,6 @@
   <g transform="translate(-125.00,75.00) scale(-1,1)" font-size="7pt">
     <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="outn" />
   </g>
   <text x="-133.00" y="62.40" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
   <text x="-133.00" y="87.40" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">-</text>
@@ -103,8 +92,6 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="2.50" y="66.00" font-family="sans-serif" font-size="7.0pt" fill="#000000" text-anchor="end">R8</text>
   <text x="9.50" y="76.50" font-family="monospace" font-size="6.0pt" fill="#000000" text-anchor="end">100k</text>
@@ -112,8 +99,6 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="74.05" y="5.15" font-family="sans-serif" font-size="7.0pt" fill="#000000">R7</text>
   <text x="74.83" y="14.76" font-family="monospace" font-size="6.0pt" fill="#000000">10k</text>
@@ -121,8 +106,6 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="35.22" y="75.93" font-family="sans-serif" font-size="7.0pt" fill="#000000">R6</text>
   <text x="35.22" y="84.37" font-family="monospace" font-size="6.0pt" fill="#000000">1k</text>
@@ -130,8 +113,6 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="34.05" y="-90.38" font-family="sans-serif" font-size="7.0pt" fill="#000000">R5</text>
   <text x="33.89" y="-79.72" font-family="monospace" font-size="6.0pt" fill="#000000">2.7k</text>
@@ -139,8 +120,6 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="-50.00" y="74.50" font-family="sans-serif" font-size="7.0pt" fill="#000000">R4</text>
   <text x="-50.50" y="84.50" font-family="monospace" font-size="6.0pt" fill="#000000">1k</text>
@@ -148,8 +127,6 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="-29.37" y="-0.21" font-family="sans-serif" font-size="7.0pt" fill="#000000" text-anchor="end">R3</text>
   <text x="-28.96" y="8.82" font-family="monospace" font-size="6.0pt" fill="#000000" text-anchor="end">3k</text>
@@ -157,8 +134,6 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="-51.00" y="-89.60" font-family="sans-serif" font-size="7.0pt" fill="#000000">R2</text>
   <text x="-50.55" y="-80.39" font-family="monospace" font-size="6.0pt" fill="#000000">82k</text>
@@ -166,8 +141,6 @@
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="-115.00" y="30.00" font-family="sans-serif" font-size="7.0pt" fill="#000000">R1</text>
   <text x="-115.00" y="39.50" font-family="monospace" font-size="6.0pt" fill="#000000">2k</text>
@@ -176,9 +149,6 @@
     <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
     <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2" />
     <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1" />
-    <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
-    <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
-    <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
     <polyline points="8 8 6.2 3.4 3.4 6.2" stroke="black" stroke-width="0" fill="black" />
   </g>
   <text x="29.05" y="-37.81" font-family="sans-serif" font-size="7.0pt" fill="#000000">Q2</text>
@@ -188,9 +158,6 @@
     <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
     <line x1="0" y1="-12" x2="0" y2="12" stroke="black" stroke-width="2" />
     <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1" />
-    <circle cx="10" cy="-20" r="0.5" class="node" data-node="C" />
-    <circle cx="-10" cy="0" r="0.5" class="node" data-node="B" />
-    <circle cx="10" cy="20" r="0.5" class="node" data-node="E" />
     <polyline points="8 8 6.2 3.4 3.4 6.2" stroke="black" stroke-width="0" fill="black" />
   </g>
   <text x="-54.00" y="-23.50" font-family="sans-serif" font-size="7.0pt" fill="#000000">Q1</text>
@@ -200,8 +167,6 @@
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="117.33" y="4.37" font-family="sans-serif" font-size="7.0pt" fill="#000000">C5</text>
   <text x="116.94" y="15.93" font-family="monospace" font-size="6.0pt" fill="#000000">100p</text>
@@ -210,8 +175,6 @@
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="77.00" y="-45.00" font-family="sans-serif" font-size="7.0pt" fill="#000000">C4</text>
   <text x="75.00" y="-33.00" font-family="monospace" font-size="6.0pt" fill="#000000">100n</text>
@@ -220,8 +183,6 @@
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="76.16" y="75.54" font-family="sans-serif" font-size="7.0pt" fill="#000000">C3</text>
   <text x="76.55" y="84.76" font-family="monospace" font-size="6.0pt" fill="#000000">200u</text>
@@ -230,8 +191,6 @@
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="9.51" y="10.17" font-family="sans-serif" font-size="7.0pt" fill="#000000">C2</text>
   <text x="9.18" y="19.79" font-family="monospace" font-size="6.0pt" fill="#000000">C_c</text>
@@ -240,14 +199,11 @@
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
   <text x="-95.00" y="-24.35" font-family="sans-serif" font-size="7.0pt" fill="#000000">C1</text>
   <text x="-96.67" y="-15.52" font-family="monospace" font-size="6.0pt" fill="#000000">1u</text>
   <g transform="translate(125.00,-25.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
   </g>
   <text x="129.57" y="-22.85" font-family="monospace" font-size="6.0pt" fill="#000000">out</text>
   <circle cx="-20.00" cy="30.00" r="2.00" fill="#000000" />

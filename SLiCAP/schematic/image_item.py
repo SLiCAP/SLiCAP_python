@@ -19,9 +19,13 @@ class ImageItem(QGraphicsItem):
     PDF files are rasterised via QPdfDocument.
     All other formats are loaded directly as a QPixmap.
 
-    display_width / display_height are in scene units.  The image is
-    reloaded from disk each time from_data() restores the scene, so the
-    canvas stays in sync with the source file.
+    display_width / display_height are in scene units: the box the picture
+    is fitted into (aspect ratio kept).  The picture itself is kept at its
+    own resolution and scaled at paint time, so it is sharp at every zoom
+    (Anton, 2026-09-27: a picture shown at 5 % was reduced to that many
+    pixels and blurred when zoomed in).  The image is reloaded from disk each
+    time from_data() restores the scene, so the canvas stays in sync with
+    the source file.
 
     Double-click opens a dialog to change the file or resize.
     """
@@ -63,10 +67,8 @@ class ImageItem(QGraphicsItem):
             px = QPixmap(self.file_path)
             if px.isNull():
                 px = self._placeholder(w, h)
-            else:
-                px = px.scaled(w, h, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self._renderer = None
-            self._pixmap   = px
+            self._pixmap   = px            # full resolution; scaled when drawn
 
     def _load_pdf(self, w: int, h: int) -> QPixmap:
         try:
@@ -80,15 +82,14 @@ class ImageItem(QGraphicsItem):
             if pt.width() <= 0:
                 doc.close()
                 return self._placeholder(w, h)
-            # Render at 2× display size for crispness, then downscale
-            scale = w / pt.width()
-            img_w = max(1, round(pt.width()  * scale * 2))
-            img_h = max(1, round(pt.height() * scale * 2))
+            # Rasterise the page once at a fixed resolution (4 px per point,
+            # about 290 dpi, at most 4000 px wide); it is scaled when drawn.
+            px_per_pt = min(4.0, 4000.0 / pt.width())
+            img_w = max(1, round(pt.width()  * px_per_pt))
+            img_h = max(1, round(pt.height() * px_per_pt))
             qimg  = doc.render(0, QSize(img_w, img_h))
             doc.close()
-            return QPixmap.fromImage(qimg).scaled(
-                w, h, Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
+            return QPixmap.fromImage(qimg)
         except Exception:
             return self._placeholder(w, h)
 
@@ -108,19 +109,40 @@ class ImageItem(QGraphicsItem):
         path.addRect(self.boundingRect())
         return path
 
+    def picture_rect(self, box: QRectF | None = None) -> QRectF:
+        """The rect the picture fills inside *box* (the display box by
+        default): the largest rect of the picture's aspect ratio, centred."""
+        r = self.boundingRect() if box is None else box
+        if self._renderer is not None:
+            vb = self._renderer.viewBoxF()
+            sw, sh = (vb.width(), vb.height()) if vb.width() > 0 and vb.height() > 0 \
+                else (self._renderer.defaultSize().width(), self._renderer.defaultSize().height())
+        elif self._pixmap is not None and not self._pixmap.isNull():
+            sw, sh = self._pixmap.width(), self._pixmap.height()
+        else:
+            return r
+        if sw <= 0 or sh <= 0:
+            return r
+        sc = min(r.width() / sw, r.height() / sh)
+        w, h = sw * sc, sh * sc
+        return QRectF(r.x() + (r.width() - w) / 2, r.y() + (r.height() - h) / 2, w, h)
+
+    def paint_picture(self, painter: QPainter, box: QRectF | None = None) -> None:
+        """Draw the picture fitted into *box* (the display box by default),
+        scaled from its own resolution; shared by paint() and the embedding
+        of an image into a symbol."""
+        target = self.picture_rect(box)
+        if self._renderer is not None:
+            self._renderer.render(painter, target)
+        elif self._pixmap is not None and not self._pixmap.isNull():
+            painter.setRenderHint(QPainter.SmoothPixmapTransform)
+            painter.drawPixmap(target, self._pixmap, QRectF(self._pixmap.rect()))
+        else:
+            painter.fillRect(target, _PLACEHOLDER_COLOR)
+
     def paint(self, painter: QPainter, option, widget=None) -> None:
         r = self.boundingRect()
-        if self._renderer is not None:
-            self._renderer.render(painter, r)
-        elif self._pixmap is not None:
-            px = self._pixmap
-            # Centre in bounding rect (pixmap may be smaller due to aspect ratio)
-            x_off = (r.width()  - px.width())  / 2
-            y_off = (r.height() - px.height()) / 2
-            painter.setRenderHint(QPainter.SmoothPixmapTransform)
-            painter.drawPixmap(int(x_off), int(y_off), px)
-        else:
-            painter.fillRect(r, _PLACEHOLDER_COLOR)
+        self.paint_picture(painter, r)
         if option.state & _SELECTED:
             painter.save()
             painter.setPen(_SEL_PEN)

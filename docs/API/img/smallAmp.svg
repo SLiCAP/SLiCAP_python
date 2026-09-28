@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-84.542 -51.439 173.420 82.439" width="86.710mm" height="41.220mm">
-  <!-- SLiCAP schematic export: smallAmp.slicap_sch, SLiCAP 6.0 -->
+  <!-- SLiCAP schematic export: smallAmp.slicap_sch, SLiCAP 6.0.3 -->
   <title>smallAmp</title>
   <defs>
     <path id="lt0-g1-49" d="M2.336239-4.435367C2.336239-4.623661 2.322291-4.630635 2.127024-4.630635C1.680697-4.191283 1.046077-4.184309 .760149-4.184309V-3.93325C.927522-3.93325 1.387796-3.93325 1.771357-4.128518V-.571856C1.771357-.341719 1.771357-.251059 1.073973-.251059H.808966V0C.934496-.006974 1.792279-.027895 2.050311-.027895C2.266501-.027895 3.145205-.006974 3.29863 0V-.251059H3.033624C2.336239-.251059 2.336239-.341719 2.336239-.571856V-4.435367Z" />
@@ -18,38 +18,32 @@
   <polyline points="40.00,-20.00 45.00,-20.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <g transform="translate(-45.00,20.00) rotate(90.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
   </g>
   <text x="-81.05" y="22.80" font-family="monospace" font-size="6.0pt" fill="#000000">inN</text>
   <g transform="translate(-45.00,-20.00) rotate(90.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
   </g>
   <text x="-81.54" y="-17.20" font-family="monospace" font-size="6.0pt" fill="#000000">inP</text>
   <g transform="translate(45.00,20.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
   </g>
   <text x="66.63" y="23.17" font-family="monospace" font-size="6.0pt" fill="#000000">outN</text>
   <g transform="translate(45.00,-20.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
   </g>
   <text x="66.63" y="-17.08" font-family="monospace" font-size="6.0pt" fill="#000000">outP</text>
   <g transform="translate(20.00,-20.00) rotate(270.000)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="0" cy="-20" r="0.5" class="node" data-node="pos" />
-    <circle cx="0" cy="20" r="0.5" class="node" data-node="neg" />
   </g>
-  <g transform="translate(10.000,-48.439) scale(1.049081,1.049081) translate(-0.000,6.656)">
+  <g transform="translate(10.000,-48.439) scale(1.049081,1.049081) translate(-0.000,6.656)" fill="#000000">
     <g id="lt0-page1">
       <use x="0" y=".179883" xlink:href="#lt0-g0-82" />
       <use x="8.592731" y="1.674264" xlink:href="#lt0-g1-49" />
     </g>
   </g>
-  <g transform="translate(10.113,-35.825) scale(1.049081,1.049081) translate(-0.000,5.383)">
+  <g transform="translate(10.113,-35.825) scale(1.049081,1.049081) translate(-0.000,5.383)" fill="#000000">
     <g id="lt1-page1">
       <use x="0" y="-1.09313" xlink:href="#lt1-g0-114" />
       <use x="4.494739" y=".401251" xlink:href="#lt1-g1-111" />
@@ -60,22 +54,18 @@
     <polyline points="10 10 0 0 10 -10 20 0 10 10" stroke="black" stroke-width="1" fill="none" />
     <line x1="-20" y1="-20" x2="-10" y2="-20" stroke="black" stroke-width="1" />
     <line x1="-20" y1="20" x2="-10" y2="20" stroke="black" stroke-width="1" />
-    <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />
-    <circle cx="10" cy="20" r="0.5" class="node" data-node="outn" />
-    <circle cx="-20" cy="-20" r="0.5" class="node" data-node="inp" />
-    <circle cx="-20" cy="20" r="0.5" class="node" data-node="inn" />
   </g>
   <text x="-40.00" y="-12.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
   <text x="-40.00" y="12.40" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">-</text>
   <text x="-10.00" y="-12.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
   <text x="-10.00" y="12.40" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">-</text>
-  <g transform="translate(0.260,-9.999) scale(1.049081,1.049081) translate(-0.000,6.656)">
+  <g transform="translate(0.260,-9.999) scale(1.049081,1.049081) translate(-0.000,6.656)" fill="#000000">
     <g id="lt2-page1">
       <use x="0" y=".179883" xlink:href="#lt2-g0-69" />
       <use x="7.527286" y="1.674264" xlink:href="#lt2-g1-49" />
     </g>
   </g>
-  <g transform="translate(0.254,1.042) scale(1.049081,1.049081) translate(-0.000,6.642)">
+  <g transform="translate(0.254,1.042) scale(1.049081,1.049081) translate(-0.000,6.642)" fill="#000000">
     <g id="lt3-page1">
       <use x="0" y=".166034" xlink:href="#lt3-g0-65" />
       <use x="7.471999" y="1.660415" xlink:href="#lt3-g1-118" />

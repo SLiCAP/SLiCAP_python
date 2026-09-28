@@ -2,21 +2,21 @@
     :header: "ID", "Nodes", "Refs", "Model", "Param", "Symbolic", "Numeric"
     :widths: auto
 
-    "V1", "1 0 ", "", "V", "value", :math:`V_{s}`, :math:`1`
+    "V1", "1 0 ", "", "V", "value", :math:`V_{\mathrm{s}}`, :math:`1`
     "", "", "", "", "dc", :math:`0`, :math:`0`
     "", "", "", "", "dcvar", :math:`0`, :math:`0`
     "", "", "", "", "noise", :math:`0`, :math:`0`
-    "R1", "2 1 ", "", "R", "value", :math:`R_{s}`, :math:`50`
+    "R1", "2 1 ", "", "R", "value", :math:`R_{\mathrm{s}}`, :math:`50`
     "", "", "", "", "dcvar", :math:`0`, :math:`0`
     "", "", "", "", "noisetemp", :math:`0`, :math:`0`
     "", "", "", "", "noiseflow", :math:`0`, :math:`0`
     "", "", "", "", "dcvarlot", :math:`0`, :math:`0`
-    "R2", "3 0 ", "", "R", "value", :math:`R_{L}`, :math:`R_{L}`
+    "R2", "3 0 ", "", "R", "value", :math:`R_{\mathrm{L}}`, :math:`R_{\mathrm{L}}`
     "", "", "", "", "dcvar", :math:`0`, :math:`0`
     "", "", "", "", "noisetemp", :math:`0`, :math:`0`
     "", "", "", "", "noiseflow", :math:`0`, :math:`0`
     "", "", "", "", "dcvarlot", :math:`0`, :math:`0`
-    "E1_X1_X1", "1_X1_X1 0 2 0 ", "", "E", "value", :math:`A_{i}`, :math:`A_{i}`
+    "E1_X1_X1", "1_X1_X1 0 2 0 ", "", "E", "value", :math:`A_{\mathrm{i}}`, :math:`A_{\mathrm{i}}`
     "R1_X1_X1", "1_X1_X1 1_X1 ", "", "R", "value", :math:`40`, :math:`40`
     "", "", "", "", "dcvar", :math:`0`, :math:`0`
     "", "", "", "", "noisetemp", :math:`0`, :math:`0`

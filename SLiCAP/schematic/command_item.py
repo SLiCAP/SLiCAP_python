@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsItem
 from PySide6.QtCore import Qt, QPointF
 
-from .config import snap, style_of, default_style
+from .config import snap, snap_pos, style_of, default_style
 
 
 class CommandItem(QGraphicsTextItem):
@@ -28,7 +28,7 @@ class CommandItem(QGraphicsTextItem):
         if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
             self._apply_style(style_of(self))
         if change == QGraphicsItem.ItemPositionChange:
-            return snap(value)
+            return snap_pos(self, value)   # Shift: free (config.snap_pos)
         return super().itemChange(change, value)
 
     def mouseDoubleClickEvent(self, event):

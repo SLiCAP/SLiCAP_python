@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QFont, QFontMetricsF, QPen
 
-from .config import snap, style_of
+from .config import snap, snap_pos, style_of
 
 _BORDER_COLOR  = QColor(60, 100, 140)
 _LINE_SPACING  = 1.3                       # multiple of line height
@@ -94,7 +94,8 @@ class ParameterItem(QGraphicsItem):
         if self._svg_bytes:
             from PySide6.QtSvg import QSvgRenderer
             from PySide6.QtCore import QByteArray
-            r = QSvgRenderer(QByteArray(self._svg_bytes))
+            from .latex_label import display_svg
+            r = QSvgRenderer(QByteArray(display_svg(self._svg_bytes, self)))
             if r.isValid():
                 self._renderer = r
                 self._derive_size(r)
@@ -214,7 +215,7 @@ class ParameterItem(QGraphicsItem):
             self._load_renderer()
             self.update()
         if change == QGraphicsItem.ItemPositionChange:
-            return snap(value)
+            return snap_pos(self, value)   # Shift: free (config.snap_pos)
         return super().itemChange(change, value)
 
     # ── static helpers ────────────────────────────────────────────────────────

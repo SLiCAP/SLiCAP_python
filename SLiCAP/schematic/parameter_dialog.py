@@ -95,6 +95,10 @@ class ParameterDialog(QDialog):
 
         # ── parameter table ───────────────────────────────────────────────────
         self._table = QTableWidget(0, 2)
+        # an opaque cell editor: at a fractional display scale (Windows,
+        # 125 %) the editor's text sat a pixel off the cell's own text,
+        # showing as ghosting (a user's report, 2026-09-25)
+        self._table.setStyleSheet("QTableWidget QLineEdit { background: palette(base); }")
         self._table.setHorizontalHeaderLabels(["Parameter", "Value"])
         self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)

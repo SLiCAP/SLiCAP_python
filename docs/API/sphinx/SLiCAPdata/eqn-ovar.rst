@@ -1,4 +1,4 @@
 .. math::
 
-    \sigma_{o}^{2} = \frac{V_{DC T}^{2} \sigma_{V}^{2}}{A^{2}} + \frac{V_{DC T}^{2} \left(A - 1\right)^{2} \left(T_{\Delta}^{2} \sigma_{TC tr R}^{2} + \sigma_{m R}^{2}\right)}{A^{4}}\,\,\left[\mathrm{V^{2}}\right]
+    \sigma_{\mathrm{o}}^{2} = \frac{V_{DC T}^{2} \sigma_{\mathrm{V}}^{2}}{A^{2}} + \frac{V_{DC T}^{2} \left(A - 1\right)^{2} \left(T_{\Delta}^{2} \sigma_{TC tr R}^{2} + \sigma_{m R}^{2}\right)}{A^{4}}\,\,\left[\mathrm{V^{2}}\right]
 
