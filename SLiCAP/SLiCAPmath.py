@@ -907,6 +907,60 @@ def phaseMargin(LaplaceExpr):
         freqs = freqs[0]
     return (mrgns, freqs)
 
+def sampleExpr(expr, var="x", start=0, stop=1, num=200, log=False):
+    """
+    Samples an expression in one variable: returns the x and y arrays of
+    y = expr(x) over the range, linearly or logarithmically spaced. The
+    numeric data of a function sketch on a schematic (the Draw menu's
+    "Function curve") and of a trace made from an expression.
+
+    :param expr: Expression in *var*, in SLiCAP notation (``"exp(x) - 1"``,
+                 scale factors allowed), or a sympy expression.
+    :type expr: str, sympy.Expr
+
+    :param var: The variable of the expression.
+    :type var: str
+
+    :param start: Start of the range of *var* (SLiCAP notation allowed).
+    :type start: str, int, float
+
+    :param stop: End of the range.
+    :type stop: str, int, float
+
+    :param num: Number of samples.
+    :type num: int
+
+    :param log: True spaces the samples logarithmically (start and stop
+                must be positive).
+    :type log: bool
+
+    :return: (x, y) as numpy arrays; points where the expression is not
+             finite are left out.
+    :rtype: tuple
+
+    :Example:
+
+    >>> x, y = sl.sampleExpr("exp(x) - 1", "x", 0, 3, 100)
+    """
+    if isinstance(expr, str):
+        expr = _checkExpression(expr)
+    if expr is None:
+        raise ValueError("sampleExpr: the expression is not valid SLiCAP notation.")
+    x0, x1 = float(_checkNumber(start)), float(_checkNumber(stop))
+    num = max(2, int(num))
+    if log:
+        if x0 <= 0 or x1 <= 0:
+            raise ValueError("sampleExpr: a logarithmic range needs positive limits.")
+        x = np.logspace(np.log10(x0), np.log10(x1), num)
+    else:
+        x = np.linspace(x0, x1, num)
+    xVar = sp.Symbol(str(var))
+    y = np.array([complex(v).real if np.isfinite(complex(v)) else np.nan
+                  for v in _makeNumData(sp.sympify(expr), xVar, x)], dtype=float)
+    keep = np.isfinite(y)
+    return x[keep], y[keep]
+
+
 def _makeNumData(yFunc, xVar, x, normalize=False):
     """
     Returns a list of values y, where y[i] = yFunc(x[i]).

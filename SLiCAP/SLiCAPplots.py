@@ -159,6 +159,15 @@ class figure(object):
         Defaults to [].
         """
 
+        self.title = None
+        """
+        (*str*, *NoneType*) Heading drawn across the top of the figure, INSIDE
+        the image, so the window, the SVG and the PDF show it alike (Anton,
+        2026-10-06: the window bar showed the file name, the exports nothing).
+        None (default): no heading; a book figure has its caption in the
+        document. The window bar shows the title when given, else fileName.
+        """
+
         self.shareX = 'none'
         """
         (*str*) Axes sharing ONE x axis: 'none' (default), 'col' (down each
@@ -368,24 +377,33 @@ class figure(object):
         # layout by repositioning their boxes - see _close_shared_stacks -
         # which works under any span.
         fig = plt.figure(figsize = (self.axisWidth*cols, rows*self.axisHeight))
-        gridkw = {}
-        if rows > 1:                     # room for a title above an x label
-            gridkw['hspace'] = getattr(ini, 'subplot_hspace', 0.45)
-        if cols > 1:
-            gridkw['wspace'] = getattr(ini, 'subplot_wspace', 0.3)
-        grid = fig.add_gridspec(rows, cols, **gridkw)
+        # The grid takes NO spacing of its own: a gridspec with its own
+        # hspace/wspace is one matplotlib's tight_layout refuses ("Axes not
+        # compatible"), so every multi-row figure kept the default margins,
+        # 1.2 inch of white above a Bode stack (Anton, 2026-10-06). The
+        # spacing of August (titles colliding with x labels) was the same
+        # defect seen from the other side: the layout had silently not run.
+        # tight_layout now sizes the margins and the gaps from the
+        # decorations; ini.subplot_hspace / wspace are enforced afterwards
+        # as a MINIMUM gap (_space_rows_and_columns). Passing hspace/wspace
+        # to add_gridspec was tried and REVERTED.
+        grid = fig.add_gridspec(rows, cols)
         _spec = lambda r0, r1, c0, c1: grid[r0:r1 + 1, c0:c1 + 1]
         closed_x_axes = set()
         closed_y_axes = set()
         _xGroups = {}     # group key -> list of (mpl axes, r0, r1, c0, c1)
         _yGroups = {}
-        # Window title: the SLiCAP figure name instead of "Figure 1" etc.
-        # (no-op for non-interactive backends)
-        if self.fileName:
+        # Window title: the figure's title, else the SLiCAP figure name
+        # instead of "Figure 1" etc. (no-op for non-interactive backends)
+        if self.title or self.fileName:
             try:
-                fig.canvas.manager.set_window_title(self.fileName)
+                fig.canvas.manager.set_window_title(self.title or self.fileName)
             except Exception:
                 pass
+        if self.title:
+            # drawn now, BEFORE the axes: every tight_layout call then keeps
+            # room for the heading
+            fig.suptitle(self.title, fontsize=ini.plot_fontsize + 2)
         # Create the axes with their plots
         for i in range(len(axesList)):
             if axesList[i] != "":
@@ -506,6 +524,7 @@ class figure(object):
                         plt.text(X, Y, txt, fontsize = ini.plot_fontsize)
                     # Set default font sizes and grid
                     defaultsPlot()
+        _space_rows_and_columns(fig, rows, cols)
         # ── gap closing: reposition each shared CONTIGUOUS stack ─────────
         # A closed group reads as one plot: the members' boxes are moved so
         # the gaps vanish, their heights stretched to reclaim the gap space.
@@ -681,13 +700,30 @@ def _block_until_figures_closed():
             print(_SCRIPT_DONE_SENTINEL, flush=True)
         plt.show(block=True)
 
+def _space_rows_and_columns(fig, rows, cols):
+    """After tight_layout: widen the gaps between rows (columns) to at least
+    ini.subplot_hspace (ini.subplot_wspace), a fraction of the axis height
+    (width), the room a title needs above an x label. tight_layout chose the
+    margins from the decorations; this only shrinks the axes toward their
+    centres, the margins stay. Nothing to do on a single row and column."""
+    if rows < 2 and cols < 2:
+        return
+    pars = fig.subplotpars
+    kw = {}
+    if rows > 1:
+        kw['hspace'] = max(pars.hspace, getattr(ini, 'subplot_hspace', 0.45))
+    if cols > 1:
+        kw['wspace'] = max(pars.wspace, getattr(ini, 'subplot_wspace', 0.3))
+    fig.subplots_adjust(**kw)
+
+
 def defaultsPlot():
     """
     Applies default settings for plots.
     """
     figures = [manager.canvas.figure for manager in plotHelp.Gcf.get_all_fig_managers()]
     for fig in figures:
-        plt.tight_layout()
+        fig.tight_layout()               # THIS figure, not the current one
         for i in range(len(fig.axes)):
             fig.axes[i].title.set_fontsize(ini.plot_fontsize)
             fig.axes[i].grid(visible=True, which='major', color='0.5',linestyle='-')
@@ -2973,7 +3009,7 @@ def stepParams(results, xVar, yVar, sVar, sweepList):
 
 def makeFigure(axes, fileName, show = False, save = True, cursors = True,
                axisWidth = None, axisHeight = None, shareX = 'none',
-               shareY = 'none'):
+               shareY = 'none', title = None):
     """
     Creates a figure from a grid of axis objects and plots it.
 
@@ -3048,9 +3084,16 @@ def makeFigure(axes, fileName, show = False, save = True, cursors = True,
                    axis.
     :type shareY: str, list
 
+    :param title: Heading drawn across the top of the figure, inside the
+                  image, so that the SVG and PDF files carry it too. The
+                  figure window shows it as its title. Defaults to None: no
+                  heading, the window shows the file name.
+    :type title: str, NoneType
+
     :Example:
 
-    >>> BODE = sl.makeFigure([[axMag], [axPhase]], "bode", shareX="col")
+    >>> BODE = sl.makeFigure([[axMag], [axPhase]], "bode", shareX="col",
+    ...                      title="Bode plot of the amplifier")
 
     :return: fig
     :rtype: SLiCAPplots.figure
@@ -3071,6 +3114,7 @@ def makeFigure(axes, fileName, show = False, save = True, cursors = True,
         fig.axisHeight = axisHeight
     fig.shareX = shareX
     fig.shareY = shareY
+    fig.title = title
     fig.axes = [list(row) for row in axes]
     fig.plot()
     return fig

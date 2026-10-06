@@ -117,6 +117,7 @@ def _generate_project_config():
                      "txt"           : 'txt/',
                      "img"           : 'img/',
                      "sch"           : 'sch/',
+                     "posters"       : 'posters/',
                      "results"       : 'results/',
                      "sphinx"        : 'sphinx/',
                      "tex"           : 'tex/',
@@ -519,6 +520,7 @@ def dump(section="all"):
         print('ini.html_path              =', html_path)
         print('ini.cir_path               =', cir_path)
         print('ini.img_path               =', img_path)
+        print('ini.poster_path            =', poster_path)
         print('ini.csv_path               =', csv_path)
         print('ini.results_path           =', results_path)
         print('ini.txt_path               =', txt_path)
@@ -644,6 +646,7 @@ txt_path              = project_config['projectpaths']['txt']
 tex_path              = project_config['projectpaths']['tex']
 user_lib_path         = project_config['projectpaths']['lib']
 schematic_path        = project_config['projectpaths'].get('sch', 'sch/')
+poster_path           = project_config['projectpaths'].get('posters', 'posters/')
 # design-data manifest + result artifacts (SLNG.md "Design data panel");
 # .get(): projects created before this key existed keep working
 results_path          = project_config['projectpaths'].get('results', 'results/')

@@ -52,6 +52,12 @@ The dialog is grouped by element type, including:
 * **Scaling defaults** — default sizes for parameter tables, LaTeX fragments and
   images.
 
+Every font family list offers the generic families **sans-serif**, **serif**
+and **monospace**. They render the same on every machine, in the editor and
+in the SVG and PDF export, because the viewer resolves a generic family to a
+font it has. A named font can be typed in the list, at the risk that another
+machine substitutes it.
+
 Changes take effect immediately on the canvas.
 
 Grid
@@ -67,17 +73,21 @@ Border
 ======
 
 The **Border** group sets the look that a *new* border gets when it is placed
-(Place > Border): line colour and width, background colour and opacity, and
-whether the dashed line is drawn in the exported SVG/PDF. An existing border
+(Place > Border): line colour, width and style (solid, dashed, dotted,
+dash-dot), background colour and opacity, and whether the line is drawn in
+the exported SVG/PDF. An existing border
 keeps its own values, edited in the Border dialog. A background at opacity
 0 % is invisible; choosing a background colour in the Border dialog therefore
 sets the opacity to 100 % when it was 0 %.
 
-For figures in a document, set the background here once per schematic style,
-e.g. ``bg_color = #ecf3ff``, ``bg_alpha = 100``, ``show_line_in_export =
-false`` in the ``[border]`` section of the schematic's ``.ini`` sidecar, and
-give every border the width of the document column (see the ``sch_scale``
-setting under :doc:`/GUI/project/project`).
+The defaults are those of the figures in the book *Structured Electronic
+Design*: a solid blue line, the light blue background ``#ecf3ff`` at 100 %
+opacity, and no border line in the export, so an exported schematic is a
+figure on a tinted panel. The same palette sets black symbol text, red net
+labels and blue operating-point annotations. A schematic's own values live
+in the ``[border]`` and other sections of its ``.ini`` sidecar; give every
+border the width of the document column (see the ``sch_scale`` setting
+under :doc:`/GUI/project/project`).
 
 Colour scheme
 =============

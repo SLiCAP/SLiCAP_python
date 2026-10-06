@@ -28,6 +28,7 @@ class circuit(object):
         """
 
         self.file       = None
+        self.schematic  = None   # the editor schematic it was made from (updateImages)
         """
         Name (*str*) of the netlist file. Defaults to None.
         """

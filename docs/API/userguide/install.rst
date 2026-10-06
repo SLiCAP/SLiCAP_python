@@ -207,6 +207,7 @@ Create a SLiCAP project
      | |   - slicap.css        # CSS file for standard SLiCAP html report
      | +-- img                 # Default directory for standard SLiCAP html report images
      +-- csv                   # Default directory for csv files generated or imported by SLiCAP
+     +-- posters               # Default directory for posters (.slicap_poster): drawings that show schematics, figures and snippets of the project
      +-- results               # Inventory (design_data.json) of the variables created by the instruction file, used by the GUI
      +-- sch                   # Default directory for SLiCAP .slicap_sch and spice_sch schematic files
      +-+ sphinx                # Root directory for Sphinx project report
@@ -292,6 +293,7 @@ The python script below (user=USR, python environment=ENV, os=LINUX) generates/u
     ini.html_path              = html/
     ini.cir_path               = cir/
     ini.img_path               = img/
+    ini.poster_path            = posters/
     ini.csv_path               = csv/
     ini.results_path           = results/
     ini.txt_path               = txt/

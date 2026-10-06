@@ -50,7 +50,7 @@ from . import app_prefs
 from .instr_file import write_main_py
 from .sizing import chars
 
-_SCHEMATIC_SUFFIXES = ('.slicap_sch', '.spice_sch')
+_SCHEMATIC_SUFFIXES = ('.slicap_sch', '.spice_sch', '.slicap_poster')
 _SYMBOL_SUFFIXES    = ('.slicap_sym', '.spice_sym')     # open in the symbol editor
 
 # Compound suffixes that must not be lumped with their plain suffix: a
@@ -264,7 +264,7 @@ class ProjectPanel(QDockWidget):
         before breaking a link (spec CSV, netlist, library, …). A full
         dependency graph is an ACDE Phase-2 (project index) concern."""
         name = path.name
-        scan_ext = {".py", ".cir", ".net", ".slicap_sch", ".spice_sch",
+        scan_ext = {".py", ".cir", ".net", ".slicap_sch", ".spice_sch", ".slicap_poster",
                     ".sch", ".tex", ".rst", ".csv", ".lib"}
         refs = []
         root = Path(self._root)

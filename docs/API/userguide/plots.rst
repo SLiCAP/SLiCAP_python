@@ -111,7 +111,9 @@ All plot functions by default store a ``.pdf`` graphics file and a graphics file
     ini.html_path              = html/
     ini.cir_path               = cir/
     ini.img_path               = img/
+    ini.poster_path            = posters/
     ini.csv_path               = csv/
+    ini.results_path           = results/
     ini.txt_path               = txt/
     ini.tex_path               = tex/
     ini.user_lib_path          = lib/

@@ -21,6 +21,8 @@ def _netlist_output(sch_path: Path, title=None) -> Path:
     schematic, with <name> the given title, else the schematic's title,
     else its stem - the rule the CLI applies (Anton, 2026-09-16)."""
     from . import project
+    if project.doc_type(sch_path) == "poster":
+        return None                     # a poster is a drawing: no netlist
     props = schematic_properties(sch_path)
     if props.is_subcircuit:
         from .subcircuit import lib_path_for
@@ -50,13 +52,18 @@ def _outputs_current(sch_path: Path, title=None) -> "Path | None":
     try:
         src = input_mtime(sch_path)
         for out in (cir, svg, pdf):
+            if out is None:
+                continue                # a poster writes no netlist
             if not out.exists() or out.stat().st_mtime < src:
                 return None
     except OSError:
         return None
     if svg_source(svg) != sch_path.name or not pdf_is_export(pdf):
         return None
-    return cir
+    return cir if cir is not None else svg
+
+
+_exporting: set = set()      # posters whose children are being exported
 
 
 def make_schematic(sch_path, cir_title=None, force=False):
@@ -83,6 +90,18 @@ def make_schematic(sch_path, cir_title=None, force=False):
     import subprocess
 
     sch_path = Path(sch_path).resolve()
+
+    # A poster shows other drawings: their exports are brought up to date
+    # first, children before parents, each once (a poster that contains
+    # itself through a chain is stopped here, the dialog refuses it too).
+    from .provenance import poster_children
+    if sch_path not in _exporting:
+        _exporting.add(sch_path)
+        try:
+            for child in poster_children(sch_path):
+                make_schematic(child, force=force)
+        finally:
+            _exporting.discard(sch_path)
 
     # Skip regeneration when the outputs are already current (biggest win:
     # no subprocess at all when the schematic hasn't changed).
@@ -113,4 +132,5 @@ def make_schematic(sch_path, cir_title=None, force=False):
     # Derive the output path without creating any Qt objects.
     from . import project
     project.set_current(sch_path)
-    return _netlist_output(sch_path, cir_title)
+    out = _netlist_output(sch_path, cir_title)
+    return out if out is not None else project.subdir("img") / sch_path.with_suffix(".svg").name

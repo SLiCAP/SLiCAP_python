@@ -3,13 +3,11 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import Qt, QPointF, QRectF, QByteArray
-from PySide6.QtGui import QPainterPath, QFontMetricsF, QColor, QPen
+from PySide6.QtGui import QPainterPath, QFontMetricsF
 from PySide6.QtSvg import QSvgRenderer
 
-from .config import snap, snap_pos, style_of, default_style
+from .config import snap_pos, style_of, default_style, SELECTION_MARGIN, selection_pen
 
-_SEL_PEN = QPen(QColor(0, 120, 215), 1.5, Qt.DashLine)
-_SEL_PEN.setCosmetic(True)
 
 
 def _tex_escape(s: str) -> str:
@@ -171,10 +169,15 @@ class LibraryItem(QGraphicsItem):
         h = fm.height() * len(lines)
         return QRectF(0.0, 0.0, max(1.0, w), max(1.0, h))
 
-    def boundingRect(self) -> QRectF:
+    def content_rect(self) -> QRectF:
+        """The rendered extent; the selection frame is drawn on it."""
         if self._renderer is not None:
             return self._svg_rect
         return self._natural_text_rect()
+
+    def boundingRect(self) -> QRectF:
+        m = SELECTION_MARGIN
+        return self.content_rect().adjusted(-m, -m, m, m)
 
     def shape(self) -> QPainterPath:
         p = QPainterPath()
@@ -198,9 +201,9 @@ class LibraryItem(QGraphicsItem):
             self._paint_text(painter)
         if option.state & QStyle.State_Selected:
             painter.save()
-            painter.setPen(_SEL_PEN)
+            painter.setPen(selection_pen())
             painter.setBrush(Qt.NoBrush)
-            painter.drawRect(self.boundingRect())
+            painter.drawRect(self.content_rect())
             painter.restore()
 
     def itemChange(self, change, value):

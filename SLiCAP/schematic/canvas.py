@@ -75,12 +75,20 @@ def _shape_record(item):
         rotation=item.rotation,
         head_width=item.head_width,
         head_length=item.head_length,
+        arc_start=item.arc_start, arc_sweep=item.arc_sweep,
+        closed=item.closed,
+        expression=item.expression, var=item.var,
+        x_range=list(item.x_range), y_range=list(item.y_range),
+        x_log=item.x_log, num=item.num,
+        trace_var=item.trace_var, trace_label=item.trace_label,
+        data=[list(p) for p in item.data], flip_x=item.flip_x,
+        z=item.zValue(),
     )
 
 
 def _shape_from_record(sd, delta: QPointF = QPointF(0, 0)):
     """A shape item from its record, shifted by *delta* (paste)."""
-    return ShapeItem(
+    item = ShapeItem(
         kind=sd.kind,
         rel_points=[QPointF(px, py) for px, py in sd.rel_points],
         stroke_color=sd.stroke_color,
@@ -94,7 +102,14 @@ def _shape_from_record(sd, delta: QPointF = QPointF(0, 0)):
         head_width=sd.head_width,
         head_length=sd.head_length,
         pos=QPointF(sd.x + delta.x(), sd.y + delta.y()),
+        arc_start=sd.arc_start, arc_sweep=sd.arc_sweep, closed=sd.closed,
+        expression=sd.expression, var=sd.var, x_range=sd.x_range,
+        y_range=sd.y_range, x_log=sd.x_log, num=sd.num,
+        trace_var=sd.trace_var, trace_label=sd.trace_label, data=sd.data,
+        flip_x=sd.flip_x,
     )
+    item.setZValue(sd.z)
+    return item
 
 
 def _make_preview_pen() -> QPen:
@@ -250,6 +265,7 @@ class SchematicScene(QGraphicsScene):
     data_changed      = Signal()   # emitted on every new undo snapshot
     group_move_started = Signal()
     group_move_ended   = Signal()
+    open_file_requested = Signal(str)   # a linked drawing on a poster: open it
 
     def __init__(self):
         super().__init__()
@@ -345,6 +361,7 @@ class SchematicScene(QGraphicsScene):
         self._param_pending:    tuple | None = None   # (params, preamble)
         self._analysis_pending: tuple | None = None   # (source, detector, lgref)
         self._placing_text:     str | None   = None   # text for PLACING_TEXT mode
+        self._placing_text_props: dict       = {}     # its own font and colour
         self._hyperlink_pending: tuple | None = None  # (url, label)
         self._model_pending:    tuple | None = None   # (name, type, sim, params, preamble)
 
@@ -454,6 +471,9 @@ class SchematicScene(QGraphicsScene):
                     'x':    item.pos().x(),
                     'y':    item.pos().y(),
                     'text': item.toPlainText(),
+                    'props': dict(font_family=item.font_family, font_size=item.font_size,
+                                  bold=item.bold, italic=item.italic, color=item.color),
+                    'z': item.zValue(),
                 })
             elif isinstance(item, AnalysisItem):
                 self._clipboard.append({
@@ -471,6 +491,7 @@ class SchematicScene(QGraphicsScene):
                     'y':     item.pos().y(),
                     'url':   item.url,
                     'label': item.label,
+                    'z':     item.zValue(),
                 })
             # Model definitions and parameter tables copy as they are, the
             # model under the SAME name (Anton, 2026-09-20: renaming is the
@@ -506,10 +527,13 @@ class SchematicScene(QGraphicsScene):
             elif isinstance(item, LatexFragmentItem):
                 self._clipboard.append({'kind': 'latex', 'x': item.pos().x(), 'y': item.pos().y(),
                                         'latex_code': item.latex_code, 'preamble': item.preamble_path,
-                                        'w': item.display_width, 'h': item.display_height})
+                                        'w': item.display_width, 'h': item.display_height,
+                                        'color': item.color, 'snippet': item.snippet,
+                                        'z': item.zValue()})
             elif isinstance(item, ImageItem):
                 self._clipboard.append({'kind': 'image', 'x': item.pos().x(), 'y': item.pos().y(),
-                                        'file_path': item.file_path,
+                                        'file_path': item.file_path, 'link': item.link,
+                                        'z': item.zValue(),
                                         'w': item.display_width, 'h': item.display_height})
             elif isinstance(item, SymbolPinItem):
                 self._clipboard.append({'kind': 'pin', 'x': item.pos().x(), 'y': item.pos().y(),
@@ -706,7 +730,9 @@ class SchematicScene(QGraphicsScene):
                 item.setSelected(True)
             elif kind == 'free_text':
                 item = FreeTextItem(data['text'],
-                                    QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                                    QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                    **data.get('props', {}))
+                item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'analysis':
@@ -721,6 +747,7 @@ class SchematicScene(QGraphicsScene):
                     data['url'], data['label'],
                     QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
                 )
+                item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'model':
@@ -743,12 +770,17 @@ class SchematicScene(QGraphicsScene):
                 item.setSelected(True)
             elif kind == 'latex':
                 item = LatexFragmentItem(data['latex_code'], data['preamble'], data['w'], data['h'],
-                                         QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                                         QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                         color=data.get('color', ''),
+                                         snippet=data.get('snippet', ''))
+                item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'image':
                 item = ImageItem(data['file_path'], data['w'], data['h'],
-                                 QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                                 QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                 link=data.get('link', ''))
+                item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'pin':
@@ -852,6 +884,7 @@ class SchematicScene(QGraphicsScene):
         self._param_pending     = None
         self._analysis_pending  = None
         self._placing_text      = None
+        self._placing_text_props = {}
         self._hyperlink_pending = None
         self._model_pending     = None
         # also cancel any in-progress shape draw
@@ -1100,15 +1133,118 @@ class SchematicScene(QGraphicsScene):
         self._mode = _Mode.PLACING_JUNCTION
         self.placing_started.emit()
 
-    def start_text_placement(self, text: str = "Text"):
+    def link_choices(self, kind: str) -> list:
+        """What a link of *kind* can show, as (name, "img/<name>.svg"): the
+        figures of the Design data; the schematics of the project; the
+        posters of the project except this one and any poster that already
+        shows this one, directly or through a chain (a poster may not
+        contain itself)."""
+        from . import project
+        root = project.project_root()
+        if kind == "figure":
+            from .design_data import manifest_figures
+            return manifest_figures(root)
+        out = []
+        if kind == "schematic":
+            folder = root / "sch"
+            for p in sorted(folder.glob("*")) if folder.is_dir() else []:
+                if p.suffix.lower() in (".slicap_sch", ".spice_sch"):
+                    out.append((p.stem, "img/" + p.stem + ".svg"))
+        elif kind == "poster":
+            from .provenance import poster_contains
+            me = getattr(self, "file_path", None)
+            folder = root / "posters"
+            for p in sorted(folder.glob("*" + project.POSTER_SUFFIX)) if folder.is_dir() else []:
+                if me is not None and poster_contains(p, me):
+                    continue                     # itself, or one that shows it
+                out.append((p.stem, "img/" + p.stem + ".svg"))
+        return out
+
+    def link_source(self, link: str):
+        """The source file of a schematic or poster link, or None."""
+        from . import project
+        kind, _, name = link.partition(":")
+        if kind == "schematic":
+            return project.schematic_file_for(name)
+        if kind == "poster":
+            return project.poster_file_for(name)
+        return None
+
+    # ── stacking order of annotations ───────────────────────────────────────
+    # Shapes, images, LaTeX fragments, text and hyperlinks keep a z value of
+    # their own, saved with them; the circuit layers (border -10, wires 0,
+    # components 10, junctions 20, net labels 30) are fixed. An annotation
+    # may go above the circuit: a figure over a component, overlapping
+    # schematics on a poster (Anton, 2026-10-06). Keeping annotations
+    # below the components was considered and REJECTED for that reason.
+
+    ANNOTATION_TYPES = ("ShapeItem", "ImageItem", "LatexFragmentItem",
+                        "FreeTextItem", "HyperlinkItem")
+
+    def _is_annotation(self, item) -> bool:
+        return type(item).__name__ in self.ANNOTATION_TYPES
+
+    def restack(self, how: str) -> int:
+        """Move the selected annotations in the stacking order: 'front'
+        above everything, 'back' just above the border, 'forward' past the
+        next item above, 'backward' past the next item below. Returns the
+        count moved."""
+        from .border_item import BorderItem
+        from .config import Z_BORDER
+        sel = [i for i in self.selectedItems() if self._is_annotation(i)]
+        if not sel:
+            return 0
+        others = [i for i in self.items()
+                  if i not in sel and not isinstance(i, BorderItem)
+                  and i.parentItem() is None]
+        zs = sorted({i.zValue() for i in others})
+        self._push_undo()
+        for item in sel:
+            z = item.zValue()
+            if how == "front":
+                new = (max(zs) if zs else z) + 1.0
+            elif how == "back":
+                new = (min(zs) if zs else z) - 1.0
+            elif how == "forward":
+                above = [v for v in zs if v > z]
+                new = (above[0] + 0.5) if above else z + 1.0
+            elif how == "backward":
+                below = [v for v in zs if v < z]
+                new = (below[-1] - 0.5) if below else z - 1.0
+            else:
+                raise ValueError(how)
+            item.setZValue(max(new, Z_BORDER + 1.0))     # never under the border
+        self.data_changed.emit()
+        return len(sel)
+
+    def reload_links(self) -> int:
+        """Reload every link that changed after a run of the instruction
+        file: images whose file changed on disk, Figure items whose image in
+        the Design data is another file, and LaTeX snippet items whose text
+        in the Design data changed; the count reloaded."""
+        n = 0
+        for item in self.items():
+            if isinstance(item, (ImageItem, LatexFragmentItem)) and item.reload_if_changed():
+                n += 1
+            elif isinstance(item, ShapeItem) and item.kind == "func" and item.trace_var:
+                before = item.data
+                item.resample()
+                if item.data != before:
+                    n += 1
+        return n
+
+    def start_text_placement(self, text: str = "Text", props: dict | None = None):
+        """*props*: the item's own font and colour (TextDialog.properties())."""
         from PySide6.QtGui import QBrush
         self._end_wire(commit=False)
         self._cancel_placement()
         self._placing_text = text
+        self._placing_text_props = dict(props or {})
         first_line = (text.split('\n')[0] or "Text")[:50]
         ghost = QGraphicsSimpleTextItem(first_line)
-        ghost.setFont(self.style.TEXT_FONT)
-        ghost.setBrush(QBrush(self.style.TEXT_COLOR))
+        probe = FreeTextItem(first_line, **self._placing_text_props)
+        ghost.setFont(probe.effective_font(self.style))
+        ghost.setBrush(QBrush(probe.defaultTextColor()))
         ghost.setOpacity(0.4)
         ghost.setAcceptedMouseButtons(Qt.NoButton)
         self._ghost = ghost
@@ -1191,7 +1327,8 @@ class SchematicScene(QGraphicsScene):
             block.set_show(show)
             block.update_text()
 
-    def start_image_placement(self, file_path: str, width: int, height: int):
+    def start_image_placement(self, file_path: str, width: int, height: int,
+                              link: str = ""):
         from pathlib import Path as _Path
         from PySide6.QtWidgets import QGraphicsPixmapItem
         from PySide6.QtGui import QPainter as _QPainter
@@ -1224,12 +1361,13 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._image_pending = (file_path, width, height)
+        self._image_pending = (file_path, width, height, link)
         self._mode = _Mode.PLACING_IMAGE
         self.placing_started.emit()
 
     def start_latex_placement(self, latex_code: str, preamble_path: str,
-                              width: int, height: int):
+                              width: int, height: int, color: str = "",
+                              snippet: str = ""):
         from PySide6.QtWidgets import QGraphicsPixmapItem
         from PySide6.QtGui import QPainter as _QPainter
         self._end_wire(commit=False)
@@ -1237,7 +1375,10 @@ class SchematicScene(QGraphicsScene):
         svg_bytes = self._render_ghost_latex(latex_code, preamble_path)
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
-        from .latex_label import display_svg
+        from .latex_label import display_svg, recolor_svg
+        from .config import display_color
+        if svg_bytes and color:
+            svg_bytes = recolor_svg(svg_bytes, display_color(color).name())
         renderer = QSvgRenderer(QByteArray(display_svg(svg_bytes))) if svg_bytes else None
         w, h = max(1, width), max(1, height)
         if renderer and renderer.isValid():
@@ -1255,7 +1396,7 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._latex_pending = (latex_code, preamble_path, width, height)
+        self._latex_pending = (latex_code, preamble_path, width, height, color, snippet)
         self._mode = _Mode.PLACING_LATEX
         self.placing_started.emit()
 
@@ -1321,18 +1462,25 @@ class SchematicScene(QGraphicsScene):
 
     # ── shape drawing ─────────────────────────────────────────────────────────
 
-    def start_drawing(self, kind: str) -> None:
-        """Enter drawing mode for the given shape kind."""
+    def start_drawing(self, kind: str, template=None) -> None:
+        """Enter drawing mode for the given shape kind. *template*: a shape
+        item (not in the scene) whose properties the drawn shape takes; a
+        function curve is defined in its dialog FIRST and then given its
+        box with two clicks (Anton, 2026-10-06)."""
         self._end_wire(commit=False)
         self._cancel_placement()
         self._cancel_draw()
         self._draw_kind = kind
+        self._draw_template = template
         mode_map = {
             "line":    _Mode.DRAWING_LINE,
             "rect":    _Mode.DRAWING_RECT,
             "ellipse": _Mode.DRAWING_ELLIPSE,
             "circle":  _Mode.DRAWING_ELLIPSE,    # legacy name
             "polygon": _Mode.DRAWING_POLYGON,
+            "arc":     _Mode.DRAWING_ELLIPSE,    # two corners, as an ellipse
+            "func":    _Mode.DRAWING_RECT,       # two corners: the box
+            "curve":   _Mode.DRAWING_POLYGON,    # clicked points
         }
         self._mode = mode_map[kind]
         self.placing_started.emit()   # reuse signal: switches view to NoDrag
@@ -1344,6 +1492,7 @@ class SchematicScene(QGraphicsScene):
         self._draw_anchor = None
         self._draw_pts    = []
         self._draw_kind   = None
+        self._draw_template = None
         if self._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_RECT,
                            _Mode.DRAWING_ELLIPSE, _Mode.DRAWING_POLYGON):
             self._mode = _Mode.NORMAL
@@ -1365,7 +1514,10 @@ class SchematicScene(QGraphicsScene):
             anchor = pts[0]
             rel    = [QPointF(p.x() - anchor.x(), p.y() - anchor.y()) for p in pts]
             # a polygon preview with fewer than 3 points is its outline so far
-            kind_g = "polygon" if (self._mode == _Mode.DRAWING_POLYGON and len(pts) >= 3) else "line"
+            if self._draw_kind == "curve":
+                kind_g = "curve"
+            else:
+                kind_g = "polygon" if (self._mode == _Mode.DRAWING_POLYGON and len(pts) >= 3) else "line"
 
         elif self._mode == _Mode.DRAWING_RECT:
             if self._draw_anchor is None:
@@ -1374,7 +1526,7 @@ class SchematicScene(QGraphicsScene):
             rel    = [QPointF(0, 0),
                       QPointF(scene_pos.x() - anchor.x(),
                               scene_pos.y() - anchor.y())]
-            kind_g = "rect"
+            kind_g = "rect"                      # a func box previews as its rect
 
         elif self._mode == _Mode.DRAWING_ELLIPSE:
             if self._draw_anchor is None:
@@ -1383,7 +1535,7 @@ class SchematicScene(QGraphicsScene):
             rel    = [QPointF(0, 0),
                       QPointF(scene_pos.x() - anchor.x(),
                               scene_pos.y() - anchor.y())]
-            kind_g = "ellipse"
+            kind_g = "arc" if self._draw_kind == "arc" else "ellipse"
         else:
             return
 
@@ -1402,14 +1554,17 @@ class SchematicScene(QGraphicsScene):
         """Finalise the current shape and add it to the scene."""
         kind = self._draw_kind
 
-        if kind in ("line", "polygon"):
+        if kind in ("line", "polygon", "curve"):
             pts    = self._draw_pts
             if kind == "polygon" and len(pts) < 3:
                 self._cancel_draw()
                 return
+            if kind == "curve" and len(pts) < 2:
+                self._cancel_draw()
+                return
             anchor = pts[0]
             rel    = [QPointF(p.x() - anchor.x(), p.y() - anchor.y()) for p in pts]
-        elif kind in ("rect", "ellipse", "circle"):
+        elif kind in ("rect", "ellipse", "circle", "arc", "func"):
             anchor = self._draw_anchor
             rel    = [QPointF(0, 0),
                       QPointF(scene_pos.x() - anchor.x(),
@@ -1418,10 +1573,84 @@ class SchematicScene(QGraphicsScene):
             return
 
         self._push_undo()
+        template = getattr(self, "_draw_template", None)
+        if template is not None:
+            # the properties were set in the dialog before the box was clicked
+            item = _shape_from_record(_shape_record(template))
+            item.rel_points = rel
+            item.setPos(anchor)
+            item.line_width = self.default_line_width if template.line_width is None else template.line_width
+            item.apply_rotation()
+            item.anchor_to_first_point()
+            self.addItem(item)
+            item.resample()
+            self._cancel_draw()
+            return                       # one box per command
         item = ShapeItem(kind, rel, pos=anchor, line_width=self.default_line_width)
         self.addItem(item)
         self._cancel_draw()
+        if kind == "func":
+            # a function curve is nothing without its source: the dialog
+            # opens at once; cancelled, the box goes again
+            if not self.edit_shape(item):
+                self.removeItem(item)
+                self._pop_undo_if_possible()
+            return                       # one box per command
         self.start_drawing(kind)
+
+    def edit_shape(self, item) -> bool:
+        """The properties dialog of a shape; True when accepted and applied."""
+        from .shape_dialog import ShapeDialog
+        dlg = ShapeDialog(item, trace_choices=self._trace_choices())
+        if not dlg.exec():
+            return False
+        self._apply_shape_dialog(item, dlg)
+        return True
+
+    def _pop_undo_if_possible(self) -> None:
+        try:
+            self._undo_stack.pop()
+        except (AttributeError, IndexError):
+            pass
+
+    def _trace_choices(self) -> list:
+        """The traces of the Design data for a function curve, as
+        (trace_var, label) pairs."""
+        from . import project
+        from .design_data import manifest_traces
+        try:
+            return [(v, l) for v, l, _d in manifest_traces(project.project_root())]
+        except Exception:
+            return []
+
+    def _apply_shape_dialog(self, item, dlg) -> None:
+        item.stroke_color   = dlg.get_stroke_color()
+        item.line_width     = dlg.get_line_width()
+        item.line_style     = dlg.get_line_style()
+        item.line_end_start = dlg.get_line_end_start()
+        item.line_end_end   = dlg.get_line_end_end()
+        item.fill_style     = dlg.get_fill_style()
+        item.fill_color     = dlg.get_fill_color()
+        item.head_width     = dlg.get_head_width()
+        item.head_length    = dlg.get_head_length()
+        item.rotation       = dlg.get_rotation()
+        if item.kind == "arc":
+            item.arc_start, item.arc_sweep = dlg.get_arc()
+        if item.kind == "curve":
+            item.closed = dlg.get_closed()
+        if item.kind == "func":
+            src = dlg.get_func()
+            item.expression  = src["expression"]
+            item.var         = src["var"]
+            item.x_range     = src["x_range"]
+            item.y_range     = src["y_range"]
+            item.x_log       = src["x_log"]
+            item.num         = src["num"]
+            item.trace_var   = src["trace_var"]
+            item.trace_label = src["trace_label"]
+            item.resample()
+        item.apply_rotation()
+        item.update()
 
     # ── wiring ────────────────────────────────────────────────────────────────
 
@@ -2107,6 +2336,9 @@ class SchematicScene(QGraphicsScene):
                 free_texts.append(FreeTextData(
                     x=item.pos().x(), y=item.pos().y(),
                     text=item.toPlainText(),
+                    font_family=item.font_family, font_size=item.font_size,
+                    bold=item.bold, italic=item.italic, color=item.color,
+                    z=item.zValue(),
                 ))
             elif isinstance(item, CommandItem):
                 commands.append(CommandData(
@@ -2122,6 +2354,7 @@ class SchematicScene(QGraphicsScene):
                     fixed_w=item.fixed_w, fixed_h=item.fixed_h,
                     line_color=item.line_color, line_width=item.line_width,
                     bg_color=item.bg_color, bg_alpha=item.bg_alpha,
+                    line_style=item.line_style,
                 )
             elif isinstance(item, LibraryItem):
                 libs.append(LibraryData(
@@ -2135,6 +2368,7 @@ class SchematicScene(QGraphicsScene):
                     file_path=item.file_path,
                     display_width=item.display_width,
                     display_height=item.display_height,
+                    link=item.link, z=item.zValue(),
                 ))
             elif isinstance(item, LatexFragmentItem):
                 latex_frags.append(LatexFragmentData(
@@ -2143,6 +2377,9 @@ class SchematicScene(QGraphicsScene):
                     preamble_path=item.preamble_path,
                     display_width=item.display_width,
                     display_height=item.display_height,
+                    color=item.color,
+                    snippet=item.snippet,
+                    z=item.zValue(),
                 ))
             elif isinstance(item, ParameterItem):
                 param_items.append(ParameterData(
@@ -2164,7 +2401,7 @@ class SchematicScene(QGraphicsScene):
             elif isinstance(item, HyperlinkItem):
                 hyperlinks.append(HyperlinkData(
                     x=item.pos().x(), y=item.pos().y(),
-                    url=item.url, label=item.label,
+                    url=item.url, label=item.label, z=item.zValue(),
                 ))
             elif isinstance(item, ModelItem):
                 model_defs.append(ModelData(
@@ -2258,7 +2495,11 @@ class SchematicScene(QGraphicsScene):
             self.addItem(JunctionItem(QPointF(jd.x, jd.y)))
 
         for td in data.free_texts:
-            self.addItem(FreeTextItem(td.text, QPointF(td.x, td.y)))
+            t = FreeTextItem(td.text, QPointF(td.x, td.y),
+                             font_family=td.font_family, font_size=td.font_size,
+                             bold=td.bold, italic=td.italic, color=td.color)
+            t.setZValue(td.z)
+            self.addItem(t)
 
         for cd in data.commands:
             self.addItem(CommandItem(cd.text, QPointF(cd.x, cd.y)))
@@ -2275,15 +2516,20 @@ class SchematicScene(QGraphicsScene):
             self.addItem(LibraryItem(lib_entries, lib_pos, show=lib_show))
 
         for img in data.images:
-            self.addItem(ImageItem(img.file_path, img.display_width,
-                                   img.display_height, QPointF(img.x, img.y)))
+            im = ImageItem(img.file_path, img.display_width,
+                           img.display_height, QPointF(img.x, img.y), link=img.link)
+            im.setZValue(img.z)
+            self.addItem(im)
 
         for frag in data.latex_fragments:
-            self.addItem(LatexFragmentItem(
+            lf = LatexFragmentItem(
                 frag.latex_code, frag.preamble_path,
                 frag.display_width, frag.display_height,
-                QPointF(frag.x, frag.y),
-            ))
+                QPointF(frag.x, frag.y), color=frag.color,
+                snippet=frag.snippet,
+            )
+            lf.setZValue(frag.z)
+            self.addItem(lf)
 
         for pd in data.parameters:
             self.addItem(ParameterItem(
@@ -2298,7 +2544,9 @@ class SchematicScene(QGraphicsScene):
                                       show=getattr(ad, "show", True)))
 
         for hd in data.hyperlinks:
-            self.addItem(HyperlinkItem(hd.url, hd.label, QPointF(hd.x, hd.y)))
+            h = HyperlinkItem(hd.url, hd.label, QPointF(hd.x, hd.y))
+            h.setZValue(hd.z)
+            self.addItem(h)
 
         for sd in data.shapes:
             self.addItem(_shape_from_record(sd))
@@ -2318,7 +2566,8 @@ class SchematicScene(QGraphicsScene):
                 bd.x, bd.y, bd.width, bd.height, bd.show_in_export,
                 fixed_w=bd.fixed_w, fixed_h=bd.fixed_h,
                 line_color=bd.line_color, line_width=bd.line_width,
-                bg_color=bd.bg_color, bg_alpha=bd.bg_alpha))
+                bg_color=bd.bg_color, bg_alpha=bd.bg_alpha,
+                line_style=bd.line_style))
 
         from .symbol_editor import SymbolPinItem, SymbolTextItem, OpaqueSvgItem
         for pd in getattr(data, "pins", []):
@@ -2373,7 +2622,8 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_TEXT and event.button() == Qt.LeftButton:
             self._push_undo()
-            item = FreeTextItem(self._placing_text or "Text", pos)
+            item = FreeTextItem(self._placing_text or "Text", pos,
+                                **getattr(self, "_placing_text_props", {}))
             self.addItem(item)
             self._cancel_placement()
 
@@ -2413,14 +2663,14 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_IMAGE and event.button() == Qt.LeftButton:
             self._push_undo()
-            fp, w, h = self._image_pending
-            self.addItem(ImageItem(fp, w, h, pos))
+            fp, w, h, link = self._image_pending
+            self.addItem(ImageItem(fp, w, h, pos, link=link))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_LATEX and event.button() == Qt.LeftButton:
             self._push_undo()
-            lc, pp, w, h = self._latex_pending
-            self.addItem(LatexFragmentItem(lc, pp, w, h, pos))
+            lc, pp, w, h, color, snippet = self._latex_pending
+            self.addItem(LatexFragmentItem(lc, pp, w, h, pos, color=color, snippet=snippet))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_PARAMETER and event.button() == Qt.LeftButton:
@@ -3217,10 +3467,12 @@ class SchematicScene(QGraphicsScene):
                 fixed_w=item.fixed_w, fixed_h=item.fixed_h,
                 line_color=item.line_color, line_width=item.line_width,
                 bg_color=item.bg_color, bg_alpha=item.bg_alpha,
+                line_style=item.line_style,
             )
             if dlg.exec():
                 self._push_undo()
                 props = dlg.border_properties()
+                item.line_style = props["line_style"]
                 item.setRect(0, 0, props["width"], props["height"])
                 item.show_in_export = props["show_in_export"]
                 item.fixed_w = props["fixed_w"]
@@ -3253,9 +3505,17 @@ class SchematicScene(QGraphicsScene):
                 display_width=item.display_width,
                 display_height=item.display_height,
                 style=self.style,
+                link_kind=item.link_kind,
+                choices=self.link_choices(item.link_kind) if item.link_kind else None,
+                link_name=item.link_name,
             )
             if dlg.exec() and dlg.image_path():
+                if dlg.open_requested:
+                    # "Open": the linked drawing in its own tab, nothing changed
+                    self.open_file_requested.emit(str(self.link_source(dlg.link()) or ""))
+                    return
                 self._push_undo()
+                item.link           = dlg.link()
                 item.file_path      = dlg.image_path()
                 item.display_width  = dlg.image_width()
                 item.display_height = dlg.image_height()
@@ -3264,20 +3524,27 @@ class SchematicScene(QGraphicsScene):
             return
         if isinstance(item, LatexFragmentItem):
             from .latex_fragment_dialog import LatexFragmentDialog
+            from .design_data import manifest_snippets
+            from . import project
             dlg = LatexFragmentDialog(
                 latex_code=item.latex_code,
                 preamble_path=item.preamble_path,
                 svg_bytes=item._svg_bytes,
                 display_width=item.display_width,
                 display_height=item.display_height,
+                color=item.color,
                 style=self.style,
+                snippets=manifest_snippets(project.project_root()) if item.snippet else None,
+                snippet=item.snippet,
             )
-            if dlg.exec() and dlg.svg_bytes():
+            if dlg.exec() and (dlg.svg_bytes() or dlg.snippet()):
                 self._push_undo()
+                item.snippet       = dlg.snippet()
                 item.latex_code    = dlg.latex_code()
                 item.preamble_path = dlg.preamble_path()
                 item.display_width  = dlg.display_width()
                 item.display_height = dlg.display_height()
+                item.color          = dlg.color()
                 item._load_renderer()
                 item.prepareGeometryChange()
                 item.update()
@@ -3345,10 +3612,13 @@ class SchematicScene(QGraphicsScene):
             return
         if isinstance(item, FreeTextItem):
             from .text_dialog import TextDialog
-            dlg = TextDialog(item.toPlainText(), style=self.style)
+            dlg = TextDialog(item.toPlainText(), style=self.style,
+                             font_family=item.font_family, font_size=item.font_size,
+                             bold=item.bold, italic=item.italic, color=item.color)
             if dlg.exec():
                 self._push_undo()
                 item.setPlainText(dlg.text())
+                item.set_properties(**dlg.properties())
             return
         if isinstance(item, HyperlinkItem):
             from .hyperlink_dialog import HyperlinkDialog
@@ -3377,20 +3647,10 @@ class SchematicScene(QGraphicsScene):
             return
         if isinstance(item, ShapeItem):
             from .shape_dialog import ShapeDialog
-            dlg = ShapeDialog(item)
+            dlg = ShapeDialog(item, trace_choices=self._trace_choices())
             if dlg.exec():
                 self._push_undo()
-                item.stroke_color   = dlg.get_stroke_color()
-                item.line_width     = dlg.get_line_width()
-                item.line_style     = dlg.get_line_style()
-                item.line_end_start = dlg.get_line_end_start()
-                item.line_end_end   = dlg.get_line_end_end()
-                item.fill_style     = dlg.get_fill_style()
-                item.fill_color     = dlg.get_fill_color()
-                item.head_width     = dlg.get_head_width()
-                item.head_length    = dlg.get_head_length()
-                item.rotation       = dlg.get_rotation()
-                item.apply_rotation()
+                self._apply_shape_dialog(item, dlg)
                 item.update()
             return
         if isinstance(item, WireItem):
@@ -3667,11 +3927,20 @@ class SchematicView(QGraphicsView):
         self.centerOn(0, 0)
 
     def _on_active_mode(self):
+        """A placing or drawing mode: no rubber band, and the cross ("+")
+        cursor on the view AND its viewport. The viewport is the widget
+        under the pointer; QGraphicsView resets the viewport's cursor on
+        its own when an item with a cursor of its own (a border edge) is
+        left, and after a modal dialog the viewport's cursor is what the
+        window system re-reads (Anton, 2026-10-06: the "+" must show after
+        a Draw command and after OK of the function dialog)."""
         self.setDragMode(QGraphicsView.NoDrag)
         self.setCursor(Qt.CrossCursor)
+        self.viewport().setCursor(Qt.CrossCursor)
 
     def _on_normal_mode(self):
         self.setDragMode(QGraphicsView.RubberBandDrag)
+        self.viewport().unsetCursor()
         self.unsetCursor()
 
     # ── zoom ─────────────────────────────────────────────────────────────────
@@ -3840,16 +4109,23 @@ class SchematicView(QGraphicsView):
             if rotatable:
                 scene._push_undo()
             for item in rotatable:
-                item.setRotation(item.rotation() + 90)
+                if isinstance(item, ShapeItem):
+                    item.rotate_quarter()      # on the points, see ShapeItem
+                else:
+                    item.setRotation(item.rotation() + 90)
         elif key == Qt.Key_M:
             if scene.mirror_ghost():
                 return
-            sel = [i for i in scene.selectedItems() if isinstance(i, ComponentItem)]
+            sel = [i for i in scene.selectedItems()
+                   if isinstance(i, (ComponentItem, ShapeItem))]
             if sel:
                 scene._push_undo()
                 for item in sel:
-                    item.h_flip = not item.h_flip
-                    item.apply_transform()
+                    if isinstance(item, ShapeItem):
+                        item.mirror()
+                    else:
+                        item.h_flip = not item.h_flip
+                        item.apply_transform()
                 scene._sync_junctions()
         elif key in (Qt.Key_Delete, Qt.Key_Backspace):
             if scene.selectedItems():

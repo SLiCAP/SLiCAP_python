@@ -183,6 +183,12 @@ class FigureDialog(QDialog):
         self._file.textChanged.connect(self._update)
         head.addWidget(self._file, 2, 1)
 
+        head.addWidget(QLabel("Title:"), 3, 0)
+        self._title = QLineEdit()
+        self._title.setPlaceholderText("heading inside the image; empty = none")
+        self._title.textChanged.connect(self._update)
+        head.addWidget(self._title, 3, 1)
+
         # ── the grid ──────────────────────────────────────────────────────
         size = QHBoxLayout()
         size.addWidget(QLabel("Rows:"))
@@ -529,6 +535,7 @@ class FigureDialog(QDialog):
         show = _lit(kwargs.get("show"))
         save = _lit(kwargs.get("save"))
         cursors = _lit(kwargs.get("cursors"))
+        self._title.setText(str(_lit(kwargs.get("title")) or ""))
         self._show.setChecked(bool(show))
         self._save.setChecked(True if save is None else bool(save))
         self._cursors.setChecked(True if cursors is None else bool(cursors))
@@ -597,6 +604,8 @@ class FigureDialog(QDialog):
             parts += ", save=False"
         if not self._cursors.isChecked():
             parts += ", cursors=False"
+        if self._title.text().strip():
+            parts += ", title={0}".format(_q(self._title.text().strip()))
         statement = "{0} = sl.makeFigure({1}, {2}{3})".format(
             name, body, _q(file_name), parts)
         # the axes made from a cell come FIRST: one statement per object, in

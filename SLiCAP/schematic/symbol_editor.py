@@ -50,10 +50,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QPointF, QRectF, QByteArray
 from PySide6.QtGui import (QColor, QPainter, QPen, QBrush, QFont, QFontMetricsF,
-                           QPolygonF, QPainterPath)
+                           QPainterPath)
 from PySide6.QtSvg import QSvgRenderer
 
-from .config import snap, style_of, default_style
+from .config import snap, style_of, SELECTION_COLOR, SELECTION_MARGIN, selection_pen
 
 XLINK_NS = "http://www.w3.org/1999/xlink"
 ET.register_namespace("xlink", XLINK_NS)
@@ -61,7 +61,7 @@ from .sizing import fix_chars, fit_contents
 
 SVG_NS  = "http://www.w3.org/2000/svg"
 NODE_R  = 0.5                       # radius of the pin marker in the file
-_SEL    = QColor(0, 120, 215)
+_SEL    = SELECTION_COLOR
 _ATTR_KEYS = ("prefix", "nodes", "model", "params", "refs", "description",
               "info", "show-pinnames")
 
@@ -157,7 +157,7 @@ class SymbolPinItem(QGraphicsItem):
         return super().itemChange(change, value)
 
     def boundingRect(self) -> QRectF:
-        r = self.BADGE_R + 1
+        r = self.BADGE_R + SELECTION_MARGIN
         return QRectF(-r, -r, 2 * r, 2 * r)
 
     def shape(self) -> QPainterPath:
@@ -179,12 +179,11 @@ class SymbolPinItem(QGraphicsItem):
         painter.drawEllipse(QPointF(0, 0), self.BADGE_R, self.BADGE_R)
         painter.setFont(self._font())
         painter.setPen(st.NET_LABEL_COLOR)
-        painter.drawText(QRectF(-self.BADGE_R, -self.BADGE_R, 2 * self.BADGE_R, 2 * self.BADGE_R),
-                         Qt.AlignCenter, str(self.number))
+        content = QRectF(-self.BADGE_R, -self.BADGE_R, 2 * self.BADGE_R, 2 * self.BADGE_R)
+        painter.drawText(content, Qt.AlignCenter, str(self.number))
         if option.state & QStyle.State_Selected:
-            pen = QPen(_SEL, 1.0, Qt.DashLine); pen.setCosmetic(True)
-            painter.setPen(pen); painter.setBrush(Qt.NoBrush)
-            painter.drawRect(self.boundingRect())
+            painter.setPen(selection_pen()); painter.setBrush(Qt.NoBrush)
+            painter.drawRect(content)
 
 
 class SymbolTextItem(QGraphicsItem):
@@ -206,10 +205,14 @@ class SymbolTextItem(QGraphicsItem):
         f.setPixelSize(max(1, round(self.size)))
         return f
 
-    def boundingRect(self) -> QRectF:
+    def content_rect(self) -> QRectF:
         fm = QFontMetricsF(self._font())
         w = max(4.0, fm.horizontalAdvance(self.content)); h = fm.height()
-        return QRectF(-w / 2 - 2, -h / 2 - 2, w + 4, h + 4)
+        return QRectF(-w / 2, -h / 2, w, h)
+
+    def boundingRect(self) -> QRectF:
+        m = SELECTION_MARGIN + 1.0     # glyphs may overhang the advance
+        return self.content_rect().adjusted(-m, -m, m, m)
 
     def paint(self, painter: QPainter, option, widget=None) -> None:
         st = style_of(self)
@@ -217,9 +220,8 @@ class SymbolTextItem(QGraphicsItem):
         painter.setPen(st.SYMBOL_TEXT_COLOR)
         painter.drawText(QRectF(-100, -100, 200, 200), Qt.AlignCenter, self.content)
         if option.state & QStyle.State_Selected:
-            pen = QPen(_SEL, 1.0, Qt.DashLine); pen.setCosmetic(True)
-            painter.setPen(pen); painter.setBrush(Qt.NoBrush)
-            painter.drawRect(self.boundingRect())
+            painter.setPen(selection_pen()); painter.setBrush(Qt.NoBrush)
+            painter.drawRect(self.content_rect())
 
 
 class OpaqueSvgItem(QGraphicsItem):
@@ -261,15 +263,15 @@ class OpaqueSvgItem(QGraphicsItem):
         return super().itemChange(change, value)
 
     def boundingRect(self) -> QRectF:
-        return self._bbox.adjusted(-2, -2, 2, 2)
+        m = SELECTION_MARGIN + 1.0
+        return self._bbox.adjusted(-m, -m, m, m)
 
     def paint(self, painter: QPainter, option, widget=None) -> None:
         painter.setRenderHint(QPainter.Antialiasing)
         if self._renderer is not None and self._renderer.isValid():
             self._renderer.render(painter, self._bbox)
         if option.state & QStyle.State_Selected:
-            pen = QPen(_SEL, 1.0, Qt.DashLine); pen.setCosmetic(True)
-            painter.setPen(pen); painter.setBrush(Qt.NoBrush)
+            painter.setPen(selection_pen()); painter.setBrush(Qt.NoBrush)
             painter.drawRect(self._bbox)
 
 
@@ -458,7 +460,7 @@ def _image_element(item, x: float, y: float) -> tuple[ET.Element | None, int]:
     display size).  Returns (element, byte size) or (None, 0)."""
     import base64
     from PySide6.QtCore import QBuffer, QIODevice
-    from PySide6.QtGui import QPainter as _QP, QPixmap as _QPixmap, QImage as _QImage
+    from PySide6.QtGui import QPainter as _QP, QImage as _QImage
     path = Path(item.file_path)
     mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}.get(path.suffix.lower())
     data = b""

@@ -177,6 +177,14 @@ def main():
             m for m in _saved["GTK_MODULES"].split(":")
             if m and m not in ("xapp-gtk3-module", "gail", "atk-bridge"))
     os.environ.setdefault("NO_AT_BRIDGE", "1")
+    # Qt's SVG renderer warns on every matplotlib plot placed on a
+    # schematic: the space glyph is an empty path, which it drops, and then
+    # reports every reference to it as an undefined link. Nothing visible is
+    # lost and nothing a user can act on, so the category is silenced in the
+    # GUI process only (Anton, 2026-10-06: "users might file a lot of useless
+    # bug reports"). Scripts and the export keep Qt's output.
+    from PySide6.QtCore import QLoggingCategory
+    QLoggingCategory.setFilterRules("qt.svg.warning=false")
     app = QApplication(sys.argv)
     from . import app_prefs
     app_prefs.apply_color_scheme(app)

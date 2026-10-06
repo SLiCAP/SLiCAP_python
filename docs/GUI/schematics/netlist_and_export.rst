@@ -52,13 +52,28 @@ netlist and figures automatically before parsing:
    cir = sl.makeCircuit("sch/my_circuit.slicap_sch")   # exports + parses
    result = sl.doNoise(cir, pardefs="circuit", numeric=True)
 
-You can also trigger the export step separately — for example to regenerate
-figures without re-running the analysis:
+The export can also be run on its own with ``sl.updateImages()``, which
+rewrites the schematic's images (and its netlist) without creating a
+circuit object. It takes the circuit object of a SLiCAP schematic, or the
+name of the circuit, which is how an NGspice schematic is addressed. Its
+place is the end of the instruction file. A schematic that links plots
+(:menuselection:`Place --> Image…` with a file in ``img/``) inlines them at
+export time, and ``makeCircuit()`` at the top of the file exports before
+the analyses have written them. An export after the figures shows the
+plots of this run:
 
 .. code-block:: python
 
-   from SLiCAP.schematic import make_schematic
-   make_schematic("sch/my_circuit.slicap_sch")   # writes cir/ and img/
+   cir = sl.makeCircuit("sch/my_circuit.spice_sch")   # exports + parses
+   TR1 = sl.tran("my_circuit", "1n", "1u")
+   FIG1 = sl.makeFigure([[AX1]], "tran")               # writes img/tran.svg
+   sl.updateImages("my_circuit")                       # exports with the new plot
+
+:menuselection:`Instruction --> Update schematic images…` on the schematic's tab
+appends that last line. Both calls skip the export when the netlist and
+the images are newer than everything they depend on: the schematic, its
+sidecars, the symbol libraries, the operating-point results and the linked
+images. On the canvas the linked images are reloaded after every run.
 
 For a subcircuit schematic both calls write the library in ``lib/`` and the
 figures, and ``makeCircuit()`` returns ``None``: a subcircuit dos not require

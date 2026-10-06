@@ -6,61 +6,167 @@ Sections shown / hidden depending on shape kind:
   line ends : line only (with the head width and length)
   rotation  : rect, ellipse, polygon (a line is rotated by its points)
 """
-from .sizing import fix_chars, fit_contents
+from .sizing import fit_contents
+from .color_button import ColorButton
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
-    QDoubleSpinBox, QComboBox, QPushButton, QDialogButtonBox, QLabel,
-    QColorDialog,
+    QCheckBox, QLabel,
+    QDialog, QVBoxLayout, QFormLayout, QGroupBox,
+    QDoubleSpinBox, QComboBox, QDialogButtonBox,
 )
-from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
-_KINDS_WITH_FILL     = {"rect", "ellipse", "polygon"}
-_KINDS_WITH_LINEENDS = {"line"}
-_KINDS_WITH_ROTATION = {"rect", "ellipse", "polygon"}
+_KINDS_WITH_FILL     = {"rect", "ellipse", "polygon", "curve"}
+_KINDS_WITH_LINEENDS = {"line", "arc", "curve", "func"}
+_KINDS_WITH_ROTATION = {"rect", "ellipse", "polygon", "arc", "curve", "func"}
 
 _LINE_STYLES = ["none", "solid", "dashed", "dotted", "dash-dot"]
 _LINE_ENDS   = ["none", "arrow", "dot", "diamond"]
 _FILL_STYLES = ["none", "solid"]
 
 
-class _ColorButton(QPushButton):
-    def __init__(self, color: str, parent=None):
-        super().__init__(parent, Qt.Window)
-        fix_chars(self, 7)
-        self._color = QColor(color)
-        self._refresh()
-        self.clicked.connect(self._pick)
+class _FuncSource(QGroupBox):
+    """The source of a function curve: an expression in one variable over a
+    range, sampled by the core (SLiCAPmath.sampleExpr), or a trace of the
+    Design data (its decimated data in the run manifest); and the mapping
+    of the data into the box: x linear or logarithmic, y from the data or a
+    given range (Anton, 2026-10-06)."""
 
-    def color(self) -> str:
-        return self._color.name()
+    def __init__(self, item, trace_choices):
+        super().__init__("Function curve")
+        from PySide6.QtWidgets import QRadioButton, QLineEdit, QSpinBox, QWidget, QHBoxLayout
+        form = QFormLayout(self)
+        self._use_expr = QRadioButton("Expression")
+        self._use_trace = QRadioButton("Trace of the Design data")
+        form.addRow(self._use_expr, self._use_trace)
 
-    def _pick(self):
-        c = QColorDialog.getColor(self._color, self)
-        if c.isValid():
-            self._color = c
-            self._refresh()
+        self._expr = QLineEdit(item.expression)
+        self._expr.setPlaceholderText("e.g. exp(x) - 1   (SLiCAP notation)")
+        form.addRow("Expression:", self._expr)
+        self._var = QLineEdit(item.var or "x")
+        fit = QWidget(); h = QHBoxLayout(fit); h.setContentsMargins(0, 0, 0, 0)
+        h.addWidget(self._var)
+        h.addWidget(QLabel("from")); self._x0 = QLineEdit(str(item.x_range[0]) if item.x_range else "0")
+        h.addWidget(self._x0)
+        h.addWidget(QLabel("to")); self._x1 = QLineEdit(str(item.x_range[1]) if len(item.x_range) > 1 else "1")
+        h.addWidget(self._x1)
+        h.addWidget(QLabel("samples")); self._num = QSpinBox(); self._num.setRange(8, 5000)
+        self._num.setValue(item.num); fit_contents(self._num); h.addWidget(self._num)
+        form.addRow("Variable:", fit)
 
-    def _refresh(self):
-        self.setStyleSheet(
-            f"background-color: {self._color.name()}; border: 1px solid #888;"
-        )
-        self.setText("")
+        self._trace = QComboBox()
+        for var, label in trace_choices:
+            self._trace.addItem(f"{var}: {label}", (var, label))
+        if not trace_choices:
+            self._trace.addItem("(no traces in the Design data: run the instruction file)")
+            self._trace.setEnabled(False)
+        idx = self._trace.findData((item.trace_var, item.trace_label))
+        if idx >= 0:
+            self._trace.setCurrentIndex(idx)
+        form.addRow("Trace:", self._trace)
+
+        self._x_log = QCheckBox("logarithmic x")
+        self._x_log.setChecked(item.x_log)
+        form.addRow("x axis:", self._x_log)
+        yw = QWidget(); yh = QHBoxLayout(yw); yh.setContentsMargins(0, 0, 0, 0)
+        self._y_auto = QCheckBox("from the data"); self._y_auto.setChecked(not item.y_range)
+        yh.addWidget(self._y_auto)
+        yh.addWidget(QLabel("or from")); self._y0 = QLineEdit(str(item.y_range[0]) if item.y_range else "")
+        yh.addWidget(self._y0)
+        yh.addWidget(QLabel("to")); self._y1 = QLineEdit(str(item.y_range[1]) if len(item.y_range) > 1 else "")
+        yh.addWidget(self._y1)
+        form.addRow("y range:", yw)
+        self._y_auto.toggled.connect(lambda on: (self._y0.setEnabled(not on), self._y1.setEnabled(not on)))
+        self._y0.setEnabled(bool(item.y_range)); self._y1.setEnabled(bool(item.y_range))
+
+        use_trace = bool(item.trace_var) and self._trace.isEnabled()
+        self._use_trace.setChecked(use_trace); self._use_expr.setChecked(not use_trace)
+        self._use_trace.setEnabled(self._trace.isEnabled())
+        for rb in (self._use_expr, self._use_trace):
+            rb.toggled.connect(self._sync)
+        self._sync()
+
+    def _sync(self, *_):
+        expr = self._use_expr.isChecked()
+        for w in (self._expr, self._var, self._x0, self._x1, self._num):
+            w.setEnabled(expr)
+        self._trace.setEnabled(not expr and self._trace.count() > 0
+                               and self._trace.currentData() is not None)
+
+    def values(self) -> dict:
+        from SLiCAP.SLiCAPmath import _checkNumber
+        def num(text, default):
+            try:
+                return float(_checkNumber(text.strip()))
+            except Exception:
+                return default
+        y_range = [] if self._y_auto.isChecked() else [num(self._y0.text(), 0.0), num(self._y1.text(), 1.0)]
+        if self._use_trace.isChecked() and self._trace.currentData():
+            var, label = self._trace.currentData()
+            return dict(expression="", var=self._var.text().strip() or "x",
+                        x_range=[], y_range=y_range, x_log=self._x_log.isChecked(),
+                        num=self._num.value(), trace_var=var, trace_label=label)
+        return dict(expression=self._expr.text().strip(), var=self._var.text().strip() or "x",
+                    x_range=[num(self._x0.text(), 0.0), num(self._x1.text(), 1.0)],
+                    y_range=y_range, x_log=self._x_log.isChecked(), num=self._num.value(),
+                    trace_var="", trace_label="")
 
 
 class ShapeDialog(QDialog):
-    def __init__(self, item, parent=None):
+    def __init__(self, item, parent=None, trace_choices=None, hint: str = ""):
+        """*trace_choices*: ``[(trace_var, label), ...]`` of the Design data,
+        the trace source of a function curve. *hint*: a line shown at the
+        top, what happens after OK (Draw -> Function curve: the box is
+        clicked after the dialog, Anton, 2026-10-06)."""
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Shape Properties")
         self._kind = item.kind
 
         layout = QVBoxLayout(self)
+        if hint:
+            lbl = QLabel(hint)
+            lbl.setWordWrap(True)
+            lbl.setStyleSheet("font-weight: bold;")
+            layout.addWidget(lbl)
+
+        # ── Arc: the part of the ellipse ─────────────────────────────────────
+        self._arc_start = self._arc_sweep = None
+        if self._kind == "arc":
+            arc_box = QGroupBox("Arc")
+            af = QFormLayout(arc_box)
+            self._arc_start = QDoubleSpinBox()
+            self._arc_start.setRange(-360.0, 360.0); self._arc_start.setDecimals(1)
+            self._arc_start.setSuffix(" deg"); self._arc_start.setValue(item.arc_start)
+            fit_contents(self._arc_start)
+            af.addRow("Start angle:", self._arc_start)
+            self._arc_sweep = QDoubleSpinBox()
+            self._arc_sweep.setRange(-360.0, 360.0); self._arc_sweep.setDecimals(1)
+            self._arc_sweep.setSuffix(" deg"); self._arc_sweep.setValue(item.arc_sweep)
+            fit_contents(self._arc_sweep)
+            af.addRow("Sweep:", self._arc_sweep)
+            hint = QLabel("Angles turn clockwise from 3 o'clock; drag the two "
+                          "end handles on the canvas as well.")
+            hint.setStyleSheet("color: grey; font-size: 9pt;")
+            af.addRow(hint)
+            layout.addWidget(arc_box)
+
+        # ── Curve: open or closed ────────────────────────────────────────────
+        self._closed = None
+        if self._kind == "curve":
+            self._closed = QCheckBox("Closed curve (fill possible, no line ends)")
+            self._closed.setChecked(item.closed)
+            layout.addWidget(self._closed)
+
+        # ── Function curve: the source and the mapping ───────────────────────
+        self._func = None
+        if self._kind == "func":
+            self._func = _FuncSource(item, trace_choices or [])
+            layout.addWidget(self._func)
 
         # ── Stroke ───────────────────────────────────────────────────────────
         stroke_box = QGroupBox("Stroke")
         sf = QFormLayout(stroke_box)
 
-        self._stroke_btn = _ColorButton(item.stroke_color)
+        self._stroke_btn = ColorButton(item.stroke_color)
         sf.addRow("Colour:", self._stroke_btn)
 
         self._width_spin = QDoubleSpinBox()
@@ -142,7 +248,7 @@ class ShapeDialog(QDialog):
             self._fill_style.setCurrentText(item.fill_style)
             ff.addRow("Style:", self._fill_style)
 
-            self._fill_btn = _ColorButton(item.fill_color)
+            self._fill_btn = ColorButton(item.fill_color)
             ff.addRow("Colour:", self._fill_btn)
 
             self._fill_style.currentTextChanged.connect(
@@ -162,6 +268,17 @@ class ShapeDialog(QDialog):
         layout.addWidget(buttons)
 
     # ── result accessors ──────────────────────────────────────────────────────
+
+    def get_arc(self) -> tuple:
+        if self._arc_start is None:
+            return 0.0, 270.0
+        return self._arc_start.value(), self._arc_sweep.value()
+
+    def get_closed(self) -> bool:
+        return bool(self._closed is not None and self._closed.isChecked())
+
+    def get_func(self) -> dict:
+        return self._func.values() if self._func is not None else {}
 
     def get_stroke_color(self) -> str:
         return self._stroke_btn.color()

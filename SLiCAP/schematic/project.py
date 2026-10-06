@@ -43,6 +43,43 @@ _base: Path | None = None          # the schematic path, or None when unsaved
 APP_ROOT = Path.cwd()
 
 
+# The project folders that hold EDITED sources: schematics, subcircuit
+# packages and posters (Anton, 2026-10-06: a poster is an editable input, so
+# it lives beside the schematics, in its own folder, never in img/ with the
+# exports). A file in one of them belongs to the project one level up.
+SOURCE_DIRS = ("sch", "lib", "posters")
+POSTER_SUFFIX = ".slicap_poster"
+
+
+def doc_type(path) -> str:
+    """The document type of a canvas file by its suffix: 'ngspice'
+    (.spice_sch), 'poster' (.slicap_poster) or 'slicap' (.slicap_sch)."""
+    suffix = Path(path).suffix.lower()
+    if suffix == ".spice_sch":
+        return "ngspice"
+    if suffix == POSTER_SUFFIX:
+        return "poster"
+    return "slicap"
+
+
+def schematic_file_for(name: str, root=None):
+    """The schematic of the project called *name*: sch/<name>.slicap_sch or
+    .spice_sch, or None."""
+    base = Path(root) if root is not None else project_root()
+    for ext in (".slicap_sch", ".spice_sch"):
+        p = base / "sch" / (name + ext)
+        if p.is_file():
+            return p
+    return None
+
+
+def poster_file_for(name: str, root=None):
+    """The poster of the project called *name*, or None."""
+    base = Path(root) if root is not None else project_root()
+    p = base / "posters" / (name + POSTER_SUFFIX)
+    return p if p.is_file() else None
+
+
 def current() -> Path | None:
     """The current schematic path, or None when never saved."""
     return _base
@@ -72,7 +109,7 @@ def project_root() -> Path:
     """
     if _base is not None:
         parent = _base.parent
-        return parent.parent if parent.name in ("sch", "lib") else parent
+        return parent.parent if parent.name in SOURCE_DIRS else parent
     return APP_ROOT
 
 
@@ -88,7 +125,34 @@ def root_for(path) -> Path:
     of the app-wide current schematic.  A schematic may live in ``sch/`` or,
     for subcircuit packages, in ``lib/``."""
     parent = Path(path).parent
-    return parent.parent if parent.name in ("sch", "lib") else parent
+    return parent.parent if parent.name in SOURCE_DIRS else parent
+
+
+def relative_to_root(file_path, sch_path=None) -> str:
+    """How a schematic stores a linked file (an image): relative to the
+    project root when the file lies inside the project, else as given.
+    POSIX separators, the form an instruction file uses too. A project then
+    moves between machines, or into a book folder, with its links intact
+    (Anton, 2026-10-06). *sch_path* is the schematic the link belongs to;
+    None means the current one."""
+    root = root_for(sch_path) if sch_path is not None else project_root()
+    p = Path(file_path)
+    if not p.is_absolute():
+        return p.as_posix()
+    try:
+        return p.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
+def resolve_from_root(file_path, sch_path=None) -> Path:
+    """The file a stored link refers to: a relative link is taken from the
+    project root (see relative_to_root), an absolute one as it is."""
+    p = Path(file_path)
+    if p.is_absolute():
+        return p
+    root = root_for(sch_path) if sch_path is not None else project_root()
+    return root / p
 
 
 def subdir_for(path, name: str) -> Path:

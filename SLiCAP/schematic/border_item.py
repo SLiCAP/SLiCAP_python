@@ -2,11 +2,12 @@ from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QPen, QBrush, QColor, QPainterPath, QPainterPathStroker
 
-from .config import snap, snap_pos, Z_BORDER
+from .config import snap, snap_pos, Z_BORDER, LINE_STYLES
 
 DEFAULT_LINE_COLOR = "#5050b4"
 DEFAULT_LINE_WIDTH = 0.8
 DEFAULT_BG_COLOR   = "#ffffff"
+DEFAULT_LINE_STYLE = "solid"      # a new border; files without the key load as "dashed"
 
 _EDGE_TOL = 5.0    # scene units; matches the shape() hit band
 _MIN_SIZE = 10.0
@@ -17,8 +18,9 @@ class BorderItem(QGraphicsRectItem):
     Export boundary rectangle.
 
     When present, SVG/PDF export uses this rect as the viewport instead of
-    the items bounding box.  show_in_export controls whether the dashed
-    rectangle itself appears in the exported output.
+    the items bounding box.  show_in_export controls whether the rectangle
+    itself appears in the exported output, drawn in line_style (solid,
+    dashed, dotted, dash-dot: config.LINE_STYLES).
 
     Sides can be dragged to resize unless the corresponding axis is fixed
     (fixed_w locks the left/right sides, fixed_h the top/bottom sides —
@@ -33,8 +35,10 @@ class BorderItem(QGraphicsRectItem):
                  line_color: str = DEFAULT_LINE_COLOR,
                  line_width: float = DEFAULT_LINE_WIDTH,
                  bg_color: str = DEFAULT_BG_COLOR,
-                 bg_alpha: int = 0):
+                 bg_alpha: int = 0,
+                 line_style: str = DEFAULT_LINE_STYLE):
         super().__init__(0.0, 0.0, width, height)
+        self.line_style: str = line_style if line_style in LINE_STYLES else DEFAULT_LINE_STYLE
         self.show_in_export: bool = show_in_export
         self.fixed_w: bool = fixed_w
         self.fixed_h: bool = fixed_h
@@ -52,7 +56,8 @@ class BorderItem(QGraphicsRectItem):
         self.apply_style()
 
     def apply_style(self):
-        self.setPen(QPen(QColor(self.line_color), self.line_width, Qt.DashLine))
+        self.setPen(QPen(QColor(self.line_color), self.line_width,
+                         LINE_STYLES.get(self.line_style, Qt.SolidLine)))
         if self.bg_alpha > 0:
             c = QColor(self.bg_color)
             c.setAlpha(round(self.bg_alpha * 255 / 100))
@@ -107,6 +112,13 @@ class BorderItem(QGraphicsRectItem):
         if event.button() == Qt.LeftButton:
             ex, ey = self._edge_at(event.pos())
             if ex or ey:
+                # A press on an edge resizes, and it SELECTS the border too:
+                # the hit area is the edge band, so with free sides every
+                # press was a resize press and the border could never be
+                # selected, hence never deleted (Anton, 2026-10-06).
+                if not (event.modifiers() & Qt.ControlModifier) and self.scene() is not None:
+                    self.scene().clearSelection()
+                self.setSelected(True)
                 self._resize = (ex, ey)
                 event.accept()
                 return

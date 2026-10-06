@@ -151,7 +151,6 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
     junc_color = _qhex(style.JUNCTION_COLOR)
     lbl_color  = _qhex(style.COMP_LABEL_COLOR)
     net_color  = _qhex(style.NET_LABEL_COLOR)
-    txt_color  = _qhex(style.TEXT_COLOR)
     cmd_color  = _qhex(style.COMMAND_COLOR)
     lnk_color  = _qhex(style.HYPERLINK_COLOR)
 
@@ -177,7 +176,9 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
                 continue        # "Show on schematic" off: netlisted, not drawn
             if item._svg_bytes:
                 pos = item.pos()
-                _inline_image_svg(root, defs, item._svg_bytes,
+                svg_bytes = (item.export_bytes() if isinstance(item, LatexFragmentItem)
+                             else item._svg_bytes)
+                _inline_image_svg(root, defs, svg_bytes,
                                   pos.x(), pos.y(),
                                   item.display_width, item.display_height,
                                   aspect_fit=True)
@@ -192,14 +193,17 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
                                   item._svg_rect.width(), item._svg_rect.height(),
                                   aspect_fit=True)
                 continue
-            is_cmd = isinstance(item, (CommandItem, AnalysisItem, LibraryItem))
-            _text_block(
-                root, item,
-                cmd_color if is_cmd else txt_color,
-                style.COMMAND_FONT_SIZE if is_cmd else style.TEXT_FONT_SIZE,
-                "monospace" if is_cmd else style.TEXT_FONT_FAMILY,
-                style.COMMAND_FONT if is_cmd else style.TEXT_FONT,
-            )
+            if isinstance(item, FreeTextItem):
+                # the item's own font and colour, or the style's (the scene's
+                # style holds the document colours)
+                font = item.effective_font(style)
+                _text_block(root, item, _qhex(item.effective_color(style)),
+                            font.pointSize(), font.family(), font)
+            else:
+                _text_block(
+                    root, item, cmd_color, style.COMMAND_FONT_SIZE,
+                    "monospace", style.COMMAND_FONT,
+                )
         elif type(item).__name__ in ("SymbolPinItem", "SymbolTextItem", "OpaqueSvgItem"):
             _symbol_item(root, item, style)
         elif isinstance(item, HyperlinkItem):
@@ -297,20 +301,35 @@ def _border_rect(parent, item):
         el.set("fill",           "none")
         el.set("stroke",         getattr(item, "line_color", "#5050b4"))
         el.set("stroke-width",   f'{getattr(item, "line_width", 0.8):g}')
-        el.set("stroke-dasharray", "4 2")
+        da = _DASH_ARRAY.get(getattr(item, "line_style", "dashed"), "8,4")
+        if da:
+            el.set("stroke-dasharray", da)
 
 
 def _image_svg(parent, defs, item) -> None:
     """Dispatch to vector-inline (SVG source) or base64 PNG (everything else)."""
     from pathlib import Path as _Path
-    ext = _Path(item.file_path).suffix.lower()
+    file = _Path(item.path)                 # the link, resolved from the project root
+    from . import project
+    from .provenance import own_exports
+    cur = project.current()
+    if cur is not None and file.resolve() in own_exports(cur):
+        return                              # the schematic's own export: never nested
+    if getattr(item, "link_kind", "") in ("schematic", "poster"):
+        # a drawing shown on a poster: in a browser a click opens the
+        # drawing's own export, next to the poster's in img/ (relative link)
+        a = ET.SubElement(parent, f"{{{_SVG_NS}}}a")
+        a.set("href", item.link_name + ".svg")
+        a.set(f"{{{_XLINK_NS}}}href", item.link_name + ".svg")
+        parent = a
+    ext = file.suffix.lower()
     pos = item.pos()
     x, y = pos.x(), pos.y()
     w, h = item.display_width, item.display_height
 
     if ext == ".svg":
         try:
-            svg_bytes = _Path(item.file_path).read_bytes()
+            svg_bytes = file.read_bytes()
         except OSError:
             return
         _inline_image_svg(parent, defs, svg_bytes, x, y, w, h)
@@ -320,8 +339,8 @@ def _image_svg(parent, defs, item) -> None:
     # (a PDF page) as the item's bitmap; both at the picture's own
     # resolution, placed in the rect the picture fills on the canvas.
     mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}.get(ext)
-    if mime and _Path(item.file_path).is_file():
-        raw = _Path(item.file_path).read_bytes()
+    if mime and file.is_file():
+        raw = file.read_bytes()
     else:
         px = item._pixmap
         if px is None or px.isNull():
@@ -408,6 +427,13 @@ def _inline_image_svg(parent, defs, svg_bytes: bytes,
 
     g = ET.SubElement(parent, f"{{{_SVG_NS}}}g")
     g.set("transform", transform)
+    # A dvisvgm render has no colour attributes: its paths inherit from the
+    # root <svg>, which is where recolor_svg puts a tint. The root is dropped
+    # here, so the wrapper group takes its fill and stroke over, or the tint
+    # of a LaTeX fragment would be lost in the export (2026-10-06).
+    for attr in ("fill", "stroke"):
+        if sym.get(attr):
+            g.set(attr, sym.get(attr))
     for child in content:
         g.append(child)
 
@@ -665,6 +691,10 @@ def _text_block(parent, item, color, fs, family, font=None):
         t.set("y", f"{baseline_y + i * line_h:.2f}")
         t.set("font-family", family)
         t.set("font-size", f"{fs}pt")
+        if font is not None and font.bold():
+            t.set("font-weight", "bold")
+        if font is not None and font.italic():
+            t.set("font-style", "italic")
         t.set("fill", color)
         t.text = line
 
@@ -681,12 +711,14 @@ def _shape(parent, item) -> None:
     """Render a ShapeItem to SVG: line (polyline with filled heads), rect,
     ellipse, polygon; stroke style "none" gives a fill without contour;
     the rotation goes out as an SVG rotate about the shape's centre."""
-    from .shape_item import shaft_points, KINDS_WITH_FILL
+    from .shape_item import shaft_points, head_base, KINDS_SAMPLED
     from PySide6.QtCore import QPointF
     ox, oy = item.pos().x(), item.pos().y()
-    pts    = [(ox + p.x(), oy + p.y()) for p in item.rel_points]
+    # arc, curve and func are exported as the polyline they are drawn with
+    source = item.stroke_points() if item.kind in KINDS_SAMPLED else item.rel_points
+    pts    = [(ox + p.x(), oy + p.y()) for p in source]
     lw     = item.line_width
-    fill   = item.fill_color if (item.fill_style == "solid" and item.kind in KINDS_WITH_FILL) else "none"
+    fill   = item.fill_color if item.is_filled() else "none"
 
     if item.line_style == "none":
         stroke_attrs = {"stroke": "none", "fill": fill}
@@ -708,7 +740,13 @@ def _shape(parent, item) -> None:
     def _pts(seq):
         return " ".join(f"{x:.2f},{y:.2f}" for x, y in seq)
 
-    if item.kind == "line" and len(pts) >= 2:
+    if item.kind == "curve" and item.closed and len(pts) >= 3:
+        el = ET.SubElement(parent, f"{{{_SVG_NS}}}polygon")
+        el.set("points", _pts(pts))
+        for k, v in stroke_attrs.items():
+            el.set(k, v)
+
+    elif item.kind in ("line",) + KINDS_SAMPLED and len(pts) >= 2:
         qpts = [QPointF(x, y) for x, y in pts]
         shaft = shaft_points(qpts, item.line_end_start, item.line_end_end, item.head_length)
         el = ET.SubElement(parent, f"{{{_SVG_NS}}}polyline")
@@ -716,8 +754,10 @@ def _shape(parent, item) -> None:
         for k, v in stroke_attrs.items():
             el.set(k, v)
         el.set("fill", "none")
-        _svg_line_end(parent, qpts[1],  qpts[0],  item.line_end_start, item)
-        _svg_line_end(parent, qpts[-2], qpts[-1],  item.line_end_end,   item)
+        _svg_line_end(parent, head_base(qpts, item.head_length, False), qpts[0],
+                      item.line_end_start, item)
+        _svg_line_end(parent, head_base(qpts, item.head_length, True), qpts[-1],
+                      item.line_end_end, item)
 
     elif item.kind == "rect" and len(pts) == 2:
         x0 = min(pts[0][0], pts[1][0]); y0 = min(pts[0][1], pts[1][1])

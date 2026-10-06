@@ -263,6 +263,7 @@ specified with the circuit.
                                  
 ----
 """
+import os
 import sympy as sp
 from copy import deepcopy
 import SLiCAP.SLiCAPconfigure as ini
@@ -322,6 +323,108 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
               .format(cirType))
     return netlist, subckt
         
+def updateImages(circuit, cirTitle=None, force=False):
+    """
+    Updates the SVG and PDF images of a schematic of the schematic editor
+    (".slicap_sch" or ".spice_sch") in the project's ``img`` folder, and
+    its netlist, without creating a circuit object. For a poster
+    (``posters/<name>.slicap_poster``) it first updates the images of the
+    schematics and posters the poster shows, then the poster's own.
+
+    ``makeCircuit()`` does the same export at the top of an instruction
+    file, before the analyses run. Images that the schematic links, such
+    as plots written by ``makeFigure()``, are inlined at export time, so
+    an export BEFORE the run holds the plots of the previous run. Call
+    ``updateImages()`` at the END of the instruction file, after the
+    figures, to export the schematic with the plots the run has just
+    written. The export is skipped when the netlist and images are newer
+    than the schematic, its sidecars, the symbol libraries, the
+    operating-point results and the linked images.
+
+    :param circuit: The circuit object returned by ``makeCircuit()`` for a
+                    ".slicap_sch" schematic, or a string: the name of the
+                    circuit (the schematic ``sch/<name>.slicap_sch`` or
+                    ``sch/<name>.spice_sch`` of the project), or the path
+                    of the schematic file relative to the project root.
+                    An NGspice schematic has no circuit object, so its
+                    name is used, as in ``sl.op()``.
+    :type circuit: SLiCAP.SLiCAPprotos.circuit, str
+
+    :param cirTitle: Circuit title override; default: the title stored in
+                     the schematic, else the file stem.
+    :type cirTitle: str, NoneType
+
+    :param force: True exports even when the outputs are current.
+    :type force: bool
+
+    :return: Path of the netlist written, or of the library for a
+             subcircuit schematic.
+    :rtype: pathlib.Path
+
+    :Example:
+
+    >>> import SLiCAP as sl
+    >>> sl.makeCircuit("sch/myAmp.spice_sch")
+    >>> TR1 = sl.tran("myAmp", "1n", "1u")
+    >>> FIG1 = sl.makeFigure([[sl.traceAxis("", "lin", sl.make_traces(TR1, [{"y": "v(out)", "x": "time"}]))]], "tran")
+    >>> sl.updateImages("myAmp")   # img/myAmp.svg and .pdf now show img/tran.svg
+    """
+    from SLiCAP.schematic import make_schematic
+    _publishDesignData()
+    return make_schematic(_schematicFile(circuit), cir_title=cirTitle, force=force)
+
+
+def _publishDesignData():
+    """Writes the Design data (the run manifest) of the instruction file that
+    calls updateImages(), BEFORE the export reads it.
+
+    The generated main.py writes the manifest after the instruction file
+    has run, so an export called from inside the file saw the manifest of
+    the previous run: a snippet changed in the script showed its old text
+    in the exported images while the canvas, reloaded after the run, had the
+    new one (Anton, 2026-10-06). The same writer is used, on the caller's
+    namespace; main.py rewrites the section at the end as before.
+    """
+    import inspect
+    frame = inspect.currentframe()
+    try:
+        caller = frame.f_back.f_back          # updateImages() -> its caller
+        g = caller.f_globals if caller is not None else {}
+    finally:
+        del frame
+    source = g.get("__file__")
+    if not source or g.get("__name__") == "__main__" and not os.path.isfile(str(source)):
+        return
+    try:
+        from SLiCAP.schematic.design_data import write_manifest
+        write_manifest(g, os.path.basename(str(source)),
+                       source_dir=os.path.dirname(os.path.abspath(str(source))))
+    except Exception as exc:                  # never let the export fail on this
+        print("updateImages: Design data not written ({0})".format(exc))
+
+def _schematicFile(circuit):
+    """The schematic file behind *circuit* (see updateImages): a circuit
+    object made from a schematic of the editor, a schematic path, or a
+    circuit name whose schematic lies in the project's ``sch`` folder."""
+    sch = getattr(circuit, "schematic", None)
+    if sch:
+        return sch
+    if not isinstance(circuit, str):
+        raise ValueError("updateImages: '{}' was not made from a schematic of the "
+                         "schematic editor (.slicap_sch or .spice_sch).".format(
+                             getattr(circuit, "title", circuit)))
+    name = circuit.replace("\\", "/")
+    if name.lower().endswith((".slicap_sch", ".spice_sch", ".slicap_poster")):
+        return name
+    for folder, ext in (("sch", ".slicap_sch"), ("sch", ".spice_sch"),
+                        ("posters", ".slicap_poster")):
+        candidate = os.path.join(folder, name + ext)   # the project root is the cwd
+        if os.path.isfile(candidate):
+            return candidate
+    raise FileNotFoundError("updateImages: no schematic sch/{0}.slicap_sch or "
+                            "sch/{0}.spice_sch, and no poster posters/{0}.slicap_poster "
+                            "in this project.".format(name))
+
 def makeCircuit(fileName, cirTitle=None, imgWidth=500, 
                  expansion=True, description=None, language="SLiCAP"):
     """
@@ -417,6 +520,8 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
         language = language.upper()
         if language == "SLICAP":
             cir = _checkCircuit(cirName + ".cir")
+            # the schematic the circuit was made from, for updateImages()
+            cir.schematic = fileName if ext.lower() == "slicap_sch" else None
         elif language == "SPICE":
             ini.html_prefix = ('-'.join(cirName.split()) + '_')
             ini.html_index = 'index.html'

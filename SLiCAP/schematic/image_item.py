@@ -24,17 +24,31 @@ class ImageItem(QGraphicsItem):
     own resolution and scaled at paint time, so it is sharp at every zoom
     (Anton, 2026-09-27: a picture shown at 5 % was reduced to that many
     pixels and blurred when zoomed in).  The image is reloaded from disk each
-    time from_data() restores the scene, so the canvas stays in sync with
-    the source file.
+    time from_data() restores the scene and after every run of the
+    instruction file (SchematicScene.reload_links), so the canvas stays in
+    sync with the source file: a plot written by a simulation is a link.
+
+    file_path is the stored link: relative to the project root when the
+    file lies inside the project (project.relative_to_root), absolute
+    otherwise; ``path`` resolves it.
 
     Double-click opens a dialog to change the file or resize.
     """
     SNAPS_TO_GRID = False   # an annotation: placed and dragged freely (canvas: group move, _FREE_PLACEMENT_MODES)
 
     def __init__(self, file_path: str, display_width: int, display_height: int,
-                 pos: QPointF = QPointF(0, 0)):
+                 pos: QPointF = QPointF(0, 0), link: str = ""):
         super().__init__()
         self.file_path: str      = file_path
+        # A LINK item shows something of the project by NAME and follows it:
+        # "figure:<name>", a figure object of the Design data (the run
+        # manifest), whose image is re-derived from the manifest on every
+        # load and reload (Anton, 2026-10-06: the Variable pane is the
+        # source, not the instruction file - that was tried first and
+        # REPLACED); "schematic:<name>" and "poster:<name>", a drawing of
+        # the project, shown as its export img/<name>.svg, which the export
+        # of a poster brings up to date first. A plain image has no link.
+        self.link: str           = link or ""
         self.display_width: int  = display_width
         self.display_height: int = display_height
         self.setPos(pos)
@@ -43,17 +57,71 @@ class ImageItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self._renderer = None          # QSvgRenderer for SVG files
         self._pixmap: QPixmap | None = None  # QPixmap for raster / PDF
+        self._loaded_mtime: float | None = None
         self._load()
 
     # ── loading ───────────────────────────────────────────────────────────────
 
+    @property
+    def path(self) -> Path:
+        """The linked file, resolved from the project root."""
+        from . import project
+        return project.resolve_from_root(self.file_path)
+
+    def _file_mtime(self):
+        try:
+            return self.path.stat().st_mtime
+        except OSError:
+            return None
+
+    @property
+    def link_kind(self) -> str:
+        return self.link.split(":", 1)[0] if ":" in self.link else ""
+
+    @property
+    def link_name(self) -> str:
+        return self.link.split(":", 1)[1] if ":" in self.link else ""
+
+    def _resolve_figure(self) -> bool:
+        """A link item takes its image from what it links: a figure from the
+        Design data, a schematic or poster from the export of that drawing;
+        True when the link's file changed. Without a manifest entry (no run
+        yet, or a figure renamed away) the stored link stays."""
+        kind, name = self.link_kind, self.link_name
+        if not kind:
+            return False
+        new = None
+        if kind == "figure":
+            from . import project
+            from .design_data import manifest_figures
+            new = dict(manifest_figures(project.project_root())).get(name)
+        elif kind in ("schematic", "poster"):
+            new = "img/" + name + ".svg"
+        if new and new != self.file_path:
+            self.file_path = new
+            return True
+        return False
+
+    def reload_if_changed(self) -> bool:
+        """Reload the picture when the linked file changed on disk since it
+        was loaded (a simulation rewrote a plot), or when a Figure's image
+        in the Design data is another file; True when it did."""
+        if not self._resolve_figure() and self._file_mtime() == self._loaded_mtime:
+            return False
+        self._load()
+        self.update()
+        return True
+
     def _load(self) -> None:
-        ext = Path(self.file_path).suffix.lower()
+        self._resolve_figure()
+        path = str(self.path)
+        ext = Path(path).suffix.lower()
         w, h = max(1, self.display_width), max(1, self.display_height)
+        self._loaded_mtime = self._file_mtime()
 
         if ext == ".svg":
             from PySide6.QtSvg import QSvgRenderer
-            renderer = QSvgRenderer(self.file_path)
+            renderer = QSvgRenderer(path)
             if renderer.isValid():
                 self._renderer = renderer
                 self._pixmap   = None
@@ -64,7 +132,7 @@ class ImageItem(QGraphicsItem):
             self._renderer = None
             self._pixmap   = self._load_pdf(w, h)
         else:
-            px = QPixmap(self.file_path)
+            px = QPixmap(path)
             if px.isNull():
                 px = self._placeholder(w, h)
             self._renderer = None
@@ -74,7 +142,7 @@ class ImageItem(QGraphicsItem):
         try:
             from PySide6.QtPdf import QPdfDocument
             doc = QPdfDocument(None)
-            doc.load(self.file_path)
+            doc.load(str(self.path))
             if doc.pageCount() < 1:
                 doc.close()
                 return self._placeholder(w, h)

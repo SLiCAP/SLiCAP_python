@@ -2,58 +2,23 @@ from __future__ import annotations
 
 import configparser
 
-from .sizing import chars, fix_chars, fit_contents
+from .sizing import chars, fit_contents
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
-    QLabel, QPushButton, QDoubleSpinBox, QSpinBox,
+    QLabel, QDoubleSpinBox, QSpinBox,
     QCheckBox, QComboBox,
-    QDialogButtonBox, QColorDialog,
+    QDialogButtonBox,
 )
+from .color_button import ColorButton
+from .config import LINE_STYLE_NAMES
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
-_FONT_FAMILIES = [
-    "sans-serif", "serif", "monospace",
-    "Arial", "Helvetica", "Times New Roman", "Courier New", "Georgia",
-]
+from .config import GENERIC_FONT_FAMILIES as _FONT_FAMILIES
 
 # Widths come from the font (sizing.py); the pixel constants 65/130/56 that
 # sat here cut off two-digit sizes and long font names on Windows
 # (Anton, 2026-09-25).
-_COLOR_CHARS = 7   # colour swatch buttons
-
-
-class _ColorButton(QPushButton):
-    def __init__(self, color: QColor, parent=None):
-        super().__init__(parent, Qt.Window)
-        self.setObjectName("slicapColorBtn")   # lets the stylesheet target ONLY this button
-        self._color = QColor(color)
-        fix_chars(self, _COLOR_CHARS)
-        self._refresh()
-        self.clicked.connect(self._pick)
-
-    def color(self) -> QColor:
-        return self._color
-
-    def _pick(self):
-        # Parent to the top-level window, NOT this button: a QColorDialog
-        # parented to the colour swatch inherited its background-color on
-        # Windows and rendered the whole picker in that colour (Anton, Win10).
-        c = QColorDialog.getColor(self._color, self.window())
-        if c.isValid():
-            self._color = c
-            self._refresh()
-
-    def _refresh(self):
-        # Scope the rule to this button by object-name; a bare
-        # "background-color: ..." cascades to child widgets (the picker dialog).
-        self.setStyleSheet(
-            "#slicapColorBtn { background-color: %s; border: 1px solid #888; }"
-            % self._color.name()
-        )
-        self.setText("")
-
-
 class PreferencesDialog(QDialog):
     """Edits ONE schematic's drawing style (the panel's own Style object)."""
 
@@ -81,8 +46,8 @@ class PreferencesDialog(QDialog):
 
         # ── widget factories ─────────────────────────────────────────────────
 
-        def cbtn(c: QColor) -> _ColorButton:
-            return _ColorButton(c)
+        def cbtn(c: QColor) -> ColorButton:
+            return ColorButton(c)
 
         def fspin(val, lo=0.1, hi=10.0, step=0.1, dec=1) -> QDoubleSpinBox:
             sb = QDoubleSpinBox()
@@ -112,6 +77,13 @@ class PreferencesDialog(QDialog):
             fit_contents(cb)
             return cb
 
+        def choice(current: str, items: list) -> QComboBox:
+            cb = QComboBox()
+            cb.addItems(items)
+            cb.setCurrentText(current if current in items else items[0])
+            fit_contents(cb)
+            return cb
+
         def check(checked: bool) -> QCheckBox:
             cb = QCheckBox()
             cb.setChecked(checked)
@@ -129,7 +101,7 @@ class PreferencesDialog(QDialog):
             grp.setLayout(form)
             for label, sec, key, widget in rows:
                 self._widgets[(sec, key)] = widget
-                if isinstance(widget, _ColorButton):
+                if isinstance(widget, ColorButton):
                     # Right-align colour buttons with a stretch spacer
                     h = QHBoxLayout()
                     h.setContentsMargins(0, 0, 0, 0)
@@ -212,6 +184,7 @@ class PreferencesDialog(QDialog):
         group(right, "Border (new borders; the Border dialog edits an existing one)", [
             ("Line colour",          "border", "line_color",          cbtn(style.BORDER_LINE_COLOR)),
             ("Line width",           "border", "line_width",          fspin(style.BORDER_LINE_WIDTH, 0.2, 3.0)),
+            ("Line style",           "border", "line_style",          choice(style.BORDER_LINE_STYLE, LINE_STYLE_NAMES)),
             ("Background colour",    "border", "bg_color",            cbtn(style.BORDER_BG_COLOR)),
             ("Background opacity %", "border", "bg_alpha",            ispin(style.BORDER_BG_ALPHA, 0, 100)),
             ("Line in export",       "border", "show_line_in_export", check(style.BORDER_SHOW_LINE)),
@@ -254,8 +227,8 @@ class PreferencesDialog(QDialog):
         for (section, key), widget in self._widgets.items():
             if section not in cfg:
                 cfg[section] = {}
-            if isinstance(widget, _ColorButton):
-                cfg[section][key] = widget.color().name()
+            if isinstance(widget, ColorButton):
+                cfg[section][key] = widget.color()
             elif isinstance(widget, QDoubleSpinBox):
                 cfg[section][key] = str(widget.value())
             elif isinstance(widget, QSpinBox):

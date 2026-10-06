@@ -381,6 +381,58 @@ def _object_entries(obj) -> list[dict]:
     return out
 
 
+DECIMATE_BUCKETS = 75     # <= 4 * buckets points kept per trace in the manifest
+
+
+def decimate(x, y, buckets: int = DECIMATE_BUCKETS) -> list:
+    """A reduced copy of a trace for the manifest: the first, the minimum,
+    the maximum and the last point of each of *buckets* slices, in x order,
+    so that peaks survive and the file stays small. A trace of a few hundred
+    points or fewer is kept as it is. Returns ``[[x, y], ...]`` of floats;
+    points that are not finite are dropped (Anton, 2026-10-06: a trace
+    placed on a schematic "must subsample as large as required but not
+    larger")."""
+    import numpy as np
+    x = np.asarray(x, dtype=float).ravel()
+    y = np.asarray(np.real(y), dtype=float).ravel()
+    n = min(len(x), len(y))
+    x, y = x[:n], y[:n]
+    keep = np.isfinite(x) & np.isfinite(y)
+    x, y = x[keep], y[keep]
+    if len(x) <= 4 * buckets:
+        return [[float(a), float(b)] for a, b in zip(x, y)]
+    out = []
+    edges = np.linspace(0, len(x), buckets + 1).astype(int)
+    for i0, i1 in zip(edges[:-1], edges[1:]):
+        if i1 <= i0:
+            continue
+        seg = y[i0:i1]
+        idx = sorted({0, int(np.argmin(seg)), int(np.argmax(seg)), len(seg) - 1})
+        out.extend([[float(x[i0 + i]), float(y[i0 + i])] for i in idx])
+    return out
+
+
+def subsample(points: list, n: int) -> list:
+    """At most *n* points of ``[[x, y], ...]``, the extremes kept the same
+    way as decimate: what a box on a schematic can resolve."""
+    if n < 4 or len(points) <= n:
+        return [list(p) for p in points]
+    xs = [p[0] for p in points]; ys = [p[1] for p in points]
+    return decimate(xs, ys, max(1, n // 4))
+
+
+def manifest_traces(project_root) -> list:
+    """The traces of the Design data with their decimated data:
+    ``[(trace_var, label, [[x, y], ...]), ...]`` (Place -> Function curve,
+    trace source)."""
+    out = []
+    for e in _manifest_entries(project_root, "traces"):
+        for child in e.get("attributes", []):
+            if child.get("kind") == "trace" and child.get("data"):
+                out.append((e["name"], child["name"], child["data"]))
+    return out
+
+
 def _trace_entries(traces) -> list[dict]:
     """Child entries of a trace dictionary: one row per trace.
 
@@ -410,6 +462,12 @@ def _trace_entries(traces) -> list[dict]:
         # left at its default is shown as "not set", because for a trace that
         # is meaningful: no colour means the axis assigns one.
         entry["attributes"] = _object_entries(tr)
+        # the data itself, decimated: a trace placed on a schematic takes
+        # its points from here after every run
+        try:
+            entry["data"] = decimate(x_data, y_data)
+        except Exception:
+            entry["data"] = []
         try:
             entry["pprint"] = "{0} = {1}\n{2} = {3}".format(
                 entry["x"], np.array2string(x_data, precision=4,
@@ -491,6 +549,45 @@ def variables_of(namespace: dict) -> list[dict]:
         entry = {"name": name, "kind": kind, "class": _class_name(value)}
         entry.update(_preview(value, kind))
         out.append(entry)
+    return out
+
+
+def _manifest_entries(project_root, kind: str) -> list[dict]:
+    """The manifest entries of one *kind*, newest section first, one per
+    name (a name defined by two instruction files: the last run wins)."""
+    manifest = read_manifest(Path(project_root) / "results")
+    sections = sorted(manifest.get("sections", {}).values(),
+                      key=lambda s: s.get("timestamp", 0), reverse=True)
+    seen, out = set(), []
+    for section in sections:
+        for entry in section.get("variables", []):
+            if entry.get("kind") == kind and entry.get("name") not in seen:
+                seen.add(entry["name"])
+                out.append(entry)
+    return out
+
+
+def manifest_figures(project_root) -> list:
+    """The figure objects of the last runs, from the Design data: ``[(name,
+    "img/<fileName>.svg"), ...]``. A Figure placed on a schematic links one
+    by NAME; its image is derived here (Anton, 2026-10-06: "input for
+    Figures and Snippets must be taken from the Variable pane")."""
+    out = []
+    for e in _manifest_entries(project_root, "figure"):
+        if e.get("fileName"):
+            out.append((e["name"], "img/" + e["fileName"] + ".svg"))
+    return out
+
+
+def manifest_snippets(project_root) -> list:
+    """The LaTeX snippet objects of the last runs, from the Design data:
+    ``[(name, latex_code), ...]``. The text is the snippet itself, so a
+    snippet needs no saved file to be placed (``EX1 = ltx.expr(e)``). Other
+    formats are left out: only LaTeX can be typeset on a schematic."""
+    out = []
+    for e in _manifest_entries(project_root, "snippet"):
+        if str(e.get("format", "")).lower() == "latex" and e.get("value"):
+            out.append((e["name"], str(e["value"])))
     return out
 
 

@@ -4,6 +4,111 @@ SLiCAP release notes
 
 .. image:: /API/img/colorCode.svg
 
+SLiCAP version 6.2 release notes
+================================
+
+Version 6.2 turns the schematic editor into an **SVG editor with
+script-updatable objects**. A drawing can show figures, LaTeX snippets and
+traces of the Design data by name, and schematics and other drawings of the
+project as links; everything shown follows the runs of the instruction
+files, and the export brings the drawings it shows up to date first. A new
+document type, the **poster**, is a drawing without a circuit, with a page
+format, for design overviews, hand-outs and clickable presentations. The
+Draw menu gained arcs, hand-drawn curves and function curves, and the
+annotations a stacking order of their own.
+
+#. **Text and LaTeX annotations.** The text dialog sets the font family,
+   size, bold, italic and colour of a text annotation. Each setting has a
+   *(Preferences)* state, the default, in which the text follows the
+   schematic's drawing preferences, so existing schematics are unchanged.
+   The family list offers the generic families sans-serif, serif and
+   monospace, which render the same on every machine in the editor and in
+   the exports. A LaTeX fragment has a colour of its own, applied as for the
+   LaTeX labels of a symbol. See :doc:`/GUI/schematics/annotations`.
+
+#. **Linked images and the export at the end of a run.** An image placed on
+   a schematic is a link: the file is read when the schematic is opened,
+   exported, and after every run of the instruction file, so a plot the
+   simulation writes into ``img/`` updates on the canvas and in the
+   exported schematic. A file inside the project is stored relative to
+   the project root. The linked images count as inputs of the export, so a
+   newer plot re-exports the schematic. The new instruction
+   ``sl.updateImages("<schematic name>")``, appended by
+   :menuselection:`Instruction --> Update schematic images…`, exports the
+   schematic at the end of the instruction file, after the figures. See
+   :doc:`/GUI/schematics/netlist_and_export`.
+
+#. **Figure title.** ``makeFigure()`` has a keyword ``title``: a heading
+   drawn across the top of the figure, inside the image, so the SVG and
+   PDF files carry it and the figure window shows it. The default is no
+   heading, as before, because a book figure has its caption in the
+   document. The Figures dialog has a Title field.
+
+#. **Figure layout.** Figures with several rows or columns of axes
+   kept matplotlib's default margins, more than an inch of white above and
+   below a Bode stack, because the grid's own row spacing stopped the tight
+   layout from running (the warning "Axes not compatible with
+   tight_layout" in the log). The layout now runs on every figure; the
+   settings ``subplothspace`` and ``subplotwspace`` of the project
+   configuration are the minimum gap between rows and columns.
+
+#. **Stacking order.** Shapes, images, LaTeX fragments, text and hyperlinks
+   have a stacking order of their own, saved and exported: the Edit menu's
+   Bring to front, Bring forward, Send backward and Send to back move the
+   selected ones, also above the circuit. See
+   :doc:`/GUI/schematics/annotations`.
+
+#. **Posters.** :menuselection:`File --> New poster…` makes a drawing in
+   ``posters/<name>.slicap_poster`` with a page format (paper sizes and
+   screen formats) that shows schematics, other posters, figures and
+   snippets of the project by name, as links that follow every run and
+   export. A poster is never netlisted and cannot contain itself. Its
+   export first updates the drawings it shows, and in a browser a click on
+   a shown drawing opens that drawing's own export. ``updateImages()``
+   takes a poster name as well. The project configuration has the new path
+   ``posters``. See :doc:`/GUI/schematics/posters`.
+
+#. **Arc, curve and function curve.** The Draw menu has three more shapes
+   for the sketches of a figure: an arc, a part of an ellipse between two
+   angles with line ends; a curve through clicked points, open with line
+   ends or closed with a fill; and a function curve, a box into which an
+   expression over a range, sampled by SLiCAP, or a trace of the Design
+   data is mapped, so a miniature plot on a schematic follows every run.
+   The new function ``sampleExpr()`` does the sampling. The run manifest
+   now records a reduced copy of every trace's data for this purpose. See
+   :doc:`/GUI/schematics/annotations`.
+
+#. **Figures and LaTeX snippets on the schematic.** The Place menu has
+   :menuselection:`Figure…`, a figure object of the Design data chosen by
+   name, and :menuselection:`LaTeX snippet…`, a snippet object of the
+   Design data chosen by name, rendered with SLiCAP's preamble, with its
+   own scale and colour. Both are links to the run: the figure's image and
+   the snippet's text are taken from the Design data after every run. The
+   image dialog refuses the schematic's own exported image, which would
+   make the export its own input. See :doc:`/GUI/schematics/annotations`.
+
+#. **Drawing defaults.** New schematics use the palette of the book
+   *Structured Electronic Design*: black symbol text, red net labels, blue
+   operating-point annotations, and a border with a solid blue line, the
+   light blue background ``#ecf3ff`` at full opacity and no line in the
+   export. The border line has a style of its own, solid, dashed, dotted or
+   dash-dot, in the Border dialog and in the preferences for new borders;
+   it was a fixed dash. Existing schematics keep the values of their
+   ``.ini`` sidecar and their border keeps its dash. See
+   :doc:`/GUI/schematics/preferences`.
+
+#. **Generic font families.** Every font family list, in the drawing
+   preferences and in the text dialog, offers sans-serif, serif and
+   monospace. They render the same on every machine, in the editor and in
+   the exports; a named font can still be typed, at the risk that another
+   machine substitutes it.
+
+#. **Design data at export time.** ``updateImages()`` called from inside an
+   instruction file first writes the Design data of that file, then
+   exports, so a snippet changed in the script is typeset with its new text
+   in the exported images. The main script writes the Design data at the
+   end of the run as before.
+
 SLiCAP version 6.1 release notes
 ================================
 
@@ -33,7 +138,8 @@ simple **SVG editor** (``Draw`` menu) to illustrate schematics, and with a
    Double-clicking a shape opens its properties: stroke colour, width and
    style, fill, a rotation about the shape's centre and, for a line, the two
    line ends (arrow heads with their own width and length). A selected shape
-   shows a handle at every vertex for reshaping. See
+   shows a handle at every vertex for reshaping. **R** turns a selected
+   shape by a quarter turn and **M** mirrors it, as for a component. See
    :doc:`/GUI/schematics/annotations`.
 
 #. **Shift + drag.** Items snap in three ways. Symbols, wires, junctions

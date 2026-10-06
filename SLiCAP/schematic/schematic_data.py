@@ -84,11 +84,27 @@ class JunctionData:
     y: float
 
 
+# What a poster file holds: the page (border), the annotations and the
+# links, and the document properties without the subcircuit fields.
+POSTER_SECTIONS = ("border", "free_texts", "hyperlinks", "images",
+                   "latex_fragments", "shapes", "properties")
+POSTER_PROPERTIES = ("title", "author", "project", "created", "last_modified",
+                     "page_size", "page_width_mm", "page_height_mm")
+
+
 @dataclass
 class FreeTextData:
     x: float
     y: float
     text: str
+    # Per-item font and colour; empty / 0 / False = the schematic's
+    # Preferences (Anton, 2026-10-06). Files without these keys load as before.
+    font_family: str = ""
+    font_size: int = 0
+    bold: bool = False
+    italic: bool = False
+    color: str = ""
+    z: float = 0.0        # stacking order among annotations AND the circuit layers
 
 
 @dataclass
@@ -97,6 +113,7 @@ class HyperlinkData:
     y: float
     url: str
     label: str
+    z: float = 0.0        # stacking order among annotations AND the circuit layers
 
 
 @dataclass
@@ -141,6 +158,11 @@ class ImageData:
     file_path: str
     display_width: int
     display_height: int
+    link: str = ""        # "" = a plain image file; else what the image shows
+                          # and follows: "figure:<name>" (a figure object of the
+                          # Design data), "schematic:<name>" (sch/<name>, its
+                          # export img/<name>.svg), "poster:<name>" (posters/<name>)
+    z: float = 0.0        # stacking order among annotations AND the circuit layers
 
 
 @dataclass
@@ -156,6 +178,7 @@ class BorderData:
     line_width: float = 0.8
     bg_color: str = "#ffffff"
     bg_alpha: int = 0            # background opacity 0…100 %, bottom layer
+    line_style: str = "dashed"   # files before 2026-10-06 had a fixed dash
 
 
 @dataclass
@@ -189,6 +212,10 @@ class LatexFragmentData:
     display_width: int
     display_height: int
     svg_b64: str = ""  # kept for reading old files; no longer written
+    color: str = ""    # "" = the document black of the LaTeX render
+    snippet: str = ""  # a LaTeX snippet item: the save name of the snippet
+                       # (tex/SLiCAPdata/<name>.tex) the code is read from
+    z: float = 0.0        # stacking order among annotations AND the circuit layers
 
 
 @dataclass
@@ -208,6 +235,24 @@ class ShapeData:
     rotation:       float = 0.0               # degrees about the shape's centre
     head_width:     float = 4.0               # arrow / diamond head, scene units
     head_length:    float = 6.0
+    # kind "arc": a part of the ellipse of the two corners (2026-10-06)
+    arc_start:      float = 0.0               # degrees, parametric, y down
+    arc_sweep:      float = 270.0
+    # kind "curve": a spline through the points, open or closed
+    closed:         bool  = False
+    # kind "func": sampled data mapped into the box of the two corners;
+    # the source is an expression or a trace of the Design data
+    expression:     str   = ""
+    var:            str   = "x"
+    x_range:        list  = field(default_factory=lambda: [0.0, 1.0])
+    y_range:        list  = field(default_factory=list)   # [] = from the data
+    x_log:          bool  = False
+    num:            int   = 200
+    trace_var:      str   = ""                # a trace dictionary of the Design data
+    trace_label:    str   = ""                # the trace in it
+    data:           list  = field(default_factory=list)   # [[x, y], ...] as drawn
+    flip_x:         bool  = False             # the graph mirrored (M)
+    z: float = 0.0        # stacking order among annotations AND the circuit layers
 
 
 @dataclass
@@ -259,7 +304,9 @@ class SchematicData:
     origin:           list | None                = None   # symbol editor: marker position
     properties:       DocumentProperties         = field(default_factory=DocumentProperties)
 
-    def to_json(self) -> str:
+    def to_json(self, doc_type: str = "schematic") -> str:
+        """The file text; *doc_type* "poster" writes the poster's sections
+        only (see POSTER_SECTIONS)."""
         data = {
             "components": [
                 {
@@ -296,11 +343,18 @@ class SchematicData:
                 for j in self.junctions
             ],
             "free_texts": [
-                {"x": t.x, "y": t.y, "text": t.text}
+                {"x": t.x, "y": t.y, "text": t.text,
+                 **({"font_family": t.font_family} if t.font_family else {}),
+                 **({"font_size": t.font_size} if t.font_size else {}),
+                 **({"bold": True} if t.bold else {}),
+                 **({"italic": True} if t.italic else {}),
+                 **({"color": t.color} if t.color else {}),
+                 **({"z": t.z} if t.z else {})}
                 for t in self.free_texts
             ],
             "hyperlinks": [
-                {"x": h.x, "y": h.y, "url": h.url, "label": h.label}
+                {"x": h.x, "y": h.y, "url": h.url, "label": h.label,
+                 **({"z": h.z} if h.z else {})}
                 for h in self.hyperlinks
             ],
             "commands": [
@@ -321,6 +375,8 @@ class SchematicData:
                     "file_path": i.file_path,
                     "display_width": i.display_width,
                     "display_height": i.display_height,
+                    **({"link": i.link} if i.link else {}),
+                    **({"z": i.z} if i.z else {}),
                 }
                 for i in self.images
             ],
@@ -336,6 +392,7 @@ class SchematicData:
                 "line_width": self.border.line_width,
                 "bg_color": self.border.bg_color,
                 "bg_alpha": self.border.bg_alpha,
+                "line_style": self.border.line_style,
             } if self.border is not None else None,
             "latex_fragments": [
                 {
@@ -344,6 +401,9 @@ class SchematicData:
                     "preamble_path": f.preamble_path,
                     "display_width":  f.display_width,
                     "display_height": f.display_height,
+                    **({"color": f.color} if f.color else {}),
+                    **({"snippet": f.snippet} if f.snippet else {}),
+                    **({"z": f.z} if f.z else {}),
                 }
                 for f in self.latex_fragments
             ],
@@ -384,6 +444,15 @@ class SchematicData:
                     "rotation":       s.rotation,
                     "head_width":     s.head_width,
                     "head_length":    s.head_length,
+                    **({"arc_start": s.arc_start, "arc_sweep": s.arc_sweep}
+                       if s.kind == "arc" else {}),
+                    **({"closed": s.closed} if s.kind == "curve" else {}),
+                    **({"expression": s.expression, "var": s.var,
+                        "x_range": s.x_range, "y_range": s.y_range,
+                        "x_log": s.x_log, "num": s.num,
+                        "trace_var": s.trace_var, "trace_label": s.trace_label,
+                        "data": s.data, "flip_x": s.flip_x} if s.kind == "func" else {}),
+                    **({"z": s.z} if s.z else {}),
                 }
                 for s in self.shapes
             ],
@@ -420,6 +489,15 @@ class SchematicData:
                 "control_section":   self.properties.control_section,
             },
         }
+        if doc_type == "poster":
+            # A poster holds what a poster can hold: the circuit and symbol
+            # sections are not written, nor the subcircuit fields of the
+            # properties (Anton, 2026-10-06: "there can be no wires,
+            # junctions and all kinds of other stuff"). The reader defaults
+            # every missing section, so one reader serves both.
+            data = {k: v for k, v in data.items() if k in POSTER_SECTIONS}
+            data["properties"] = {k: v for k, v in data["properties"].items()
+                                  if k in POSTER_PROPERTIES}
         return json.dumps(data, indent=2)
 
     @classmethod
@@ -472,12 +550,18 @@ class SchematicData:
             for j in data.get("junctions", [])
         ]
         free_texts = [
-            FreeTextData(x=t["x"], y=t["y"], text=t.get("text", ""))
+            FreeTextData(x=t["x"], y=t["y"], text=t.get("text", ""),
+                         font_family=t.get("font_family", ""),
+                         font_size=int(t.get("font_size", 0) or 0),
+                         bold=bool(t.get("bold", False)),
+                         italic=bool(t.get("italic", False)),
+                         color=t.get("color", ""), z=float(t.get("z", 0.0)))
             for t in data.get("free_texts", [])
         ]
         hyperlinks = [
             HyperlinkData(x=h["x"], y=h["y"],
-                          url=h.get("url", ""), label=h.get("label", ""))
+                          url=h.get("url", ""), label=h.get("label", ""),
+                          z=float(h.get("z", 0.0)))
             for h in data.get("hyperlinks", [])
         ]
         commands = [
@@ -502,6 +586,8 @@ class SchematicData:
                 file_path=i["file_path"],
                 display_width=i["display_width"],
                 display_height=i["display_height"],
+                link=i.get("link") or ("figure:" + i["figure"] if i.get("figure") else ""),
+                z=float(i.get("z", 0.0)),
             )
             for i in data.get("images", [])
         ]
@@ -516,6 +602,7 @@ class SchematicData:
             line_width=bd.get("line_width", 0.8),
             bg_color=bd.get("bg_color", "#ffffff"),
             bg_alpha=bd.get("bg_alpha", 0),
+            line_style=bd.get("line_style", "dashed"),
         ) if bd else None
         latex_fragments = [
             LatexFragmentData(
@@ -525,6 +612,9 @@ class SchematicData:
                 svg_b64=f.get("svg_b64", ""),
                 display_width=f.get("display_width", 200),
                 display_height=f.get("display_height", 100),
+                color=f.get("color", ""),
+                snippet=f.get("snippet", ""),
+                z=float(f.get("z", 0.0)),
             )
             for f in data.get("latex_fragments", [])
         ]
@@ -566,6 +656,20 @@ class SchematicData:
                 rotation=float(s.get("rotation", 0.0)),
                 head_width=float(s.get("head_width", 4.0)),
                 head_length=float(s.get("head_length", 6.0)),
+                arc_start=float(s.get("arc_start", 0.0)),
+                arc_sweep=float(s.get("arc_sweep", 270.0)),
+                closed=bool(s.get("closed", False)),
+                expression=s.get("expression", ""),
+                var=s.get("var", "x"),
+                x_range=list(s.get("x_range", [0.0, 1.0])),
+                y_range=list(s.get("y_range", [])),
+                x_log=bool(s.get("x_log", False)),
+                num=int(s.get("num", 200)),
+                trace_var=s.get("trace_var", ""),
+                trace_label=s.get("trace_label", ""),
+                data=[list(p) for p in s.get("data", [])],
+                flip_x=bool(s.get("flip_x", False)),
+                z=float(s.get("z", 0.0)),
             )
             for s in data.get("shapes", [])
         ]
@@ -663,7 +767,8 @@ class SchematicData:
 
     def save(self, path: Path) -> None:
         self.normalize_origin()
-        path.write_text(self.to_json(), encoding="utf-8")
+        doc_type = "poster" if str(path).lower().endswith(".slicap_poster") else "schematic"
+        path.write_text(self.to_json(doc_type), encoding="utf-8")
 
     @classmethod
     def load(cls, path: Path) -> SchematicData:

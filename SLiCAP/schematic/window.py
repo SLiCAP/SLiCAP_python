@@ -17,6 +17,7 @@ from .canvas import SchematicScene, SchematicView
 from .symbol_library import SymbolLibrary
 from .schematic_data import DocumentProperties
 from . import project
+from .border_item import BorderItem
 
 _SLICAP_SVG        = Path(__file__).parent.parent / "files" / "symbols" / "slicap"  / "Symbols.slicap_sym"
 _SLICAP_DIR        = _SLICAP_SVG.parent
@@ -24,7 +25,8 @@ _NGSPICE_SVG       = Path(__file__).parent.parent / "files" / "symbols" / "ngspi
 
 _FILTER_SLICAP      = "SLiCAP Schematic (*.slicap_sch)"
 _FILTER_NGSPICE     = "NGspice Schematic (*.spice_sch)"
-_FILE_FILTER        = f"{_FILTER_SLICAP};;{_FILTER_NGSPICE};;All Files (*)"
+_FILTER_POSTER      = "SLiCAP Poster (*.slicap_poster)"
+_FILE_FILTER        = f"{_FILTER_SLICAP};;{_FILTER_NGSPICE};;{_FILTER_POSTER};;All Files (*)"
 _NET_FILTER_SLICAP  = "SLiCAP Netlist (*.cir);;All Files (*)"
 _NET_FILTER_NGSPICE = "NGspice Netlist (*.sp);;All Files (*)"
 
@@ -199,6 +201,9 @@ class CanvasPanel(QWidget):
         # The scene's double-click edit of an analysis block uses the same
         # candidate lists as Place → Define src / det / lg ref.
         self._scene.analysis_candidates = self._analysis_candidates
+        if self._main_win is not None:
+            self._scene.open_file_requested.connect(
+                lambda p: self._main_win.load_file(Path(p)) if p else None)
         self._scene.show_origin = bool(getattr(self, "_symbol_mode", False))
         if self._scene.show_origin:
             self._scene.default_line_width = 1.0     # the symbol library's stroke width
@@ -261,6 +266,9 @@ class CanvasPanel(QWidget):
         self._build_edit_menu()
         self._build_view_menu()
         self._build_draw_menu()
+        if self._sch_type == 'poster':
+            self._build_poster_place_menu()
+            return                       # no symbols, netlist or instructions
         self._build_place_menu()
         self._build_tools_menu()
         if self._sch_type == 'ngspice':
@@ -519,27 +527,29 @@ class CanvasPanel(QWidget):
         # project handling live on the main window's File menu (SLNG.md,
         # "separate the two File menus").
         menu = self._menu_bar.addMenu("&File")
+        what = "poster" if self._sch_type == 'poster' else "schematic"
 
-        act = QAction("&Save schematic", self)
+        act = QAction(f"&Save {what}", self)
         act.triggered.connect(self._on_save)
         self._shortcut(act, QKeySequence.Save)
         menu.addAction(act)
 
-        act = QAction("Save schematic &as…", self)
+        act = QAction(f"Save {what} &as…", self)
         act.triggered.connect(self._on_save_as)
         self._shortcut(act, QKeySequence.SaveAs)
         menu.addAction(act)
         menu.addSeparator()
 
-        act = QAction("Schematic &properties…", self)
+        act = QAction(f"{what.capitalize()} &properties…", self)
         act.triggered.connect(self._on_doc_properties)
         menu.addAction(act)
         menu.addSeparator()
 
-        act = QAction("&Export netlist…", self)
-        act.triggered.connect(self._on_export_netlist)
-        self._shortcut(act, "Ctrl+E")
-        menu.addAction(act)
+        if self._sch_type != 'poster':
+            act = QAction("&Export netlist…", self)
+            act.triggered.connect(self._on_export_netlist)
+            self._shortcut(act, "Ctrl+E")
+            menu.addAction(act)
 
         act = QAction("Export &SVG…", self)
         act.triggered.connect(self._on_export_svg)
@@ -549,14 +559,34 @@ class CanvasPanel(QWidget):
         act.triggered.connect(self._on_export_pdf)
         menu.addAction(act)
 
-        act = QAction("Print s&chematic…", self)
+        act = QAction(f"Print {what}…", self)
         act.triggered.connect(self._on_print)
         self._shortcut(act, QKeySequence.Print)
         menu.addAction(act)
         menu.addSeparator()
 
-        act = QAction("Schematic &drawing preferences…", self)
+        act = QAction("&Drawing preferences…", self)
         act.triggered.connect(self._on_preferences)
+        menu.addAction(act)
+
+    def _build_poster_place_menu(self):
+        """The Place menu of a poster: what it can show, and its page."""
+        menu = self._menu_bar.addMenu("&Place")
+        for label, kind in (("&Schematic…", "schematic"), ("&Poster…", "poster"),
+                            ("&Figure…", "figure")):
+            act = QAction(label, self)
+            act.triggered.connect(lambda checked=False, k=kind: self._place_link(k))
+            menu.addAction(act)
+        act = QAction("LaTeX s&nippet…", self)
+        act.triggered.connect(self._on_place_snippet)
+        menu.addAction(act)
+        act = QAction("&Image…", self)
+        act.triggered.connect(self._on_place_image)
+        menu.addAction(act)
+        menu.addSeparator()
+        act = QAction("Borde&r", self)
+        act.triggered.connect(self._on_place_border)
+        self._shortcut(act, "B")
         menu.addAction(act)
 
     def _build_edit_menu(self):
@@ -569,6 +599,17 @@ class CanvasPanel(QWidget):
         act.triggered.connect(lambda: self._scene.redo())
         self._shortcut(act, QKeySequence.Redo)
         menu.addAction(act)
+        menu.addSeparator()
+        # stacking order of the selected annotations (shapes, images, LaTeX,
+        # text, hyperlinks); the circuit layers stay where they are
+        for label, how, key in (("Bring to &front", "front", "Ctrl+Shift+]"),
+                                ("Bring f&orward", "forward", "Ctrl+]"),
+                                ("Send &backward", "backward", "Ctrl+["),
+                                ("Send to bac&k", "back", "Ctrl+Shift+[")):
+            act = QAction(label, self)
+            act.triggered.connect(lambda checked=False, h=how: self._scene.restack(h))
+            self._shortcut(act, key)
+            menu.addAction(act)
 
     def _build_view_menu(self):
         menu = self._menu_bar.addMenu("&View")
@@ -590,12 +631,47 @@ class CanvasPanel(QWidget):
         self._shortcut(act, "Ctrl+0")
         menu.addAction(act)
 
+    _DRAW_HINTS = {
+        "line":    "Line: click each vertex; double-click, Enter or Escape ends it.",
+        "polygon": "Polygon: click each vertex (three or more); double-click, Enter or Escape ends it.",
+        "curve":   "Curve: click the points the curve passes through; double-click, Enter or Escape ends it.",
+        "rect":    "Rectangle: click two opposite corners.",
+        "ellipse": "Ellipse: click two opposite corners of its box.",
+        "arc":     "Arc: click two opposite corners of its ellipse; the angles are in its properties and on its end handles.",
+        "func":    "Function curve: click two opposite corners of the rectangle the curve is drawn in.",
+    }
+
+    def _start_drawing(self, kind: str) -> None:
+        """A Draw command: the scene draws, the status bar says what to click
+        (Anton, 2026-10-06: Function curve showed no dialog until its box
+        was drawn, and nothing said so). A function curve is defined in
+        its dialog first; after OK the two corners of its box are clicked."""
+        template = None
+        if kind == "func":
+            from .shape_dialog import ShapeDialog
+            from .shape_item import ShapeItem
+            from PySide6.QtCore import QPointF as _P
+            template = ShapeItem("func", [_P(0, 0), _P(100, 50)],
+                                 line_width=self._scene.default_line_width)
+            dlg = ShapeDialog(template, self, trace_choices=self._scene._trace_choices(),
+                              hint="After OK, click two opposite corners of the "
+                                   "rectangle the curve is drawn in.")
+            if not dlg.exec():
+                return
+            self._scene._apply_shape_dialog(template, dlg)
+        self._scene.start_drawing(kind, template=template)
+        hint = self._DRAW_HINTS.get(kind)
+        if hint:
+            self._status(hint)
+
     def _build_draw_menu(self):
         menu = self._menu_bar.addMenu("&Draw")
         for label, kind in [("&Line", "line"), ("&Rectangle", "rect"),
-                            ("&Ellipse", "ellipse"), ("&Polygon", "polygon")]:
+                            ("&Ellipse", "ellipse"), ("&Polygon", "polygon"),
+                            ("&Arc", "arc"), ("&Curve", "curve"),
+                            ("&Function curve…", "func")]:
             act = QAction(label, self)
-            act.triggered.connect(lambda checked=False, k=kind: self._scene.start_drawing(k))
+            act.triggered.connect(lambda checked=False, k=kind: self._start_drawing(k))
             menu.addAction(act)
         menu.addSeparator()
         act = QAction("&Text…", self)
@@ -649,6 +725,16 @@ class CanvasPanel(QWidget):
         act = QAction("&Image…", self)
         act.triggered.connect(self._on_place_image)
         menu.addAction(act)
+        act = QAction("&Figure…", self)
+        act.setToolTip("A figure object of the Design data, by name; "
+                       "its image follows every run")
+        act.triggered.connect(self._on_place_figure)
+        menu.addAction(act)
+        act = QAction("LaTeX &snippet…", self)
+        act.setToolTip("A LaTeX snippet object of the Design data, by name, "
+                       "with its own scale and colour")
+        act.triggered.connect(self._on_place_snippet)
+        menu.addAction(act)
         act = QAction("&Parameters…", self)
         act.triggered.connect(self._on_place_parameters)
         menu.addAction(act)
@@ -689,8 +775,39 @@ class CanvasPanel(QWidget):
         act = QAction("Create / edit &SLiCAP instruction…", self)
         act.triggered.connect(self._on_slicap_add_instruction)
         menu.addAction(act)
+        menu.addAction(self._export_schematic_action())
         # Run/Stop live on the MAIN-window Instruction menu only (Anton,
         # 2026-07-16: they don't belong on the schematic editor).
+
+    def _export_schematic_action(self) -> QAction:
+        act = QAction("&Update schematic images…", self)
+        act.setToolTip("Add  sl.updateImages(\"<this schematic>\")  to the "
+                       "instruction file: re-exports the schematic with the "
+                       "plots it links after the simulation wrote them")
+        act.triggered.connect(self._on_add_export_schematic)
+        return act
+
+    def _on_add_export_schematic(self):
+        """Instruction -> Update schematic images: append
+        ``sl.updateImages("<this schematic>")``. Placed AFTER the figures
+        in the instruction file it re-exports the schematic with the plots
+        the run has just written (Anton, 2026-10-06); makeCircuit() at the
+        top of the file exports before the run."""
+        if self._current_path is None or self._main_win is None:
+            return
+        from .instr_file import circuit_objects
+        editor = self._main_win._instr_editor
+        relpath = self._schematic_relpath()
+        # a SLiCAP schematic with a circuit object in the file: pass the
+        # object; otherwise (an NGspice schematic has none) the circuit name
+        owners = [c["name"] for c in circuit_objects(editor.text())
+                  if c["path"] == relpath]
+        arg = owners[-1] if owners else f'"{Path(self._current_path).stem}"'
+        editor.ensure_header('slicap')
+        editor.insert_snippet(f'sl.updateImages({arg})')
+        editor.show()
+        editor.raise_()
+        self._status("Image update added to the instruction file.")
 
     def _build_ngspice_instr_menu(self):
         menu = self._menu_bar.addMenu("&Instruction")
@@ -703,6 +820,7 @@ class CanvasPanel(QWidget):
         act = QAction("Create / edit NGspice &control section…", self)
         act.triggered.connect(self._on_ngspice_add_control)
         menu.addAction(act)
+        menu.addAction(self._export_schematic_action())
         # Run/Stop live on the MAIN-window Instruction menu only.
 
     # -- library --------------------------------------------------------------
@@ -733,7 +851,7 @@ class CanvasPanel(QWidget):
         except Exception as exc:
             QMessageBox.critical(self, "Open failed", str(exc))
             return False
-        sch_type = 'ngspice' if path.suffix.lower() == '.spice_sch' else 'slicap'
+        sch_type = project.doc_type(path)
         self._init_canvas(sch_type)
         self._current_path = path
         project.set_current(path)                 # log tee + old-sidecar migration
@@ -741,6 +859,7 @@ class CanvasPanel(QWidget):
         self._style = Style(project.ini_path_for(path))   # the file's own style
         self._scene.style = self._style
         self._scene.cache_dir = project.cache_path_for(path)
+        self._scene.file_path = path
         self._build_library(project.symbols_path_for(path))
         missing = self._scene.from_data(data, self._library)
         if missing:
@@ -784,12 +903,14 @@ class CanvasPanel(QWidget):
         if self._doc_props.is_subcircuit:
             self._save_subcircuit()
             return
-        ext  = ".spice_sch" if self._sch_type == 'ngspice' else ".slicap_sch"
-        filt = (_FILTER_NGSPICE if self._sch_type == 'ngspice' else _FILTER_SLICAP) + ";;All Files (*)"
-        start_dir = (project.subdir_for(self._current_path, "sch")
-                     if self._current_path else project.subdir("sch"))
+        ext  = {"ngspice": ".spice_sch", "poster": ".slicap_poster"}.get(self._sch_type, ".slicap_sch")
+        filt = {"ngspice": _FILTER_NGSPICE, "poster": _FILTER_POSTER}.get(self._sch_type, _FILTER_SLICAP) + ";;All Files (*)"
+        folder = "posters" if self._sch_type == 'poster' else "sch"
+        start_dir = (project.subdir_for(self._current_path, folder)
+                     if self._current_path else project.subdir(folder))
         path, _ = QFileDialog.getSaveFileName(
-            self, "Save Schematic", str(start_dir), filt)
+            self, "Save Poster" if self._sch_type == 'poster' else "Save Schematic",
+            str(start_dir), filt)
         if not path:
             return
         p = Path(path)
@@ -854,6 +975,7 @@ class CanvasPanel(QWidget):
 
     def _save_to(self, path: Path):
         self._doc_props.last_modified = _date.today().isoformat()
+        self._sync_page_properties()
         data = self._scene.to_data()
         data.properties = self._doc_props
         try:
@@ -876,6 +998,21 @@ class CanvasPanel(QWidget):
             QMessageBox.critical(self, "Save failed", str(exc))
             return
         self._set_dock_title(path.name)
+
+    def _sync_page_properties(self) -> None:
+        """The stored page size is the border's, or "Drawing size" without
+        one: a record of the fact, never a second source."""
+        from .border_dialog import _units_per
+        from .document_properties_dialog import page_name_of, DRAWING_SIZE
+        border = self._border()
+        if border is None:
+            self._doc_props.page_size = DRAWING_SIZE
+            self._doc_props.page_width_mm = self._doc_props.page_height_mm = 0.0
+            return
+        upm = _units_per()["mm"]
+        w, h = border.rect().width() / upm, border.rect().height() / upm
+        self._doc_props.page_size = page_name_of(w, h)
+        self._doc_props.page_width_mm, self._doc_props.page_height_mm = round(w, 1), round(h, 1)
 
     def _set_dock_title(self, title: str) -> None:
         """Set the enclosing canvas dock's title. The dock shows the schematic
@@ -917,17 +1054,65 @@ class CanvasPanel(QWidget):
 
     # -- misc dialogs ---------------------------------------------------------
 
+    def _border(self):
+        for item in self._scene.items():
+            if isinstance(item, BorderItem):
+                return item
+        return None
+
     def _on_doc_properties(self):
+        """Properties: title, author, project and the page, which IS the
+        border (see DocumentPropertiesDialog)."""
         from .document_properties_dialog import DocumentPropertiesDialog
-        dlg = DocumentPropertiesDialog(self._doc_props, self)
+        from .border_dialog import _units_per
+        upm = _units_per()["mm"]
+        border = self._border()
+        border_mm = ((border.rect().width() / upm, border.rect().height() / upm)
+                     if border is not None else None)
+        dlg = DocumentPropertiesDialog(self._doc_props, self, border_mm=border_mm,
+                                       is_poster=self._sch_type == 'poster')
         if dlg.exec():
             dlg.apply(self._doc_props)
+            self._apply_page(dlg.page_mm())
+
+    def _apply_page(self, page_mm) -> None:
+        """Make the border the page: None removes it, a size creates or
+        resizes it (position kept, sides fixed)."""
+        from .border_dialog import _units_per
+        upm = _units_per()["mm"]
+        border = self._border()
+        if page_mm is None:
+            if border is not None:
+                self._scene._push_undo()
+                self._scene.removeItem(border)
+                self._scene.data_changed.emit()
+            return
+        w, h = round(page_mm[0] * upm, 2), round(page_mm[1] * upm, 2)
+        self._scene._push_undo()
+        if border is None:
+            st = self._style
+            border = BorderItem(0.0, 0.0, w, h, show_in_export=st.BORDER_SHOW_LINE,
+                                fixed_w=True, fixed_h=True,
+                                line_color=st.BORDER_LINE_COLOR.name(),
+                                line_width=st.BORDER_LINE_WIDTH,
+                                bg_color=st.BORDER_BG_COLOR.name(),
+                                bg_alpha=st.BORDER_BG_ALPHA,
+                                line_style=st.BORDER_LINE_STYLE)
+            self._scene.addItem(border)
+        else:
+            border.setRect(0.0, 0.0, w, h)
+            border.fixed_w = border.fixed_h = True
+        self._scene.data_changed.emit()
 
     def refresh_op_annotations(self) -> None:
         """Load this circuit's most recent UNSTEPPED operating-point results
         (<stem>_op.raw, written by sl.op()) into the scene's op store and
         refresh the bias annotations.  NGspice schematics only; stepped op
         runs write *_op_sN.raw and are deliberately excluded."""
+        if self._current_path is not None:
+            # plots rewritten by the run, figures and snippets re-read from
+            # the Design data
+            self._scene.reload_links()
         if self._sch_type != 'ngspice' or self._current_path is None:
             return
         if self._scene.load_op_raw(self._current_path):
@@ -1093,7 +1278,8 @@ class CanvasPanel(QWidget):
                               line_color=item.line_color,
                               line_width=item.line_width,
                               bg_color=item.bg_color,
-                              bg_alpha=item.bg_alpha)
+                              bg_alpha=item.bg_alpha,
+                              line_style=item.line_style)
                 break
         if not kwargs:                    # a new border: the style's look
             st = self._style
@@ -1101,7 +1287,8 @@ class CanvasPanel(QWidget):
                           line_color=st.BORDER_LINE_COLOR.name(),
                           line_width=st.BORDER_LINE_WIDTH,
                           bg_color=st.BORDER_BG_COLOR.name(),
-                          bg_alpha=st.BORDER_BG_ALPHA)
+                          bg_alpha=st.BORDER_BG_ALPHA,
+                          line_style=st.BORDER_LINE_STYLE)
         dlg = BorderDialog(parent=self, **kwargs)
         if dlg.exec():
             self._scene.start_border_placement(dlg.border_properties())
@@ -1222,12 +1409,44 @@ class CanvasPanel(QWidget):
         if dlg.exec() and dlg.image_path():
             self._scene.start_image_placement(dlg.image_path(), dlg.image_width(), dlg.image_height())
 
+    def _on_place_figure(self):
+        self._place_link("figure")
+
+    def _place_link(self, kind: str):
+        """Place -> Figure / Schematic / Poster: a drawing or figure of the
+        project linked by name; its image follows every run and export."""
+        from .image_dialog import ImageDialog
+        dlg = ImageDialog(style=self._style, parent=self, link_kind=kind,
+                          choices=self._scene.link_choices(kind))
+        if dlg.exec() and dlg.link():
+            if dlg.open_requested:
+                src = self._scene.link_source(dlg.link())
+                if src is not None and self._main_win is not None:
+                    self._main_win.load_file(src)
+                return
+            self._scene.start_image_placement(dlg.image_path(), dlg.image_width(),
+                                              dlg.image_height(), link=dlg.link())
+
+    def _on_place_snippet(self):
+        """Place -> LaTeX snippet: a snippet OBJECT of the Design data by
+        name, its text from the run manifest, with its own scale and colour."""
+        from .latex_fragment_dialog import LatexFragmentDialog
+        from .design_data import manifest_snippets
+        dlg = LatexFragmentDialog(style=self._style, parent=self,
+                                  snippets=manifest_snippets(project.root_for(self._current_path)
+                                                             if self._current_path else project.project_root()))
+        if dlg.exec() and dlg.snippet():
+            self._scene.start_latex_placement(dlg.latex_code(), dlg.preamble_path(),
+                                              dlg.display_width(), dlg.display_height(),
+                                              dlg.color(), snippet=dlg.snippet())
+
     def _on_place_latex(self):
         from .latex_fragment_dialog import LatexFragmentDialog
         dlg = LatexFragmentDialog(style=self._style, parent=self)
         if dlg.exec() and dlg.svg_bytes():
             self._scene.start_latex_placement(dlg.latex_code(), dlg.preamble_path(),
-                                              dlg.display_width(), dlg.display_height())
+                                              dlg.display_width(), dlg.display_height(),
+                                              dlg.color())
 
     def _on_place_parameters(self):
         # ONE parameter table per schematic (Anton, 2026-07-12): the menu
@@ -1327,7 +1546,7 @@ class CanvasPanel(QWidget):
         from .text_dialog import TextDialog
         dlg = TextDialog(style=self._style, parent=self)
         if dlg.exec():
-            self._scene.start_text_placement(dlg.text())
+            self._scene.start_text_placement(dlg.text(), dlg.properties())
 
     def _on_place_hyperlink(self):
         from .hyperlink_dialog import HyperlinkDialog
@@ -1977,9 +2196,9 @@ class MainWindow(QMainWindow):
     def _open_filter(self) -> str:
         """File-open dialog filter, constrained to the session capture mode."""
         if self._config in ('basic', 'slicap'):
-            return _FILTER_SLICAP + ";;All Files (*)"
+            return f"{_FILTER_SLICAP};;{_FILTER_POSTER};;All Files (*)"
         if self._config == 'ngspice':
-            return _FILTER_NGSPICE + ";;All Files (*)"
+            return f"{_FILTER_NGSPICE};;{_FILTER_POSTER};;All Files (*)"
         return _FILE_FILTER
 
     def _build_menu(self):
@@ -2022,6 +2241,11 @@ class MainWindow(QMainWindow):
         act_open.setShortcut(QKeySequence.Open)
         act_open.triggered.connect(self._on_open)
         m.addAction(act_open)
+        act_poster = QAction("New &poster…", self)
+        act_poster.setToolTip("A drawing that shows schematics, posters, figures "
+                              "and snippets of the project, updated by the runs")
+        act_poster.triggered.connect(self._on_new_poster)
+        m.addAction(act_poster)
         act_sym_new = QAction("New s&ymbol", self)
         act_sym_new.triggered.connect(lambda: self._on_symbol_editor(open_existing=False))
         m.addAction(act_sym_new)
@@ -2041,7 +2265,7 @@ class MainWindow(QMainWindow):
         act_open_instr.triggered.connect(self._on_open_instruction_file)
         act_open_instr.setEnabled(not self._schematic_only)
         m.addAction(act_open_instr)
-        self._sch_menu_actions = [act_new_sl, act_new_ng, act_open,
+        self._sch_menu_actions = [act_new_sl, act_new_ng, act_open, act_poster,
                                   act_sym_new, act_sym_edit,
                                   act_new_instr, act_open_instr]
         m.addSeparator()
@@ -2243,6 +2467,19 @@ class MainWindow(QMainWindow):
 
     # -- canvas panel management ----------------------------------------------
 
+    def _on_new_poster(self):
+        """File > New poster: name and page format, then the new poster
+        opens in its own tab (posters/<name>.slicap_poster)."""
+        from .poster import NewPosterDialog
+        if not self._project_is_open():
+            QMessageBox.information(self, "New poster",
+                                    "Open or create a project first: posters live in "
+                                    "its posters folder.")
+            return
+        dlg = NewPosterDialog(project.project_root(), parent=self)
+        if dlg.exec() and dlg.path is not None:
+            self.load_file(dlg.path)
+
     def _on_new_ngspice_schematic(self):
         """New NGspice Schematic — check NGspice is available first (running a
         simulation needs it), letting the user locate it or continue anyway."""
@@ -2314,7 +2551,7 @@ class MainWindow(QMainWindow):
             schematic_only=self._schematic_only,
             symbol_mode=symbol_mode,
         )
-        label = "Symbol" if symbol_mode else ("NGspice" if sch_type == 'ngspice' else "SLiCAP")
+        label = "Symbol" if symbol_mode else {"ngspice": "NGspice", "poster": "Poster"}.get(sch_type, "SLiCAP")
         dock  = QDockWidget(label, self)
         dock.setWidget(panel)
         dock.setObjectName(f"canvas_dock_{len(self._canvas_docks)}")
@@ -2397,7 +2634,7 @@ class MainWindow(QMainWindow):
                 dock.raise_()                 # the tab that shows it
                 panel.setFocus()
                 return panel
-        sch_type = 'ngspice' if path.suffix.lower() == '.spice_sch' else 'slicap'
+        sch_type = project.doc_type(path)
         # Honour the session capture mode so the symbol palette stays consistent
         # (basic mode → basic palette); the schematic's own symbols still load
         # via its frozen symbol bundle.

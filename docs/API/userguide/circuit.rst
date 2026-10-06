@@ -316,6 +316,23 @@ Scalable Vector Graphics ``.svg`` images are preferred for displaying on HTML pa
 
 **makeCircuit()** generates drawing-size ``svg`` and ``pdf`` images of SLiCAP schematics (``.slicap_sch`` and ``.spice_sch`` file types), and places these image files in the ``img/`` folder in the project directory.
 
+Updating the images: updateImages()
+-----------------------------------
+
+A schematic can show images placed with the schematic editor (:menuselection:`Place --> Image…`), for example the plots of its own simulation written to ``img/`` by ``makeFigure()``. Such an image is a link: its file is read when the schematic is exported. ``makeCircuit()`` exports the schematic at the top of the script, before the analyses run, so its images show the plots of the previous run. `updateImages() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.updateImages>`__ exports the schematic again, netlist and images, at the end of the script, after the figures:
+
+.. code-block:: python
+
+   cir = sl.makeCircuit("sch/myAmp.slicap_sch")   # a SLiCAP schematic: a circuit object
+   ...                                            # analyses, makeFigure() calls
+   sl.updateImages(cir)                           # the circuit object
+
+   sl.makeCircuit("sch/myAmp.spice_sch")          # an NGspice schematic: no circuit object
+   ...                                            # op(), tran(), ..., makeFigure() calls
+   sl.updateImages("myAmp")                       # the circuit name, as in sl.op("myAmp")
+
+Both forms work for both schematic types: a circuit object made from a ``.slicap_sch`` file remembers its schematic, and a name is looked up as ``sch/<name>.slicap_sch`` or ``sch/<name>.spice_sch`` in the project. An NGspice schematic has no circuit object, because ``makeCircuit()`` returns its netlist text, so there the name is the form to use. The export is skipped when the netlist and the images are newer than everything they depend on: the schematic, its sidecars, the symbol libraries, the operating-point results and the linked images. In the schematic editor, :menuselection:`Instruction --> Update schematic images…` appends the call to the instruction file.
+
 Schematic file locations
 ========================
 
@@ -336,11 +353,15 @@ Below a project directory structure according to this principle.
    |   - slicap_circuit_1.cir     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
    |   - slicap_circuit_2.cir     <-- created with: sl.makeCircuit("sch/slicap_circuit_2.slicap_sch")
    +-- lib
+   +-- posters
+   |   - overview.slicap_poster   <-- a poster made in the schematic editor
    +-- img
        - slicap_circuit_1.svg     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
        - slicap_circuit_1.pdf     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
-       
-Netlist files (``.cir`` extension) and image files (``.svg`` and ``.pdf`` extensions) shown above, are created with **makeCircuit()** and by default placed in the ``cir`` folder and the ``img`` folder of the project directory, respectively.
+       - overview.svg             <-- created with: sl.updateImages("overview")
+       - overview.pdf             <-- created with: sl.updateImages("overview")
+
+Netlist files (``.cir`` extension) and image files (``.svg`` and ``.pdf`` extensions) shown above, are created with **makeCircuit()** and by default placed in the ``cir`` folder and the ``img`` folder of the project directory, respectively. A poster (``posters`` folder) has no netlist; ``updateImages()`` writes its images.
 
 Below an example of creating a circuit object from a SLiCAP schematic file. The project folder is ``/USR/myProject/``.
 

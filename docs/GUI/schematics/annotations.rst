@@ -11,12 +11,26 @@ Free text
 :menuselection:`Draw --> Text…` (shortcut :kbd:`T`) adds a line of text.  Use it
 for notes, titles or callouts.
 
+The text dialog sets the font family, the size, bold and italic, and the
+colour of that text. Every setting has a *(Preferences)* state, the default,
+in which the text follows the schematic's drawing preferences. The family
+list offers the generic families **sans-serif**, **serif** and
+**monospace**. They render the same on every machine, in the editor and in
+the SVG and PDF export, because the viewer resolves a generic family to a
+font it has. A named font can be typed in the list, at the risk that another
+machine substitutes it.
+
 LaTeX fragments
 ===============
 
 :menuselection:`Draw --> LaTeX…` adds a block of typeset LaTeX — equations,
 aligned derivations, anything a ``standalone`` LaTeX document can produce.
 (Requires ``pdflatex`` and ``dvisvgm``.)
+
+The dialog's **Colour** tints the fragment, on the canvas and in the export,
+in the same way the LaTeX labels of a symbol take the symbol's colour: the
+black of the render is replaced, a colour written in the LaTeX code itself
+is kept. Unticked, the fragment is black.
 
 .. figure:: /GUI/img/latex_fragment.png
    :alt: A LaTeX fragment
@@ -33,31 +47,113 @@ course or datasheet).  In the editor, right-click the link to open or edit it.
 Images
 ======
 
-:menuselection:`Place --> Image…` embeds a raster or vector image — a logo,
+:menuselection:`Place --> Image…` places a raster or vector image — a logo,
 a photo of a measurement, a plot.
+
+The image is a link, not a copy: the schematic stores the file's path and
+reads the file whenever it is opened, exported, or after a run of the
+instruction file. A plot written by the simulation into ``img/`` therefore
+updates on the canvas and in the exported schematic by itself (see
+:doc:`netlist_and_export` for the export at the end of a run). A file inside
+the project is stored relative to the project root, so the project can move
+between machines; a file elsewhere is stored with its absolute path.
+An image can be anything but the schematic's own exported image: a
+schematic that showed itself would make its export its own input, stale
+after every run and nested in every export, so the dialog refuses that
+file.
+
+Figures
+=======
+
+:menuselection:`Place --> Figure…` places a **figure object** of the
+Design data, chosen by name from the figures the last runs made with
+``makeFigure()``. The image it shows is the file that figure writes to
+``img/``, taken from the Design data, so a figure whose file name changes
+in the instruction file follows on the canvas after the next run, and the
+picture updates after every run like a placed image. The dialog sets the
+scale as for an image. A figure is never the schematic's own export, so a
+Figure cannot link a schematic to itself. Run the instruction file first:
+the dialog offers what the Design data panel shows.
+
+LaTeX snippets
+==============
+
+:menuselection:`Place --> LaTeX snippet…` places a **LaTeX snippet object**
+of the Design data, chosen by name: ``EX1 = ltx.expr(G)`` makes one, a saved
+file is not needed. The item takes the snippet's text from the Design data,
+renders it with SLiCAP's LaTeX preamble, and re-renders it after every run
+that changed it. Scale and colour are the item's own, set in the dialog as
+for a LaTeX fragment; the snippet itself is never touched. A numbered
+equation renders without its number, because a schematic has no equation
+numbers to refer to, while the snippet keeps its number in the report. Only
+LaTeX snippets are offered: an RST or HTML snippet cannot be typeset on a
+schematic.
 
 Drawing primitives
 ==================
 
 The :menuselection:`Draw` menu also provides simple shapes — **Line**,
-**Rectangle**, **Ellipse** and **Polygon** — for framing, grouping or
-highlighting parts of the diagram. A line and a polygon take a click per
+**Rectangle**, **Ellipse**, **Polygon**, **Arc**, **Curve** and **Function
+curve** — for framing, grouping or highlighting parts of the diagram and for
+the sketches of a figure. A line and a polygon take a click per
 vertex and end with a double click, Enter or Escape (a polygon needs three
 vertices); a rectangle and an ellipse take two opposite corners, so a
-square or a circle is the special case of equal sides. Double-click a shape
+square or a circle is the special case of equal sides.
+
+An **arc** is a part of the ellipse of two corners, from a start angle over
+a sweep, both set in its properties or by dragging the two end handles on
+the canvas, with line ends as a line has them: the loop and rotation arrow
+of many figures. A **curve** is clicked like a polygon, but passes smoothly
+through its points, open with line ends or closed with a fill: the
+hand-drawn curve. A **function curve** is a box of two corners into which
+sampled data is mapped, y upward: either an expression in one variable over
+a range, in SLiCAP notation (``exp(x) - 1``, ``1/(1+(f/1k)**2)``, with a
+linear or logarithmic x axis), sampled by SLiCAP itself, or a **trace of the
+Design data**, chosen by name, which makes it a miniature plot that follows
+every run of the instruction file. The y range is taken from the data
+unless given. Only as many points as the box can resolve are kept. The
+properties dialog opens first, because a function curve is nothing without
+its source; after OK the two opposite corners of the rectangle the curve
+is drawn in are clicked.
+
+A selected shape shows a small square on every point that can be dragged:
+the vertices of a line, polygon or curve, the two corners that define a
+rectangle, ellipse, arc or function box, and the two ends of an arc.
+Dragging one reshapes the shape, also when it is rotated. Double-click a shape
 for its properties: stroke colour, width and style (**none** shows a filled
 shape without contour), fill, a rotation angle about the shape's centre,
 and for a line the two line ends. An arrow head is a filled triangle
 without contour with its own width and length (the defaults 4 and 6 are
 those of the current-source arrow of the symbol library); a wide arrow with
-a shaft that has width is a polygon.
+a shaft that has width is a polygon. **R** turns a selected shape by a
+quarter turn about its centre and **M** mirrors it about the vertical axis
+through its centre, as for a component. Both act on the shape's points, so
+a line with an arrow head keeps its head at the same end; the rotation
+angle of the properties stays as it is (mirroring changes its sign).
+
+Stacking order
+==============
+
+Every annotation, a shape, image, LaTeX fragment, text or hyperlink, has a
+place in the stacking order of its own, saved with it, and the exports draw
+in that order. :menuselection:`Edit --> Bring to front` (:kbd:`Ctrl+Shift+]`),
+:menuselection:`Bring forward` (:kbd:`Ctrl+]`), :menuselection:`Send
+backward` (:kbd:`Ctrl+[`) and :menuselection:`Send to back`
+(:kbd:`Ctrl+Shift+[`) move the selected annotations. An annotation can go
+above the circuit, a figure over a component, or two schematics overlapping
+on a poster, and below the wires, but never under the border. The circuit
+itself keeps its layers: wires, components, junctions and net labels in
+that order.
 
 Borders and document properties
 ===============================
 
 * :menuselection:`Place --> Border` (:kbd:`B`) adds a drawing border/frame.
-* :menuselection:`File --> Schematic properties…` sets the title, author and page
-  size, which are used when exporting and printing.
+  The border is the page: the exported SVG and PDF have its size. Without
+  a border the export is as large as the drawing, with a small margin.
+* :menuselection:`File --> Schematic properties…` sets the title, author and
+  the page. The page field shows the border's size, a format creates or
+  resizes the border, and **Drawing size** removes it.
 
 Renaming components
 ===================

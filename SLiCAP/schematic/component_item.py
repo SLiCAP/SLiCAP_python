@@ -3,12 +3,12 @@ import xml.etree.ElementTree as ET
 
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtSvgWidgets import QGraphicsSvgItem
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsSimpleTextItem, QStyle
+from PySide6.QtWidgets import QGraphicsItem, QStyle
 from PySide6.QtCore import QByteArray, Qt, QPointF, QRectF
 from PySide6.QtGui import QPen, QColor, QPainter, QFont, QFontMetricsF, QTransform, QPainterPath
 
 from . import config
-from .config import snap, style_of, default_style
+from .config import snap, style_of, default_style, SELECTION_MARGIN, selection_pen
 
 
 def _pt_key(pt: "QPointF") -> tuple[int, int]:
@@ -280,6 +280,11 @@ _SYMBOL_FIXED_PARAMS: dict[str, dict[str, str]] = {
     "port": {"name": ""},
 }
 
+# The node symbols: no element, no refdes; their "name" is a NET name and
+# is shown as one (net label font and colour, on screen and in the export;
+# Anton, 2026-09-30: the ground's "0" ignored the net label colour).
+NODE_SYMBOLS = frozenset(_SYMBOL_FIXED_PARAMS)
+
 
 def fixed_params_for_symbol(symbol_name: str) -> dict[str, str]:
     """Return a default params dict for power symbols (ground, port)."""
@@ -493,6 +498,10 @@ class _PropertyLabel(QGraphicsItem):
         style = style or style_of(self)
         if self.prop_key == "refdes":
             return style.COMP_LABEL_FONT, style.COMP_LABEL_COLOR
+        parent = self.parentItem()
+        if (self.prop_key == "name" and parent is not None
+                and parent.symbol_name in NODE_SYMBOLS):
+            return style.NET_LABEL_FONT, style.NET_LABEL_COLOR
         if self.prop_key == "dc_current":
             from PySide6.QtGui import QFont as _QFont
             parent = self.parentItem()
@@ -506,7 +515,8 @@ class _PropertyLabel(QGraphicsItem):
             return font, (QColor("#909090") if dimmed else style.BIAS_COLOR)
         return style.COMP_PARAM_FONT, style.COMP_PARAM_COLOR
 
-    def boundingRect(self) -> QRectF:
+    def content_rect(self) -> QRectF:
+        """The text or LaTeX extent; the selection frame is drawn on it."""
         hf = self._h_flipped()
         if self._svg_renderer is not None:
             total_w = self._prefix_w + self._svg_rect.width()
@@ -521,16 +531,23 @@ class _PropertyLabel(QGraphicsItem):
         x0 = -w if hf else 0.0
         return QRectF(x0, -fm.ascent(), w, fm.ascent() + fm.descent())
 
+    def boundingRect(self) -> QRectF:
+        r = self.content_rect()
+        if r.isNull():
+            return r
+        m = SELECTION_MARGIN
+        return r.adjusted(-m, -m, m, m)
+
     def paint(self, painter: QPainter, option, widget=None):
         hf = self._h_flipped()
         font, color = self._font_and_color()
         if self.isSelected():
-            # Same selection mark as a net label: a thin blue box, no Qt
+            # Same selection mark as a net label: a thin box, no Qt
             # default indicator (labels draw their own text/SVG).
             painter.save()
-            painter.setPen(QPen(QColor(0, 120, 215), 0.8))
+            painter.setPen(selection_pen())
             painter.setBrush(Qt.NoBrush)
-            painter.drawRect(self.boundingRect())
+            painter.drawRect(self.content_rect())
             painter.restore()
         painter.setFont(font)
         painter.setPen(QPen(color))
@@ -643,7 +660,7 @@ class ComponentItem(_ViewBoxSvgItem):
         _is_sub = symbol.prefix == "X"
         self.refs: list[str] = [] if _is_sub else ["?"] * len(symbol.refs)
         # Ground and port are power symbols — show net name, never refdes
-        _show_refdes = symbol.name not in ("0", "port")
+        _show_refdes = symbol.name not in NODE_SYMBOLS
         self.prop_display: dict[str, tuple[bool, bool]] = {"refdes": (_show_refdes, False)}
         # Parameter default visibility comes from the symbol's data-params.
         for pname in self.params:
@@ -881,7 +898,7 @@ class ComponentItem(_ViewBoxSvgItem):
             # the bare expression and the braces that mark it as an expression
             # are added here for rendering (refdes/model/refs are left as-is).
             # Power symbols' "name" param is a net name, not an expression.
-            is_param = key in self.params and self.symbol_name not in ("0", "port")
+            is_param = key in self.params and self.symbol_name not in NODE_SYMBOLS
             render_val = wrap_braces(raw_val) if is_param else raw_val
 
             if is_expression(render_val):
@@ -952,7 +969,8 @@ class ComponentItem(_ViewBoxSvgItem):
         h = size / 2.0
         for lx, ly in self.symbol.pins:
             br = br.united(QRectF(lx - h, ly - h, size, size))
-        return br
+        m = SELECTION_MARGIN               # the selection frame on select_box
+        return br.adjusted(-m, -m, m, m)
 
     def shape(self) -> QPainterPath:
         path = QPainterPath()
@@ -1109,7 +1127,7 @@ class ComponentItem(_ViewBoxSvgItem):
 
         if option.state & QStyle.State_Selected:
             painter.save()
-            painter.setPen(QPen(QColor(0, 120, 215), 1.0))
+            painter.setPen(selection_pen())
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(QRectF(*self.symbol.select_box))
             painter.restore()

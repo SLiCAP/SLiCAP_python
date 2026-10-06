@@ -105,6 +105,7 @@ def _write_netlist(input_path, scene, data, output_path, title):
     """Build and write the netlist for an ALREADY-LOADED scene (the file
     extension selects the SLiCAP or NGspice builder). Shared by the
     ``netlist`` and ``export`` commands so the scene is loaded once.
+    A poster (.slicap_poster) is a drawing without a circuit: no netlist.
 
     A subcircuit schematic (Subcircuit checked in Schematic Properties)
     gets its library, lib/<title>.slicap_lib or .spice_lib - the file the
@@ -112,6 +113,10 @@ def _write_netlist(input_path, scene, data, output_path, title):
     nodes have no ground, so the flat .cir that was written before only
     failed makeCircuit's ground check (Anton, 2026-09-16). ``output_path``
     None selects the default location, cir/ or lib/."""
+    from . import project
+    if project.doc_type(input_path) == "poster":
+        return None
+
     from .component_item import ComponentItem
     from .wire_item import WireItem
     from .library_item import LibraryItem

@@ -4,8 +4,29 @@ import configparser
 import copy
 from pathlib import Path
 
-from PySide6.QtCore import QPointF
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtGui import QColor, QFont, QPen
+
+# The font families every font combo offers (drawing preferences, text
+# dialog): the generic families only. An SVG viewer and a PDF printer
+# resolve a generic family on every machine, a named font only where it is
+# installed, so a named font drifts between machines (Anton, 2026-10-06).
+# The combos stay editable: a named font can be typed at the user's risk.
+# Offering named fonts (Arial, Helvetica, Times New Roman, Courier New,
+# Georgia) was the previous list and is REJECTED for that reason.
+GENERIC_FONT_FAMILIES = ["sans-serif", "serif", "monospace"]
+
+# The line styles of drawn shapes and of the border, by name: ONE table for
+# the canvas pens; the SVG export keeps the matching dash arrays
+# (export._DASH_ARRAY). The border's style was a hard-coded dash until
+# 2026-10-06 (Anton: "cannot be changed").
+LINE_STYLES = {
+    "solid":    Qt.SolidLine,
+    "dashed":   Qt.DashLine,
+    "dotted":   Qt.DotLine,
+    "dash-dot": Qt.DashDotLine,
+}
+LINE_STYLE_NAMES = list(LINE_STYLES)
 
 # ── grid (functional, not cosmetic) ──────────────────────────────────────────
 
@@ -38,6 +59,21 @@ Z_BORDER    = -10   # frame, always behind everything
 # The colour in which a selected item shows itself (wires, junctions, shapes,
 # component select box): the item is drawn in this colour, no box around it.
 SELECTION_COLOR = QColor(0, 120, 215)
+
+# The selection frame of an item is painted with this pen on the item's
+# CONTENT rectangle, and the item's boundingRect() is that rectangle grown by
+# SELECTION_MARGIN. Qt repaints only the declared rectangle when an item
+# moves, so a frame that straddles its edge leaves stripes behind while it
+# is dragged, visible when zoomed in or at a high DPI (Anton, 2026-09-30,
+# and the ghosting of the Windows report).
+SELECTION_MARGIN = 1.0          # scene units, more than half the frame pen
+
+
+def selection_pen() -> QPen:
+    """The selection frame: one screen pixel at every zoom, dashed."""
+    pen = QPen(SELECTION_COLOR, 1.0, Qt.DashLine)
+    pen.setCosmetic(True)
+    return pen
 
 Z_WIRE      = 0
 Z_WIRE_DRAG = 5     # a wire lifted above its rubber-band partners during a drag
@@ -117,14 +153,14 @@ class Style:
 
         # Symbol colours
         self.SYMBOL_STROKE_COLOR = self._c("symbol", "stroke_color", "#000000")
-        self.SYMBOL_TEXT_COLOR   = self._c("symbol", "text_color",   "#0000cc")
+        self.SYMBOL_TEXT_COLOR   = self._c("symbol", "text_color",   "#000000")
 
         # Wire
         self.WIRE_COLOR = self._c("wire", "color", "#000000")
         self.WIRE_WIDTH = self._f("wire", "width", 1.0)
 
         # Net labels
-        self.NET_LABEL_COLOR     = self._c("net_label", "color",     "#26a269")
+        self.NET_LABEL_COLOR     = self._c("net_label", "color",     "#ff0000")
         self.NET_LABEL_FONT_SIZE = self._i("net_label", "font_size", 7)
         self.NET_LABEL_FONT      = QFont("sans-serif", self.NET_LABEL_FONT_SIZE)
 
@@ -194,7 +230,7 @@ class Style:
         # ("V: 1.23m" on wires, "I: -2m" on V-sources/inductors).
         self.BIAS_FONT_FAMILY = self._s("bias_annotation", "font_family", "sans-serif")
         self.BIAS_FONT_SIZE   = self._i("bias_annotation", "font_size",   7)
-        self.BIAS_COLOR       = self._c("bias_annotation", "color",       "#B00020")
+        self.BIAS_COLOR       = self._c("bias_annotation", "color",       "#0000ff")
         self.BIAS_DIGITS      = self._i("bias_annotation", "digits",      4)
         self.BIAS_FONT        = QFont(self.BIAS_FONT_FAMILY, self.BIAS_FONT_SIZE)
 
@@ -207,11 +243,15 @@ class Style:
         # keeps its own values in the schematic file (Border dialog). A book
         # sets its figure background here once, e.g. bg_color = #ecf3ff,
         # bg_alpha = 100, show_line_in_export = false (Anton, 2026-09-26).
-        self.BORDER_LINE_COLOR = self._c("border", "line_color", "#5050b4")
+        # Defaults = the palette of the book Structured Electronic Design
+        # (Anton, 2026-10-06): blue line, the light blue background of the
+        # book's figures at full opacity, and no border line in the export.
+        self.BORDER_LINE_COLOR = self._c("border", "line_color", "#0000ff")
         self.BORDER_LINE_WIDTH = self._f("border", "line_width", 0.8)
-        self.BORDER_BG_COLOR   = self._c("border", "bg_color",   "#ffffff")
-        self.BORDER_BG_ALPHA   = self._i("border", "bg_alpha",   0)
-        self.BORDER_SHOW_LINE  = self._b("border", "show_line_in_export", True)
+        self.BORDER_LINE_STYLE = self._s("border", "line_style", "solid")
+        self.BORDER_BG_COLOR   = self._c("border", "bg_color",   "#ecf3ff")
+        self.BORDER_BG_ALPHA   = self._i("border", "bg_alpha",   100)
+        self.BORDER_SHOW_LINE  = self._b("border", "show_line_in_export", False)
 
     # -- Preferences-dialog protocol --------------------------------------------
 

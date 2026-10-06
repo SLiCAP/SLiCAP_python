@@ -7,6 +7,8 @@ import configparser
 from pathlib import Path
 
 from PySide6.QtWidgets import (
+    QComboBox,
+    QCheckBox,
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QPlainTextEdit, QSpinBox, QDialogButtonBox,
     QFileDialog, QApplication, QLayout,
@@ -52,11 +54,20 @@ class LatexFragmentDialog(QDialog):
                  display_width: int | None = None,
                  display_height: int | None = None,
                  style=None,
-                 parent=None):
+                 parent=None,
+                 color: str = "",
+                 snippets=None, snippet: str = ""):
+        """*snippets*: ``[(name, latex_code), ...]`` from the Design data
+        (design_data.manifest_snippets) turns the dialog into the SNIPPET
+        dialog: the snippet is chosen by name, its text shown read-only and
+        rendered with SLiCAP's preamble; scale and colour are the item's
+        own (Anton, 2026-10-06). *snippet* preselects one."""
         super().__init__(parent, Qt.Window)
         from .config import default_style
         self._style = style or default_style()
-        self.setWindowTitle("LaTeX Fragment")
+        self._snippets = list(snippets or [])
+        self._snippet_mode = snippets is not None
+        self.setWindowTitle("LaTeX snippet" if self._snippet_mode else "LaTeX Fragment")
         self.setMinimumWidth(chars(self, 80))
         self._svg_bytes: bytes | None = svg_bytes
         self._natural_w: int | None = None
@@ -80,6 +91,24 @@ class LatexFragmentDialog(QDialog):
         prow.addWidget(browse_btn)
         prow.addWidget(clear_btn)
         outer.addLayout(prow)
+
+        # ── snippet combo (snippet mode) ──────────────────────────────────────
+        self._snippet_combo = None
+        if self._snippet_mode:
+            srow = QHBoxLayout()
+            srow.addWidget(QLabel("Snippet:"))
+            self._snippet_combo = QComboBox()
+            for name, _code in self._snippets:
+                self._snippet_combo.addItem(name, name)
+            if self._snippet_combo.findData(snippet) >= 0:
+                self._snippet_combo.setCurrentIndex(self._snippet_combo.findData(snippet))
+            if not self._snippets:
+                self._snippet_combo.addItem("(no LaTeX snippets in the instruction file)")
+                self._snippet_combo.setEnabled(False)
+            srow.addWidget(self._snippet_combo, stretch=1)
+            outer.addLayout(srow)
+            if not self._preamble_edit.text():
+                self._preamble_edit.setText(_find_slicap_preamble())
 
         # ── code editor ───────────────────────────────────────────────────────
         mono = QFont("Courier New", 10)
@@ -136,6 +165,22 @@ class LatexFragmentDialog(QDialog):
         scale_row.addStretch(1)
         outer.addLayout(scale_row)
 
+        # ── colour row (the render is tinted, see LatexFragmentItem) ─────────
+        from .color_button import ColorButton
+        crow = QHBoxLayout()
+        self._color_on = QCheckBox("Colour:")
+        self._color_on.setChecked(bool(color))
+        self._color_on.setToolTip("Unticked: the black of the LaTeX render")
+        crow.addWidget(self._color_on)
+        self._color_btn = ColorButton(color or "#000000")
+        self._color_btn.setEnabled(bool(color))
+        self._color_on.toggled.connect(self._color_btn.setEnabled)
+        self._color_on.toggled.connect(self._refresh_preview)
+        self._color_btn.changed.connect(self._refresh_preview)
+        crow.addWidget(self._color_btn)
+        crow.addStretch(1)
+        outer.addLayout(crow)
+
         # ── OK / Cancel ───────────────────────────────────────────────────────
         self._btn_box = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel
@@ -154,6 +199,28 @@ class LatexFragmentDialog(QDialog):
         if svg_bytes:
             self._show_svg(svg_bytes)
             self._status_lbl.setText("Ready.")
+        if self._snippet_mode:
+            self._code_edit.setReadOnly(True)
+            self._snippet_combo.currentIndexChanged.connect(self._on_snippet_chosen)
+            if self._snippets:
+                self._on_snippet_chosen()
+
+    def _on_snippet_chosen(self, *_args) -> None:
+        """Show the chosen snippet's text (from the Design data) in the code
+        view and render it."""
+        name = self.snippet()
+        code = dict(self._snippets).get(name, "")
+        self._code_edit.setPlainText(code)
+        if code.strip():
+            self._render()
+        else:
+            self._svg_bytes = None
+            self._preview_lbl.setText("(empty snippet)")
+            self._ok_btn.setEnabled(False)
+
+    def snippet(self) -> str:
+        """The chosen snippet name ("" for a typed fragment)."""
+        return (self._snippet_combo.currentData() or "") if self._snippet_combo else ""
 
     # ── slots ─────────────────────────────────────────────────────────────────
 
@@ -177,6 +244,9 @@ class LatexFragmentDialog(QDialog):
     def _render(self) -> None:
         from .latex_label import render_latex_raw
         code     = self._code_edit.toPlainText()
+        if self._snippet_mode:
+            from .latex_fragment_item import unnumbered
+            code = unnumbered(code)        # no equation numbers on a schematic
         preamble = self._preamble_edit.text()
         self._prev_btn.setEnabled(False)
         self._status_lbl.setText("Rendering…")
@@ -196,12 +266,19 @@ class LatexFragmentDialog(QDialog):
             self._preview_lbl.setText("(render failed)")
             self._ok_btn.setEnabled(False)
 
+    def _refresh_preview(self, *_args) -> None:
+        if self._svg_bytes:
+            self._show_svg(self._svg_bytes)
+
     def _show_svg(self, svg_bytes: bytes) -> None:
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
-        from .config import canvas_background
-        from .latex_label import display_svg
-        renderer = QSvgRenderer(QByteArray(display_svg(svg_bytes)))
+        from .config import canvas_background, display_color
+        from .latex_label import display_svg, recolor_svg
+        color = self.color()
+        shown = (recolor_svg(svg_bytes, display_color(color).name()) if color
+                 else display_svg(svg_bytes))
+        renderer = QSvgRenderer(QByteArray(shown))
         if not renderer.isValid():
             self._preview_lbl.setText("(invalid SVG)")
             return
@@ -256,6 +333,10 @@ class LatexFragmentDialog(QDialog):
 
     def preamble_path(self) -> str:
         return self._preamble_edit.text()
+
+    def color(self) -> str:
+        """The fragment's own colour, "" for the render's black."""
+        return self._color_btn.color() if self._color_on.isChecked() else ""
 
     def svg_bytes(self) -> bytes | None:
         return self._svg_bytes

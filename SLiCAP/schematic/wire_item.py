@@ -8,7 +8,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QPen, QBrush, QPainterPath, QPainterPathStroker, QPainter, QColor
 
-from .config import style_of, default_style, Z_WIRE, Z_NET_LABEL, SELECTION_COLOR
+from .config import (style_of, default_style, Z_WIRE, Z_NET_LABEL, SELECTION_COLOR,
+                     SELECTION_MARGIN, selection_pen)
 
 _HIT_TOL          = 6.0   # click-to-wire tolerance in scene units
 _NET_LABEL_OFFSET = 3.0   # default y-offset above the first wire point
@@ -50,11 +51,18 @@ class _NetLabel(QGraphicsSimpleTextItem):
         self.setFont(style.NET_LABEL_FONT)
         self.setBrush(QBrush(style.NET_LABEL_COLOR))
 
+    def content_rect(self) -> QRectF:
+        return super().boundingRect()
+
+    def boundingRect(self) -> QRectF:
+        m = SELECTION_MARGIN
+        return self.content_rect().adjusted(-m, -m, m, m)
+
     def shape(self) -> QPainterPath:
         # Pad the clickable area beyond the tight glyph bounds so a short net
         # name is an easy target (the default shape is hard to hit).
         path = QPainterPath()
-        path.addRect(self.boundingRect().adjusted(-3, -2, 3, 2))
+        path.addRect(self.content_rect().adjusted(-3, -2, 3, 2))
         return path
 
     def paint(self, painter: QPainter, option, widget=None):
@@ -64,9 +72,9 @@ class _NetLabel(QGraphicsSimpleTextItem):
         super().paint(painter, clean_option, widget)
         if option.state & QStyle.State_Selected:
             painter.save()
-            painter.setPen(QPen(QColor(0, 120, 215), 0.8))
+            painter.setPen(selection_pen())
             painter.setBrush(Qt.NoBrush)
-            painter.drawRect(self.boundingRect())
+            painter.drawRect(self.content_rect())
             painter.restore()
 
     def itemChange(self, change, value):

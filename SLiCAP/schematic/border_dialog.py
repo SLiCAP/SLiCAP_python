@@ -1,14 +1,14 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QGridLayout, QLabel, QDoubleSpinBox, QComboBox,
-    QCheckBox, QDialogButtonBox, QLayout, QPushButton, QSpinBox,
-    QColorDialog,
+    QCheckBox, QDialogButtonBox, QLayout, QSpinBox,
 )
-from PySide6.QtGui import QColor
 
 from .border_item import (DEFAULT_LINE_COLOR, DEFAULT_LINE_WIDTH,
-                          DEFAULT_BG_COLOR)
-from .sizing import fix_chars
+                          DEFAULT_BG_COLOR, DEFAULT_LINE_STYLE)
+from .color_button import ColorButton
+from .config import LINE_STYLE_NAMES
+from .sizing import fit_contents
 
 def _units_per() -> dict:
     """Scene units per physical unit — from the project setting
@@ -17,34 +17,6 @@ def _units_per() -> dict:
     import SLiCAP.SLiCAPconfigure as ini
     upm = float(getattr(ini, "sch_scale", 2.0))
     return {"mm": upm, "inch": 25.4 * upm}
-
-
-class _ColorButton(QPushButton):
-    """Small swatch button opening a QColorDialog. Emits ``changed`` with the
-    new colour name when the user picked one."""
-
-    changed = Signal(str)
-
-    def __init__(self, color: str, parent=None):
-        super().__init__(parent)
-        fix_chars(self, 6)
-        self._color = color
-        self._apply()
-        self.clicked.connect(self._pick)
-
-    def _apply(self):
-        self.setStyleSheet(
-            f"background-color: {self._color}; border: 1px solid #888;")
-
-    def _pick(self):
-        c = QColorDialog.getColor(QColor(self._color), self, "Select color")
-        if c.isValid():
-            self._color = c.name()
-            self._apply()
-            self.changed.emit(self._color)
-
-    def color(self) -> str:
-        return self._color
 
 
 class _SizeRow:
@@ -101,7 +73,8 @@ class BorderDialog(QDialog):
                  line_color: str = DEFAULT_LINE_COLOR,
                  line_width: float = DEFAULT_LINE_WIDTH,
                  bg_color: str = DEFAULT_BG_COLOR,
-                 bg_alpha: int = 0, parent=None):
+                 bg_alpha: int = 0, parent=None,
+                 line_style: str = DEFAULT_LINE_STYLE):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Border")
         outer = QVBoxLayout()
@@ -118,7 +91,7 @@ class BorderDialog(QDialog):
                                units_per)
 
         grid.addWidget(QLabel("Line"), 2, 0)
-        self._line_color = _ColorButton(line_color)
+        self._line_color = ColorButton(line_color)
         grid.addWidget(self._line_color, 2, 1)
         self._line_width = QDoubleSpinBox()
         self._line_width.setDecimals(2)
@@ -126,9 +99,15 @@ class BorderDialog(QDialog):
         self._line_width.setValue(line_width)
         self._line_width.setSuffix(" units")
         grid.addWidget(self._line_width, 2, 2)
+        self._line_style = QComboBox()
+        self._line_style.addItems(LINE_STYLE_NAMES)
+        self._line_style.setCurrentText(
+            line_style if line_style in LINE_STYLE_NAMES else DEFAULT_LINE_STYLE)
+        fit_contents(self._line_style)
+        grid.addWidget(self._line_style, 2, 3)
 
         grid.addWidget(QLabel("Background"), 3, 0)
-        self._bg_color = _ColorButton(bg_color)
+        self._bg_color = ColorButton(bg_color)
         grid.addWidget(self._bg_color, 3, 1)
         self._bg_alpha = QSpinBox()
         self._bg_alpha.setRange(0, 100)
@@ -188,6 +167,9 @@ class BorderDialog(QDialog):
     def line_width(self) -> float:
         return self._line_width.value()
 
+    def line_style(self) -> str:
+        return self._line_style.currentText()
+
     def bg_color(self) -> str:
         return self._bg_color.color()
 
@@ -204,4 +186,5 @@ class BorderDialog(QDialog):
                     fixed_w=self.fixed_w(), fixed_h=self.fixed_h(),
                     line_color=self.line_color(),
                     line_width=self.line_width(),
+                    line_style=self.line_style(),
                     bg_color=self.bg_color(), bg_alpha=self.bg_alpha())

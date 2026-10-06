@@ -35,6 +35,7 @@ two that must be kept in sync by hand.
    schematics/wiring
    schematics/labels_ports_parameters
    schematics/annotations
+   schematics/posters
    schematics/symbol_editor
    schematics/preferences
    schematics/netlist_and_export

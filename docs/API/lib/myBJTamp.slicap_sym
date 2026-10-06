@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <g id="myBJTamp"
+     data-prefix="X"
+     data-nodes="in ref out"
+     data-model="myBJTamp|1"
+     data-params=""
+     data-show-pinnames="true"
+     data-description="Subcircuit myBJTamp">
+      <rect x="-25" y="-15" width="50" height="30" fill="none" stroke="black" stroke-width="1"/>
+      
+      <!-- Pins -->
+      <line x1="-25" y1="0" x2="-35" y2="0" stroke="black" stroke-width="1"/>
+      <line x1="0" y1="15" x2="0" y2="25" stroke="black" stroke-width="1"/>
+      <line x1="25" y1="0" x2="35" y2="0" stroke="black" stroke-width="1"/>
+      
+      <circle cx="-35" cy="0" r="0.5" class="node" data-node="in"/>
+      <circle cx="0" cy="25" r="0.5" class="node" data-node="ref"/>
+      <circle cx="35" cy="0" r="0.5" class="node" data-node="out"/>
+  </g>
+</svg>
