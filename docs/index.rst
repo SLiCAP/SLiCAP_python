@@ -33,20 +33,15 @@ SLiCAP Manual
        
     **Download link to the** `source files <https://montagne.nl/downloads/SLiCAP_KiCON.zip>`_
     
+Quick jumps
+-----------
+
+#. `An introduction to SLiCAP <API/introduction/SLiCAPintroduction.html>`_ 
+#. `Release Notes <API/introduction/SLiCAPreleaseNotes#slicap-version-6-2-release-notes.html>`_
+#. `Book Structured Electronic Design <https://books.open.tudelft.nl/home/catalog/book/162>`_
+    
 What you can find in this manual
 ================================
-
-Below, you find short descriptions of the main sections of this manual, listed in the side menu.
-
-SLiCAP Version 5
-----------------
-
-`SLiCAP Version 5 <API/introduction/SLiCAPintroduction.html>`_ includes:
-
-#. An introduction to SLiCAP
-#. Release Notes
-#. A short guidance how to use SLiCAP in conjunction with `Structured Electronic Design <https://books.open.tudelft.nl/home/catalog/book/162>`_
-#. A list of contributers to SLiCAP.
 
 SLiCAP User Guide
 -----------------
@@ -56,14 +51,6 @@ The `User Guide <API/userguide/SLiCAPuserguide.html>`_ provides a comprehensive 
 SLiCAP output displayed in this **SLiCAP user guide**, is generated with the script: `manual.py <https://github.com/SLiCAP/SLiCAP_python/tree/main/docs/manual.py>`_. 
 
 .. literalinclude:: API/Manual.py
-
-.. admonition:: Warning: running this script may take a while!
-    :class: warning
-    
-    This is because:
-    
-    #. ``feedback.py`` Compares symbolic circuit analysis results obtained with the **asymptotic-gain feedback model** with the results obtained from **Modified Nodal Analysis**. The sole purpose of this is to illustrate the correctness of the feedback model for those unacquainted with it. As stated in `How to Use SLiCAP <introduction/SLiCAPhow.html>`_, working with such complex multi-variable expressions is not encouraged.
-    #. The script ``plots.py`` shows a plot of a periodic pulse response obtained from a single unit step response. Periodic pulses created in this way use the  **Heaviside** function. The numeric evaluation of expressions with this function may take a while. 
 
 SLiCAP Examples and Tutorials
 -----------------------------
@@ -83,7 +70,7 @@ SLiCAP Reference
 Structured Electronic Design Environment
 ========================================
 
-SLiCAP Version 5 adds a graphical environment on top of the analysis
+SLiCAP includes a graphical environment on top of the analysis
 engine. It is documented in its own `manual Structured Electronic Design
 Environment <GUI/index.html>`_.
 
@@ -148,13 +135,30 @@ in the same form.
 Because they arrive in the same form, they can be **compared directly**. The
 transfer of a concept, derived symbolically from a handful of ideal elements,
 and the transfer of the completed circuit, simulated with full device models,
-can be drawn on the same axes of the same figure - and NGspice's operating
+can be drawn on the same axes of the same figure. NGspice's operating
 point is annotated on the schematic itself, node by node, down into the
-subcircuits. So the closing question of any design - *does the realisation
-still do what the concept promised, and where does it start to deviate?* - is
+subcircuits. So the closing question of any design: *does the realisation
+still do what the concept promised, and where does it start to deviate?* is
 answered by reading one figure, not by reconciling two separate documents.
-This is what makes it an integrated design **and** verification environment
+This is what makes it an integrated **design and verification environment**
 rather than a drawing tool with a simulator attached.
+
+Annotate schematics and create reports, posters and presentations
+-----------------------------------------------------------------
+
+The Structured Electronic Design environments includes a graphic ``svg`` editor
+for annotating schematics and ``LaTeX`` and ``RST`` formatters for creating up-to-date
+design reports:
+
+- Create rectangles, ellipses, lines, polygons, hand-drawn curves or curves from 
+  math functions or simulation results (traces)
+- Rotate, mirror, and reshape the above objects
+- Place plots, bias annotation and expressions, all of those live updated from simulation 
+  on the schematic
+- Create posters or nested posters including multiple schematics and annotations, all of 
+  those live updated from simulation
+- Create LaTeX and RST snippets for including design results, tables, expressions, figures in 
+  auto-updated LaTeX documents and Sphinx-generated web sites, respectively.
 
 .. toctree::
     :hidden:

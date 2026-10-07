@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-125.000 -57.500 293.948 123.500" width="146.974mm" height="61.750mm">
-  <!-- SLiCAP schematic export: bigAmp.slicap_sch, SLiCAP 6.0.3 -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-126.492 -58.500 299.628 124.500" width="149.814mm" height="62.250mm">
+  <!-- SLiCAP schematic export: bigAmp.slicap_sch, SLiCAP 6.2.0 -->
   <title>bigAmp</title>
   <defs>
     <path id="img0-g0-46" d="M2.654047-.533998C2.654047-.852802 2.399004-1.075965 2.12005-1.075965C1.801245-1.075965 1.578082-.820922 1.578082-.541968C1.578082-.223163 1.833126 0 2.11208 0C2.430884 0 2.654047-.255044 2.654047-.533998Z" />
@@ -41,7 +41,7 @@
     <path id="lt7-g0-111" d="M3.985056-1.745455C3.985056-2.797509 3.148194-3.658281 2.11208-3.658281S.239103-2.789539 .239103-1.745455C.239103-.73325 1.083935 .079701 2.11208 .079701C3.148194 .079701 3.985056-.73325 3.985056-1.745455ZM2.11208-.470237C1.482441-.470237 .932503-.932503 .932503-1.833126S1.522291-3.132254 2.11208-3.132254C2.709838-3.132254 3.291656-2.717808 3.291656-1.833126C3.291656-.924533 2.725778-.470237 2.11208-.470237Z" />
     <path id="lt7-g0-114" d="M1.346949-1.697634C1.346949-2.558406 2.064259-3.020672 2.765629-3.028643V-3.618431C2.096139-3.610461 1.609963-3.283686 1.291158-2.86127V-3.594521H.67746V0H1.346949V-1.697634Z" />
   </defs>
-  <rect x="-125.000" y="-57.500" width="293.948" height="123.500" fill="white" />
+  <rect x="-126.492" y="-58.500" width="299.628" height="124.500" fill="white" />
   <polyline points="115.00,55.00 115.00,45.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="125.00,55.00 115.00,55.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="125.00,15.00 115.00,15.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
@@ -85,19 +85,19 @@
   <g transform="translate(-85.00,15.00) rotate(90.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
   </g>
-  <text x="-121.49" y="17.45" font-family="monospace" font-size="6.0pt" fill="#000000">inP</text>
+  <text x="-121.49" y="17.45" font-family="sans-serif" font-size="7.0pt" fill="#26a269">inP</text>
   <g transform="translate(-85.00,55.00) rotate(90.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
   </g>
-  <text x="-121.49" y="57.45" font-family="monospace" font-size="6.0pt" fill="#000000">inN</text>
+  <text x="-121.49" y="57.45" font-family="sans-serif" font-size="7.0pt" fill="#26a269">inN</text>
   <g transform="translate(125.00,55.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
   </g>
-  <text x="146.70" y="57.48" font-family="monospace" font-size="6.0pt" fill="#000000">outN</text>
+  <text x="146.70" y="57.48" font-family="sans-serif" font-size="7.0pt" fill="#26a269">outN</text>
   <g transform="translate(125.00,15.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
   </g>
-  <text x="146.70" y="17.15" font-family="monospace" font-size="6.0pt" fill="#000000">outP</text>
+  <text x="146.70" y="17.15" font-family="sans-serif" font-size="7.0pt" fill="#26a269">outP</text>
   <g transform="translate(-75.00,35.00)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />

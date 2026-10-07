@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-173.192 -128.124 356.473 261.501" width="178.236mm" height="130.751mm">
-  <!-- SLiCAP schematic export: VampQspice.spice_sch, SLiCAP 6.0.3 -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-175.192 -128.124 359.473 263.501" width="179.736mm" height="131.751mm">
+  <!-- SLiCAP schematic export: VampQspice.spice_sch, SLiCAP 6.2.0 -->
   <title>VampQspice</title>
   <defs />
-  <rect x="-173.192" y="-128.124" width="356.473" height="261.501" fill="white" />
+  <rect x="-175.192" y="-128.124" width="359.473" height="263.501" fill="white" />
   <polyline points="65.00,-65.00 25.00,-65.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <text x="34.30" y="-68.26" font-family="sans-serif" font-size="7pt" fill="#b00020">V: 4.296</text>
   <polyline points="0.00,-65.00 25.00,-65.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
@@ -205,7 +205,7 @@
   <g transform="translate(125.00,-25.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
   </g>
-  <text x="129.57" y="-22.85" font-family="monospace" font-size="6.0pt" fill="#000000">out</text>
+  <text x="129.57" y="-22.85" font-family="sans-serif" font-size="7.0pt" fill="#26a269">out</text>
   <circle cx="-20.00" cy="30.00" r="2.00" fill="#000000" />
   <circle cx="0.00" cy="-10.00" r="2.00" fill="#000000" />
   <circle cx="-60.00" cy="-40.00" r="2.00" fill="#000000" />

@@ -156,4 +156,3 @@ Planned
 -------
 
 * **Loop detection** across the hierarchy.
-* A full **Symbol Editor** for refining generated symbols.

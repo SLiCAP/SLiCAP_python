@@ -1,6 +1,6 @@
-==================
-SLiCAP Version 6.0
-==================
+================
+SLiCAP Version 6
+================
 
 .. image:: /API/img/colorCode.svg
 
@@ -10,7 +10,7 @@ SLiCAP Version 6.0
 - SLiCAP is a an **open source** application written in Python, created by `Anton J.M. Montagne <https://montagne.nl>`_
 - SLiCAP is part of the tool set for teaching `Structured Electronic Design <https://analog-electronics.tudelft.nl>`_ at the Delft University of Technology
 
-SLiCAP Version 6.0 is distributed under the `MIT license <https://opensource.org/license/mit>`_
+SLiCAP Version 6 is distributed under the `MIT license <https://opensource.org/license/mit>`_
 
 .. image:: /API/img/colorCode.svg
 
