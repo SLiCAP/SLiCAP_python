@@ -136,6 +136,9 @@ A signal detector can be specified in three different ways:
   - The format for a differential voltage detector is: ``.detector V_<positive-node>  V_<negative-node>``
   - The format for a single current detector is: ``.detector I_<element-refdes>``
   - The format for a differential current detector is: ``.detector I_<positive-element> I_<negative-element>``
+  - The word ``None`` is the ground side of a pair: ``.detector None V_<node-name>`` gives
+    the negated node voltage, and ``.detector None I_<element-refdes>`` the negated current.
+    This is the netlist form of ``detector=[None, 'V_<node-name>']``. ``V_0`` is not a detector.
   
 - In the circuit file
 
@@ -307,7 +310,7 @@ The loop gain type
 
 **loopgaintype**: 'dd' \| 'dc' \| 'cd' \| 'cc'
 
-Applies to the transfers 'loopgain' and 'servo' when TWO loop gain references are given and no conversion type: a balanced stage, such as the input pair of an operational amplifier, inside an unbalanced amplifier. The loop gain is computed by injection at both references: each reference is replaced by an independent source of its own gain and the returned controlling quantity is detected. The letters follow the mixed-mode naming of the conversion types, first the response and second the stimulus: the controlling quantities of the pair are driven in the mode of the second letter (the injection at the outputs of the references) and detected in the mode of the first letter, with the differential-mode and common-mode definitions of the conversion matrix (differential-mode voltage :math:`V_P - V_N`, common-mode voltage :math:`(V_P + V_N)/2`, differential-mode current :math:`(I_P - I_N)/2`, common-mode current :math:`I_P + I_N`); each reference injects its own gain, so a gain mismatch is included.
+Applies to the transfers 'loopgain' and 'servo' when TWO loop gain references are given and no conversion type: a balanced stage, such as the input pair of an operational amplifier, inside an unbalanced amplifier. The loop gain is computed by injection at both references: each reference is replaced with an independent source of its own gain and the returned controlling quantity is detected. The letters follow the mixed-mode naming of the conversion types, first the response and second the stimulus: the controlling quantities of the pair are driven in the mode of the second letter (the injection at the outputs of the references) and detected in the mode of the first letter, with the differential-mode and common-mode definitions of the conversion matrix (differential-mode voltage :math:`V_P - V_N`, common-mode voltage :math:`(V_P + V_N)/2`, differential-mode current :math:`(I_P - I_N)/2`, common-mode current :math:`I_P + I_N`); each reference injects its own gain, so a gain mismatch is included.
 
 - 'dd' (default): the differential-mode loop gain
 - 'cc': the common-mode loop gain

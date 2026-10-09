@@ -234,7 +234,11 @@ def _find_junction_points(wires, components) -> set[tuple[int, int]]:
 # did not, which made captions such as "+", "-" and a voltage name
 # impossible to align with a symbol (Anton, 2026-09-26). The item classes
 # of these kinds do not snap in itemChange either. The set itself,
-# _FREE_PLACEMENT_MODES, is defined right after _Mode.
+# _FREE_PLACEMENT_MODES, is defined right after _Mode. One exception: an
+# image that LINKS a drawing (a schematic or a poster on a poster) snaps,
+# in placement and in itemChange: it is a drawing on the same grid, and
+# at 100 % its grid is the poster's (Anton, 2026-10-09). Plain images and
+# figures stay free.
 
 
 # ONE clipboard for every scene of the process, so a selection copied on one
@@ -291,6 +295,9 @@ class SchematicScene(QGraphicsScene):
         # style through the scene (config.style_of), so several open
         # schematics never share style state.
         self.style = _config.default_style()
+        # The document properties of the drawing shown (from_data; the panel
+        # keeps them in step): what the properties block renders.
+        self.document_properties = None
         # The schematic's own LaTeX render-cache directory (the ``<name>.cache``
         # sidecar), set by the owning panel; None → the session temp.  Items
         # resolve it via latex_label.cache_dir_of.
@@ -396,6 +403,12 @@ class SchematicScene(QGraphicsScene):
         # Unselected wire points attached to the group at drag START, moved
         # from their originals on every step: [(wire, idx, orig_QPointF)].
         self._group_rb: list = []
+        # Moving points of the group that sit on a component pin at press:
+        # [(comp, local_xy, source)], source = ("wire", wire, idx) or
+        # ("pin", comp, local_xy). A point that leaves its pin is bridged at
+        # release; a dashed preview shows the bridge during the drag.
+        self._group_pin_anchors: list = []
+        self._group_pin_previews: list = []
         self._comp_group_move_moved  = False
 
     # ── copy / paste ──────────────────────────────────────────────────────────
@@ -570,6 +583,12 @@ class SchematicScene(QGraphicsScene):
             return
         self._end_wire(commit=False)
         self._cancel_placement()   # clears any prior ghost / mode
+        # The copied originals stay selected after Copy. R and M act on
+        # the selection when no single ghost is being placed, so R during
+        # a paste rotated the ORIGINALS (a user's report on 6.1.0,
+        # 2026-10-09). The paste is the new selection: the pasted items
+        # are selected when placed, and R then turns those.
+        self.clearSelection()
 
         # Reference point: first component's position (always on-grid).
         # Using a component origin guarantees delta = snapped_cursor - ref
@@ -596,7 +615,7 @@ class SchematicScene(QGraphicsScene):
         for data in entries:
             kind = data['kind']
             if kind == 'component':
-                ghost = make_ghost(data['svg_bytes'], self.style)
+                ghost = make_ghost(data['svg_bytes'], _config.display_style(self.style))
                 ghost.setTransform(QTransform().scale(
                     -1 if data['h_flip'] else 1,
                     -1 if data['v_flip'] else 1,
@@ -710,7 +729,7 @@ class SchematicScene(QGraphicsScene):
                 item.model        = data['model']
                 item.refs         = list(data['refs'])
                 item.prop_display = {k: tuple(v) for k, v in data['prop_display'].items()}
-                item.prop_offsets = {k: list(v) for k, v in data['prop_offsets'].items()}
+                item.set_prop_offsets(data['prop_offsets'])   # moved labels stay moved
                 item.update_labels()
                 self.addItem(item)
                 item.setSelected(True)
@@ -851,7 +870,7 @@ class SchematicScene(QGraphicsScene):
         self._placing_name = name
         self._placing_svg  = svg_bytes
         self._placing_hflip = False
-        self._ghost        = make_ghost(svg_bytes, self.style)
+        self._ghost        = make_ghost(svg_bytes, _config.display_style(self.style))
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
         self.placing_started.emit()
@@ -1134,41 +1153,48 @@ class SchematicScene(QGraphicsScene):
         self.placing_started.emit()
 
     def link_choices(self, kind: str) -> list:
-        """What a link of *kind* can show, as (name, "img/<name>.svg"): the
-        figures of the Design data; the schematics of the project; the
-        posters of the project except this one and any poster that already
-        shows this one, directly or through a chain (a poster may not
-        contain itself)."""
+        """What a link of *kind* can show, as (key, "img/<stem>.svg"): the
+        figures of the Design data by name; the schematics of the project
+        (sch/ and lib/) by source path; the posters of the project by name,
+        except this one and any poster that already shows this one,
+        directly or through a chain (a poster may not contain itself)."""
         from . import project
         root = project.project_root()
         if kind == "figure":
             from .design_data import manifest_figures
             return manifest_figures(root)
         out = []
+        img = project.folder_rel("img", root)
         if kind == "schematic":
-            folder = root / "sch"
-            for p in sorted(folder.glob("*")) if folder.is_dir() else []:
-                if p.suffix.lower() in (".slicap_sch", ".spice_sch"):
-                    out.append((p.stem, "img/" + p.stem + ".svg"))
+            for p in project.project_schematics(root):
+                out.append((project.schematic_ref(p, root), img + "/" + p.stem + ".svg"))
         elif kind == "poster":
             from .provenance import poster_contains
             me = getattr(self, "file_path", None)
-            folder = root / "posters"
+            folder = project.folder("posters", root)
             for p in sorted(folder.glob("*" + project.POSTER_SUFFIX)) if folder.is_dir() else []:
                 if me is not None and poster_contains(p, me):
                     continue                     # itself, or one that shows it
-                out.append((p.stem, "img/" + p.stem + ".svg"))
+                out.append((p.stem, img + "/" + p.stem + ".svg"))
         return out
+
+    def properties_block(self):
+        """THE document-properties block of the drawing, or None."""
+        return next((i for i in self.items()
+                     if isinstance(i, FreeTextItem) and i.is_properties), None)
+
+    def refresh_properties_text(self, props) -> None:
+        """Re-render the properties block from *props* (after the
+        properties dialog, at save)."""
+        self.document_properties = props
+        block = self.properties_block()
+        if block is not None:
+            block.render(props)
 
     def link_source(self, link: str):
         """The source file of a schematic or poster link, or None."""
         from . import project
-        kind, _, name = link.partition(":")
-        if kind == "schematic":
-            return project.schematic_file_for(name)
-        if kind == "poster":
-            return project.poster_file_for(name)
-        return None
+        return project.link_source(link)
 
     # ── stacking order of annotations ───────────────────────────────────────
     # Shapes, images, LaTeX fragments, text and hyperlinks keep a z value of
@@ -1233,13 +1259,16 @@ class SchematicScene(QGraphicsScene):
                     n += 1
         return n
 
-    def start_text_placement(self, text: str = "Text", props: dict | None = None):
-        """*props*: the item's own font and colour (TextDialog.properties())."""
+    def start_text_placement(self, text: str = "Text", props: dict | None = None,
+                             template: str = ""):
+        """*props*: the item's own font and colour (TextDialog.properties()).
+        *template*: the text is the rendered document-properties block."""
         from PySide6.QtGui import QBrush
         self._end_wire(commit=False)
         self._cancel_placement()
         self._placing_text = text
         self._placing_text_props = dict(props or {})
+        self._placing_text_template = template or ""
         first_line = (text.split('\n')[0] or "Text")[:50]
         ghost = QGraphicsSimpleTextItem(first_line)
         probe = FreeTextItem(first_line, **self._placing_text_props)
@@ -1732,6 +1761,8 @@ class SchematicScene(QGraphicsScene):
         self._pin_anchors         = []
         self._pin_preview_wires   = []
         self._wire_pin_preview_wires = []
+        self._group_pin_anchors   = []
+        self._group_pin_previews  = []
         self._border_pending    = None
         self._library_pending   = None
         self._image_pending     = None
@@ -1957,6 +1988,17 @@ class SchematicScene(QGraphicsScene):
                     changed = True
             if changed:
                 wire._rebuild()
+
+    def _group_moving_point(self, src) -> QPointF | None:
+        """Current scene position of a moving point of the group drag:
+        ("wire", wire, idx) a point of a selected wire, ("pin", comp,
+        local_xy) a pin of a moving component. None once the item is gone."""
+        kind, item, ref = src
+        if item.scene() is None:
+            return None
+        if kind == "wire":
+            return QPointF(item.points[ref]) if ref < len(item.points) else None
+        return item.mapToScene(QPointF(*ref))
 
     def _record_pre_drag_wire_pts(self) -> None:
         """Remember every wire's points at drag start (for _reconnect_after_move)."""
@@ -2338,7 +2380,7 @@ class SchematicScene(QGraphicsScene):
                     text=item.toPlainText(),
                     font_family=item.font_family, font_size=item.font_size,
                     bold=item.bold, italic=item.italic, color=item.color,
-                    z=item.zValue(),
+                    z=item.zValue(), template=item.template,
                 ))
             elif isinstance(item, CommandItem):
                 commands.append(CommandData(
@@ -2447,12 +2489,7 @@ class SchematicScene(QGraphicsScene):
                 missing.append(cd.symbol_name)
                 continue
             item = ComponentItem(sym, cd.instance_id)
-            # __init__ creates a "refdes" label at the default position.
-            # Clear it now so _save_label_offsets() inside update_labels()
-            # below does not overwrite the prop_offsets we are about to restore.
-            for _lbl in list(item._labels.values()):
-                _discard_label(_lbl)      # never orphan: see component_item
-            item._labels.clear()
+            item.set_prop_offsets(cd.prop_offsets)   # discards the constructor's labels
             item.setPos(QPointF(cd.x, cd.y))
             item.setRotation(cd.rotation)
             item.h_flip       = cd.h_flip
@@ -2462,7 +2499,6 @@ class SchematicScene(QGraphicsScene):
             item.model        = cd.model
             item.refs         = list(cd.refs)
             item.prop_display = {k: tuple(v) for k, v in cd.prop_display.items()}
-            item.prop_offsets = {k: tuple(v) for k, v in cd.prop_offsets.items()}
             # Backfill defaults for power symbols saved without net name (old files)
             if cd.symbol_name in ("0", "port"):
                 item.params.setdefault("name", "0" if cd.symbol_name == "0" else "")
@@ -2494,11 +2530,14 @@ class SchematicScene(QGraphicsScene):
         for jd in data.junctions:
             self.addItem(JunctionItem(QPointF(jd.x, jd.y)))
 
+        self.document_properties = getattr(data, "properties", None)
         for td in data.free_texts:
             t = FreeTextItem(td.text, QPointF(td.x, td.y),
                              font_family=td.font_family, font_size=td.font_size,
-                             bold=td.bold, italic=td.italic, color=td.color)
+                             bold=td.bold, italic=td.italic, color=td.color,
+                             template=td.template)
             t.setZValue(td.z)
+            t.render(self.document_properties)      # the properties block follows the file
             self.addItem(t)
 
         for cd in data.commands:
@@ -2590,6 +2629,11 @@ class SchematicScene(QGraphicsScene):
         """Where a placed item goes: the raw pointer position for an
         annotation, the grid point for everything else (see
         _FREE_PLACEMENT_MODES)."""
+        if self._mode == _Mode.PLACING_IMAGE and self._image_pending and \
+           self._image_pending[3].split(":", 1)[0] in ("schematic", "poster"):
+            from .config import shift_held, snap_fine
+            # a placed DRAWING aligns with the grid, or the fine grid under Shift
+            return snap_fine(event.scenePos()) if shift_held() else snap(event.scenePos())
         if self._mode in _FREE_PLACEMENT_MODES:
             return event.scenePos()
         if self._mode == _Mode.PLACING_ITEM and self._ghost is not None:
@@ -2623,6 +2667,7 @@ class SchematicScene(QGraphicsScene):
         elif self._mode == _Mode.PLACING_TEXT and event.button() == Qt.LeftButton:
             self._push_undo()
             item = FreeTextItem(self._placing_text or "Text", pos,
+                                template=getattr(self, "_placing_text_template", ""),
                                 **getattr(self, "_placing_text_props", {}))
             self.addItem(item)
             self._cancel_placement()
@@ -2936,7 +2981,15 @@ class SchematicScene(QGraphicsScene):
                         and i.parentItem() is not None
                         and not i.parentItem().isSelected()
                     ]
-                    if len(non_wire_sel) + len(loose_labels) > 1 and non_wire_sel:
+                    # A selection is a GROUP as soon as it holds more than
+                    # the pressed item: other components, loose labels OR
+                    # wires. One component with its wires selected is a
+                    # block too; counting the non-wire items only sent it
+                    # down the single-component path, which moved the
+                    # component alone and stretched its selected wires from
+                    # the pins (Anton, 2026-10-08).
+                    sel_wires = [w for w in self.selectedItems() if isinstance(w, WireItem)]
+                    if len(non_wire_sel) + len(loose_labels) + len(sel_wires) > 1 and non_wire_sel:
                         self._comp_group_move_items = [
                             (i, QPointF(i.pos())) for i in non_wire_sel
                         ]
@@ -2993,6 +3046,47 @@ class SchematicScene(QGraphicsScene):
                             and not getattr(w, "_preview", False)
                             for i, p in enumerate(w.points) if _pt_key(p) in anchors
                         ]
+                        # Rule 1 for the group (Anton, 2026-10-08): a moving
+                        # point - a pin of a moving component or a point of a
+                        # selected wire - that sits on a component pin at
+                        # press stays connected. If it leaves the pin, the pin
+                        # is bridged to its new position at release (dashed
+                        # preview during the drag). A pin that moves with the
+                        # group ends where the point ends, so nothing is added
+                        # then. "Group move: no bridge wires needed" was the
+                        # earlier assumption and was WRONG: a selected wire
+                        # dragged off an unselected pin disconnected the net.
+                        comp_pins: dict[tuple, list] = {}
+                        for comp in self.items():
+                            if isinstance(comp, ComponentItem):
+                                for lx, ly in comp.pin_positions():
+                                    k = _pt_key(comp.mapToScene(QPointF(lx, ly)))
+                                    comp_pins.setdefault(k, []).append((comp, (lx, ly)))
+                        self._group_pin_anchors = []
+                        for w, orig_pts in self._wire_group_move_data:
+                            for idx in {0, len(orig_pts) - 1}:
+                                for comp, local in comp_pins.get(_pt_key(orig_pts[idx]), []):
+                                    self._group_pin_anchors.append(
+                                        (comp, local, ("wire", w, idx)))
+                        for itm, _ in self._comp_group_move_items:
+                            if not isinstance(itm, ComponentItem):
+                                continue
+                            for lx, ly in itm.pin_positions():
+                                k = _pt_key(itm.mapToScene(QPointF(lx, ly)))
+                                for comp, local in comp_pins.get(k, []):
+                                    if comp is not itm:
+                                        self._group_pin_anchors.append(
+                                            (comp, local, ("pin", itm, (lx, ly))))
+                        self._group_pin_previews = []
+                        for comp, local, src in self._group_pin_anchors:
+                            pt = self._group_moving_point(src)
+                            pw = WireItem([QPointF(pt), QPointF(pt)])
+                            pen = pw.pen()
+                            pen.setStyle(Qt.DashLine)
+                            pw.setPen(pen)
+                            pw._preview = True
+                            self.addItem(pw)
+                            self._group_pin_previews.append(pw)
                         self.group_move_started.emit()
                         return
                 # Single-component drag off a pin-to-pin contact: show the
@@ -3212,6 +3306,14 @@ class SchematicScene(QGraphicsScene):
                 touched.add(w)
             for w in touched:
                 w._rebuild()
+            # Dashed bridge previews: from the pin to the moving point.
+            for (comp, local, src), pw in zip(self._group_pin_anchors,
+                                              self._group_pin_previews):
+                if pw.scene() is None or comp.scene() is None:
+                    continue
+                pw.points = _elbow(QPointF(comp.mapToScene(QPointF(*local))),
+                                   QPointF(self._group_moving_point(src)), True)
+                pw._rebuild()
 
         else:
             super().mouseMoveEvent(event)
@@ -3360,17 +3462,32 @@ class SchematicScene(QGraphicsScene):
                 self._vdrag_pin_preview = None
                 return
             if self._comp_group_move_start is not None:
+                for pw in self._group_pin_previews:
+                    if pw.scene() is not None:
+                        self.removeItem(pw)
+                self._group_pin_previews = []
                 if self._comp_group_move_moved:
                     self._push_snapshot(self._pre_drag_data)
                     self._reconnect_after_move()
-                    for anchor, comp, local_xy in self._pin_anchors:
-                        if comp.scene() is not None:
-                            new_pin = comp.mapToScene(QPointF(*local_xy))
-                            if _pt_key(new_pin) != _pt_key(anchor):
-                                self.addItem(WireItem(_elbow(anchor, new_pin, True)))
+                    # Bridge every moving point that left its pin (one wire
+                    # per pin/point pair: a wire end and a group pin on the
+                    # same fixed pin would otherwise add the bridge twice).
+                    bridged: set[tuple] = set()
+                    for comp, local, src in self._group_pin_anchors:
+                        if comp.scene() is None:
+                            continue
+                        pin = comp.mapToScene(QPointF(*local))
+                        pt  = self._group_moving_point(src)
+                        if pt is None or _pt_key(pt) == _pt_key(pin):
+                            continue
+                        key = (_pt_key(pin), _pt_key(pt))
+                        if key not in bridged:
+                            bridged.add(key)
+                            self.addItem(WireItem(_elbow(QPointF(pin), QPointF(pt), True)))
                     self._sync_junctions()
                     self._remove_short_circuit_wires()
                     self._sync_junctions()
+                self._group_pin_anchors = []
                 self._comp_group_move_start = None
                 self._comp_group_move_items = []
                 self._label_group_move_items = []
@@ -3459,6 +3576,7 @@ class SchematicScene(QGraphicsScene):
                         break
         if isinstance(item, BorderItem):
             from .border_dialog import BorderDialog
+            from .document_properties_dialog import border_formats
             r = item.rect()
             dlg = BorderDialog(
                 width=r.width(),
@@ -3468,6 +3586,7 @@ class SchematicScene(QGraphicsScene):
                 line_color=item.line_color, line_width=item.line_width,
                 bg_color=item.bg_color, bg_alpha=item.bg_alpha,
                 line_style=item.line_style,
+                formats=border_formats(self.style.BORDER_PRESETS),
             )
             if dlg.exec():
                 self._push_undo()
@@ -3612,12 +3731,15 @@ class SchematicScene(QGraphicsScene):
             return
         if isinstance(item, FreeTextItem):
             from .text_dialog import TextDialog
-            dlg = TextDialog(item.toPlainText(), style=self.style,
-                             font_family=item.font_family, font_size=item.font_size,
-                             bold=item.bold, italic=item.italic, color=item.color)
+            dlg = TextDialog(item.template or item.toPlainText(), style=self.style,
+                             template=item.is_properties, **item.own_properties())
             if dlg.exec():
                 self._push_undo()
-                item.setPlainText(dlg.text())
+                if item.is_properties:
+                    item.template = dlg.text() or item.template
+                    item.render(self.document_properties)
+                else:
+                    item.setPlainText(dlg.text())
                 item.set_properties(**dlg.properties())
             return
         if isinstance(item, HyperlinkItem):

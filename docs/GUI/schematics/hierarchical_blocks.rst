@@ -41,8 +41,16 @@ Any schematic can be turned into a reusable subcircuit:
    **Down**, top to bottom is the left-to-right node order of the ``.subckt``
    line, the order in which a parent connects the block. Under *Parameters*
    declare the **overridable parameters** with their defaults; a parent may
-   pass a value for each of them. The dialog is a fixed part of saving a
-   subcircuit: it opens on every save, showing the previous choices.
+   pass a value for each of them. The dialog opens on the first save and
+   whenever the schematic holds a port that is not yet in the node order.
+   Otherwise :menuselection:`File --> Save schematic` writes the package
+   without a question.
+
+   :menuselection:`File --> Save schematic as…` always opens the dialog,
+   with the *Subcircuit name* editable. Another name saves a copy of the
+   package under that name, and the editor continues on the copy. With the
+   name unchanged it is the way to reorder the nodes or edit the
+   parameters.
 
    .. TODO screenshot: the Create Subcircuit dialog for smallAmp (nodes inP, inN, outP, outN; parameters A_v, r_o)
 
@@ -130,8 +138,8 @@ Descending into the hierarchy
 Double-click a placed block and choose **Descend into subcircuit**: the
 subcircuit's schematic opens in its own tab for inspection and editing.  If
 it is already open, its tab is activated instead of opening a second copy.
-Saving the subcircuit re-runs the Create Subcircuit dialog and regenerates
-the library, keeping schematic, symbol and ``.subckt`` definition in step.
+Saving the subcircuit regenerates the library, keeping schematic, symbol
+and ``.subckt`` definition in step.
 
 **Operating-point annotations (NGspice) follow the descent.**  When the parent
 schematic holds the results of an op run, descending hands the subcircuit

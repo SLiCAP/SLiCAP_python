@@ -104,12 +104,16 @@ def open_figure(entry: dict, panel) -> None:
     root = getattr(panel, "_project_root", None)
     if root is None:
         return
-    img_dir = Path(root) / "img"
+    from . import project
+    img_dir = project.folder("img", root)
     name = entry.get("fileName", "")
     for suffix in (".svg", "." + entry.get("fileType", "svg"), ".pdf"):
         path = img_dir / f"{name}{suffix}"
         if path.is_file():
-            QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+            # detached, output discarded: the desktop viewer's own GTK
+            # chatter stays out of SLiCAP's terminal (Anton, 2026-10-07)
+            from .project_panel import open_with_default_app
+            open_with_default_app(path)
             return
     QMessageBox.information(
         panel, "Open image",

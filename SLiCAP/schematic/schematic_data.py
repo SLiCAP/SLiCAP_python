@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from datetime import date as _date
@@ -92,6 +93,37 @@ POSTER_PROPERTIES = ("title", "author", "project", "created", "last_modified",
                      "page_size", "page_width_mm", "page_height_mm")
 
 
+# The document-properties block (Anton, 2026-10-09): ONE free text per
+# drawing whose text is DERIVED from the document properties through a
+# template with these placeholders. A line whose placeholders are all
+# empty is dropped. The text is rendered on load, after the properties
+# dialog and at save, so the exported figure carries the date of the save
+# that produced it. A typed copy of the properties was not considered: it
+# is stale at the next save.
+PROPERTIES_FIELDS   = ("project", "title", "author", "created", "modified")
+PROPERTIES_TEMPLATE = ("Project: {project}\nTitle: {title}\nAuthor: {author}\n"
+                       "Created: {created}\nModified: {modified}")
+
+
+def render_properties(template: str, props) -> str:
+    """The text of the document-properties block: *template* with the
+    placeholders {project} {title} {author} {created} {modified} filled
+    from *props* (DocumentProperties). A line whose placeholders are all
+    empty is dropped; an unknown placeholder is left as it is."""
+    values = {"project": props.project, "title": props.title,
+              "author": props.author, "created": props.created,
+              "modified": props.last_modified}
+    out = []
+    for line in template.split("\n"):
+        names = [n for n in re.findall(r"\{(\w+)\}", line) if n in values]
+        if names and all(not (values[n] or "").strip() for n in names):
+            continue
+        for n in names:
+            line = line.replace("{" + n + "}", values[n] or "")
+        out.append(line)
+    return "\n".join(out)
+
+
 @dataclass
 class FreeTextData:
     x: float
@@ -105,6 +137,7 @@ class FreeTextData:
     italic: bool = False
     color: str = ""
     z: float = 0.0        # stacking order among annotations AND the circuit layers
+    template: str = ""    # non-empty: THE document-properties block (render_properties)
 
 
 @dataclass
@@ -160,8 +193,9 @@ class ImageData:
     display_height: int
     link: str = ""        # "" = a plain image file; else what the image shows
                           # and follows: "figure:<name>" (a figure object of the
-                          # Design data), "schematic:<name>" (sch/<name>, its
-                          # export img/<name>.svg), "poster:<name>" (posters/<name>)
+                          # Design data), "schematic:<source path>" (sch/x.slicap_sch
+                          # or lib/y.spice_sch, shown as its export img/<stem>.svg;
+                          # a bare name in older files), "poster:<name>" (posters/<name>)
     z: float = 0.0        # stacking order among annotations AND the circuit layers
 
 
@@ -349,7 +383,8 @@ class SchematicData:
                  **({"bold": True} if t.bold else {}),
                  **({"italic": True} if t.italic else {}),
                  **({"color": t.color} if t.color else {}),
-                 **({"z": t.z} if t.z else {})}
+                 **({"z": t.z} if t.z else {}),
+                 **({"template": t.template} if t.template else {})}
                 for t in self.free_texts
             ],
             "hyperlinks": [
@@ -555,7 +590,8 @@ class SchematicData:
                          font_size=int(t.get("font_size", 0) or 0),
                          bold=bool(t.get("bold", False)),
                          italic=bool(t.get("italic", False)),
-                         color=t.get("color", ""), z=float(t.get("z", 0.0)))
+                         color=t.get("color", ""), z=float(t.get("z", 0.0)),
+                         template=t.get("template", ""))
             for t in data.get("free_texts", [])
         ]
         hyperlinks = [

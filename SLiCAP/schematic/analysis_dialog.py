@@ -12,9 +12,23 @@ built yet (unsaved or incomplete schematic).
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
-    QLabel, QComboBox, QCheckBox, QDialogButtonBox, QFormLayout,
+    QLabel, QComboBox, QCheckBox, QDialogButtonBox, QFormLayout, QMessageBox,
 )
 from .sizing import chars
+from .config import GROUND
+from SLiCAP.SLiCAPyacc import GROUND_TOKEN
+
+
+def _ref_token(text: str) -> str:
+    """Combo text -> the reference as netlisted: the ground label becomes
+    the parser's ground token."""
+    text = text.strip()
+    return GROUND_TOKEN if text == GROUND else text
+
+
+def _ref_label(ref: str) -> str:
+    """The reverse of :func:`_ref_token`, for prefilling a combo."""
+    return GROUND if ref == GROUND_TOKEN else ref
 
 
 def _ref_combo(items, placeholder: str) -> QComboBox:
@@ -72,15 +86,16 @@ class AnalysisDialog(QDialog):
 
         hint = QLabel(
             "V — voltage at node  (result: V_<ref>)\n"
-            "I — current through V-source  (result: I_<ref>)"
+            "I — current through V-source  (result: I_<ref>)\n"
+            f"{GROUND} as Ref 1 negates Ref 2  (result: -V_<ref> or -I_<ref>)"
         )
         hint.setEnabled(False)
         det_v.addWidget(hint)
 
         ref_form = QFormLayout()
-        self._det1_ref = _ref_combo(self._det_v_refs,
+        self._det1_ref = _ref_combo([GROUND] + self._det_v_refs,
                                     "node name  or  V-source refdes")
-        self._det2_ref = _ref_combo(self._det_v_refs,
+        self._det2_ref = _ref_combo([GROUND] + self._det_v_refs,
                                     "optional — differential detector (same type)")
         ref_form.addRow("Ref 1:", self._det1_ref)
         ref_form.addRow("Ref 2:", self._det2_ref)
@@ -137,9 +152,9 @@ class AnalysisDialog(QDialog):
             idx = self._det_type.findText(det[0][0])
             if idx >= 0:
                 self._det_type.setCurrentIndex(idx)
-            self._det1_ref.setCurrentText(det[0][1])
+            self._det1_ref.setCurrentText(_ref_label(det[0][1]))
         if len(det) > 1:
-            self._det2_ref.setCurrentText(det[1][1])
+            self._det2_ref.setCurrentText(_ref_label(det[1][1]))
 
         if len(lgr) > 0:
             self._lg1.setCurrentText(lgr[0])
@@ -154,7 +169,7 @@ class AnalysisDialog(QDialog):
             cur = cb.currentText()
             cb.blockSignals(True)
             cb.clear()
-            cb.addItems(items)
+            cb.addItems([GROUND] + items)
             cb.setCurrentText(cur)
             cb.blockSignals(False)
 
@@ -166,14 +181,36 @@ class AnalysisDialog(QDialog):
             result.append(self._src2.currentText().strip())
         return result
 
+    def _detector_refs(self) -> tuple:
+        """(ref1, ref2) as typed, the ground label mapped to the netlist
+        token, a ground on the - side dropped: V_x against ground IS the
+        single form."""
+        r1 = _ref_token(self._det1_ref.currentText())
+        r2 = _ref_token(self._det2_ref.currentText())
+        if r2 == GROUND_TOKEN:
+            r2 = ""
+        return r1, r2
+
     def get_detector(self) -> list:
         t = self._det_type.currentText()
+        r1, r2 = self._detector_refs()
         result = []
-        if self._det1_ref.currentText().strip():
-            result.append([t, self._det1_ref.currentText().strip()])
-        if self._det2_ref.currentText().strip():
-            result.append([t, self._det2_ref.currentText().strip()])
+        if r1:
+            result.append([t, r1])
+        if r2:
+            result.append([t, r2])
         return result
+
+    def accept(self) -> None:
+        # the ground alone names nothing: the ground on the + side needs the
+        # - side (then the result is -V_<ref> or -I_<ref>)
+        r1, r2 = self._detector_refs()
+        if r1 == GROUND_TOKEN and not r2:
+            QMessageBox.warning(self, "Detector",
+                                f"{GROUND} as Ref 1 needs a Ref 2: "
+                                "the result is then the negated Ref 2.")
+            return
+        super().accept()
 
     def get_lgref(self) -> list:
         result = []

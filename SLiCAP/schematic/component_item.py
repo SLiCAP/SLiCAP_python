@@ -616,7 +616,10 @@ class _ViewBoxSvgItem(QGraphicsSvgItem):
 
 
 def make_ghost(svg_bytes: bytes, style=None) -> _ViewBoxSvgItem:
-    """Semi-transparent drag preview used during placement mode."""
+    """Semi-transparent drag preview used during placement mode. *style*
+    is the DISPLAY style (config.display_style): a ghost coloured with the
+    document style was black on the dark canvas (a user's report on
+    6.1.0, 2026-10-09)."""
     item = _ViewBoxSvgItem(svg_bytes, style)
     item.setOpacity(0.4)
     item.setAcceptedMouseButtons(Qt.NoButton)
@@ -813,6 +816,19 @@ class ComponentItem(_ViewBoxSvgItem):
         """Persist current label positions into prop_offsets."""
         for key, lbl in self._labels.items():
             self.prop_offsets[key] = (lbl.pos().x(), lbl.pos().y())
+
+    def set_prop_offsets(self, offsets: dict) -> None:
+        """Restore stored label positions (a file, the clipboard): the
+        labels the constructor made at the default positions are
+        discarded first, because update_labels() begins by saving the
+        current label positions into prop_offsets and would otherwise
+        overwrite the restored ones. The paste path assigned prop_offsets
+        directly and lost every moved label (a user's report on 6.1.0,
+        2026-10-09); the file loader had the discard inline."""
+        for lbl in list(self._labels.values()):
+            _discard_label(lbl)           # never orphan: see _discard_label
+        self._labels.clear()
+        self.prop_offsets = {k: tuple(v) for k, v in offsets.items()}
 
     def update_labels(self) -> None:
         """Rebuild visible property labels from prop_display."""

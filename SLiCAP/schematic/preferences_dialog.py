@@ -6,15 +6,94 @@ from .sizing import chars, fit_contents
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
     QLabel, QDoubleSpinBox, QSpinBox,
-    QCheckBox, QComboBox,
+    QCheckBox, QComboBox, QWidget, QPushButton,
+    QTableWidget, QTableWidgetItem, QMessageBox,
     QDialogButtonBox,
 )
 from .color_button import ColorButton
-from .config import LINE_STYLE_NAMES
+from .config import LINE_STYLE_NAMES, format_border_preset
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
 from .config import GENERIC_FONT_FAMILIES as _FONT_FAMILIES
+
+class BorderPresetTable(QWidget):
+    """The user's border formats: rows of name, width and height in mm. An
+    empty width or height is a free side (Anton, 2026-10-09: a book figure
+    is "a fixed width and a free height"). The table owns the whole
+    [border_presets] section: section_values() is what gets written."""
+
+    def __init__(self, presets: dict, parent=None):
+        super().__init__(parent)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self._table = QTableWidget(0, 3)
+        self._table.setHorizontalHeaderLabels(["Name", "Width mm", "Height mm"])
+        self._table.horizontalHeader().setStretchLastSection(True)
+        self._table.verticalHeader().setVisible(False)
+        self._table.setToolTip("Leave the width or the height empty for a "
+                               "free side, sized by hand on the canvas.")
+        for name, (w, h) in presets.items():
+            self._add_row(name, "" if w is None else f"{w:g}",
+                          "" if h is None else f"{h:g}")
+        lay.addWidget(self._table)
+        btns = QHBoxLayout()
+        add = QPushButton("Add"); rem = QPushButton("Remove")
+        add.clicked.connect(lambda: self._add_row("", "", ""))
+        rem.clicked.connect(self._remove_row)
+        btns.addWidget(add); btns.addWidget(rem); btns.addStretch(1)
+        lay.addLayout(btns)
+
+    def _add_row(self, name: str, w: str, h: str) -> None:
+        r = self._table.rowCount()
+        self._table.insertRow(r)
+        for col, text in enumerate((name, w, h)):
+            self._table.setItem(r, col, QTableWidgetItem(text))
+
+    def _remove_row(self) -> None:
+        r = self._table.currentRow()
+        if r >= 0:
+            self._table.removeRow(r)
+
+    def _cell(self, r: int, c: int) -> str:
+        item = self._table.item(r, c)
+        return item.text().strip() if item is not None else ""
+
+    def problems(self) -> list[str]:
+        """What keeps the table from being written, one line per row."""
+        out = []
+        for r in range(self._table.rowCount()):
+            name, w, h = (self._cell(r, c) for c in range(3))
+            if not name and not w and not h:
+                continue
+            if not name:
+                out.append(f"row {r + 1}: no name"); continue
+            if not w and not h:
+                out.append(f"{name}: a width or a height is needed"); continue
+            for label, text in (("width", w), ("height", h)):
+                try:
+                    if text and float(text) <= 0:
+                        raise ValueError
+                except ValueError:
+                    out.append(f"{name}: {label} '{text}' is not a size in mm")
+        return out
+
+    def section_values(self) -> dict:
+        """name -> "w x h" for the [border_presets] section; rows that
+        problems() lists are left out."""
+        out = {}
+        for r in range(self._table.rowCount()):
+            name, w, h = (self._cell(r, c) for c in range(3))
+            try:
+                wv = float(w) if w else None
+                hv = float(h) if h else None
+            except ValueError:
+                continue
+            if name and (wv is not None or hv is not None) and \
+               (wv is None or wv > 0) and (hv is None or hv > 0):
+                out[name] = format_border_preset(wv, hv)
+        return out
+
 
 # Widths come from the font (sizing.py); the pixel constants 65/130/56 that
 # sat here cut off two-digit sizes and long font names on Windows
@@ -189,6 +268,15 @@ class PreferencesDialog(QDialog):
             ("Background opacity %", "border", "bg_alpha",            ispin(style.BORDER_BG_ALPHA, 0, 100)),
             ("Line in export",       "border", "show_line_in_export", check(style.BORDER_SHOW_LINE)),
         ])
+        # The user's border formats, offered next to the paper and screen
+        # formats in the Border, Properties and New poster dialogs. The
+        # widget owns its section: key None in self._widgets.
+        presets_grp = QGroupBox("Border formats (next to the paper and screen formats)")
+        presets_lay = QVBoxLayout(presets_grp)
+        self._presets = BorderPresetTable(style.BORDER_PRESETS)
+        presets_lay.addWidget(self._presets)
+        right.addWidget(presets_grp)
+        self._widgets[("border_presets", None)] = self._presets
         group(right, "Wire handles / connections", [
             ("Handle colour",     "handles", "color",            cbtn(style.HANDLE_COLOR)),
             ("Handle size",       "handles", "size",             fspin(style.HANDLE_SIZE, 2.0, 12.0)),
@@ -215,9 +303,16 @@ class PreferencesDialog(QDialog):
 
         # ── buttons ───────────────────────────────────────────────────────────
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(self.accept)
+        buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
+
+    def _on_accept(self) -> None:
+        problems = self._presets.problems()
+        if problems:
+            QMessageBox.warning(self, "Border formats", "\n".join(problems))
+            return
+        self.accept()
 
     def result_parser(self) -> configparser.ConfigParser:
         """The edited style: the panel's effective config (so unedited keys are
@@ -225,6 +320,9 @@ class PreferencesDialog(QDialog):
         it to the panel's Style and persists it to the schematic's sidecar."""
         cfg = self._style.snapshot()
         for (section, key), widget in self._widgets.items():
+            if key is None:                       # a widget that owns its section
+                cfg[section] = widget.section_values()
+                continue
             if section not in cfg:
                 cfg[section] = {}
             if isinstance(widget, ColorButton):

@@ -30,6 +30,7 @@ from .param_table import ParamTable
 from .step_widget import StepWidget
 from .instr_file import next_result_name, parse_calls
 from .sizing import cap_chars, chars
+from .config import GROUND           # a detector side at node 0: None in the pair
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -100,6 +101,7 @@ _RULES = {
     "doDCsolve":   dict(transfers=None,         refs="none",          convtype="dm-cm", base="DCSOLVE"),
     "doDCvar":     dict(transfers=None,         refs="noise",         convtype="dm-cm", base="DCVAR"),
 }
+
 
 _CONVTYPES = {
     "full":  ["None", "all", "dd", "cc", "dc", "cd"],
@@ -370,18 +372,24 @@ class SLiCAPAnalysisDialog(QDialog):
             self._transfer.addItems(rules["transfers"])
         self._transfer.blockSignals(False)
 
-        # ref candidate lists ('(none)' only where source is optional)
+        # ref candidate lists ('(none)' only where source is optional). A
+        # DETECTOR may have the ground on either side: SLiCAP's pair
+        # [V_P, V_N] takes None for a side at node 0, so [None, "V_2"] is
+        # -V_2, the voltage across an element whose + terminal is grounded
+        # (Anton, 2026-10-08: "[V_0, V_2] cannot be selected"). V_0 is not a
+        # dependent variable, so the entry is "(ground)", not "V_0".
         for key, w in self._refs.items():
             optional = key == "source" and rules["refs"] == "noise"
             first = ["circuit"] + (["(none)"] if optional else [])
+            ground = [GROUND] if key == "detector" else []
             w["c1"].blockSignals(True)
             w["c1"].clear()
-            w["c1"].addItems(first + w["items"])
+            w["c1"].addItems(first + ground + w["items"])
             w["c1"].setCurrentText("circuit")
             w["c1"].blockSignals(False)
             w["c2"].blockSignals(True)
             w["c2"].clear()
-            w["c2"].addItems(["(none)"] + w["items"])
+            w["c2"].addItems(["(none)"] + ground + w["items"])
             w["c2"].setCurrentText("(none)")
             w["c2"].blockSignals(False)
 
@@ -435,9 +443,10 @@ class SLiCAPAnalysisDialog(QDialog):
             if val is None:
                 continue
             pair = val if isinstance(val, list) else [val]
-            self._refs[key]["c1"].setCurrentText(str(pair[0]))
+            # a None side of a detector pair is the ground
+            self._refs[key]["c1"].setCurrentText(GROUND if pair[0] is None else str(pair[0]))
             if len(pair) > 1:
-                self._refs[key]["c2"].setCurrentText(str(pair[1]))
+                self._refs[key]["c2"].setCurrentText(GROUND if pair[1] is None else str(pair[1]))
         convtype = lit(kw.get("convtype"))
         if convtype is not None:
             self._convtype.setCurrentText(str(convtype))
@@ -503,6 +512,12 @@ class SLiCAPAnalysisDialog(QDialog):
         self._numeric.setEnabled(not stepping)
 
         ok = True
+        # the ground alone is no detector: it needs the - side
+        w = self._refs.get("detector")
+        if w is not None and w["c1"].isVisibleTo(self) and w["c1"].currentText().strip() == GROUND:
+            v2 = w["c2"].currentText().strip()
+            if not v2 or v2 in ("(none)", GROUND):
+                ok = False
         name = self._result_var.text().strip()
         if not name:
             ok = False
@@ -527,6 +542,12 @@ class SLiCAPAnalysisDialog(QDialog):
             return None                          # shell default — omit
         if v1 == "(none)":
             return f"{key}=None"
+        if v2 == GROUND:
+            v2 = ""                              # V_x against ground: the single form
+        if v1 == GROUND:
+            if not v2 or v2 == "(none)":
+                return None                      # ground alone names nothing: invalid
+            return f"{key}=[None, '{v2}']"       # the ground on the + side: -V_x
         if v2 and v2 != "(none)":
             return f"{key}=['{v1}', '{v2}']"
         return f"{key}='{v1}'"

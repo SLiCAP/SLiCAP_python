@@ -583,6 +583,9 @@ class CanvasPanel(QWidget):
         act = QAction("&Image…", self)
         act.triggered.connect(self._on_place_image)
         menu.addAction(act)
+        act = QAction("&Document properties…", self)
+        act.triggered.connect(self._on_place_properties)
+        menu.addAction(act)
         menu.addSeparator()
         act = QAction("Borde&r", self)
         act.triggered.connect(self._on_place_border)
@@ -708,6 +711,9 @@ class CanvasPanel(QWidget):
         act.triggered.connect(lambda: self._scene.start_junction_placement())
         self._shortcut(act, "J")
         menu.addAction(act)
+        act = QAction("&Document properties…", self)
+        act.triggered.connect(self._on_place_properties)
+        menu.addAction(act)
         act = QAction("Borde&r", self)
         act.triggered.connect(self._on_place_border)
         self._shortcut(act, "B")
@@ -832,7 +838,7 @@ class CanvasPanel(QWidget):
         from .symbol_library import build_library
         path = self._current_path
         if path is None:                      # a fresh, unsaved schematic
-            path = project.project_root() / "sch" / "untitled"
+            path = project.folder("sch") / "untitled"
         return build_library(path, sch_type=self._sch_type,
                              config=self._config, overlay=overlay_path)
 
@@ -891,7 +897,7 @@ class CanvasPanel(QWidget):
         if self._symbol_mode:
             self._on_symbol_save(); return
         if self._doc_props.is_subcircuit:
-            self._save_subcircuit()
+            self._save_subcircuit(ask=False)
         elif self._current_path is None:
             self._on_save_as()
         else:
@@ -901,7 +907,7 @@ class CanvasPanel(QWidget):
         if self._symbol_mode:
             self._on_symbol_save_as(); return
         if self._doc_props.is_subcircuit:
-            self._save_subcircuit()
+            self._save_subcircuit(ask=True)
             return
         ext  = {"ngspice": ".spice_sch", "poster": ".slicap_poster"}.get(self._sch_type, ".slicap_sch")
         filt = {"ngspice": _FILTER_NGSPICE, "poster": _FILTER_POSTER}.get(self._sch_type, _FILTER_SLICAP) + ";;All Files (*)"
@@ -918,12 +924,19 @@ class CanvasPanel(QWidget):
             p = p.with_suffix(ext)
         self._save_to(p)
 
-    def _save_subcircuit(self):
+    def _save_subcircuit(self, ask: bool):
+        """Writes the subcircuit package (schematic + library) to lib/.
+
+        Save (ask=False) writes under the current name without a question
+        once the node order is settled: every port on the schematic has a
+        place in the recorded order. The first save, a new port, or a
+        missing title opens the Create Subcircuit dialog, with the name
+        read-only. Save as (ask=True) always opens the dialog with the
+        name editable; another name saves a copy of the package. Running
+        the dialog on EVERY save was the previous form and was REJECTED:
+        it made Save and Save as the same action (Anton, 2026-10-09).
+        """
         title = self._doc_props.title.strip()
-        if not title:
-            QMessageBox.warning(self, "No title",
-                                "Set a Title in Schematic Properties before saving as a subcircuit.")
-            return
         from .component_item import ComponentItem
         from .wire_item import WireItem
         from .parameter_item import ParameterItem
@@ -939,12 +952,24 @@ class CanvasPanel(QWidget):
         mdefs = [i for i in items if isinstance(i, ModelItem)]
         present       = schematic_ports(comps, wires)
         saved         = [p for p in self._doc_props.subcircuit_ports if p in present]
-        ports_default = saved + [p for p in present if p not in saved]
-        dlg = CreateSubcircuitDialog(title, ports_default, self._doc_props.subcircuit_params, self)
-        if not dlg.exec():
-            return
-        self._doc_props.subcircuit_ports  = dlg.ports()
-        self._doc_props.subcircuit_params = dlg.params()
+        new_ports     = [p for p in present if p not in saved]
+        settled       = bool(title) and bool(present) and not new_ports
+        if ask or not settled:
+            dlg = CreateSubcircuitDialog(title, saved + new_ports,
+                                         self._doc_props.subcircuit_params, self,
+                                         name_editable=ask)
+            if not dlg.exec():
+                return
+            # The name typed in the dialog IS the subcircuit: the title, the
+            # .subckt name and the file stem. Another name saves a copy of
+            # the package in lib/ and the panel continues on the copy, as
+            # Save as does for a flat schematic (Anton, 2026-10-09).
+            title = dlg.name()
+            self._doc_props.title             = title
+            self._doc_props.subcircuit_ports  = dlg.ports()
+            self._doc_props.subcircuit_params = dlg.params()
+        else:
+            self._doc_props.subcircuit_ports  = saved   # removed ports drop out
         base    = self._current_path
         is_ng   = self._sch_type == 'ngspice'
         sch_ext = ".spice_sch" if is_ng else ".slicap_sch"
@@ -976,6 +1001,7 @@ class CanvasPanel(QWidget):
     def _save_to(self, path: Path):
         self._doc_props.last_modified = _date.today().isoformat()
         self._sync_page_properties()
+        self._scene.refresh_properties_text(self._doc_props)   # the date of THIS save
         data = self._scene.to_data()
         data.properties = self._doc_props
         try:
@@ -1011,7 +1037,8 @@ class CanvasPanel(QWidget):
             return
         upm = _units_per()["mm"]
         w, h = border.rect().width() / upm, border.rect().height() / upm
-        self._doc_props.page_size = page_name_of(w, h)
+        self._doc_props.page_size = page_name_of(w, h, (border.fixed_w, border.fixed_h),
+                                                 self._style.BORDER_PRESETS)
         self._doc_props.page_width_mm, self._doc_props.page_height_mm = round(w, 1), round(h, 1)
 
     def _set_dock_title(self, title: str) -> None:
@@ -1061,38 +1088,43 @@ class CanvasPanel(QWidget):
         return None
 
     def _on_doc_properties(self):
-        """Properties: title, author, project and the page, which IS the
-        border (see DocumentPropertiesDialog)."""
+        """Properties: title, author, project and the border, the export
+        frame (see DocumentPropertiesDialog)."""
         from .document_properties_dialog import DocumentPropertiesDialog
         from .border_dialog import _units_per
         upm = _units_per()["mm"]
         border = self._border()
         border_mm = ((border.rect().width() / upm, border.rect().height() / upm)
                      if border is not None else None)
+        fixed = (border.fixed_w, border.fixed_h) if border is not None else (True, True)
         dlg = DocumentPropertiesDialog(self._doc_props, self, border_mm=border_mm,
-                                       is_poster=self._sch_type == 'poster')
+                                       is_poster=self._sch_type == 'poster',
+                                       fixed=fixed, presets=self._style.BORDER_PRESETS)
         if dlg.exec():
             dlg.apply(self._doc_props)
-            self._apply_page(dlg.page_mm())
+            self._apply_border(dlg.border_mm())
+            self._scene.refresh_properties_text(self._doc_props)
 
-    def _apply_page(self, page_mm) -> None:
-        """Make the border the page: None removes it, a size creates or
-        resizes it (position kept, sides fixed)."""
+    def _apply_border(self, spec) -> None:
+        """The border as chosen in the properties dialog: None removes it,
+        (width_mm, height_mm, fixed_w, fixed_h) creates or resizes it
+        (position kept)."""
         from .border_dialog import _units_per
         upm = _units_per()["mm"]
         border = self._border()
-        if page_mm is None:
+        if spec is None:
             if border is not None:
                 self._scene._push_undo()
                 self._scene.removeItem(border)
                 self._scene.data_changed.emit()
             return
-        w, h = round(page_mm[0] * upm, 2), round(page_mm[1] * upm, 2)
+        w_mm, h_mm, fixed_w, fixed_h = spec
+        w, h = round(w_mm * upm, 2), round(h_mm * upm, 2)
         self._scene._push_undo()
         if border is None:
             st = self._style
             border = BorderItem(0.0, 0.0, w, h, show_in_export=st.BORDER_SHOW_LINE,
-                                fixed_w=True, fixed_h=True,
+                                fixed_w=fixed_w, fixed_h=fixed_h,
                                 line_color=st.BORDER_LINE_COLOR.name(),
                                 line_width=st.BORDER_LINE_WIDTH,
                                 bg_color=st.BORDER_BG_COLOR.name(),
@@ -1101,7 +1133,7 @@ class CanvasPanel(QWidget):
             self._scene.addItem(border)
         else:
             border.setRect(0.0, 0.0, w, h)
-            border.fixed_w = border.fixed_h = True
+            border.fixed_w, border.fixed_h = fixed_w, fixed_h
         self._scene.data_changed.emit()
 
     def refresh_op_annotations(self) -> None:
@@ -1289,7 +1321,9 @@ class CanvasPanel(QWidget):
                           bg_color=st.BORDER_BG_COLOR.name(),
                           bg_alpha=st.BORDER_BG_ALPHA,
                           line_style=st.BORDER_LINE_STYLE)
-        dlg = BorderDialog(parent=self, **kwargs)
+        from .document_properties_dialog import border_formats
+        dlg = BorderDialog(parent=self, formats=border_formats(self._style.BORDER_PRESETS),
+                           **kwargs)
         if dlg.exec():
             self._scene.start_border_placement(dlg.border_properties())
 
@@ -1547,6 +1581,31 @@ class CanvasPanel(QWidget):
         dlg = TextDialog(style=self._style, parent=self)
         if dlg.exec():
             self._scene.start_text_placement(dlg.text(), dlg.properties())
+
+    def _on_place_properties(self):
+        """Place -> Document properties: ONE block per drawing, as the
+        parameter table (2026-07-12): the menu opens THE block, prefilled,
+        and creates it when there is none. Its text is derived from the
+        document properties through a template (Anton, 2026-10-09)."""
+        from .text_dialog import TextDialog
+        from .schematic_data import PROPERTIES_TEMPLATE, render_properties
+        existing = self._scene.properties_block()
+        dlg = TextDialog(existing.template if existing else PROPERTIES_TEMPLATE,
+                         style=self._style, parent=self, template=True,
+                         **(existing.own_properties() if existing else {}))
+        if not dlg.exec():
+            return
+        template = dlg.text().strip() or PROPERTIES_TEMPLATE
+        if existing is not None:
+            self._scene._push_undo()
+            existing.template = template
+            existing.set_properties(**dlg.properties())
+            self._scene.refresh_properties_text(self._doc_props)
+        else:
+            self._scene.document_properties = self._doc_props
+            self._scene.start_text_placement(
+                render_properties(template, self._doc_props), dlg.properties(),
+                template=template)
 
     def _on_place_hyperlink(self):
         from .hyperlink_dialog import HyperlinkDialog
@@ -2397,7 +2456,8 @@ class MainWindow(QMainWindow):
         docs = (Path(ini.install_path) / "SLiCAP" / "docs" / "html"
                 / "index.html")
         if docs.is_file():
-            QDesktopServices.openUrl(QUrl.fromLocalFile(str(docs)))
+            from .project_panel import open_with_default_app
+            open_with_default_app(docs)      # the browser's chatter stays out of the terminal
             return
         QDesktopServices.openUrl(QUrl("https://slicap.org"))
 

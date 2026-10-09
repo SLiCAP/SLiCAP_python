@@ -20,8 +20,13 @@ class FreeTextItem(QGraphicsTextItem):
 
     def __init__(self, text: str = "Text", pos: QPointF = QPointF(0, 0),
                  font_family: str = "", font_size: int = 0,
-                 bold: bool = False, italic: bool = False, color: str = ""):
+                 bold: bool = False, italic: bool = False, color: str = "",
+                 template: str = ""):
         super().__init__(text)
+        # Non-empty: THE document-properties block of the drawing, whose
+        # text is render_properties(template, properties), re-rendered on
+        # load, after the properties dialog and at save (Anton, 2026-10-09).
+        self.template    = template or ""
         self.font_family = font_family or ""
         self.font_size   = int(font_size or 0)
         self.bold        = bool(bold)
@@ -54,6 +59,26 @@ class FreeTextItem(QGraphicsTextItem):
         """The item's own colour, or the style's text colour. With the
         scene's document style (the export) that is the document colour."""
         return QColor(self.color) if self.color else QColor(style.TEXT_COLOR)
+
+    @property
+    def is_properties(self) -> bool:
+        return bool(self.template)
+
+    def own_properties(self) -> dict:
+        """The item's own font and colour, as TextDialog takes them."""
+        return dict(font_family=self.font_family, font_size=self.font_size,
+                    bold=self.bold, italic=self.italic, color=self.color)
+
+    def render(self, props) -> None:
+        """A properties block takes its text from the document properties."""
+        if not self.template or props is None:
+            return
+        from .schematic_data import render_properties
+        text = render_properties(self.template, props)
+        if text != self.toPlainText():
+            self.prepareGeometryChange()
+            self.setPlainText(text)
+            self.update()
 
     def set_properties(self, font_family: str = "", font_size: int = 0,
                        bold: bool = False, italic: bool = False,

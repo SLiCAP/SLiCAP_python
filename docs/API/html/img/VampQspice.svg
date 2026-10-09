@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-175.192 -128.124 359.473 263.501" width="179.736mm" height="131.751mm">
-  <!-- SLiCAP schematic export: VampQspice.spice_sch, SLiCAP 6.2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-174.192 -126.124 358.473 260.501" width="179.236mm" height="130.251mm">
+  <!-- SLiCAP schematic export: VampQspice.spice_sch, SLiCAP 6.2.1 -->
   <title>VampQspice</title>
   <defs />
-  <rect x="-175.192" y="-128.124" width="359.473" height="263.501" fill="white" />
+  <rect x="-174.192" y="-126.124" width="358.473" height="260.501" fill="white" />
   <polyline points="65.00,-65.00 25.00,-65.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <text x="34.30" y="-68.26" font-family="sans-serif" font-size="7pt" fill="#b00020">V: 4.296</text>
   <polyline points="0.00,-65.00 25.00,-65.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />

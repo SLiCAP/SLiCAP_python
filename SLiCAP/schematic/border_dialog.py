@@ -53,6 +53,12 @@ class _SizeRow:
     def units(self) -> float:
         return self._spin.value() * self._units_per[self._last_unit]
 
+    def set_units(self, value: float) -> None:
+        self._spin.setValue(value / self._units_per[self._last_unit])
+
+    def set_fixed(self, fixed: bool) -> None:
+        self._fixed.setChecked(fixed)
+
     def fixed(self) -> bool:
         return self._fixed.isChecked()
 
@@ -74,7 +80,7 @@ class BorderDialog(QDialog):
                  line_width: float = DEFAULT_LINE_WIDTH,
                  bg_color: str = DEFAULT_BG_COLOR,
                  bg_alpha: int = 0, parent=None,
-                 line_style: str = DEFAULT_LINE_STYLE):
+                 line_style: str = DEFAULT_LINE_STYLE, formats: dict | None = None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Border")
         outer = QVBoxLayout()
@@ -85,30 +91,43 @@ class BorderDialog(QDialog):
         grid.setColumnStretch(1, 1)
         unit = BorderDialog._last_unit
         units_per = _units_per()
-        self._w_row = _SizeRow(grid, 0, "Width", width, fixed_w, unit,
+        self._units_per = units_per
+        # The formats (document_properties_dialog.border_formats): choosing
+        # one fills the size rows and their Fixed boxes; a free side keeps
+        # its size (Anton, 2026-10-09).
+        self._formats = formats or {}
+        self._format = QComboBox()
+        self._format.addItems(["(size below)"] + list(self._formats))
+        self._format.setToolTip("A paper or screen format, or a preset of "
+                                "the Preferences (Border formats).")
+        self._format.activated.connect(self._on_format)
+        fit_contents(self._format)
+        grid.addWidget(QLabel("Format"), 0, 0)
+        grid.addWidget(self._format, 0, 1, 1, 3)
+        self._w_row = _SizeRow(grid, 1, "Width", width, fixed_w, unit,
                                units_per)
-        self._h_row = _SizeRow(grid, 1, "Height", height, fixed_h, unit,
+        self._h_row = _SizeRow(grid, 2, "Height", height, fixed_h, unit,
                                units_per)
 
-        grid.addWidget(QLabel("Line"), 2, 0)
+        grid.addWidget(QLabel("Line"), 3, 0)
         self._line_color = ColorButton(line_color)
-        grid.addWidget(self._line_color, 2, 1)
+        grid.addWidget(self._line_color, 3, 1)
         self._line_width = QDoubleSpinBox()
         self._line_width.setDecimals(2)
         self._line_width.setRange(0.1, 20.0)
         self._line_width.setValue(line_width)
         self._line_width.setSuffix(" units")
-        grid.addWidget(self._line_width, 2, 2)
+        grid.addWidget(self._line_width, 3, 2)
         self._line_style = QComboBox()
         self._line_style.addItems(LINE_STYLE_NAMES)
         self._line_style.setCurrentText(
             line_style if line_style in LINE_STYLE_NAMES else DEFAULT_LINE_STYLE)
         fit_contents(self._line_style)
-        grid.addWidget(self._line_style, 2, 3)
+        grid.addWidget(self._line_style, 3, 3)
 
-        grid.addWidget(QLabel("Background"), 3, 0)
+        grid.addWidget(QLabel("Background"), 4, 0)
         self._bg_color = ColorButton(bg_color)
-        grid.addWidget(self._bg_color, 3, 1)
+        grid.addWidget(self._bg_color, 4, 1)
         self._bg_alpha = QSpinBox()
         self._bg_alpha.setRange(0, 100)
         self._bg_alpha.setValue(bg_alpha)
@@ -118,7 +137,7 @@ class BorderDialog(QDialog):
             "Opacity of the background fill: 0 % = fully transparent "
             "(no background), 100 % = solid. The background is the "
             "bottom layer.")
-        grid.addWidget(self._bg_alpha, 3, 2)
+        grid.addWidget(self._bg_alpha, 4, 2)
         # A colour chosen at opacity 0 was invisible on the canvas and in the
         # export, and looked like a bug (Anton, 2026-09-26): choosing a
         # colour means showing it.
@@ -143,6 +162,17 @@ class BorderDialog(QDialog):
         buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
+
+    def _on_format(self, index: int) -> None:
+        name = self._format.itemText(index)
+        if name not in self._formats:
+            return
+        from .document_properties_dialog import resolve_format
+        upm = self._units_per["mm"]
+        current = (self._w_row.units() / upm, self._h_row.units() / upm)
+        w, h, fw, fh = resolve_format(self._formats, name, current=current)
+        self._w_row.set_units(w * upm); self._w_row.set_fixed(fw)
+        self._h_row.set_units(h * upm); self._h_row.set_fixed(fh)
 
     def _on_accept(self):
         BorderDialog._last_unit = self._w_row.unit_name()

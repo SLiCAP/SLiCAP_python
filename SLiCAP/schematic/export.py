@@ -77,16 +77,41 @@ def export_bounds(scene) -> QRectF:
             pos = item.pos()
             r   = item.rect()
             return QRectF(pos.x(), pos.y(), r.width(), r.height())
-    b = scene.itemsBoundingRect()
+    # Without a border the frame is the drawing, EXACTLY: a poster of
+    # bordered schematics then has their size and sits on the book's
+    # margins (Anton, 2026-10-09). The guard against clipped text stays
+    # where the uncertainty is: an item drawn from Qt text metrics (a
+    # label, a free text, a command or library block) gets 1.5 mm around
+    # its own rectangle, since a renderer whose font is a fraction wider,
+    # or the overhang of the last glyph, was clipped at the edge ('inc
+    # BC847.lib' lost part of its b - Anton, 2026-09-21). A margin around
+    # the whole frame was the previous form and was REPLACED: it widened
+    # every export, also one whose edge is an image or a shape.
+    from .image_item import ImageItem
+    from .shape_item import ShapeItem
+    from .wire_item import WireItem
+    from .junction_item import JunctionItem
+    from .latex_fragment_item import LatexFragmentItem
+    from .component_item import _ViewBoxSvgItem
+    exact = (ImageItem, ShapeItem, WireItem, JunctionItem, LatexFragmentItem,
+             _ViewBoxSvgItem)
+    m = 1.5 * _units_per_mm()
+    b = QRectF()
+    for item in scene.items():
+        r = item.sceneBoundingRect()
+        if not isinstance(item, exact):
+            r = r.adjusted(-m, -m, m, m)
+        b = b.united(r)
     if b.isEmpty():
         b = QRectF(0, 0, 200, 200)
-    # A small margin (1.5 mm in scene units) around the content: the bounds
-    # were exactly tight to Qt's text metrics, so a renderer whose font is
-    # a fraction wider, or the overhang of the last glyph, was clipped at
-    # the edge ('inc BC847.lib' lost part of its b - Anton, 2026-09-21).
-    # A BorderItem (above) still sets the frame explicitly.
-    m = 1.5 * _units_per_mm()
-    return b.adjusted(-m, -m, m, m)
+    return b
+
+
+def _touches(r: QRectF, frame: QRectF) -> bool:
+    """r overlaps or borders *frame* (QRectF.intersects is False for a rect
+    of zero area, which a straight line may have)."""
+    return (r.right() >= frame.left() and r.left() <= frame.right() and
+            r.bottom() >= frame.top() and r.top() <= frame.bottom())
 
 
 def _qhex(c) -> str:
@@ -147,6 +172,26 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
     bg.set("width", f"{vw:.3f}"); bg.set("height", f"{vh:.3f}")
     bg.set("fill", "white")
 
+    # A border CLIPS (Anton, 2026-10-09): the export holds what lies
+    # inside it. An item wholly outside is left out, one that crosses the
+    # border is cut by a clip path on the group that holds the drawing.
+    # The viewBox alone hid such items but kept them in the file, where an
+    # editor showed them beyond the page. Without a border nothing clips.
+    from .border_item import BorderItem
+    border = next((i for i in scene.items() if isinstance(i, BorderItem)), None)
+    frame = None
+    out = root
+    if border is not None:
+        frame = QRectF(border.pos().x(), border.pos().y(),
+                       border.rect().width(), border.rect().height())
+        cp = ET.SubElement(defs, f"{{{_SVG_NS}}}clipPath")
+        cp.set("id", "frame")
+        cr = ET.SubElement(cp, f"{{{_SVG_NS}}}rect")
+        cr.set("x", f"{frame.x():.3f}"); cr.set("y", f"{frame.y():.3f}")
+        cr.set("width", f"{frame.width():.3f}"); cr.set("height", f"{frame.height():.3f}")
+        out = ET.SubElement(root, f"{{{_SVG_NS}}}g")
+        out.set("clip-path", "url(#frame)")
+
     wire_color = _qhex(style.WIRE_COLOR)
     junc_color = _qhex(style.JUNCTION_COLOR)
     lbl_color  = _qhex(style.COMP_LABEL_COLOR)
@@ -157,20 +202,21 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
     for item in reversed(scene.items()):
         if item.parentItem() is not None:
             continue   # child items (labels, net labels) handled by their parents
+        if frame is not None and not _touches(item.sceneBoundingRect(), frame):
+            continue   # wholly outside the border: not exported
 
-        from .border_item import BorderItem
         if isinstance(item, BorderItem):
-            _border_rect(root, item)   # bg (alpha>0) + line (show_in_export)
+            _border_rect(out, item)    # bg (alpha>0) + line (show_in_export)
             continue
         if isinstance(item, WireItem):
-            _wire(root, item, wire_color, style.WIRE_WIDTH, net_color,
+            _wire(out, item, wire_color, style.WIRE_WIDTH, net_color,
                   style.NET_LABEL_FONT_SIZE)
         elif isinstance(item, JunctionItem):
-            _junction(root, item, junc_color, style.JUNCTION_RADIUS)
+            _junction(out, item, junc_color, style.JUNCTION_RADIUS)
         elif isinstance(item, ComponentItem):
-            _component(root, defs, item, lbl_color, style.COMP_LABEL_FONT_SIZE, style)
+            _component(out, defs, item, lbl_color, style.COMP_LABEL_FONT_SIZE, style)
         elif isinstance(item, ImageItem):
-            _image_svg(root, defs, item)
+            _image_svg(out, defs, item)
         elif isinstance(item, (LatexFragmentItem, ParameterItem, ModelItem)):
             if not item.isVisible():
                 continue        # "Show on schematic" off: netlisted, not drawn
@@ -178,7 +224,7 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
                 pos = item.pos()
                 svg_bytes = (item.export_bytes() if isinstance(item, LatexFragmentItem)
                              else item._svg_bytes)
-                _inline_image_svg(root, defs, svg_bytes,
+                _inline_image_svg(out, defs, svg_bytes,
                                   pos.x(), pos.y(),
                                   item.display_width, item.display_height,
                                   aspect_fit=True)
@@ -188,7 +234,7 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
                 continue        # "Show on schematic" off: netlisted, not drawn
             if isinstance(item, (AnalysisItem, LibraryItem)) and item._svg_bytes:
                 pos = item.pos()          # LaTeX-rendered block → embed the vector SVG
-                _inline_image_svg(root, defs, item._svg_bytes,
+                _inline_image_svg(out, defs, item._svg_bytes,
                                   pos.x(), pos.y(),
                                   item._svg_rect.width(), item._svg_rect.height(),
                                   aspect_fit=True)
@@ -197,7 +243,7 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
                 # the item's own font and colour, or the style's (the scene's
                 # style holds the document colours)
                 font = item.effective_font(style)
-                _text_block(root, item, _qhex(item.effective_color(style)),
+                _text_block(out, item, _qhex(item.effective_color(style)),
                             font.pointSize(), font.family(), font)
             else:
                 _text_block(
@@ -205,13 +251,13 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
                     "monospace", style.COMMAND_FONT,
                 )
         elif type(item).__name__ in ("SymbolPinItem", "SymbolTextItem", "OpaqueSvgItem"):
-            _symbol_item(root, item, style)
+            _symbol_item(out, item, style)
         elif isinstance(item, HyperlinkItem):
-            _hyperlink_block(root, item, lnk_color,
+            _hyperlink_block(out, item, lnk_color,
                              style.HYPERLINK_FONT_SIZE, style.HYPERLINK_FONT_FAMILY,
                              style.HYPERLINK_UNDERLINE)
         elif isinstance(item, ShapeItem):
-            _shape(root, item)
+            _shape(out, item)
 
     try:
         ET.indent(root, space="  ")
@@ -319,8 +365,8 @@ def _image_svg(parent, defs, item) -> None:
         # a drawing shown on a poster: in a browser a click opens the
         # drawing's own export, next to the poster's in img/ (relative link)
         a = ET.SubElement(parent, f"{{{_SVG_NS}}}a")
-        a.set("href", item.link_name + ".svg")
-        a.set(f"{{{_XLINK_NS}}}href", item.link_name + ".svg")
+        a.set("href", item.link_stem + ".svg")
+        a.set(f"{{{_XLINK_NS}}}href", item.link_stem + ".svg")
         parent = a
     ext = file.suffix.lower()
     pos = item.pos()

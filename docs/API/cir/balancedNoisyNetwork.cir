@@ -9,7 +9,7 @@ R1N outN inN R value={R_a} noisetemp={T}
 R1P outP inP R value={R_a} noisetemp={T}
 E2 3 0 outN 0 E value={0.5}
 E1 CM 3 outP 0 E value={0.5}
-V1N 1 inN V value={V_b} noise={S_vb}
+V1N inN 1 V value={V_b} noise={S_vb}
 V1P inP 1 V value={V_a} noise={S_va}
 I1 1 0 I value={I_s}
 C1 outP outN C value={C_a}

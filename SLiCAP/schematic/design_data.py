@@ -555,7 +555,8 @@ def variables_of(namespace: dict) -> list[dict]:
 def _manifest_entries(project_root, kind: str) -> list[dict]:
     """The manifest entries of one *kind*, newest section first, one per
     name (a name defined by two instruction files: the last run wins)."""
-    manifest = read_manifest(Path(project_root) / "results")
+    from . import project
+    manifest = read_manifest(project.folder("results", project_root))
     sections = sorted(manifest.get("sections", {}).values(),
                       key=lambda s: s.get("timestamp", 0), reverse=True)
     seen, out = set(), []
@@ -572,10 +573,12 @@ def manifest_figures(project_root) -> list:
     "img/<fileName>.svg"), ...]``. A Figure placed on a schematic links one
     by NAME; its image is derived here (Anton, 2026-10-06: "input for
     Figures and Snippets must be taken from the Variable pane")."""
+    from . import project
+    img = project.folder_rel("img", project_root)
     out = []
     for e in _manifest_entries(project_root, "figure"):
         if e.get("fileName"):
-            out.append((e["name"], "img/" + e["fileName"] + ".svg"))
+            out.append((e["name"], img + "/" + e["fileName"] + ".svg"))
     return out
 
 

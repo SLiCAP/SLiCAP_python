@@ -45,8 +45,9 @@ def pdf_is_export(path: Path) -> bool:
 
 def poster_children(path) -> list:
     """The drawings a poster shows, as source files: the schematics and
-    posters its link items name (sch/<name>.slicap_sch or .spice_sch,
-    posters/<name>.slicap_poster), those that exist. A schematic has none."""
+    posters its link items name (a schematic by its source path in sch/ or
+    lib/, a poster by name in posters/), those that exist. A schematic
+    has none."""
     import json
     from . import project
     path = Path(path)
@@ -95,7 +96,7 @@ def own_exports(sch_path) -> set:
     run and nested in every export (Anton, 2026-10-06)."""
     from . import project
     sch_path = Path(sch_path)
-    img = project.root_for(sch_path) / "img"
+    img = project.folder("img", project.root_for(sch_path))
     return {(img / (sch_path.stem + ext)).resolve() for ext in (".svg", ".pdf")}
 
 
@@ -123,7 +124,7 @@ def linked_images(sch_path) -> list:
     if any(isinstance(f, dict) and f.get("snippet")
            for f in data.get("latex_fragments", []) or []):
         from .design_data import manifest_path
-        out.append(manifest_path(project.root_for(sch_path) / "results"))
+        out.append(manifest_path(project.folder("results", project.root_for(sch_path))))
     return out
 
 
@@ -141,7 +142,7 @@ def input_mtime(sch_path: Path) -> float:
     kind = "ngspice" if sch_path.suffix.lower() == ".spice_sch" else "slicap"
     candidates += list((here.parent / "files" / "symbols" / kind).glob("*.svg"))
     candidates += list(here.glob("*.py"))
-    lib = project.root_for(sch_path) / "lib"
+    lib = project.folder("lib", project.root_for(sch_path))
     if lib.is_dir():
         candidates += list(lib.glob("*"))
     # The operating-point results drawn on an NGspice schematic (bias

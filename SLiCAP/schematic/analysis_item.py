@@ -4,6 +4,7 @@ from PySide6.QtGui import QPainterPath, QFontMetricsF
 from PySide6.QtSvg import QSvgRenderer
 
 from .config import snap_pos, style_of, default_style, SELECTION_MARGIN, selection_pen
+from SLiCAP.SLiCAPyacc import GROUND_TOKEN
 
 
 
@@ -57,7 +58,9 @@ class AnalysisItem(QGraphicsItem):
     def _blocks(self):
         """[(keyword_without_dot, [item_strings]), ...] for the three commands."""
         src = [r.strip() for r in self.source if r.strip()]
-        det = [f"{t}_{r.strip()}" for t, r in self.detector if r.strip()]
+        # the ground side of a pair is the parser's bare token, never V_None
+        det = [r.strip() if r.strip() == GROUND_TOKEN else f"{t}_{r.strip()}"
+               for t, r in self.detector if r.strip()]
         lg  = [r.strip() for r in self.lgref if r.strip()]
         return [("source", src), ("detector", det), ("lgref", lg)]
 
@@ -92,6 +95,8 @@ class AnalysisItem(QGraphicsItem):
 
         def _item_tex(kw, it):
             if kw == "detector":                       # parameter-value size
+                if it == GROUND_TOKEN:                 # the word, like a keyword
+                    return rf"\textsf{{{it}}}"
                 return symbol_to_latex(it)
             # refdes size: \scalebox's arg is text mode, so keep the refdes math
             # with \ensuremath.

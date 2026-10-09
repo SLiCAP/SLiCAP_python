@@ -1,18 +1,20 @@
 """
 Create-subcircuit dialog (File → Save with the "Subcircuit" box ticked).
 
-Shows the subcircuit name (the document title), the ordered list of port nodes
-(reorderable — the order here *is* the .subckt node order), and an editable
-table of overridable parameters.  On accept the window writes the schematic and
-the subcircuit library, type-tagged so a SLiCAP and an NGspice device of the
-same name don't collide: ``<title>.slicap_sch`` + ``<title>.slicap_lib`` for
+Shows the subcircuit name (the document title; editable from "Save as", where
+a new name saves a copy of the package under that name; read-only from "Save",
+which opens the dialog only while the node order is unsettled, Anton
+2026-10-09), the ordered list of port nodes (reorderable — the order here *is*
+the .subckt node order), and an editable table of overridable parameters.  On accept the window writes the schematic and the
+subcircuit library, type-tagged so a SLiCAP and an NGspice device of the same
+name don't collide: ``<title>.slicap_sch`` + ``<title>.slicap_lib`` for
 SLiCAP schematics, ``<title>.spice_sch`` + ``<title>.spice_lib`` for NGspice
 (with ``build_ngspice_subckt`` and a ``*``-commented title for the latter).
 """
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QListWidget, QPushButton, QTableWidget, QTableWidgetItem,
-    QDialogButtonBox, QMessageBox,
+    QLabel, QLineEdit, QListWidget, QPushButton, QTableWidget,
+    QTableWidgetItem, QDialogButtonBox, QMessageBox,
 )
 from PySide6.QtCore import Qt
 from .sizing import chars
@@ -20,7 +22,8 @@ from .sizing import chars
 
 class CreateSubcircuitDialog(QDialog):
     def __init__(self, name: str, ports: list[str],
-                 params: list | None = None, parent=None):
+                 params: list | None = None, parent=None,
+                 name_editable: bool = True):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create Subcircuit")
         self.setMinimumWidth(chars(self, 60))
@@ -29,7 +32,20 @@ class CreateSubcircuitDialog(QDialog):
         # ── name ───────────────────────────────────────────────────────────────
         head = QGridLayout()
         head.addWidget(QLabel("<b>Subcircuit name:</b>"), 0, 0)
-        head.addWidget(QLabel(name or "(set a title in Schematic Properties)"), 0, 1)
+        # Editable: the name is the .subckt name AND the stem of the files
+        # in lib/. Typing another name saves a copy of the package under
+        # that name and makes it the document title. A read-only label was
+        # the previous form and was REJECTED: "Save as" could not rename a
+        # subcircuit at all (Anton, 2026-10-09).
+        self._name = QLineEdit(name)
+        self._name.setPlaceholderText("letter, then letters, digits or _")
+        self._name.setToolTip(
+            "The .subckt name and the stem of the files in lib/.\n"
+            "Another name saves a copy of the subcircuit under that name.")
+        # Save keeps the name: the dialog then only settles the node order
+        # (first save, new port). Save as makes it editable.
+        self._name.setReadOnly(not name_editable)
+        head.addWidget(self._name, 0, 1)
         outer.addLayout(head)
 
         # ── ports (reorderable node list) ──────────────────────────────────────
@@ -113,6 +129,15 @@ class CreateSubcircuitDialog(QDialog):
     # ── create ───────────────────────────────────────────────────────────────────
 
     def _on_create(self) -> None:
+        name = self.name()
+        # A netlist identifier (SLiCAPlex t_ID): a letter, then word
+        # characters. The same rule in both dialects, and a safe file stem.
+        if not (name and name[0].isalpha() and name.isidentifier()):
+            QMessageBox.warning(
+                self, "Subcircuit name",
+                f"'{name}' is not a valid subcircuit name.\n"
+                "Use a letter, then letters, digits or underscores.")
+            return
         if self._ports.count() == 0:
             if QMessageBox.question(
                 self, "No ports",
@@ -122,6 +147,9 @@ class CreateSubcircuitDialog(QDialog):
         self.accept()
 
     # ── results ──────────────────────────────────────────────────────────────────
+
+    def name(self) -> str:
+        return self._name.text().strip()
 
     def ports(self) -> list[str]:
         return [self._ports.item(i).text() for i in range(self._ports.count())]

@@ -4,10 +4,11 @@ Posters
 
 A poster is a drawing that shows other drawings of the project: schematics,
 other posters, figures and LaTeX snippets of the Design data, with text,
-shapes, LaTeX and images around them. It has a page format, it is exported
-to SVG and PDF like a schematic, and everything it shows follows the runs of
-the instruction files, so a poster is a design overview, a hand-out, or a
-clickable presentation for a lecture that is never out of date.
+shapes, LaTeX and images around them. It has a border like a schematic, it
+is exported to SVG and PDF like a schematic, and everything it shows follows
+the runs of the instruction files, so a poster is a design overview, a
+hand-out, a clickable presentation for a lecture that is never out of date,
+or a figure of several circuits for a book.
 
 A poster is **not a schematic**: it holds no circuit and is never netlisted.
 Its file is ``posters/<name>.slicap_poster``, an edited source beside the
@@ -18,18 +19,26 @@ Making a poster
 ===============
 
 :menuselection:`File --> New poster…` on the main window asks for a name, a
-title and a page format: the paper sizes A4 to A0, Letter, Legal and
-Tabloid, portrait or landscape, and the screen formats 16:9, 16:10 and 4:3.
-The page is the poster's border, drawn at that size with the border look of
-the drawing preferences, and the export has that size. The poster opens in
-its own tab with the menus of a drawing: Draw for lines, shapes, curves,
-text, hyperlinks and LaTeX, and Place for what the poster shows.
+title and a border. The border is the export frame: the exported SVG and PDF
+have its size. The choice is the same as in the properties dialog of a
+schematic (see :ref:`border-formats`): no border, a paper or screen format,
+a border format of your own, or a custom size. The border is drawn with the
+border look of the drawing preferences. The poster opens in its own tab with
+the menus of a drawing: Draw for lines, shapes, curves, text, hyperlinks and
+LaTeX, and Place for what the poster shows.
+
+A figure for a book is a poster with the border format of the document
+column: a fixed width and a free height. Place the circuits on it at one
+scale, so their text matches, and drag the bottom side of the border to the
+content. Each placed schematic brings its own border and background.
 
 What a poster shows
 ===================
 
 * :menuselection:`Place --> Schematic…` places a schematic of the project,
-  chosen by name, shown as its exported image.
+  chosen from the schematic files in ``sch/`` and ``lib/`` by their path,
+  the subcircuit packages included. Nothing is preselected. The poster
+  shows the schematic's export and keeps it up to date.
 * :menuselection:`Place --> Poster…` places another poster the same way.
   The list leaves out this poster and every poster that already shows it,
   directly or through a chain, because a poster cannot contain itself.
@@ -39,9 +48,12 @@ What a poster shows
 * :menuselection:`Place --> Image…` places a file.
 
 Every placed drawing is a **link**, never a copy: the schematic stays in its
-own file and the poster shows its export. Double-click a placed drawing for
-its scale, and press **Open** in that dialog to open the drawing itself in a
-tab.
+own file and the poster shows its export. Choosing a drawing brings its
+export up to date, so it is shown at once, at 100 %: the scale of its
+export, at which its grid and its text are those of the poster. A placed
+drawing snaps to the grid like a component. Double-click a placed drawing
+for its scale, and press **Open** in that dialog to open the drawing itself
+in a tab.
 
 Updating and exporting
 ======================

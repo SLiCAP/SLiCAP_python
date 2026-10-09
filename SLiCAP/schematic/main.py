@@ -166,9 +166,10 @@ def main():
     # GTK_MODULES; Qt's GTK platform theme initialises GTK during
     # QApplication construction, which then fails to load modules that
     # don't apply to a Qt app and prints "Gtk-Message: Failed to load
-    # module …" noise. Strip them ONLY around that construction and
-    # restore afterwards, so child processes (runner, NGspice, files
-    # opened with desktop GTK apps) inherit the unmodified environment.
+    # module …" noise. Strip them until the first window is up (GTK
+    # initialises lazily, see below) and restore then, so child processes
+    # (runner, NGspice, files opened with desktop GTK apps) inherit the
+    # unmodified environment.
     # No-op on Windows/macOS (GTK_MODULES unset); Qt's own accessibility
     # bridge is unaffected by NO_AT_BRIDGE (GTK-internal only).
     _saved = {k: os.environ.get(k) for k in ("GTK_MODULES", "NO_AT_BRIDGE")}
@@ -188,11 +189,13 @@ def main():
     app = QApplication(sys.argv)
     from . import app_prefs
     app_prefs.apply_color_scheme(app)
-    for _k, _v in _saved.items():
-        if _v is None:
-            os.environ.pop(_k, None)
-        else:
-            os.environ[_k] = _v
+
+    def _restore_environment():
+        for _k, _v in _saved.items():
+            if _v is None:
+                os.environ.pop(_k, None)
+            else:
+                os.environ[_k] = _v
     try:
         window = MainWindow(
             config=resolved_config,
@@ -213,6 +216,14 @@ def main():
         traceback.print_exc()
         sys.exit(1)
     window.show()
+    # Qt's GTK platform theme initialises GTK lazily, at the first window,
+    # not when the application object is made: restoring the environment
+    # right after QApplication() let the modules load from the restored
+    # list and the messages came back (Anton, 2026-10-07). Restored on the
+    # first pass of the event loop instead; every child process is started
+    # by a user action after that and inherits the original environment.
+    from PySide6.QtCore import QTimer
+    QTimer.singleShot(0, _restore_environment)
     sys.exit(app.exec())
 
 

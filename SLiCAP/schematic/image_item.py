@@ -34,7 +34,6 @@ class ImageItem(QGraphicsItem):
 
     Double-click opens a dialog to change the file or resize.
     """
-    SNAPS_TO_GRID = False   # an annotation: placed and dragged freely (canvas: group move, _FREE_PLACEMENT_MODES)
 
     def __init__(self, file_path: str, display_width: int, display_height: int,
                  pos: QPointF = QPointF(0, 0), link: str = ""):
@@ -45,9 +44,11 @@ class ImageItem(QGraphicsItem):
         # manifest), whose image is re-derived from the manifest on every
         # load and reload (Anton, 2026-10-06: the Variable pane is the
         # source, not the instruction file - that was tried first and
-        # REPLACED); "schematic:<name>" and "poster:<name>", a drawing of
-        # the project, shown as its export img/<name>.svg, which the export
-        # of a poster brings up to date first. A plain image has no link.
+        # REPLACED); "schematic:<source path>" (sch/x.slicap_sch,
+        # lib/y.spice_sch; a bare name in older files) and "poster:<name>",
+        # a drawing of the project, shown as its export img/<stem>.svg,
+        # which the export of a poster brings up to date first. A plain
+        # image has no link.
         self.link: str           = link or ""
         self.display_width: int  = display_width
         self.display_height: int = display_height
@@ -82,6 +83,12 @@ class ImageItem(QGraphicsItem):
     def link_name(self) -> str:
         return self.link.split(":", 1)[1] if ":" in self.link else ""
 
+    @property
+    def link_stem(self) -> str:
+        """The stem of the linked drawing: the name of its export."""
+        from pathlib import PurePosixPath
+        return PurePosixPath(self.link_name).stem if self.link_name else ""
+
     def _resolve_figure(self) -> bool:
         """A link item takes its image from what it links: a figure from the
         Design data, a schematic or poster from the export of that drawing;
@@ -96,7 +103,8 @@ class ImageItem(QGraphicsItem):
             from .design_data import manifest_figures
             new = dict(manifest_figures(project.project_root())).get(name)
         elif kind in ("schematic", "poster"):
-            new = "img/" + name + ".svg"
+            from . import project
+            new = project.folder_rel("img") + "/" + self.link_stem + ".svg"
         if new and new != self.file_path:
             self.file_path = new
             return True
@@ -218,6 +226,17 @@ class ImageItem(QGraphicsItem):
             painter.drawRect(r)
             painter.restore()
 
+    @property
+    def SNAPS_TO_GRID(self) -> bool:
+        """An image or a figure is an annotation and moves freely (see
+        canvas._FREE_PLACEMENT_MODES). A linked DRAWING snaps like a shape:
+        the grid, or the fine grid under Shift (config.snap_pos), since it
+        shares the grid of the poster it is placed on (Anton, 2026-10-09).
+        The group drag reads the same flag."""
+        return self.link_kind in ("schematic", "poster")
+
     def itemChange(self, change, value):
-        # No grid snap: an annotation (see canvas._FREE_PLACEMENT_MODES).
+        if change == QGraphicsItem.ItemPositionChange:
+            from .config import snap_pos
+            return snap_pos(self, value)     # the one snapping rule
         return super().itemChange(change, value)

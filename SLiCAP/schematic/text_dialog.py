@@ -23,9 +23,13 @@ class TextDialog(QDialog):
 
     def __init__(self, text: str = "", style=None, parent=None,
                  font_family: str = "", font_size: int = 0,
-                 bold: bool = False, italic: bool = False, color: str = ""):
+                 bold: bool = False, italic: bool = False, color: str = "",
+                 template: bool = False):
+        """*template*: the dialog of the document-properties block. The
+        text is then the TEMPLATE, with placeholders for the properties,
+        and the block renders it (Anton, 2026-10-09)."""
         super().__init__(parent, Qt.Window)
-        self.setWindowTitle("Text")
+        self.setWindowTitle("Document properties" if template else "Text")
         self.setMinimumWidth(chars(self, 51))
         from .config import default_style
         style = style or default_style()
@@ -34,6 +38,14 @@ class TextDialog(QDialog):
         outer.setSizeConstraint(QLayout.SetMinimumSize)
         self.setLayout(outer)
 
+        if template:
+            from .schematic_data import PROPERTIES_FIELDS
+            hint = QLabel("The block shows the document properties. Placeholders: "
+                          + "  ".join("{" + f + "}" for f in PROPERTIES_FIELDS)
+                          + ". A line whose placeholders are all empty is left out.")
+            hint.setWordWrap(True)
+            hint.setStyleSheet("color: grey; font-size: 9pt;")
+            outer.addWidget(hint)
         self._edit = QPlainTextEdit()
         self._edit.setMinimumHeight(100)
         self._edit.setPlainText(text)

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-152.623 -61.000 348.623 126.000" width="174.312mm" height="63.000mm">
-  <!-- SLiCAP schematic export: dcMatchingTracking.slicap_sch, SLiCAP 6.2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-151.623 -58.000 347.623 120.000" width="173.812mm" height="60.000mm">
+  <!-- SLiCAP schematic export: dcMatchingTracking.slicap_sch, SLiCAP 6.2.1 -->
   <title>dcMatchingTracking</title>
   <defs>
     <path id="img0-g1-0" d="M6.56538-2.291407C6.734745-2.291407 6.914072-2.291407 6.914072-2.49066S6.734745-2.689913 6.56538-2.689913H1.175592C1.006227-2.689913 .826899-2.689913 .826899-2.49066S1.006227-2.291407 1.175592-2.291407H6.56538Z" />
@@ -123,7 +123,7 @@
     <path id="lt11-g0-114" d="M1.346949-1.697634C1.346949-2.558406 2.064259-3.020672 2.765629-3.028643V-3.618431C2.096139-3.610461 1.609963-3.283686 1.291158-2.86127V-3.594521H.67746V0H1.346949V-1.697634Z" />
     <path id="lt11-g0-118" d="M3.777833-3.53873H3.140224C2.048319-.868742 2.000498-.653549 1.968618-.470237H1.960648C1.896887-.781071 1.673724-1.338979 1.42665-1.952677L.789041-3.53873H.119552L1.578082 0H2.319303L3.777833-3.53873Z" />
   </defs>
-  <rect x="-152.623" y="-61.000" width="348.623" height="126.000" fill="white" />
+  <rect x="-151.623" y="-58.000" width="347.623" height="120.000" fill="white" />
   <polyline points="-20.00,0.00 -20.00,10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="-20.00,-10.00 -20.00,0.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="0.00,0.00 -20.00,0.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />

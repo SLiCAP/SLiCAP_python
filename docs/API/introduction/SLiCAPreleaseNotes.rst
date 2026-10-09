@@ -92,6 +92,15 @@ curves, each with a user-defined stacking order.
    ``.ini`` sidecar and their border keeps its dash. See
    :doc:`/GUI/schematics/preferences`.
 
+#. **Project folders from the project configuration.** The schematic
+   editor and the headless export resolve every project folder, images,
+   netlists, libraries, schematics, posters and results, through the
+   ``[projectpaths]`` section of the project's ``SLiCAP.ini``, as the
+   scripts do. A project that writes its images to ``../Figures/`` gets its
+   exported schematics and posters there too; they went to ``img/``
+   before. The project root of a file is the nearest folder with a project
+   ``SLiCAP.ini``.
+
 #. **Generic font families.** Every font family list, in the drawing
    preferences and in the text dialog, offers sans-serif, serif and
    monospace. They render the same on every machine, in the editor and in
@@ -103,6 +112,68 @@ curves, each with a user-defined stacking order.
    exports, so a snippet changed in the script is typeset with its new text
    in the exported images. The main script writes the Design data at the
    end of the run as before.
+
+#. **Ground side of a detector pair.** The netlist accepts the word
+   ``None`` as one side of ``.detector``: ``.detector None V_2`` is the
+   negated node voltage, the netlist form of ``detector=[None, 'V_2']``.
+   The source/detector/lgref block dialog of the schematic offers
+   *(ground)* for both detector sides. On the minus side it is the single
+   form. On the plus side it needs a second reference, and the result is the
+   negated second reference. See :doc:`/API/userguide/analysis`.
+
+#. **Save and Save as for a subcircuit.** *Save* writes the subcircuit
+   package without a question once the node order is settled. The Create
+   Subcircuit dialog opens on the first save and when a new port appears.
+   *Save as…* always opens the dialog, with the name editable. Another
+   name saves a copy of the package (schematic and library) in ``lib/``
+   under that name. The copy becomes the open document. The name must be
+   a netlist identifier: a letter, then letters, digits or underscores.
+
+#. **Border formats.** The page of a poster is a border, as on a schematic.
+   The New poster dialog, the properties dialog and the Border dialog offer
+   the same formats: none, the paper and screen formats, a custom size, and
+   the *border formats* of the drawing preferences. A border format of your
+   own fixes the width, the height, or both. A free side is sized by hand.
+   A figure of several circuits for a book is a poster with the width of
+   the document column and a free height. See
+   :doc:`/GUI/schematics/posters` and :doc:`/GUI/schematics/preferences`.
+
+#. **Place → Schematic on a poster.** The dialog lists the schematic
+   files of the project, ``sch/`` and ``lib/``, by their path. Nothing is
+   preselected, and the image path is no longer shown. A placed schematic
+   is a link to that file. The poster shows its export. Older posters,
+   which name a schematic without its folder, still work. Choosing a
+   drawing brings its export up to date, so it is shown at once, at
+   100 %, and a placed drawing snaps to the grid, or to the fine grid
+   while Shift is held. The default scale of a placed image is 100 % as
+   well. A border clips the export: what lies
+   outside it is left out, and an item crossing it is cut at the border.
+   The export of a drawing without a border is exactly as large as the
+   drawing. Only a text at the edge keeps a small guard against clipping.
+
+#. **Document properties block.** :menuselection:`Place --> Document
+   properties…` on a schematic or a poster places a text block with the
+   project, title, author, created and last-modified fields. The text is
+   derived from the document properties through an editable template, so
+   it follows every save. One block per drawing. Font, face and colour as
+   for a text. See :doc:`/GUI/schematics/annotations`.
+
+#. **Dragging a selection.** A component selected together with its
+   wires moves as a block: the selected wires translate with it, and the
+   unselected wires at their far ends stretch. A moving point that sits
+   on the pin of an unselected component stays connected: when it leaves
+   the pin, the pin is bridged to its new position, with a dashed preview
+   during the drag. Connections change only where pins end up. Only
+   deleting a wire or a component disconnects.
+
+#. **Fixes from a user's report on 6.1.0.** The placement ghost of a
+   symbol, and the ghosts of a paste, are drawn in the display colours,
+   so they are visible on the dark canvas. R during a paste no longer
+   rotates the copied originals. The paste is the new selection, and R
+   after placing it turns the pasted items. A label moved away from its
+   default position keeps that position on the pasted copy. The project
+   folders of SLiCAP.ini, such as an image folder outside the project,
+   are honoured by the editor and by the headless export since 6.2.
 
 SLiCAP version 6.1 release notes
 ================================
@@ -273,7 +344,7 @@ work.
    default engine remains the determinant. 
    
 #. Loop gain and servo function are computed by injection at the
-   reference: the reference is replaced by an independent source of its
+   reference: the reference is replaced with an independent source of its
    own gain and its returned controlling quantity is detected (the loop
    stays closed), instead of from the return difference. For a matched reference pair with a conversion type
    each reference keeps its own gain, so that a gain mismatch shows up in 

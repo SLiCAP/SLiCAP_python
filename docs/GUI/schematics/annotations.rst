@@ -20,6 +20,26 @@ the SVG and PDF export, because the viewer resolves a generic family to a
 font it has. A named font can be typed in the list, at the risk that another
 machine substitutes it.
 
+Document properties
+===================
+
+:menuselection:`Place --> Document properties…` places a text block that
+shows the document properties: project, title, author, created and last
+modified. Its text is derived, not typed. The dialog holds a template with
+the placeholders ``{project}``, ``{title}``, ``{author}``, ``{created}`` and
+``{modified}``, one field per line by default. Edit the template for
+another layout, such as ``{title}, {author}``, or delete lines for fewer
+fields. A line whose placeholders are all empty is left out.
+
+The block is rendered on load, after the properties dialog and at every
+save, so an exported figure carries the date of the save that produced it.
+In the editor the block shows the date of the previous save until you save
+again. There is one block per drawing. The menu opens that block when it
+exists, as it does for the parameter table. The font, the face and the
+colour are those of the text dialog, with the drawing preferences as the
+default. The block is plain text in the export, never LaTeX, and it is
+placed and dragged freely like any text.
+
 LaTeX fragments
 ===============
 
@@ -145,15 +165,30 @@ on a poster, and below the wires, but never under the border. The circuit
 itself keeps its layers: wires, components, junctions and net labels in
 that order.
 
+.. _border-formats:
+
 Borders and document properties
 ===============================
 
 * :menuselection:`Place --> Border` (:kbd:`B`) adds a drawing border/frame.
-  The border is the page: the exported SVG and PDF have its size. Without
-  a border the export is as large as the drawing, with a small margin.
+  The border is the export frame: the exported SVG and PDF have its size,
+  and the border clips. Everything outside it is left out of the export,
+  and an item that crosses it is cut at the border. Without a border the
+  export is exactly as large as the drawing. Only a text at the edge gets
+  a small guard against clipping. The Border dialog has a *Format* row
+  that fills the width, the height and their Fixed boxes from a format.
 * :menuselection:`File --> Schematic properties…` sets the title, author and
-  the page. The page field shows the border's size, a format creates or
-  resizes the border, and **Drawing size** removes it.
+  the border. The *Border* field shows the border's format, a format creates
+  or resizes the border, and **Drawing size** removes it.
+
+The formats are the paper sizes A4 to A0, Letter, Legal and Tabloid,
+portrait or landscape, the screen formats 16:9, 16:10 and 4:3, and the
+**border formats** of the drawing preferences. A border format of your own
+has a width, a height, or both. A side that is left empty is free: it is
+not fixed, and you size it by hand on the canvas. A figure for a book is a
+border with the width of the document column and a free height. The same
+formats serve the New poster dialog, so a poster of posters of schematics
+is one hierarchy of drawings with one border model.
 
 Renaming components
 ===================

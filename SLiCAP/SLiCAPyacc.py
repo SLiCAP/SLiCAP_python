@@ -52,6 +52,18 @@ _NODES           = ['NODEID', 'ID', 'INT']
 _VALEXPR         = ['FLT', 'EXPR', 'SCI', 'INT']
 _TITLE           = ['ID', 'QSTRING', 'FNAME']
 
+# The ground side of a .source/.detector/.lgref pair in a netlist. The
+# Python form is detector=[None, 'V_2'] (minus V_2); the netlist spells the
+# same None as the word below: ".detector None V_2". A node named "None" is
+# therefore not allowed (Anton, 2026-10-08). The spelling "V_0" was
+# considered and REJECTED: it covers voltage detectors only, whereas
+# "None I_V1" (minus I_V1) needs the token as well.
+GROUND_TOKEN     = "None"
+
+def _refToken(token):
+    """Returns None for the ground token, else the token itself."""
+    return None if token == GROUND_TOKEN else token
+
 # Lists with constrolled and independent sources
 _CONTROLLED      = ['E', 'F', 'G', 'H']  # Controlled sources
 _INDEPSCRCS      = ['I', 'V']            # Independent sources
@@ -295,9 +307,9 @@ def _parseNetlist(netlist, name, cirType):
                 elif cmdType == "SOURCE":
                     source = None
                     if len(line) > 2:
-                        source = [line[1].value, line[2].value]
+                        source = [_refToken(line[1].value), _refToken(line[2].value)]
                     elif len(line) > 1:
-                        source = [line[1].value, None]
+                        source = [_refToken(line[1].value), None]
                     else:
                         _printError("Error: Missing source definition", line[0])
                         _addErrors(name, cirType)
@@ -305,9 +317,9 @@ def _parseNetlist(netlist, name, cirType):
                 elif cmdType == "DETECTOR":
                     detector = None
                     if len(line) > 2:
-                        detector = [line[1].value, line[2].value]
+                        detector = [_refToken(line[1].value), _refToken(line[2].value)]
                     elif len(line) > 1:
-                        detector = [line[1].value, None]
+                        detector = [_refToken(line[1].value), None]
                     else:
                         _printError("Error: Missing detector definition", line[0])
                         _addErrors(name, cirType)
@@ -315,9 +327,9 @@ def _parseNetlist(netlist, name, cirType):
                 elif cmdType == "LGREF":
                     lgRef = None
                     if len(line) > 2:
-                        lgRef = [line[1].value, line[2].value]
+                        lgRef = [_refToken(line[1].value), _refToken(line[2].value)]
                     elif len(line) > 1:
-                        lgRef = [line[1].value, None]
+                        lgRef = [_refToken(line[1].value), None]
                     else:
                         _printError("Error: Missing lgRef definition", line[0])
                         _addErrors(name, cirType)

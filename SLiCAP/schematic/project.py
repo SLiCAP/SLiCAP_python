@@ -50,6 +50,66 @@ APP_ROOT = Path.cwd()
 SOURCE_DIRS = ("sch", "lib", "posters")
 POSTER_SUFFIX = ".slicap_poster"
 
+# ── the project's folders ────────────────────────────────────────────────────
+# A project's SLiCAP.ini names its folders in [projectpaths] (img = ../Figures/
+# is how the book's chapter projects write their images into the chapter's
+# figure folder). The schematic package used the DEFAULT names regardless and
+# exported into img/ (Anton, 2026-10-08). Every folder of the project is now
+# resolved here, from that section when the project has one, else by its
+# default name; the core (SLiCAPconfigure) reads the same file, so scripts
+# and the editor agree. A SLiCAP.ini without [projectpaths] is the user's
+# global configuration, never a project.
+_INI_NAME = "SLiCAP.ini"
+_folder_cache: dict = {}
+
+
+def _project_paths(root: Path) -> dict:
+    """The [projectpaths] section of <root>/SLiCAP.ini, {} when absent."""
+    ini = Path(root) / _INI_NAME
+    try:
+        stamp = ini.stat().st_mtime_ns
+    except OSError:
+        return {}
+    key = (str(ini), stamp)
+    if key in _folder_cache:
+        return _folder_cache[key]
+    import configparser
+    cfg = configparser.ConfigParser()
+    try:
+        cfg.read(str(ini), encoding="utf-8")
+        paths = dict(cfg["projectpaths"]) if cfg.has_section("projectpaths") else {}
+    except (configparser.Error, OSError, UnicodeDecodeError):
+        paths = {}
+    _folder_cache.clear()
+    _folder_cache[key] = paths
+    return paths
+
+
+def folder_rel(name: str, root=None) -> str:
+    """The project folder *name* (cir, img, lib, sch, posters, results, txt,
+    ...) as the project's SLiCAP.ini names it, relative to the root and
+    without a trailing slash, in POSIX form: ``"img"`` or ``"../Figures"``.
+    The form a schematic stores in a link."""
+    base = Path(root) if root is not None else project_root()
+    value = _project_paths(base).get(name, "")
+    value = value.strip().replace("\\", "/").rstrip("/") if value else ""
+    return value or name
+
+
+def folder(name: str, root=None, create: bool = False) -> Path:
+    """The project folder *name* as a path (see folder_rel); *create* makes
+    it."""
+    base = Path(root) if root is not None else project_root()
+    rel = folder_rel(name, base)
+    d = Path(rel) if Path(rel).is_absolute() else base / rel
+    if create:
+        d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _has_project_ini(d: Path) -> bool:
+    return (d / _INI_NAME).is_file() and bool(_project_paths(d))
+
 
 def doc_type(path) -> str:
     """The document type of a canvas file by its suffix: 'ngspice'
@@ -62,22 +122,65 @@ def doc_type(path) -> str:
     return "slicap"
 
 
-def schematic_file_for(name: str, root=None):
-    """The schematic of the project called *name*: sch/<name>.slicap_sch or
-    .spice_sch, or None."""
+SCHEMATIC_SUFFIXES = (".slicap_sch", ".spice_sch")
+
+
+def project_schematics(root=None) -> list:
+    """The schematic sources of the project, sorted: those of sch/ and then
+    those of lib/ (the subcircuit packages). What Place -> Schematic
+    offers (Anton, 2026-10-09: the subcircuits of a figure live in lib/)."""
     base = Path(root) if root is not None else project_root()
-    for ext in (".slicap_sch", ".spice_sch"):
-        p = base / "sch" / (name + ext)
-        if p.is_file():
-            return p
+    out = []
+    for name in ("sch", "lib"):
+        d = folder(name, base)
+        if d.is_dir():
+            out += sorted(p for p in d.iterdir()
+                          if p.suffix.lower() in SCHEMATIC_SUFFIXES)
+    return out
+
+
+def schematic_ref(path, root=None) -> str:
+    """How a link names a schematic of the project: its source path from
+    the root, POSIX form ("sch/amp.slicap_sch", "lib/nullor.spice_sch").
+    A bare name was the previous form and was REPLACED: it could not tell
+    sch/ from lib/, and it showed nothing of what was linked (Anton,
+    2026-10-09). Older files with a bare name still resolve."""
+    return relative_to_root(path, path if root is None else None) if root is None \
+        else Path(path).resolve().relative_to(Path(root).resolve()).as_posix()
+
+
+def schematic_file_for(ref: str, root=None):
+    """The schematic a link refers to, or None: a source path from the
+    project root (schematic_ref), or, in older files, a bare name looked
+    up in sch/ and then in lib/."""
+    base = Path(root) if root is not None else project_root()
+    if "/" in ref or Path(ref).suffix.lower() in SCHEMATIC_SUFFIXES:
+        p = base / ref
+        return p if p.is_file() else None
+    for name in ("sch", "lib"):
+        for ext in SCHEMATIC_SUFFIXES:
+            p = folder(name, base) / (ref + ext)
+            if p.is_file():
+                return p
     return None
 
 
 def poster_file_for(name: str, root=None):
     """The poster of the project called *name*, or None."""
     base = Path(root) if root is not None else project_root()
-    p = base / "posters" / (name + POSTER_SUFFIX)
+    p = folder("posters", base) / (name + POSTER_SUFFIX)
     return p if p.is_file() else None
+
+
+def link_source(link: str, root=None):
+    """The source file of a schematic or poster link ("schematic:<source
+    path>", "poster:<name>"), or None: a figure link has no drawing."""
+    kind, _, name = link.partition(":")
+    if kind == "schematic":
+        return schematic_file_for(name, root)
+    if kind == "poster":
+        return poster_file_for(name, root)
+    return None
 
 
 def current() -> Path | None:
@@ -108,23 +211,27 @@ def project_root() -> Path:
     unsaved schematic).
     """
     if _base is not None:
-        parent = _base.parent
-        return parent.parent if parent.name in SOURCE_DIRS else parent
+        return root_for(_base)
     return APP_ROOT
 
 
 def subdir(name: str) -> Path:
-    """Return ``<project_root>/<name>`` (cir, sch, img, lib), creating it."""
-    d = project_root() / name
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    """The project folder *name* (cir, sch, img, lib, posters, ...) as the
+    project's SLiCAP.ini names it, created."""
+    return folder(name, project_root(), create=True)
 
 
 def root_for(path) -> Path:
     """Project root derived from an explicit schematic ``path`` — independent
     of the app-wide current schematic.  A schematic may live in ``sch/`` or,
     for subcircuit packages, in ``lib/``."""
-    parent = Path(path).parent
+    p = Path(path)
+    # the nearest ancestor that holds a project SLiCAP.ini is the root: this
+    # also serves a project whose source folders have other names
+    for ancestor in p.parents:
+        if _has_project_ini(ancestor):
+            return ancestor
+    parent = p.parent
     return parent.parent if parent.name in SOURCE_DIRS else parent
 
 
@@ -156,10 +263,8 @@ def resolve_from_root(file_path, sch_path=None) -> Path:
 
 
 def subdir_for(path, name: str) -> Path:
-    """``<root_for(path)>/<name>`` (cir, sch, img, lib), creating it."""
-    d = root_for(path) / name
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    """The folder *name* of the project *path* belongs to, created."""
+    return folder(name, root_for(path), create=True)
 
 
 def _sidecar(ext: str) -> Path:

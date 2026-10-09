@@ -416,8 +416,8 @@ def _schematicFile(circuit):
     name = circuit.replace("\\", "/")
     if name.lower().endswith((".slicap_sch", ".spice_sch", ".slicap_poster")):
         return name
-    for folder, ext in (("sch", ".slicap_sch"), ("sch", ".spice_sch"),
-                        ("posters", ".slicap_poster")):
+    for folder, ext in ((ini.schematic_path, ".slicap_sch"), (ini.schematic_path, ".spice_sch"),
+                        (ini.poster_path, ".slicap_poster")):
         candidate = os.path.join(folder, name + ext)   # the project root is the cwd
         if os.path.isfile(candidate):
             return candidate

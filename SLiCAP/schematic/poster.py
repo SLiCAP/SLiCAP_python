@@ -18,36 +18,55 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog, QFormLayout, QLineEdit, QComboBox, QCheckBox, QDialogButtonBox,
-    QLabel, QMessageBox,
+    QDialog, QFormLayout, QLineEdit, QDialogButtonBox, QLabel, QMessageBox,
 )
 
-from .document_properties_dialog import PAGE_SIZES_MM, page_size_mm
-from .sizing import chars, fit_contents
+from .document_properties_dialog import (
+    DRAWING_SIZE, CUSTOM, BorderFormatFields, border_formats, resolve_format,
+    page_name_of)
+from .sizing import chars
 
 
-def create_poster(root, name: str, page_size: str = "A4", landscape: bool = False,
+def create_poster(root, name: str, fmt="A4", landscape: bool = False,
                   title: str = "", author: str = "", style=None) -> Path:
-    """Write posters/<name>.slicap_poster with its page size and a border of
-    that size (the export frame, in the style's border look); returns the
-    path. The project's border and page defaults apply."""
+    """Write posters/<name>.slicap_poster and return the path.
+
+    *fmt* is the border: a format name (paper, screen, or a preset of the
+    style's [border_presets]), with *landscape* for paper; a tuple
+    (width_mm, height_mm, fixed_w, fixed_h); or None / DRAWING_SIZE for a
+    poster without a border, whose export is as large as the drawing
+    (Anton, 2026-10-09: a poster for a book figure has no page). The
+    border has the look of the style's border defaults."""
     from .schematic_data import SchematicData, DocumentProperties, BorderData
     from .border_dialog import _units_per
     from .config import default_style
     style = style or default_style()
+    from . import project
     root = Path(root)
-    folder = root / "posters"
-    folder.mkdir(parents=True, exist_ok=True)
-    path = folder / (name + ".slicap_poster")
-    w_mm, h_mm = page_size_mm(page_size, landscape)
-    upm = _units_per()["mm"]
+    path = project.folder("posters", root, create=True) / (name + ".slicap_poster")
+    presets = style.BORDER_PRESETS
+    if fmt is None or fmt == DRAWING_SIZE:
+        border = None
+    elif isinstance(fmt, str):
+        border = resolve_format(border_formats(presets), fmt, landscape)
+    else:
+        border = tuple(fmt)
     data = SchematicData.from_json("{}")
-    data.properties = DocumentProperties(title=title or name, author=author,
-                                         page_size=page_size,
-                                         page_width_mm=w_mm, page_height_mm=h_mm)
+    if border is None:
+        data.properties = DocumentProperties(title=title or name, author=author,
+                                             page_size=DRAWING_SIZE,
+                                             page_width_mm=0.0, page_height_mm=0.0)
+        data.save(path)
+        return path
+    w_mm, h_mm, fixed_w, fixed_h = border
+    upm = _units_per()["mm"]
+    data.properties = DocumentProperties(
+        title=title or name, author=author,
+        page_size=page_name_of(w_mm, h_mm, (fixed_w, fixed_h), presets),
+        page_width_mm=round(w_mm, 1), page_height_mm=round(h_mm, 1))
     data.border = BorderData(
         x=0.0, y=0.0, width=round(w_mm * upm, 2), height=round(h_mm * upm, 2),
-        show_in_export=style.BORDER_SHOW_LINE, fixed_w=True, fixed_h=True,
+        show_in_export=style.BORDER_SHOW_LINE, fixed_w=fixed_w, fixed_h=fixed_h,
         line_color=style.BORDER_LINE_COLOR.name(), line_width=style.BORDER_LINE_WIDTH,
         bg_color=style.BORDER_BG_COLOR.name(), bg_alpha=style.BORDER_BG_ALPHA,
         line_style=style.BORDER_LINE_STYLE)
@@ -56,9 +75,11 @@ def create_poster(root, name: str, page_size: str = "A4", landscape: bool = Fals
 
 
 class NewPosterDialog(QDialog):
-    """Name and page format of a new poster."""
+    """Name, title and border of a new poster: the same border formats as
+    the properties dialog of a drawing (none, paper, screen, presets,
+    custom)."""
 
-    def __init__(self, root, parent=None):
+    def __init__(self, root, parent=None, style=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("New poster")
         self.setMinimumWidth(chars(self, 48))
@@ -70,15 +91,12 @@ class NewPosterDialog(QDialog):
         form.addRow("Name:", self._name)
         self._title = QLineEdit()
         form.addRow("Title:", self._title)
-        self._size = QComboBox()
-        self._size.addItems(list(PAGE_SIZES_MM))
-        self._size.setCurrentText("A4")
-        fit_contents(self._size)
-        form.addRow("Page format:", self._size)
-        self._landscape = QCheckBox("Landscape (paper sizes)")
-        form.addRow("", self._landscape)
-        hint = QLabel("The border is the page; the exported SVG and PDF have "
-                      "this size. Saved as posters/<name>.slicap_poster.")
+        from .config import default_style
+        self._style  = style or default_style()
+        self._format = BorderFormatFields(form, self._style.BORDER_PRESETS)
+        self._format.combo.setCurrentText("A4")
+        hint = QLabel("The border is the export frame; the exported SVG and "
+                      "PDF have its size. Saved as posters/<name>.slicap_poster.")
         hint.setWordWrap(True)
         hint.setStyleSheet("color: grey; font-size: 9pt;")
         form.addRow(hint)
@@ -93,12 +111,13 @@ class NewPosterDialog(QDialog):
         if not name or any(c in name for c in "/\\:*?\"<>|"):
             QMessageBox.warning(self, "New poster", "Give the poster a file name.")
             return
-        path = self._root / "posters" / (name + ".slicap_poster")
+        from . import project
+        path = project.folder("posters", self._root) / (name + ".slicap_poster")
         if path.exists():
             if QMessageBox.question(
                     self, "New poster", f"{path.name} exists. Replace it?",
                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
                 return
-        self.path = create_poster(self._root, name, self._size.currentText(),
-                                  self._landscape.isChecked(), self._title.text().strip())
+        self.path = create_poster(self._root, name, self._format.border_mm(),
+                                  title=self._title.text().strip(), style=self._style)
         self.accept()

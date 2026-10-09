@@ -16,6 +16,12 @@ from PySide6.QtGui import QColor, QFont, QPen
 # Georgia) was the previous list and is REJECTED for that reason.
 GENERIC_FONT_FAMILIES = ["sans-serif", "serif", "monospace"]
 
+# The ground side of a detector pair in the dialogs: shown as "(ground)",
+# written as None in an instruction and as the word None in a netlist
+# (SLiCAPyacc.GROUND_TOKEN). The ground is not a dependent variable, so the
+# entry is this label, never "V_0" (which the core refuses).
+GROUND = "(ground)"
+
 # The line styles of drawn shapes and of the border, by name: ONE table for
 # the canvas pens; the SVG export keeps the matching dash arrays
 # (export._DASH_ARRAY). The border's style was a hard-coded dash until
@@ -104,7 +110,7 @@ class Style:
     """
 
     def __init__(self, sidecar: "Path | str | None" = None):
-        self._cfg = configparser.ConfigParser()
+        self._cfg = style_parser()
         self._cfg.read(STYLE_FILE)
         if sidecar is not None and Path(sidecar).is_file():
             self._cfg.read(str(sidecar))
@@ -252,19 +258,30 @@ class Style:
         self.BORDER_BG_COLOR   = self._c("border", "bg_color",   "#ecf3ff")
         self.BORDER_BG_ALPHA   = self._i("border", "bg_alpha",   100)
         self.BORDER_SHOW_LINE  = self._b("border", "show_line_in_export", False)
+        # Border formats defined by the user: name -> (width_mm, height_mm),
+        # a side None = free (not fixed). A figure of the book is "a fixed
+        # width, the column, and a free height" (Anton, 2026-10-09). Offered
+        # next to the paper and screen formats in the Border, Properties and
+        # New poster dialogs (document_properties_dialog.border_formats).
+        self.BORDER_PRESETS = {}
+        if self._cfg.has_section("border_presets"):
+            for name, text in self._cfg["border_presets"].items():
+                size = parse_border_preset(text)
+                if size is not None:
+                    self.BORDER_PRESETS[name.strip()] = size
 
     # -- Preferences-dialog protocol --------------------------------------------
 
     def snapshot(self) -> configparser.ConfigParser:
         """A copy of the effective style for the Preferences dialog to edit."""
-        cfg = configparser.ConfigParser()
+        cfg = style_parser()
         for section in self._cfg.sections():
             cfg[section] = {k: v for k, v in self._cfg[section].items()}
         return cfg
 
     def apply_parser(self, cfg: configparser.ConfigParser) -> None:
         """Replace the style with `cfg` (the Preferences dialog's result)."""
-        self._cfg = configparser.ConfigParser()
+        self._cfg = style_parser()
         for section in cfg.sections():
             self._cfg[section] = {k: v for k, v in cfg[section].items()}
         self._recompute()
@@ -277,6 +294,39 @@ class Style:
 
 
 _default_style: Style | None = None
+
+
+def style_parser() -> configparser.ConfigParser:
+    """A parser for style.ini files. Keys keep their case: a border preset
+    is named by the user ("Column", "A4 slide")."""
+    cfg = configparser.ConfigParser()
+    cfg.optionxform = str
+    return cfg
+
+
+def parse_border_preset(text: str):
+    """``"120 x"``, ``"x 80"`` or ``"210 x 297"`` (mm) -> (width, height)
+    with None for a free side. None when the text is not a size."""
+    parts = str(text).lower().split("x")
+    if len(parts) != 2:
+        return None
+    try:
+        w = float(parts[0]) if parts[0].strip() else None
+        h = float(parts[1]) if parts[1].strip() else None
+    except ValueError:
+        return None
+    if w is None and h is None:
+        return None
+    if (w is not None and w <= 0) or (h is not None and h <= 0):
+        return None
+    return w, h
+
+
+def format_border_preset(width_mm, height_mm) -> str:
+    """The inverse of parse_border_preset: ``"120 x"`` for a free height."""
+    w = f"{width_mm:g}" if width_mm is not None else ""
+    h = f"{height_mm:g}" if height_mm is not None else ""
+    return f"{w} x {h}".strip()
 
 
 def default_style() -> Style:

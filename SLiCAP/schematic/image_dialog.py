@@ -28,15 +28,25 @@ class ImageDialog(QDialog):
     """
 
     _TITLES = {"figure": "Figure", "schematic": "Schematic", "poster": "Poster"}
+    _EMPTY  = {"figure": "(choose a figure of the Design data)",
+               "schematic": "(choose a schematic of the project)",
+               "poster": "(choose a poster of the project)"}
+    _NONE   = {"figure": "(no figures in the Design data: run the instruction file)",
+               "schematic": "(no schematics in sch/ or lib/ of the project)",
+               "poster": "(no other poster to show)"}
 
     def __init__(self, file_path: str = "", display_width: int = 200,
                  display_height: int = 200, style=None, parent=None,
                  link_kind: str = "", choices=None, link_name: str = ""):
-        """*link_kind* with *choices* ``[(name, "img/<file>.svg"), ...]``
+        """*link_kind* with *choices* ``[(key, "img/<file>.svg"), ...]``
         turns the dialog into the dialog of a LINK: a figure object of the
-        Design data, a schematic or a poster of the project, chosen by name;
-        its image is the file shown (Anton, 2026-10-06). *link_name*
-        preselects one. Without a kind it is the plain image dialog."""
+        Design data by name, a schematic of the project by source path, a
+        poster by name; its image is the file shown (Anton, 2026-10-06).
+        The combo shows the key only, never the image: the image is what
+        the link derives, and showing it read as "an image is placed"
+        (Anton, 2026-10-09). *link_name* preselects one (editing a link);
+        otherwise nothing is chosen and OK waits for a choice. Without a
+        kind it is the plain image dialog."""
         super().__init__(parent, Qt.Window)
         from .config import default_style
         self._style = style or default_style()
@@ -60,18 +70,17 @@ class ImageDialog(QDialog):
         if self._link_kind:
             file_row.addWidget(QLabel(self._TITLES[self._link_kind] + ":"))
             self._figure_combo = QComboBox()
-            for name, file in self._figures:
-                self._figure_combo.addItem(f"{name}  ({file})", name)
+            if self._figures and self._figure_combo.findData(link_name) < 0:
+                self._figure_combo.addItem(self._EMPTY[self._link_kind], "")
+            for name, _file in self._figures:
+                self._figure_combo.addItem(name, name)
             if self._figure_combo.findData(link_name) >= 0:
                 self._figure_combo.setCurrentIndex(self._figure_combo.findData(link_name))
             self._figure_combo.currentIndexChanged.connect(self._on_figure_chosen)
             file_row.addWidget(self._figure_combo, stretch=1)
             if not self._figures:
                 self._figure_combo.setEnabled(False)
-                self._figure_combo.addItem({
-                    "figure": "(no figures in the Design data: run the instruction file)",
-                    "schematic": "(no schematics in the project's sch folder)",
-                    "poster": "(no other poster to show)"}[self._link_kind])
+                self._figure_combo.addItem(self._NONE[self._link_kind], "")
             else:
                 self._on_figure_chosen()
             if self._link_kind in ("schematic", "poster"):
@@ -90,10 +99,13 @@ class ImageDialog(QDialog):
         # For an existing image, load natural size and back-calculate scale.
         if file_path:
             self._load_natural_size(file_path)
+        # 100 %: a placed drawing then has the scale of its export, so its
+        # grid and text match the poster's (Anton, 2026-10-09; 50 % was the
+        # previous default and was REPLACED).
         if self._natural_w and self._natural_w > 0:
             init_scale = max(1, round(display_width / self._natural_w * 100))
         else:
-            init_scale = 50
+            init_scale = 100
 
         scale_row = QHBoxLayout()
         scale_row.addWidget(QLabel("Scale:"))
@@ -116,9 +128,16 @@ class ImageDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
+        self._ok = buttons.button(QDialogButtonBox.Ok)
 
         self._scale_spin.valueChanged.connect(self._on_scale_changed)
         self._update_size_labels()
+        self._update_ok()
+
+    def _update_ok(self) -> None:
+        """OK needs a choice: a link, or a file."""
+        if hasattr(self, "_ok"):
+            self._ok.setEnabled(bool(self.link() if self._link_kind else self.image_path()))
 
     # ── internal ──────────────────────────────────────────────────────────────
 
@@ -126,9 +145,36 @@ class ImageDialog(QDialog):
         name = self._figure_combo.currentData()
         file = dict(self._figures).get(name, "")
         self._path_edit.setText(file)
+        if name:
+            self._ensure_export(name)
         self._load_natural_size(file)
         if hasattr(self, "_scale_spin"):        # not yet during construction
             self._update_size_labels()
+        self._update_ok()
+
+    def _ensure_export(self, key: str) -> None:
+        """A chosen drawing is shown at once: its export is brought up to
+        date here, with the rule the poster export applies (children
+        first), so the item has its image and its size when it is placed.
+        Without this the item was a grey box until the poster's first
+        export (Anton, 2026-10-09). A figure's image comes from a run."""
+        if self._link_kind not in ("schematic", "poster"):
+            return
+        from . import project
+        src = project.link_source(f"{self._link_kind}:{key}")
+        if src is None:
+            return
+        from PySide6.QtWidgets import QApplication, QMessageBox
+        from . import make_schematic
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            make_schematic(src)
+        except Exception as exc:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.warning(self, self._TITLES[self._link_kind],
+                                f"{src.name} could not be exported:\n\n{exc}")
+            return
+        QApplication.restoreOverrideCursor()
 
     def link(self) -> str:
         """The typed link, "<kind>:<name>" ("" for a plain image)."""
@@ -162,8 +208,9 @@ class ImageDialog(QDialog):
             self._path_edit.setText(project.relative_to_root(path))
             self._load_natural_size(path)
             # Reset scale to the default for a newly chosen file.
-            self._scale_spin.setValue(50)
+            self._scale_spin.setValue(100)
             self._update_size_labels()
+            self._update_ok()
 
     def _load_natural_size(self, path: str) -> None:
         """Read the file's natural pixel dimensions and store them."""

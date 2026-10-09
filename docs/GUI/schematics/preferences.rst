@@ -89,6 +89,15 @@ in the ``[border]`` and other sections of its ``.ini`` sidecar; give every
 border the width of the document column (see the ``sch_scale`` setting
 under :doc:`/GUI/project/project`).
 
+The **Border formats** table holds formats of your own, offered next to the
+paper and screen formats in the Border dialog, the properties dialog and
+the New poster dialog. A row is a name, a width and a height in mm. Leave
+the width or the height empty for a free side: that side is not fixed, and
+you size it by hand on the canvas. The row ``Column``, ``120``, empty is a
+figure of a book with a 120 mm column: a fixed width and a free height.
+The table is the ``[border_presets]`` section of the sidecar, one line per
+format, ``Column = 120 x``.
+
 Colour scheme
 =============
 

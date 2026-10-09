@@ -283,7 +283,7 @@
       "instance_id": "V1N",
       "x": -80.0,
       "y": 45.0,
-      "rotation": 0.0,
+      "rotation": 180.0,
       "h_flip": true,
       "v_flip": false,
       "params": {
@@ -322,16 +322,16 @@
       },
       "prop_offsets": {
         "refdes": [
-          15.0286010543022,
-          -2.552608082983575
+          -14.256780299991206,
+          5.053919404872833
         ],
         "model": [
           16.0,
           0
         ],
         "value": [
-          15.352400702868138,
-          8.70480140573627
+          -14.809265088656176,
+          -5.546790277030048
         ],
         "dc": [
           16.0,
@@ -342,8 +342,8 @@
           30
         ],
         "noise": [
-          14.381001757170338,
-          18.953022843214455
+          -15.22059913991032,
+          -16.40232624877187
         ],
         "dc_current": [
           16.0,
@@ -1837,16 +1837,20 @@
     }
   ],
   "shapes": [],
+  "pins": [],
+  "symbol_texts": [],
+  "opaques": [],
+  "origin": null,
   "model_defs": [],
   "properties": {
     "title": "",
     "author": "",
     "project": "",
     "created": "2026-09-20",
-    "last_modified": "2026-09-20",
-    "page_size": "A4",
-    "page_width_mm": 210.0,
-    "page_height_mm": 297.0,
+    "last_modified": "2026-10-09",
+    "page_size": "Drawing size (no border)",
+    "page_width_mm": 0.0,
+    "page_height_mm": 0.0,
     "is_subcircuit": false,
     "subcircuit_ports": [],
     "subcircuit_params": [],

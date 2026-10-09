@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 from . import app_prefs
+from . import project
 from .design_data import (MANIFEST_NAME, read_manifest,
                           section_is_stale, filter_kind)
 
@@ -203,7 +204,7 @@ class DesignDataPanel(QDockWidget):
             self._watcher.removePaths(paths)
         if self._project_root is None:
             return
-        rdir = self._project_root / "results"
+        rdir = project.folder("results", self._project_root)
         if rdir.is_dir():
             self._watcher.addPath(str(rdir))
             mf = rdir / MANIFEST_NAME
@@ -242,7 +243,7 @@ class DesignDataPanel(QDockWidget):
         self._add_specifications_node()
         if not self._session_sources:
             return
-        manifest = read_manifest(self._project_root / "results")
+        manifest = read_manifest(project.folder("results", self._project_root))
         visible = set(app_prefs.get_visible_kinds())
         hidden_vars = 0
         hidden_kinds: set[str] = set()
