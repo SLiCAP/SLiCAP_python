@@ -101,18 +101,21 @@ def _default_output(input_path: Path, kind: str, suffix: str) -> Path:
     return project.subdir(kind) / input_path.with_suffix(suffix).name
 
 
-def _write_netlist(input_path, scene, data, output_path, title):
-    """Build and write the netlist for an ALREADY-LOADED scene (the file
-    extension selects the SLiCAP or NGspice builder). Shared by the
-    ``netlist`` and ``export`` commands so the scene is loaded once.
-    A poster (.slicap_poster) is a drawing without a circuit: no netlist.
+def netlist_for(input_path, scene, props, title, program: bool = True):
+    """The netlist text of an ALREADY-LOADED scene and its default file:
+    (text, path, label). ONE builder for the headless export and the
+    editor's Export netlist (Anton, 2026-10-10: the editor wrote a flat
+    .sp of a subcircuit into cir/; the library belongs in lib/).
 
-    A subcircuit schematic (Subcircuit checked in Schematic Properties)
-    gets its library, lib/<title>.slicap_lib or .spice_lib - the file the
-    GUI's Save-as-subcircuit writes - and NO circuit netlist: its internal
-    nodes have no ground, so the flat .cir that was written before only
-    failed makeCircuit's ground check (Anton, 2026-09-16). ``output_path``
-    None selects the default location, cir/ or lib/."""
+    The file extension of *input_path* selects the SLiCAP or NGspice
+    builder. A subcircuit schematic (Subcircuit checked in Schematic
+    Properties) gets its library, lib/<title>.slicap_lib or .spice_lib -
+    the file Save-as-subcircuit writes - and NO circuit netlist: its
+    internal nodes have no ground, so the flat .cir that was written
+    before only failed makeCircuit's ground check (Anton, 2026-09-16).
+    *program* selects the program netlist of an NGspice circuit (the one
+    the runs use) over the user's netlist with the control section.
+    Raises NetlistError; None for a poster, a drawing without a circuit."""
     from . import project
     if project.doc_type(input_path) == "poster":
         return None
@@ -122,7 +125,6 @@ def _write_netlist(input_path, scene, data, output_path, title):
     from .library_item import LibraryItem
     from .parameter_item import ParameterItem
     from .model_item import ModelItem
-    from .netlist import NetlistError
 
     items  = scene.items()
     comps  = [i for i in items if isinstance(i, ComponentItem)]
@@ -134,44 +136,50 @@ def _write_netlist(input_path, scene, data, output_path, title):
     # "missing definition of model" and the analysis dialog had no
     # candidates to offer (Anton, 2026-09-14).
     models = [i for i in items if isinstance(i, ModelItem)]
-    sch_type = "ngspice" if input_path.suffix.lower() == ".spice_sch" else "slicap"
-    props = getattr(data, "properties", None)
-    label = "Netlist "
+    sch_type = "ngspice" if Path(input_path).suffix.lower() == ".spice_sch" else "slicap"
+    if props is not None and props.is_subcircuit:
+        from .subcircuit import build_lib, lib_path_for
+        from .netlist import schematic_ports
+        # The saved port order, completed with ports added since - the
+        # default the GUI's Create-subcircuit dialog shows.
+        present = schematic_ports(comps, wires)
+        saved   = [p for p in props.subcircuit_ports if p in present]
+        ports   = saved + [p for p in present if p not in saved]
+        text = build_lib(sch_type, comps, wires, title, ports,
+                         props.subcircuit_params, params_items=prms,
+                         libs=libs, model_defs=models)
+        return text, lib_path_for(input_path, title, sch_type), "Library "
+    if sch_type == "ngspice":
+        from .ngspice_netlist import build_ngspice_netlist
+        text = build_ngspice_netlist(
+            comps, wires, title, libs=libs, params=prms,
+            program_netlist=program, model_defs=models,
+            control_section="" if program else getattr(props, "control_section", ""))
+        return text, _default_output(input_path, "cir", ".cir" if program else ".sp"), "Netlist "
+    from .command_item import CommandItem
+    from .analysis_item import AnalysisItem
+    from .netlist import build_netlist
+    cmds = [i for i in items if isinstance(i, (CommandItem, AnalysisItem))]
+    text = build_netlist(comps, wires, cmds, title,
+                         libs=libs, params=prms, model_defs=models)
+    return text, _default_output(input_path, "cir", ".cir"), "Netlist "
+
+
+def _write_netlist(input_path, scene, data, output_path, title):
+    """Write the netlist of an ALREADY-LOADED scene (netlist_for). Shared
+    by the ``netlist`` and ``export`` commands so the scene is loaded
+    once. ``output_path`` None selects the default location, cir/ or lib/."""
+    from .netlist import NetlistError
     try:
-        if props is not None and props.is_subcircuit:
-            from .subcircuit import build_lib, lib_path_for
-            from .netlist import schematic_ports
-            # The saved port order, completed with ports added since - the
-            # default the GUI's Create-subcircuit dialog shows.
-            present = schematic_ports(comps, wires)
-            saved   = [p for p in props.subcircuit_ports if p in present]
-            ports   = saved + [p for p in present if p not in saved]
-            text = build_lib(sch_type, comps, wires, title, ports,
-                             props.subcircuit_params, params_items=prms,
-                             libs=libs, model_defs=models)
-            default = lib_path_for(input_path, title, sch_type)
-            label = "Library "
-        elif sch_type == "ngspice":
-            from .ngspice_netlist import build_ngspice_netlist
-            text = build_ngspice_netlist(
-                comps, wires, title, libs=libs, params=prms,
-                program_netlist=True, model_defs=models)
-        else:
-            from .command_item import CommandItem
-            from .analysis_item import AnalysisItem
-            from .netlist import build_netlist
-            cmds = [i for i in items
-                    if isinstance(i, (CommandItem, AnalysisItem))]
-            text = build_netlist(comps, wires, cmds, title,
-                                 libs=libs, params=prms, model_defs=models)
-        if props is None or not props.is_subcircuit:
-            default = _default_output(input_path, "cir", ".cir")
+        result = netlist_for(input_path, scene, getattr(data, "properties", None), title)
     except NetlistError as exc:
         print("Netlist not generated:", file=sys.stderr)
         for err in exc.errors:
             print(f"  {err}", file=sys.stderr)
         sys.exit(1)
-
+    if result is None:
+        return None
+    text, default, label = result
     output_path = Path(output_path) if output_path else default
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(text, encoding="utf-8")

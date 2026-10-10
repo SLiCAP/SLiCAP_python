@@ -52,8 +52,7 @@ own file and the poster shows its export. Choosing a drawing brings its
 export up to date, so it is shown at once, at 100 %: the scale of its
 export, at which its grid and its text are those of the poster. A placed
 drawing snaps to the grid like a component. Double-click a placed drawing
-for its scale, and press **Open** in that dialog to open the drawing itself
-in a tab.
+for its scale. To edit the drawing itself, open it from the project tree.
 
 Updating and exporting
 ======================

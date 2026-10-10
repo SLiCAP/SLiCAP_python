@@ -118,6 +118,13 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
 
 
 def main():
+    # A crash inside Qt (a segmentation fault) kills the process without a
+    # Python traceback. faulthandler prints the Python frames of every
+    # thread to the real stderr at that moment, so the console shows WHERE
+    # the editor was (Anton, 2026-10-10: a segfault while editing, also
+    # reported by a user on 6.1.0, left nothing to go on).
+    import faulthandler
+    faulthandler.enable()
     from PySide6.QtWidgets import QApplication, QMessageBox
     from PySide6.QtCore import QCoreApplication, Qt as _Qt
 

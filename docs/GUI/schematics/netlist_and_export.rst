@@ -8,8 +8,11 @@ A finished schematic produces three things: a **netlist** for analysis, and
 From the GUI
 ============
 
-* :menuselection:`File --> Export netlist…` (:kbd:`Ctrl+E`) writes a SLiCAP
-  or NGspice ``.cir`` netlist.
+* :menuselection:`File --> Export netlist…` (:kbd:`Ctrl+E`) writes the
+  netlist to ``cir/``: ``.cir`` for a SLiCAP circuit, ``.sp`` for an NGspice
+  circuit. For a subcircuit schematic it writes the subcircuit library to
+  ``lib/`` instead, ``<title>.slicap_lib`` or ``<title>.spice_lib``, the
+  same file as the headless export and as saving the subcircuit.
 * :menuselection:`File --> Export SVG…` writes a vector figure.
 * :menuselection:`File --> Export PDF…` writes a PDF figure.
 * :menuselection:`File --> Print schematic…` (:kbd:`Ctrl+P`) prints the drawing.

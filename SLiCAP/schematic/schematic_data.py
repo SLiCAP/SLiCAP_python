@@ -189,14 +189,16 @@ class ImageData:
     x: float
     y: float
     file_path: str
-    display_width: int
-    display_height: int
+    display_width: float
+    display_height: float
     link: str = ""        # "" = a plain image file; else what the image shows
                           # and follows: "figure:<name>" (a figure object of the
                           # Design data), "schematic:<source path>" (sch/x.slicap_sch
                           # or lib/y.spice_sch, shown as its export img/<stem>.svg;
                           # a bare name in older files), "poster:<name>" (posters/<name>)
     z: float = 0.0        # stacking order among annotations AND the circuit layers
+    scale: float | None = None   # 1.0 = 100 %: the size follows the file
+                                 # (ImageItem); the box above is the fallback
 
 
 @dataclass
@@ -410,6 +412,7 @@ class SchematicData:
                     "file_path": i.file_path,
                     "display_width": i.display_width,
                     "display_height": i.display_height,
+                    **({"scale": i.scale} if i.scale is not None else {}),
                     **({"link": i.link} if i.link else {}),
                     **({"z": i.z} if i.z else {}),
                 }
@@ -624,6 +627,7 @@ class SchematicData:
                 display_height=i["display_height"],
                 link=i.get("link") or ("figure:" + i["figure"] if i.get("figure") else ""),
                 z=float(i.get("z", 0.0)),
+                scale=(float(i["scale"]) if i.get("scale") is not None else None),
             )
             for i in data.get("images", [])
         ]

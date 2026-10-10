@@ -142,7 +142,10 @@ curves, each with a user-defined stacking order.
    files of the project, ``sch/`` and ``lib/``, by their path. Nothing is
    preselected, and the image path is no longer shown. A placed schematic
    is a link to that file. The poster shows its export. Older posters,
-   which name a schematic without its folder, still work. Choosing a
+   which name a schematic without its folder, still work. The dialog's one
+   action is *Place*. The *Open* button, which opened the drawing in its
+   own tab, is gone: a drawing is edited from the project tree, not from
+   a poster. Choosing a
    drawing brings its export up to date, so it is shown at once, at
    100 %, and a placed drawing snaps to the grid, or to the fine grid
    while Shift is held. The default scale of a placed image is 100 % as
@@ -175,6 +178,16 @@ curves, each with a user-defined stacking order.
    SVG carries an explicit baseline for it. Before, the canvas, the
    browser and the PDF used three fonts for the same text, and the PDF
    placed symbol text visibly off.
+
+#. **Export netlist of a subcircuit.** :menuselection:`File --> Export
+   netlist…` on a subcircuit schematic writes the subcircuit library to
+   ``lib/``, for SLiCAP and NGspice alike, the file the headless export
+   and Save write. It wrote a flat netlist into ``cir/``.
+
+#. **Crash prevention.** An item removed from a drawing during an event,
+   such as a label rebuilt after its own double-click, is released only
+   when the event has been fully handled. Releasing it at once could
+   crash the editor on the next click.
 
 #. **Fixes from a user's report on 6.1.0.** The placement ghost of a
    symbol, and the ghosts of a paste, are drawn in the display colours,
@@ -317,6 +330,13 @@ simple **SVG editor** (``Draw`` menu) to illustrate schematics, and with a
      the origin.
    - A new symbol saved without a name is named after its file.
    - Save as writes the extension of the selected file type.
+   - A click on a wire where it enters a component's selection box
+     selects the wire. It selected the component, so a short wire
+     between two pins could not be selected or given a net name.
+   - A segmentation fault after mirroring a component and then editing
+     its properties is fixed. The labels of a mirrored component were
+     left behind in Qt's spatial index, and the editor crashed on the
+     next mouse move after the properties dialog had rebuilt them.
 
 SLiCAP Version 6.0 release notes
 ================================

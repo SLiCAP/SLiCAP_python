@@ -314,7 +314,13 @@
               
        <text x="-5" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
        <text x="5" y="-15.6" dominant-baseline="middle" text-anchor="middle" font-size="8">+</text>
-       <text x="0" y="-24.2" dominant-baseline="middle" text-anchor="middle" font-size="7">value</text>
+       <!-- Direction of gyration: the current into the output port (outp,
+            outn, at the arrow head) is +value times the voltage of the input
+            port (inp, inn, at the tail), as the stamp of model W. The plus
+            signs give the polarity within each port; the arrow gives the
+            order of the ports, which the symmetric plus signs cannot. -->
+       <polyline points="-6 -24 0 -24" stroke="black" stroke-width="1" fill="none" />
+       <polygon points="6 -24 0 -26 0 -22" fill="black" stroke="none" />
        
        <!-- Pins -->
        <circle cx="10" cy="-20" r="0.5" class="node" data-node="outp" />

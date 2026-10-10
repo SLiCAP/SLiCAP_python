@@ -201,9 +201,6 @@ class CanvasPanel(QWidget):
         # The scene's double-click edit of an analysis block uses the same
         # candidate lists as Place → Define src / det / lg ref.
         self._scene.analysis_candidates = self._analysis_candidates
-        if self._main_win is not None:
-            self._scene.open_file_requested.connect(
-                lambda p: self._main_win.load_file(Path(p)) if p else None)
         self._scene.show_origin = bool(getattr(self, "_symbol_mode", False))
         if self._scene.show_origin:
             self._scene.default_line_width = 1.0     # the symbol library's stroke width
@@ -1216,81 +1213,40 @@ class CanvasPanel(QWidget):
         print_scene(self._scene, self)
 
     def _on_export_netlist(self):
-        if self._sch_type == 'ngspice':
-            self._export_ngspice_netlist()
-        else:
-            self._export_slicap_netlist()
-
-    def _export_slicap_netlist(self):
+        """File -> Export netlist: the netlist the headless export writes
+        (cli.netlist_for, one builder), to a file of the user's choice.
+        A circuit goes to cir/ (.cir for SLiCAP, .sp with the control
+        section for NGspice); a subcircuit schematic gives its library,
+        lib/<title>.slicap_lib or .spice_lib (Anton, 2026-10-10: the
+        editor wrote a flat .sp of a subcircuit into cir/)."""
         if not self._ensure_saved():
             return
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export Netlist", self._default_export_path("cir", ".cir"), _NET_FILTER_SLICAP)
-        if not path:
-            return
-        p = Path(path)
-        if p.suffix.lower() != ".cir":
-            p = p.with_suffix(".cir")
-        from .component_item import ComponentItem
-        from .wire_item import WireItem
-        from .command_item import CommandItem
-        from .analysis_item import AnalysisItem
-        from .library_item import LibraryItem
-        from .parameter_item import ParameterItem
-        from .model_item import ModelItem
-        from .netlist import build_netlist, NetlistError
-        items  = self._scene.items()
-        comps  = [i for i in items if isinstance(i, ComponentItem)]
-        wires  = [i for i in items if isinstance(i, WireItem)]
-        cmds   = [i for i in items if isinstance(i, (CommandItem, AnalysisItem))]
-        libs   = [i for i in items if isinstance(i, LibraryItem)]
-        prms   = [i for i in items if isinstance(i, ParameterItem)]
-        models = [i for i in items if isinstance(i, ModelItem)]
-        title  = self._doc_props.title or self._current_path.stem
-        try:
-            text = build_netlist(comps, wires, cmds, title, libs=libs, params=prms, model_defs=models)
-        except NetlistError as exc:
-            QMessageBox.critical(self, "Netlist not generated",
-                                 "The netlist was not generated:\n\n" + "\n".join(exc.errors))
-            return
-        try:
-            p.write_text(text, encoding="utf-8")
-        except Exception as exc:
-            QMessageBox.critical(self, "Export failed", str(exc))
-
-    def _export_ngspice_netlist(self):
-        if not self._ensure_saved():
-            return
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export NGspice Netlist", self._default_export_path("cir", ".sp"), _NET_FILTER_NGSPICE)
-        if not path:
-            return
-        p = Path(path)
-        if p.suffix.lower() != ".sp":
-            p = p.with_suffix(".sp")
-        from .component_item import ComponentItem
-        from .wire_item import WireItem
-        from .library_item import LibraryItem
-        from .parameter_item import ParameterItem
-        from .ngspice_netlist import build_ngspice_netlist
+        from .cli import netlist_for
         from .netlist import NetlistError
-        items = self._scene.items()
-        comps = [i for i in items if isinstance(i, ComponentItem)]
-        wires = [i for i in items if isinstance(i, WireItem)]
-        libs  = [i for i in items if isinstance(i, LibraryItem)]
-        prms  = [i for i in items if isinstance(i, ParameterItem)]
-        from .model_item import ModelItem
-        models = [i for i in items if isinstance(i, ModelItem)]
         title = self._doc_props.title or self._current_path.stem
         try:
-            text = build_ngspice_netlist(comps, wires, title, libs=libs, params=prms,
-                                         control_section=self._doc_props.control_section,
-                                         model_defs=models)
+            result = netlist_for(self._current_path, self._scene, self._doc_props,
+                                 title, program=False)
         except NetlistError as exc:
             QMessageBox.critical(self, "Netlist not generated",
                                  "The netlist was not generated:\n\n" + "\n".join(exc.errors))
             return
+        if result is None:
+            return
+        text, default, label = result
+        ext = default.suffix
+        filt = {".cir": _NET_FILTER_SLICAP, ".sp": _NET_FILTER_NGSPICE,
+                ".slicap_lib": "SLiCAP subcircuit library (*.slicap_lib);;All Files (*)",
+                ".spice_lib": "NGspice subcircuit library (*.spice_lib);;All Files (*)"}[ext]
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Export " + label.strip(), str(default), filt)
+        if not path:
+            return
+        p = Path(path)
+        if p.suffix.lower() != ext:
+            p = p.with_suffix(ext)
         try:
+            p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text, encoding="utf-8")
         except Exception as exc:
             QMessageBox.critical(self, "Export failed", str(exc))
@@ -1441,7 +1397,8 @@ class CanvasPanel(QWidget):
         from .image_dialog import ImageDialog
         dlg = ImageDialog(style=self._style, parent=self)
         if dlg.exec() and dlg.image_path():
-            self._scene.start_image_placement(dlg.image_path(), dlg.image_width(), dlg.image_height())
+            self._scene.start_image_placement(dlg.image_path(), dlg.image_width(), dlg.image_height(),
+                                              size_scale=dlg.image_scale())
 
     def _on_place_figure(self):
         self._place_link("figure")
@@ -1453,13 +1410,9 @@ class CanvasPanel(QWidget):
         dlg = ImageDialog(style=self._style, parent=self, link_kind=kind,
                           choices=self._scene.link_choices(kind))
         if dlg.exec() and dlg.link():
-            if dlg.open_requested:
-                src = self._scene.link_source(dlg.link())
-                if src is not None and self._main_win is not None:
-                    self._main_win.load_file(src)
-                return
             self._scene.start_image_placement(dlg.image_path(), dlg.image_width(),
-                                              dlg.image_height(), link=dlg.link())
+                                              dlg.image_height(), link=dlg.link(),
+                                              size_scale=dlg.image_scale())
 
     def _on_place_snippet(self):
         """Place -> LaTeX snippet: a snippet OBJECT of the Design data by

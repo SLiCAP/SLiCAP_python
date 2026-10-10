@@ -6,6 +6,69 @@ from PySide6.QtGui import QPixmap, QColor, QPainter, QPainterPath, QPen
 
 
 _PLACEHOLDER_COLOR = QColor(200, 200, 200)
+
+# Physical SVG units in scene units: 90 per inch, the convention of Qt's
+# QSvgRenderer.defaultSize() and of the schematic scale 90/25.4 per mm.
+_SVG_UNITS = {"": 1.0, "px": 1.0, "pt": 90.0 / 72.0, "pc": 15.0,
+              "mm": 90.0 / 25.4, "cm": 900.0 / 25.4, "in": 90.0}
+
+
+def _svg_length(text):
+    import re
+    m = re.fullmatch(r"\s*([0-9.eE+-]+)\s*([a-z%]*)\s*", text or "")
+    if not m or m.group(2) not in _SVG_UNITS:
+        return None
+    try:
+        return float(m.group(1)) * _SVG_UNITS[m.group(2)]
+    except ValueError:
+        return None
+
+
+def natural_size(path):
+    """The size of a picture at 100 %, in scene units, as real numbers:
+    an SVG by its width and height attributes (its viewBox when they are
+    missing), a PDF by its page size in points, a raster image by its
+    pixels. None when the file cannot be read. The one authority for the
+    image dialog and the image item: Qt's defaultSize() is a whole number,
+    and the cut-off fraction made a 25.4 mm high drawing 89 units high
+    instead of 90, so it was drawn 1 % too narrow (Anton, 2026-10-10)."""
+    path = str(path)
+    ext = Path(path).suffix.lower()
+    if ext == ".svg":
+        try:
+            import xml.etree.ElementTree as ET
+            root = ET.parse(path).getroot()
+        except Exception:
+            return None
+        w, h = _svg_length(root.get("width")), _svg_length(root.get("height"))
+        if w and h and w > 0 and h > 0:
+            return w, h
+        vb = (root.get("viewBox") or "").replace(",", " ").split()
+        if len(vb) == 4:
+            try:
+                w, h = float(vb[2]), float(vb[3])
+            except ValueError:
+                return None
+            if w > 0 and h > 0:
+                return w, h
+        return None
+    if ext == ".pdf":
+        try:
+            from PySide6.QtPdf import QPdfDocument
+            doc = QPdfDocument(None)
+            doc.load(path)
+            pt = doc.pagePointSize(0) if doc.pageCount() > 0 else None
+            doc.close()
+            if pt is not None and pt.width() > 0 and pt.height() > 0:
+                return float(pt.width()), float(pt.height())
+        except Exception:
+            pass
+        return None
+    from PySide6.QtGui import QImageReader
+    size = QImageReader(path).size()
+    if size.isValid() and size.width() > 0 and size.height() > 0:
+        return float(size.width()), float(size.height())
+    return None
 _SELECTED          = QStyle.State_Selected
 _SEL_PEN           = QPen(QColor(0, 120, 215), 1.5, Qt.DashLine)
 _SEL_PEN.setCosmetic(True)
@@ -19,8 +82,15 @@ class ImageItem(QGraphicsItem):
     PDF files are rasterised via QPdfDocument.
     All other formats are loaded directly as a QPixmap.
 
-    display_width / display_height are in scene units: the box the picture
-    is fitted into (aspect ratio kept).  The picture itself is kept at its
+    The size of the picture is its natural size (``natural_size``) times
+    ``size_scale`` (1.0 = 100 %), computed from the CURRENT file on every
+    load: a linked drawing that changes size keeps its scale and its
+    proportions, and no fraction is lost to whole units (Anton, 2026-10-10:
+    an absolute box of 425 x 89 units made a 425.2 x 90 drawing 1 %
+    narrower). display_width / display_height are in scene units: the box
+    the picture is fitted into (aspect ratio kept). Without a scale (an
+    image whose file cannot be read, or an old box that is not a whole
+    percentage of the file) the stored box is used as it is.  The picture itself is kept at its
     own resolution and scaled at paint time, so it is sharp at every zoom
     (Anton, 2026-09-27: a picture shown at 5 % was reduced to that many
     pixels and blurred when zoomed in).  The image is reloaded from disk each
@@ -35,8 +105,9 @@ class ImageItem(QGraphicsItem):
     Double-click opens a dialog to change the file or resize.
     """
 
-    def __init__(self, file_path: str, display_width: int, display_height: int,
-                 pos: QPointF = QPointF(0, 0), link: str = ""):
+    def __init__(self, file_path: str, display_width: float, display_height: float,
+                 pos: QPointF = QPointF(0, 0), link: str = "",
+                 size_scale: float | None = None):
         super().__init__()
         self.file_path: str      = file_path
         # A LINK item shows something of the project by NAME and follows it:
@@ -50,8 +121,9 @@ class ImageItem(QGraphicsItem):
         # which the export of a poster brings up to date first. A plain
         # image has no link.
         self.link: str           = link or ""
-        self.display_width: int  = display_width
-        self.display_height: int = display_height
+        self._box                = (float(display_width), float(display_height))
+        self.size_scale: float | None = size_scale
+        self._natural: tuple | None   = None
         self.setPos(pos)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemIsMovable)
@@ -60,6 +132,55 @@ class ImageItem(QGraphicsItem):
         self._pixmap: QPixmap | None = None  # QPixmap for raster / PDF
         self._loaded_mtime: float | None = None
         self._load()
+        if self.size_scale is None:
+            self.size_scale = self._scale_of_box()
+
+    # ── size ─────────────────────────────────────────────────────────────────
+
+    def _scale_of_box(self):
+        """The scale of an old absolute box: the whole percentage that the
+        image dialog rounded to, when the box is that percentage of the
+        file's natural size within one unit (the dialog's rounding); None
+        for a box that is not (kept as it is)."""
+        if not self._natural:
+            return None
+        nw, nh = self._natural
+        w, h = self._box
+        pct = round(w / nw * 100)
+        if pct >= 1 and abs(nw * pct / 100 - w) <= 1.0 and abs(nh * pct / 100 - h) <= 1.0:
+            return pct / 100
+        return None
+
+    def _size(self):
+        if self.size_scale is not None and self._natural:
+            return self._natural[0] * self.size_scale, self._natural[1] * self.size_scale
+        return self._box
+
+    @property
+    def display_width(self) -> float:
+        return self._size()[0]
+
+    @display_width.setter
+    def display_width(self, value) -> None:
+        self.prepareGeometryChange()
+        self._box = (float(value), self._size()[1])
+        self.size_scale = None
+
+    @property
+    def display_height(self) -> float:
+        return self._size()[1]
+
+    @display_height.setter
+    def display_height(self, value) -> None:
+        self.prepareGeometryChange()
+        self._box = (self._size()[0], float(value))
+        self.size_scale = None
+
+    def set_size_scale(self, scale: float) -> None:
+        """Set the scale (1.0 = 100 %); the size follows the file."""
+        self.prepareGeometryChange()
+        self._box = self._size()
+        self.size_scale = float(scale)
 
     # ── loading ───────────────────────────────────────────────────────────────
 
@@ -116,6 +237,7 @@ class ImageItem(QGraphicsItem):
         in the Design data is another file; True when it did."""
         if not self._resolve_figure() and self._file_mtime() == self._loaded_mtime:
             return False
+        self.prepareGeometryChange()       # the size follows the file
         self._load()
         self.update()
         return True
@@ -124,7 +246,9 @@ class ImageItem(QGraphicsItem):
         self._resolve_figure()
         path = str(self.path)
         ext = Path(path).suffix.lower()
-        w, h = max(1, self.display_width), max(1, self.display_height)
+        self._natural = natural_size(path)
+        bw, bh = self._size()
+        w, h = max(1, round(bw)), max(1, round(bh))
         self._loaded_mtime = self._file_mtime()
 
         if ext == ".svg":

@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QLabel, QSpinBox, QPushButton, QLineEdit,
     QFileDialog, QDialogButtonBox, QLayout,
 )
-from PySide6.QtGui import QImageReader
 from .sizing import chars
 
 _FILE_FILTER = (
@@ -35,9 +34,10 @@ class ImageDialog(QDialog):
                "schematic": "(no schematics in sch/ or lib/ of the project)",
                "poster": "(no other poster to show)"}
 
-    def __init__(self, file_path: str = "", display_width: int = 200,
-                 display_height: int = 200, style=None, parent=None,
-                 link_kind: str = "", choices=None, link_name: str = ""):
+    def __init__(self, file_path: str = "", display_width: float = 200,
+                 display_height: float = 200, style=None, parent=None,
+                 link_kind: str = "", choices=None, link_name: str = "",
+                 size_scale: float | None = None):
         """*link_kind* with *choices* ``[(key, "img/<file>.svg"), ...]``
         turns the dialog into the dialog of a LINK: a figure object of the
         Design data by name, a schematic of the project by source path, a
@@ -52,10 +52,9 @@ class ImageDialog(QDialog):
         self._style = style or default_style()
         self._link_kind = link_kind or ""
         self._figures = list(choices or [])
-        self.open_requested = False     # "Open" pressed: open the linked drawing
         self.setWindowTitle(self._TITLES.get(self._link_kind, "Image"))
-        self._natural_w: int | None = None
-        self._natural_h: int | None = None
+        self._natural_w: float | None = None
+        self._natural_h: float | None = None
 
         outer = QVBoxLayout()
         outer.setSizeConstraint(QLayout.SetFixedSize)
@@ -83,11 +82,11 @@ class ImageDialog(QDialog):
                 self._figure_combo.addItem(self._NONE[self._link_kind], "")
             else:
                 self._on_figure_chosen()
-            if self._link_kind in ("schematic", "poster"):
-                open_btn = QPushButton("Open")
-                open_btn.setToolTip("Open the linked drawing in the editor")
-                open_btn.clicked.connect(self._on_open)
-                file_row.addWidget(open_btn)
+            # No "Open the linked drawing" button here, in placing or in
+            # editing: beside the list it read as the confirm and abandoned
+            # the placement, and a poster is not the place to start editing
+            # a schematic (Anton, 2026-10-10: REMOVED, not moved). The
+            # drawing is opened from the project tree.
         else:
             browse_btn = QPushButton("Browse…")
             browse_btn.clicked.connect(self._browse)
@@ -102,7 +101,9 @@ class ImageDialog(QDialog):
         # 100 %: a placed drawing then has the scale of its export, so its
         # grid and text match the poster's (Anton, 2026-10-09; 50 % was the
         # previous default and was REPLACED).
-        if self._natural_w and self._natural_w > 0:
+        if size_scale is not None:
+            init_scale = max(1, round(size_scale * 100))
+        elif self._natural_w and self._natural_w > 0:
             init_scale = max(1, round(display_width / self._natural_w * 100))
         else:
             init_scale = 100
@@ -129,6 +130,8 @@ class ImageDialog(QDialog):
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
         self._ok = buttons.button(QDialogButtonBox.Ok)
+        if self._link_kind and not link_name:
+            self._ok.setText("Place")        # the placement dialog's one action
 
         self._scale_spin.valueChanged.connect(self._on_scale_changed)
         self._update_size_labels()
@@ -181,10 +184,6 @@ class ImageDialog(QDialog):
         name = (self._figure_combo.currentData() or "") if self._figure_combo else ""
         return f"{self._link_kind}:{name}" if self._link_kind and name else ""
 
-    def _on_open(self) -> None:
-        self.open_requested = True
-        self.accept()
-
     def _browse(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self, "Select Image",
@@ -213,36 +212,13 @@ class ImageDialog(QDialog):
             self._update_ok()
 
     def _load_natural_size(self, path: str) -> None:
-        """Read the file's natural pixel dimensions and store them."""
+        """The file's size at 100 %, in scene units, from the one authority
+        image_item.natural_size (real numbers, no rounding)."""
         from . import project
-        path = str(project.resolve_from_root(path))
-        ext = Path(path).suffix.lower()
-        w, h = 0, 0
-        if ext == ".svg":
-            from PySide6.QtSvg import QSvgRenderer
-            renderer = QSvgRenderer(path)
-            if renderer.isValid():
-                s = renderer.defaultSize()
-                w, h = s.width(), s.height()
-        elif ext == ".pdf":
-            try:
-                from PySide6.QtPdf import QPdfDocument
-                doc = QPdfDocument(None)
-                doc.load(path)
-                if doc.pageCount() > 0:
-                    pt = doc.pagePointSize(0)
-                    w, h = round(pt.width()), round(pt.height())
-                doc.close()
-            except Exception:
-                pass
-        else:
-            reader = QImageReader(path)
-            size   = reader.size()
-            if size.isValid():
-                w, h = size.width(), size.height()
-        if w > 0 and h > 0:
-            self._natural_w = w
-            self._natural_h = h
+        from .image_item import natural_size
+        size = natural_size(project.resolve_from_root(path))
+        if size:
+            self._natural_w, self._natural_h = size
 
     def _on_scale_changed(self, _: int) -> None:
         self._update_size_labels()
@@ -261,12 +237,17 @@ class ImageDialog(QDialog):
     def image_path(self) -> str:
         return self._path_edit.text().strip()
 
-    def image_width(self) -> int:
+    def image_scale(self) -> float:
+        """The chosen scale, 1.0 = 100 %; the image item derives its size
+        from the file with it."""
+        return self._scale_spin.value() / 100
+
+    def image_width(self) -> float:
         if self._natural_w:
-            return max(1, round(self._natural_w * self._scale_spin.value() / 100))
+            return self._natural_w * self.image_scale()
         return 200
 
-    def image_height(self) -> int:
+    def image_height(self) -> float:
         if self._natural_h:
-            return max(1, round(self._natural_h * self._scale_spin.value() / 100))
+            return self._natural_h * self.image_scale()
         return 200

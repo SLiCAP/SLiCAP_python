@@ -269,7 +269,6 @@ class SchematicScene(QGraphicsScene):
     data_changed      = Signal()   # emitted on every new undo snapshot
     group_move_started = Signal()
     group_move_ended   = Signal()
-    open_file_requested = Signal(str)   # a linked drawing on a poster: open it
 
     def __init__(self):
         super().__init__()
@@ -289,6 +288,16 @@ class SchematicScene(QGraphicsScene):
         # Anton 2026-07-12). Pinning makes item lifetime explicit: an item
         # lives until removeItem()/clear().
         self._pinned: set = set()
+        # Items removed during the current event, released when the event
+        # loop has turned (see removeItem). Qt may still hold a removed
+        # item for the rest of the event delivery that caused the removal:
+        # a label discarded by the rebuild after its own double-click, a
+        # component replaced by Change symbol from its dialog. Freeing it
+        # at once left Qt a dangling pointer, the pattern behind a
+        # segmentation fault on the click after a dialog (Anton,
+        # 2026-10-10; a user's report on 6.1.0). This is deleteLater for
+        # graphics items.
+        self._retired: list = []
 
         # The schematic's own drawing style.  The owning panel replaces this
         # with the Style loaded from the file's sidecar; items resolve their
@@ -546,7 +555,7 @@ class SchematicScene(QGraphicsScene):
             elif isinstance(item, ImageItem):
                 self._clipboard.append({'kind': 'image', 'x': item.pos().x(), 'y': item.pos().y(),
                                         'file_path': item.file_path, 'link': item.link,
-                                        'z': item.zValue(),
+                                        'z': item.zValue(), 'scale': item.size_scale,
                                         'w': item.display_width, 'h': item.display_height})
             elif isinstance(item, SymbolPinItem):
                 self._clipboard.append({'kind': 'pin', 'x': item.pos().x(), 'y': item.pos().y(),
@@ -798,7 +807,7 @@ class SchematicScene(QGraphicsScene):
             elif kind == 'image':
                 item = ImageItem(data['file_path'], data['w'], data['h'],
                                  QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
-                                 link=data.get('link', ''))
+                                 link=data.get('link', ''), size_scale=data.get('scale'))
                 item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
                 item.setSelected(True)
@@ -1210,6 +1219,35 @@ class SchematicScene(QGraphicsScene):
     def _is_annotation(self, item) -> bool:
         return type(item).__name__ in self.ANNOTATION_TYPES
 
+    def settle_stacking(self) -> None:
+        """Make the stacking order of the annotations explicit: annotations
+        with EQUAL z values are drawn in the order they were added, which
+        no file records (a reload adds texts before images), so a reopened
+        drawing and its export showed another order than the canvas they
+        were saved from (Anton, 2026-10-10: "What You See Is What You
+        Get"). Each run of equal values gets small steps in the order it is
+        drawn now, below the next distinct value, so that the saved z alone
+        reproduces the canvas. The circuit layers are fixed and untouched."""
+        from .border_item import BorderItem
+        top = [i for i in self.items() if i.parentItem() is None
+               and not isinstance(i, BorderItem)]
+        drawn = list(reversed(top))                       # bottom to top
+        values = sorted({i.zValue() for i in drawn})
+        anns = [i for i in drawn if self._is_annotation(i)]
+        k = 0
+        while k < len(anns):
+            z = anns[k].zValue()
+            run = [anns[k]]
+            while k + len(run) < len(anns) and anns[k + len(run)].zValue() == z:
+                run.append(anns[k + len(run)])
+            if len(run) > 1:
+                higher = [v for v in values if v > z]
+                gap = (higher[0] - z) if higher else 1.0
+                step = min(1e-3, gap / (len(run) + 1))
+                for n, item in enumerate(run):
+                    item.setZValue(z + n * step)
+            k += len(run)
+
     def restack(self, how: str) -> int:
         """Move the selected annotations in the stacking order: 'front'
         above everything, 'back' just above the border, 'forward' past the
@@ -1356,14 +1394,14 @@ class SchematicScene(QGraphicsScene):
             block.set_show(show)
             block.update_text()
 
-    def start_image_placement(self, file_path: str, width: int, height: int,
-                              link: str = ""):
+    def start_image_placement(self, file_path: str, width: float, height: float,
+                              link: str = "", size_scale: float | None = None):
         from pathlib import Path as _Path
         from PySide6.QtWidgets import QGraphicsPixmapItem
         from PySide6.QtGui import QPainter as _QPainter
         self._end_wire(commit=False)
         self._cancel_placement()
-        w, h = max(1, width), max(1, height)
+        w, h = max(1, round(width)), max(1, round(height))   # ghost pixmap only
         ext = _Path(file_path).suffix.lower()
         if ext == ".svg":
             from PySide6.QtSvg import QSvgRenderer
@@ -1390,7 +1428,7 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._image_pending = (file_path, width, height, link)
+        self._image_pending = (file_path, width, height, link, size_scale)
         self._mode = _Mode.PLACING_IMAGE
         self.placing_started.emit()
 
@@ -1735,8 +1773,17 @@ class SchematicScene(QGraphicsScene):
         self._pinned.add(item)
 
     def removeItem(self, item) -> None:
+        """Remove *item* from the scene now, free it on the next turn of the
+        event loop (see _retired): it stops painting and receiving events
+        at once, but Qt's event delivery in progress keeps a valid object."""
         super().removeItem(item)
         self._pinned.discard(item)
+        if not self._retired:
+            QTimer.singleShot(0, self._release_retired)
+        self._retired.append(item)
+
+    def _release_retired(self) -> None:
+        self._retired.clear()
 
     def clear(self) -> None:
         super().clear()
@@ -2330,6 +2377,7 @@ class SchematicScene(QGraphicsScene):
 
     def to_data(self):
         """Serialize the current scene to a SchematicData object."""
+        self.settle_stacking()         # the saved z reproduces the canvas
         from .schematic_data import SchematicData, ComponentData, WireData, JunctionData, FreeTextData, CommandData, BorderData, LibraryData, ImageData, LatexFragmentData, ParameterData, AnalysisData, HyperlinkData, ModelData, PinData, SymbolTextData, OpaqueData
         from .symbol_editor import SymbolPinItem, SymbolTextItem, OpaqueSvgItem
         comps, wires, junctions, free_texts, commands, libs, images, latex_frags, param_items, analysis_items, hyperlinks, shapes, model_defs = [], [], [], [], [], [], [], [], [], [], [], [], []
@@ -2411,6 +2459,7 @@ class SchematicScene(QGraphicsScene):
                     display_width=item.display_width,
                     display_height=item.display_height,
                     link=item.link, z=item.zValue(),
+                    scale=item.size_scale,
                 ))
             elif isinstance(item, LatexFragmentItem):
                 latex_frags.append(LatexFragmentData(
@@ -2556,7 +2605,8 @@ class SchematicScene(QGraphicsScene):
 
         for img in data.images:
             im = ImageItem(img.file_path, img.display_width,
-                           img.display_height, QPointF(img.x, img.y), link=img.link)
+                           img.display_height, QPointF(img.x, img.y), link=img.link,
+                           size_scale=img.scale)
             im.setZValue(img.z)
             self.addItem(im)
 
@@ -2640,6 +2690,54 @@ class SchematicScene(QGraphicsScene):
             return snap_pos(self._ghost, event.scenePos())
         return snap(event.scenePos())
 
+    # ── hit resolution ────────────────────────────────────────────────────────
+
+    def item_at(self, pos: QPointF):
+        """The item the user points at, for a press, a right-click and a
+        double-click alike.
+
+        Precision beats stacking order. Qt's itemAt() takes the topmost item
+        whose shape contains *pos*, but the shapes differ in precision: a
+        component's shape is its select box, a deliberately coarse target
+        that includes the pin leads, while a wire's shape is its own stroke,
+        a net label's its text box and a drawn shape's its real geometry. A
+        click on a visible wire where it enters a component's box must pick
+        the wire, otherwise the wire cannot be selected or named near a pin
+        (Anton, 2026-10-10). Raising the Z of the SELECTED item instead was
+        considered and REJECTED: it works only once the wire is selected,
+        and Z is part of the document (serialized and in the undo
+        snapshots) and of the paint order.
+
+        Order of preference, each level in stacking order:
+        1. a handle of a selected drawn shape,
+        2. a net label or DC bias label (a wire child whose Z only orders it
+           among siblings; Anton, 2026-07-12: the bias placeholder was
+           unreachable on top of a component),
+        3. the topmost item that is not a coarse hit. Coarse hits are a
+           component (hit through its select box) and a drawn shape hit on
+           its band rather than on its real geometry. Everything else, a
+           wire, a junction, a component label (a child with its own text
+           box), a text, counts as exact and keeps its stacking order,
+        4. the topmost item."""
+        from .wire_item import _DCLabel, _NetLabel
+        stack = self.items(pos)                      # topmost first
+        if not stack:
+            return None
+        for i in stack:
+            if (isinstance(i, ShapeItem) and i.isSelected()
+                    and i._handle_at(i.mapFromScene(pos)) is not None):
+                return i
+        for i in stack:
+            if isinstance(i, (_NetLabel, _DCLabel)):
+                return i
+        for i in stack:
+            if isinstance(i, ComponentItem):
+                continue
+            if isinstance(i, ShapeItem) and not i.hit_exact(i.mapFromScene(pos)):
+                continue
+            return i
+        return stack[0]
+
     def mousePressEvent(self, event):
         pos = self._place_pos(event)
 
@@ -2708,8 +2806,8 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_IMAGE and event.button() == Qt.LeftButton:
             self._push_undo()
-            fp, w, h, link = self._image_pending
-            self.addItem(ImageItem(fp, w, h, pos, link=link))
+            fp, w, h, link, scale = self._image_pending
+            self.addItem(ImageItem(fp, w, h, pos, link=link, size_scale=scale))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_LATEX and event.button() == Qt.LeftButton:
@@ -2774,29 +2872,10 @@ class SchematicScene(QGraphicsScene):
                 for it in self.items():
                     if isinstance(it, ComponentItem):
                         it._drag_wires = None
-                item = self.itemAt(raw, QTransform())
-                handle_owner = next((i for i in self.items(raw) if isinstance(i, ShapeItem) and i.isSelected()
-                                     and i._handle_at(i.mapFromScene(raw)) is not None), None)
-                if handle_owner is not None:
-                    item = handle_owner
-                elif isinstance(item, ShapeItem) and not item.hit_exact(item.mapFromScene(raw)):
-                    # same preference as ShapeItem.mousePressEvent: a shape hit
-                    # on its real geometry beats one hit only by its band
-                    exact = next((i for i in self.items(raw)
-                                  if isinstance(i, ShapeItem) and i.hit_exact(i.mapFromScene(raw))), None)
-                    if exact is not None:
-                        item = exact
-                # A net label (and the DC bias annotation) is a wire child, so
-                # its high Z only orders it among siblings — other top-level
-                # items (junctions, crossing wires, components) can occlude it
-                # in hit-testing.  Give a label under the cursor explicit
-                # priority so it can be selected and dragged (Anton,
-                # 2026-07-12: the bias placeholder was unreachable on top of
-                # a component).
+                item = self.item_at(raw)
                 from .wire_item import _DCLabel, _NetLabel
-                _lbl = next((i for i in self.items(raw)
-                             if isinstance(i, (_NetLabel, _DCLabel))), None)
-                if _lbl is not None:
+                if isinstance(item, (_NetLabel, _DCLabel)):
+                    _lbl = item
                     # The scene drags the label itself (like wires/groups).
                     event.accept()          # no rubber band
                     if not (event.modifiers() & Qt.ControlModifier):
@@ -3106,7 +3185,7 @@ class SchematicScene(QGraphicsScene):
                     self.addItem(pw)
                     self._pin_preview_wires.append(pw)
             elif event.button() == Qt.RightButton:
-                item = self.itemAt(raw, QTransform())
+                item = self.item_at(raw)
                 if isinstance(item, HyperlinkItem):
                     self._hyperlink_context_menu(item, event.screenPos())
                     return
@@ -3563,8 +3642,8 @@ class SchematicScene(QGraphicsScene):
             return
         if event.button() != Qt.LeftButton:
             return
-        item = self.itemAt(event.scenePos(), QTransform())
-        # BorderItem.shape() covers only the edge; itemAt() misses interior
+        item = self.item_at(event.scenePos())
+        # BorderItem.shape() covers only the edge; item_at() misses interior
         # clicks on an otherwise empty area.  Only fall back to a bounding-rect
         # check when nothing else was found at the click position.
         if item is None:
@@ -3623,23 +3702,19 @@ class SchematicScene(QGraphicsScene):
                 file_path=item.file_path,
                 display_width=item.display_width,
                 display_height=item.display_height,
+                size_scale=item.size_scale,
                 style=self.style,
                 link_kind=item.link_kind,
                 choices=self.link_choices(item.link_kind) if item.link_kind else None,
                 link_name=item.link_name,
             )
             if dlg.exec() and dlg.image_path():
-                if dlg.open_requested:
-                    # "Open": the linked drawing in its own tab, nothing changed
-                    self.open_file_requested.emit(str(self.link_source(dlg.link()) or ""))
-                    return
                 self._push_undo()
                 item.link           = dlg.link()
                 item.file_path      = dlg.image_path()
-                item.display_width  = dlg.image_width()
-                item.display_height = dlg.image_height()
                 item.prepareGeometryChange()
                 item._load()
+                item.set_size_scale(dlg.image_scale())
             return
         if isinstance(item, LatexFragmentItem):
             from .latex_fragment_dialog import LatexFragmentDialog

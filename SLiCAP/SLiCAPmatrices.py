@@ -372,7 +372,7 @@ def _makeMatrices(instr):
             (numer, denom) = _getValues(
                 elmt, 'value', numeric, parDefs, substitute)
             M[dVarPosO, dVarPosI] -= numer
-            M[dVarPosO, dVarPosO] = denom
+            M[dVarPosO, dVarPosO] += denom
         elif elmt.model == 'g':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]

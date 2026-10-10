@@ -438,14 +438,25 @@ class _PropertyLabel(QGraphicsItem):
 
     # ── public setters ────────────────────────────────────────────────────────
 
+    def _announce_geometry_change(self) -> None:
+        """Before the rectangle changes: this label's and the parent's,
+        whose boundingRect unites its labels'. Qt removes an item from
+        its spatial index by the rectangle reported NOW, so this must
+        come before any state that boundingRect() reads is changed (see
+        ComponentItem.h_flip)."""
+        self.prepareGeometryChange()
+        p = self.parentItem()
+        if p is not None:
+            p.prepareGeometryChange()
+
     def set_text(self, text: str) -> None:
+        self._announce_geometry_change()
         self._text = text
         self._svg_renderer = None
         self._svg_bytes = b""
         self._svg_rect = QRectF()
         self._prefix = ""
         self._prefix_w = 0.0
-        self.prepareGeometryChange()
 
     def set_svg(self, svg_bytes: bytes, prefix: str = "") -> None:
         # ``svg_bytes`` is the render in document black (kept for the export);
@@ -455,6 +466,7 @@ class _PropertyLabel(QGraphicsItem):
         from .latex_label import recolor_svg
         _, color = self._font_and_color()
         renderer = QSvgRenderer(QByteArray(recolor_svg(svg_bytes, color.name())))
+        self._announce_geometry_change()
         if not renderer.isValid():
             self._svg_renderer = None
             self._svg_bytes = b""
@@ -483,7 +495,6 @@ class _PropertyLabel(QGraphicsItem):
         self._prefix = prefix
         self._prefix_w = prefix_w
         self._text = ""
-        self.prepareGeometryChange()
 
     # ── QGraphicsItem interface ───────────────────────────────────────────────
 
@@ -680,9 +691,9 @@ class ComponentItem(_ViewBoxSvgItem):
         # data-params (name|default|show_name|show_value), like every other
         # field — no hardcoded override here.
         self.prop_offsets: dict[str, tuple[float, float]] = {}
-        self.h_flip: bool = False
-        self.v_flip: bool = False
         self._labels: dict[str, _PropertyLabel] = {}
+        self._h_flip: bool = False
+        self._v_flip: bool = False
         # Key of the label the user last clicked, or None.  Drives the dashed
         # leader line: a clicked attribute shows only its own line; selecting the
         # component body (no active label) shows lines to all attributes.
@@ -742,6 +753,44 @@ class ComponentItem(_ViewBoxSvgItem):
             -1.0 if self.h_flip else 1.0,
             -1.0 if self.v_flip else 1.0,
         )
+
+    # The flip flags are properties because a label's boundingRect depends
+    # on them (_PropertyLabel.content_rect puts the text left of the anchor
+    # when the parent is mirrored). Qt's spatial index removes an item by
+    # the rectangle it reports at the time of prepareGeometryChange(), so
+    # the change must be announced BEFORE the flag changes, or the index
+    # keeps the label at its old place and, once the label is discarded
+    # and freed, dereferences a dangling pointer on the next hover. That
+    # was the segmentation fault after Mirror + Properties (Anton,
+    # 2026-10-10; a student's reports on 6.1.0). Announcing in
+    # apply_transform() was considered and REJECTED: every caller sets the
+    # flag first, so by then the label already reports its new rectangle.
+    @property
+    def h_flip(self) -> bool:
+        return self._h_flip
+
+    @h_flip.setter
+    def h_flip(self, value: bool) -> None:
+        if bool(value) != self._h_flip:
+            self._announce_label_geometry_change()
+        self._h_flip = bool(value)
+
+    @property
+    def v_flip(self) -> bool:
+        return self._v_flip
+
+    @v_flip.setter
+    def v_flip(self, value: bool) -> None:
+        if bool(value) != self._v_flip:
+            self._announce_label_geometry_change()
+        self._v_flip = bool(value)
+
+    def _announce_label_geometry_change(self) -> None:
+        """Tell Qt that this item's and every label's boundingRect is about
+        to change: the component's rectangle unites its labels'."""
+        self.prepareGeometryChange()
+        for lbl in self._labels.values():
+            lbl.prepareGeometryChange()
 
     def apply_transform(self) -> None:
         """Apply h_flip / v_flip to the item and counter-transform all labels."""
@@ -850,6 +899,9 @@ class ComponentItem(_ViewBoxSvgItem):
 
         self._save_label_offsets()
 
+        # The component's boundingRect unites its labels': announce the
+        # rebuild before the old labels go (see the flip properties).
+        self.prepareGeometryChange()
         for lbl in list(self._labels.values()):
             _discard_label(lbl)
         self._labels.clear()
