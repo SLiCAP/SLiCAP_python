@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QFont, QColor
 
 from .config import style_of, default_style, display_color
+from .fonts import resolve_family
 
 
 class FreeTextItem(QGraphicsTextItem):
@@ -50,7 +51,7 @@ class FreeTextItem(QGraphicsTextItem):
     def effective_font(self, style) -> QFont:
         """The document font: family and size own or the style's, bold and
         italic own. Used on the canvas and by the SVG and PDF export."""
-        font = QFont(self.effective_family(style), self.effective_size(style))
+        font = QFont(resolve_family(self.effective_family(style)), self.effective_size(style))
         font.setBold(self.bold)
         font.setItalic(self.italic)
         return font

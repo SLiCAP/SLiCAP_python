@@ -15,9 +15,12 @@ The text dialog sets the font family, the size, bold and italic, and the
 colour of that text. Every setting has a *(Preferences)* state, the default,
 in which the text follows the schematic's drawing preferences. The family
 list offers the generic families **sans-serif**, **serif** and
-**monospace**. They render the same on every machine, in the editor and in
-the SVG and PDF export, because the viewer resolves a generic family to a
-font it has. A named font can be typed in the list, at the risk that another
+**monospace**. SLiCAP draws them with the DejaVu fonts that come with
+matplotlib: DejaVu Sans, DejaVu Serif and DejaVu Sans Mono. The editor
+loads these fonts itself, the exported SVG names them first with the
+generic family as the fallback, and the exported PDF embeds them. The
+canvas, the SVG and the PDF therefore show the same outlines on every
+machine. A named font can be typed in the list, at the risk that another
 machine substitutes it.
 
 Document properties

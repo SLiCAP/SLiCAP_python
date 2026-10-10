@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QPen, QBrush, QColor, QPainterPath, QPainterPathStroker
 
-from .config import snap, snap_pos, Z_BORDER, LINE_STYLES
+from .config import snap, snap_pos, snap_fine, shift_held, Z_BORDER, LINE_STYLES
 
 DEFAULT_LINE_COLOR = "#5050b4"
 DEFAULT_LINE_WIDTH = 0.8
@@ -134,7 +134,10 @@ class BorderItem(QGraphicsRectItem):
         top    = self.pos().y()
         right  = left + self.rect().width()
         bottom = top + self.rect().height()
-        p = snap(event.scenePos())
+        # a side goes to the grid, or to the fine grid while Shift is held,
+        # as a shape's vertex does; snap() alone ignored Shift (Anton,
+        # 2026-10-10)
+        p = (snap_fine if shift_held() else snap)(event.scenePos())
         if ex == -1:
             left = min(p.x(), right - _MIN_SIZE)
         elif ex == 1:
@@ -156,5 +159,5 @@ class BorderItem(QGraphicsRectItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange and self._resize is None:
-            return snap_pos(self, value)   # Shift: free (config.snap_pos)
+            return snap_pos(self, value)   # Shift: the fine grid (config.snap_pos)
         return super().itemChange(change, value)

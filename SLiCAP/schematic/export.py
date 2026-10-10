@@ -12,6 +12,7 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from PySide6.QtCore import QRectF, QPointF, QBuffer, QIODevice
+from .fonts import svg_family, register_pdf_fonts
 
 def _units_per_mm() -> float:
     """Scene units per millimeter — the project setting ini.sch_scale
@@ -105,6 +106,22 @@ def export_bounds(scene) -> QRectF:
     if b.isEmpty():
         b = QRectF(0, 0, 200, 200)
     return b
+
+
+def _centred_baseline_y(y: float, size_px: float, style) -> float:
+    """The SVG baseline of a symbol text whose line box is CENTRED on the
+    anchor y, as the canvas draws it (component_item.draw_symbol_texts,
+    Qt.AlignCenter): the metrics of the canvas font at that pixel size.
+    dominant-baseline="central" was used and REPLACED: svglib, the PDF
+    path, does not know the attribute and put the BASELINE on the anchor,
+    so the +/- of a source sat higher in the PDF than in the SVG and on
+    the canvas (Anton, 2026-10-10). An explicit baseline reads the same
+    in a browser, in Qt and in svglib."""
+    from PySide6.QtGui import QFont, QFontMetricsF
+    f = QFont(style.SYMBOL_TEXT_FONT)
+    f.setPixelSize(max(1, round(size_px)))
+    fm = QFontMetricsF(f)
+    return y + (fm.ascent() - fm.descent()) / 2
 
 
 def _touches(r: QRectF, frame: QRectF) -> bool:
@@ -287,7 +304,7 @@ def _wire(parent, item, stroke, width, net_color, net_fs):
         t = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
         t.set("x", f"{lpos.x():.2f}")
         t.set("y", f"{lpos.y() + fm.ascent():.2f}")
-        t.set("font-family", "sans-serif")
+        t.set("font-family", svg_family("sans-serif"))
         t.set("font-size", f"{net_fs}pt")
         t.set("fill", net_color)
         t.text = item._net_label.text()   # effective name (may be derived)
@@ -307,7 +324,7 @@ def _wire(parent, item, stroke, width, net_color, net_fs):
         t = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
         t.set("x", f"{lbl.pos().x():.2f}")
         t.set("y", f"{lbl.pos().y() + fm.ascent():.2f}")
-        t.set("font-family", style.BIAS_FONT_FAMILY)
+        t.set("font-family", svg_family(style.BIAS_FONT_FAMILY))
         t.set("font-size", f"{style.BIAS_FONT_SIZE}pt")
         t.set("fill", _qhex(lbl.brush().color()))
         if lbl.font().italic():
@@ -530,13 +547,16 @@ def _component(parent, defs, item, lbl_color, lbl_fs, style=None):
         sp = item.mapToScene(QPointF(t["x"], t["y"]))
         te = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
         te.set("x", f"{sp.x():.2f}")
-        te.set("y", f"{sp.y():.2f}")
-        te.set("font-family", "sans-serif")
+        # centred horizontally (text-anchor) and vertically (the baseline
+        # below the anchor by the font's half line box) on the anchor point
+        te.set("y", f"{_centred_baseline_y(sp.y(), t['size'], style):.2f}")
+        te.set("font-family", svg_family(style.SYMBOL_TEXT_FONT_FAMILY))
         te.set("font-size", f"{t['size']:.1f}")
-        te.set("text-anchor", "middle")        # centred horizontally and …
-        te.set("dominant-baseline", "central")  # … vertically on the anchor point
+        te.set("text-anchor", "middle")
         te.set("fill", _qhex(symbol_text_color))
         if vertical:
+            # about the anchor, where the glyph centre is: the text turns
+            # in place, as readable_transform does on the canvas
             te.set("transform", f"rotate(-90 {sp.x():.2f} {sp.y():.2f})")
         te.text = content
     stroke_hex = _qhex(style.SYMBOL_STROKE_COLOR)
@@ -567,7 +587,7 @@ def _component(parent, defs, item, lbl_color, lbl_fs, style=None):
             t = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
             t.set("x", f"{sp.x():.2f}")
             t.set("y", f"{sp.y():.2f}")
-            t.set("font-family", font.family() or "sans-serif")
+            t.set("font-family", svg_family(font.family()))
             t.set("font-size", f"{fs:.1f}pt")
             t.set("fill", clr)
             # For h_flipped components the label's local origin is baseline-right;
@@ -589,7 +609,7 @@ def _latex_label(parent, defs, item, lbl, sp, lbl_color, lbl_fs):
             t = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
             t.set("x", f"{sp.x():.2f}")
             t.set("y", f"{sp.y():.2f}")
-            t.set("font-family", "sans-serif")
+            t.set("font-family", svg_family("sans-serif"))
             t.set("font-size", f"{lbl_fs}pt")
             t.set("fill", lbl_color)
             if item.h_flip:
@@ -618,7 +638,7 @@ def _latex_label(parent, defs, item, lbl, sp, lbl_color, lbl_fs):
         t.set("x", f"{prefix_x:.2f}")
         # Prefix text centred on SVG: baseline at SVG centre (sp.y() - svg_h/2)
         t.set("y", f"{sp.y() - svg_h / 2:.2f}")
-        t.set("font-family", "sans-serif")
+        t.set("font-family", svg_family("sans-serif"))
         t.set("font-size", f"{lbl_fs}pt")
         t.set("fill", lbl_color)
         t.text = lbl._prefix
@@ -735,7 +755,7 @@ def _text_block(parent, item, color, fs, family, font=None):
         t = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
         t.set("x", f"{x0:.2f}")
         t.set("y", f"{baseline_y + i * line_h:.2f}")
-        t.set("font-family", family)
+        t.set("font-family", svg_family(family))
         t.set("font-size", f"{fs}pt")
         if font is not None and font.bold():
             t.set("font-weight", "bold")
@@ -863,9 +883,10 @@ def _symbol_item(parent, item, style) -> None:
         el.set("fill", _qhex(style.NET_LABEL_COLOR)); el.set("stroke", "none")
     elif isinstance(item, SymbolTextItem):
         el = _ET.SubElement(parent, f"{{{_SVG_NS}}}text")
-        el.set("x", f"{x:.2f}"); el.set("y", f"{y:.2f}")
+        el.set("x", f"{x:.2f}")
+        el.set("y", f"{_centred_baseline_y(y, item.size, style):.2f}")   # see _centred_baseline_y
         el.set("font-size", f"{item.size:g}"); el.set("text-anchor", "middle")
-        el.set("dominant-baseline", "middle"); el.set("fill", _qhex(style.SYMBOL_TEXT_COLOR))
+        el.set("fill", _qhex(style.SYMBOL_TEXT_COLOR))
         el.text = item.content
     else:
         try:
@@ -891,7 +912,7 @@ def _hyperlink_block(parent, item, color, fs, family, underline: bool):
     t = ET.SubElement(a, f"{{{_SVG_NS}}}text")
     t.set("x", f"{pos.x():.2f}")
     t.set("y", f"{pos.y() + fm.ascent():.2f}")
-    t.set("font-family", family)
+    t.set("font-family", svg_family(family))
     t.set("font-size", f"{fs}pt")
     t.set("fill", color)
     if underline:
@@ -918,6 +939,7 @@ def export_pdf(scene, output_path: Path, source: str = "",
     from reportlab.graphics import renderPDF
     from reportlab.pdfgen import canvas as rl_canvas
     from .provenance import CREATOR
+    register_pdf_fonts()      # the shipped families, embedded (see fonts.py)
     with tempfile.NamedTemporaryFile("wb", suffix=".svg", delete=False) as tf:
         tf.write(_build_svg(scene))
         tmp = tf.name

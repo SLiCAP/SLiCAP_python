@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QFont, QFontMetricsF, QPen
 
 from .config import snap, snap_pos, style_of
+from .fonts import resolve_family
 
 _BORDER_COLOR  = QColor(60, 100, 140)
 _LINE_SPACING  = 1.3                       # multiple of line height
@@ -130,10 +131,10 @@ class ParameterItem(QGraphicsItem):
     def _fonts(self) -> tuple[QFont, QFont]:
         """(header, body) fonts from the owning schematic's style."""
         style = style_of(self)
-        hdr_font = QFont(style.COMP_REFDES_FONT_FAMILY)
+        hdr_font = QFont(resolve_family(style.COMP_REFDES_FONT_FAMILY))
         hdr_font.setBold(True)
         hdr_font.setPointSizeF(style.COMP_LABEL_FONT_SIZE)
-        body_font = QFont(style.COMP_REFDES_FONT_FAMILY)
+        body_font = QFont(resolve_family(style.COMP_REFDES_FONT_FAMILY))
         body_font.setPointSizeF(style.COMP_LABEL_FONT_SIZE)
         return hdr_font, body_font
 

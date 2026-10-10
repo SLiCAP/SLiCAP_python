@@ -166,6 +166,16 @@ curves, each with a user-defined stacking order.
    during the drag. Connections change only where pins end up. Only
    deleting a wire or a component disconnects.
 
+#. **One font for the canvas, the SVG and the PDF.** The generic families
+   sans-serif, serif and monospace are drawn with the DejaVu fonts that
+   come with matplotlib. The editor loads them, the SVG names them with
+   the generic fallback, and the PDF embeds them. Text embedded in a
+   symbol, the plus and minus of a source or the pin names of a
+   subcircuit, uses one family on the canvas and in the export, and the
+   SVG carries an explicit baseline for it. Before, the canvas, the
+   browser and the PDF used three fonts for the same text, and the PDF
+   placed symbol text visibly off.
+
 #. **Fixes from a user's report on 6.1.0.** The placement ghost of a
    symbol, and the ghosts of a paste, are drawn in the display colours,
    so they are visible on the dark canvas. R during a paste no longer

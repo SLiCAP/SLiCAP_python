@@ -1289,7 +1289,7 @@ class SchematicScene(QGraphicsScene):
         self._hyperlink_pending = (url, label)
         display = label or url or "hyperlink"
         ghost = QGraphicsSimpleTextItem(display[:50])
-        font = QFont(self.style.HYPERLINK_FONT_FAMILY, self.style.HYPERLINK_FONT_SIZE)
+        font = QFont(_config.resolve_family(self.style.HYPERLINK_FONT_FAMILY), self.style.HYPERLINK_FONT_SIZE)
         font.setUnderline(self.style.HYPERLINK_UNDERLINE)
         ghost.setFont(font)
         ghost.setBrush(QBrush(self.style.HYPERLINK_COLOR))

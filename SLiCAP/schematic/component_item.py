@@ -221,7 +221,7 @@ def draw_symbol_texts(painter, texts, rotation: float,
         content = t["content"]
         if not content:
             continue
-        f = QFont(style.COMP_PARAM_FONT)
+        f = QFont(style.SYMBOL_TEXT_FONT)      # the export writes the same family
         f.setPixelSize(max(1, round(t["size"])))
         painter.setFont(f)
         painter.save()

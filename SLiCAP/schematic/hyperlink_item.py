@@ -3,6 +3,7 @@ from PySide6.QtCore import QPointF
 from PySide6.QtGui import QFont, QBrush
 
 from .config import style_of, default_style
+from .fonts import resolve_family
 
 
 class HyperlinkItem(QGraphicsSimpleTextItem):
@@ -26,7 +27,7 @@ class HyperlinkItem(QGraphicsSimpleTextItem):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
 
     def _apply_style(self, style) -> None:
-        font = QFont(style.HYPERLINK_FONT_FAMILY, style.HYPERLINK_FONT_SIZE)
+        font = QFont(resolve_family(style.HYPERLINK_FONT_FAMILY), style.HYPERLINK_FONT_SIZE)
         font.setUnderline(style.HYPERLINK_UNDERLINE)
         self.setFont(font)
         self.setBrush(QBrush(style.HYPERLINK_COLOR))

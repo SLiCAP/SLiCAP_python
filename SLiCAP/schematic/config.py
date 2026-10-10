@@ -7,6 +7,8 @@ from pathlib import Path
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QColor, QFont, QPen
 
+from .fonts import resolve_family
+
 # The font families every font combo offers (drawing preferences, text
 # dialog): the generic families only. An SVG viewer and a PDF printer
 # resolve a generic family on every machine, a named font only where it is
@@ -168,7 +170,7 @@ class Style:
         # Net labels
         self.NET_LABEL_COLOR     = self._c("net_label", "color",     "#ff0000")
         self.NET_LABEL_FONT_SIZE = self._i("net_label", "font_size", 7)
-        self.NET_LABEL_FONT      = QFont("sans-serif", self.NET_LABEL_FONT_SIZE)
+        self.NET_LABEL_FONT      = QFont(resolve_family("sans-serif"), self.NET_LABEL_FONT_SIZE)
 
         # Component refdes labels.  IEEE-style element identifiers (customer
         # request, 2026-07-11): render the refdes through the SLiCAP LaTeX
@@ -180,14 +182,14 @@ class Style:
         self.COMP_LABEL_LATEX        = self._b("component_label", "latex",       True)
         self.COMP_LABEL_LATEX_BOLD   = self._b("component_label", "latex_bold",  True)
         self.COMP_LABEL_SVG_HEIGHT   = self.COMP_LABEL_LATEX_SCALE / 100.0 * 20.0
-        self.COMP_LABEL_FONT         = QFont(self.COMP_REFDES_FONT_FAMILY,
+        self.COMP_LABEL_FONT         = QFont(resolve_family(self.COMP_REFDES_FONT_FAMILY),
                                              self.COMP_LABEL_FONT_SIZE)
 
         # Component parameter labels (value, noisetemp, …)
         self.COMP_PARAM_FONT_FAMILY = self._s("component_param", "font_family", "monospace")
         self.COMP_PARAM_FONT_SIZE   = self._i("component_param", "font_size",   6)
         self.COMP_PARAM_COLOR       = self._c("component_param", "color",       "#000000")
-        self.COMP_PARAM_FONT        = QFont(self.COMP_PARAM_FONT_FAMILY,
+        self.COMP_PARAM_FONT        = QFont(resolve_family(self.COMP_PARAM_FONT_FAMILY),
                                             self.COMP_PARAM_FONT_SIZE)
         self.COMP_PARAM_LATEX_SCALE = self._i("component_param", "latex_scale", 30)
         self.COMP_PARAM_SVG_HEIGHT  = self.COMP_PARAM_LATEX_SCALE / 100.0 * 20.0
@@ -210,25 +212,25 @@ class Style:
         # Free text annotations
         self.FREE_TEXT_COLOR     = self._c("free_text", "color",     "#333333")
         self.FREE_TEXT_FONT_SIZE = self._i("free_text", "font_size",  8)
-        self.FREE_TEXT_FONT      = QFont("sans-serif", self.FREE_TEXT_FONT_SIZE)
+        self.FREE_TEXT_FONT      = QFont(resolve_family("sans-serif"), self.FREE_TEXT_FONT_SIZE)
 
         # SLiCAP command blocks
         self.COMMAND_COLOR     = self._c("command", "color",     "#004080")
         self.COMMAND_FONT_SIZE = self._i("command", "font_size",  7)
-        self.COMMAND_FONT      = QFont("monospace", self.COMMAND_FONT_SIZE)
+        self.COMMAND_FONT      = QFont(resolve_family("monospace"), self.COMMAND_FONT_SIZE)
 
         # Text annotations
         self.TEXT_FONT_FAMILY = self._s("text", "font_family", "sans-serif")
         self.TEXT_FONT_SIZE   = self._i("text", "font_size",   7)
         self.TEXT_COLOR       = self._c("text", "color",       "#333333")
-        self.TEXT_FONT        = QFont(self.TEXT_FONT_FAMILY, self.TEXT_FONT_SIZE)
+        self.TEXT_FONT        = QFont(resolve_family(self.TEXT_FONT_FAMILY), self.TEXT_FONT_SIZE)
 
         # Hyperlinks
         self.HYPERLINK_FONT_FAMILY = self._s("hyperlink", "font_family", "sans-serif")
         self.HYPERLINK_FONT_SIZE   = self._i("hyperlink", "font_size",   7)
         self.HYPERLINK_COLOR       = self._c("hyperlink", "color",       "#0000cc")
         self.HYPERLINK_UNDERLINE   = self._b("hyperlink", "underline",   True)
-        self.HYPERLINK_FONT        = QFont(self.HYPERLINK_FONT_FAMILY,
+        self.HYPERLINK_FONT        = QFont(resolve_family(self.HYPERLINK_FONT_FAMILY),
                                            self.HYPERLINK_FONT_SIZE)
         self.HYPERLINK_FONT.setUnderline(self.HYPERLINK_UNDERLINE)
 
@@ -238,7 +240,15 @@ class Style:
         self.BIAS_FONT_SIZE   = self._i("bias_annotation", "font_size",   7)
         self.BIAS_COLOR       = self._c("bias_annotation", "color",       "#0000ff")
         self.BIAS_DIGITS      = self._i("bias_annotation", "digits",      4)
-        self.BIAS_FONT        = QFont(self.BIAS_FONT_FAMILY, self.BIAS_FONT_SIZE)
+        self.BIAS_FONT        = QFont(resolve_family(self.BIAS_FONT_FAMILY), self.BIAS_FONT_SIZE)
+
+        # Text embedded in a symbol (+/- of a source, the pin names of a
+        # subcircuit box): ONE family on the canvas and in the export. The
+        # canvas drew it with the parameter font (monospace) while the
+        # export wrote sans-serif (found 2026-10-10). The size comes from
+        # the symbol; the QFont carries the family only.
+        self.SYMBOL_TEXT_FONT_FAMILY = self._s("symbol", "font_family", "sans-serif")
+        self.SYMBOL_TEXT_FONT        = QFont(resolve_family(self.SYMBOL_TEXT_FONT_FAMILY))
 
         # Scale (%) of the parameter table / model definition blocks — the
         # single source for their on-canvas size (natural size × this value).

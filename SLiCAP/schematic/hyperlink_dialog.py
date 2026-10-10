@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
 from .sizing import chars
+from .fonts import resolve_family
 
 
 class HyperlinkDialog(QDialog):
@@ -31,7 +32,7 @@ class HyperlinkDialog(QDialog):
         outer.addLayout(form)
 
         # Preview line showing appearance.
-        preview_font = QFont(style.HYPERLINK_FONT_FAMILY, style.HYPERLINK_FONT_SIZE)
+        preview_font = QFont(resolve_family(style.HYPERLINK_FONT_FAMILY), style.HYPERLINK_FONT_SIZE)
         preview_font.setUnderline(style.HYPERLINK_UNDERLINE)
         self._preview = QLabel(label or url or "preview")
         self._preview.setFont(preview_font)
