@@ -323,11 +323,11 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
               .format(cirType))
     return netlist, subckt
         
-def updateImages(circuit, cirTitle=None, force=False):
+def updateImages(circuit, force=False):
     """
     Updates the SVG and PDF images of a schematic of the schematic editor
-    (".slicap_sch" or ".spice_sch") in the project's ``img`` folder, and
-    its netlist, without creating a circuit object. For a poster
+    (".slicap_sch" or ".spice_sch") in the project's ``img`` folder,
+    without building a netlist or a circuit object. For a poster
     (``posters/<name>.slicap_poster``) it first updates the images of the
     schematics and posters the poster shows, then the poster's own.
 
@@ -337,9 +337,10 @@ def updateImages(circuit, cirTitle=None, force=False):
     an export BEFORE the run holds the plots of the previous run. Call
     ``updateImages()`` at the END of the instruction file, after the
     figures, to export the schematic with the plots the run has just
-    written. The export is skipped when the netlist and images are newer
-    than the schematic, its sidecars, the symbol libraries, the
-    operating-point results and the linked images.
+    written. The export is skipped when the images are newer than the
+    schematic, its sidecars, the symbol libraries, the operating-point
+    results and the linked images. A drawing that is not a valid circuit,
+    e.g. one with a '?' value, is exported as well.
 
     :param circuit: The circuit object returned by ``makeCircuit()`` for a
                     ".slicap_sch" schematic, or a string: the name of the
@@ -350,15 +351,10 @@ def updateImages(circuit, cirTitle=None, force=False):
                     name is used, as in ``sl.op()``.
     :type circuit: SLiCAP.SLiCAPprotos.circuit, str
 
-    :param cirTitle: Circuit title override; default: the title stored in
-                     the schematic, else the file stem.
-    :type cirTitle: str, NoneType
-
-    :param force: True exports even when the outputs are current.
+    :param force: True exports even when the images are current.
     :type force: bool
 
-    :return: Path of the netlist written, or of the library for a
-             subcircuit schematic.
+    :return: Path of the SVG written.
     :rtype: pathlib.Path
 
     :Example:
@@ -369,9 +365,9 @@ def updateImages(circuit, cirTitle=None, force=False):
     >>> FIG1 = sl.makeFigure([[sl.traceAxis("", "lin", sl.make_traces(TR1, [{"y": "v(out)", "x": "time"}]))]], "tran")
     >>> sl.updateImages("myAmp")   # img/myAmp.svg and .pdf now show img/tran.svg
     """
-    from SLiCAP.schematic import make_schematic
+    from SLiCAP.schematic import export_images
     _publishDesignData()
-    return make_schematic(_schematicFile(circuit), cir_title=cirTitle, force=force)
+    return export_images(_schematicFile(circuit), force=force)
 
 
 def _publishDesignData():

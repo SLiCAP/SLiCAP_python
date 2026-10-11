@@ -56,7 +56,8 @@ class LatexFragmentDialog(QDialog):
                  style=None,
                  parent=None,
                  color: str = "",
-                 snippets=None, snippet: str = ""):
+                 snippets=None, snippet: str = "",
+                 latex_scale=None):
         """*snippets*: ``[(name, latex_code), ...]`` from the Design data
         (design_data.manifest_snippets) turns the dialog into the SNIPPET
         dialog: the snippet is chosen by name, its text shown read-only and
@@ -143,18 +144,38 @@ class LatexFragmentDialog(QDialog):
         # ── scale row (per-instance — fragments have individual sizes) ───────
         if svg_bytes:
             self._compute_natural_size(svg_bytes)
-        if self._natural_w and display_width:
+        # The fragment's LaTeX scale: its own value, or None to follow the
+        # schematic's default (a new fragment does). An older fragment
+        # ("box") shows the percentage of its stored box.
+        own = isinstance(latex_scale, (int, float))
+        if own:
+            init_scale = max(1, round(latex_scale))
+        elif latex_scale == "box" and self._natural_w and display_width:
             init_scale = max(1, round(display_width / self._natural_w * 100))
+            own = True
         else:
-            init_scale = 100
+            init_scale = max(1, round(self._style.LATEX_SCALE))
 
         scale_row = QHBoxLayout()
         scale_row.addWidget(QLabel("Scale:"))
         self._scale_spin = QSpinBox()
-        self._scale_spin.setRange(1, 500)
+        self._scale_spin.setRange(1, 1000)
         self._scale_spin.setValue(init_scale)
         self._scale_spin.setSuffix(" %")
         scale_row.addWidget(self._scale_spin)
+        self._scale_default = QCheckBox("Default (%g %%)" % self._style.LATEX_SCALE)
+        self._scale_default.setToolTip("Follow the LaTeX scale of the schematic "
+                                       "(Preferences, Rendering)")
+        self._scale_default.setChecked(not own)
+        self._scale_spin.setEnabled(own)
+
+        def _toggle_default(on):
+            self._scale_spin.setEnabled(not on)
+            if on:
+                self._scale_spin.setValue(max(1, round(self._style.LATEX_SCALE)))
+            self._update_size_labels()
+        self._scale_default.toggled.connect(_toggle_default)
+        scale_row.addWidget(self._scale_default)
         scale_row.addSpacing(16)
         self._size_lbl = QLabel()
         scale_row.addWidget(self._size_lbl)
@@ -300,7 +321,6 @@ class LatexFragmentDialog(QDialog):
     def _compute_natural_size(self, svg_bytes: bytes) -> None:
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
-        from .latex_label import svg_line_height
         renderer = QSvgRenderer(QByteArray(svg_bytes))
         if not renderer.isValid():
             return
@@ -309,8 +329,9 @@ class LatexFragmentDialog(QDialog):
         svg_h = vb.height() if vb.height() > 0 else renderer.defaultSize().height()
         if svg_w <= 0 or svg_h <= 0:
             return
-        ref_h = svg_line_height()
-        base = (self._style.COMP_LABEL_FONT_SIZE / ref_h) if (ref_h and ref_h > 0) else 0.5
+        from .config import LATEX_UNITS_PER_PT
+        # 100 % is the size pdflatex sets, as for every LaTeX item.
+        base = LATEX_UNITS_PER_PT
         self._natural_w = max(1, round(svg_w * base))
         self._natural_h = max(1, round(svg_h * base))
 
@@ -340,6 +361,10 @@ class LatexFragmentDialog(QDialog):
 
     def svg_bytes(self) -> bytes | None:
         return self._svg_bytes
+
+    def latex_scale(self):
+        """None follows the schematic's default, else the own scale in %."""
+        return None if self._scale_default.isChecked() else float(self._scale_spin.value())
 
     def display_width(self) -> int:
         if self._natural_w:

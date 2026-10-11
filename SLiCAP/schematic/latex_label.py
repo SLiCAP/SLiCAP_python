@@ -204,36 +204,6 @@ def _ensure_slicap() -> bool:
     return _slicap_ready
 
 
-# ── calibration ───────────────────────────────────────────────────────────────
-
-_reference_line_height: float | None = None
-
-
-def svg_line_height() -> float | None:
-    """
-    Return the viewBox height (in SVG units) of a single-line LaTeX expression.
-
-    Renders '$x$' once and caches the result.  This gives the natural height
-    of one line of math as produced by the pdflatex + pdf2svg pipeline, so
-    callers can derive a scale factor without hard-coding pdf2svg's unit system.
-    Returns None when the pipeline is unavailable.
-    """
-    if not _latex_installed():
-        return None
-    global _reference_line_height
-    if _reference_line_height is not None:
-        return _reference_line_height
-    svg = _render_cached("x")
-    if svg is None:
-        return None
-    from PySide6.QtSvg import QSvgRenderer
-    from PySide6.QtCore import QByteArray
-    r = QSvgRenderer(QByteArray(svg))
-    if r.isValid() and r.viewBoxF().height() > 0:
-        _reference_line_height = r.viewBoxF().height()
-    return _reference_line_height
-
-
 # ── public API ────────────────────────────────────────────────────────────────
 
 def is_expression(value_str: str) -> bool:

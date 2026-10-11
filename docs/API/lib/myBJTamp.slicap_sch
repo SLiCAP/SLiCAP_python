@@ -560,7 +560,8 @@
       "preamble_path": "",
       "display_width": 40,
       "display_height": 44,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "properties": {

@@ -2720,7 +2720,8 @@
           "corner": ""
         }
       ],
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "images": [],
@@ -2743,7 +2744,8 @@
       "preamble_path": "/home/anton/anton/lib/python3.12/site-packages/tex/preambuleSLiCAP.tex",
       "display_width": 200,
       "display_height": 80,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "analysis_items": [],

@@ -21,8 +21,9 @@ class ModelItem(QGraphicsItem):
     Netlists its .model line ALWAYS, also when "Show on schematic" is off
     (hidden: in the scene, not drawn/exported).
 
-    The on-canvas size is DERIVED: natural SVG size × the schematic's
-    SCALE_PARAMETER_TABLE preference (no per-item scale).
+    The on-canvas size is DERIVED: natural SVG size × the LaTeX scale, the
+    item's own ``latex_scale`` or, when None, the schematic's default
+    (Style.LATEX_SCALE; Anton, 2026-10-11).
 
     Double-click opens the model definition dialog to edit.
     """
@@ -31,8 +32,11 @@ class ModelItem(QGraphicsItem):
                  params: list,
                  preamble_path: str = "",
                  pos: QPointF = QPointF(0, 0),
-                 show: bool = True):
+                 show: bool = True,
+                 latex_scale: float | None = None):
         super().__init__()
+        # LaTeX scale (%); None follows the schematic's default.
+        self.latex_scale: float | None = latex_scale
         self.model_name:     str          = model_name
         self.model_type:     str          = model_type
         self.simulator:      str          = simulator
@@ -94,12 +98,13 @@ class ModelItem(QGraphicsItem):
             self.setToolTip("")
 
     def _derive_size(self, renderer) -> None:
-        """Display size = natural size × the schematic's table-scale preference."""
+        """Display size = natural size × the block's LaTeX scale."""
         from .parameter_item import svg_scene_size
+        from .config import latex_scale_of
         style = style_of(self)
-        natural = svg_scene_size(renderer, style)
+        natural = svg_scene_size(renderer)
         if natural is not None:
-            pct = style.SCALE_PARAMETER_TABLE / 100.0
+            pct = latex_scale_of(self.latex_scale, style) / 100.0
             self.display_width  = max(1, round(natural[0] * pct))
             self.display_height = max(1, round(natural[1] * pct))
 

@@ -505,6 +505,7 @@ class SchematicScene(QGraphicsScene):
                     'source':   list(item.source),
                     'detector': [list(d) for d in item.detector],
                     'lgref':    list(item.lgref),
+                    'latex_scale': item.latex_scale,
                 })
             elif isinstance(item, HyperlinkItem):
                 self._clipboard.append({
@@ -530,6 +531,7 @@ class SchematicScene(QGraphicsScene):
                     'params':     [tuple(p) for p in item.params],
                     'preamble':   item.preamble_path,
                     'show':       item.show_on_schematic,
+                    'latex_scale': item.latex_scale,
                 })
             elif isinstance(item, ParameterItem):
                 self._clipboard.append({
@@ -539,6 +541,7 @@ class SchematicScene(QGraphicsScene):
                     'params':   [tuple(p) for p in item.params],
                     'preamble': item.preamble_path,
                     'show':     item.show_on_schematic,
+                    'latex_scale': item.latex_scale,
                 })
             # Shapes, LaTeX labels, images and the symbol editor's items copy
             # through their data records (Anton, 2026-09-27: Ctrl+C/V did
@@ -551,7 +554,7 @@ class SchematicScene(QGraphicsScene):
                                         'latex_code': item.latex_code, 'preamble': item.preamble_path,
                                         'w': item.display_width, 'h': item.display_height,
                                         'color': item.color, 'snippet': item.snippet,
-                                        'z': item.zValue()})
+                                        'z': item.zValue(), 'latex_scale': item.latex_scale})
             elif isinstance(item, ImageItem):
                 self._clipboard.append({'kind': 'image', 'x': item.pos().x(), 'y': item.pos().y(),
                                         'file_path': item.file_path, 'link': item.link,
@@ -767,6 +770,7 @@ class SchematicScene(QGraphicsScene):
                 item = AnalysisItem(
                     data['source'], data['detector'], data['lgref'],
                     QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                    latex_scale=data.get('latex_scale'),
                 )
                 self.addItem(item)
                 item.setSelected(True)
@@ -783,13 +787,13 @@ class SchematicScene(QGraphicsScene):
                                  data['simulator'], list(data['params']),
                                  data['preamble'],
                                  QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
-                                 show=data['show'])
+                                 show=data['show'], latex_scale=data.get('latex_scale'))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'parameters':
                 item = ParameterItem(list(data['params']), data['preamble'],
                                      QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
-                                     show=data['show'])
+                                     show=data['show'], latex_scale=data.get('latex_scale'))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'shape':
@@ -800,7 +804,8 @@ class SchematicScene(QGraphicsScene):
                 item = LatexFragmentItem(data['latex_code'], data['preamble'], data['w'], data['h'],
                                          QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
                                          color=data.get('color', ''),
-                                         snippet=data.get('snippet', ''))
+                                         snippet=data.get('snippet', ''),
+                                         latex_scale=data.get('latex_scale', "box"))
                 item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
                 item.setSelected(True)
@@ -948,8 +953,8 @@ class SchematicScene(QGraphicsScene):
 
     def _ghost_pixmap(self, svg_bytes) -> QPixmap:
         """Placement-ghost pixmap at the DERIVED display size (natural SVG
-        size × the schematic's table-scale preference) — the size the placed
-        item will actually get."""
+        size × the schematic's LaTeX scale, which a new table follows) — the
+        size the placed item will actually get."""
         from PySide6.QtGui import QPainter as _QPainter
         from PySide6.QtSvg import QSvgRenderer
         from PySide6.QtCore import QByteArray
@@ -957,8 +962,8 @@ class SchematicScene(QGraphicsScene):
         from .latex_label import display_svg
         renderer = QSvgRenderer(QByteArray(display_svg(svg_bytes))) if svg_bytes else None
         if renderer and renderer.isValid():
-            natural = svg_scene_size(renderer, self.style)
-            pct = self.style.SCALE_PARAMETER_TABLE / 100.0
+            natural = svg_scene_size(renderer)
+            pct = self.style.LATEX_SCALE / 100.0
             if natural is not None:
                 w = max(1, round(natural[0] * pct))
                 h = max(1, round(natural[1] * pct))
@@ -1378,7 +1383,8 @@ class SchematicScene(QGraphicsScene):
                 return it
         return None
 
-    def apply_library_block(self, entries, show: bool = True, pos=None) -> None:
+    def apply_library_block(self, entries, show: bool = True, pos=None,
+                            latex_scale="keep") -> None:
         """Create/update THE library block from a list of entry dicts (the
         caller pushes undo).  Empty entries remove the block."""
         block = self.library_block()
@@ -1388,10 +1394,13 @@ class SchematicScene(QGraphicsScene):
             return
         entries = [dict(e) for e in entries]
         if block is None:
-            self.addItem(LibraryItem(entries, pos or QPointF(0, 0), show=show))
+            self.addItem(LibraryItem(entries, pos or QPointF(0, 0), show=show,
+                                     latex_scale=None if latex_scale == "keep" else latex_scale))
         else:
             block.entries = entries
             block.set_show(show)
+            if latex_scale != "keep":
+                block.latex_scale = latex_scale
             block.update_text()
 
     def start_image_placement(self, file_path: str, width: float, height: float,
@@ -1434,7 +1443,7 @@ class SchematicScene(QGraphicsScene):
 
     def start_latex_placement(self, latex_code: str, preamble_path: str,
                               width: int, height: int, color: str = "",
-                              snippet: str = ""):
+                              snippet: str = "", latex_scale=None):
         from PySide6.QtWidgets import QGraphicsPixmapItem
         from PySide6.QtGui import QPainter as _QPainter
         self._end_wire(commit=False)
@@ -1463,11 +1472,13 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._latex_pending = (latex_code, preamble_path, width, height, color, snippet)
+        self._latex_pending = (latex_code, preamble_path, width, height, color, snippet,
+                               latex_scale)
         self._mode = _Mode.PLACING_LATEX
         self.placing_started.emit()
 
-    def start_parameter_placement(self, params: list, preamble_path: str):
+    def start_parameter_placement(self, params: list, preamble_path: str,
+                                  latex_scale=None):
         from PySide6.QtWidgets import QGraphicsPixmapItem
         self._end_wire(commit=False)
         self._cancel_placement()
@@ -1479,11 +1490,12 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._param_pending = (params, preamble_path)
+        self._param_pending = (params, preamble_path, latex_scale)
         self._mode = _Mode.PLACING_PARAMETER
         self.placing_started.emit()
 
-    def start_analysis_placement(self, source: list, detector: list, lgref: list):
+    def start_analysis_placement(self, source: list, detector: list, lgref: list,
+                                 latex_scale=None):
         from PySide6.QtWidgets import QGraphicsSimpleTextItem
         from PySide6.QtGui import QBrush
         self._end_wire(commit=False)
@@ -1496,13 +1508,13 @@ class SchematicScene(QGraphicsScene):
         self._ghost = ghost
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
-        self._analysis_pending = (source, detector, lgref)
+        self._analysis_pending = (source, detector, lgref, latex_scale)
         self._mode = _Mode.PLACING_ANALYSIS
         self.placing_started.emit()
 
     def start_model_placement(self, model_name: str, model_type: str,
                                simulator: str, params: list,
-                               preamble_path: str = ""):
+                               preamble_path: str = "", latex_scale=None):
         self._end_wire(commit=False)
         self._cancel_placement()
         from .model_item import ModelItem as _MI
@@ -1523,7 +1535,7 @@ class SchematicScene(QGraphicsScene):
         self._ghost.setPos(QPointF(-9999, -9999))
         self.addItem(self._ghost)
         self._model_pending = (model_name, model_type, simulator, params,
-                               preamble_path)
+                               preamble_path, latex_scale)
         self._mode = _Mode.PLACING_MODEL
         self.placing_started.emit()
 
@@ -2451,6 +2463,7 @@ class SchematicScene(QGraphicsScene):
                     x=item.pos().x(), y=item.pos().y(),
                     entries=[dict(e) for e in item.entries],
                     show=item.show_on_schematic,
+                    latex_scale=item.latex_scale,
                 ))
             elif isinstance(item, ImageItem):
                 images.append(ImageData(
@@ -2471,6 +2484,7 @@ class SchematicScene(QGraphicsScene):
                     color=item.color,
                     snippet=item.snippet,
                     z=item.zValue(),
+                    latex_scale=item.latex_scale,
                 ))
             elif isinstance(item, ParameterItem):
                 param_items.append(ParameterData(
@@ -2480,6 +2494,7 @@ class SchematicScene(QGraphicsScene):
                     display_width=item.display_width,
                     display_height=item.display_height,
                     show=item.show_on_schematic,
+                    latex_scale=item.latex_scale,
                 ))
             elif isinstance(item, AnalysisItem):
                 analysis_items.append(AnalysisData(
@@ -2488,6 +2503,7 @@ class SchematicScene(QGraphicsScene):
                     detector=[list(d) for d in item.detector],
                     lgref=list(item.lgref),
                     show=item.show_on_schematic,
+                    latex_scale=item.latex_scale,
                 ))
             elif isinstance(item, HyperlinkItem):
                 hyperlinks.append(HyperlinkData(
@@ -2505,6 +2521,7 @@ class SchematicScene(QGraphicsScene):
                     display_width=item.display_width,
                     display_height=item.display_height,
                     show=item.show_on_schematic,
+                    latex_scale=item.latex_scale,
                 ))
             elif isinstance(item, ShapeItem):
                 from .schematic_data import ShapeData
@@ -2594,14 +2611,36 @@ class SchematicScene(QGraphicsScene):
 
         # One library BLOCK per schematic: merge every stored LibraryData
         # (new single block, or legacy one-file-per-item schematics) into it.
-        lib_entries, lib_pos, lib_show = [], None, True
+        # LaTeX scales: an item of an older file gets the scale that keeps its
+        # size (Anton, 2026-10-11): an own scale is converted with the
+        # style's ITEM_SCALE_FACTOR, an item without one ("legacy") gets the
+        # old scale of its kind, and a scale that equals the default becomes
+        # the default. Without old style values, the old defaults: tables 60 %
+        # of the label font size = 21 %, blocks 0.75 x 30 % = 22.5 % (in the
+        # meaning of 20 units per x-height, hence the factor).
+        k = self.style.ITEM_SCALE_FACTOR
+        def item_scale(v, legacy):
+            if v is None:
+                return None
+            v = legacy if v == "legacy" else v * k
+            if v is None or abs(v - self.style.LATEX_SCALE) < 0.05:
+                return None
+            return v
+        table_legacy = (self.style.LEGACY_TABLE_SCALE
+                        if self.style.LEGACY_TABLE_SCALE is not None else 21.0 * k)
+        block_legacy = (self.style.LEGACY_BLOCK_SCALE
+                        if self.style.LEGACY_BLOCK_SCALE is not None else 22.5 * k)
+
+        lib_entries, lib_pos, lib_show, lib_scale = [], None, True, "legacy"
         for ld in data.libs:
             if lib_pos is None:
                 lib_pos  = QPointF(ld.x, ld.y)
                 lib_show = getattr(ld, "show", True)
+                lib_scale = getattr(ld, "latex_scale", "legacy")
             lib_entries.extend(dict(e) for e in ld.entries)
         if lib_entries:
-            self.addItem(LibraryItem(lib_entries, lib_pos, show=lib_show))
+            self.addItem(LibraryItem(lib_entries, lib_pos, show=lib_show,
+                                     latex_scale=item_scale(lib_scale, block_legacy)))
 
         for img in data.images:
             im = ImageItem(img.file_path, img.display_width,
@@ -2616,6 +2655,8 @@ class SchematicScene(QGraphicsScene):
                 frag.display_width, frag.display_height,
                 QPointF(frag.x, frag.y), color=frag.color,
                 snippet=frag.snippet,
+                latex_scale=("box" if frag.latex_scale == "legacy"
+                             else item_scale(frag.latex_scale, None)),
             )
             lf.setZValue(frag.z)
             self.addItem(lf)
@@ -2625,12 +2666,14 @@ class SchematicScene(QGraphicsScene):
                 [tuple(p) for p in pd.params], pd.preamble_path,
                 QPointF(pd.x, pd.y),
                 show=getattr(pd, "show", True),
+                latex_scale=item_scale(pd.latex_scale, table_legacy),
             ))
 
         for ad in data.analysis_items:
             self.addItem(AnalysisItem(ad.source, ad.detector, ad.lgref,
                                       QPointF(ad.x, ad.y),
-                                      show=getattr(ad, "show", True)))
+                                      show=getattr(ad, "show", True),
+                                      latex_scale=item_scale(ad.latex_scale, block_legacy)))
 
         for hd in data.hyperlinks:
             h = HyperlinkItem(hd.url, hd.label, QPointF(hd.x, hd.y))
@@ -2647,6 +2690,7 @@ class SchematicScene(QGraphicsScene):
                 md.preamble_path,
                 QPointF(md.x, md.y),
                 show=getattr(md, "show", True),
+                latex_scale=item_scale(md.latex_scale, table_legacy),
             ))
 
         if data.border is not None:
@@ -2812,26 +2856,27 @@ class SchematicScene(QGraphicsScene):
 
         elif self._mode == _Mode.PLACING_LATEX and event.button() == Qt.LeftButton:
             self._push_undo()
-            lc, pp, w, h, color, snippet = self._latex_pending
-            self.addItem(LatexFragmentItem(lc, pp, w, h, pos, color=color, snippet=snippet))
+            lc, pp, w, h, color, snippet, lscale = self._latex_pending
+            self.addItem(LatexFragmentItem(lc, pp, w, h, pos, color=color, snippet=snippet,
+                                           latex_scale=lscale))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_PARAMETER and event.button() == Qt.LeftButton:
             self._push_undo()
-            prms, pp = self._param_pending
-            self.addItem(ParameterItem(prms, pp, pos))
+            prms, pp, lscale = self._param_pending
+            self.addItem(ParameterItem(prms, pp, pos, latex_scale=lscale))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_ANALYSIS and event.button() == Qt.LeftButton:
             self._push_undo()
-            src, det, lgr = self._analysis_pending
-            self.addItem(AnalysisItem(src, det, lgr, pos))
+            src, det, lgr, lscale = self._analysis_pending
+            self.addItem(AnalysisItem(src, det, lgr, pos, latex_scale=lscale))
             self._cancel_placement()
 
         elif self._mode == _Mode.PLACING_MODEL and event.button() == Qt.LeftButton:
             self._push_undo()
-            mn, mt, sim, prms, pp = self._model_pending
-            self.addItem(ModelItem(mn, mt, sim, prms, pp, pos))
+            mn, mt, sim, prms, pp, lscale = self._model_pending
+            self.addItem(ModelItem(mn, mt, sim, prms, pp, pos, latex_scale=lscale))
             self._cancel_placement()
 
         elif self._mode == _Mode.PASTING and event.button() == Qt.LeftButton:
@@ -3685,13 +3730,16 @@ class SchematicScene(QGraphicsScene):
             from .library_dialog import LibraryDialog
             dlg = LibraryDialog(entries=item.entries,
                                 sch_type=getattr(self, "sch_type", "slicap"),
-                                show=item.show_on_schematic)
+                                show=item.show_on_schematic,
+                                latex_scale=item.latex_scale,
+                                default_scale=self.style.LATEX_SCALE)
             if dlg.exec():
                 self._push_undo()
                 entries = dlg.entries()
                 if entries:
                     item.entries = entries
                     item.set_show(dlg.show_on_schematic())
+                    item.latex_scale = dlg.latex_scale()
                     item.update_text()
                 else:                      # all lines removed → drop the block
                     self.removeItem(item)
@@ -3730,9 +3778,11 @@ class SchematicScene(QGraphicsScene):
                 style=self.style,
                 snippets=manifest_snippets(project.project_root()) if item.snippet else None,
                 snippet=item.snippet,
+                latex_scale=item.latex_scale,
             )
             if dlg.exec() and (dlg.svg_bytes() or dlg.snippet()):
                 self._push_undo()
+                item.latex_scale   = dlg.latex_scale()
                 item.snippet       = dlg.snippet()
                 item.latex_code    = dlg.latex_code()
                 item.preamble_path = dlg.preamble_path()
@@ -3751,12 +3801,14 @@ class SchematicScene(QGraphicsScene):
                 show=item.show_on_schematic,
                 edit_mode=True,
                 style=self.style,
+                latex_scale=item.latex_scale,
             )
             if dlg.exec():
                 self._push_undo()
                 item.prepareGeometryChange()
                 item.params        = dlg.get_params()
                 item.preamble_path = dlg.preamble_path()
+                item.latex_scale   = dlg.latex_scale()
                 item.set_show(dlg.show_on_schematic())
                 item._load_renderer()
                 item.update()
@@ -3769,6 +3821,8 @@ class SchematicScene(QGraphicsScene):
                 detector=item.detector,
                 lgref=item.lgref,
                 show=item.show_on_schematic,
+                latex_scale=item.latex_scale,
+                default_scale=self.style.LATEX_SCALE,
                 **(provider() if provider else {}),
             )
             if dlg.exec():
@@ -3776,6 +3830,7 @@ class SchematicScene(QGraphicsScene):
                 item.source   = dlg.get_source()
                 item.detector = dlg.get_detector()
                 item.lgref    = dlg.get_lgref()
+                item.latex_scale = dlg.latex_scale()
                 item.set_show(dlg.show_on_schematic())
                 item.update_text()
             return
@@ -3791,10 +3846,12 @@ class SchematicScene(QGraphicsScene):
                 edit_mode=True,
                 style=self.style,
                 sch_type=getattr(self, "sch_type", "slicap"),
+                latex_scale=item.latex_scale,
             )
             if dlg.exec():
                 self._push_undo()
                 item.prepareGeometryChange()
+                item.latex_scale   = dlg.latex_scale()
                 item.model_name    = dlg.model_name()
                 item.model_type    = dlg.model_type()
                 item.simulator     = dlg.simulator()

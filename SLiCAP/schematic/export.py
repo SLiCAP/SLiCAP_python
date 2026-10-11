@@ -927,12 +927,18 @@ def export_svg(scene, output_path: Path, title: str = "",
 
 def export_pdf(scene, output_path: Path, source: str = "",
                title: str = "") -> None:
-    """Render the schematic SVG to PDF with svglib + reportlab — the same
-    pure-Python path used in SLiCAPkicad. No Cairo (dropped for its Windows
-    trouble), and no Qt application required, so it works from the headless
-    ``cli export`` subprocess or any non-GUI caller. The PDF inherits the SVG's
-    physical (mm) page size set in ``_build_svg``. The creator and subject
-    fields name the export and *source* (provenance, 2026-09-13)."""
+    """The schematic as PDF: its SVG (_build_svg) converted by svg2pdf."""
+    svg2pdf(_build_svg(scene), output_path, source=source, title=title)
+
+
+def svg2pdf(svg_bytes: bytes, output_path: Path, source: str = "",
+            title: str = "") -> None:
+    """Convert an exported schematic SVG to PDF with svglib + reportlab — the
+    same pure-Python path used in SLiCAPkicad. No Cairo (dropped for its
+    Windows trouble), and no Qt application required, so it works from the
+    headless ``cli`` subprocess or any non-GUI caller. The PDF inherits the
+    SVG's physical (mm) page size set in ``_build_svg``. The creator and
+    subject fields name the export and *source* (provenance, 2026-09-13)."""
     import os
     import tempfile
     from svglib.svglib import svg2rlg
@@ -941,7 +947,7 @@ def export_pdf(scene, output_path: Path, source: str = "",
     from .provenance import CREATOR
     register_pdf_fonts()      # the shipped families, embedded (see fonts.py)
     with tempfile.NamedTemporaryFile("wb", suffix=".svg", delete=False) as tf:
-        tf.write(_build_svg(scene))
+        tf.write(svg_bytes)
         tmp = tf.name
     try:
         drawing = svg2rlg(tmp)

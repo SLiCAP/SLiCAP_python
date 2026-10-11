@@ -93,7 +93,8 @@ class LibraryDialog(QDialog):
     """Add / edit the schematic's library block (one line per library)."""
 
     def __init__(self, entries=None, sch_type: str = "slicap",
-                 show: bool = True, parent=None):
+                 show: bool = True, parent=None, latex_scale=None,
+                 default_scale: float = 150.0):
         super().__init__(parent, Qt.Window)
         self._spice = (sch_type == "ngspice")
         self.setWindowTitle("Add / Edit libraries")
@@ -131,6 +132,9 @@ class LibraryDialog(QDialog):
             "Show on schematic  (libraries are always netlisted)")
         self._show_cb.setChecked(bool(show))
         outer.addWidget(self._show_cb)
+        from .latex_scale_field import LatexScaleField
+        self._scale_field = LatexScaleField(latex_scale, default_scale)
+        outer.addWidget(self._scale_field)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -160,3 +164,8 @@ class LibraryDialog(QDialog):
 
     def show_on_schematic(self) -> bool:
         return self._show_cb.isChecked()
+
+    def latex_scale(self):
+        """The item's LaTeX scale: None follows the schematic's default."""
+        return self._scale_field.value()
+

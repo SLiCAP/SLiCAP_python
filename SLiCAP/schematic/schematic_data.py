@@ -156,6 +156,28 @@ class CommandData:
     text: str
 
 
+def _latex_scale_in(d: dict):
+    """The LaTeX scale of an item as stored: a number (its own scale in %),
+    "default" (None: the schematic's default), or absent: "legacy", an item
+    of a file written before items carried a scale (2026-10-11); the scene
+    gives such an item the scale that keeps its size."""
+    v = d.get("latex_scale")
+    if v is None:
+        return "legacy"
+    if v == "default":
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return "legacy"
+
+
+def _latex_scale_out(v) -> dict:
+    if isinstance(v, str):                 # "legacy"/"box": nothing known yet
+        return {}
+    return {"latex_scale": "default" if v is None else v}
+
+
 @dataclass
 class LibraryData:
     # One library BLOCK holding a list of entries; each entry is a dict
@@ -167,6 +189,7 @@ class LibraryData:
     y: float
     entries: list = field(default_factory=list)
     show: bool = True         # drawn on the schematic; ALWAYS netlisted
+    latex_scale: object = "legacy"   # see _latex_scale_in
 
 
 @dataclass
@@ -179,9 +202,10 @@ class ModelData:
     params:        list         # list of [name, value] string pairs
     preamble_path: str  = ""
     svg_b64:       str  = ""
-    display_width:  int = 200   # legacy; size is derived from the style scale
+    display_width:  int = 200   # legacy; size is derived from the LaTeX scale
     display_height: int = 80
     show: bool = True   # drawn on the schematic; ALWAYS netlisted
+    latex_scale: object = "legacy"   # see _latex_scale_in
 
 
 @dataclass
@@ -223,10 +247,11 @@ class ParameterData:
     y: float
     params: list          # list of [name, value] string pairs
     preamble_path: str
-    display_width: int    # legacy; size is derived from the style scale
+    display_width: int    # legacy; size is derived from the LaTeX scale
     display_height: int
     svg_b64: str = ""    # kept for reading old files; no longer written
     show: bool = True    # drawn on the schematic; ALWAYS netlisted
+    latex_scale: object = "legacy"   # see _latex_scale_in
 
 
 @dataclass
@@ -237,6 +262,7 @@ class AnalysisData:
     detector: list   # 0-2 [type, ref] pairs; type = "V" or "I"
     lgref:    list   # 0-2 refdes strings
     show: bool = True   # drawn on the schematic; ALWAYS netlisted
+    latex_scale: object = "legacy"   # see _latex_scale_in
 
 
 @dataclass
@@ -252,6 +278,7 @@ class LatexFragmentData:
     snippet: str = ""  # a LaTeX snippet item: the save name of the snippet
                        # (tex/SLiCAPdata/<name>.tex) the code is read from
     z: float = 0.0        # stacking order among annotations AND the circuit layers
+    latex_scale: object = "legacy"   # see _latex_scale_in
 
 
 @dataclass
@@ -403,6 +430,7 @@ class SchematicData:
                     "x": l.x, "y": l.y,
                     "entries": [dict(e) for e in l.entries],
                     "show": l.show,
+                    **_latex_scale_out(l.latex_scale),
                 }
                 for l in self.libs
             ],
@@ -442,6 +470,7 @@ class SchematicData:
                     **({"color": f.color} if f.color else {}),
                     **({"snippet": f.snippet} if f.snippet else {}),
                     **({"z": f.z} if f.z else {}),
+                    **_latex_scale_out(f.latex_scale),
                 }
                 for f in self.latex_fragments
             ],
@@ -453,6 +482,7 @@ class SchematicData:
                     "display_width":  p.display_width,
                     "display_height": p.display_height,
                     "show": p.show,
+                    **_latex_scale_out(p.latex_scale),
                 }
                 for p in self.parameters
             ],
@@ -463,6 +493,7 @@ class SchematicData:
                     "detector": a.detector,
                     "lgref":    a.lgref,
                     "show":     a.show,
+                    **_latex_scale_out(a.latex_scale),
                 }
                 for a in self.analysis_items
             ],
@@ -509,6 +540,7 @@ class SchematicData:
                     "display_width":  m.display_width,
                     "display_height": m.display_height,
                     "show": m.show,
+                    **_latex_scale_out(m.latex_scale),
                 }
                 for m in self.model_defs
             ],
@@ -618,6 +650,7 @@ class SchematicData:
             libs.append(LibraryData(
                 x=l["x"], y=l["y"], entries=entries,
                 show=bool(l.get("show", True)),
+                latex_scale=_latex_scale_in(l),
             ))
         images = [
             ImageData(
@@ -655,6 +688,7 @@ class SchematicData:
                 color=f.get("color", ""),
                 snippet=f.get("snippet", ""),
                 z=float(f.get("z", 0.0)),
+                latex_scale=_latex_scale_in(f),
             )
             for f in data.get("latex_fragments", [])
         ]
@@ -667,6 +701,7 @@ class SchematicData:
                 display_width=pd.get("display_width", 200),
                 display_height=pd.get("display_height", 80),
                 show=bool(pd.get("show", True)),
+                latex_scale=_latex_scale_in(pd),
             )
             for pd in data.get("parameters", [])
         ]
@@ -677,6 +712,7 @@ class SchematicData:
                 detector=[list(d) for d in a.get("detector", [])],
                 lgref=list(a.get("lgref", [])),
                 show=bool(a.get("show", True)),
+                latex_scale=_latex_scale_in(a),
             )
             for a in data.get("analysis_items", [])
         ]
@@ -725,6 +761,7 @@ class SchematicData:
                 display_width=m.get("display_width", 200),
                 display_height=m.get("display_height", 80),
                 show=bool(m.get("show", True)),
+                latex_scale=_latex_scale_in(m),
             )
             for m in data.get("model_defs", [])
         ]

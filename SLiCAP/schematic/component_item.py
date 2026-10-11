@@ -379,8 +379,8 @@ class _PropertyLabel(QGraphicsItem):
     """
     Movable label for one component property — supports plain text and SVG modes.
 
-    In SVG mode (a rendered LaTeX expression) the SVG is scaled to the style's
-    COMP_LABEL_SVG_HEIGHT scene units tall; an optional prefix string is drawn
+    In SVG mode (a rendered LaTeX expression) the SVG is drawn at the style's
+    LATEX_SCALE of its natural size; an optional prefix string is drawn
     as plain text immediately to the left.
 
     Freely draggable (no snap) as a child of ComponentItem.
@@ -472,17 +472,8 @@ class _PropertyLabel(QGraphicsItem):
             self._svg_bytes = b""
             return
         vb = renderer.viewBoxF()
-        from .latex_label import svg_line_height
-        ref_h = svg_line_height()
-        style = style_of(self)
-        target_h = (style.COMP_LABEL_SVG_HEIGHT if self.prop_key == "refdes"
-                    else style.COMP_PARAM_SVG_HEIGHT)
-        if ref_h and ref_h > 0:
-            scale = target_h / ref_h * 0.75
-        elif vb.height() > 0:
-            scale = target_h / vb.height() * 0.75
-        else:
-            scale = 1.0
+        from .config import LATEX_UNITS_PER_PT
+        scale = style_of(self).LATEX_SCALE / 100.0 * LATEX_UNITS_PER_PT
         svg_w = vb.width() * scale
         svg_h = vb.height() * scale
         font, _ = self._font_and_color()

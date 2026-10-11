@@ -31,8 +31,10 @@ class AnalysisItem(QGraphicsItem):
                  detector: list,   # 0-2 [type, ref] pairs; type = "V" or "I"
                  lgref:    list,   # 0-2 dependent source refdes strings
                  pos: QPointF = QPointF(0, 0),
-                 show: bool = True):
+                 show: bool = True,
+                 latex_scale: float | None = None):
         super().__init__()
+        self.latex_scale: float | None = latex_scale     # None: the schematic's default
         self.source   = list(source)
         self.detector = [list(d) for d in detector]
         self.lgref    = list(lgref)
@@ -82,25 +84,17 @@ class AnalysisItem(QGraphicsItem):
     def _latex_block(self) -> str:
         """One math array: footnotesize sans-serif keywords, then the items —
         source/lgref as component refdesses (bold, like the refdes labels),
-        detector names as math symbols.  The block is scaled to the parameter
-        size, so keyword (footnotesize) and detector (normalsize) already match
-        component parameter name/value; the refdesses are bumped to the refdes
-        size by the exact COMP_LABEL/COMP_PARAM ratio (\\scalebox)."""
+        detector names as math symbols, at the size of the component labels."""
         from .latex_label import symbol_to_latex, refdes_to_latex
         style = style_of(self) if self.scene() is not None else default_style()
         bold  = getattr(style, "COMP_LABEL_LATEX_BOLD", False)
-        lh    = getattr(style, "COMP_LABEL_SVG_HEIGHT", 14.0)
-        ph    = getattr(style, "COMP_PARAM_SVG_HEIGHT", 12.0)
-        ref_scale = (lh / ph) if ph else 1.0
 
         def _item_tex(kw, it):
             if kw == "detector":                       # parameter-value size
                 if it == GROUND_TOKEN:                 # the word, like a keyword
                     return rf"\textsf{{{it}}}"
                 return symbol_to_latex(it)
-            # refdes size: \scalebox's arg is text mode, so keep the refdes math
-            # with \ensuremath.
-            return rf"\scalebox{{{ref_scale:.4f}}}{{\ensuremath{{{refdes_to_latex(it, bold)}}}}}"
+            return refdes_to_latex(it, bold)
 
         blocks = [(kw, items) for kw, items in self._blocks() if items]
         if not blocks:                                   # empty → keyword template
@@ -135,21 +129,17 @@ class AnalysisItem(QGraphicsItem):
                     self._derive_svg_rect(r)
 
     def _derive_svg_rect(self, renderer) -> None:
-        """On-canvas size: scale the natural SVG so the block matches the
-        component parameter text height (keyword/detector), the refdesses
-        already bumped to the refdes height inside the LaTeX (\\scalebox)."""
-        vb = renderer.viewBoxF()
-        from .latex_label import svg_line_height
+        """On-canvas size: natural size × the block's LaTeX scale (its own,
+        or the schematic's default)."""
+        from .parameter_item import svg_scene_size
+        from .config import latex_scale_of
         style = style_of(self) if self.scene() is not None else default_style()
-        ref_h    = svg_line_height()
-        target_h = style.COMP_PARAM_SVG_HEIGHT
-        if ref_h and ref_h > 0:
-            scale = target_h / ref_h * 0.75
-        elif vb.height() > 0:
-            scale = target_h / vb.height() * 0.75
-        else:
-            scale = 1.0
-        self._svg_rect = QRectF(0.0, 0.0, vb.width() * scale, vb.height() * scale)
+        natural = svg_scene_size(renderer)
+        if natural is None:
+            self._svg_rect = QRectF()
+            return
+        pct = latex_scale_of(self.latex_scale, style) / 100.0
+        self._svg_rect = QRectF(0.0, 0.0, natural[0] * pct, natural[1] * pct)
 
     def update_text(self) -> None:
         """Re-render after an edit or a style change (safe outside itemChange)."""

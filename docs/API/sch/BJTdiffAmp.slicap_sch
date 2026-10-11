@@ -794,7 +794,8 @@
           "corner": ""
         }
       ],
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "images": [],

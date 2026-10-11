@@ -214,14 +214,11 @@ class PreferencesDialog(QDialog):
              check(style.COMP_LABEL_LATEX)),
             ("Bold face",       "component_label", "latex_bold",
              check(style.COMP_LABEL_LATEX_BOLD)),
-            ("LaTeX scale %",   "component_label", "latex_scale",
-             ispin(style.COMP_LABEL_LATEX_SCALE, 25, 400)),
         ])
         group(left, "Component parameters", [
             ("Font family",   "component_param", "font_family",   combo(style.COMP_PARAM_FONT_FAMILY)),
             ("Font size",     "component_param", "font_size",     ispin(style.COMP_PARAM_FONT_SIZE, 4, 32)),
             ("Colour",        "component_param", "color",         cbtn(style.COMP_PARAM_COLOR)),
-            ("LaTeX scale %", "component_param", "latex_scale",   ispin(style.COMP_PARAM_LATEX_SCALE, 25, 400)),
         ])
         group(left, "Text annotations", [
             ("Font family", "text", "font_family", combo(style.TEXT_FONT_FAMILY)),
@@ -246,6 +243,14 @@ class PreferencesDialog(QDialog):
         rend_form.setSpacing(4)
         rend_grp.setLayout(rend_form)
         rend_form.addRow("LaTeX rendering", latex_cb)
+        # The one LaTeX scale of the schematic (Anton, 2026-10-11): component
+        # labels always; fragments, tables and blocks unless they have their
+        # own scale in their dialogs.
+        scale_sb = fspin(style.LATEX_SCALE, 5.0, 1000.0, 1.0, 1)
+        scale_sb.setToolTip("One line of LaTeX at 100 % is 20 units. Fragments, "
+                            "tables and blocks may set their own scale.")
+        self._widgets[("rendering", "latex_scale")] = scale_sb
+        rend_form.addRow("LaTeX scale %", scale_sb)
         right.addWidget(rend_grp)
 
         group(right, "Hyperlinks", [
@@ -291,13 +296,6 @@ class PreferencesDialog(QDialog):
             ("Font size",   "bias_annotation", "font_size",   ispin(style.BIAS_FONT_SIZE, 4, 32)),
             ("Colour",      "bias_annotation", "color",       cbtn(style.BIAS_COLOR)),
             ("Digits",      "bias_annotation", "digits",      ispin(style.BIAS_DIGITS, 1, 10)),
-        ])
-        # LaTeX fragments and images scale per instance in their own
-        # dialogs — one value, one place (Anton, 2026-07-12); only the
-        # table/model scale is a schematic preference (applies live to all
-        # tables/models on this schematic).
-        group(right, "Parameter and model definitions", [
-            ("Scaling (%)", "scales", "parameter_table", ispin(style.SCALE_PARAMETER_TABLE, 1, 500)),
         ])
         right.addStretch(1)
 

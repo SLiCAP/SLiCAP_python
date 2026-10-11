@@ -1253,7 +1253,8 @@
       "lgref": [
         "Gm_Q2"
       ],
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "shapes": [],
@@ -1305,7 +1306,8 @@
       "preamble_path": "",
       "display_width": 46,
       "display_height": 68,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     },
     {
       "x": 50.0,
@@ -1354,7 +1356,8 @@
       "preamble_path": "",
       "display_width": 46,
       "display_height": 68,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "properties": {

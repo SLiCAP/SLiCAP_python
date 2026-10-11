@@ -75,8 +75,14 @@ class LatexFragmentItem(QGraphicsItem):
     def __init__(self, latex_code: str, preamble_path: str,
                  display_width: int, display_height: int,
                  pos: QPointF = QPointF(0, 0), color: str = "",
-                 snippet: str = ""):
+                 snippet: str = "", latex_scale="box"):
         super().__init__()
+        # LaTeX scale (%) of the fragment: a number, or None to follow the
+        # schematic's default (Style.LATEX_SCALE); the size follows from it
+        # on every render (Anton, 2026-10-11). "box": a fragment of an older
+        # file, stored by its box only; the box is kept and converted into
+        # its own scale at the first render.
+        self.latex_scale = latex_scale
         self.latex_code:    str        = latex_code
         self.preamble_path: str        = preamble_path
         self.color:         str        = color or ""
@@ -147,6 +153,23 @@ class LatexFragmentItem(QGraphicsItem):
             r = QSvgRenderer(QByteArray(self.display_bytes()))
             if r.isValid():
                 self._renderer = r
+                self._derive_size(r)
+
+    def _derive_size(self, renderer) -> None:
+        """Size = natural size × the LaTeX scale. A fragment of an older
+        file ("box") keeps its stored box, which becomes its own scale."""
+        from .parameter_item import svg_scene_size
+        from .config import latex_scale_of
+        natural = svg_scene_size(renderer)
+        if natural is None or natural[0] <= 0:
+            return
+        if self.latex_scale == "box":
+            self.latex_scale = self.display_width / natural[0] * 100.0
+            return
+        pct = latex_scale_of(self.latex_scale, style_of(self)) / 100.0
+        self.prepareGeometryChange()
+        self.display_width  = natural[0] * pct
+        self.display_height = natural[1] * pct
 
     def display_bytes(self) -> bytes:
         """The SVG as drawn on the canvas: tinted in the item's own colour

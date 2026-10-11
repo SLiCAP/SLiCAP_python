@@ -1552,7 +1552,8 @@
       "preamble_path": "",
       "display_width": 60,
       "display_height": 66,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "analysis_items": [
@@ -1577,7 +1578,8 @@
         "E_O1P",
         "E_O1N"
       ],
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "shapes": [],
@@ -1617,7 +1619,8 @@
       "preamble_path": "",
       "display_width": 57,
       "display_height": 58,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "properties": {

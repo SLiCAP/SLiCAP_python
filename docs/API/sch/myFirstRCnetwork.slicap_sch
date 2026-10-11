@@ -536,7 +536,8 @@
       "preamble_path": "",
       "display_width": 56,
       "display_height": 45,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "analysis_items": [
@@ -553,7 +554,8 @@
         ]
       ],
       "lgref": [],
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "shapes": [],

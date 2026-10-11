@@ -942,7 +942,8 @@
       "lgref": [
         "E_O1"
       ],
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "shapes": [],
@@ -982,7 +983,8 @@
       "preamble_path": "",
       "display_width": 51,
       "display_height": 59,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "properties": {

@@ -1291,12 +1291,15 @@ class CanvasPanel(QWidget):
         entries = list(block.entries) if block else []
         show    = block.show_on_schematic if block else True
         dlg = LibraryDialog(entries=entries, sch_type=self._sch_type,
-                            show=show, parent=self)
+                            show=show, parent=self,
+                            latex_scale=block.latex_scale if block else None,
+                            default_scale=self._style.LATEX_SCALE)
         if dlg.exec():
             self._scene._push_undo()
             pos = self._view.mapToScene(20, 20)
             self._scene.apply_library_block(dlg.entries(),
-                                            dlg.show_on_schematic(), pos)
+                                            dlg.show_on_schematic(), pos,
+                                            latex_scale=dlg.latex_scale())
 
     def _on_place_model_definition(self):
         from .model_dialog import ModelDialog
@@ -1316,18 +1319,21 @@ class CanvasPanel(QWidget):
             existing.simulator     = dlg.simulator()
             existing.params        = dlg.get_params()
             existing.preamble_path = dlg.preamble_path()
+            existing.latex_scale   = dlg.latex_scale()
             existing.set_show(dlg.show_on_schematic())
             existing._load_renderer()
             existing.update()
         elif dlg.show_on_schematic():
             self._scene.start_model_placement(dlg.model_name(), dlg.model_type(),
                                               dlg.simulator(), dlg.get_params(),
-                                              dlg.preamble_path())
+                                              dlg.preamble_path(),
+                                              latex_scale=dlg.latex_scale())
         else:
             self._scene._push_undo()
             self._scene.addItem(ModelItem(dlg.model_name(), dlg.model_type(),
                                           dlg.simulator(), dlg.get_params(),
-                                          dlg.preamble_path(), show=False))
+                                          dlg.preamble_path(), show=False,
+                                          latex_scale=dlg.latex_scale()))
 
     def adopt_symbol(self, name: str, svg_text: str):
         """Write a re-skinned subcircuit symbol (Change symbol…) into the
@@ -1425,7 +1431,8 @@ class CanvasPanel(QWidget):
         if dlg.exec() and dlg.snippet():
             self._scene.start_latex_placement(dlg.latex_code(), dlg.preamble_path(),
                                               dlg.display_width(), dlg.display_height(),
-                                              dlg.color(), snippet=dlg.snippet())
+                                              dlg.color(), snippet=dlg.snippet(),
+                                              latex_scale=dlg.latex_scale())
 
     def _on_place_latex(self):
         from .latex_fragment_dialog import LatexFragmentDialog
@@ -1433,7 +1440,7 @@ class CanvasPanel(QWidget):
         if dlg.exec() and dlg.svg_bytes():
             self._scene.start_latex_placement(dlg.latex_code(), dlg.preamble_path(),
                                               dlg.display_width(), dlg.display_height(),
-                                              dlg.color())
+                                              dlg.color(), latex_scale=dlg.latex_scale())
 
     def _on_place_parameters(self):
         # ONE parameter table per schematic (Anton, 2026-07-12): the menu
@@ -1448,7 +1455,8 @@ class CanvasPanel(QWidget):
             preamble_path=existing.preamble_path if existing else "",
             show=existing.show_on_schematic if existing else True,
             edit_mode=existing is not None,
-            style=self._style, parent=self)
+            style=self._style, parent=self,
+            latex_scale=existing.latex_scale if existing else None)
         if not dlg.exec():
             return
         if existing is not None:
@@ -1456,18 +1464,21 @@ class CanvasPanel(QWidget):
             existing.prepareGeometryChange()
             existing.params        = dlg.get_params()
             existing.preamble_path = dlg.preamble_path()
+            existing.latex_scale   = dlg.latex_scale()
             existing.set_show(dlg.show_on_schematic())
             existing._load_renderer()
             existing.update()
         elif dlg.show_on_schematic():
             self._scene.start_parameter_placement(dlg.get_params(),
-                                                  dlg.preamble_path())
+                                                  dlg.preamble_path(),
+                                                  latex_scale=dlg.latex_scale())
         else:
             # hidden: nothing to position — add directly (netlisted, not
             # drawn); re-showing later runs through this same dialog
             self._scene._push_undo()
             self._scene.addItem(ParameterItem(dlg.get_params(),
-                                              dlg.preamble_path(), show=False))
+                                              dlg.preamble_path(), show=False,
+                                              latex_scale=dlg.latex_scale()))
 
     def _analysis_candidates(self) -> dict:
         """Candidate reference lists for the .source/.detector/.lgref dialog,
@@ -1507,27 +1518,32 @@ class CanvasPanel(QWidget):
                                  detector=existing.detector,
                                  lgref=existing.lgref,
                                  show=existing.show_on_schematic,
+                                 latex_scale=existing.latex_scale,
+                                 default_scale=self._style.LATEX_SCALE,
                                  **self._analysis_candidates())
             if dlg.exec():
                 self._scene._push_undo()
                 existing.source   = dlg.get_source()
                 existing.detector = dlg.get_detector()
                 existing.lgref    = dlg.get_lgref()
+                existing.latex_scale = dlg.latex_scale()
                 existing.set_show(dlg.show_on_schematic())
                 existing.update_text()
             return
-        dlg = AnalysisDialog(parent=self, **self._analysis_candidates())
+        dlg = AnalysisDialog(parent=self, default_scale=self._style.LATEX_SCALE,
+                             **self._analysis_candidates())
         if dlg.exec():
             if dlg.show_on_schematic():
                 self._scene.start_analysis_placement(
-                    dlg.get_source(), dlg.get_detector(), dlg.get_lgref())
+                    dlg.get_source(), dlg.get_detector(), dlg.get_lgref(),
+                    latex_scale=dlg.latex_scale())
             else:
                 # hidden: nothing to position — add directly (netlisted,
                 # not drawn); re-showing later keeps the stored position
                 self._scene._push_undo()
                 self._scene.addItem(AnalysisItem(
                     dlg.get_source(), dlg.get_detector(), dlg.get_lgref(),
-                    show=False))
+                    show=False, latex_scale=dlg.latex_scale()))
 
     def _on_place_text(self):
         from .text_dialog import TextDialog

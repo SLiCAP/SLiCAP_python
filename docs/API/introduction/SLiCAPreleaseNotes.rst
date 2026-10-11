@@ -198,6 +198,32 @@ curves, each with a user-defined stacking order.
    folders of SLiCAP.ini, such as an image folder outside the project,
    are honoured by the editor and by the headless export since 6.2.
 
+#. **One LaTeX scale per schematic.** The Rendering group of the
+   preferences has one **LaTeX scale**, 150 % by default. At 100 %, LaTeX
+   is drawn at its natural size of 10 pt in a drawing at 2 units per mm,
+   the default ``sch_scale``. The same percentage therefore gives the same
+   text size relative to the symbols in every project. The component
+   labels always use this scale. LaTeX fragments, parameter and model
+   tables, and the analysis and library blocks use it as well, unless the
+   user gives them a scale of their own: their dialogs have a **LaTeX
+   scale** field with a **Default** box. The separate scales of the
+   reference designators, the parameter labels and the tables are gone.
+   Schematics made with an earlier version are converted on loading,
+   and no drawing changes size. The script ``tools/set_latex_scale.py``
+   of the repository sets one scale for all schematics and posters under
+   a folder, and puts all their LaTeX items on Default. See
+   :doc:`/GUI/schematics/preferences`.
+
+#. **Image export without a netlist.** ``updateImages()`` exports the SVG
+   and PDF of a schematic or poster without building a netlist, so a
+   drawing that is not a valid circuit, such as one with a ``?`` value, is
+   exported as well. It no longer writes the netlist, it no longer has the
+   argument ``cirTitle``, and it returns the path of the SVG. The PDF is
+   converted from the SVG that was just written. ``makeCircuit()`` still
+   writes the netlist, the SVG and the PDF together. When the netlist
+   cannot be built, it writes the images first and then reports the
+   netlist errors.
+
 SLiCAP version 6.1 release notes
 ================================
 

@@ -165,10 +165,12 @@ def netlist_for(input_path, scene, props, title, program: bool = True):
     return text, _default_output(input_path, "cir", ".cir"), "Netlist "
 
 
-def _write_netlist(input_path, scene, data, output_path, title):
+def _write_netlist(input_path, scene, data, output_path, title) -> bool:
     """Write the netlist of an ALREADY-LOADED scene (netlist_for). Shared
     by the ``netlist`` and ``export`` commands so the scene is loaded
-    once. ``output_path`` None selects the default location, cir/ or lib/."""
+    once. ``output_path`` None selects the default location, cir/ or lib/.
+    Returns False, with the errors on stderr, when the netlist could not
+    be built."""
     from .netlist import NetlistError
     try:
         result = netlist_for(input_path, scene, getattr(data, "properties", None), title)
@@ -176,14 +178,15 @@ def _write_netlist(input_path, scene, data, output_path, title):
         print("Netlist not generated:", file=sys.stderr)
         for err in exc.errors:
             print(f"  {err}", file=sys.stderr)
-        sys.exit(1)
+        return False
     if result is None:
-        return None
+        return True
     text, default, label = result
     output_path = Path(output_path) if output_path else default
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(text, encoding="utf-8")
     print(f"{label} --> {output_path}")
+    return True
 
 
 def cmd_netlist(args):
@@ -193,7 +196,8 @@ def cmd_netlist(args):
     scene, data = _load_scene(input_path)
     output_path = Path(args.output) if args.output else None
     title = getattr(args, "title", None) or data.properties.title or input_path.stem
-    _write_netlist(input_path, scene, data, output_path, title)
+    if not _write_netlist(input_path, scene, data, output_path, title):
+        sys.exit(1)
 
 
 def cmd_svg(args):
@@ -218,23 +222,44 @@ def cmd_pdf(args):
     print(f"PDF      --> {output_path}")
 
 
+def _write_images(input_path, scene, data, title):
+    """Write the SVG and the PDF of an ALREADY-LOADED scene. The SVG is
+    built once; the PDF is converted from it."""
+    from .export import _build_svg, svg2pdf
+    svg_bytes = _build_svg(scene, data.properties.title or input_path.stem,
+                           input_path.name)
+    svg = _default_output(input_path, "img", ".svg")
+    svg.parent.mkdir(parents=True, exist_ok=True)
+    svg.write_bytes(svg_bytes)
+    print(f"SVG      --> {svg}")
+    pdf = _default_output(input_path, "img", ".pdf")
+    svg2pdf(svg_bytes, pdf, source=input_path.name, title=title)
+    print(f"PDF      --> {pdf}")
+
+
+def cmd_images(args):
+    """SVG + PDF of a schematic or poster: a drawing, so no netlist is
+    built and the circuit is not checked (Anton, 2026-10-11)."""
+    _qt_app()
+    input_path  = Path(args.input)
+    scene, data = _load_scene(input_path)
+    _write_images(input_path, scene, data, data.properties.title or input_path.stem)
+
+
 def cmd_export(args):
     """Netlist + SVG + PDF in ONE process — the scene is loaded once, so the
     cold Python+Qt import (≈1.1 s) is paid once instead of three times
-    (Anton, 2026-07-16: this is 60% of make_schematic's cost)."""
+    (Anton, 2026-07-16: this is 60% of make_schematic's cost). For callers
+    that always need all three (makeCircuit). The images are written also
+    when the netlist fails; the exit status is then 1."""
     _qt_app()
-    from .export import export_svg, export_pdf
     input_path  = Path(args.input)
     scene, data = _load_scene(input_path)
     title = getattr(args, "title", None) or data.properties.title or input_path.stem
-    _write_netlist(input_path, scene, data, None, title)
-    svg = _default_output(input_path, "img", ".svg")
-    export_svg(scene, svg, data.properties.title or input_path.stem,
-               source=input_path.name)
-    print(f"SVG      --> {svg}")
-    pdf = _default_output(input_path, "img", ".pdf")
-    export_pdf(scene, pdf, source=input_path.name, title=title)
-    print(f"PDF      --> {pdf}")
+    netlist_ok = _write_netlist(input_path, scene, data, None, title)
+    _write_images(input_path, scene, data, title)
+    if not netlist_ok:
+        sys.exit(1)
 
 
 # ── entry point ───────────────────────────────────────────────────────────────
@@ -275,11 +300,16 @@ def main():
     p_exp.add_argument("--title", metavar="TITLE", default=None,
                        help="Circuit title (default: from schematic or file stem)")
 
+    p_img = sub.add_parser(
+        "images",
+        help="SVG + PDF in one pass, no netlist (a schematic or a poster)")
+    p_img.add_argument("input", help=_input_help)
+
     args = parser.parse_args()
     from .symbol_library import SymbolError
     try:
         {"netlist": cmd_netlist, "svg": cmd_svg, "pdf": cmd_pdf,
-         "export": cmd_export}[args.command](args)
+         "export": cmd_export, "images": cmd_images}[args.command](args)
     except SymbolError as exc:
         # A malformed symbol definition is the user's to fix in the SVG file.
         sys.exit(f"Symbol library error: {exc}")

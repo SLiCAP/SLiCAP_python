@@ -53,7 +53,7 @@ class AnalysisDialog(QDialog):
 
     def __init__(self, source=None, detector=None, lgref=None,
                  sources=(), det_v_refs=(), det_i_refs=(), lgrefs=(),
-                 show=True, parent=None):
+                 show=True, parent=None, latex_scale=None, default_scale=150.0):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Add / Edit Source / Detector / Loop Gain "
                             "Reference")
@@ -129,6 +129,9 @@ class AnalysisDialog(QDialog):
             "Show on schematic  (the commands are always netlisted)")
         self._show_cb.setChecked(bool(show))
         layout.addWidget(self._show_cb)
+        from .latex_scale_field import LatexScaleField
+        self._scale_field = LatexScaleField(latex_scale, default_scale)
+        layout.addWidget(self._scale_field)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -219,6 +222,10 @@ class AnalysisDialog(QDialog):
         if self._lg2.currentText().strip():
             result.append(self._lg2.currentText().strip())
         return result
+
+    def latex_scale(self):
+        """The item's LaTeX scale: None follows the schematic's default."""
+        return self._scale_field.value()
 
     def show_on_schematic(self) -> bool:
         return self._show_cb.isChecked()

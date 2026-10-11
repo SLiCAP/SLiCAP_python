@@ -36,8 +36,9 @@ class LibraryItem(QGraphicsItem):
     """
 
     def __init__(self, entries=None, pos: QPointF = QPointF(0, 0),
-                 show: bool = True):
+                 show: bool = True, latex_scale: float | None = None):
         super().__init__()
+        self.latex_scale: float | None = latex_scale     # None: the schematic's default
         self.entries: list = [dict(e) for e in (entries or [])]
         self.show_on_schematic = bool(show)
         self.setVisible(self.show_on_schematic)
@@ -142,18 +143,17 @@ class LibraryItem(QGraphicsItem):
                     self._derive_svg_rect(r)
 
     def _derive_svg_rect(self, renderer) -> None:
-        vb = renderer.viewBoxF()
-        from .latex_label import svg_line_height
+        """On-canvas size: natural size × the block's LaTeX scale (its own,
+        or the schematic's default)."""
+        from .parameter_item import svg_scene_size
+        from .config import latex_scale_of
         style = style_of(self) if self.scene() is not None else default_style()
-        ref_h    = svg_line_height()
-        target_h = style.COMP_PARAM_SVG_HEIGHT
-        if ref_h and ref_h > 0:
-            scale = target_h / ref_h * 0.75
-        elif vb.height() > 0:
-            scale = target_h / vb.height() * 0.75
-        else:
-            scale = 1.0
-        self._svg_rect = QRectF(0.0, 0.0, vb.width() * scale, vb.height() * scale)
+        natural = svg_scene_size(renderer)
+        if natural is None:
+            self._svg_rect = QRectF()
+            return
+        pct = latex_scale_of(self.latex_scale, style) / 100.0
+        self._svg_rect = QRectF(0.0, 0.0, natural[0] * pct, natural[1] * pct)
 
     def update_text(self) -> None:
         self.prepareGeometryChange()

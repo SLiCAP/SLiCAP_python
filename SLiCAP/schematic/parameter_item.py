@@ -12,19 +12,16 @@ _SEL_PEN       = QPen(QColor(0, 120, 215), 1.5, Qt.DashLine)
 _SEL_PEN.setCosmetic(True)
 
 
-def svg_scene_size(renderer, style) -> "tuple[float, float] | None":
-    """Natural (100 %) size of a rendered-LaTeX SVG in scene units.
-
-    Calibrated against the height of one line of math (svg_line_height) so
-    that at 100 % the table's text matches the component-label font size."""
-    from .latex_label import svg_line_height
+def svg_scene_size(renderer, style=None) -> "tuple[float, float] | None":
+    """Natural (100 %) size of a rendered-LaTeX SVG in scene units: the size
+    pdflatex sets it, at LATEX_UNITS_PER_PT scene units per point."""
+    from .config import LATEX_UNITS_PER_PT
     vb = renderer.viewBoxF()
     sw = vb.width()  if vb.width()  > 0 else renderer.defaultSize().width()
     sh = vb.height() if vb.height() > 0 else renderer.defaultSize().height()
     if sw <= 0 or sh <= 0:
         return None
-    ref_h = svg_line_height()
-    base = (style.COMP_LABEL_FONT_SIZE / ref_h) if (ref_h and ref_h > 0) else 0.5
+    base = LATEX_UNITS_PER_PT
     return sw * base, sh * base
 
 
@@ -36,9 +33,9 @@ class ParameterItem(QGraphicsItem):
     Contributes .param lines to the netlist on export — ALWAYS, also when
     "Show on schematic" is off (hidden: in the scene, not drawn/exported).
 
-    The on-canvas size is DERIVED: natural SVG size × the schematic's
-    SCALE_PARAMETER_TABLE preference (the single source for table scaling —
-    there is no per-item scale).
+    The on-canvas size is DERIVED: natural SVG size × the LaTeX scale, the
+    item's own ``latex_scale`` or, when None, the schematic's default
+    (Style.LATEX_SCALE; Anton, 2026-10-11).
 
     Double-click opens the parameter dialog to edit and re-render.
     """
@@ -46,8 +43,12 @@ class ParameterItem(QGraphicsItem):
     def __init__(self, params: list,        # list[tuple[str, str]]
                  preamble_path: str,
                  pos: QPointF = QPointF(0, 0),
-                 show: bool = True):
+                 show: bool = True,
+                 latex_scale: float | None = None):
         super().__init__()
+        # LaTeX scale (%) of this table; None follows the schematic's
+        # default (Style.LATEX_SCALE).
+        self.latex_scale: float | None = latex_scale
         self.params:        list        = list(params)  # [(name, value), ...]
         self.preamble_path: str         = preamble_path
         self._svg_bytes:    bytes | None = None
@@ -108,11 +109,12 @@ class ParameterItem(QGraphicsItem):
             self.setToolTip("")
 
     def _derive_size(self, renderer) -> None:
-        """Display size = natural size × the schematic's table-scale preference."""
+        """Display size = natural size × the table's LaTeX scale."""
+        from .config import latex_scale_of
         style = style_of(self)
-        natural = svg_scene_size(renderer, style)
+        natural = svg_scene_size(renderer)
         if natural is not None:
-            pct = style.SCALE_PARAMETER_TABLE / 100.0
+            pct = latex_scale_of(self.latex_scale, style) / 100.0
             self.display_width  = max(1, round(natural[0] * pct))
             self.display_height = max(1, round(natural[1] * pct))
 

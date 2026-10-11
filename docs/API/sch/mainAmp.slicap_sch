@@ -600,7 +600,8 @@
           "corner": ""
         }
       ],
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "images": [],
@@ -627,7 +628,8 @@
       "preamble_path": "",
       "display_width": 38,
       "display_height": 40,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "analysis_items": [],

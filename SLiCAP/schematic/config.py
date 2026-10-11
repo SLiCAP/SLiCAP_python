@@ -68,6 +68,23 @@ Z_BORDER    = -10   # frame, always behind everything
 # component select box): the item is drawn in this colour, no box around it.
 SELECTION_COLOR = QColor(0, 120, 215)
 
+# LaTeX scale: at 100 % rendered LaTeX (10 pt) has the size pdflatex sets it
+# in a drawing at the reference of 2 units per mm, the default sch_scale. The
+# reference is fixed, not the project's sch_scale, so that one percentage
+# gives the same text size relative to the symbols in every project (Anton,
+# 2026-10-11). On paper the text is 10 pt x scale x 2 / sch_scale. The SVGs
+# from dvisvgm are in points; a point is 25.4/72 mm.
+LATEX_REFERENCE_UNITS_PER_MM = 2.0
+LATEX_UNITS_PER_PT = LATEX_REFERENCE_UNITS_PER_MM * 25.4 / 72.0
+
+# Meaning of [rendering] latex_scale and of the item scales in the schematic:
+# "4" = percentage of LATEX_UNITS_PER_PT; "3" (development) = percentage of the
+# natural size at the project's sch_scale; "2" (development) = percentage of 20
+# units per x-height of 10 pt math, dvisvgm: 4.289468 pt (see
+# Style._convert_latex_scales).
+LATEX_SCALE_VERSION = "4"
+_V2_UNITS_PER_PT = 20.0 / 4.289468
+
 # The selection frame of an item is painted with this pen on the item's
 # CONTENT rectangle, and the item's boundingRect() is that rectangle grown by
 # SELECTION_MARGIN. Qt repaints only the declared rectangle when an item
@@ -101,6 +118,16 @@ Z_NET_LABEL = 30    # most clickable (child of a wire; see note above)
 
 STYLE_FILE = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "style.ini"
 
+# Style keys that the program no longer reads; older sidecars still carry
+# them. Fragments and images are scaled per instance in their own dialogs
+# (Anton, 2026-07-12): a new fragment starts at the component-label scale,
+# a new image at 100 %. Removed as leftovers (Anton, 2026-10-11).
+_OBSOLETE_KEYS = (("scales", "latex_fragment"), ("scales", "image"),
+                  # replaced by [rendering] latex_scale (Anton, 2026-10-11)
+                  ("scales", "parameter_table"), ("scales", "latex_reference"),
+                  ("component_label", "latex_scale"), ("component_param", "latex_scale"),
+                  ("component_label", "svg_height"))
+
 
 class Style:
     """The drawing style of one schematic (colours, fonts, scales, flags).
@@ -114,9 +141,87 @@ class Style:
     def __init__(self, sidecar: "Path | str | None" = None):
         self._cfg = style_parser()
         self._cfg.read(STYLE_FILE)
+        # Scales that items of an OLD file get as their own value, so that
+        # they keep their size (None: the file is new, items follow the
+        # default). Set by _convert_latex_scales.
+        self.LEGACY_TABLE_SCALE: float | None = None
+        self.LEGACY_BLOCK_SCALE: float | None = None
+        # Factor on the own scales of the items of an older file (1: current).
+        self.ITEM_SCALE_FACTOR: float = 1.0
         if sidecar is not None and Path(sidecar).is_file():
             self._cfg.read(str(sidecar))
+            self._convert_latex_scales(sidecar)
+        for section, key in _OBSOLETE_KEYS:      # dropped on load, gone after
+            if self._cfg.has_option(section, key):   # the next save
+                self._cfg.remove_option(section, key)
+        for section in list(self._cfg.sections()):
+            if not self._cfg.options(section):
+                self._cfg.remove_section(section)
         self._recompute()
+
+    def _convert_latex_scales(self, sidecar) -> None:
+        """One LaTeX scale for the whole schematic, ``[rendering]
+        latex_scale``, the default of every LaTeX item; fragments, tables and
+        blocks may override it per item (Anton, 2026-10-11). At 100 % every
+        LaTeX item, component labels included, is drawn at
+        LATEX_UNITS_PER_PT scene units per point.
+
+        Older sidecars are converted so that nothing changes size. Their
+        percentages are multiplied by ITEM_SCALE_FACTOR, which the scene also
+        applies to the own scales of the items of that file:
+
+        - version 3 (development) measured 100 % at the project's sch_scale;
+
+        - up to release 6.2.4 a sidecar had the scales of the refdes and parameter
+          labels and of the tables. The labels were drawn at 0.75 times their
+          scale. The table scale and the scale of the analysis and library
+          blocks (0.75 times the parameter labels) become LEGACY_TABLE_SCALE
+          and LEGACY_BLOCK_SCALE, which the scene gives as own values to the
+          tables and blocks of the old file. A table scale saved before the
+          common reference (no ``latex_reference``) took one line at 100 %
+          to be the label font size and is converted;
+        - the first development version wrote ``latex_scale`` without
+          ``latex_scale_version`` and drew the labels at 0.75 times it;
+        - version 2 (development) took 100 % as 20 units per x-height. The
+          older formats are first expressed in this meaning."""
+        own = style_parser()
+        own.read(str(sidecar))
+        if not self._cfg.has_section("rendering"):
+            self._cfg.add_section("rendering")
+        rendering = self._cfg["rendering"]
+        def num(section, key, default):
+            try:
+                return float(own[section][key])
+            except (KeyError, ValueError):
+                return default
+        version = own.get("rendering", "latex_scale_version", fallback=None)
+        if version == LATEX_SCALE_VERSION:
+            return                                   # a current file
+        v2 = _V2_UNITS_PER_PT / LATEX_UNITS_PER_PT     # version 2 --> 4
+        if version == "3":
+            import SLiCAP.SLiCAPconfigure as ini
+            k = float(getattr(ini, "sch_scale", 2.0)) / LATEX_REFERENCE_UNITS_PER_MM
+            scale = num("rendering", "latex_scale", 85.0)
+        elif version == "2":
+            k, scale = v2, num("rendering", "latex_scale", 22.5)
+        elif own.has_option("rendering", "latex_scale"):   # first development version
+            k, scale = v2, 0.75 * num("rendering", "latex_scale", 30.0)
+        else:                                        # release 6.2.4 and older
+            label = num("component_label", "latex_scale", 30.0)
+            param = num("component_param", "latex_scale", 30.0)
+            table = num("scales", "parameter_table", 60.0)
+            if not own.has_option("scales", "latex_reference"):
+                font = num("component_label", "font_size", 7.0)
+                table = table * font / 20.0
+            k, scale = v2, 0.75 * label
+            self.LEGACY_TABLE_SCALE = table
+            self.LEGACY_BLOCK_SCALE = 0.75 * param
+        self.ITEM_SCALE_FACTOR = k
+        rendering["latex_scale"] = f"{round(scale * k, 1):g}"
+        rendering["latex_scale_version"] = LATEX_SCALE_VERSION
+        if self.LEGACY_TABLE_SCALE is not None:
+            self.LEGACY_TABLE_SCALE *= k
+            self.LEGACY_BLOCK_SCALE *= k
 
     # -- typed readers ---------------------------------------------------------
 
@@ -158,6 +263,9 @@ class Style:
         # installed on this machine is a separate, global fact
         # (latex_label.LATEX_INSTALLED) — the only global in the LaTeX story.
         self.LATEX_RENDERING_ENABLED = self._b("rendering", "latex_rendering", True)
+        # The one LaTeX scale (%): component labels always, and every
+        # fragment, table and block that does not have its own scale.
+        self.LATEX_SCALE = self._f("rendering", "latex_scale", 150.0)
 
         # Symbol colours
         self.SYMBOL_STROKE_COLOR = self._c("symbol", "stroke_color", "#000000")
@@ -178,10 +286,8 @@ class Style:
         self.COMP_REFDES_FONT_FAMILY = self._s("component_label", "font_family", "sans-serif")
         self.COMP_LABEL_COLOR        = self._c("component_label", "color",       "#000000")
         self.COMP_LABEL_FONT_SIZE    = self._i("component_label", "font_size",   7)
-        self.COMP_LABEL_LATEX_SCALE  = self._i("component_label", "latex_scale", 30)
         self.COMP_LABEL_LATEX        = self._b("component_label", "latex",       True)
         self.COMP_LABEL_LATEX_BOLD   = self._b("component_label", "latex_bold",  True)
-        self.COMP_LABEL_SVG_HEIGHT   = self.COMP_LABEL_LATEX_SCALE / 100.0 * 20.0
         self.COMP_LABEL_FONT         = QFont(resolve_family(self.COMP_REFDES_FONT_FAMILY),
                                              self.COMP_LABEL_FONT_SIZE)
 
@@ -191,8 +297,6 @@ class Style:
         self.COMP_PARAM_COLOR       = self._c("component_param", "color",       "#000000")
         self.COMP_PARAM_FONT        = QFont(resolve_family(self.COMP_PARAM_FONT_FAMILY),
                                             self.COMP_PARAM_FONT_SIZE)
-        self.COMP_PARAM_LATEX_SCALE = self._i("component_param", "latex_scale", 30)
-        self.COMP_PARAM_SVG_HEIGHT  = self.COMP_PARAM_LATEX_SCALE / 100.0 * 20.0
 
         # Grid
         self.GRID_MINOR_COLOR = self._c("grid", "minor_color", "#DCDCDC")
@@ -250,10 +354,6 @@ class Style:
         self.SYMBOL_TEXT_FONT_FAMILY = self._s("symbol", "font_family", "sans-serif")
         self.SYMBOL_TEXT_FONT        = QFont(resolve_family(self.SYMBOL_TEXT_FONT_FAMILY))
 
-        # Scale (%) of the parameter table / model definition blocks — the
-        # single source for their on-canvas size (natural size × this value).
-        # LaTeX fragments and images scale per instance in their dialogs.
-        self.SCALE_PARAMETER_TABLE = self._i("scales", "parameter_table", 60)
 
         # Border (export frame): the look a NEW border gets; each border then
         # keeps its own values in the schematic file (Border dialog). A book
@@ -301,6 +401,12 @@ class Style:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as fh:
             self._cfg.write(fh)
+
+
+def latex_scale_of(item_scale, style) -> float:
+    """The LaTeX scale (%) of an item: its own value, or the schematic's
+    default (``None``)."""
+    return style.LATEX_SCALE if item_scale is None else float(item_scale)
 
 
 _default_style: Style | None = None

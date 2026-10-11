@@ -64,7 +64,8 @@ class ParameterDialog(QDialog):
                  show: bool = True,
                  edit_mode: bool = False,
                  style=None,
-                 parent=None):
+                 parent=None,
+                 latex_scale=None):
         super().__init__(parent, Qt.Window)
         from .config import default_style
         from .latex_label import LATEX_INSTALLED
@@ -134,6 +135,9 @@ class ParameterDialog(QDialog):
         self._show_cb.setChecked(show)
         self._show_cb.toggled.connect(self._update_action_button)
         outer.addWidget(self._show_cb)
+        from .latex_scale_field import LatexScaleField
+        self._scale_field = LatexScaleField(latex_scale, self._style.LATEX_SCALE)
+        outer.addWidget(self._scale_field)
 
         # ── action buttons ────────────────────────────────────────────────────
         self._btn_box = QDialogButtonBox(QDialogButtonBox.Cancel)
@@ -234,3 +238,8 @@ class ParameterDialog(QDialog):
 
     def show_on_schematic(self) -> bool:
         return self._show_cb.isChecked()
+
+    def latex_scale(self):
+        """The item's LaTeX scale: None follows the schematic's default."""
+        return self._scale_field.value()
+

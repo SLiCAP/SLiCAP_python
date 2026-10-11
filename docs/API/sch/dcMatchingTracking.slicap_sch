@@ -521,7 +521,8 @@
       "preamble_path": "",
       "display_width": 133,
       "display_height": 66,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "analysis_items": [],

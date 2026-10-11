@@ -1898,7 +1898,8 @@
       "preamble_path": "/home/anton/anton/lib/python3.12/site-packages/tex/preambuleSLiCAP.tex",
       "display_width": 66,
       "display_height": 77,
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "analysis_items": [
@@ -1920,7 +1921,8 @@
         ]
       ],
       "lgref": [],
-      "show": true
+      "show": true,
+      "latex_scale": "default"
     }
   ],
   "shapes": [],

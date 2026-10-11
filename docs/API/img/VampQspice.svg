@@ -1,26 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-174.192 -126.124 358.473 260.501" width="179.236mm" height="130.251mm">
-  <!-- SLiCAP schematic export: VampQspice.spice_sch, SLiCAP 6.2.1 -->
+  <!-- SLiCAP schematic export: VampQspice.spice_sch, SLiCAP 6.2.4 -->
   <title>VampQspice</title>
   <defs />
   <rect x="-174.192" y="-126.124" width="358.473" height="260.501" fill="white" />
   <polyline points="65.00,-65.00 25.00,-65.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="34.30" y="-68.26" font-family="sans-serif" font-size="7pt" fill="#b00020">V: 4.296</text>
+  <text x="34.30" y="-68.26" font-family="DejaVu Sans, sans-serif" font-size="7pt" fill="#b00020">V: 4.296</text>
   <polyline points="0.00,-65.00 25.00,-65.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="-5.41" y="-69.33" font-family="sans-serif" font-size="7pt" fill="#26a269">outDC</text>
+  <text x="-5.41" y="-69.33" font-family="DejaVu Sans, sans-serif" font-size="7pt" fill="#26a269">outDC</text>
   <polyline points="0.00,-65.00 0.00,-10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="-60.00,-30.00 -60.00,-40.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="-85.00,50.00 -85.00,-10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="-20.00,50.00 -85.00,50.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="-79.86" y="48.53" font-family="sans-serif" font-size="7pt" fill="#26a269">inDC</text>
-  <text x="-48.24" y="46.57" font-family="sans-serif" font-size="7pt" fill="#b00020">V: 1.764</text>
+  <text x="-79.86" y="48.53" font-family="DejaVu Sans, sans-serif" font-size="7pt" fill="#26a269">inDC</text>
+  <text x="-48.24" y="46.57" font-family="DejaVu Sans, sans-serif" font-size="7pt" fill="#b00020">V: 1.764</text>
   <polyline points="-80.00,-10.00 -85.00,-10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="25.00,-20.00 25.00,50.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="20.00,50.00 25.00,50.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="25.00,50.00 65.00,50.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="29.85" y="47.08" font-family="sans-serif" font-size="7pt" fill="#b00020">V: 1.813</text>
+  <text x="29.85" y="47.08" font-family="DejaVu Sans, sans-serif" font-size="7pt" fill="#b00020">V: 1.813</text>
   <polyline points="-60.00,30.00 -60.00,55.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="-60.00,10.00 -60.00,30.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="-57.02" y="22.40" font-family="sans-serif" font-size="7pt" fill="#b00020">V: 1.157</text>
+  <text x="-57.02" y="22.40" font-family="DejaVu Sans, sans-serif" font-size="7pt" fill="#b00020">V: 1.157</text>
   <polyline points="-20.00,30.00 -60.00,30.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="0.00,30.00 -20.00,30.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="-20.00,-10.00 0.00,-10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
@@ -30,17 +30,17 @@
   <polyline points="25.00,-65.00 25.00,-70.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="25.00,-60.00 25.00,-65.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="105.00,-110.00 25.00,-110.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="69.57" y="-113.78" font-family="sans-serif" font-size="7pt" fill="#26a269">Supply</text>
+  <text x="69.57" y="-113.78" font-family="DejaVu Sans, sans-serif" font-size="7pt" fill="#26a269">Supply</text>
   <polyline points="-60.00,-110.00 25.00,-110.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="-60.00,-40.00 -60.00,-70.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="5.00,-40.00 -60.00,-40.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="-56.22" y="-43.28" font-family="sans-serif" font-size="7pt" fill="#b00020">V: 2.492</text>
+  <text x="-56.22" y="-43.28" font-family="DejaVu Sans, sans-serif" font-size="7pt" fill="#b00020">V: 2.492</text>
   <polyline points="-125.00,10.00 -125.00,-10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="-125.00,50.00 -125.00,55.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="125.00,-25.00 105.00,-25.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="25.00,55.00 25.00,50.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="65.00,55.00 65.00,50.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
-  <text x="110.00" y="118.34" font-family="monospace" font-size="7pt" fill="#004080">inc BC847.lib</text>
+  <text x="110.00" y="118.34" font-family="DejaVu Sans Mono, monospace" font-size="7pt" fill="#004080">inc BC847.lib</text>
   <g transform="translate(-125.00,95.00)" font-size="7pt">
     <line x1="0" y1="0" x2="0" y2="5" stroke="black" stroke-width="1" />
     <polyline points="0 5 3 5 0 10 -3 5 0 5" stroke="black" stroke-width="1" fill="none" />
@@ -73,77 +73,77 @@
     <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="113.00" y="-102.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
-  <text x="113.00" y="-77.60" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">-</text>
-  <text x="120.22" y="-88.68" font-family="sans-serif" font-size="7.0pt" fill="#000000">V2</text>
-  <text x="119.63" y="-80.49" font-family="monospace" font-size="6.0pt" fill="#000000">dc:DC=V_S</text>
-  <text x="122.17" y="-69.83" font-family="sans-serif" font-size="7.0pt" fill="#b00020">I: -2.969m</text>
+  <text x="113.00" y="-99.83" font-family="DejaVu Sans, sans-serif" font-size="8.0" text-anchor="middle" fill="#0000cc">+</text>
+  <text x="113.00" y="-74.83" font-family="DejaVu Sans, sans-serif" font-size="8.0" text-anchor="middle" fill="#0000cc">-</text>
+  <text x="120.22" y="-88.68" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">V2</text>
+  <text x="119.63" y="-80.49" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">dc:DC=V_S</text>
+  <text x="122.17" y="-69.83" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#b00020">I: -2.969m</text>
   <g transform="translate(-125.00,75.00) scale(-1,1)" font-size="7pt">
     <circle cx="0" cy="0" r="10" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="-133.00" y="62.40" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">+</text>
-  <text x="-133.00" y="87.40" font-family="sans-serif" font-size="8.0" text-anchor="middle" dominant-baseline="central" fill="#0000cc">-</text>
-  <text x="-139.27" y="78.22" font-family="sans-serif" font-size="7.0pt" fill="#000000" text-anchor="end">V1</text>
-  <text x="-136.16" y="107.36" font-family="monospace" font-size="6.0pt" fill="#000000" text-anchor="end">dc:DC=0</text>
-  <text x="-92.60" y="117.72" font-family="monospace" font-size="6.0pt" fill="#000000" text-anchor="end">ac:MAG=1|PHASE=0</text>
-  <text x="65.62" y="128.50" font-family="monospace" font-size="6.0pt" fill="#000000" text-anchor="end">pulse:V1=0|V2=0.3|TD=0|TR=1n|TF=1n|PW=499n|PER=1u</text>
+  <text x="-133.00" y="65.17" font-family="DejaVu Sans, sans-serif" font-size="8.0" text-anchor="middle" fill="#0000cc">+</text>
+  <text x="-133.00" y="90.17" font-family="DejaVu Sans, sans-serif" font-size="8.0" text-anchor="middle" fill="#0000cc">-</text>
+  <text x="-139.27" y="78.22" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000" text-anchor="end">V1</text>
+  <text x="-136.16" y="107.36" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000" text-anchor="end">dc:DC=0</text>
+  <text x="-92.60" y="117.72" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000" text-anchor="end">ac:MAG=1|PHASE=0</text>
+  <text x="65.62" y="128.50" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000" text-anchor="end">pulse:V1=0|V2=0.3|TD=0|TR=1n|TF=1n|PW=499n|PER=1u</text>
   <g transform="translate(0.00,50.00) scale(-1,1) rotate(90.000)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="2.50" y="66.00" font-family="sans-serif" font-size="7.0pt" fill="#000000" text-anchor="end">R8</text>
-  <text x="9.50" y="76.50" font-family="monospace" font-size="6.0pt" fill="#000000" text-anchor="end">100k</text>
+  <text x="2.50" y="66.00" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000" text-anchor="end">R8</text>
+  <text x="9.50" y="76.50" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000" text-anchor="end">100k</text>
   <g transform="translate(65.00,5.00)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="74.05" y="5.15" font-family="sans-serif" font-size="7.0pt" fill="#000000">R7</text>
-  <text x="74.83" y="14.76" font-family="monospace" font-size="6.0pt" fill="#000000">10k</text>
+  <text x="74.05" y="5.15" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">R7</text>
+  <text x="74.83" y="14.76" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">10k</text>
   <g transform="translate(25.00,75.00)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="35.22" y="75.93" font-family="sans-serif" font-size="7.0pt" fill="#000000">R6</text>
-  <text x="35.22" y="84.37" font-family="monospace" font-size="6.0pt" fill="#000000">1k</text>
+  <text x="35.22" y="75.93" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">R6</text>
+  <text x="35.22" y="84.37" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">1k</text>
   <g transform="translate(25.00,-90.00)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="34.05" y="-90.38" font-family="sans-serif" font-size="7.0pt" fill="#000000">R5</text>
-  <text x="33.89" y="-79.72" font-family="monospace" font-size="6.0pt" fill="#000000">2.7k</text>
+  <text x="34.05" y="-90.38" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">R5</text>
+  <text x="33.89" y="-79.72" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">2.7k</text>
   <g transform="translate(-60.00,75.00)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="-50.00" y="74.50" font-family="sans-serif" font-size="7.0pt" fill="#000000">R4</text>
-  <text x="-50.50" y="84.50" font-family="monospace" font-size="6.0pt" fill="#000000">1k</text>
+  <text x="-50.00" y="74.50" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">R4</text>
+  <text x="-50.50" y="84.50" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">1k</text>
   <g transform="translate(-20.00,10.00) scale(-1,1)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="-29.37" y="-0.21" font-family="sans-serif" font-size="7.0pt" fill="#000000" text-anchor="end">R3</text>
-  <text x="-28.96" y="8.82" font-family="monospace" font-size="6.0pt" fill="#000000" text-anchor="end">3k</text>
+  <text x="-29.37" y="-0.21" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000" text-anchor="end">R3</text>
+  <text x="-28.96" y="8.82" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000" text-anchor="end">3k</text>
   <g transform="translate(-60.00,-90.00)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="-51.00" y="-89.60" font-family="sans-serif" font-size="7.0pt" fill="#000000">R2</text>
-  <text x="-50.55" y="-80.39" font-family="monospace" font-size="6.0pt" fill="#000000">82k</text>
+  <text x="-51.00" y="-89.60" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">R2</text>
+  <text x="-50.55" y="-80.39" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">82k</text>
   <g transform="translate(-125.00,30.00)" font-size="7pt">
     <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1" />
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="-115.00" y="30.00" font-family="sans-serif" font-size="7.0pt" fill="#000000">R1</text>
-  <text x="-115.00" y="39.50" font-family="monospace" font-size="6.0pt" fill="#000000">2k</text>
+  <text x="-115.00" y="30.00" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">R1</text>
+  <text x="-115.00" y="39.50" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">2k</text>
   <g transform="translate(15.00,-40.00)" font-size="7pt">
     <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
     <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
@@ -151,8 +151,8 @@
     <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1" />
     <polyline points="8 8 6.2 3.4 3.4 6.2" stroke="black" stroke-width="0" fill="black" />
   </g>
-  <text x="29.05" y="-37.81" font-family="sans-serif" font-size="7.0pt" fill="#000000">Q2</text>
-  <text x="30.00" y="-26.00" font-family="monospace" font-size="6.0pt" fill="#000000">BC847</text>
+  <text x="29.05" y="-37.81" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">Q2</text>
+  <text x="30.00" y="-26.00" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">BC847</text>
   <g transform="translate(-70.00,-10.00)" font-size="7pt">
     <polyline points="10 -20 10 -10 0 0" stroke="black" stroke-width="1" fill="none" />
     <polyline points="10 20 10 10 0 0" stroke="black" stroke-width="1" fill="none" />
@@ -160,52 +160,52 @@
     <line x1="-10" y1="0" x2="0" y2="0" stroke="black" stroke-width="1" />
     <polyline points="8 8 6.2 3.4 3.4 6.2" stroke="black" stroke-width="0" fill="black" />
   </g>
-  <text x="-54.00" y="-23.50" font-family="sans-serif" font-size="7.0pt" fill="#000000">Q1</text>
-  <text x="-55.00" y="-12.50" font-family="monospace" font-size="6.0pt" fill="#000000">BC847</text>
+  <text x="-54.00" y="-23.50" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">Q1</text>
+  <text x="-55.00" y="-12.50" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">BC847</text>
   <g transform="translate(105.00,5.00)" font-size="7pt">
     <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2" />
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="117.33" y="4.37" font-family="sans-serif" font-size="7.0pt" fill="#000000">C5</text>
-  <text x="116.94" y="15.93" font-family="monospace" font-size="6.0pt" fill="#000000">100p</text>
+  <text x="117.33" y="4.37" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">C5</text>
+  <text x="116.94" y="15.93" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">100p</text>
   <g transform="translate(65.00,-45.00)" font-size="7pt">
     <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2" />
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="77.00" y="-45.00" font-family="sans-serif" font-size="7.0pt" fill="#000000">C4</text>
-  <text x="75.00" y="-33.00" font-family="monospace" font-size="6.0pt" fill="#000000">100n</text>
+  <text x="77.00" y="-45.00" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">C4</text>
+  <text x="75.00" y="-33.00" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">100n</text>
   <g transform="translate(65.00,75.00)" font-size="7pt">
     <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2" />
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="76.16" y="75.54" font-family="sans-serif" font-size="7.0pt" fill="#000000">C3</text>
-  <text x="76.55" y="84.76" font-family="monospace" font-size="6.0pt" fill="#000000">200u</text>
+  <text x="76.16" y="75.54" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">C3</text>
+  <text x="76.55" y="84.76" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">200u</text>
   <g transform="translate(0.00,10.00)" font-size="7pt">
     <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2" />
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="9.51" y="10.17" font-family="sans-serif" font-size="7.0pt" fill="#000000">C2</text>
-  <text x="9.18" y="19.79" font-family="monospace" font-size="6.0pt" fill="#000000">C_c</text>
+  <text x="9.51" y="10.17" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">C2</text>
+  <text x="9.18" y="19.79" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">C_c</text>
   <g transform="translate(-105.00,-10.00) rotate(270.000)" font-size="7pt">
     <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2" />
     <line x1="-7" y1="2" x2="7" y2="2" stroke="black" stroke-width="2" />
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <text x="-95.00" y="-24.35" font-family="sans-serif" font-size="7.0pt" fill="#000000">C1</text>
-  <text x="-96.67" y="-15.52" font-family="monospace" font-size="6.0pt" fill="#000000">1u</text>
+  <text x="-95.00" y="-24.35" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#000000">C1</text>
+  <text x="-96.67" y="-15.52" font-family="DejaVu Sans Mono, monospace" font-size="6.0pt" fill="#000000">1u</text>
   <g transform="translate(125.00,-25.00) rotate(270.000)" font-size="7pt">
     <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1" />
   </g>
-  <text x="129.57" y="-22.85" font-family="sans-serif" font-size="7.0pt" fill="#26a269">out</text>
+  <text x="129.57" y="-22.85" font-family="DejaVu Sans, sans-serif" font-size="7.0pt" fill="#26a269">out</text>
   <circle cx="-20.00" cy="30.00" r="2.00" fill="#000000" />
   <circle cx="0.00" cy="-10.00" r="2.00" fill="#000000" />
   <circle cx="-60.00" cy="-40.00" r="2.00" fill="#000000" />

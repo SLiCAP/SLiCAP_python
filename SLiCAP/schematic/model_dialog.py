@@ -69,7 +69,8 @@ class ModelDialog(QDialog):
                  edit_mode: bool = False,
                  style=None,
                  parent=None,
-                 sch_type: str = "slicap"):
+                 sch_type: str = "slicap",
+                 latex_scale=None):
         super().__init__(parent, Qt.Window)
         # the dialect of the schematic the block belongs to: SLiCAP models
         # have fixed parameter sets (prefilled), NGspice models do not
@@ -143,6 +144,9 @@ class ModelDialog(QDialog):
         self._show_cb.setChecked(show)
         self._show_cb.toggled.connect(self._update_action_button)
         outer.addWidget(self._show_cb)
+        from .latex_scale_field import LatexScaleField
+        self._scale_field = LatexScaleField(latex_scale, self._style.LATEX_SCALE)
+        outer.addWidget(self._scale_field)
 
         # ── action buttons ────────────────────────────────────────────────────
         self._btn_box = QDialogButtonBox(QDialogButtonBox.Cancel)
@@ -289,3 +293,8 @@ class ModelDialog(QDialog):
 
     def show_on_schematic(self) -> bool:
         return self._show_cb.isChecked()
+
+    def latex_scale(self):
+        """The item's LaTeX scale: None follows the schematic's default."""
+        return self._scale_field.value()
+

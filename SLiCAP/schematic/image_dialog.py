@@ -168,10 +168,10 @@ class ImageDialog(QDialog):
         if src is None:
             return
         from PySide6.QtWidgets import QApplication, QMessageBox
-        from . import make_schematic
+        from . import export_images
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            make_schematic(src)
+            export_images(src)
         except Exception as exc:
             QApplication.restoreOverrideCursor()
             QMessageBox.warning(self, self._TITLES[self._link_kind],
