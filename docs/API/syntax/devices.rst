@@ -224,7 +224,11 @@ Examples
 F: Current-controlled current source
 ------------------------------------
 
-Below the syntax, the symbol and the matrix stamp for a CCCS: model F_. 
+Below the syntax, the symbol and the matrix stamp for a CCCS: model F_.
+
+The controlling current is the current of an element in the netlist whose
+current is an unknown of the network equations, such as a voltage source, an inductor, or a controlled source with a current variable. In
+SPICE, the controlling element must be a voltage source. 
 
 .. _F:
 
@@ -237,12 +241,12 @@ Model F
 	 
 	 Syntax, symbol and matrix stamp of a CCCS model F
 	 
-Please notice the independent variable :math:`I_{Fx}` which is added to the vector of independent variables equals the product of the denominator of the current gain :math:`Df_s` and the input current :math:`Ii_{Fx}`, rather than the input current.
+The output current :math:`I_{Fx}` of the source is added to the vector with dependent variables. Its matrix row holds the denominator of the current gain in the column of :math:`I_{Fx}`, and minus the numerator in the column of the controlling current.
 
 +-------+------------------+-------+------+
 | name  | description      | type  | I    |
 +=======+==================+=======+======+
-| F     | VCVS             | stamp | TRUE |
+| F     | CCCS             | stamp | TRUE |
 +-------+------------------+-------+------+
 
 Parameters model F
@@ -365,6 +369,8 @@ H: Current-controlled voltage source
 ------------------------------------
 
 SLiCAP has two models for current-controlled voltage sources: model H_ and model HZ_. The later one includes a series output impedance but has a compact matrix stamp.
+
+As with model F_, the controlling current is the current of an element in the netlist whose current is an unknown of the network equations, such as a voltage source, an inductor, or a controlled source with a current variable. In SPICE, the controlling element must be a voltage source.
 
 Models
 ~~~~~~

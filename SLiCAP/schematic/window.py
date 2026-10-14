@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QMenuBar,
 )
-from PySide6.QtCore import Qt, QEvent, QTimer
+from PySide6.QtCore import Qt, QEvent, QTimer, QSortFilterProxyModel
 from PySide6.QtGui import QAction, QKeySequence
 
 import SLiCAP.SLiCAPconfigure as ini
@@ -22,6 +22,42 @@ from .border_item import BorderItem
 _SLICAP_SVG        = Path(__file__).parent.parent / "files" / "symbols" / "slicap"  / "Symbols.slicap_sym"
 _SLICAP_DIR        = _SLICAP_SVG.parent
 _NGSPICE_SVG       = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.spice_sym"
+
+class _SidecarHidingModel(QSortFilterProxyModel):
+    """Hides a document's sidecar directories, <name>.<ext>.cache, in the
+    file dialogs. They are not documents, but their names end in a
+    document's extension and read like one in a Save as list (Anton,
+    2026-10-14). Works because the editor uses Qt's own dialogs
+    (AA_DontUseNativeDialogs in main.py): a native chooser ignores the
+    proxy model."""
+
+    def filterAcceptsRow(self, row, parent) -> bool:
+        model = self.sourceModel()
+        idx = model.index(row, 0, parent)
+        return not (model.isDir(idx) and model.fileName(idx).endswith(".cache"))
+
+
+def document_file_dialog(parent, title: str, directory, filters: str,
+                         save: bool, file_name: "str | None" = None) -> "str | None":
+    """The one file dialog for documents, Open and Save as alike. It starts
+    in *directory*, with *file_name* preselected when given (Save as
+    offers the current name), and hides the sidecar directories. Returns
+    the chosen path, or None when cancelled."""
+    dlg = QFileDialog(parent, title, str(directory), filters)
+    dlg.setProxyModel(_SidecarHidingModel(dlg))
+    if save:
+        dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        dlg.setFileMode(QFileDialog.FileMode.AnyFile)
+    else:
+        dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
+        dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
+    if file_name:
+        dlg.selectFile(file_name)
+    if dlg.exec() != QDialog.DialogCode.Accepted:
+        return None
+    files = dlg.selectedFiles()
+    return files[0] if files else None
+
 
 _FILTER_SLICAP      = "SLiCAP Schematic (*.slicap_sch)"
 _FILTER_NGSPICE     = "NGspice Schematic (*.spice_sch)"
@@ -911,9 +947,10 @@ class CanvasPanel(QWidget):
         folder = "posters" if self._sch_type == 'poster' else "sch"
         start_dir = (project.subdir_for(self._current_path, folder)
                      if self._current_path else project.subdir(folder))
-        path, _ = QFileDialog.getSaveFileName(
+        path = document_file_dialog(
             self, "Save Poster" if self._sch_type == 'poster' else "Save Schematic",
-            str(start_dir), filt)
+            start_dir, filt, save=True,
+            file_name=Path(self._current_path).name if self._current_path else None)
         if not path:
             return
         p = Path(path)
@@ -2705,8 +2742,8 @@ class MainWindow(QMainWindow):
     # -- file handlers --------------------------------------------------------
 
     def _on_open(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Open Schematic", str(project.subdir("sch")), self._open_filter())
+        path = document_file_dialog(
+            self, "Open Schematic", project.subdir("sch"), self._open_filter(), save=False)
         if path:
             self.load_file(Path(path))
 

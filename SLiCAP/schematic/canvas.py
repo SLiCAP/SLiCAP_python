@@ -2945,8 +2945,15 @@ class SchematicScene(QGraphicsScene):
                         if not (event.modifiers() & Qt.ControlModifier):
                             self.clearSelection()
                         item.setSelected(True)
+                    # A vertex drag reshapes ONE wire: only when that wire
+                    # is the whole selection. In a group selection a click
+                    # near a wire end moves the group, like a click on its
+                    # body or on any other member; a vertex drag there
+                    # replaced the group by the wire (Anton, 2026-10-14,
+                    # after item_at started giving the wire its ends inside
+                    # the component boxes).
                     v = item.vertex_near(raw)
-                    if v is not None:
+                    if v is not None and self.selectedItems() == [item]:
                         self._pre_drag_data = self.to_data()
                         self._vdrag_moved   = False
                         self._vdrag_wire = item

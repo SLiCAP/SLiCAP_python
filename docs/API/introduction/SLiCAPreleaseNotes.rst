@@ -359,6 +359,12 @@ simple **SVG editor** (``Draw`` menu) to illustrate schematics, and with a
    - A click on a wire where it enters a component's selection box
      selects the wire. It selected the component, so a short wire
      between two pins could not be selected or given a net name.
+   - Save as offers the current file name, and the Open and Save as
+     dialogs no longer list the cache directories of the schematics.
+   - A click near the end of a wire that belongs to a group selection
+     drags the group. It dragged the wire end and replaced the selection
+     by that wire. A wire end is dragged only when the wire is the only
+     selected item.
    - A segmentation fault after mirroring a component and then editing
      its properties is fixed. The labels of a mirrored component were
      left behind in Qt's spatial index, and the editor crashed on the
