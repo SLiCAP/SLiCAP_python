@@ -15,8 +15,10 @@ formatters print the terms of an equation in the order they were written.
    ``method="tc"`` returns the first-order (expanded) MNA matrix and, in
    addition, the incidence matrix of the reactive elements (``.Nr``), the
    matrix of their values (``.Cr``) and their names (``.reactances``), with
-   C = Nr Cr Nr^T. They give the time-constant matrix Nr^T G^-1 Nr Cr of the
-   network. See :doc:`/userguide/matrices`.
+   :math:`\mathbf{C} = \mathbf{N}_r \mathbf{C}_r \mathbf{N}_r^T`. They give 
+   the time-constant matrix 
+   :math:`\mathbf{T} = \mathbf{N}_r^T \mathbf{G}^{-1} \mathbf{N}_r \mathbf{C}_r`
+   of the    network. See :doc:`/userguide/matrices`.
 
 #. **Readable state-space realizations.** ``doStateSpace()`` chooses the
    state coordinates on the pivots of the reduced row echelon form of the
