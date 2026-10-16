@@ -2537,8 +2537,59 @@ class SchematicScene(QGraphicsScene):
                              origin=([self.origin_pos().x(), self.origin_pos().y()]
                                      if self.show_origin else None))
 
+    def convert_file_scales(self, data) -> None:
+        """Express the LaTeX scales of the records of a FILE in the meaning
+        of this schematic's style, once, when the file is read.
+
+        An item of an older file gets the scale that keeps its size (Anton,
+        2026-10-11): an own scale is converted with the style's
+        ITEM_SCALE_FACTOR, an item without one ("legacy") gets the old
+        scale of its kind, a fragment without one keeps its stored box, and
+        a scale that equals the default becomes the default. Without old
+        style values, the old defaults: tables 60 % of the label font size
+        = 21 %, blocks 0.75 x 30 % = 22.5 % (in the meaning of 20 units per
+        x-height, hence the factor).
+
+        This is a file-boundary step, done by load_file_data(). It was part
+        of from_data(), which undo, redo and the re-render round trips
+        from_data(to_data()) also use: every undo multiplied a table's own
+        scale by the factor again, and the table grew (a student's report,
+        2026-10-16)."""
+        k = self.style.ITEM_SCALE_FACTOR
+        def item_scale(v, legacy):
+            if v is None:
+                return None
+            v = legacy if v == "legacy" else v * k
+            if v is None or abs(v - self.style.LATEX_SCALE) < 0.05:
+                return None
+            return v
+        table_legacy = (self.style.LEGACY_TABLE_SCALE
+                        if self.style.LEGACY_TABLE_SCALE is not None else 21.0 * k)
+        block_legacy = (self.style.LEGACY_BLOCK_SCALE
+                        if self.style.LEGACY_BLOCK_SCALE is not None else 22.5 * k)
+        for ld in data.libs:
+            ld.latex_scale = item_scale(getattr(ld, "latex_scale", "legacy"), block_legacy)
+        for frag in data.latex_fragments:
+            frag.latex_scale = ("box" if frag.latex_scale == "legacy"
+                                else item_scale(frag.latex_scale, None))
+        for pd in data.parameters:
+            pd.latex_scale = item_scale(pd.latex_scale, table_legacy)
+        for ad in data.analysis_items:
+            ad.latex_scale = item_scale(ad.latex_scale, block_legacy)
+        for md in data.model_defs:
+            md.latex_scale = item_scale(md.latex_scale, table_legacy)
+
+    def load_file_data(self, data, library) -> list:
+        """Populate the scene from the records of a FILE: convert_file_scales()
+        then from_data(). The file loaders use this; undo and the re-render
+        round trips use from_data() on records that are current already."""
+        self.convert_file_scales(data)
+        return self.from_data(data, library)
+
     def from_data(self, data, library) -> list:
-        """Populate the scene from a SchematicData object.
+        """Populate the scene from a SchematicData object whose LaTeX scales
+        are current: None (the default), a number, or "box" for a fragment.
+        A file's records go through load_file_data() first.
 
         Returns the symbol names that could NOT be found, so a caller that
         must be correct - the netlister - can refuse instead of writing a
@@ -2611,36 +2662,16 @@ class SchematicScene(QGraphicsScene):
 
         # One library BLOCK per schematic: merge every stored LibraryData
         # (new single block, or legacy one-file-per-item schematics) into it.
-        # LaTeX scales: an item of an older file gets the scale that keeps its
-        # size (Anton, 2026-10-11): an own scale is converted with the
-        # style's ITEM_SCALE_FACTOR, an item without one ("legacy") gets the
-        # old scale of its kind, and a scale that equals the default becomes
-        # the default. Without old style values, the old defaults: tables 60 %
-        # of the label font size = 21 %, blocks 0.75 x 30 % = 22.5 % (in the
-        # meaning of 20 units per x-height, hence the factor).
-        k = self.style.ITEM_SCALE_FACTOR
-        def item_scale(v, legacy):
-            if v is None:
-                return None
-            v = legacy if v == "legacy" else v * k
-            if v is None or abs(v - self.style.LATEX_SCALE) < 0.05:
-                return None
-            return v
-        table_legacy = (self.style.LEGACY_TABLE_SCALE
-                        if self.style.LEGACY_TABLE_SCALE is not None else 21.0 * k)
-        block_legacy = (self.style.LEGACY_BLOCK_SCALE
-                        if self.style.LEGACY_BLOCK_SCALE is not None else 22.5 * k)
-
-        lib_entries, lib_pos, lib_show, lib_scale = [], None, True, "legacy"
+        lib_entries, lib_pos, lib_show, lib_scale = [], None, True, None
         for ld in data.libs:
             if lib_pos is None:
                 lib_pos  = QPointF(ld.x, ld.y)
                 lib_show = getattr(ld, "show", True)
-                lib_scale = getattr(ld, "latex_scale", "legacy")
+                lib_scale = getattr(ld, "latex_scale", None)
             lib_entries.extend(dict(e) for e in ld.entries)
         if lib_entries:
             self.addItem(LibraryItem(lib_entries, lib_pos, show=lib_show,
-                                     latex_scale=item_scale(lib_scale, block_legacy)))
+                                     latex_scale=lib_scale))
 
         for img in data.images:
             im = ImageItem(img.file_path, img.display_width,
@@ -2655,8 +2686,7 @@ class SchematicScene(QGraphicsScene):
                 frag.display_width, frag.display_height,
                 QPointF(frag.x, frag.y), color=frag.color,
                 snippet=frag.snippet,
-                latex_scale=("box" if frag.latex_scale == "legacy"
-                             else item_scale(frag.latex_scale, None)),
+                latex_scale=frag.latex_scale,
             )
             lf.setZValue(frag.z)
             self.addItem(lf)
@@ -2666,14 +2696,14 @@ class SchematicScene(QGraphicsScene):
                 [tuple(p) for p in pd.params], pd.preamble_path,
                 QPointF(pd.x, pd.y),
                 show=getattr(pd, "show", True),
-                latex_scale=item_scale(pd.latex_scale, table_legacy),
+                latex_scale=pd.latex_scale,
             ))
 
         for ad in data.analysis_items:
             self.addItem(AnalysisItem(ad.source, ad.detector, ad.lgref,
                                       QPointF(ad.x, ad.y),
                                       show=getattr(ad, "show", True),
-                                      latex_scale=item_scale(ad.latex_scale, block_legacy)))
+                                      latex_scale=ad.latex_scale))
 
         for hd in data.hyperlinks:
             h = HyperlinkItem(hd.url, hd.label, QPointF(hd.x, hd.y))
@@ -2690,7 +2720,7 @@ class SchematicScene(QGraphicsScene):
                 md.preamble_path,
                 QPointF(md.x, md.y),
                 show=getattr(md, "show", True),
-                latex_scale=item_scale(md.latex_scale, table_legacy),
+                latex_scale=md.latex_scale,
             ))
 
         if data.border is not None:

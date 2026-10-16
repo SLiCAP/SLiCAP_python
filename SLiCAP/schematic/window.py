@@ -900,7 +900,7 @@ class CanvasPanel(QWidget):
         self._scene.cache_dir = project.cache_path_for(path)
         self._scene.file_path = path
         self._build_library(project.symbols_path_for(path))
-        missing = self._scene.from_data(data, self._library)
+        missing = self._scene.load_file_data(data, self._library)
         if missing:
             QMessageBox.warning(
                 self, "Missing symbols",

@@ -149,6 +149,21 @@ class instruction(object):
         Vector with dependent variables (sympy.Matrix).
         """
 
+        self.Nr          = None
+        """
+        Incidence matrix of the reactive elements (sympy.Matrix), method 'tc'.
+        """
+
+        self.Cr          = None
+        """
+        Matrix of the reactive element values (sympy.Matrix), method 'tc'.
+        """
+
+        self.reactances  = None
+        """
+        Names of the columns of Nr (list of str), method 'tc'.
+        """
+
         self.denom       = []
         """
         Laplace poly of denominator (sympy.Expr).
@@ -486,6 +501,9 @@ class instruction(object):
         self.stateSpace  = None
         self.orthogonal  = None
         self.Dv          = None
+        self.Nr          = None
+        self.Cr          = None
+        self.reactances  = None
         self.denom       = []
         self.numer       = []
         self.laplace     = []
@@ -741,6 +759,11 @@ class instruction(object):
                          eigenvalues of its exact state-space realization.
                          Stepped analyses and symbolic circuits use the
                          determinant.
+                       - 'tc': only for the data type 'matrix', without a
+                         conversion type and stepping: the first-order matrix
+                         as with 'state', plus the incidence matrix (.Nr),
+                         the values (.Cr) and the names (.reactances) of the
+                         reactive elements, C = Nr Cr Nr^T.
         :type method: str, NoneType
 
         :Example:
@@ -748,11 +771,11 @@ class instruction(object):
         >>> my_instr = instruction()
         >>> my_instr.setMethod('state')
         """
-        if method in (None, 'det', 'state'):
+        if method in (None, 'det', 'state', 'tc'):
             self.method = method
         else:
             self.errors += 1
-            print("Error: unknown method '%s'; use None, 'det' or 'state'." % method)
+            print("Error: unknown method '%s'; use None, 'det', 'state' or 'tc'." % method)
         return
 
     def setLoopGainType(self, lgType):

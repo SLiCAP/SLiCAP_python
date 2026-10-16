@@ -74,7 +74,7 @@ def _load_scene(input_path: Path):
     scene.sch_type = "ngspice" if is_ngspice else "slicap"    # as the editor sets it
     scene.style = Style(project.ini_path_for(input_path))     # saved style
     scene.cache_dir = project.cache_path_for(input_path)      # render cache
-    missing = scene.from_data(data, library)
+    missing = scene.load_file_data(data, library)
     if is_ngspice and not missing:
         scene.load_op_raw(input_path)     # bias annotations in the export
     if missing:

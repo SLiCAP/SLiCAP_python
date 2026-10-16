@@ -1,8 +1,10 @@
 from collections import namedtuple
 import numpy as np
 import sympy as sp
-from sympy import QQ
+from sympy import QQ, EX
+from sympy.polys.constructor import construct_domain
 from sympy.polys.matrices import DomainMatrix
+from sympy.polys.matrices.exceptions import DMNonInvertibleMatrixError
 import SLiCAP.SLiCAPconfigure as ini
 
 
@@ -72,65 +74,101 @@ def _nullspace(A):
     return [B[j, :].T for j in range(B.rows)]
 
 
-def _unit(v):
+# ---------------------------------------------------------------------
+#  The reduction works on DomainMatrix (Anton, 2026-10-15)
+# ---------------------------------------------------------------------
+# The elimination divides (Schur complements, null spaces, rref). On sympy
+# expressions every division leaves an unreduced sum of fractions: the
+# entries grow from round to round, and every rank decision needs a
+# heuristic simplify() to recognise a zero (one rref of the symbolic G of
+# VampQ: 244 s). In a DomainMatrix over the field of rational functions
+# QQ(symbols, s) every entry is one reduced fraction p/q, kept reduced by
+# every operation: the expressions stay compact, a zero is recognised
+# exactly, and zeros are skipped (sparse storage). The same rref takes
+# 0.1 s. The Laplace variable is not in the field: it occurs only in the
+# right-hand side S(s) and in F(s), which are carried as lists of
+# coefficient matrices [X0, X1, ...] for X0 + s X1 + ...; numeric matrices
+# therefore stay over QQ. Minor expansion does not divide and gains nothing (det() stays as
+# it is). Element values that are not rational functions of symbols, such
+# as sqrt(L_1*L_2) of a unity coupling, would become an independent
+# generator g and lose g**2 = L_1*L_2; the domain is then EX (sympy
+# expressions with their own simplification), as before.
+
+def _domain(*mats):
     """
-    The vector v scaled (exactly) so that its entry of largest magnitude is
-    1. Basis vectors of the reduction come from the matrices themselves and
-    carry their scale - a row of C is measured in farads - and a basis with
-    entries of 1e-9 next to entries of 1 gives a state matrix whose float
-    eigenvalues are wrong by half (pzNetwork zeros, 2026-09-12). Exact
-    rescaling of every basis vector is a similarity: it changes nothing but
-    the conditioning.
+    The field for the reduction of the matrices mats (free of the Laplace
+    variable): QQ for numeric matrices, the rational functions of their
+    symbols, or EX when an entry is not a rational function of symbols.
     """
-    if not all(e.is_number for e in v):
-        return v                                   # symbolic: scale has no meaning
-    mx = max((abs(e) for e in v if e != 0), default=None, key=lambda e: float(e))
-    return v if mx is None or mx == 1 else v/mx
+    entries = [e for M in mats for e in M]
+    K, _ = construct_domain(entries or [sp.Integer(0)], field=True)
+    gens = getattr(K, "symbols", ())
+    if K.is_EX or not all(g.is_Symbol or g is sp.pi for g in gens):
+        return EX
+    return K
+
+
+def _dm(M, K):
+    """
+    The sympy matrix M as a DomainMatrix over K.
+    """
+    return DomainMatrix([[K.from_sympy(e) for e in M.row(i)] for i in range(M.rows)],
+                        M.shape, K)
+
+
+def _pivotBasis(A):
+    """
+    Returns (P, N) for a DomainMatrix A: a basis of the variables of A
+    normalised on its pivots. P holds the unit columns at the pivot columns
+    of the reduced row echelon form R of A, N the null space of A with a 1
+    at one free column, 0 at the other free columns and minus the column of
+    R at the pivots. [P N] is invertible, and the coordinates of x in this
+    basis are R x (along P) and the free entries of x (along N).
+
+    All bases of the reduction are chosen this way (Anton, 2026-10-15): a
+    coordinate is then a network variable or a combination with the
+    coefficients of R, e.g. the voltage across a floating capacitor, and
+    the element values do not accumulate in the basis from round to round.
+    The earlier choice, the rows of C themselves, carried the element values
+    into every coordinate: correct, but unreadable symbolic matrices.
+    """
+    K = A.domain
+    m, n = A.shape
+    if m == 0 or n == 0:
+        piv, R = (), []
+    else:
+        Rd, piv = A.rref()
+        R = Rd.to_list()
+    unit = lambda j: DomainMatrix([[K.one] if i == j else [K.zero] for i in range(n)], (n, 1), K)
+    P = [unit(p) for p in piv]
+    N = []
+    for f in (j for j in range(n) if j not in piv):
+        v = [K.zero]*n
+        v[f] = K.one
+        for i, p in enumerate(piv):
+            v[p] = -R[i][f]
+        N.append(DomainMatrix([[e] for e in v], (n, 1), K))
+    return P, N
+
+
+def _hstack(cols, rows, K):
+    return DomainMatrix.hstack(*cols) if cols else DomainMatrix.zeros((rows, 0), K)
 
 
 def _split(C):
     """
-    Returns (U, V, r) with U C V = diag(C11, 0): V holds a basis of the row
-    space of C followed by a basis of its null space, U a basis of the column
-    space (as rows) followed by the left null space; r = rank(C) and C11 is
-    invertible. Every basis vector is normalised (_unit).
+    Returns (U, V, r) for a DomainMatrix C with U C V = diag(C11, 0): V holds
+    the unit columns at the pivot columns of C followed by its null space,
+    U the unit rows at the pivot rows of C followed by its left null space
+    (_pivotBasis); r = rank(C) and C11 is the invertible submatrix of C at
+    those rows and columns.
     """
-    n = C.rows
-    Vdyn = [_unit(v) for v in _columnspace(C.T)]
-    Valg = [_unit(v) for v in _nullspace(C)]
-    Udyn = [_unit(v).T for v in _columnspace(C)]
-    Ualg = [_unit(v).T for v in _nullspace(C.T)]
-    V = sp.Matrix.hstack(*(Vdyn + Valg)) if (Vdyn + Valg) else sp.eye(n)
-    U = sp.Matrix.vstack(*(Udyn + Ualg)) if (Udyn + Ualg) else sp.eye(n)
+    n = C.shape[0]
+    Vdyn, Valg = _pivotBasis(C)
+    Udyn, Ualg = _pivotBasis(C.transpose())
+    V = _hstack(Vdyn + Valg, n, C.domain)
+    U = _hstack(Udyn + Ualg, n, C.domain).transpose()
     return U, V, len(Vdyn)
-
-
-def _polyCoeffs(P, s):
-    """
-    Coefficient matrices [P0, P1, ...] of a matrix P polynomial in s:
-    P = P0 + s P1 + s^2 P2 + ...
-    """
-    P = sp.expand(P)
-    d = 0
-    for e in P:
-        if e != 0:
-            d = max(d, sp.Poly(e, s).degree())
-    return [P.applyfunc(lambda e: sp.Poly(e, s).coeff_monomial(s**k) if e != 0 else 0)
-            for k in range(d + 1)]
-
-
-def _rowComplement(W, m):
-    """
-    Unit rows that complete the rows of W (q x m, full row rank) to a basis.
-    """
-    comp, base = [], W
-    for i in range(m):
-        e = sp.zeros(1, m)
-        e[0, i] = 1
-        if _rank(sp.Matrix.vstack(base, e)) > _rank(base):
-            comp.append(e)
-            base = sp.Matrix.vstack(base, e)
-    return sp.Matrix.vstack(*comp) if comp else sp.zeros(0, m)
 
 
 def _reduce(G, C):
@@ -161,71 +199,107 @@ def _reduce(G, C):
     """
     s = ini.laplace
     n = G.rows
-    return _eliminate(G, C, sp.eye(n), sp.eye(n), sp.zeros(n, n), s)
+    K = _domain(G, C)
+    eye, zero = DomainMatrix.eye(n, K), DomainMatrix.zeros((n, n), K)
+    try:
+        A, Pin, Pout, D = _eliminate(_dm(G, K), _dm(C, K), [eye], eye, [zero])
+    except DMNonInvertibleMatrixError:
+        raise sp.matrices.exceptions.NonInvertibleMatrixError(
+            "the pencil (G, C) is singular: the network has no unique solution")
+    Dfull = sp.zeros(n, n)
+    for k, Dk in enumerate(D):
+        Dfull += s**k*Dk.to_Matrix()
+    return A.to_Matrix(), Pin.to_Matrix(), Pout.to_Matrix(), sp.expand(Dfull)
 
 
-def _eliminate(G, C, S, E, F, s):
+# Polynomials in s with matrix coefficients: lists [X0, X1, ...] of
+# DomainMatrix for X0 + s X1 + ...
+
+def _padd(P, Q):
+    """P + Q."""
+    if len(P) < len(Q):
+        P, Q = Q, P
+    return [P[k] + Q[k] if k < len(Q) else P[k] for k in range(len(P))]
+
+
+def _pmul(M, P):
+    """The constant matrix M times P."""
+    return [M*X for X in P]
+
+
+def _ptrim(P):
+    """P without zero coefficients of the highest powers (at least X0)."""
+    while len(P) > 1 and P[-1].is_zero_matrix:
+        P = P[:-1]
+    return P
+
+
+def _eliminate(G, C, S, E, F):
     """
     One round of the recursive elimination on (G + sC) z = S(s) b with the
     reconstruction x = E z + F(s) b of the original variables; recurses on
-    the reduced system and returns (A, P_in, P_out, D_map).
+    the reduced system and returns (A, P_in, P_out, D_map) with D_map a
+    polynomial in s (list of coefficients). G, C, E and the coefficients of
+    S and F are DomainMatrix over one field K, free of s.
     """
-    m = G.rows
-    n = S.cols
+    K = G.domain
+    Z = lambda m, n: DomainMatrix.zeros((m, n), K)
+    m = G.shape[0]
+    n = S[0].shape[1]
     if m == 0:
-        return sp.zeros(0, 0), sp.zeros(0, n), sp.zeros(n, 0), sp.expand(F)
-    r = _rank(C)
+        return Z(0, 0), Z(0, n), Z(n, 0), _ptrim(F)
+    r = C.rank()
     if r == 0:                                   # algebraic only
-        try:
-            Gi = G.inv()
-        except sp.matrices.exceptions.NonInvertibleMatrixError:
-            raise sp.matrices.exceptions.NonInvertibleMatrixError(
-                "the pencil (G, C) is singular: the network has no unique solution")
-        return sp.zeros(0, 0), sp.zeros(0, n), sp.zeros(n, 0), sp.expand(E*Gi*S + F)
+        return Z(0, 0), Z(0, n), Z(n, 0), _ptrim(_padd(_pmul(E*G.inv(), S), F))
     U, V, r = _split(C)
-    Gt, Ct, St = U*G*V, U*C*V, U*S
+    Gt, Ct, St = U*G*V, U*C*V, _pmul(U, S)
     E = E*V
     G11, G12, G21, G22 = Gt[:r, :r], Gt[:r, r:], Gt[r:, :r], Gt[r:, r:]
     C11 = Ct[:r, :r]
-    S1, S2 = St[:r, :], St[r:, :]
-    q = (m - r) - (_rank(G22) if m - r else 0)
+    S1, S2 = [X[:r, :] for X in St], [X[r:, :] for X in St]
+    q = (m - r) - (G22.rank() if m - r else 0)
     if q == 0:
         # ---- G22 invertible: Schur complement, the index-1 step
-        G22i = G22.inv() if m - r else sp.zeros(0, 0)
+        G22i = G22.inv() if m - r else Z(0, 0)
         C11i = C11.inv()
-        A = -C11i*(G11 - G12*G22i*G21)
-        Bk = [C11i*Bc for Bc in _polyCoeffs(S1 - G12*G22i*S2, s)]   # B0 + s B1 + ...
-        # derivatives of the sources in the dynamic block: y1 = z + Q(s) b
+        A = -(C11i*(G11 - G12*G22i*G21))
+        Bk = _ptrim(_pmul(C11i, _padd(S1, _pmul(-(G12*G22i), S2))))   # B0 + s B1 + ...
+        # derivatives of the sources in the dynamic block: y1 = z + Q(s) b,
+        # Q = Bhat_1 + s Bhat_2 + ... + s^(d-1) Bhat_d
         d = len(Bk) - 1
         Bhat = {}
         for k in range(d, 0, -1):
-            Bhat[k] = Bk[k] + (A*Bhat[k + 1] if k + 1 <= d else sp.zeros(r, n))
-        Pin = Bk[0] + (A*Bhat[1] if d >= 1 else sp.zeros(r, n))
-        Q = sum((s**(k - 1)*Bhat[k] for k in range(1, d + 1)), sp.zeros(r, n))
+            Bhat[k] = Bk[k] + (A*Bhat[k + 1] if k + 1 <= d else Z(r, n))
+        Pin = Bk[0] + (A*Bhat[1] if d >= 1 else Z(r, n))
+        Q = [Bhat[k] for k in range(1, d + 1)] or [Z(r, n)]
         E1, E2 = E[:, :r], E[:, r:]
         Pout = E1 - E2*G22i*G21
-        Dfull = sp.expand(Pout*Q + E2*G22i*S2 + F)
-        return A, Pin, Pout, Dfull
+        Dfull = _padd(_padd(_pmul(Pout, Q), _pmul(E2*G22i, S2)), F)
+        return A, Pin, Pout, _ptrim(Dfull)
     # ---- G22 singular: hidden constraints on the reactive variables
-    W = sp.Matrix.vstack(*[w.T for w in _nullspace(G22.T)])          # q x (m-r)
-    K = W*G21                                                       # q x r
-    if _rank(K) < q:
-        raise sp.matrices.exceptions.NonInvertibleMatrixError(
-            "the pencil (G, C) is singular: the network has no unique solution")
-    Y1 = (sp.Matrix.hstack(*[_unit(v) for v in _nullspace(K)])
-          if r > q else sp.zeros(r, 0))                             # free directions
-    Y2 = sp.Matrix.hstack(*[_unit(K.T[:, i]) for i in range(q)])    # fixed directions
-    v2 = (K*Y2).inv()*W*S2                                          # they follow the sources
-    Wc = _rowComplement(W, m - r)
-    Gn = sp.Matrix.vstack(sp.Matrix.hstack(G11*Y1, G12),
-                          sp.Matrix.hstack(Wc*G21*Y1, Wc*G22))
-    Cn = sp.Matrix.vstack(sp.Matrix.hstack(C11*Y1, sp.zeros(r, m - r)),
-                          sp.zeros(Wc.rows, r - q + m - r))
-    Sn = sp.expand(sp.Matrix.vstack(S1 - (G11 + s*C11)*Y2*v2,
-                                    Wc*S2 - Wc*G21*Y2*v2))
-    En = sp.Matrix.hstack(E[:, :r]*Y1, E[:, r:])
-    Fn = sp.expand(F + E[:, :r]*Y2*v2)
-    return _eliminate(Gn, Cn, Sn, En, Fn, s)
+    Wp, Wn = _pivotBasis(G22.transpose())
+    W = _hstack(Wn, m - r, K).transpose()                           # q x (m-r), W G22 = 0
+    Wc = _hstack(Wp, m - r, K).transpose()                          # the other equations
+    Kc = W*G21                                                      # q x r
+    if Kc.rank() < q:
+        raise DMNonInvertibleMatrixError("singular pencil")
+    Kp, Kn = _pivotBasis(Kc)
+    Y1 = _hstack(Kn, r, K)                                          # free directions
+    Y2 = _hstack(Kp, r, K)                                          # fixed directions
+    v2 = _pmul((Kc*Y2).inv()*W, S2)                                 # they follow the sources
+    Gn = DomainMatrix.vstack(DomainMatrix.hstack(G11*Y1, G12),
+                             DomainMatrix.hstack(Wc*G21*Y1, Wc*G22))
+    Cn = DomainMatrix.vstack(DomainMatrix.hstack(C11*Y1, Z(r, m - r)),
+                             Z(Wc.shape[0], r - q + m - r))
+    # (G11 + s C11) Y2 v2: the fixed reactances draw s C11 Y2 v2
+    GCv = _padd(_pmul(G11*Y2, v2), [Z(r, n)] + _pmul(C11*Y2, v2))
+    top = _padd(S1, [-X for X in GCv])
+    bot = _padd(_pmul(Wc, S2), _pmul(-(Wc*G21*Y2), v2))
+    Sn = _ptrim([DomainMatrix.vstack(t, b) for t, b in zip(_padd(top, [Z(r, n)]*len(bot)),
+                                                          _padd(bot, [Z(Wc.shape[0], n)]*len(top)))])
+    En = DomainMatrix.hstack(E[:, :r]*Y1, E[:, r:])
+    Fn = _padd(F, _pmul(E[:, :r]*Y2, v2))
+    return _eliminate(Gn, Cn, Sn, En, Fn)
 
 
 def _reducePencil(G, C):

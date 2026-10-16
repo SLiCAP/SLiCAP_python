@@ -21,13 +21,13 @@ _INJECTION_DATATYPES = ('laplace', 'numer', 'denom', 'poles', 'zeros', 'pz',
 
 def _resolveMethod(instr):
     """
-    Returns the calculation engine for the instruction: an explicit 'det' or
-    'state' is kept; None follows ini.pz_method for the root-finding data
+    Returns the calculation engine for the instruction: an explicit 'det',
+    'state' or 'tc' is kept; None follows ini.pz_method for the root-finding data
     types (poles, zeros, pz) and is 'det' for every other data type (the
     Laplace, numer and denom results are polynomials in s, which the
     state engine does not produce).
     """
-    if instr.method in ("det", "state"):
+    if instr.method in ("det", "state", "tc"):
         return instr.method
     if instr.dataType in ("poles", "zeros", "pz") and ini.pz_method == "state":
         return "state"
@@ -63,6 +63,11 @@ def _doInstruction(instr):
     :rtype: SLiCAPinstruction.instruction
     """
     instr = deepcopy(instr) # For compatibility with SLiCAP V3
+    if instr.method == "tc" and (instr.dataType != "matrix" or instr.convType is not None
+                                 or instr.step):
+        print("Error: method 'tc' is only available for doMatrix(), without "
+              "convtype and without stepping.")
+        instr.errors += 1
     if instr.errors == 0:
         instr = _makeInstrParDict(instr)
         instr.clear()

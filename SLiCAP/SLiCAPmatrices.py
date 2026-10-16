@@ -137,7 +137,18 @@ def _makeMatrices(instr):
     # state without a pole (Anton/Claude, 2026-09-09, PZ.md addendum E).
     chains = {}          # chain key -> (a, b, columns)
     expanded = {}        # refDes -> {"av": key|None, "zo": (kind, key|value)}
-    if getattr(instr, "method", "det") == "state":
+    # method 'tc': the same first-order matrix, and in addition the
+    # incidence matrix Nr and the values Cr of the reactive elements, with
+    # C = Nr Cr Nr^T. Every s-term of the first-order matrix comes from one
+    # of four stamps: a capacitor (C q q^T), an inductor (-L at its current),
+    # a mutual inductance (-M between two inductor currents) and an
+    # integrator of an expanded transfer (+1 at its variable). Each records
+    # its contribution here (Anton, 2026-10-16).
+    tc = getattr(instr, "method", "det") == "tc"
+    react = {"C": [], "L": [], "V": []}     # capacitors, inductors, integrators
+    mutual = []                             # (L_a, L_b, M)
+    improper = False                        # polynomial stamp: no tc form
+    if getattr(instr, "method", "det") in ("state", "tc"):
 
         def _coeffs(numer, denom):
             a = sp.Poly(denom, ini.laplace).all_coeffs()          # highest first
@@ -170,6 +181,7 @@ def _makeMatrices(instr):
                     print("Warning: %s: transfer is not proper (numerator "
                           "order > denominator order); polynomial stamp "
                           "used, no state-space form." % elmt.refDes)
+                    improper = True
                     continue
                 if len(a) > 1:
                     info["av"] = _newChain(elmt.refDes, a, b, elmt.refDes)
@@ -215,6 +227,8 @@ def _makeMatrices(instr):
         for i in range(1, len(cols)):
             M[cols[i], cols[i-1]] -= 1
             M[cols[i], cols[i]]   += s
+            if tc:
+                react["V"].append(cols[i])
         return list(zip(cols, b))
 
     for el in list(cir.elements.keys()):
@@ -303,6 +317,8 @@ def _makeMatrices(instr):
             M[pos0, pos1] -= value * ini.laplace
             M[pos1, pos0] -= value * ini.laplace
             M[pos1, pos1] += value * ini.laplace
+            if tc:
+                react["C"].append((elmt.refDes, pos0, pos1, value))
         elif elmt.model == 'L':
             dVarPos = varIndex['I_' + elmt.refDes]
             pos0 = varIndex[elmt.nodes[0]]
@@ -313,6 +329,8 @@ def _makeMatrices(instr):
             M[dVarPos, pos0] += 1
             M[dVarPos, pos1] -= 1
             M[dVarPos, dVarPos] -= value * ini.laplace
+            if tc:
+                react["L"].append((elmt.refDes, dVarPos, value))
         elif elmt.model == 'R':
             pos0 = varIndex[elmt.nodes[0]]
             pos1 = varIndex[elmt.nodes[1]]
@@ -477,6 +495,8 @@ def _makeMatrices(instr):
             ind1 = _getValue(
                 cir.elements[elmt.refs[1]], 'value', numeric, parDefs, substitute)
             value = _getValue(elmt, 'value', numeric, parDefs, substitute)
+            if tc:
+                mutual.append((elmt.refs[0], elmt.refs[1], value * sp.sqrt(ind0 * ind1)))
             value = value * ini.laplace * sp.sqrt(ind0 * ind1)
             M[refPos0, refPos1] -= value
             M[refPos1, refPos0] -= value
@@ -485,7 +505,47 @@ def _makeMatrices(instr):
     M.col_del(gndPos)
     Dv = sp.Matrix(Dv)
     Dv.row_del(gndPos)
+    if tc:
+        instr.Nr, instr.Cr, instr.reactances = (None, None, None) if improper else \
+            _reactances(react, mutual, dim, gndPos, names)
     return (M, Dv)
+
+
+def _reactances(react, mutual, dim, gndPos, names):
+    """
+    Returns (Nr, Cr, names) of method 'tc' from the contributions recorded
+    by the stamps: one column of Nr per reactance, capacitors first, then
+    inductors, then integrator variables, each in netlist order. A
+    capacitor has its incidence vector (+1 at its first node, -1 at its
+    second) and the value C, an inductor the unit vector of its current and
+    the value -L, an integrator variable its unit vector and the value 1. A
+    mutual inductance M puts -M at the pair of inductor columns. The ground
+    row is removed, as in the MNA matrix.
+    """
+    cols, values, labels = [], [], []
+    for refDes, pos0, pos1, value in react["C"]:
+        v = sp.zeros(dim, 1)
+        v[pos0] += 1
+        v[pos1] -= 1
+        cols.append(v); values.append(value); labels.append(refDes)
+    for refDes, pos, value in react["L"]:
+        v = sp.zeros(dim, 1)
+        v[pos] = 1
+        cols.append(v); values.append(-value); labels.append(refDes)
+    for pos in react["V"]:
+        v = sp.zeros(dim, 1)
+        v[pos] = 1
+        cols.append(v); values.append(sp.Integer(1)); labels.append(names[pos])
+    if not cols:
+        return sp.zeros(dim - 1, 0), sp.zeros(0, 0), []
+    Nr = sp.Matrix.hstack(*cols)
+    Nr.row_del(gndPos)
+    Cr = sp.diag(*values)
+    for La, Lb, Mab in mutual:
+        i, j = labels.index(La), labels.index(Lb)
+        Cr[i, j] -= Mab
+        Cr[j, i] -= Mab
+    return Nr, Cr, labels
 
 def _makeSrcVector(cir, parDefs, elid, value='id', numeric=True, substitute=True):
     """

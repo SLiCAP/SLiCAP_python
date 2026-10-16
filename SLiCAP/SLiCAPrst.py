@@ -416,7 +416,7 @@ class RSTformatter(_BaseFormatter):
             RST =  "**Found no specifications of type: " + specType + ".**\n\n"
         return Snippet(RST, self.format)
 
-    def eqn(self, LHS, RHS, units="", label="", multiline=False):
+    def eqn(self, LHS, RHS, units="", label="", multiline=False, order=None):
         """
         Creates a displayed (numbered) equation.
 
@@ -435,6 +435,11 @@ class RSTformatter(_BaseFormatter):
         :param multiline: n breaks the equation over multiple lines with n sums
                           or products per line
         :type multiline: int, Bool
+
+        :param order: Order of the terms, see :func:`SLiCAP.SLiCAPlatex.exprLatex`:
+                      None (default) for sympy's ordering, ``'none'`` to keep
+                      the order of LHS and RHS, e.g. ``G + s*C`` with matrices.
+        :type order: str, NoneType
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -460,7 +465,8 @@ class RSTformatter(_BaseFormatter):
         
         if multiline:
             TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), 
-                                            terms_per_line=multiline)
+                                            terms_per_line=multiline,
+                                            **({} if order is None else {"order": order}))
             # 'aligned', not 'align': Sphinx wraps the content of a math
             # directive in its own equation (and split) environment, and an
             # align inside it is an "Erroneous nesting of equation
@@ -475,7 +481,7 @@ class RSTformatter(_BaseFormatter):
             TEX = TEX.replace("\n", "\n    ")
             RST += TEX
         else:
-            RST += '    ' + exprLatex(LHS) + ' = ' + exprLatex(RHS)
+            RST += '    ' + exprLatex(LHS, order) + ' = ' + exprLatex(RHS, order)
             if units != '':
                 RST += '\\,\\,\\left[\\mathrm{' + units + '}\\right]\n\n'
         return Snippet(RST, self.format)

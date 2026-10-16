@@ -544,7 +544,7 @@ class LaTeXformatter(_BaseFormatter):
             TEX += specType + ".}\n\n"
         return Snippet(TEX, self.format)
 
-    def eqn(self, LHS, RHS, units="", label="", multiline=False):
+    def eqn(self, LHS, RHS, units="", label="", multiline=False, order=None):
         """
         Creates a displayed (numbered) equation.
 
@@ -563,6 +563,11 @@ class LaTeXformatter(_BaseFormatter):
         :param multiline: n breaks the equation over multiple lines with n sums
                           or products per line
         :type multiline: int, Bool
+
+        :param order: Order of the terms, see :func:`exprLatex`: None
+                      (default) for sympy's ordering, ``'none'`` to keep the
+                      order of LHS and RHS, e.g. ``G + s*C`` with matrices.
+        :type order: str, NoneType
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
@@ -587,7 +592,8 @@ class LaTeXformatter(_BaseFormatter):
             RHS = _sympify(RHS)
         if multiline:
             TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), 
-                                            terms_per_line=multiline)
+                                            terms_per_line=multiline,
+                                            **({} if order is None else {"order": order}))
             TEX = TEX.replace('\\\\\n', '\\nonumber \\\\\n')
             TEX = TEX.replace('{align*}', '{align}')
             if label != '':
@@ -595,7 +601,7 @@ class LaTeXformatter(_BaseFormatter):
             TEX += '\\,\\left[\\mathrm{' + units + '}\\right]\n'
         else:
             TEX = '\\begin{equation}'
-            TEX += '\n' + exprLatex(LHS) + ' = ' + exprLatex(RHS)
+            TEX += '\n' + exprLatex(LHS, order) + ' = ' + exprLatex(RHS, order)
             if units != '':
                 TEX += '\\,\\left[\\mathrm{' + units + '}\\right]'
             TEX += '\n'
@@ -955,12 +961,17 @@ def sub2rm(textext):
 # The single "expression -> display LaTeX" chokepoint. Moved here from
 # SLiCAPhtml and made public on 2026-08-16 (Anton): the GUI reached into the
 # HTML module for it, which is how the GUI and the reports drifted apart.
-def exprLatex(expr):
+def exprLatex(expr, order=None):
     """
     Renders a sympy object as a LaTeX math string, in SLiCAP's display
     notation: scale factors or engineering notation as set by
     ``ini.scalefactors`` / ``ini.eng_notation``, rounded to ``ini.disp``
     digits.
+
+    The order of the terms is sympy's ordering unless ``order`` says
+    otherwise. ``order='none'`` keeps the terms in the order in which they
+    appear in ``expr``, for instance ``G + s*C`` built as an unevaluated sum
+    of matrices, which sympy would print as ``s*C + G``.
 
     The report formatters (HTML, LaTeX, RST) and the schematic editor all
     typeset values through this function, so a value looks the same in a
@@ -973,6 +984,12 @@ def exprLatex(expr):
     :param expr: sympy object (or number) to be rendered.
     :type expr: sympy.Basic, int, float
 
+    :param order: Order of the terms, passed to sympy's ``latex()``:
+                  None (default) for sympy's ordering, ``'none'`` to keep
+                  the order of ``expr``, or a monomial order such as
+                  ``'lex'``.
+    :type order: str, NoneType
+
     :return: LaTeX math string (without $ delimiters)
     :rtype: str
 
@@ -983,6 +1000,7 @@ def exprLatex(expr):
     >>> sl.exprLatex(sp.sympify("2700"))
     '2.700\\cdot 10^{3}'
     """
+    settings = {} if order is None else {"order": order}
     if ini.scalefactors or ini.eng_notation:
         expr, exp = ENG(expr, scaleFactors=ini.scalefactors)
         expr = roundN(expr)
@@ -992,9 +1010,9 @@ def exprLatex(expr):
             else:
                 expr = str(expr) + '\\cdot 10^{' + str(exp) + '}'
         else:
-            expr = sp.latex(expr)
+            expr = sp.latex(expr, **settings)
     else:
-        expr = sp.latex(roundN(expr))
+        expr = sp.latex(roundN(expr), **settings)
     return expr
 
 

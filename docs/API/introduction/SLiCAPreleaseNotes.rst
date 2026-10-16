@@ -4,6 +4,52 @@ SLiCAP release notes
 
 .. image:: /API/img/colorCode.svg
 
+SLiCAP version 6.3 release notes
+================================
+
+Version 6.3 gives access to the **time-constant matrix** of a network,
+makes symbolic state-space realizations readable and small, and lets the
+formatters print the terms of an equation in the order they were written.
+
+#. **Reactive elements of a network.** ``doMatrix()`` with
+   ``method="tc"`` returns the first-order (expanded) MNA matrix and, in
+   addition, the incidence matrix of the reactive elements (``.Nr``), the
+   matrix of their values (``.Cr``) and their names (``.reactances``), with
+   C = Nr Cr Nr^T. They give the time-constant matrix Nr^T G^-1 Nr Cr of the
+   network. See :doc:`/userguide/matrices`.
+
+#. **Readable state-space realizations.** ``doStateSpace()`` chooses the
+   state coordinates on the pivots of the reduced row echelon form of the
+   matrices in each elimination round. A coordinate is then a network
+   variable, or a combination with simple coefficients such as the voltage
+   across a floating capacitor, and the element values no longer pile up
+   in the coordinates from round to round. The elimination itself works
+   on fractions of polynomials in the element values that are kept reduced
+   at every step, so the expressions stay compact and a rank is decided
+   exactly. The poles, the transfers and the feedthrough are unchanged.
+   Symbolic realizations of networks with fixed reactances come out much
+   smaller and faster: a transimpedance amplifier with a phantom-zero
+   capacitor takes 0.06 s instead of 50 s. See :doc:`/userguide/statespace`.
+
+#. **Order of the terms in equations.** The method ``eqn()`` of the LaTeX
+   and RST formatters, and the function ``exprLatex()``, have an argument
+   ``order``. By default the terms appear in sympy's order. With
+   ``order='none'`` they keep the order of the expression, so that, for
+   instance, ``G + s*C`` with the matrices ``G`` and ``C`` built as an
+   unevaluated sum is printed as written, and not as ``s*C + G``. Other
+   values are passed to sympy's ``latex()``, for example ``'lex'``.
+
+#. **Bug fixes.**
+
+   - The dialogs of the parameter table, the library block, the model
+     table and the analysis block open again. The 6.2.5 and 6.2.6
+     packages lacked the module of their LaTeX scale field.
+   - Undo after moving a parameter table, a library block, an analysis
+     block or a model table of a schematic saved before 6.2.5 no longer
+     enlarges it. The conversion of the LaTeX scales of such a file is now
+     done once, when the file is read. It was repeated at every undo, redo
+     and re-render.
+
 SLiCAP version 6.2 release notes
 ================================
 

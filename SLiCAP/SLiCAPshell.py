@@ -246,6 +246,12 @@ specified with the circuit.
                #. 'state': eigenvalues of the state matrix of the first-order 
                   (expanded) MNA matrix; controlled sources with Laplace
                   rational transfers are expanded with integrator chains.
+               #. 'tc': only for doMatrix(), without convtype and stepping:
+                  the first-order (expanded) MNA matrix as with 'state', and
+                  in addition the incidence matrix of the reactive elements
+                  (.Nr), the matrix of their values (.Cr) and their names
+                  (.reactances), with C = Nr Cr Nr^T. The basis of the
+                  time-constant matrix Nr^T G^-1 Nr Cr.
 
                Defaults to None
 
@@ -560,6 +566,26 @@ def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit',
     - doMatrix(<circuit>).M: MNA matrix (sympy.Matrix)
     - doMatrix(<circuit>.Iv: Vector with independent variables (sympy.Matrix)
     - doMatrix(<circuit>).Dv: Vector with dependent variables (sympy.Matrix)
+
+    With method='tc' (first-order network, no convtype, no stepping) also:
+
+    - doMatrix(<circuit>, method='tc').Nr: incidence matrix of the reactive
+      elements (sympy.Matrix), one column per reactance and one row per
+      network variable: the incidence vector of a capacitor, the unit vector
+      of the current of an inductor, the unit vector of an integrator
+      variable of an expanded controlled source
+    - doMatrix(<circuit>, method='tc').Cr: matrix of the reactive element
+      values (sympy.Matrix): C for a capacitor, -L for an inductor, -M off
+      the diagonal for a mutual inductance, 1 for an integrator variable
+    - doMatrix(<circuit>, method='tc').reactances: names of the columns of Nr
+      (list of str): the reference designators of the capacitors and the
+      inductors, then the integrator variables, each in netlist order
+
+    They satisfy C = Nr*Cr*Nr.T with C the coefficient matrix of s in M, and
+    give the time-constant matrix Nr.T*G^-1*Nr*Cr. The entries of Cr for
+    integrator variables have no physical meaning. A network with an
+    improper transfer (polynomial stamp) has no such form: Nr, Cr and
+    reactances are then None.
       
     **Parameters**
     
@@ -1515,10 +1541,10 @@ def _executeInstruction(cir, transfer=None, source='circuit',
         i1.setGainType(transfer)
     i1.dataType    = datatype
     i1.numeric     = numeric
-    if method in (None, "det", "state"):
+    if method in (None, "det", "state", "tc"):
         i1.method  = method         # None: resolved from ini.pz_method
     else:
-        print("Error: unknown method '%s'; use None, 'det' or 'state'." % method)
+        print("Error: unknown method '%s'; use None, 'det', 'state' or 'tc'." % method)
         i1.errors += 1
     i1.setLoopGainType(loopgaintype)
     if convtype != None:
