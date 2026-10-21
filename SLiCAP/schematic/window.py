@@ -292,17 +292,25 @@ class CanvasPanel(QWidget):
             self._build_symbol_file_menu()
             self._build_edit_menu()
             self._build_view_menu()
+            self._build_symbol_menu()
             self._build_draw_menu()
-            self._build_symbol_place_menu()
             return
         self._build_file_menu()
         self._build_edit_menu()
         self._build_view_menu()
+        # The menus are named by FUNCTION (Anton, 2026-10-21): Circuit holds
+        # what reaches the netlist, Insert the objects that exist elsewhere
+        # and follow the runs (figures, snippets, images, linked drawings),
+        # Draw the hand-made annotation that nothing updates, Document the
+        # page (properties and border). "Place" and "Draw" mixed the first
+        # three and left the border, which is not drawn, on Place.
+        if self._sch_type != 'poster':
+            self._build_circuit_menu()
+        self._build_insert_menu()
         self._build_draw_menu()
+        self._build_document_menu()
         if self._sch_type == 'poster':
-            self._build_poster_place_menu()
             return                       # no symbols, netlist or instructions
-        self._build_place_menu()
         self._build_tools_menu()
         if self._sch_type == 'ngspice':
             self._build_ngspice_instr_menu()
@@ -336,8 +344,9 @@ class CanvasPanel(QWidget):
         act.triggered.connect(self._on_preferences)
         menu.addAction(act)
 
-    def _build_symbol_place_menu(self):
-        menu = self._menu_bar.addMenu("&Place")
+    def _build_symbol_menu(self):
+        """What the symbol is made of."""
+        menu = self._menu_bar.addMenu("&Symbol")
         act = QAction("&Pin…", self)
         act.triggered.connect(self._on_symbol_place_pin)
         self._shortcut(act, "P")
@@ -346,7 +355,7 @@ class CanvasPanel(QWidget):
         act.triggered.connect(self._on_symbol_place_text)
         self._shortcut(act, "T")
         menu.addAction(act)
-        act = QAction("La&TeX…", self)
+        act = QAction("La&TeX text…", self)
         act.triggered.connect(self._on_place_latex)
         menu.addAction(act)
         act = QAction("&Image…", self)
@@ -602,29 +611,6 @@ class CanvasPanel(QWidget):
         act.triggered.connect(self._on_preferences)
         menu.addAction(act)
 
-    def _build_poster_place_menu(self):
-        """The Place menu of a poster: what it can show, and its page."""
-        menu = self._menu_bar.addMenu("&Place")
-        for label, kind in (("&Schematic…", "schematic"), ("&Poster…", "poster"),
-                            ("&Figure…", "figure")):
-            act = QAction(label, self)
-            act.triggered.connect(lambda checked=False, k=kind: self._place_link(k))
-            menu.addAction(act)
-        act = QAction("LaTeX s&nippet…", self)
-        act.triggered.connect(self._on_place_snippet)
-        menu.addAction(act)
-        act = QAction("&Image…", self)
-        act.triggered.connect(self._on_place_image)
-        menu.addAction(act)
-        act = QAction("&Document properties…", self)
-        act.triggered.connect(self._on_place_properties)
-        menu.addAction(act)
-        menu.addSeparator()
-        act = QAction("Borde&r", self)
-        act.triggered.connect(self._on_place_border)
-        self._shortcut(act, "B")
-        menu.addAction(act)
-
     def _build_edit_menu(self):
         menu = self._menu_bar.addMenu("&Edit")
         act = QAction("&Undo", self)
@@ -718,15 +704,56 @@ class CanvasPanel(QWidget):
         act.triggered.connect(self._on_place_hyperlink)
         menu.addAction(act)
         from .latex_label import LATEX_INSTALLED
-        act = QAction("La&TeX…", self)
+        act = QAction("La&TeX text…", self)
+        act.setToolTip("Typeset text you write here; nothing updates it")
         act.triggered.connect(self._on_place_latex)
         act.setEnabled(LATEX_INSTALLED)
         if not LATEX_INSTALLED:
             act.setToolTip("Requires pdflatex and dvisvgm")
         menu.addAction(act)
 
-    def _build_place_menu(self):
-        menu = self._menu_bar.addMenu("&Place")
+    def _build_insert_menu(self):
+        """Objects that exist elsewhere and follow the runs: the Design
+        data's figures and LaTeX snippets, image files, and on a poster
+        the drawings of the project."""
+        menu = self._menu_bar.addMenu("&Insert")
+        if self._sch_type == 'poster':
+            for label, kind in (("&Schematic…", "schematic"), ("&Poster…", "poster")):
+                act = QAction(label, self)
+                act.triggered.connect(lambda checked=False, k=kind: self._place_link(k))
+                menu.addAction(act)
+            act = QAction("&Figure from design data…", self)
+            act.triggered.connect(lambda checked=False: self._place_link("figure"))
+            menu.addAction(act)
+        else:
+            act = QAction("&Figure from design data…", self)
+            act.setToolTip("A figure object of the Design data, by name; "
+                           "its image follows every run")
+            act.triggered.connect(self._on_place_figure)
+            menu.addAction(act)
+        act = QAction("LaTeX from &design data…", self)
+        act.setToolTip("A LaTeX snippet object of the Design data, by name, "
+                       "with its own scale and colour; it follows every run")
+        act.triggered.connect(self._on_place_snippet)
+        menu.addAction(act)
+        act = QAction("&Image…", self)
+        act.triggered.connect(self._on_place_image)
+        menu.addAction(act)
+
+    def _build_document_menu(self):
+        """The page of the drawing: its properties block and its border."""
+        menu = self._menu_bar.addMenu("D&ocument")
+        act = QAction("&Document properties…", self)
+        act.triggered.connect(self._on_place_properties)
+        menu.addAction(act)
+        act = QAction("Borde&r", self)
+        act.triggered.connect(self._on_place_border)
+        self._shortcut(act, "B")
+        menu.addAction(act)
+
+    def _build_circuit_menu(self):
+        """What reaches the netlist."""
+        menu = self._menu_bar.addMenu("&Circuit")
         act = QAction("&Symbol…", self)
         act.triggered.connect(self._on_place_component)
         self._shortcut(act, "S")
@@ -744,13 +771,7 @@ class CanvasPanel(QWidget):
         act.triggered.connect(lambda: self._scene.start_junction_placement())
         self._shortcut(act, "J")
         menu.addAction(act)
-        act = QAction("&Document properties…", self)
-        act.triggered.connect(self._on_place_properties)
-        menu.addAction(act)
-        act = QAction("Borde&r", self)
-        act.triggered.connect(self._on_place_border)
-        self._shortcut(act, "B")
-        menu.addAction(act)
+        menu.addSeparator()
         act = QAction("&Library…", self)
         act.triggered.connect(self._on_place_library)
         menu.addAction(act)
@@ -760,19 +781,6 @@ class CanvasPanel(QWidget):
         # 2026-08-04).
         act = QAction("New s&ubcircuit symbol…", self)
         act.triggered.connect(self._on_place_subcircuit)
-        menu.addAction(act)
-        act = QAction("&Image…", self)
-        act.triggered.connect(self._on_place_image)
-        menu.addAction(act)
-        act = QAction("&Figure…", self)
-        act.setToolTip("A figure object of the Design data, by name; "
-                       "its image follows every run")
-        act.triggered.connect(self._on_place_figure)
-        menu.addAction(act)
-        act = QAction("LaTeX &snippet…", self)
-        act.setToolTip("A LaTeX snippet object of the Design data, by name, "
-                       "with its own scale and colour")
-        act.triggered.connect(self._on_place_snippet)
         menu.addAction(act)
         act = QAction("&Parameters…", self)
         act.triggered.connect(self._on_place_parameters)
@@ -2637,6 +2645,12 @@ class MainWindow(QMainWindow):
         # most recently opened schematic that is still docked; floating ones
         # are ignored (tabifying onto a floating dock leaves the new panel
         # floating over the main window).
+        # The tab that comes to the front takes the keyboard: a click on
+        # a tab shows another schematic but left the focus, and so Ctrl+V,
+        # R and Escape, on the hidden one (Anton, 2026-10-21: a paste
+        # started on the hidden schematic and waited there for a click).
+        dock.visibilityChanged.connect(
+            lambda visible, p=panel: visible and p.setFocus())
         anchor = next((d for d in reversed(self._canvas_docks)
                        if not d.isFloating()), None)
         if anchor is not None:

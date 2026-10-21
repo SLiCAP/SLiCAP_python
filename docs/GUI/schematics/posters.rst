@@ -35,17 +35,17 @@ content. Each placed schematic brings its own border and background.
 What a poster shows
 ===================
 
-* :menuselection:`Place --> Schematic…` places a schematic of the project,
+* :menuselection:`Insert --> Schematic…` places a schematic of the project,
   chosen from the schematic files in ``sch/`` and ``lib/`` by their path,
   the subcircuit packages included. Nothing is preselected. The poster
   shows the schematic's export and keeps it up to date.
-* :menuselection:`Place --> Poster…` places another poster the same way.
+* :menuselection:`Insert --> Poster…` places another poster the same way.
   The list leaves out this poster and every poster that already shows it,
   directly or through a chain, because a poster cannot contain itself.
-* :menuselection:`Place --> Figure…` and :menuselection:`Place --> LaTeX
-  snippet…` place a figure or a snippet of the Design data by name, as on a
+* :menuselection:`Insert --> Figure from design data…` and :menuselection:`Insert --> LaTeX from
+  design data…` place a figure or a snippet of the Design data by name, as on a
   schematic (see :doc:`annotations`).
-* :menuselection:`Place --> Image…` places a file.
+* :menuselection:`Insert --> Image…` places a file.
 
 Every placed drawing is a **link**, never a copy: the schematic stays in its
 own file and the poster shows its export. Choosing a drawing brings its

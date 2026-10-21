@@ -48,7 +48,7 @@ The dialog is grouped by element type, including:
   typeset. A value that cannot be typeset is shown as plain text — it is never
   rendered wrongly. If you want a typeset expression on an NGspice schematic,
   either accept the generated form, or hide the value and place the formula
-  yourself with :menuselection:`Place --> LaTeX...`; such a snippet is for
+  yourself with :menuselection:`Draw --> LaTeX text...`; such a snippet is for
   display only and is not netlisted.
 
 Every font family list offers the generic families **sans-serif**, **serif**

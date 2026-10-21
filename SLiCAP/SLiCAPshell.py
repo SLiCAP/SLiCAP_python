@@ -250,8 +250,9 @@ specified with the circuit.
                   the first-order (expanded) MNA matrix as with 'state', and
                   in addition the incidence matrix of the reactive elements
                   (.Nr), the matrix of their values (.Cr) and their names
-                  (.reactances), with C = Nr Cr Nr^T. The basis of the
-                  time-constant matrix Nr^T G^-1 Nr Cr.
+                  (.reactances), with C = Nr Cr Nr^T, and the resistance
+                  matrix Rr = Nr^T G^-1 Nr (.Rr). The time-constant matrix
+                  is Rr Cr.
 
                Defaults to None
 
@@ -551,7 +552,7 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
 
 def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer=None, convtype=None, pardefs=None, numeric=False, 
-            stepdict=None, method=None, loopgaintype="dd"):
+            stepdict=None, method=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the MNA matrix, the vector with dependent variables and the vector 
     with independent variables.
@@ -580,12 +581,16 @@ def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit',
     - doMatrix(<circuit>, method='tc').reactances: names of the columns of Nr
       (list of str): the reference designators of the capacitors and the
       inductors, then the integrator variables, each in netlist order
+    - doMatrix(<circuit>, method='tc').Rr: resistance matrix Nr.T*G^-1*Nr
+      (sympy.Matrix), with G the matrix M at s = 0: the DC transfers between
+      the ports of the reactive elements. None if the network has no DC
+      solution (G singular).
 
     They satisfy C = Nr*Cr*Nr.T with C the coefficient matrix of s in M, and
-    give the time-constant matrix Nr.T*G^-1*Nr*Cr. The entries of Cr for
+    give the time-constant matrix Rr*Cr. The entries of Cr for
     integrator variables have no physical meaning. A network with an
-    improper transfer (polynomial stamp) has no such form: Nr, Cr and
-    reactances are then None.
+    improper transfer (polynomial stamp) has no such form: Nr, Cr,
+    reactances and Rr are then None.
       
     **Parameters**
     
@@ -618,10 +623,11 @@ def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit',
                                  convtype=convtype, datatype='matrix', 
                                  pardefs=pardefs, numeric=numeric, 
                                  stepdict=stepdict, method=method,
-                                 loopgaintype=loopgaintype)
+                                 loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result 
 
-def doStateSpace(cir, convtype=None, pardefs=None, numeric=False):
+def doStateSpace(cir, convtype=None, pardefs=None, numeric=False, use_submatrix=False):
     """
     Returns the full state-space realization of a circuit: dx/dt = A x + B u,
     y = C x + D u, with every independent source an input (u) and every
@@ -667,12 +673,13 @@ def doStateSpace(cir, convtype=None, pardefs=None, numeric=False):
                                  detector=None, lgref=None,
                                  convtype=convtype, datatype='statespace',
                                  pardefs=pardefs, numeric=numeric,
-                                 stepdict=None, method="state")
+                                 stepdict=None, method="state",
+                                 use_submatrix=use_submatrix)
     return result
 
 def doLaplace(cir, source='circuit', detector='circuit', lgref='circuit', 
               transfer='gain', convtype=None, pardefs=None, numeric=False, 
-              stepdict=None, method=None, loopgaintype="dd"):
+              stepdict=None, method=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns a transfer function or a detector voltage or current.
     
@@ -717,12 +724,13 @@ def doLaplace(cir, source='circuit', detector='circuit', lgref='circuit',
                                  convtype=convtype, datatype='laplace', 
                                  pardefs=pardefs, numeric=numeric, 
                                  stepdict=stepdict, method=method,
-                                 loopgaintype=loopgaintype)
+                                 loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doDC(cir, source='circuit', detector='circuit', lgref='circuit', 
          transfer='gain', convtype=None, pardefs=None, numeric=False, 
-         stepdict=None, loopgaintype="dd"):
+         stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the zero-frequency value (DC value) of a transfer or a detector
     voltge or current.
@@ -767,12 +775,13 @@ def doDC(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='dc', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doNumer(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer='gain', convtype=None, pardefs=None, numeric=False, 
-            stepdict=None, method=None, loopgaintype="dd"):
+            stepdict=None, method=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the numerator of a transfer or of a detector voltage or current.
     
@@ -813,12 +822,13 @@ def doNumer(cir, source='circuit', detector='circuit', lgref='circuit',
                                  convtype=convtype, datatype='numer', 
                                  pardefs=pardefs, numeric=numeric, 
                                  stepdict=stepdict, method=method,
-                                 loopgaintype=loopgaintype)
+                                 loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doDenom(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer='gain', convtype=None, pardefs=None, numeric=False, 
-            stepdict=None, method=None, loopgaintype="dd"):
+            stepdict=None, method=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the denominator of a transfer or a detector voltage or current.
     
@@ -858,12 +868,13 @@ def doDenom(cir, source='circuit', detector='circuit', lgref='circuit',
                                  convtype=convtype, datatype='denom', 
                                  pardefs=pardefs, numeric=numeric, 
                                  stepdict=stepdict, method=method,
-                                 loopgaintype=loopgaintype)
+                                 loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doTime(cir, source='circuit', detector='circuit', lgref='circuit', 
            transfer=None, convtype=None, pardefs=None, numeric=False, 
-           stepdict=None, loopgaintype="dd"):
+           stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the detector voltage or current (Inverse Laplace Transform).
     
@@ -915,12 +926,13 @@ def doTime(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='time', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doImpulse(cir, source='circuit', detector='circuit', lgref='circuit', 
               transfer='gain', convtype=None, pardefs=None, numeric=False, 
-              stepdict=None, loopgaintype="dd"):
+              stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the unit-impulse response of a transfer (ILT of a transfer 
     function). The argument 'transfer' will be set to gain if None is given.
@@ -971,12 +983,13 @@ def doImpulse(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='impulse', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doStep(cir, source='circuit', detector='circuit', lgref='circuit', 
            transfer='gain', convtype=None, pardefs=None, numeric=False, 
-           stepdict=None, loopgaintype="dd"):
+           stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the unit-step response of a transfer (based upon the ILT).  The 
     argument 'transfer' will be set to gain if None is given.
@@ -1026,12 +1039,13 @@ def doStep(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=lgref, 
                                  convtype=convtype, datatype='step', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doPoles(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer='gain', convtype=None, pardefs=None, numeric=False, 
-            stepdict=None, method=None, loopgaintype="dd"):
+            stepdict=None, method=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the poles of a transfer function.
     
@@ -1080,12 +1094,13 @@ def doPoles(cir, source='circuit', detector='circuit', lgref='circuit',
                                  convtype=convtype, datatype='poles', 
                                  pardefs=pardefs, numeric=numeric, 
                                  stepdict=stepdict, method=method,
-                                 loopgaintype=loopgaintype)
+                                 loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doZeros(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer='gain', convtype=None, pardefs=None, numeric=False, 
-            stepdict=None, method=None, loopgaintype="dd"):
+            stepdict=None, method=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the zeros of a transfer function.
     
@@ -1136,12 +1151,13 @@ def doZeros(cir, source='circuit', detector='circuit', lgref='circuit',
                                  convtype=convtype, datatype='zeros', 
                                  pardefs=pardefs, numeric=numeric, 
                                  stepdict=stepdict, method=method,
-                                 loopgaintype=loopgaintype)
+                                 loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doPZ(cir, source='circuit', detector='circuit', lgref='circuit', 
          transfer='gain', convtype=None, pardefs=None, numeric=False, 
-         stepdict=None, method=None, loopgaintype="dd"):
+         stepdict=None, method=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the DC value, the zeros, and the poles of a transfer function. 
     Poles and zeros that coincide within the diaplay accuracy (ini.disp) are
@@ -1200,11 +1216,12 @@ def doPZ(cir, source='circuit', detector='circuit', lgref='circuit',
                                  convtype=convtype, datatype='pz', 
                                  pardefs=pardefs, numeric=numeric, 
                                  stepdict=stepdict, method=method,
-                                 loopgaintype=loopgaintype)
+                                 loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doSolve(cir, source=None, detector=None, lgref=None, transfer=None, 
-            convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd"):
+            convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the (Laplace) solution of the circuit.
     
@@ -1253,11 +1270,12 @@ def doSolve(cir, source=None, detector=None, lgref=None, transfer=None,
                                  detector=None, lgref=None, 
                                  convtype=convtype, datatype='solve', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doDCsolve(cir, source=None, detector=None, lgref=None, transfer=None, 
-              convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd"):
+              convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the DC solution of the circuit.
     
@@ -1304,11 +1322,12 @@ def doDCsolve(cir, source=None, detector=None, lgref=None, transfer=None,
     result = _executeInstruction(cir, transfer=None, source=None, 
                                  detector=None, lgref=None,  convtype=convtype,
                                  datatype='dcsolve', pardefs=pardefs, 
-                                 numeric=numeric, stepdict=stepdict, loopgaintype=loopgaintype)
+                                 numeric=numeric, stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
 
 def doTimeSolve(cir, source=None, detector=None, lgref=None, transfer=None, 
-                convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd"):
+                convtype=None, pardefs=None, numeric=False, stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Returns the time-domain solution of the circuit, using the Inverse Laplace
     Transform.
@@ -1358,13 +1377,14 @@ def doTimeSolve(cir, source=None, detector=None, lgref=None, transfer=None,
                                  detector=None, lgref=None, 
                                  convtype=convtype, datatype='timesolve', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     
     return result
 
 def doNoise(cir, source='circuit', detector='circuit', lgref=None, 
             transfer=None, convtype=None, pardefs=None, numeric=False, 
-            stepdict=None, loopgaintype="dd"):
+            stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Evaluates the detector noise spectral density and the individual 
     contributions of all noise sources to it. 
@@ -1424,13 +1444,14 @@ def doNoise(cir, source='circuit', detector='circuit', lgref=None,
                                  detector=detector, lgref=None, 
                                  convtype=convtype, datatype='noise', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
 
     return result
 
 def doDCvar(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer=None, convtype=None, pardefs=None, numeric=False, 
-            stepdict=None, loopgaintype="dd"):
+            stepdict=None, loopgaintype="dd", use_submatrix=False):
     """
     Evaluates the variance of the detector DC voltage or current and the 
     individual contributions of all noise sources to it. 
@@ -1489,13 +1510,14 @@ def doDCvar(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=detector, lgref=None, 
                                  convtype=convtype, datatype='dcvar', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
 
     return result
 
 def doParams(cir, source='circuit', detector='circuit', lgref='circuit', 
             transfer=None, convtype=None, pardefs='circuit', numeric=True, 
-            stepdict=None, loopgaintype="dd"):
+            stepdict=None, loopgaintype="dd", use_submatrix=False):
     
     """
     This function is used in combination with plotSweep(funcType='param')
@@ -1507,13 +1529,15 @@ def doParams(cir, source='circuit', detector='circuit', lgref='circuit',
                                  detector=None, lgref=None, 
                                  convtype=None, datatype='params', 
                                  pardefs=pardefs, numeric=numeric, 
-                                 stepdict=stepdict, loopgaintype=loopgaintype)
+                                 stepdict=stepdict, loopgaintype=loopgaintype,
+                                 use_submatrix=use_submatrix)
     return result
     
 def _executeInstruction(cir, transfer=None, source='circuit', 
                         detector='circuit', lgref='circuit', convtype='circuit', 
                         datatype=None, pardefs='circuit', numeric=False, 
-                        stepdict=None, method=None, loopgaintype="dd"):
+                        stepdict=None, method=None, loopgaintype="dd",
+                        use_submatrix=False):
     """
     Converts the shell instruction into a basic instruction object, executes it
     and returns the result.
@@ -1551,6 +1575,7 @@ def _executeInstruction(cir, transfer=None, source='circuit',
         i1.convType    = convtype.lower()
     else:
         i1.convType = None
+    i1.useSubmatrix = use_submatrix
     if pardefs == None:
         i1.substitute = False
     else:

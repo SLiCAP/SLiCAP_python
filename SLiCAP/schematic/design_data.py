@@ -65,11 +65,12 @@ def filter_kind(kind: str) -> str:
 # Result attributes worth exposing as expandable children of a result
 # entry (Anton, 2026-07-12: the reference documents these per instruction
 # under "Return value attributes" — e.g. doPZ → poles, zeros, DCvalue).
+# doMatrix(method="tc") adds Nr, Cr, Rr and reactances (2026-10-18).
 # Only attributes with a non-empty value are listed.
 _RESULT_ATTRS = ["laplace", "numer", "denom", "poles", "zeros", "DCvalue",
                  "dc", "dcSolve", "onoise", "inoise", "ovar", "ivar",
                  "time", "impulse", "stepResp", "solve", "M", "Iv", "Dv",
-                 "stateSpace"]
+                 "Nr", "Cr", "Rr", "reactances", "stateSpace"]
 
 
 def _class_name(value) -> str:

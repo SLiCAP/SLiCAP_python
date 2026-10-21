@@ -188,16 +188,25 @@ class LatexFragmentItem(QGraphicsItem):
 
     # ── QGraphicsItem interface ───────────────────────────────────────────────
 
-    def boundingRect(self) -> QRectF:
+    def content_rect(self) -> QRectF:
+        """The drawn box: the SVG scaled to the display size, at the origin."""
         return QRectF(0, 0, self.display_width, self.display_height)
+
+    def boundingRect(self) -> QRectF:
+        # The selection frame is drawn ON the edge of the content box, so
+        # half its pen lies outside; Qt repaints only the declared rectangle
+        # when the item moves, and the strip outside stayed behind as a hole
+        # in the grid (Anton, 2026-10-21; see tests/test_selection_frames).
+        from .config import SELECTION_MARGIN as m
+        return self.content_rect().adjusted(-m, -m, m, m)
 
     def shape(self) -> QPainterPath:
         path = QPainterPath()
-        path.addRect(self.boundingRect())
+        path.addRect(self.content_rect())
         return path
 
     def paint(self, painter: QPainter, option, widget=None) -> None:
-        r = self.boundingRect()
+        r = self.content_rect()
         if self._renderer is not None:
             self._renderer.render(painter, _aspect_fit(self._renderer, r))
         else:

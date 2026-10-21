@@ -366,6 +366,11 @@ class SchematicData:
     opaques:          list[OpaqueData]           = field(default_factory=list)
     origin:           list | None                = None   # symbol editor: marker position
     properties:       DocumentProperties         = field(default_factory=DocumentProperties)
+    # Meaning of the components' prop_offsets: "corner" = from the label
+    # corner of the symbol's footprint, in screen orientation (2026-10-21,
+    # see ComponentItem._label_frame); "local" = in the component's own
+    # frame, the meaning of files written before. Absent in those files.
+    label_offsets:    str                        = "local"
 
     def to_json(self, doc_type: str = "schematic") -> str:
         """The file text; *doc_type* "poster" writes the poster's sections
@@ -529,6 +534,7 @@ class SchematicData:
             "symbol_texts": [{"x": t.x, "y": t.y, "content": t.content, "size": t.size} for t in self.symbol_texts],
             "opaques": [{"x": o.x, "y": o.y, "xml": o.xml} for o in self.opaques],
             "origin": self.origin,
+            "label_offsets": self.label_offsets,
             "model_defs": [
                 {
                     "x": m.x, "y": m.y,
@@ -792,7 +798,8 @@ class SchematicData:
                                  for t in data.get("symbol_texts", [])],
                    opaques=[OpaqueData(x=float(o["x"]), y=float(o["y"]), xml=o.get("xml", "")) for o in data.get("opaques", [])],
                    origin=(list(data["origin"]) if data.get("origin") else None),
-                   model_defs=model_defs, properties=properties)
+                   model_defs=model_defs, properties=properties,
+                   label_offsets=str(data.get("label_offsets", "local")))
 
     def normalize_origin(self, grid_size: int = 5) -> None:
         """Shift all positions so the bounding-rect centre lands on the origin.

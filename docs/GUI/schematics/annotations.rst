@@ -26,7 +26,7 @@ machine substitutes it.
 Document properties
 ===================
 
-:menuselection:`Place --> Document properties…` places a text block that
+:menuselection:`Document --> Document properties…` places a text block that
 shows the document properties: project, title, author, created and last
 modified. Its text is derived, not typed. The dialog holds a template with
 the placeholders ``{project}``, ``{title}``, ``{author}``, ``{created}`` and
@@ -46,7 +46,7 @@ placed and dragged freely like any text.
 LaTeX fragments
 ===============
 
-:menuselection:`Draw --> LaTeX…` adds a block of typeset LaTeX — equations,
+:menuselection:`Draw --> LaTeX text…` adds a block of typeset LaTeX — equations,
 aligned derivations, anything a ``standalone`` LaTeX document can produce.
 (Requires ``pdflatex`` and ``dvisvgm``.)
 
@@ -70,7 +70,7 @@ course or datasheet).  In the editor, right-click the link to open or edit it.
 Images
 ======
 
-:menuselection:`Place --> Image…` places a raster or vector image — a logo,
+:menuselection:`Insert --> Image…` places a raster or vector image — a logo,
 a photo of a measurement, a plot.
 
 The image is a link, not a copy: the schematic stores the file's path and
@@ -88,7 +88,7 @@ file.
 Figures
 =======
 
-:menuselection:`Place --> Figure…` places a **figure object** of the
+:menuselection:`Insert --> Figure from design data…` places a **figure object** of the
 Design data, chosen by name from the figures the last runs made with
 ``makeFigure()``. The image it shows is the file that figure writes to
 ``img/``, taken from the Design data, so a figure whose file name changes
@@ -101,7 +101,7 @@ the dialog offers what the Design data panel shows.
 LaTeX snippets
 ==============
 
-:menuselection:`Place --> LaTeX snippet…` places a **LaTeX snippet object**
+:menuselection:`Insert --> LaTeX from design data…` places a **LaTeX snippet object**
 of the Design data, chosen by name: ``EX1 = ltx.expr(G)`` makes one, a saved
 file is not needed. The item takes the snippet's text from the Design data,
 renders it with SLiCAP's LaTeX preamble, and re-renders it after every run
@@ -173,7 +173,7 @@ that order.
 Borders and document properties
 ===============================
 
-* :menuselection:`Place --> Border` (:kbd:`B`) adds a drawing border/frame.
+* :menuselection:`Document --> Border` (:kbd:`B`) adds a drawing border/frame.
   The border is the export frame: the exported SVG and PDF have its size,
   and the border clips. Everything outside it is left out of the export,
   and an item that crosses it is cut at the border. Without a border the

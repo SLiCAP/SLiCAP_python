@@ -202,31 +202,24 @@ The conversion type
     
 **convtype**: None \| 'all' \| 'dd' \| 'dc' \| 'cd' \| 'cc'; defaults to None. See `Work with balanced circuits <balanced.html>`_
 
-The conversion type is used to convert balanced circuits into differential-mode and common-mode equivalent networks.
-   
-- None: No matrix conversion will be applied
-   
-- 'all': Dependent variables and independent variables will be grouped in differential-mode and common-mode variables. 
-   
-  The circuit matrix dimension is not changed.
-     
-  This conversion type can only be used with the doMatrix() instruction.
-     
-- 'dd': After grouping of the vaiables in differential-mode and common-mode variables, only the differential-mode variables of both dependent and independent variables are considered. 
-   
-  The matrix equation describes the differential-mode behavior of the circuit.
-   
-- 'cc': After grouping of the vaiables in differential-mode and common-mode variables, only the common-mode variables of both dependent and independent variables are considered. 
-   
-  The matrix equation describes the common-mode behavior of the circuit.
-     
-- 'dc': After grouping of the vaiables in differential-mode and common-mode variables, only the differential-mode dependent variables and the common-mode independent variables are considered. 
-   
-  The matrix equation describes the common-mode to differential-mode conversion of the circuit. This conversion type can only be used with the doMatrix() instruction.
+The conversion type is used to convert balanced circuits into differential-mode and common-mode quantities, see `Work with balanced circuits <balanced.html>`_. The variables and the equations are grouped in a differential-mode part and a common-mode part; the converted matrix consists of four blocks: the differential-mode block ``dd`` (upper left), the common-mode block ``cc`` (lower right) and the conversion blocks ``dc`` (upper right) and ``cd`` (lower left). The first letter is the mode of the response (the rows), the second letter the mode of the stimulus (the columns).
 
-- 'cd': After grouping of the vaiables in differential-mode and common-mode variables, only the common-mode dependent variables and the differential-mode independent ariables are considered. 
+- None: No matrix conversion will be applied.
 
-  The matrix equation describes the differential-mode to common-mode conversion of the circuit. This conversion type can only be used with the doMatrix() instruction.
+- With **doMatrix()**, the conversion type selects the matrix equation:
+
+  - 'all': the complete converted matrix equation; the dimension of the matrix is not changed.
+  - 'dd', 'cc': the differential-mode or common-mode block with its variables: the differential-mode or common-mode equivalent network.
+  - 'dc', 'cd': a conversion block: the differential-mode equations in the common-mode variables ('dc'), or the common-mode equations in the differential-mode variables ('cd'). Generally these blocks are not square.
+
+- With **all other instructions** (doLaplace(), doPoles(), doNoise(), ...), SLiCAP uses the complete converted matrix, the conversion blocks included. The conversion type selects the mode of the source (second letter) and the mode of the detector (first letter): 'dd' the differential-mode transfer, 'cc' the common-mode transfer, 'dc' the differential-mode response to a common-mode source and 'cd' the common-mode response to a differential-mode source. 'all' can only be used with doMatrix().
+
+Use the submatrix only
+----------------------
+
+**use_submatrix**: False \| True; defaults to False.
+
+With ``use_submatrix=True``, an instruction with conversion type 'dd' or 'cc' uses the differential-mode or common-mode block alone: the equivalent network. The conversion blocks are then ignored. This is the analysis of the equivalent network, for instance its poles: with the complete matrix, the determinant contains the poles of both modes. For a fully balanced circuit (``orthogonal`` is True: both conversion blocks are zero), the transfers of the submatrix equal those of the complete matrix. For a circuit that is not fully balanced, they generally do not. ``use_submatrix=True`` can not be combined with 'dc' or 'cd', because their blocks are not square. It has no effect on doMatrix().
 
 The parameter definitions
 -------------------------

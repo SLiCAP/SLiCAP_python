@@ -24,11 +24,20 @@ SLiCAP balanced network decomposition is based upon pairing nodes, branches and 
 
 The decomposition itself is initiated by setting the argument ``convtype`` in an `instruction <../reference/SLiCAPshell.html#general-instruction-format>`__ to:
 
-#. **"all"**: SLiCAP decomposes paired node voltages and paired branch currents into pairs of common-mode and differential-mode voltages and currents. Convertion type ``all`` can only be used for displaying the matrix equations; performing analysis is not implemented.
-#. **"dd"**: After the above decomposition, SLiCAP can perform all types of analysis using the differential-mode matrix equation.
-#. **"dc"**: SLiCAP returns the differential-mode to common-mode matrix equation. Generally this involves a non-square matrix.
-#. **"cd"**: SLiCAP returns the common-mode to differential-mode matrix equation. Generally this involves a non-square matrix.
-#. **"cc"**: After the above decomposition, SLiCAP can perform all types of analysis using the common-mode matrix equation.
+#. **"all"**: SLiCAP decomposes paired node voltages and paired branch currents into pairs of common-mode and differential-mode voltages and currents. Conversion type ``all`` can only be used with doMatrix(): it returns the complete converted matrix equation.
+#. **"dd"**: doMatrix() returns the differential-mode block: the differential-mode equivalent network. Other instructions return the differential-mode result of the complete converted matrix.
+#. **"dc"**: doMatrix() returns the common-mode to differential-mode conversion block: the differential-mode equations in the common-mode variables. Generally this involves a non-square matrix. Other instructions return the differential-mode response to a common-mode source, computed with the complete converted matrix.
+#. **"cd"**: doMatrix() returns the differential-mode to common-mode conversion block: the common-mode equations in the differential-mode variables. Generally this involves a non-square matrix. Other instructions return the common-mode response to a differential-mode source, computed with the complete converted matrix.
+#. **"cc"**: doMatrix() returns the common-mode block: the common-mode equivalent network. Other instructions return the common-mode result of the complete converted matrix.
+
+Instructions other than doMatrix() use the complete converted matrix, so that their results include the mode conversion. With the keyword argument ``use_submatrix=True``, an instruction with ``convtype='dd'`` or ``convtype='cc'`` uses the differential-mode or common-mode block alone: the analysis of the equivalent network, which ignores the conversion blocks. For a fully balanced circuit (the conversion blocks are zero, attribute ``orthogonal`` of the result) both give the same transfers; ``use_submatrix=True`` then gives the poles and zeros of one mode only.
+
+The conversion types are named like the elements of a matrix: the first letter is the mode of the rows (the equations), the second letter the mode of the columns (the variables). As for the parameter :math:`y_{21}` of a two-port, which gives the response at port 2 to a stimulus at port 1, the first letter is the mode of the response and the second letter the mode of the stimulus. With ``convtype='dc'``, SLiCAP thus returns the block through which a common-mode stimulus produces a differential-mode response, and with ``convtype='cd'`` the block through which a differential-mode stimulus produces a common-mode response. The same naming applies to the loop gain types ``loopgaintype='dc'`` and ``loopgaintype='cd'``.
+
+.. admonition:: Note
+    :class: note
+
+    The matrix equation of ``convtype='dc'`` comes with the differential-mode sources (one per row) and the common-mode variables (one per column). These vectors give the shape of the block, not the direction of the transfer: the block does NOT carry a differential-mode source into a common-mode response. A transfer goes from the sources to the variables through the inverse of the matrix, in which the rows belong to the variables (detectors) and the columns to the sources. For a small conversion, the block of the inverse in the differential-mode rows and the common-mode columns equals :math:`-\mathbf{M}_{dd}^{-1}\mathbf{M}_{dc}\mathbf{M}_{cc}^{-1}`: the same position, the same name. A common-mode variable in a differential-mode equation, for instance a common-mode voltage that drives a differential-mode current, converts common mode into differential mode.
 
 Pairing nodes, branches, and parameters
 =======================================
@@ -96,7 +105,7 @@ Matrix equation convtype='all'
 
 .. admonition:: Important
     
-    After pairing, pair extensions in the vector with nodal voltages and branch currents have been replaced with ``_D`` and ``_C`` for differential-mode and common-mode, respectively.
+    After pairing, pair extensions in the vector with nodal voltages and branch currents have been replaced with ``_d`` and ``_c`` for differential-mode and common-mode, respectively, in lower case like the conversion types.
 
 Matrix equation convtype='dd'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -311,7 +320,7 @@ This prints:
 
 .. code-block:: text
 
-    Detector changed to: V_out_D
+    Detector changed to: V_out_d
 
 .. include:: ../sphinx/SLiCAPdata/eqn-AvddBJT.rst
 
@@ -324,7 +333,7 @@ This prints:
     
 .. code-block:: text
     
-    Detector changed to: V_out_C
+    Detector changed to: V_out_c
 
 .. include:: ../sphinx/SLiCAPdata/eqn-AvccBJT.rst
 
@@ -447,7 +456,7 @@ The console output:
 
 .. code-block:: text
 
-    Detector changed to: V_out_D
+    Detector changed to: V_out_d
     Difference onoise full circuit and DM equivalent network: 0
     Noise sources:
     I1 : S_i
@@ -459,9 +468,9 @@ The console output:
     I_noise_R2P : 4*T*k/R_b
     I_noise_R3 : 4*T*k/R_c
     Differential-mode noise sources contribution to DM onoise:
-    V1_D : S_va + S_vb
-    I_noise_R1_D : 2*T*k/R_a
-    I_noise_R2_D : 2*T*k/R_b
+    V1_d : S_va + S_vb
+    I_noise_R1_d : 2*T*k/R_a
+    I_noise_R2_d : 2*T*k/R_b
 
 Output noise of the common-mode equivalent circuit
 --------------------------------------------------
@@ -475,7 +484,7 @@ The console output:
 
 .. code-block:: text
 
-    Detector changed to: V_out_C
+    Detector changed to: V_out_c
     Difference onoise full circuit and CM equivalent network: 0
     Noise sources:
     I1 : S_i
@@ -488,9 +497,9 @@ The console output:
     I_noise_R3 : 4*T*k/R_c
     Common-mode noise sources contribution to CM onoise:
     I1 : S_i
-    V1_C : S_va/4 + S_vb/4
-    I_noise_R1_C : 8*T*k/R_a
-    I_noise_R2_C : 8*T*k/R_b
+    V1_c : S_va/4 + S_vb/4
+    I_noise_R1_c : 8*T*k/R_a
+    I_noise_R2_c : 8*T*k/R_b
     I_noise_R3 : 4*T*k/R_c
 
 Balanced dcvar
@@ -536,7 +545,7 @@ The console output:
 
 .. code-block:: text
 
-    Detector changed to: V_out_D
+    Detector changed to: V_out_d
     Difference ovar full circuit and DM equivalent network: 0
     DCvar sources:
     V1N : 0
@@ -555,13 +564,13 @@ The console output:
     V_dcvar_Lot_1 : 0
     I_dcvar_R2P : I_b**2*R_a**2*sigma_R**2
     Differential-mode dc variance sources contribution to DM onoise:
-    V1_D : 0
-    Ib_X1_D : 2*sigma_ib**2*(R_a*R_b - 2*R_a*R_s - R_b*R_s)**2/R_b**2
-    Vm_X1_D : 0
-    Io_X1_D : 2*sigma_io**2*(R_a*R_b + 2*R_a*R_s + R_b*R_s)**2/R_b**2
-    Vo_X1_D : 2*sigma_vo**2*(2*R_a + R_b)**2/R_b**2
-    I_dcvar_R1_D : 0
-    I_dcvar_R2_D : 2*I_b**2*R_a**2*sigma_R**2
+    V1_d : 0
+    Ib_X1_d : 2*sigma_ib**2*(R_a*R_b - 2*R_a*R_s - R_b*R_s)**2/R_b**2
+    Vm_X1_d : 0
+    Io_X1_d : 2*sigma_io**2*(R_a*R_b + 2*R_a*R_s + R_b*R_s)**2/R_b**2
+    Vo_X1_d : 2*sigma_vo**2*(2*R_a + R_b)**2/R_b**2
+    I_dcvar_R1_d : 0
+    I_dcvar_R2_d : 2*I_b**2*R_a**2*sigma_R**2
 
 Output dc variance of the common-mode equivalent circuit
 --------------------------------------------------------
@@ -575,7 +584,7 @@ The console output:
 
 .. code-block:: text
 
-    Detector changed to: V_out_C
+    Detector changed to: V_out_c
     Difference ovar full circuit and CM equivalent network: 0
     DC variance sources:
     V1N : 0
@@ -594,13 +603,13 @@ The console output:
     V_dcvar_Lot_1 : I_b**2*R_a**2*sigma_L**2
     I_dcvar_R2P : I_b**2*R_a**2*sigma_R**2/4
     Common-mode dc variance sources contribution to CM dc variance:
-    V1_C : 0
-    Ib_X1_C : sigma_ib**2*(R_a - R_s)**2/2
-    Vm_X1_C : 0
-    Io_X1_C : sigma_io**2*(R_a + R_s)**2/2
-    Vo_X1_C : sigma_vo**2/2
-    I_dcvar_R1_C : 0
-    I_dcvar_R2_C : I_b**2*R_a**2*sigma_R**2/2
+    V1_c : 0
+    Ib_X1_c : sigma_ib**2*(R_a - R_s)**2/2
+    Vm_X1_c : 0
+    Io_X1_c : sigma_io**2*(R_a + R_s)**2/2
+    Vo_X1_c : sigma_vo**2/2
+    I_dcvar_R1_c : 0
+    I_dcvar_R2_c : I_b**2*R_a**2*sigma_R**2/2
     V_dcvar_Lot_1 : I_b**2*R_a**2*sigma_L**2
         
 .. image:: /API/img/colorCode.svg

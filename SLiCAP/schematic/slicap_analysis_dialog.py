@@ -73,7 +73,9 @@ _GROUPS = [
 #            "noise"         — detector required + source optional (doNoise /
 #                              doDCvar; lgref is forced None by the shell)
 #            "none"          — no refs at all
-# convtype:  "full" (doMatrix only, manual) or "dm-cm" (None/dd/cc)
+# convtype:  "full" (doMatrix only, manual) or "dm-cm" (None/dd/cc/dc/cd;
+#            analyses use the full converted matrix, dd and cc optionally
+#            their submatrix: use_submatrix)
 # base:      result-variable prefix (auto-incremented per instruction file)
 # method:    True — the instruction takes method=None|'det'|'state' (the
 #            engine for poles/zeros: ini.pz_method, determinant, or the
@@ -105,7 +107,7 @@ _RULES = {
 
 _CONVTYPES = {
     "full":  ["None", "all", "dd", "cc", "dc", "cd"],
-    "dm-cm": ["None", "dd", "cc"],
+    "dm-cm": ["None", "dd", "cc", "dc", "cd"],
 }
 
 
@@ -309,7 +311,15 @@ class SLiCAPAnalysisDialog(QDialog):
         orow.addSpacing(20)
         orow.addWidget(QLabel("convtype:"))
         self._convtype = QComboBox()
+        self._convtype.currentTextChanged.connect(self._update)
         orow.addWidget(self._convtype)
+        self._use_submatrix = QCheckBox("use submatrix")
+        self._use_submatrix.setToolTip(
+            "Only for dd and cc: use the differential-mode or common-mode "
+            "submatrix alone (the equivalent network). Without it, the "
+            "analysis uses the full converted matrix, the conversion blocks "
+            "included.")
+        orow.addWidget(self._use_submatrix)
         orow.addSpacing(20)
         self._method_lbl = QLabel("method:")
         orow.addWidget(self._method_lbl)
@@ -450,6 +460,7 @@ class SLiCAPAnalysisDialog(QDialog):
         convtype = lit(kw.get("convtype"))
         if convtype is not None:
             self._convtype.setCurrentText(str(convtype))
+        self._use_submatrix.setChecked(bool(lit(kw.get("use_submatrix"), False)))
         pardefs = lit(kw.get("pardefs"), "__absent__")
         if pardefs == "circuit":
             mode = 1
@@ -506,6 +517,14 @@ class SLiCAPAnalysisDialog(QDialog):
 
         # stepping requires numeric results (symbolic stepping is not
         # implemented — SLiCAPinstruction._checkStep)
+        # the submatrix of dd or cc only, for an analysis (not doMatrix)
+        ct = self._convtype.currentText()
+        sub_ok = ct in ("dd", "cc") and self._convtype.count() > 0 \
+            and self._convtype.findText("all") < 0
+        self._use_submatrix.setEnabled(sub_ok)
+        if not sub_ok:
+            self._use_submatrix.setChecked(False)
+
         stepping = self._step.isChecked() and self._step.isVisibleTo(self)
         if stepping and not self._numeric.isChecked():
             self._numeric.setChecked(True)
@@ -581,6 +600,8 @@ class SLiCAPAnalysisDialog(QDialog):
         ct = self._convtype.currentText()
         if ct and ct != "None":
             parts.append(f"convtype='{ct}'")
+        if self._use_submatrix.isEnabled() and self._use_submatrix.isChecked():
+            parts.append("use_submatrix=True")
         pd_mode = self._pd_group.checkedId()
         if pd_mode == 1:
             parts.append("pardefs='circuit'")

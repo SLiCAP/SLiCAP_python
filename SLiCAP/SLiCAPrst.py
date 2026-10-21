@@ -271,9 +271,9 @@ class RSTformatter(_BaseFormatter):
                     headerList = ['#', 'Re [rad/s]', 'Im [rad/s]', 'w [rad/s]', 'Q']
             else:
                 if ini.hz == True:
-                    headerList = ['#', ':math:`f` [Hz]']
+                    headerList = ['#', ':math:`s` [Hz]']
                 else:
-                    headerList = ['#', ':math:`\\omega` [rad/s]']
+                    headerList = ['#', ':math:`s` [rad/s]']
             linesList = []
             if resultObject.dataType == 'poles' or resultObject.dataType == 'pz':
                 if numeric:
@@ -416,7 +416,8 @@ class RSTformatter(_BaseFormatter):
             RST =  "**Found no specifications of type: " + specType + ".**\n\n"
         return Snippet(RST, self.format)
 
-    def eqn(self, LHS, RHS, units="", label="", multiline=False, order=None):
+    def eqn(self, LHS, RHS, units="", label="", multiline=False, order=None,
+            intlen=0):
         """
         Creates a displayed (numbered) equation.
 
@@ -440,7 +441,14 @@ class RSTformatter(_BaseFormatter):
                       None (default) for sympy's ordering, ``'none'`` to keep
                       the order of LHS and RHS, e.g. ``G + s*C`` with matrices.
         :type order: str, NoneType
-        
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`. Defaults
+                       to 0: all rational coefficients become floats.
+        :type intlen: int
+
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         
@@ -464,7 +472,7 @@ class RSTformatter(_BaseFormatter):
             units = ''
         
         if multiline:
-            TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), 
+            TEX = '\n' + sp.multiline_latex(roundN(LHS, intlen=intlen), roundN(RHS, intlen=intlen), 
                                             terms_per_line=multiline,
                                             **({} if order is None else {"order": order}))
             # 'aligned', not 'align': Sphinx wraps the content of a math
@@ -481,9 +489,62 @@ class RSTformatter(_BaseFormatter):
             TEX = TEX.replace("\n", "\n    ")
             RST += TEX
         else:
-            RST += '    ' + exprLatex(LHS, order) + ' = ' + exprLatex(RHS, order)
+            RST += '    ' + exprLatex(LHS, order, intlen) + ' = ' + exprLatex(RHS, order, intlen)
             if units != '':
                 RST += '\\,\\,\\left[\\mathrm{' + units + '}\\right]\n\n'
+        return Snippet(RST, self.format)
+
+    def eqns(self, pairs, label="", order=None, intlen=0):
+        """
+        Creates one displayed (numbered) equation with several lines: one
+        equation per line, aligned on the equal sign, for instance the
+        solution of a set of equations.
+
+        :param pairs: The equations: an iterable of (LHS, RHS) pairs, e.g.
+                      ``solution.items()`` of a dict returned by
+                      ``sympy.solve(..., dict=True)``.
+        :type pairs: iterable
+
+        :param label: Reference label of the display. Defaults to an empty
+                      string.
+        :type label: str
+
+        :param order: Order of the terms, see :func:`exprLatex`.
+        :type order: str, NoneType
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`.
+        :type intlen: int
+
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+
+        :example:
+
+        >>> import SLiCAP as sl
+        >>> import sympy as sp
+        >>>
+        >>> x, y = sp.symbols("x y")
+        >>> sol = sp.solve([x + y - 3, x - y - 1], [x, y], dict=True)[0]
+        >>> rst = sl.RSTformatter()
+        >>> rst.eqns(sol.items(), label="eq-sol").save("sol")
+        """
+        lines = []
+        for LHS, RHS in pairs:
+            if type(LHS) == str:
+                LHS = _sympify(LHS)
+            if type(RHS) == str:
+                RHS = _sympify(RHS)
+            lines.append(exprLatex(LHS, order, intlen) + ' &= ' + exprLatex(RHS, order, intlen))
+        RST = '.. math::\n'
+        if label != '':
+            RST += '    :label: ' + label + '\n'
+        RST += '\n    \\begin{aligned}\n'
+        RST += ''.join('    ' + line + (' \\\\\n' if k < len(lines) - 1 else '\n')
+                       for k, line in enumerate(lines))
+        RST += '    \\end{aligned}\n\n'
         return Snippet(RST, self.format)
 
     def stateSpace(self, resultObject, label="", parts=None):
@@ -522,7 +583,7 @@ class RSTformatter(_BaseFormatter):
         RST += '    \\end{aligned}\n\n'
         return Snippet(RST, self.format)
 
-    def matrixEqn(self, Iv, M, Dv, label=""):
+    def matrixEqn(self, Iv, M, Dv, label="", intlen=0):
         """
         Creates a displayed matrix equation without evaluating it.
 
@@ -537,7 +598,14 @@ class RSTformatter(_BaseFormatter):
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
-        
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`. Defaults
+                       to 0: all rational coefficients become floats.
+        :type intlen: int
+
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
@@ -545,8 +613,8 @@ class RSTformatter(_BaseFormatter):
         if label != '':
             RST += '    :label: ' + label + '\n'
         RST += '\n'
-        RST += '    ' + sp.latex(roundN(Iv)) + '='
-        RST += sp.latex(roundN(M)) + '\\cdot ' + sp.latex(roundN(Dv)) + '\n\n'
+        RST += '    ' + sp.latex(roundN(Iv, intlen=intlen)) + '='
+        RST += sp.latex(roundN(M, intlen=intlen)) + '\\cdot ' + sp.latex(roundN(Dv, intlen=intlen)) + '\n\n'
         return Snippet(RST, self.format)
 
     def stepArray(self, stepVars, stepArray, label="", caption=""):
@@ -657,7 +725,7 @@ class RSTformatter(_BaseFormatter):
                 RST += '    :lineno-start: ' + str(firstNumber) + '\n'
         return Snippet(RST, self.format)
 
-    def expr(self, expr, units="", name=None):
+    def expr(self, expr, units="", name=None, intlen=0):
         """
         Creates in inline expression. 
         
@@ -669,7 +737,14 @@ class RSTformatter(_BaseFormatter):
         
         :param name: Name of the variable for RST substitution.
         :type name: str:
-            
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`. Defaults
+                       to 0: all rational coefficients become floats.
+        :type intlen: int
+
         :return: SLiCAP Snippet object with save variable append mode
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
@@ -678,7 +753,7 @@ class RSTformatter(_BaseFormatter):
                 units = units2TeX(units)
             except:
                 pass
-            RST = ':math:`' + exprLatex(expr)
+            RST = ':math:`' + exprLatex(expr, intlen=intlen)
             if units != '':
                 RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
             else:
@@ -688,7 +763,7 @@ class RSTformatter(_BaseFormatter):
             raise NameError
         return Snippet(RST, self.format, mode="a")
 
-    def eqnInline(self, LHS, RHS, units="", name=None):
+    def eqnInline(self, LHS, RHS, units="", name=None, intlen=0):
         """
         Creates in inline equation. 
         
@@ -703,7 +778,14 @@ class RSTformatter(_BaseFormatter):
         
         :param name: Name of the variable for RST substitution.
         :type name: str:
-            
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`. Defaults
+                       to 0: all rational coefficients become floats.
+        :type intlen: int
+
         :return: SLiCAP Snippet object with save variable append mode
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
@@ -712,7 +794,7 @@ class RSTformatter(_BaseFormatter):
                 units = units2TeX(units)
             except:
                 pass
-            RST = ':math:`' + exprLatex(LHS) + '=' + exprLatex(RHS)
+            RST = ':math:`' + exprLatex(LHS, intlen=intlen) + '=' + exprLatex(RHS, intlen=intlen)
             if units != '':
                 RST += '\\, \\left[ \\mathrm{' + units + '} \\right]` '
             else:
@@ -753,6 +835,12 @@ class RSTformatter(_BaseFormatter):
 
 # Non-public functions for creating table snippets
 
+def _csv_cell(text):
+    """A csv-table cell: always quoted, quotes inside doubled, so that a comma
+    in the cell, such as the separator of the subscript parts in
+    V_{\\mathrm{DC},\\mathrm{T}}, does not split it (2026-10-21)."""
+    return '"' + text.replace('"', '""') + '"'
+
 def _RSTcreateCSVtable(name, headerList, linesList, unitpos=None, 
                        label='', numeric=[]):
     """
@@ -783,9 +871,9 @@ def _RSTcreateCSVtable(name, headerList, linesList, unitpos=None,
     RST += '    :header: '
     for item in headerList:
         if type(item) == str:
-            RST += '"' + item + '", '
+            RST += _csv_cell(item) + ', '
         else:
-            RST += ':math:`' + sp.latex(roundN(item)) + '`, '
+            RST += _csv_cell(':math:`' + sp.latex(roundN(item)) + '`') + ', '
     RST = RST[:-2] + '\n'
     RST +=  '    :widths: auto\n'
     for line in linesList:
@@ -794,13 +882,13 @@ def _RSTcreateCSVtable(name, headerList, linesList, unitpos=None,
         j = 0
         for item in line:
             if i == unitpos:
-                RST += ':math:`\\mathrm{' + units2TeX(item) + '}`, '
+                RST += _csv_cell(':math:`\\mathrm{' + units2TeX(item) + '}`') + ', '
             elif type(item) == str:
-                RST += '"' + item + '", '
+                RST += _csv_cell(item) + ', '
             elif j in numeric:
-                RST += ':math:`' + sp.latex(roundN(sp.N(item))) + '`, '
+                RST += _csv_cell(':math:`' + sp.latex(roundN(sp.N(item))) + '`') + ', '
             else:
-                RST += ':math:`' + sp.latex(roundN(item)) + '`, '
+                RST += _csv_cell(':math:`' + sp.latex(roundN(item)) + '`') + ', '
             i += 1
             j += 1
         RST = RST[:-2]

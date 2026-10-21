@@ -140,6 +140,7 @@ class instruction(object):
         self.convVars    = None
         self.stateSpace  = None
         self.orthogonal  = None
+        self.useSubmatrix = False
         """
         Base conversion matrix (sympy.Matrix).
         """
@@ -162,6 +163,12 @@ class instruction(object):
         self.reactances  = None
         """
         Names of the columns of Nr (list of str), method 'tc'.
+        """
+
+        self.Rr          = None
+        """
+        Resistance matrix Nr^T G^-1 Nr of the reactive elements
+        (sympy.Matrix), method 'tc'; None if the network has no DC solution.
         """
 
         self.denom       = []
@@ -504,6 +511,7 @@ class instruction(object):
         self.Nr          = None
         self.Cr          = None
         self.reactances  = None
+        self.Rr          = None
         self.denom       = []
         self.numer       = []
         self.laplace     = []
@@ -763,7 +771,8 @@ class instruction(object):
                          conversion type and stepping: the first-order matrix
                          as with 'state', plus the incidence matrix (.Nr),
                          the values (.Cr) and the names (.reactances) of the
-                         reactive elements, C = Nr Cr Nr^T.
+                         reactive elements, C = Nr Cr Nr^T, and the resistance
+                         matrix (.Rr) = Nr^T G^-1 Nr.
         :type method: str, NoneType
 
         :Example:
@@ -1957,10 +1966,17 @@ class instruction(object):
             # executed result: the SLiCAP consistency checks do not apply — skip.
             return
         self.checkCircuit()
+        # Analyses with a conversion type use the full converted matrix: the
+        # conversion type selects the response mode (first letter) and the
+        # stimulus mode (second letter). With useSubmatrix, dd and cc use
+        # their submatrix alone, the equivalent network (Anton, 2026-10-20).
         if self.dataType != "matrix":
-            if self.convType not in [None, "dd", "cc"]:
+            if self.convType == "all":
                 self.errors += 1
-                print("Error: conversion type '%s' can only be combined with doMatrix() (or instruction.dataType='matrix')."%(self.convType))
+                print("Error: conversion type 'all' can only be combined with doMatrix() (or instruction.dataType='matrix').")
+            elif self.convType in ("dc", "cd") and self.useSubmatrix:
+                self.errors += 1
+                print("Error: use_submatrix=True can not be combined with conversion type '%s': its submatrix is not square." % self.convType)
         if self.dataType == 'noise':
             # Noise sources of resistors add k and T to the circuit parameters
             # These sources should be added before executing the instruction.

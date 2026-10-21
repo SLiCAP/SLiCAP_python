@@ -9,7 +9,7 @@ you never declare connections explicitly — you simply draw.
 Drawing a wire
 ==============
 
-#. Choose :menuselection:`Place --> Wire` (shortcut :kbd:`W`).
+#. Choose :menuselection:`Circuit --> Wire` (shortcut :kbd:`W`).
 #. Click the starting point (usually a pin).
 #. Click each corner; the wire routes in right-angle (Manhattan) segments.
 #. Click the end point.  Right-click (or press :kbd:`Esc`) to finish.
@@ -26,7 +26,7 @@ Junctions
 Where three or more connections meet, a **junction dot** is added automatically
 so the crossing is unambiguous.  Two crossing wires do *not* connect and have
 no dot.  To connect them, place a junction on the crossing with
-:menuselection:`Place --> Junction` (:kbd:`J`): the wires passing through that
+:menuselection:`Circuit --> Junction` (:kbd:`J`): the wires passing through that
 point are split there, their ends meet, and the dot appears because a
 connection now exists.  A junction placed on a single wire or in empty space
 changes nothing.  Dots are never drawn by hand; they show connections.

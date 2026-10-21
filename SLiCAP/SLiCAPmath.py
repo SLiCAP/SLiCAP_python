@@ -2169,35 +2169,63 @@ def float2rational(expr):
         pass
     return expr
 
-def rational2float(expr):
+def rational2float(expr, intlen=0):
     """
-    Converts rational numbers in expr into floats.
+    Converts the rational numbers in expr into floats, except the exponents
+    of roots: an exponent 1/n or -1/n, with n an integer, is kept, so that a
+    root is displayed as a root. Other rational exponents, such as 41/50,
+    become floats. A rational p/q whose numerator and denominator both have
+    at most intlen digits is kept as a fraction. Only the parts of expr that
+    change are rebuilt.
 
-    :param expr: Sympy expression in which rational numbers need to be
-                 converterd into floats.
+    :param expr: Sympy expression or matrix in which rational numbers need
+                 to be converted into floats.
     :type expr: sympy.Expression
 
-    :return: expression in which rational numbers have been replaced with floats.
+    :param intlen: Maximum number of digits of the numerator and of the
+                   denominator of a rational that is kept as a fraction.
+                   Defaults to 0: all rationals become floats.
+    :type intlen: int
+
+    :return: expression in which rational numbers have been replaced with
+             floats, except the exponents of roots and the rationals with
+             at most intlen digits.
     :rtype:  sympy.Expression
     """
-    try:
-        for atom in expr.atoms():
-            if isinstance(atom, sp.core.numbers.Rational) and not isinstance(atom, sp.core.numbers.Integer):
-                expr = expr.xreplace({atom: sp.Float(atom, ini.disp)})
-    except AttributeError:
-        pass
-    return expr
+    if isinstance(expr, sp.MatrixBase):
+        return expr.applyfunc(lambda e: rational2float(e, intlen))
+    if not isinstance(expr, sp.Basic):
+        return expr
+    if isinstance(expr, sp.Rational) and not isinstance(expr, sp.Integer):
+        if len(str(abs(expr.p))) <= intlen and len(str(expr.q)) <= intlen:
+            return expr
+        return sp.Float(expr, ini.disp)
+    if (isinstance(expr, sp.Pow) and isinstance(expr.exp, sp.Rational)
+            and abs(expr.exp.p) == 1 and expr.exp.q > 1):
+        base = rational2float(expr.base, intlen)
+        return expr if base == expr.base else expr.func(base, expr.exp)
+    args = [rational2float(arg, intlen) for arg in expr.args]
+    if all(new is old for new, old in zip(args, expr.args)):
+        return expr
+    return expr.func(*args)
 
-def roundN(expr, numeric=False):
+def roundN(expr, numeric=False, intlen=0):
     """
     Rounds all float and rational numbers in an expression to ini.disp digits,
-    and converts integers into floats if their number of digits exceeds ini.disp
+    and converts integers into floats if their number of digits exceeds ini.disp.
+    Rationals whose numerator and denominator have at most intlen digits are
+    kept as fractions (see :func:`rational2float`).
 
     :param expr: Input expression
     :type expr: sympy.Expr
 
     :param numeric: True if numeric evaluation (pi = 3.14...) must be done
     :type numeric: Bool
+
+    :param intlen: Maximum number of digits of the numerator and of the
+                   denominator of a rational that is kept as a fraction.
+                   Defaults to 0: all rationals become floats.
+    :type intlen: int
 
     :return: modified expression
     :rtype: sympy.Expr
@@ -2212,7 +2240,7 @@ def roundN(expr, numeric=False):
         expr = sp.N(expr, ini.disp)
     else:
         # Convert rationals into floats
-        expr = rational2float(expr)
+        expr = rational2float(expr, intlen)
     # Clean-up the expression
     try:
         # Round floats to display accuracy

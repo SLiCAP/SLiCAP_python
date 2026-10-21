@@ -10,7 +10,7 @@ link), so the netlister and the Properties dialog need nothing else.
 Opening the place dialog
 ========================
 
-Choose :menuselection:`Place --> Symbol…` (shortcut :kbd:`S`).
+Choose :menuselection:`Circuit --> Symbol…` (shortcut :kbd:`S`).
 
 .. figure:: /GUI/img/place_symbol_dialog.png
    :alt: The Place Symbol dialog
@@ -51,8 +51,11 @@ Basic SLiCAP symbols
      - ``I``
      - Independent current source.
    * - VCVS / VCCS
-     - ``VCVS`` / ``VCVS``
+     - ``VCVS`` / ``VCCS``
      - Voltage-controlled voltage / current source.
+   * - VCVS-ref / VCCS-ref
+     - ``VCVS-ref`` / ``VCCS-ref``
+     - Voltage-controlled voltage / current source with only the output terminals; the controlling nodes are entered as references (ref 1: + node, ref 2: - node). The netlist line is the same as that of VCVS / VCCS.
    * - CCVS / CCCS
      - ``CCVS`` / ``CCCS``
      - Current-controlled voltage / current source.

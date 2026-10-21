@@ -500,7 +500,27 @@ def symbol_to_latex(name: str) -> str:
 
 # Bump when the SLiCAP→LaTeX formatting changes (e.g. sub2rm IEEE subscripts),
 # so SVGs cached under an older formatting are re-rendered rather than reused.
-_FORMAT_VERSION = "ieee-sub2rm-1"
+_FORMAT_VERSION = "ieee-sub2rm-2"      # 2: exact glyph boxes (dvisvgm --exact-bbox)
+
+
+_EXACT_BBOX: "bool | None" = None
+
+
+def _dvisvgm_args() -> list:
+    """dvisvgm's options. ``--exact-bbox`` makes the SVG's box follow the
+    glyph outlines instead of the font metrics: the top of the A of
+    \\LaTeX, raised above its metric box, was outside the SVG box, so the
+    item painted outside its boundingRect and left ghosts when dragged
+    (Anton, 2026-10-21). Probed once: older dvisvgm versions lack it."""
+    global _EXACT_BBOX
+    if _EXACT_BBOX is None:
+        try:
+            out = subprocess.run([_latex_tools()[1], "--help"], capture_output=True,
+                                 text=True, timeout=20).stdout
+        except Exception:
+            out = ""
+        _EXACT_BBOX = "--exact-bbox" in out
+    return ["--no-fonts"] + (["--exact-bbox"] if _EXACT_BBOX else [])
 
 
 def _cache_path(expr_str: str, cache: Path) -> Path:
@@ -537,7 +557,7 @@ def _render_latex_str(latex_str: str, cache_dir=None) -> bytes | None:
     if not _latex_installed():
         return None
     cache = _resolve_cache(cache_dir)
-    h = hashlib.sha256(("raw:" + latex_str).encode()).hexdigest()[:24]
+    h = hashlib.sha256(("raw:" + _FORMAT_VERSION + "\x00" + latex_str).encode()).hexdigest()[:24]
     path = cache / f"{h}.svg"
     if path.exists():
         _touch(cache, path.name)
@@ -574,7 +594,7 @@ def _latex_to_svg(latex_str: str, cache: Path) -> bytes | None:
 
         svg_file = tmpdir / "expr.svg"
         subprocess.run(
-            [_latex_tools()[1], "--no-fonts", "expr.dvi", "-o", "expr.svg"],
+            [_latex_tools()[1], *_dvisvgm_args(), "expr.dvi", "-o", "expr.svg"],
             cwd=tmpdir,
             capture_output=True,
         )
@@ -613,7 +633,7 @@ def render_latex_raw(latex_code: str,
         preamble = r"\usepackage{amsmath}" + "\n" + r"\usepackage{amssymb}" + "\n"
 
     cache_key = hashlib.sha256(
-        (preamble + "\x00" + latex_code + "\x00" + max_width).encode()
+        (_FORMAT_VERSION + "\x00" + preamble + "\x00" + latex_code + "\x00" + max_width).encode()
     ).hexdigest()[:24]
     cache = _resolve_cache(cache_dir)
     cached = cache / f"frag_{cache_key}.svg"
@@ -653,7 +673,7 @@ def render_latex_raw(latex_code: str,
             return None, "pdflatex failed (no output)"
         svg = tmpdir / "frag.svg"
         subprocess.run(
-            [_latex_tools()[1], "--no-fonts", "frag.dvi", "-o", "frag.svg"],
+            [_latex_tools()[1], *_dvisvgm_args(), "frag.dvi", "-o", "frag.svg"],
             cwd=tmpdir, capture_output=True,
         )
         if not svg.exists():

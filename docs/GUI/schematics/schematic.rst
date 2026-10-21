@@ -149,11 +149,11 @@ Creating and opening schematics, and application-wide actions, live in the
 A first schematic in five steps
 ===============================
 
-#. **Place a symbol.**  Open :menuselection:`Place --> Symbol…` (shortcut
+#. **Place a symbol.**  Open :menuselection:`Circuit --> Symbol…` (shortcut
    :kbd:`S`), pick a resistor and click on the canvas to drop it.  See
    :doc:`/GUI/schematics/placing_symbols`.
 
-#. **Wire it up.**  Choose :menuselection:`Place --> Wire` (shortcut :kbd:`W`)
+#. **Wire it up.**  Choose :menuselection:`Circuit --> Wire` (shortcut :kbd:`W`)
    and click from one pin to the next.  Unconnected pins show a small grey
    marker that disappears once a wire reaches them.  See :doc:`/GUI/schematics/wiring`.
 
@@ -162,7 +162,7 @@ A first schematic in five steps
    :doc:`/GUI/schematics/component_properties`.
 
 #. **Mark source and detector.**  Use
-   :menuselection:`Place --> Define src / det / lg ref…` to designate the
+   :menuselection:`Circuit --> Define src / det / lg ref…` to designate the
    independent source and the detector. Do this as the last step, with the
    schematic complete and saved: the dialog's drop-down lists come from the
    parsed circuit, so elements added later are not offered until the dialog

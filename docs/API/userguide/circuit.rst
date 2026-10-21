@@ -319,7 +319,7 @@ Scalable Vector Graphics ``.svg`` images are preferred for displaying on HTML pa
 Updating the images: updateImages()
 -----------------------------------
 
-A schematic can show images placed with the schematic editor (:menuselection:`Place --> Image…`), for example the plots of its own simulation written to ``img/`` by ``makeFigure()``. Such an image is a link: its file is read when the schematic is exported. ``makeCircuit()`` exports the schematic at the top of the script, before the analyses run, so its images show the plots of the previous run. `updateImages() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.updateImages>`__ exports the schematic again, netlist and images, at the end of the script, after the figures:
+A schematic can show images placed with the schematic editor (:menuselection:`Insert --> Image…`), for example the plots of its own simulation written to ``img/`` by ``makeFigure()``. Such an image is a link: its file is read when the schematic is exported. ``makeCircuit()`` exports the schematic at the top of the script, before the analyses run, so its images show the plots of the previous run. `updateImages() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.updateImages>`__ exports the schematic again, netlist and images, at the end of the script, after the figures:
 
 .. code-block:: python
 

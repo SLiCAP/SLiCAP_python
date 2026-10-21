@@ -696,12 +696,18 @@ def _correctDMcurrentinstr(instr):
                         instr.numer[i] = instr.numer[i]/2
     return instr
 
+# Suffixes of the converted variables, detectors, references and noise
+# sources: lower case, like the conversion types 'dd', 'dc', 'cd', 'cc'
+# (Anton, 2026-10-19). V_outP, V_outN --> V_out_d, V_out_c.
+_DM_SUFFIX = 'd'
+_CM_SUFFIX = 'c'
+
 def _updateSRCnames(instr):
     """
     If instr.convType == "dd" or "cc" and ini.update_srcnames == True, this 
     function updates the names and values of noise and dcvar sources after a 
     doNoise() or doDcvar() instruction, respectively.
-    It replaces the pair extensions with "_D", or "_C" for conversion types "dd"
+    It replaces the pair extensions with "_d", or "_c" for conversion types "dd"
     and "cc", respectively.
     These source names are the keys of the dictionaries:
     - instr.snoiseTerms
@@ -741,9 +747,9 @@ def _updateSRCnames(instr):
                 else:
                     nsteps = 0
                 if instr.convType == "dd":
-                    ext = "D"
+                    ext = _DM_SUFFIX
                 elif instr.convType == "cc":
-                    ext = "C"
+                    ext = _CM_SUFFIX
                 vi = srcName[0].upper()
                 if baseName[-1] == "_":
                     newName = baseName + ext
@@ -751,23 +757,23 @@ def _updateSRCnames(instr):
                     newName = baseName + "_" + ext
                 if newName not in newSterms.keys():
                     if vi == "V":
-                        if ext == "D":
+                        if ext == _DM_SUFFIX:
                             if nsteps:
                                 newSterms[newName] = [sTerms[baseName + instr.pairExt[0]][i] + sTerms[baseName + instr.pairExt[1]][i] for i in range(nsteps)]
                             else:
                                 newSterms[newName] = sTerms[baseName + instr.pairExt[0]] + sTerms[baseName + instr.pairExt[1]]
-                        elif ext == "C":
+                        elif ext == _CM_SUFFIX:
                             if nsteps:
                                 newSterms[newName] = [sTerms[baseName + instr.pairExt[0]][i]/4 + sTerms[baseName + instr.pairExt[1]][i]/4 for i in range(nsteps)]
                             else:
                                 newSterms[newName] = sTerms[baseName + instr.pairExt[0]]/4 + sTerms[baseName + instr.pairExt[1]]/4
                     elif vi == "I":
-                        if ext == "D":
+                        if ext == _DM_SUFFIX:
                             if nsteps:
                                 newSterms[newName] = [sTerms[baseName + instr.pairExt[0]][i]/4 + sTerms[baseName + instr.pairExt[1]][i]/4 for i in range(nsteps)]
                             else:
                                 newSterms[newName] = sTerms[baseName + instr.pairExt[0]]/4 + sTerms[baseName + instr.pairExt[1]]/4
-                        elif ext == "C":
+                        elif ext == _CM_SUFFIX:
                             if nsteps:
                                 newSterms[newName] = [sTerms[baseName + instr.pairExt[0]][i] + sTerms[baseName + instr.pairExt[1]][i] for i in range(nsteps)]
                             else:
@@ -1506,12 +1512,12 @@ def _convertedControl(instr, control):
     The detector of a loop gain or servo function of a reference pair after
     the conversion: the controlling quantity of the pair (the unconverted
     names in *control*) in the requested mode. A paired name V_x<P> becomes
-    V_x_D (dd, cd, all) or V_x_C (cc, dc); an unpaired node keeps its name;
+    V_x_d (dd, cd, all) or V_x_c (cc, dc); an unpaired node keeps its name;
     a node absent from the block is a virtual ground there (None).
     """
     names = [str(v) for v in instr.Dv]
     ext = instr.pairExt[0]
-    mode = 'C' if instr.convType in ('cc', 'cd') else 'D'                # response: first letter
+    mode = _CM_SUFFIX if instr.convType in ('cc', 'cd') else _DM_SUFFIX  # response: first letter
 
     def mapped(name):
         if name is None:
@@ -1738,9 +1744,9 @@ def _pairReferences(refs, pairExt, convType):
         if len(refs[i]) > lenExt and refs[i][-lenExt:] in pairExt:
             ref = refs[i][:-lenExt]
             if convType == 'dd' or convType == 'dc':
-                ref += '_D'
+                ref += '_' + _DM_SUFFIX
             elif convType == 'cc'or convType == 'cd':
-                ref += '_C'
+                ref += '_' + _CM_SUFFIX
             refs[i] = ref
     refs = list(set(refs))
     return refs
@@ -1791,8 +1797,14 @@ def _convertMatrices(instr):
     # Fully balanced: the DM and CM parts do not couple (both anti-diagonal
     # blocks zero). Only then is the dd (cc) block a closed circuit whose
     # loop can be opened by injection (Anton, 2026-09-11).
-    instr.orthogonal = (instr.M[:dimDm, dimDm:].is_zero_matrix
-                        and instr.M[dimDm:, :dimDm].is_zero_matrix)
+    # An entry is zero only if it is identically zero: a rational expression
+    # in s and the parameters, decided exactly with cancel(). sympy's
+    # is_zero_matrix answers None for a symbolic entry that is not provably
+    # zero, such as C_1*s/2 - 1/(4*R_2) (Anton, 2026-10-20: False whenever
+    # M_dc or M_cd has a nonzero entry).
+    def _zero(block):
+        return all(sp.cancel(entry) == 0 for entry in block)
+    instr.orthogonal = _zero(instr.M[:dimDm, dimDm:]) and _zero(instr.M[dimDm:, :dimDm])
     instr = _getSubMatrices(instr, dimDm, dimCm, instr.convType)
     #instr.detector = instr.detector
     instr.detector = _makeNewDetector(instr, pairs, dmVars, cmVars)
@@ -1811,22 +1823,23 @@ def _createConversionMatrices(instr):
     n = len(pairs)
     m = len(unPaired)
     # Create conversion matrix: express nodal voltages and branch currents in
-    # corresponding differential-mode and common-mode quantities.
+    # corresponding differential-mode and common-mode quantities. The entries
+    # are exact (sympy Rational): A is a definition, not a computed result.
     for i in range(n):
         row0 = depVars.index(pairs[i][0]) # nodal voltage or branch current
         row1 = depVars.index(pairs[i][1]) # nodal voltage or branch current
         if pairs[i][0][0] == 'V':
             # transform pair DM and CM voltages into node voltages
-            A[row0, i] = 1/2
-            A[row1, i]  = -1/2
+            A[row0, i] = sp.Rational(1, 2)
+            A[row1, i]  = -sp.Rational(1, 2)
             A[row0, i+n] = 1
             A[row1, i+n] = 1
         elif pairs[i][0][0] == 'I':
             # transform pair of DM and CM currents into branch currents
             A[row0, i] = 1
             A[row1, i]  = -1
-            A[row0, i+n] = 1/2
-            A[row1, i+n] = 1/2
+            A[row0, i+n] = sp.Rational(1, 2)
+            A[row1, i+n] = sp.Rational(1, 2)
     for i in range(m):
         # Unpaired variable, no transformation
         row = depVars.index(unPaired[i])
@@ -1872,8 +1885,8 @@ def _pairVariables(instr):
                         baseName = pairs[-1][0][0: -l_sub1]
                     if baseName[-1] != '_':
                         baseName += '_'
-                    dmVars.append(baseName + 'D')
-                    cmVars.append(baseName + 'C')
+                    dmVars.append(baseName + _DM_SUFFIX)
+                    cmVars.append(baseName + _CM_SUFFIX)
                     #_makeNewDetector(instr, [pairedVar, var], baseName)
                 else:
                     unPaired.append(var)
@@ -1936,13 +1949,13 @@ def _makeNewDetector(instr, pairs, dmVars, cmVars):
                 if base_P == base_N:
                     baseName = base_P + "_"
                     if instr.convType == 'dd' or instr.convType=='dc':    # response: first letter
-                        if baseName + "D" in dmVars:
-                            instr.detector = baseName + "D"
+                        if baseName + _DM_SUFFIX in dmVars:
+                            instr.detector = baseName + _DM_SUFFIX
                             print("Detector changed to:", instr.detector)
                             new_detector = True
                     elif instr.convType == 'cc' or instr.convType=='cd':
-                        if baseName + "C" in cmVars:
-                            instr.detector = baseName + "C"
+                        if baseName + _CM_SUFFIX in cmVars:
+                            instr.detector = baseName + _CM_SUFFIX
                             print("Detector changed to:", instr.detector)
                             new_detector = True
             elif old_detector[1] == None:
@@ -1961,23 +1974,35 @@ def _getSubMatrices(instr, dimDm, dimCm, convType):
     type: convType.
     """
     convType = convType.lower()
+    if instr.dataType != 'matrix' and not instr.useSubmatrix:
+        # An analysis uses the full converted matrix: the source is driven in
+        # the stimulus mode (second letter of the conversion type) and the
+        # detector is converted to the response mode (first letter). Only
+        # with use_submatrix=True, dd and cc use their submatrix alone: the
+        # differential-mode or common-mode equivalent network, which ignores
+        # the conversion blocks (Anton, 2026-10-20).
+        return instr
     if convType == 'dd':
         instr.M  = instr.M.extract([i for i in range(0, dimDm)],[i for i in range(0, dimDm)])
         instr.Iv = sp.Matrix(instr.Iv[0: dimDm])
         instr.Dv = sp.Matrix(instr.Dv[0: dimDm])
     elif convType == 'dc':
-        # differential-mode response (variables) to a common-mode stimulus
-        # (sources, equations): mixed-mode naming [response][stimulus]
-        # (Bockelman and Eisenstadt); the code followed the opposite reading
-        # until 2026-09-12 (Anton: make the code compliant with the manual)
-        instr.M  = instr.M.extract([i for i in range(dimDm, dimDm+dimCm)], [i for i in range(0, dimDm)])
-        instr.Iv = sp.Matrix(instr.Iv[dimDm: dimDm + dimCm])
-        instr.Dv = sp.Matrix(instr.Dv[0: dimDm])
-    elif convType == 'cd':
-        # common-mode response to a differential-mode stimulus
-        instr.M  = instr.M.extract([i for i in range(0, dimDm)],[i for i in range(dimDm, dimDm + dimCm)])
+        # Mixed-mode naming [response][stimulus], as a matrix element
+        # [row][column]: the block with the differential-mode equations
+        # (rows) in the common-mode variables (columns). Through this block a
+        # common-mode stimulus produces a differential-mode response:
+        # common-mode to differential-mode conversion. (Version 6.0 swapped
+        # dc and cd; restored 2026-10-19, Anton.)
+        instr.M  = instr.M.extract([i for i in range(0, dimDm)], [i for i in range(dimDm, dimDm + dimCm)])
         instr.Iv = sp.Matrix(instr.Iv[0: dimDm])
         instr.Dv = sp.Matrix(instr.Dv[dimDm: dimDm + dimCm])
+    elif convType == 'cd':
+        # The common-mode equations (rows) in the differential-mode variables
+        # (columns): a common-mode response to a differential-mode stimulus,
+        # differential-mode to common-mode conversion.
+        instr.M  = instr.M.extract([i for i in range(dimDm, dimDm + dimCm)], [i for i in range(0, dimDm)])
+        instr.Iv = sp.Matrix(instr.Iv[dimDm: dimDm + dimCm])
+        instr.Dv = sp.Matrix(instr.Dv[0: dimDm])
     elif convType == 'cc':
         instr.M  = instr.M.extract([i for i in range(dimDm, dimDm+dimCm)], [i for i in range(dimDm, dimDm + dimCm)])
         instr.Iv = sp.Matrix(instr.Iv[dimDm: dimDm + dimCm])

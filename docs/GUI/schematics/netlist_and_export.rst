@@ -60,7 +60,7 @@ rewrites the schematic's images (and its netlist) without creating a
 circuit object. It takes the circuit object of a SLiCAP schematic, or the
 name of the circuit, which is how an NGspice schematic is addressed. Its
 place is the end of the instruction file. A schematic that links plots
-(:menuselection:`Place --> Image…` with a file in ``img/``) inlines them at
+(:menuselection:`Insert --> Image…` with a file in ``img/``) inlines them at
 export time, and ``makeCircuit()`` at the top of the file exports before
 the analyses have written them. An export after the figures shows the
 plots of this run:

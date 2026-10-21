@@ -508,7 +508,31 @@ def _makeMatrices(instr):
     if tc:
         instr.Nr, instr.Cr, instr.reactances = (None, None, None) if improper else \
             _reactances(react, mutual, dim, gndPos, names)
+        instr.Rr = None if improper else _resistanceMatrix(M, instr.Nr)
     return (M, Dv)
+
+
+def _resistanceMatrix(M, Nr):
+    """
+    Returns the resistance matrix Rr = Nr^T G^-1 Nr of method 'tc', with
+    G = M(s=0): the DC transfers between the ports of the reactive elements,
+    with all reactances replaced with sources (Anton, 2026-10-18). Computed
+    exactly over the field of the matrix entries. Returns None, with a
+    message, when G is singular: the network has no DC solution.
+    """
+    from SLiCAP.SLiCAPstateSpace import _domain, _dm
+    if Nr.cols == 0:
+        return sp.zeros(0, 0)
+    G = M.subs(ini.laplace, 0)
+    K = _domain(G, Nr)
+    dG, dN = _dm(G, K), _dm(Nr, K)
+    if dG.rank() < dG.shape[0]:
+        print("Warning: method 'tc': the network has no DC solution, the "
+              "resistance matrix is not defined (.Rr = None). A large "
+              "resistor across each cut set of capacitors and a small one "
+              "in each loop of inductors give it one.")
+        return None
+    return (dN.transpose()*dG.lu_solve(dN)).to_Matrix().applyfunc(sp.factor)
 
 
 def _reactances(react, mutual, dim, gndPos, names):

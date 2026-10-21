@@ -1,4 +1,4 @@
 .. math::
 
-    \sigma_{I V1}^{2} = \frac{V_{DC T}^{2} \sigma_{\mathrm{R}}^{2}}{A^{2} R^{2}}\,\,\left[\mathrm{A^{2}}\right]
+    \sigma_{\mathrm{I},\mathrm{V1}}^{2} = \frac{V_{\mathrm{DC},\mathrm{T}}^{2} \sigma_{\mathrm{R}}^{2}}{A^{2} R^{2}}\,\,\left[\mathrm{A^{2}}\right]
 

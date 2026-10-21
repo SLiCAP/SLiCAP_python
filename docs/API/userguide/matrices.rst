@@ -68,30 +68,32 @@ network:
   :math:`1` for an integrator variable;
 - ``.reactances``: the names of the columns: the reference designators of the
   capacitors and the inductors, then the names of the integrator variables,
-  each in netlist order.
+  each in netlist order;
+- ``.Rr``: the resistance matrix
+  :math:`\mathbf{R}_\mathrm{r} = \mathbf{N}_\mathrm{r}^T\mathbf{G}^{-1}\mathbf{N}_\mathrm{r}`,
+  with :math:`\mathbf{G}` the matrix :math:`\mathbf{M}` at :math:`s=0`: the DC
+  transfers between the ports of the reactive elements, with the capacitors
+  replaced with current sources and the inductors with voltage sources. It is
+  ``None`` if the network has no DC solution.
 
 The coefficient matrix of :math:`s` is
 :math:`\mathbf{C} = \mathbf{N}_\mathrm{r}\mathbf{C}_\mathrm{r}\mathbf{N}_\mathrm{r}^T`,
 and the time-constant matrix follows as
-:math:`\mathbf{T}_\mathrm{r} = \mathbf{N}_\mathrm{r}^T\mathbf{G}^{-1}\mathbf{N}_\mathrm{r}\mathbf{C}_\mathrm{r}`
+:math:`\mathbf{T}_\mathrm{r} = \mathbf{R}_\mathrm{r}\mathbf{C}_\mathrm{r}`
 when :math:`\mathbf{G}` is invertible:
 
 .. code-block:: python
 
     import SLiCAP as sl
-    import sympy as sp
-    s   = sl.ini.laplace
     res = sl.doMatrix(cir, method="tc")
-    G, C = res.M.subs(s, 0), res.M.diff(s)
-    Rr  = res.Nr.T * G.inv() * res.Nr          # resistance matrix
-    Tr  = Rr * res.Cr                          # time-constant matrix
+    Tr  = res.Rr * res.Cr                      # time-constant matrix
 
 The entries of ``.Cr`` for integrator variables have no physical meaning:
 the time constants of an expanded transfer are in the coefficients of its
 chain. ``method="tc"`` is only available for ``doMatrix()``, without a
 conversion type and without stepping. A network with an improper transfer
 (numerator order above denominator order) has no first-order form: then
-``.Nr``, ``.Cr`` and ``.reactances`` are ``None``.
+``.Nr``, ``.Cr``, ``.reactances`` and ``.Rr`` are ``None``.
 
 Display the matrix equation on HTML pages and in LaTeX documents
 ================================================================

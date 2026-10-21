@@ -352,7 +352,6 @@ def _vi_stimuli_display(key: str, params: dict) -> "tuple[str, list[tuple[str,st
     return "", []
 
 
-_DEFAULT_LABEL_X    = 32   # fallback when no tight rect is available
 _DEFAULT_LABEL_Y0   = -10
 _DEFAULT_LABEL_STEP = 10   # line spacing (scene units) between attribute labels
 _LABEL_MARGIN       = 5    # gap between symbol right edge and first label column
@@ -699,6 +698,7 @@ class ComponentItem(_ViewBoxSvgItem):
         # they follow this component's pins. None until the first move of a drag;
         # reset to None by the scene at every mouse press. See _rubber_band_wires.
         self._drag_wires: "list | None" = None
+        self._drag_junctions: "list | None" = None   # the dots at those wire ends
         # Indices of pins with nothing connected to them — drawn as grey markers.
         # Starts with all pins unconnected; the scene refreshes this on every
         # topology change (via _sync_junctions → _refresh_pin_markers).
@@ -764,6 +764,7 @@ class ComponentItem(_ViewBoxSvgItem):
     def h_flip(self, value: bool) -> None:
         if bool(value) != self._h_flip:
             self._announce_label_geometry_change()
+            self._save_label_offsets()        # under the old pose; apply_transform() re-places
         self._h_flip = bool(value)
 
     @property
@@ -774,6 +775,7 @@ class ComponentItem(_ViewBoxSvgItem):
     def v_flip(self, value: bool) -> None:
         if bool(value) != self._v_flip:
             self._announce_label_geometry_change()
+            self._save_label_offsets()
         self._v_flip = bool(value)
 
     def _announce_label_geometry_change(self) -> None:
@@ -784,21 +786,64 @@ class ComponentItem(_ViewBoxSvgItem):
             lbl.prepareGeometryChange()
 
     def apply_transform(self) -> None:
-        """Apply h_flip / v_flip to the item and counter-transform all labels."""
+        """Apply h_flip / v_flip to the item, counter-transform all labels
+        and put them back beside the symbol's footprint (see _label_frame)."""
         self.setTransform(self._flip_transform())
         ct = _counter_transform(self.rotation(), self.h_flip, self.v_flip)
         for lbl in self._labels.values():
             lbl.setTransform(ct)
+        self._place_labels()
 
-    # ── property helpers ──────────────────────────────────────────────────────
+    # ── label placement ───────────────────────────────────────────────────────
+    #
+    # A label offset (prop_offsets) is measured in SCREEN orientation from
+    # the label corner of the symbol's footprint: the top-right corner of
+    # the box the turned symbol covers, or the top-left one of a mirrored
+    # symbol, dx growing away from the symbol and dy growing downwards.
+    # So a turned or vertically flipped component carries its labels
+    # beside it as if it stood upright, reading top-down, and a mirrored
+    # one has them on its other side. Offsets in the component's own frame
+    # were tried and REPLACED (Anton, 2026-10-21): the column of labels
+    # turned into a row of overlapping upright texts on every turned
+    # component. Files from before carry "label_offsets": "local"; the
+    # scene converts them with _label_offset() when they are read.
 
-    def _label_x(self) -> float:
-        """X offset for the first label column, just right of the symbol outline."""
-        x0, _y0, w, _h = self.symbol.select_box
-        right = x0 + w
-        if right > 0:
-            return right + _LABEL_MARGIN
-        return _DEFAULT_LABEL_X
+    def _label_frame(self):
+        """(corner_x, corner_y, sx, sy): the label corner relative to the
+        item's position, and the directions of dx and dy, in the parent's
+        frame."""
+        fp = self.mapRectToParent(QRectF(*self.symbol.select_box))
+        fp.translate(-self.pos())
+        sx = -1.0 if self.h_flip else 1.0
+        return (fp.left() if self.h_flip else fp.right(), fp.top(), sx, 1.0)
+
+    def _label_local(self, offset) -> QPointF:
+        """The local position of a label with the stored *offset*."""
+        cx, cy, sx, sy = self._label_frame()
+        rel = QPointF(cx + sx * float(offset[0]), cy + sy * float(offset[1]))
+        inv, _ok = self.sceneTransform().inverted()
+        return inv.map(self.pos() + rel)
+
+    def _label_offset(self, local: QPointF) -> tuple:
+        """The stored offset of a label at the local position *local*."""
+        cx, cy, sx, sy = self._label_frame()
+        rel = self.sceneTransform().map(local) - self.pos()
+        return (sx * (rel.x() - cx), sy * (rel.y() - cy))
+
+    def _place_labels(self) -> None:
+        """Put every label where its stored offset says, for the current
+        turn and flips."""
+        for key, lbl in self._labels.items():
+            off = self.prop_offsets.get(key)
+            if off is not None:
+                lbl.setPos(self._label_local(off))
+
+    def _default_label_offset(self, i: int) -> tuple:
+        """The default offset of the i-th label: a column just right of
+        the symbol, the first line level with the old fixed start, so that
+        an upright component looks as it always did."""
+        _x0, y0, _w, _h = self.symbol.select_box
+        return (_LABEL_MARGIN, _DEFAULT_LABEL_Y0 + i * _DEFAULT_LABEL_STEP - y0)
 
     def _all_prop_keys(self) -> list[str]:
         """Ordered list of every key that can be displayed as a label, in the
@@ -853,9 +898,10 @@ class ComponentItem(_ViewBoxSvgItem):
     # ── label management ──────────────────────────────────────────────────────
 
     def _save_label_offsets(self) -> None:
-        """Persist current label positions into prop_offsets."""
+        """Persist current label positions into prop_offsets (see
+        _label_frame for their meaning)."""
         for key, lbl in self._labels.items():
-            self.prop_offsets[key] = (lbl.pos().x(), lbl.pos().y())
+            self.prop_offsets[key] = self._label_offset(lbl.pos())
 
     def set_prop_offsets(self, offsets: dict) -> None:
         """Restore stored label positions (a file, the clipboard): the
@@ -898,14 +944,9 @@ class ComponentItem(_ViewBoxSvgItem):
         self._labels.clear()
 
         # Ensure a default offset exists for every known property.
-        # Always use +label_x; the rendering side adapts for h_flip.
-        label_x = self._label_x()
         for i, key in enumerate(self._all_prop_keys()):
             if key not in self.prop_offsets:
-                self.prop_offsets[key] = (
-                    label_x,
-                    _DEFAULT_LABEL_Y0 + i * _DEFAULT_LABEL_STEP,
-                )
+                self.prop_offsets[key] = self._default_label_offset(i)
 
         for key in self._all_prop_keys():
             show_val, show_name = self.prop_display.get(key, (False, False))
@@ -919,7 +960,7 @@ class ComponentItem(_ViewBoxSvgItem):
                     "DC operating-point current i(%s) — NGspice convention: "
                     "measured INTO the + terminal (a source driving a load "
                     "reads negative)" % self.instance_id)
-                lbl.setPos(QPointF(*self.prop_offsets[key]))
+                lbl.setPos(self._label_local(self.prop_offsets[key]))
                 lbl.setTransform(_counter_transform(self.rotation(),
                                                     self.h_flip, self.v_flip))
                 self._labels[key] = lbl
@@ -948,7 +989,7 @@ class ComponentItem(_ViewBoxSvgItem):
                 else:
                     text = pfx + "|".join(f"{pn}={pv}" for pn, pv in pairs)
                     lbl.set_text(text or raw_val)
-                lbl.setPos(QPointF(*self.prop_offsets[key]))
+                lbl.setPos(self._label_local(self.prop_offsets[key]))
                 lbl.setTransform(_counter_transform(self.rotation(), self.h_flip, self.v_flip))
                 self._labels[key] = lbl
                 continue
@@ -991,7 +1032,7 @@ class ComponentItem(_ViewBoxSvgItem):
             else:
                 lbl.set_text(self._prop_text(key))
 
-            lbl.setPos(QPointF(*self.prop_offsets[key]))
+            lbl.setPos(self._label_local(self.prop_offsets[key]))
             lbl.setTransform(_counter_transform(self.rotation(), self.h_flip, self.v_flip))
             self._labels[key] = lbl
 
@@ -1097,10 +1138,13 @@ class ComponentItem(_ViewBoxSvgItem):
                 delta = self.pos() - self._prev_pos
                 if delta.x() or delta.y():
                     self._rubber_band_wires(delta)
+        if change == QGraphicsItem.ItemRotationChange:
+            self._save_label_offsets()        # under the old turn
         if change == QGraphicsItem.ItemRotationHasChanged:
             ct = _counter_transform(self.rotation(), self.h_flip, self.v_flip)
             for lbl in self._labels.values():
                 lbl.setTransform(ct)
+            self._place_labels()
         return super().itemChange(change, value)
 
     def _rubber_band_wires(self, delta: QPointF) -> None:
@@ -1115,6 +1159,7 @@ class ComponentItem(_ViewBoxSvgItem):
         from .wire_item import WireItem
         # After ItemPositionHasChanged, self.pos() is the new position; the wires
         # are still at the previous pin positions = current pins minus this delta.
+        from .junction_item import JunctionItem
         if self._drag_wires is None:
             start_keys = {_pt_key(p - delta) for p in self.pin_scene_pos()}
             self._drag_wires = [
@@ -1123,12 +1168,27 @@ class ComponentItem(_ViewBoxSvgItem):
                 if isinstance(item, WireItem) and not getattr(item, "_preview", False)
                 for i, pt in enumerate(item.points) if _pt_key(pt) in start_keys
             ]
+            self._drag_junctions = [
+                j for j in self.scene().items()
+                if isinstance(j, JunctionItem) and _pt_key(j.pos()) in start_keys
+            ]
         by_wire: dict = {}
         for wire, idx in self._drag_wires:
             if wire.scene() is not None:
                 by_wire.setdefault(wire, set()).add(idx)
         for wire, idxs in by_wire.items():
             wire.move_points(idxs, delta)
+        # The junction dots at the moved pins follow (Anton, 2026-10-21:
+        # they jumped to their place only at the drop). The scene flag keeps
+        # the dots' own rubber band out of it: their wires moved above.
+        scene = self.scene()
+        if scene is not None and self._drag_junctions:
+            was = getattr(scene, "_group_drag_active", False)
+            scene._group_drag_active = True
+            for j in self._drag_junctions:
+                if j.scene() is not None:
+                    j.setPos(j.pos() + delta)
+            scene._group_drag_active = was
 
     def paint(self, painter, option, widget=None):
         super().paint(painter, option, widget)

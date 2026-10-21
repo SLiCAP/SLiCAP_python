@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-136.885 -86.232 215.605 134.420" width="107.802mm" height="67.210mm">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-136.885 -86.302 215.605 134.490" width="107.802mm" height="67.245mm">
   <!-- SLiCAP schematic export: Transimpedance.slicap_sch, SLiCAP 6.3.0 -->
   <title>Transimpedance</title>
   <defs>
@@ -93,7 +93,7 @@
     <path id="lt13-g0-115" d="M2.909091-3.411208C2.367123-3.634371 1.968618-3.658281 1.681694-3.658281C1.482441-3.658281 .278954-3.658281 .278954-2.598257C.278954-2.223661 .486177-2.016438 .589788-1.920797C.868742-1.641843 1.203487-1.578082 1.625903-1.498381C2.000498-1.42665 2.430884-1.346949 2.430884-.964384C2.430884-.462267 1.769365-.462267 1.657783-.462267C1.147696-.462267 .669489-.645579 .350685-.868742L.239103-.270984C.510087-.135492 .996264 .079701 1.657783 .079701C2.016438 .079701 2.367123 .02391 2.662017-.191283C2.956912-.414446 3.052553-.765131 3.052553-1.036115C3.052553-1.179577 3.036613-1.490411 2.701868-1.793275C2.406974-2.056289 2.12005-2.11208 1.737484-2.183811C1.267248-2.271482 .900623-2.343213 .900623-2.693898C.900623-3.148194 1.482441-3.148194 1.601993-3.148194C2.056289-3.148194 2.406974-3.052553 2.805479-2.84533L2.909091-3.411208Z" />
     <path id="lt13-g0-119" d="M5.65878-3.53873H5.037111C4.96538-3.315567 4.519054-1.968618 4.27198-1.139726C4.208219-.908593 4.128518-.653549 4.104608-.470237H4.096638C4.048817-.797011 3.769863-1.657783 3.753923-1.713574L3.164134-3.53873H2.558406C2.327273-2.8533 1.729514-1.067995 1.665753-.486177H1.657783C1.594022-1.052055 1.004234-2.81345 .876712-3.196015C.812951-3.387298 .812951-3.403238 .773101-3.53873H.119552L1.283188 0H1.952677C1.960648-.03188 2.175841-.661519 2.454795-1.546202C2.574346-1.936737 2.81345-2.701868 2.8533-3.052553L2.86127-3.060523C2.87721-2.893151 2.925031-2.717808 2.980822-2.518555S3.092403-2.10411 3.148194-1.920797L3.761893 0H4.495143L5.65878-3.53873Z" />
   </defs>
-  <rect x="-136.885" y="-86.232" width="215.605" height="134.420" fill="white" />
+  <rect x="-136.885" y="-86.302" width="215.605" height="134.490" fill="white" />
   <polyline points="15.00,-10.00 0.00,-10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="0.00,-10.00 -15.00,-10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
   <polyline points="0.00,-35.00 0.00,-10.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-linecap="round" stroke-linejoin="round" />
@@ -115,13 +115,13 @@
     <line x1="0" y1="-20" x2="0" y2="-2" stroke="black" stroke-width="1" />
     <line x1="0" y1="2" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <g transform="translate(-36.705,2.578) scale(1.058333,1.058333) translate(-0.000,6.656)" fill="#000000">
+  <g transform="translate(-35.318,2.464) scale(1.058333,1.058333) translate(-0.638,6.764)" fill="#000000">
     <g id="lt0-page1">
       <use x="0" y=".179883" xlink:href="#lt0-g0-67" />
       <use x="8.274482" y="1.674264" xlink:href="#lt0-g1-49" />
     </g>
   </g>
-  <g transform="translate(-36.262,12.158) scale(1.058333,1.058333) translate(-0.000,6.642)" fill="#000000">
+  <g transform="translate(-35.398,11.856) scale(1.058333,1.058333) translate(-0.498,6.858)" fill="#000000">
     <g id="lt1-page1">
       <use x="0" y=".166034" xlink:href="#lt1-g0-67" />
       <use x="7.120515" y="1.660415" xlink:href="#lt1-g1-115" />
@@ -135,13 +135,13 @@
     <line x1="15" y1="-10" x2="15" y2="10" stroke="black" stroke-width="1" />
     <polyline points="15 12 17 6 13 6 15 12" stroke="black" stroke-width="0" fill="black" />
   </g>
-  <g transform="translate(-131.519,-23.606) scale(1.058333,1.058333) translate(-0.000,6.656)" fill="#000000">
+  <g transform="translate(-131.519,-23.605) scale(1.058333,1.058333) translate(-0.329,6.654)" fill="#000000">
     <g id="lt2-page1">
       <use x="0" y=".179883" xlink:href="#lt2-g0-73" />
       <use x="4.344802" y="1.674264" xlink:href="#lt2-g1-49" />
     </g>
   </g>
-  <g transform="translate(-131.838,-8.652) scale(1.058333,1.058333) translate(-0.000,6.642)" fill="#000000">
+  <g transform="translate(-131.838,-8.722) scale(1.058333,1.058333) translate(-0.120,6.638)" fill="#000000">
     <g id="lt3-page1">
       <use x="0" y=".166034" xlink:href="#lt3-g0-118" />
       <use x="3.902085" y=".166034" xlink:href="#lt3-g0-97" />
@@ -153,7 +153,7 @@
       <use x="35.789549" y="1.660415" xlink:href="#lt3-g3-115" />
     </g>
   </g>
-  <g transform="translate(-132.249,35.402) scale(1.058333,1.058333) translate(-0.000,6.642)" fill="#000000">
+  <g transform="translate(-132.249,35.405) scale(1.058333,1.058333) translate(-0.287,6.638)" fill="#000000">
     <g id="lt4-page1">
       <use x="0" y=".166034" xlink:href="#lt4-g0-100" />
       <use x="4.372549" y=".166034" xlink:href="#lt4-g0-99" />
@@ -163,7 +163,7 @@
       <use x="33.547852" y="1.660415" xlink:href="#lt4-g4-68" />
     </g>
   </g>
-  <g transform="translate(-132.273,20.175) scale(1.058333,1.058333) translate(-0.000,7.918)" fill="#000000">
+  <g transform="translate(-132.273,20.031) scale(1.058333,1.058333) translate(-0.287,8.054)" fill="#000000">
     <g id="lt5-page1">
       <use x="0" y=".19212" xlink:href="#lt5-g0-100" />
       <use x="4.372549" y=".19212" xlink:href="#lt5-g0-99" />
@@ -177,7 +177,7 @@
       <use x="40.617555" y="2.936163" xlink:href="#lt5-g3-68" />
     </g>
   </g>
-  <g transform="translate(-132.885,6.870) scale(1.058333,1.058333) translate(-0.000,6.863)" fill="#000000">
+  <g transform="translate(-132.885,6.878) scale(1.058333,1.058333) translate(-0.662,6.860)" fill="#000000">
     <g id="lt6-page1">
       <use x="0" y="-.055365" xlink:href="#lt6-g0-110" />
       <use x="4.372549" y="-.055365" xlink:href="#lt6-g0-111" />
@@ -201,7 +201,7 @@
     <polyline points="-10 -20 -10 -10" stroke="black" stroke-width="1" fill="none" />
   </g>
   <text x="40.00" y="-2.83" font-family="DejaVu Sans, sans-serif" font-size="8.0" text-anchor="middle" fill="#0000cc">+</text>
-  <g transform="translate(44.725,5.637) scale(1.058333,1.058333) translate(-0.000,6.656)" fill="#000000">
+  <g transform="translate(44.725,5.639) scale(1.058333,1.058333) translate(-0.389,6.654)" fill="#000000">
     <g id="lt7-page1">
       <use x="0" y=".179883" xlink:href="#lt7-g0-78" />
       <use x="8.966334" y="1.674264" xlink:href="#lt7-g1-49" />
@@ -212,13 +212,13 @@
     <line x1="0" y1="-20" x2="0" y2="-10" stroke="black" stroke-width="1" />
     <line x1="0" y1="10" x2="0" y2="20" stroke="black" stroke-width="1" />
   </g>
-  <g transform="translate(-9.640,-82.189) scale(1.058333,1.058333) translate(-0.000,6.656)" fill="#000000">
+  <g transform="translate(-9.640,-82.188) scale(1.058333,1.058333) translate(-0.389,6.654)" fill="#000000">
     <g id="lt8-page1">
       <use x="0" y=".179883" xlink:href="#lt8-g0-82" />
       <use x="8.592731" y="1.674264" xlink:href="#lt8-g1-49" />
     </g>
   </g>
-  <g transform="translate(19.771,-82.232) scale(1.058333,1.058333) translate(-0.000,6.642)" fill="#000000">
+  <g transform="translate(19.771,-82.302) scale(1.058333,1.058333) translate(-0.120,6.638)" fill="#000000">
     <g id="lt9-page1">
       <use x="0" y=".166034" xlink:href="#lt9-g0-118" />
       <use x="3.902085" y=".166034" xlink:href="#lt9-g0-97" />
@@ -230,7 +230,7 @@
       <use x="38.974655" y="1.660415" xlink:href="#lt9-g3-116" />
     </g>
   </g>
-  <g transform="translate(-44.948,-54.798) scale(1.058333,1.058333) translate(-0.000,7.918)" fill="#000000">
+  <g transform="translate(-44.948,-55.090) scale(1.058333,1.058333) translate(-0.287,8.054)" fill="#000000">
     <g id="lt10-page1">
       <use x="0" y=".19212" xlink:href="#lt10-g0-100" />
       <use x="4.372549" y=".19212" xlink:href="#lt10-g0-99" />
@@ -243,7 +243,7 @@
       <use x="37.73943" y="2.936163" xlink:href="#lt10-g3-82" />
     </g>
   </g>
-  <g transform="translate(19.482,-52.082) scale(1.058333,1.058333) translate(-0.000,5.701)" fill="#000000">
+  <g transform="translate(19.482,-52.541) scale(1.058333,1.058333) translate(-0.287,5.916)" fill="#000000">
     <g id="lt11-page1">
       <use x="0" y=".719516" xlink:href="#lt11-g0-100" />
       <use x="4.372549" y=".719516" xlink:href="#lt11-g0-99" />
@@ -257,7 +257,7 @@
       <use x="41.359067" y=".719516" xlink:href="#lt11-g1-48" />
     </g>
   </g>
-  <g transform="translate(-45.410,-67.700) scale(1.058333,1.058333) translate(-0.000,6.669)" fill="#000000">
+  <g transform="translate(-45.410,-67.629) scale(1.058333,1.058333) translate(-0.662,6.606)" fill="#000000">
     <g id="lt12-page1">
       <use x="0" y=".138351" xlink:href="#lt12-g0-110" />
       <use x="4.372549" y=".138351" xlink:href="#lt12-g0-111" />
@@ -272,7 +272,7 @@
       <use x="48.839454" y=".138351" xlink:href="#lt12-g1-84" />
     </g>
   </g>
-  <g transform="translate(19.148,-66.828) scale(1.058333,1.058333) translate(-0.000,5.701)" fill="#000000">
+  <g transform="translate(19.148,-67.287) scale(1.058333,1.058333) translate(-0.662,5.916)" fill="#000000">
     <g id="lt13-page1">
       <use x="0" y=".719516" xlink:href="#lt13-g0-110" />
       <use x="4.372549" y=".719516" xlink:href="#lt13-g0-111" />

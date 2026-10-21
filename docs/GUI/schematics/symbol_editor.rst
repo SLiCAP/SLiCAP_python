@@ -20,7 +20,7 @@ model, parameters, description). The file is the input and the output:
 * :menuselection:`File --> Save symbol` writes the symbol back as one group,
   replacing the group of the same name and leaving the other symbols of the
   file untouched. A file in the project's ``lib`` folder is offered in
-  :menuselection:`Place --> Symbol` of every schematic of the project.
+  :menuselection:`Circuit --> Symbol…` of every schematic of the project.
 * :menuselection:`File --> Symbol properties...` sets the name (the id in the
   file), the prefix (the SLiCAP element type; ``X`` for a subcircuit), the
   model, the parameters with their defaults and label flags, the reference
@@ -31,10 +31,10 @@ Drawing
 -------
 
 Use :menuselection:`Draw` for lines, rectangles, ellipses and polygons,
-:menuselection:`Place --> Pin...` for a terminal,
-:menuselection:`Place --> Symbol text...` for decoration such as the plus and
-minus of a source, :menuselection:`Place --> LaTeX...` for a typeset label
-and :menuselection:`Place --> Image...` for a picture. Every placed item
+:menuselection:`Symbol --> Pin...` for a terminal,
+:menuselection:`Symbol --> Symbol text...` for decoration such as the plus and
+minus of a source, :menuselection:`Symbol --> LaTeX text...` for a typeset label
+and :menuselection:`Symbol --> Image...` for a picture. Every placed item
 follows the cursor and is put down with a click, like on a schematic;
 **Escape** drops it. Copy and paste (**Ctrl+C**, **Ctrl+V**) work on pins,
 texts, shapes, LaTeX labels and images; a pasted pin gets the next pin

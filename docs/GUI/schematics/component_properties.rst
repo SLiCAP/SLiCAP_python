@@ -118,7 +118,7 @@ For a subcircuit block any symbol with the right number of pins is
 offered, with the subcircuit's ports assigned to the symbol's pins in a
 list (**Up** and **Down** move a port to another pin) and a preview. The
 result is written into the project's ``lib`` folder as the block's symbol,
-as :menuselection:`Place --> Subcircuit` does, so the netlist order of the
+as :menuselection:`Circuit --> New subcircuit symbol…` does, so the netlist order of the
 ports is unchanged and other schematics of the project pick it up with
 :menuselection:`Tools --> Load symbols from library`.
 

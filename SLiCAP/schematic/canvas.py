@@ -86,6 +86,34 @@ def _shape_record(item):
     )
 
 
+def _turn_point(p: QPointF, ref: QPointF, quarter_turns: int, h_mirror: bool) -> QPointF:
+    """*p* mirrored (x to -x) and then turned by quarter turns about *ref*,
+    in Qt's sense (setRotation(90) maps (1, 0) onto (0, 1)). The maths of
+    a pasted group and of a selected group turned or mirrored as one."""
+    x, y = p.x() - ref.x(), p.y() - ref.y()
+    if h_mirror:
+        x = -x
+    r = (quarter_turns * 90) % 360
+    if r == 90:
+        x, y = -y, x
+    elif r == 180:
+        x, y = -x, -y
+    elif r == 270:
+        x, y = y, -x
+    return QPointF(ref.x() + x, ref.y() + y)
+
+
+def _turn_pose(rotation: float, h_flip: bool, v_flip: bool,
+               quarter_turns: int, h_mirror: bool):
+    """A component's rotation and flips under the same mirror and turn.
+    The mirror of a turned component is the opposite turn of the mirrored
+    one, M R(r) = R(-r) M, and the mirror toggles h_flip."""
+    turn = (quarter_turns * 90) % 360
+    if h_mirror:
+        return (turn - rotation) % 360, not h_flip, v_flip
+    return (turn + rotation) % 360, h_flip, v_flip
+
+
 def _shape_from_record(sd, delta: QPointF = QPointF(0, 0)):
     """A shape item from its record, shifted by *delta* (paste)."""
     item = ShapeItem(
@@ -355,6 +383,7 @@ class SchematicScene(QGraphicsScene):
         self._wire_move_wires:     list = []
         self._wire_move_origins:   list = []
         self._wire_move_others:    list = []
+        self._wire_move_loose_labels: list = []   # [(label, scene pos)] of unselected parents
         self._wire_move_start:     QPointF | None = None
         # Scene-driven label drag (net-name / bias labels): Qt's movable
         # machinery cannot be used — a covering top-level item receives the
@@ -388,6 +417,10 @@ class SchematicScene(QGraphicsScene):
         self._draw_ghost:  object | None    = None   # preview ShapeItem
 
         self._paste_ghost_items: list = []   # [(kind, item, base)]
+        self._paste_rot: int = 0             # R during a paste: the group turns
+        self._paste_hflip: bool = False      # M during a paste: the group mirrors
+        self._paste_last_pos = None          # where the ghosts follow the cursor
+        self._junction_pin_previews: list = []   # [(comp, local, junction, preview wire)]
         self._paste_ref: QPointF | None = None
         self._exporting: bool = False
 
@@ -412,6 +445,7 @@ class SchematicScene(QGraphicsScene):
         # Unselected wire points attached to the group at drag START, moved
         # from their originals on every step: [(wire, idx, orig_QPointF)].
         self._group_rb: list = []
+        self._group_junctions: list = []
         # Moving points of the group that sit on a component pin at press:
         # [(comp, local_xy, source)], source = ("wire", wire, idx) or
         # ("pin", comp, local_xy). A point that leaves its pin is bridged at
@@ -436,6 +470,20 @@ class SchematicScene(QGraphicsScene):
         label.setSelected(False)
         comp.update_labels()
         comp.update()
+
+    def select_all(self) -> None:
+        """Ctrl+A: what a rubber band over the whole drawing takes, the
+        components, wires and annotations. Not the labels (they ride with
+        their component), the junction dots (derived from the wires), the
+        border, or a ghost (Anton, 2026-10-21)."""
+        ghosts = {id(g) for _, g, _ in self._paste_ghost_items}
+        for i in self.items():
+            if (i.parentItem() is None
+                    and i.flags() & QGraphicsItem.ItemIsSelectable
+                    and not isinstance(i, (JunctionItem, BorderItem))
+                    and not getattr(i, "_preview", False)
+                    and i is not self._ghost and id(i) not in ghosts):
+                i.setSelected(True)
 
     def _copy_selection(self) -> None:
         from .component_item import ComponentItem
@@ -587,14 +635,124 @@ class SchematicScene(QGraphicsScene):
             return
         self._start_paste_ghost()
 
-    def _start_paste_ghost(self) -> None:
-        """Enter paste-ghost mode: clipboard items follow the cursor, click to place."""
+    def _paste_point(self, p: QPointF) -> QPointF:
+        """A clipboard point under the paste's mirror and turn, about the
+        reference point (see _turn_point)."""
+        if self._paste_ref is None:
+            return QPointF(p)
+        return _turn_point(p, self._paste_ref, self._paste_rot // 90, self._paste_hflip)
+
+    def _paste_pose(self, rotation: float, h_flip: bool, v_flip: bool):
+        """A component's pose under the paste's mirror and turn (see _turn_pose)."""
+        return _turn_pose(rotation, h_flip, v_flip, self._paste_rot // 90, self._paste_hflip)
+
+    def transform_selection(self, quarter_turns: int = 0, mirror: bool = False) -> bool:
+        """R or M on a GROUP: the selected items turn or mirror as one,
+        about the grid point nearest the centre of the selection (Anton,
+        2026-10-21: they turned and mirrored one by one, in place). The
+        wires that stay behind follow the moved pins, as after a drag.
+        A single item turns or mirrors in place, in the key handlers:
+        returns False when the selection is not a group."""
+        from .border_item import BorderItem
+        members = [i for i in self.selectedItems()
+                   if i.parentItem() is None
+                   and not isinstance(i, (JunctionItem, BorderItem, _PropertyLabel))
+                   and not getattr(i, "_preview", False)]
+        if len(members) < 2:
+            return False
+        bounds = QRectF()
+        for i in members:
+            bounds = bounds.united(i.sceneBoundingRect())
+        ref = snap(bounds.center())
+        T = lambda p: _turn_point(p, ref, quarter_turns, mirror)
+        self._push_undo()
+        # Compute the new geometry from a snapshot of the old one, then
+        # assign it: the result does not depend on the order of the
+        # selection, and no rubber band (a component's or a junction's
+        # itemChange) can move a wire end in between (Anton, 2026-10-21:
+        # the mirrored group came out with diagonal wires).
+        wires = [w for w in self.items()
+                 if isinstance(w, WireItem) and not getattr(w, "_preview", False)]
+        old_pts = {id(w): [QPointF(p) for p in w.points] for w in wires}
+        selected = {id(w) for w in members if isinstance(w, WireItem)}
+        anchors: dict = {}                      # old point key -> new point
+        for w in wires:
+            if id(w) in selected:
+                for p in old_pts[id(w)]:
+                    anchors[_pt_key(p)] = T(p)
+        self._group_drag_active = True
+        for item in members:
+            if isinstance(item, ComponentItem):
+                old_pins = item.pin_scene_pos()
+                rot, hf, vf = _turn_pose(item.rotation(), item.h_flip, item.v_flip,
+                                         quarter_turns, mirror)
+                item.setPos(T(item.pos()))
+                item.setRotation(rot)
+                item.h_flip, item.v_flip = hf, vf
+                item.apply_transform()
+                for old, new in zip(old_pins, item.pin_scene_pos()):
+                    anchors[_pt_key(old)] = QPointF(new)
+            elif isinstance(item, ShapeItem):
+                c = item.mapToScene(item.centre())
+                for _ in range(quarter_turns % 4):
+                    item.rotate_quarter()
+                if mirror:
+                    item.mirror()
+                c_now = item.mapToScene(item.centre())
+                item.setPos(item.pos() + (T(c) - c_now))
+            elif not isinstance(item, WireItem):
+                # an annotation keeps its orientation; its centre moves
+                c = item.sceneBoundingRect().center()
+                item.setPos(item.pos() + (T(c) - c))
+        self._group_drag_active = False
+        for w in wires:
+            if w.scene() is None:
+                continue
+            if id(w) in selected:
+                w.points = [T(p) for p in old_pts[id(w)]]
+            else:
+                # a wire left behind follows the moved pins and wire ends
+                w.points = [QPointF(anchors.get(_pt_key(p), p)) for p in old_pts[id(w)]]
+            w._rebuild()
+        self._sync_junctions()
+        self._remove_short_circuit_wires()
+        self._sync_junctions()
+        return True
+
+    def _move_paste_ghosts(self, pos: QPointF) -> None:
+        """The ghosts follow the cursor: the reference point goes to *pos*."""
+        if not self._paste_ghost_items or self._paste_ref is None:
+            return
+        self._paste_last_pos = QPointF(pos)
+        delta = pos - self._paste_ref
+        for kind, item, base in self._paste_ghost_items:
+            if kind == 'point':
+                item.setPos(base + delta)
+            else:
+                item.setPath(_build_path([p + delta for p in base]))
+
+    def _rebuild_paste_ghost(self) -> None:
+        """R or M during a paste: the ghosts are made again in the new pose
+        and put back under the cursor."""
+        self._start_paste_ghost(fresh=False)
+        if self._paste_last_pos is not None:
+            self._move_paste_ghosts(self._paste_last_pos)
+
+    def _start_paste_ghost(self, fresh: bool = True) -> None:
+        """Enter paste-ghost mode: clipboard items follow the cursor, click to place.
+
+        *fresh* is a new paste: the group starts unturned and unmirrored.
+        A rebuild after R or M (fresh=False) keeps the pose and the cursor
+        position (Anton, 2026-10-21: R and M did nothing before the paste
+        was placed)."""
         from PySide6.QtWidgets import QGraphicsSimpleTextItem as _ST
         entries = self._pasteable()
         if not entries:
             return
         self._end_wire(commit=False)
         self._cancel_placement()   # clears any prior ghost / mode
+        if fresh:
+            self._paste_rot, self._paste_hflip, self._paste_last_pos = 0, False, None
         # The copied originals stay selected after Copy. R and M act on
         # the selection when no single ghost is being placed, so R during
         # a paste rotated the ORIGINALS (a user's report on 6.1.0,
@@ -628,16 +786,15 @@ class SchematicScene(QGraphicsScene):
             kind = data['kind']
             if kind == 'component':
                 ghost = make_ghost(data['svg_bytes'], _config.display_style(self.style))
-                ghost.setTransform(QTransform().scale(
-                    -1 if data['h_flip'] else 1,
-                    -1 if data['v_flip'] else 1,
-                ))
-                ghost.setRotation(data['rotation'])
-                ghost.setPos(QPointF(data['x'], data['y']))
+                rot, hf, vf = self._paste_pose(data['rotation'], data['h_flip'], data['v_flip'])
+                ghost.setTransform(QTransform().scale(-1 if hf else 1, -1 if vf else 1))
+                ghost.setRotation(rot)
+                base = self._paste_point(QPointF(data['x'], data['y']))
+                ghost.setPos(base)
                 self.addItem(ghost)
-                self._paste_ghost_items.append(('point', ghost, QPointF(data['x'], data['y'])))
+                self._paste_ghost_items.append(('point', ghost, base))
             elif kind == 'wire':
-                pts = [QPointF(x, y) for x, y in data['points']]
+                pts = [self._paste_point(QPointF(x, y)) for x, y in data['points']]
                 ghost = QGraphicsPathItem(_build_path(pts))
                 ghost.setPen(QPen(Qt.black, 1.2))
                 ghost.setOpacity(0.4)
@@ -648,35 +805,39 @@ class SchematicScene(QGraphicsScene):
                 ghost = _ST(data['text'][:30])
                 ghost.setOpacity(0.4)
                 ghost.setAcceptedMouseButtons(Qt.NoButton)
-                ghost.setPos(QPointF(data['x'], data['y']))
+                base = self._paste_point(QPointF(data['x'], data['y']))
+                ghost.setPos(base)
                 self.addItem(ghost)
-                self._paste_ghost_items.append(('point', ghost, QPointF(data['x'], data['y'])))
+                self._paste_ghost_items.append(('point', ghost, base))
             elif kind == 'analysis':
                 ghost = _ST(".source / .detector / .lgref")
                 ghost.setOpacity(0.4)
                 ghost.setAcceptedMouseButtons(Qt.NoButton)
-                ghost.setPos(QPointF(data['x'], data['y']))
+                base = self._paste_point(QPointF(data['x'], data['y']))
+                ghost.setPos(base)
                 self.addItem(ghost)
-                self._paste_ghost_items.append(('point', ghost, QPointF(data['x'], data['y'])))
+                self._paste_ghost_items.append(('point', ghost, base))
             elif kind == 'hyperlink':
                 ghost = _ST((data['label'] or data['url'])[:30])
                 ghost.setOpacity(0.4)
                 ghost.setAcceptedMouseButtons(Qt.NoButton)
-                ghost.setPos(QPointF(data['x'], data['y']))
+                base = self._paste_point(QPointF(data['x'], data['y']))
+                ghost.setPos(base)
                 self.addItem(ghost)
-                self._paste_ghost_items.append(('point', ghost, QPointF(data['x'], data['y'])))
+                self._paste_ghost_items.append(('point', ghost, base))
             elif kind in ('model', 'parameters'):
                 ghost = _ST(("%s %s" % (data['model_name'], data['model_type']))
                             if kind == 'model' else "parameters")
                 ghost.setOpacity(0.4)
                 ghost.setAcceptedMouseButtons(Qt.NoButton)
-                ghost.setPos(QPointF(data['x'], data['y']))
+                base = self._paste_point(QPointF(data['x'], data['y']))
+                ghost.setPos(base)
                 self.addItem(ghost)
-                self._paste_ghost_items.append(('point', ghost, QPointF(data['x'], data['y'])))
+                self._paste_ghost_items.append(('point', ghost, base))
             elif kind in ('shape', 'latex', 'image', 'pin', 'symbol_text', 'opaque'):
                 from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsEllipseItem
                 from .symbol_editor import OpaqueSvgItem
-                base = QPointF(data['x'], data['y'])
+                base = self._paste_point(QPointF(data['x'], data['y']))
                 if kind == 'shape':
                     ghost = _shape_from_record(data['record'])
                 elif kind in ('latex', 'image'):
@@ -716,7 +877,6 @@ class SchematicScene(QGraphicsScene):
             return
 
         delta = pos - self._paste_ref
-        self._paste_ref = None
 
         self._push_undo()
         self.clearSelection()
@@ -732,10 +892,11 @@ class SchematicScene(QGraphicsScene):
                 if sym is None:
                     continue   # symbol unknown to this schematic's library
                 item = ComponentItem(sym, self._next_id(data['symbol_name']))
-                item.setPos(QPointF(data['x'], data['y']) + delta)
-                item.setRotation(data['rotation'])
-                item.h_flip       = data['h_flip']
-                item.v_flip       = data['v_flip']
+                item.setPos(self._paste_point(QPointF(data['x'], data['y'])) + delta)
+                rot, hf, vf = self._paste_pose(data['rotation'], data['h_flip'], data['v_flip'])
+                item.setRotation(rot)
+                item.h_flip       = hf
+                item.v_flip       = vf
                 item.apply_transform()
                 item.params       = dict(data['params'])
                 item.model        = data['model']
@@ -746,7 +907,7 @@ class SchematicScene(QGraphicsScene):
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'wire':
-                pts = [QPointF(x + delta.x(), y + delta.y()) for x, y in data['points']]
+                pts = [self._paste_point(QPointF(x, y)) + delta for x, y in data['points']]
                 wire = WireItem(pts)
                 wire.net_name     = data['net_name']
                 wire.display_name = data['display_name']
@@ -756,12 +917,12 @@ class SchematicScene(QGraphicsScene):
                 wire.setSelected(True)
             elif kind == 'command':
                 item = CommandItem(data['text'],
-                                   QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                                   self._paste_point(QPointF(data['x'], data['y'])) + delta)
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'free_text':
                 item = FreeTextItem(data['text'],
-                                    QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                    self._paste_point(QPointF(data['x'], data['y'])) + delta,
                                     **data.get('props', {}))
                 item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
@@ -769,7 +930,7 @@ class SchematicScene(QGraphicsScene):
             elif kind == 'analysis':
                 item = AnalysisItem(
                     data['source'], data['detector'], data['lgref'],
-                    QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                    self._paste_point(QPointF(data['x'], data['y'])) + delta,
                     latex_scale=data.get('latex_scale'),
                 )
                 self.addItem(item)
@@ -777,7 +938,7 @@ class SchematicScene(QGraphicsScene):
             elif kind == 'hyperlink':
                 item = HyperlinkItem(
                     data['url'], data['label'],
-                    QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                    self._paste_point(QPointF(data['x'], data['y'])) + delta,
                 )
                 item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
@@ -786,23 +947,25 @@ class SchematicScene(QGraphicsScene):
                 item = ModelItem(data['model_name'], data['model_type'],
                                  data['simulator'], list(data['params']),
                                  data['preamble'],
-                                 QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                 self._paste_point(QPointF(data['x'], data['y'])) + delta,
                                  show=data['show'], latex_scale=data.get('latex_scale'))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'parameters':
                 item = ParameterItem(list(data['params']), data['preamble'],
-                                     QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                     self._paste_point(QPointF(data['x'], data['y'])) + delta,
                                      show=data['show'], latex_scale=data.get('latex_scale'))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'shape':
-                item = _shape_from_record(data['record'], delta)
+                item = _shape_from_record(
+                    data['record'],
+                    self._paste_point(QPointF(data['x'], data['y'])) + delta - QPointF(data['x'], data['y']))
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'latex':
                 item = LatexFragmentItem(data['latex_code'], data['preamble'], data['w'], data['h'],
-                                         QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                         self._paste_point(QPointF(data['x'], data['y'])) + delta,
                                          color=data.get('color', ''),
                                          snippet=data.get('snippet', ''),
                                          latex_scale=data.get('latex_scale', "box"))
@@ -811,7 +974,7 @@ class SchematicScene(QGraphicsScene):
                 item.setSelected(True)
             elif kind == 'image':
                 item = ImageItem(data['file_path'], data['w'], data['h'],
-                                 QPointF(data['x'] + delta.x(), data['y'] + delta.y()),
+                                 self._paste_point(QPointF(data['x'], data['y'])) + delta,
                                  link=data.get('link', ''), size_scale=data.get('scale'))
                 item.setZValue(data.get('z', 0.0))
                 self.addItem(item)
@@ -824,18 +987,18 @@ class SchematicScene(QGraphicsScene):
                 number = max((p.number for p in pins), default=0) + 1
                 names = {p.name for p in pins}
                 name = data['name'] if data['name'] not in names else f"{data['name']}{number}"
-                item = SymbolPinItem(name, number, QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                item = SymbolPinItem(name, number, self._paste_point(QPointF(data['x'], data['y'])) + delta)
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'symbol_text':
                 from .symbol_editor import SymbolTextItem
                 item = SymbolTextItem(data['content'], data['size'],
-                                      QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                                      self._paste_point(QPointF(data['x'], data['y'])) + delta)
                 self.addItem(item)
                 item.setSelected(True)
             elif kind == 'opaque':
                 from .symbol_editor import OpaqueSvgItem
-                item = OpaqueSvgItem(data['xml'], QPointF(data['x'] + delta.x(), data['y'] + delta.y()))
+                item = OpaqueSvgItem(data['xml'], self._paste_point(QPointF(data['x'], data['y'])) + delta)
                 self.addItem(item)
                 item.setSelected(True)
 
@@ -844,6 +1007,8 @@ class SchematicScene(QGraphicsScene):
         self._sync_junctions()
 
     # ── placement ─────────────────────────────────────────────────────────────
+        self._paste_ref = None
+        self._paste_rot, self._paste_hflip, self._paste_last_pos = 0, False, None
 
     def start_item_placement(self, item) -> None:
         """A prepared item (a symbol pin, a symbol text) follows the cursor
@@ -864,13 +1029,26 @@ class SchematicScene(QGraphicsScene):
         """R while a component is being placed: the ghost turns, and the
         component is placed as shown (a user found rotation possible only
         after placement, 2026-09-25). Returns False outside a placement."""
+        if self._mode == _Mode.PASTING and self._paste_ghost_items:
+            # The whole pasted group turns about its reference point
+            # (Anton, 2026-10-21: R and M did nothing before the paste).
+            self._paste_rot = (self._paste_rot + 90) % 360
+            self._rebuild_paste_ghost()
+            return True
         if self._mode != _Mode.PLACING or self._ghost is None:
             return False
         self._ghost.setRotation(self._ghost.rotation() + 90)
         return True
 
     def mirror_ghost(self) -> bool:
-        """M while a component is being placed: the ghost mirrors."""
+        """M while a component is being placed: the ghost mirrors. During
+        a paste the group mirrors about its reference point; a turned
+        group mirrored is the mirrored group turned the other way."""
+        if self._mode == _Mode.PASTING and self._paste_ghost_items:
+            self._paste_rot = (-self._paste_rot) % 360
+            self._paste_hflip = not self._paste_hflip
+            self._rebuild_paste_ghost()
+            return True
         if self._mode != _Mode.PLACING or self._ghost is None:
             return False
         self._placing_hflip = not self._placing_hflip
@@ -1813,6 +1991,7 @@ class SchematicScene(QGraphicsScene):
         self._wire_move_wires     = []
         self._wire_move_origins   = []
         self._wire_move_others    = []
+        self._wire_move_loose_labels = []
         self._wire_move_start     = None
         self._wire_move_moved     = False
         self._wire_move_rb        = []
@@ -1954,6 +2133,14 @@ class SchematicScene(QGraphicsScene):
                 w.update_label()
 
     # ── post-drag reconnection ────────────────────────────────────────────────
+
+    def _drop_junction_previews(self) -> None:
+        """The dashed bridges shown during a junction drag; the real bridge
+        wires are made at release."""
+        for _, _, _, pw in self._junction_pin_previews:
+            if pw.scene() is not None:
+                self.removeItem(pw)
+        self._junction_pin_previews = []
 
     def _reconnect_after_move(self) -> None:
         """
@@ -2535,7 +2722,8 @@ class SchematicScene(QGraphicsScene):
                              model_defs=model_defs, pins=pins,
                              symbol_texts=symbol_texts, opaques=opaques,
                              origin=([self.origin_pos().x(), self.origin_pos().y()]
-                                     if self.show_origin else None))
+                                     if self.show_origin else None),
+                             label_offsets="corner")
 
     def convert_file_scales(self, data) -> None:
         """Express the LaTeX scales of the records of a FILE in the meaning
@@ -2606,12 +2794,19 @@ class SchematicScene(QGraphicsScene):
                 missing.append(cd.symbol_name)
                 continue
             item = ComponentItem(sym, cd.instance_id)
-            item.set_prop_offsets(cd.prop_offsets)   # discards the constructor's labels
             item.setPos(QPointF(cd.x, cd.y))
             item.setRotation(cd.rotation)
             item.h_flip       = cd.h_flip
             item.v_flip       = cd.v_flip
             item.apply_transform()
+            # Label offsets of a file from before 2026-10-21 are in the
+            # component's frame; they become corner offsets under the pose
+            # just set, so the labels stay where they were (see
+            # ComponentItem._label_frame).
+            offsets = (cd.prop_offsets if data.label_offsets == "corner"
+                       else {k: item._label_offset(QPointF(*v))
+                             for k, v in cd.prop_offsets.items()})
+            item.set_prop_offsets(offsets)   # discards the constructor's labels
             item.params       = dict(cd.params)
             item.model        = cd.model
             item.refs         = list(cd.refs)
@@ -2947,7 +3142,16 @@ class SchematicScene(QGraphicsScene):
                 for it in self.items():
                     if isinstance(it, ComponentItem):
                         it._drag_wires = None
+                        it._drag_junctions = None
                 item = self.item_at(raw)
+                if (item is not None and item.isSelected()
+                        and event.modifiers() & Qt.ControlModifier):
+                    # Ctrl+click takes a selected item out of the selection
+                    # (Anton, 2026-10-21). The drag set-ups below take the
+                    # press before Qt, which would have toggled it.
+                    item.setSelected(False)
+                    event.accept()
+                    return
                 from .wire_item import _DCLabel, _NetLabel
                 if isinstance(item, (_NetLabel, _DCLabel)):
                     _lbl = item
@@ -3035,9 +3239,21 @@ class SchematicScene(QGraphicsScene):
                         [QPointF(p) for p in w.points]
                         for w in self._wire_move_wires
                     ]
+                    # Labels: one of a selected component rides with its
+                    # parent, a loose one moves by the scene delta in its
+                    # parent's frame, as in the group drag. Moving every
+                    # selected label by the delta moved the labels of the
+                    # moving components twice (Anton, 2026-10-21).
                     self._wire_move_others  = [
                         (i, i.pos().x(), i.pos().y())
-                        for i in sel if not isinstance(i, WireItem)
+                        for i in sel
+                        if not isinstance(i, (WireItem, _PropertyLabel))
+                    ]
+                    self._wire_move_loose_labels = [
+                        (i, i.parentItem().mapToScene(i.pos()))
+                        for i in sel
+                        if isinstance(i, _PropertyLabel) and i.parentItem() is not None
+                        and not i.parentItem().isSelected()
                     ]
                     self._wire_move_start   = snap(raw)
                     self._wire_move_moved   = False
@@ -3118,6 +3334,26 @@ class SchematicScene(QGraphicsScene):
                         pk = _pt_key(p)
                         if pk in others:
                             self._pin_anchors.append((others[pk], item, (lx, ly)))
+                if (isinstance(item, JunctionItem)
+                        and (not item.isSelected() or self.selectedItems() == [item])):
+                    # A junction dragged off a component pin is bridged to
+                    # that pin at release (mouseReleaseEvent). Show the
+                    # bridge while dragging, as for a wire end dragged off a
+                    # pin (Anton, 2026-10-21: the wire looked broken until
+                    # the drop).
+                    jk = _pt_key(item.pos())
+                    for comp in self.items():
+                        if not isinstance(comp, ComponentItem):
+                            continue
+                        for lx, ly in comp.pin_positions():
+                            if _pt_key(comp.mapToScene(QPointF(lx, ly))) == jk:
+                                pw = WireItem([QPointF(item.pos()), QPointF(item.pos())])
+                                pen = pw.pen()
+                                pen.setStyle(Qt.DashLine)
+                                pw.setPen(pen)
+                                pw._preview = True
+                                self.addItem(pw)
+                                self._junction_pin_previews.append((comp, (lx, ly), item, pw))
                 # snapshot before potential component/text/junction/border move
                 self._pre_drag_data = self.to_data()
                 self._record_pre_drag_wire_pts()
@@ -3206,6 +3442,15 @@ class SchematicScene(QGraphicsScene):
                             if isinstance(w, WireItem) and id(w) not in sel_wire_ids
                             and not getattr(w, "_preview", False)
                             for i, p in enumerate(w.points) if _pt_key(p) in anchors
+                        ]
+                        # The junction dots at moving points follow the drag
+                        # visually, as in a wire-body drag (Anton, 2026-10-21:
+                        # they jumped to their place only at the drop).
+                        moving = {id(itm) for itm, _ in self._comp_group_move_items}
+                        self._group_junctions = [
+                            (j, QPointF(j.pos())) for j in self.items()
+                            if isinstance(j, JunctionItem) and id(j) not in moving
+                            and _pt_key(j.pos()) in anchors
                         ]
                         # Rule 1 for the group (Anton, 2026-10-08): a moving
                         # point - a pin of a moving component or a point of a
@@ -3372,13 +3617,7 @@ class SchematicScene(QGraphicsScene):
             self._update_draw_ghost(snap(event.scenePos()))
 
         elif self._mode == _Mode.PASTING:
-            if self._paste_ghost_items and self._paste_ref is not None:
-                delta = pos - self._paste_ref
-                for kind, item, base in self._paste_ghost_items:
-                    if kind == 'point':
-                        item.setPos(base + delta)
-                    else:
-                        item.setPath(_build_path([p + delta for p in base]))
+            self._move_paste_ghosts(pos)
 
         elif self._label_drag is not None:
             lbl, orig, start = self._label_drag
@@ -3400,6 +3639,10 @@ class SchematicScene(QGraphicsScene):
                     junc.setPos(orig_pos + delta)
             for other_item, ox, oy in self._wire_move_others:
                 other_item.setPos(QPointF(ox + delta.x(), oy + delta.y()))   # delta is a grid multiple
+            for lbl, orig_scene in self._wire_move_loose_labels:
+                parent = lbl.parentItem()
+                if parent is not None and parent.scene() is not None:
+                    lbl.setPos(parent.mapFromScene(orig_scene + delta))
             for (comp, local, wire, idx), pw in zip(self._wire_pin_anchors,
                                                      self._wire_pin_preview_wires):
                 if pw.scene() is None:
@@ -3467,6 +3710,11 @@ class SchematicScene(QGraphicsScene):
                 touched.add(w)
             for w in touched:
                 w._rebuild()
+            self._group_drag_active = True      # no rubber band of their own
+            for j, orig in self._group_junctions:
+                if j.scene() is not None:
+                    j.setPos(orig + snap_delta)
+            self._group_drag_active = False
             # Dashed bridge previews: from the pin to the moving point.
             for (comp, local, src), pw in zip(self._group_pin_anchors,
                                               self._group_pin_previews):
@@ -3478,6 +3726,11 @@ class SchematicScene(QGraphicsScene):
 
         else:
             super().mouseMoveEvent(event)
+            for comp, local, junc, pw in self._junction_pin_previews:
+                if pw.scene() is not None and comp.scene() is not None and junc.scene() is not None:
+                    pw.points = _elbow(QPointF(comp.mapToScene(QPointF(*local))),
+                                       QPointF(junc.pos()), True)
+                    pw._rebuild()
             # Stretch the dashed bridge previews to follow the dragged pins.
             if self._pin_preview_wires:
                 for (anchor, comp, local), pw in zip(self._pin_anchors,
@@ -3530,6 +3783,7 @@ class SchematicScene(QGraphicsScene):
                 w.setSelected(True)
 
     def mouseReleaseEvent(self, event):
+        self._drop_junction_previews()
         if event.button() == Qt.LeftButton:
             if self._label_drag is not None:
                 wire = self._label_drag[0].parentItem()
@@ -3579,6 +3833,7 @@ class SchematicScene(QGraphicsScene):
                 self._wire_move_wires        = []
                 self._wire_move_origins      = []
                 self._wire_move_others       = []
+                self._wire_move_loose_labels = []
                 self._wire_move_moved        = False
                 self._wire_move_rb           = []
                 self._wire_move_junctions    = []
@@ -4395,6 +4650,8 @@ class SchematicView(QGraphicsView):
         elif key == Qt.Key_R:
             if scene.rotate_ghost():
                 return                    # a component being placed turns
+            if scene.transform_selection(quarter_turns=1):
+                return                    # a group turns as one
             rotatable = [i for i in scene.selectedItems()
                          if not isinstance(i, _PropertyLabel)]
             if rotatable:
@@ -4407,6 +4664,8 @@ class SchematicView(QGraphicsView):
         elif key == Qt.Key_M:
             if scene.mirror_ghost():
                 return
+            if scene.transform_selection(mirror=True):
+                return                    # a group mirrors as one
             sel = [i for i in scene.selectedItems()
                    if isinstance(i, (ComponentItem, ShapeItem))]
             if sel:
@@ -4435,6 +4694,8 @@ class SchematicView(QGraphicsView):
                     else:
                         scene.removeItem(item)
                 scene._sync_junctions()
+        elif key == Qt.Key_A and mods & Qt.ControlModifier:
+            scene.select_all()
         elif key == Qt.Key_C and mods & Qt.ControlModifier:
             scene._copy_selection()
         elif key == Qt.Key_X and mods & Qt.ControlModifier:

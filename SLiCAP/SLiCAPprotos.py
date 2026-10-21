@@ -646,8 +646,9 @@ _FORMATS: dict[str, tuple[str, str]] = {
     "txt"   : _Entry(ini.txt_path,      ".txt"),
 }
 
-_SUBSCRIPT_NAME = re.compile(r"_\{([A-Za-z0-9]*[A-Za-z][A-Za-z0-9]*)\}")   # holds a letter
-_SUBSCRIPT_ANY  = re.compile(r"_\{([A-Za-z0-9]+)\}")                      # letters or digits
+# A subscript of letters and digits, or several of them separated by single
+# spaces: sympy prints the name V_in_d as V_{in d}.
+_SUBSCRIPT = re.compile(r"_\{([A-Za-z0-9]+(?: [A-Za-z0-9]+)*)\}")
 _MATH_FORMATS = ("latex", "rst", "myst", "md", "html")
 
 
@@ -667,9 +668,19 @@ def upright_subscripts(text: str, digits: bool = False) -> str:
     Applied by :class:`Snippet` (with ``digits=False``) to every report format
     that carries math, so equations in reports and identifiers on schematics
     use one convention (Anton, 2026-09-27).
+
+    A name with several subscript parts, such as the converted variable
+    ``V_in_d``, is printed by sympy as ``V_{in d}``; its parts are separated
+    by commas and each part follows the rule above: ``V_{\\mathrm{in},
+    \\mathrm{d}}`` (Anton, 2026-10-19).
     """
-    pat = _SUBSCRIPT_ANY if digits else _SUBSCRIPT_NAME
-    return pat.sub(lambda m: "_{\\mathrm{" + m.group(1) + "}}", text)
+    def part(p):
+        return p if (p.isdigit() and not digits) else "\\mathrm{" + p + "}"
+
+    def upright(m):
+        return "_{" + ",".join(part(p) for p in m.group(1).split(" ")) + "}"
+
+    return _SUBSCRIPT.sub(upright, text)
 
 
 class Snippet:

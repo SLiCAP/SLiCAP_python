@@ -4,6 +4,157 @@ SLiCAP release notes
 
 .. image:: /API/img/colorCode.svg
 
+SLiCAP version 6.4 release notes
+================================
+
+Version 6.4 completes the 6.3 work on derivations and converted
+circuits, and makes the schematic editor ready for a long stable period:
+its menus are named by function, a selected group turns and mirrors as
+one, the labels of a turned component stay beside it, and a round of
+canvas fixes follows the first weeks of use.
+
+#. **Exact fractions in derivations.** The formatter methods ``eqn()``,
+   ``eqnInline()``, ``expr()`` and ``matrixEqn()`` of the LaTeX and RST
+   formatters, and the functions ``exprLatex()``, ``roundN()`` and
+   ``rational2float()``, have an argument ``intlen``. A rational coefficient
+   whose numerator and denominator have at most ``intlen`` digits is shown
+   as a fraction, for instance :math:`\frac{1}{2}` and :math:`\frac{1}{4}`
+   in a derivation, while longer ones become floats. The default ``0`` keeps
+   the earlier behaviour: all rational coefficients are shown as floats.
+
+#. **Several equations in one display.** The LaTeX and RST formatters have
+   the method ``eqns(pairs, label="", order=None, intlen=0)``. It shows a
+   list of (left-hand side, right-hand side) pairs as one numbered display,
+   one equation per line, aligned on the equal sign, for instance the
+   solution of a set of equations: ``eqns(solution.items())``.
+
+#. **Converted variables in lower case.** The differential-mode and
+   common-mode variables, detectors, references and noise sources of a
+   balanced circuit carry the suffixes ``_d`` and ``_c``, in lower case like
+   the conversion types ``dd``, ``dc``, ``cd`` and ``cc``: the pair
+   ``V_outP``, ``V_outN`` becomes ``V_out_d`` and ``V_out_c`` (it was
+   ``V_out_D`` and ``V_out_C``). A detector given as a pair is renamed
+   automatically, so scripts that pass pairs need no change; scripts that use
+   the converted names themselves must use the lower-case suffixes.
+
+#. **Names with several subscripts.** A name with several subscript parts,
+   such as ``V_in_d`` or ``I_noise_R1``, is displayed with its parts
+   separated by commas, each part upright when it holds a letter:
+   :math:`V_{\mathrm{in},\mathrm{d}}`. It was shown as
+   :math:`V_{in d}`, italic and with the parts run together.
+
+#. **Analyses with a conversion type use the complete converted matrix.**
+   All instructions other than ``doMatrix()`` now compute with the complete
+   converted matrix, the conversion blocks included. The conversion type
+   selects the mode of the source (second letter) and of the detector (first
+   letter): ``dd`` and ``cc`` give the differential-mode and common-mode
+   results, ``dc`` and ``cd`` the conversion transfers, which were not
+   available before. The new keyword argument ``use_submatrix=True`` (all
+   instructions, and the analysis dialog of the schematic editor) restores
+   the earlier behaviour for ``dd`` and ``cc``: the analysis of the
+   differential-mode or common-mode equivalent network alone. For fully
+   balanced circuits the transfers do not change. Results that do change:
+   the transfers of circuits that are not fully balanced (they now include
+   the mode conversion), and ``doPoles()``, ``doZeros()`` and
+   ``doStateSpace()`` with ``dd`` or ``cc``, which now include the poles of
+   both modes unless ``use_submatrix=True`` is given.
+
+#. **Controlled sources with node references.** The schematic editor has two
+   new symbols, ``VCVS-ref`` and ``VCCS-ref``: a voltage-controlled voltage
+   or current source with only its output terminals. The controlling nodes
+   are entered as references (ref 1: + node, ref 2: - node), so that the
+   controlling voltage can be taken anywhere in the drawing without wires.
+   The netlist line is the same as that of ``VCVS`` and ``VCCS``.
+
+#. **Bug fixes.**
+
+   - The orthogonality test of a balanced circuit (attribute
+     ``orthogonal`` of a result with a conversion type) returns ``False``
+     whenever the block ``M_dc`` or ``M_cd`` has an entry that is not
+     identically zero. For a symbolic entry such as ``C_1*s/2 - 1/(4*R_2)``
+     it returned ``None``.
+   - The conversion matrix of a balanced circuit is exact. Its entries 1/2
+     were Python floats, so that every symbolic converted matrix carried
+     floats, for instance ``0.5/R_1`` instead of :math:`\frac{1}{2R_1}`. The
+     results were numerically the same.
+
+   - ``convtype='dc'`` and ``convtype='cd'`` return the right blocks of the
+     converted matrix again. Version 6.0 had swapped them: ``dc`` returned
+     the common-mode equations in the differential-mode variables, the block
+     of ``cd``. ``dc`` now returns the differential-mode equations in the
+     common-mode variables, the path by which a common-mode stimulus
+     produces a differential-mode response, as the manual states. Analyses
+     with ``dd`` and ``cc``, the orthogonality test and the loop gain types
+     were not affected.
+   - Roots are displayed as roots again. The rounding of expressions for
+     display (``roundN()``) converted every rational number into a float,
+     the exponent of a root included, so that, for instance, the coupling
+     term ``k*s*sqrt(L_a*L_b)`` of coupled inductors was shown as
+     ``(L_a L_b)^0.5``. The exponents 1/n and -1/n of roots are now kept.
+     Other rational exponents, such as 41/50, and rational coefficients are
+     still shown as floats. The computations were not affected.
+   - The LaTeX table of symbolic poles and zeros (``pz()`` of the LaTeX
+     formatter) typesets the roots as mathematics again. The roots were
+     passed to the table as LaTeX text, in which every underscore was
+     escaped, so that, for instance, ``C_2`` was printed as ``C\_{2}``. The
+     column of symbolic roots is now headed :math:`s` [rad/s] or
+     :math:`s` [Hz], for poles and zeros alike. All headers of the table are
+     set as mathematics, with upright units, so that they keep their shape
+     in an italic environment such as an example.
+   - The Design data panel lists the results of ``doMatrix()`` with
+     ``method="tc"``: ``Nr``, ``Cr``, ``Rr`` and ``reactances`` appear under
+     the result, next to ``M``, ``Iv`` and ``Dv``.
+
+#. **Group rotate and mirror.** R and M on a selection of several items
+   turn or mirror them as one, about the grid point nearest the centre of
+   the selection. The wires that stay behind follow the moved pins. A
+   single selected item turns or mirrors in place, as before.
+
+#. **Menus named by function.** The schematic editor's *Place* and *Draw*
+   menus are replaced by four menus that say what their items do.
+   *Circuit* holds what reaches the netlist: symbol, wire, net label,
+   junction, library, subcircuit symbol, parameters, source, detector
+   and loop gain reference, model definition. *Insert* holds the objects
+   that exist elsewhere and follow the runs: the figures and LaTeX
+   snippets of the Design data, image files, and on a poster the drawings
+   of the project. *Draw* holds the hand-made annotation that nothing
+   updates: shapes, text, hyperlinks and typed LaTeX. *Document* holds
+   the page: the document properties block and the border. The entries
+   for the Design data's objects are called *Figure from design data*
+   and *LaTeX from design data*; the typed one is *LaTeX text*. The symbol editor's *Place* menu is now *Symbol*. The shortcuts
+   are unchanged.
+
+#. **Labels of turned and mirrored components.** The labels of a
+   component keep their column beside the symbol when it is turned, and
+   move to its other side when it is mirrored, as if the symbol stood
+   upright. They turned with the symbol, so the column became a row of
+   overlapping texts on every turned component. A label moved by hand
+   keeps its place relative to the symbol's footprint. The file stores
+   the label offsets in this new meaning and marks it; older files are
+   converted when they are read, so nothing moves in an existing
+   schematic.
+
+#. **Canvas fixes from the test round of 21 October.**
+
+   - Ctrl+A selects everything on the canvas: the components, wires and
+     annotations.
+   - Ctrl+click on a selected item takes it out of the selection.
+   - R and M turn and mirror a pasted group before it is placed, about
+     the point under the cursor.
+   - A group dragged by one of its wires keeps the component labels on
+     their components. They were moved twice.
+   - The junction dots follow a dragged component or group. They jumped
+     to their place only at the drop.
+   - A junction dragged off a component pin shows the bridge to the pin
+     while dragging, as a wire end does.
+   - A LaTeX fragment is drawn with exact glyph boxes, so the raised A
+     of ``\LaTeX`` no longer sticks out of its box, and its selection
+     frame lies inside its repaint rectangle. Dragging one left ghosts
+     and a hole in the grid.
+   - The schematic tab that comes to the front takes the keyboard. A
+     paste after a tab click went to the hidden schematic, where it
+     waited for a click, and Escape could not cancel it.
+
 SLiCAP version 6.3 release notes
 ================================
 

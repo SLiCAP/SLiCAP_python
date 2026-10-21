@@ -1,3 +1,3 @@
 .. math::
 
-    A_{v oo} = \frac{\frac{0.5 c_{\mathrm{c}} s}{R_{\mathrm{s}}} + \frac{1}{R_{\mathrm{b}} R_{\mathrm{s}}} + \frac{1}{R_{\mathrm{a}} R_{\mathrm{s}}}}{\frac{0.5 c_{\mathrm{c}} s}{R_{\mathrm{a}}} + \frac{1}{R_{\mathrm{a}} R_{\mathrm{s}}}}
+    A_{\mathrm{v},\mathrm{oo}} = \frac{\frac{0.5 c_{\mathrm{c}} s}{R_{\mathrm{s}}} + \frac{1}{R_{\mathrm{b}} R_{\mathrm{s}}} + \frac{1}{R_{\mathrm{a}} R_{\mathrm{s}}}}{\frac{0.5 c_{\mathrm{c}} s}{R_{\mathrm{a}}} + \frac{1}{R_{\mathrm{a}} R_{\mathrm{s}}}}

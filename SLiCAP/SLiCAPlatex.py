@@ -367,15 +367,17 @@ class LaTeXformatter(_BaseFormatter):
             if numeric:
                 alignstring = '[c]{lrrrrr}'
                 if ini.hz == True:
-                    headerList = ['\\#', 'Re [Hz]', 'Im [Hz]', 'f [Hz]', 'Q']
+                    headerList = ['\\#', '$\\mathrm{Re}\\ [\\mathrm{Hz}]$', '$\\mathrm{Im}\\ [\\mathrm{Hz}]$',
+                                  '$f\\ [\\mathrm{Hz}]$', '$Q$']
                 else:
-                    headerList = ['\\#', 'Re [rad/s]', 'Im [rad/s]', '$\\omega$ [rad/s]', 'Q']
+                    headerList = ['\\#', '$\\mathrm{Re}\\ [\\mathrm{rad/s}]$', '$\\mathrm{Im}\\ [\\mathrm{rad/s}]$',
+                                  '$\\omega\\ [\\mathrm{rad/s}]$', '$Q$']
             else:
                 alignstring = '[c]{ll}'
                 if ini.hz == True:
-                    headerList = ['\\#', 'f [Hz]']
+                    headerList = ['\\#', '$s\\ [\\mathrm{Hz}]$']
                 else:
-                    headerList = ['\\#', '$\\omega$ [rad/s]']
+                    headerList = ['\\#', '$s\\ [\\mathrm{rad/s}]$']
             linesList = []
             if len(resultObject.poles) != 0:
                 if numeric:
@@ -389,9 +391,10 @@ class LaTeXformatter(_BaseFormatter):
                     linesList += _numRoots2TEX(resultObject.zeros, ini.hz, 'z')
                 else:
                     linesList += _symRoots2TEX(resultObject.zeros, ini.hz, 'z')
-            TEX += _TEXcreateCSVtable(headerList, linesList, alignstring, 
-                                      label=label, caption=caption, 
-                                      color=color)
+            TEX += _TEXcreateCSVtable(headerList, linesList, alignstring,
+                                      label=label, caption=caption,
+                                      color=color,
+                                      value_fn=None if numeric else exprLatex)
         return Snippet(TEX, self.format)
 
     def noiseContribs(self, resultObject, label="", caption="", color="myyellow"):
@@ -544,7 +547,8 @@ class LaTeXformatter(_BaseFormatter):
             TEX += specType + ".}\n\n"
         return Snippet(TEX, self.format)
 
-    def eqn(self, LHS, RHS, units="", label="", multiline=False, order=None):
+    def eqn(self, LHS, RHS, units="", label="", multiline=False, order=None,
+            intlen=0):
         """
         Creates a displayed (numbered) equation.
 
@@ -568,7 +572,14 @@ class LaTeXformatter(_BaseFormatter):
                       (default) for sympy's ordering, ``'none'`` to keep the
                       order of LHS and RHS, e.g. ``G + s*C`` with matrices.
         :type order: str, NoneType
-        
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`. Defaults
+                       to 0: all rational coefficients become floats.
+        :type intlen: int
+
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         
@@ -591,7 +602,7 @@ class LaTeXformatter(_BaseFormatter):
         if type(RHS) == str:
             RHS = _sympify(RHS)
         if multiline:
-            TEX = '\n' + sp.multiline_latex(roundN(LHS), roundN(RHS), 
+            TEX = '\n' + sp.multiline_latex(roundN(LHS, intlen=intlen), roundN(RHS, intlen=intlen), 
                                             terms_per_line=multiline,
                                             **({} if order is None else {"order": order}))
             TEX = TEX.replace('\\\\\n', '\\nonumber \\\\\n')
@@ -601,13 +612,65 @@ class LaTeXformatter(_BaseFormatter):
             TEX += '\\,\\left[\\mathrm{' + units + '}\\right]\n'
         else:
             TEX = '\\begin{equation}'
-            TEX += '\n' + exprLatex(LHS, order) + ' = ' + exprLatex(RHS, order)
+            TEX += '\n' + exprLatex(LHS, order, intlen) + ' = ' + exprLatex(RHS, order, intlen)
             if units != '':
                 TEX += '\\,\\left[\\mathrm{' + units + '}\\right]'
             TEX += '\n'
             if label != '':
                 TEX += '\\label{'+ label + '}\n'
             TEX += '\\end{equation}\n\n'
+        return Snippet(TEX, self.format)
+
+    def eqns(self, pairs, label="", order=None, intlen=0):
+        """
+        Creates one displayed (numbered) equation with several lines: one
+        equation per line, aligned on the equal sign, for instance the
+        solution of a set of equations.
+
+        :param pairs: The equations: an iterable of (LHS, RHS) pairs, e.g.
+                      ``solution.items()`` of a dict returned by
+                      ``sympy.solve(..., dict=True)``.
+        :type pairs: iterable
+
+        :param label: Reference label of the display. Defaults to an empty
+                      string.
+        :type label: str
+
+        :param order: Order of the terms, see :func:`exprLatex`.
+        :type order: str, NoneType
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`.
+        :type intlen: int
+
+        :return: SLiCAP Snippet object
+        :rtype: SLiCAP.SLiCAPprotos.Snippet
+
+        :example:
+
+        >>> import SLiCAP as sl
+        >>> import sympy as sp
+        >>>
+        >>> x, y = sp.symbols("x y")
+        >>> sol = sp.solve([x + y - 3, x - y - 1], [x, y], dict=True)[0]
+        >>> ltx = sl.LaTeXformatter()
+        >>> ltx.eqns(sol.items(), label="eq-sol").save("sol")
+        """
+        lines = []
+        for LHS, RHS in pairs:
+            if type(LHS) == str:
+                LHS = _sympify(LHS)
+            if type(RHS) == str:
+                RHS = _sympify(RHS)
+            lines.append(exprLatex(LHS, order, intlen) + ' &= ' + exprLatex(RHS, order, intlen))
+        TEX = '\\begin{equation}\n\\begin{aligned}\n'
+        TEX += ' \\\\\n'.join(lines) + '\n'
+        TEX += '\\end{aligned}\n'
+        if label != '':
+            TEX += '\\label{' + label + '}\n'
+        TEX += '\\end{equation}\n\n'
         return Snippet(TEX, self.format)
 
     def stateSpace(self, resultObject, label="", parts=None):
@@ -654,7 +717,7 @@ class LaTeXformatter(_BaseFormatter):
         TEX += '\\end{align}\n\n'
         return Snippet(TEX, self.format)
 
-    def matrixEqn(self, Iv, M, Dv, label=""):
+    def matrixEqn(self, Iv, M, Dv, label="", intlen=0):
         """
         Creates a displayed matrix equation without evaluating it.
 
@@ -669,13 +732,20 @@ class LaTeXformatter(_BaseFormatter):
         
         :param label: Reference label for the table. Defaults to an empty string.
         :type label: str
-        
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`. Defaults
+                       to 0: all rational coefficients become floats.
+        :type intlen: int
+
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
         TEX =  '\\begin{equation}\n'
-        TEX += sp.latex(roundN(Iv)) + '=' + sp.latex(roundN(M)) + '\\cdot ' 
-        TEX += sp.latex(roundN(Dv)) + '\n'
+        TEX += sp.latex(roundN(Iv, intlen=intlen)) + '=' + sp.latex(roundN(M, intlen=intlen)) + '\\cdot ' 
+        TEX += sp.latex(roundN(Dv, intlen=intlen)) + '\n'
         if label != '':
             TEX += '\\label{'+ label + '}\n'
         TEX += '\\end{equation}\n\n'
@@ -833,7 +903,7 @@ class LaTeXformatter(_BaseFormatter):
         TEX += ']{' + fileName + '}\n\n'
         return Snippet(TEX, self.format)
 
-    def expr(self, expr, units=""):
+    def expr(self, expr, units="", intlen=0):
         """
         Creates in inline expression. If format='rst', this expression is 
         stored (name = expr) in the file 'substitutions.rst'. 
@@ -846,19 +916,26 @@ class LaTeXformatter(_BaseFormatter):
         
         :param units: Units
         :type units: str
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`. Defaults
+                       to 0: all rational coefficients become floats.
+        :type intlen: int
         """
         try:
             units = units2TeX(units)
         except:
            units = ''
-        TEX = '$' + exprLatex(expr)
+        TEX = '$' + exprLatex(expr, intlen=intlen)
         if units == '':
             TEX += '$ '
         else:
             TEX += '\\left[ \\mathrm{' + units + '} \\right] $ '
         return Snippet(TEX, self.format)
 
-    def eqnInline(self, LHS, RHS, units=""):
+    def eqnInline(self, LHS, RHS, units="", intlen=0):
         """
         Creates in inline equation. If format='rst', this equation is 
         stored (name = equation) in the file 'substitutions.rst'. 
@@ -874,6 +951,13 @@ class LaTeXformatter(_BaseFormatter):
         
         :param units: Units
         :type units: str
+
+        :param intlen: Maximum number of digits of the numerator and of the
+                       denominator of a rational coefficient that is kept as
+                       a fraction, see
+                       :func:`SLiCAP.SLiCAPmath.rational2float`. Defaults
+                       to 0: all rational coefficients become floats.
+        :type intlen: int
         """
         try:
             units = units2TeX(units)
@@ -883,7 +967,7 @@ class LaTeXformatter(_BaseFormatter):
             LHS = _sympify(LHS)
         if type(RHS) == str:
             RHS = _sympify(RHS)
-        TEX = '$' + exprLatex(LHS) + '=' + exprLatex(RHS)
+        TEX = '$' + exprLatex(LHS, intlen=intlen) + '=' + exprLatex(RHS, intlen=intlen)
         if units == '':
             TEX += '$ '
         else:
@@ -961,7 +1045,7 @@ def sub2rm(textext):
 # The single "expression -> display LaTeX" chokepoint. Moved here from
 # SLiCAPhtml and made public on 2026-08-16 (Anton): the GUI reached into the
 # HTML module for it, which is how the GUI and the reports drifted apart.
-def exprLatex(expr, order=None):
+def exprLatex(expr, order=None, intlen=0):
     """
     Renders a sympy object as a LaTeX math string, in SLiCAP's display
     notation: scale factors or engineering notation as set by
@@ -990,6 +1074,12 @@ def exprLatex(expr, order=None):
                   ``'lex'``.
     :type order: str, NoneType
 
+    :param intlen: Maximum number of digits of the numerator and of the
+                   denominator of a rational coefficient that is kept as a
+                   fraction, see :func:`SLiCAP.SLiCAPmath.rational2float`.
+                   Defaults to 0: all rational coefficients become floats.
+    :type intlen: int
+
     :return: LaTeX math string (without $ delimiters)
     :rtype: str
 
@@ -1003,7 +1093,7 @@ def exprLatex(expr, order=None):
     settings = {} if order is None else {"order": order}
     if ini.scalefactors or ini.eng_notation:
         expr, exp = ENG(expr, scaleFactors=ini.scalefactors)
-        expr = roundN(expr)
+        expr = roundN(expr, intlen=intlen)
         if exp != None:
             if ini.scalefactors:
                 expr = str(expr) + '\\, \\mathrm{' + str(exp) + '}'
@@ -1012,7 +1102,7 @@ def exprLatex(expr, order=None):
         else:
             expr = sp.latex(expr, **settings)
     else:
-        expr = sp.latex(roundN(expr), **settings)
+        expr = sp.latex(roundN(expr, intlen=intlen), **settings)
     return expr
 
 
@@ -1199,7 +1289,8 @@ def _symRoots2TEX(roots, Hz, pz):
     :param pz: Identifier prefix: 'p' ofr poles 'z' for zeros.
     :type pz: str
 
-    :return: List of lists with data of poles or zeros
+    :return: List of lists with data of poles or zeros: the name and the
+             expression of each root, as sympy objects.
     :rtype: list
     """
     lineList = []
@@ -1207,9 +1298,8 @@ def _symRoots2TEX(roots, Hz, pz):
     for root in roots:
         i += 1
         if Hz == True:
-            line = [sp.Symbol(pz + '_' + str(i)), 
-                    '$' + sp.latex(roundN(root/2/sp.pi)) + '$']
+            line = [sp.Symbol(pz + '_' + str(i)), root/2/sp.pi]
         else:
-            line = [sp.Symbol(pz + '_' + str(i)), '$' + sp.latex(roundN(root)) + '$']
+            line = [sp.Symbol(pz + '_' + str(i)), root]
         lineList.append(line)
     return lineList

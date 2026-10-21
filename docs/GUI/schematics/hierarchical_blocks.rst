@@ -100,7 +100,7 @@ Unchanged schematics are not re-exported.
 Placing a block
 ===============
 
-:menuselection:`Place --> New subcircuit symbol…` creates (or re-assigns) a
+:menuselection:`Circuit --> New subcircuit symbol…` creates (or re-assigns) a
 subcircuit's block symbol and places its first instance:
 
 #. Pick the subcircuit's library file.  The dialog reads its ``.subckt``
