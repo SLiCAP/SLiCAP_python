@@ -128,23 +128,26 @@ def linked_images(sch_path) -> list:
     return out
 
 
-def input_mtime(sch_path: Path) -> float:
-    """The newest modification time of everything an export depends on:
-    the schematic, its style and frozen-symbols sidecars, the symbol
-    libraries (system and project) and the schematic package itself, so
-    that an install or a symbol change re-exports every schematic once."""
+def source_mtime(sch_path: Path) -> float:
+    """The newest modification time of the SOURCES of a drawing: the file
+    itself, its style and frozen-symbols sidecars, the operating-point
+    results it draws and the files it places by their file name. The
+    images of a drawing are current when they are newer than this.
+
+    The rule (Anton, 2026-10-21): an object placed by its file name
+    follows that file, and with it what that file places. The frozen
+    symbol cache defines the symbols, so a symbol library is no source,
+    and an install of SLiCAP changes no source either: an image changes
+    only when its drawing changes (``force=True`` exports on request).
+    Counting the libraries and the package for the images as well, so
+    that an install re-exported every image once (2026-09-13), was
+    REVERTED for that reason. A netlist still counts them: see
+    input_mtime."""
     from . import project
     sch_path = Path(sch_path)
     candidates = [sch_path,
                   project.ini_path_for(sch_path),
                   project.symbols_path_for(sch_path)]
-    here = Path(__file__).parent
-    kind = "ngspice" if sch_path.suffix.lower() == ".spice_sch" else "slicap"
-    candidates += list((here.parent / "files" / "symbols" / kind).glob("*.svg"))
-    candidates += list(here.glob("*.py"))
-    lib = project.folder("lib", project.root_for(sch_path))
-    if lib.is_dir():
-        candidates += list(lib.glob("*"))
     # The operating-point results drawn on an NGspice schematic (bias
     # annotations): a newer sl.op() run re-exports the image (2026-09-21).
     candidates.append(project.subdir_for(sch_path, "cir")
@@ -154,8 +157,31 @@ def input_mtime(sch_path: Path) -> float:
     # schematic (Anton, 2026-10-06). Without this a run that rewrote the
     # plots left the exported schematic current and stale.
     candidates += linked_images(sch_path)
+    return _newest(candidates)
+
+
+def input_mtime(sch_path: Path) -> float:
+    """The newest modification time of everything a NETLIST depends on:
+    the sources of the drawing (source_mtime), the symbol libraries
+    (system and project) and the schematic package itself. A netlist is
+    derived by SLiCAP's netlister, so an install or a symbol change
+    rebuilds every netlist once: a netlister fix must reach it."""
+    from . import project
+    sch_path = Path(sch_path)
+    here = Path(__file__).parent
+    kind = "ngspice" if sch_path.suffix.lower() == ".spice_sch" else "slicap"
+    candidates = list((here.parent / "files" / "symbols" / kind).glob("*.svg"))
+    candidates += list(here.glob("*.py"))
+    lib = project.folder("lib", project.root_for(sch_path))
+    if lib.is_dir():
+        candidates += list(lib.glob("*"))
+    return max(source_mtime(sch_path), _newest(candidates))
+
+
+def _newest(paths) -> float:
+    """The newest modification time of the files among *paths*, 0 for none."""
     newest = 0.0
-    for p in candidates:
+    for p in paths:
         try:
             if p is not None and Path(p).is_file():
                 newest = max(newest, Path(p).stat().st_mtime)

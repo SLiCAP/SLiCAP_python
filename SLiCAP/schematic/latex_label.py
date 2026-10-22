@@ -15,6 +15,10 @@ once.  The cache directory is per-schematic (the ``<name>.cache`` sidecar,
 carried by the scene and passed explicitly as ``cache_dir``); non-schematic
 callers use the session temp.  Returns None on any failure; callers fall back
 to plain text.
+
+A bulk build (opening a schematic) renders its cache misses together: one
+pdflatex and one dvisvgm run per kind of document, instead of one pair per
+expression.  See :func:`render_batch`.
 """
 
 from __future__ import annotations
@@ -151,15 +155,19 @@ def __getattr__(name):
         return _latex_installed()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-# ── LaTeX template ────────────────────────────────────────────────────────────
+# ── LaTeX documents ───────────────────────────────────────────────────────────
+# Every render is one page of the standalone class: the class OPTIONS, a
+# PREAMBLE and a BODY.  _document() joins them the way the renders always
+# have, so a single render compiles the same document as before the batch
+# render existed.
 
-_TEX_TEMPLATE = r"""\documentclass[preview,varwidth=true,border=2pt]{standalone}
-\usepackage{amsmath}
-\usepackage{graphicx}
-\begin{document}
-%s
-\end{document}
-"""
+_LABEL_OPTIONS  = "preview,varwidth=true,border=2pt"
+_LABEL_PREAMBLE = "\\usepackage{amsmath}\n\\usepackage{graphicx}\n"
+
+
+def _document(options: str, preamble: str, body: str) -> str:
+    return ("\\documentclass[" + options + "]{standalone}\n" + preamble
+            + "\\begin{document}\n" + body + "\n\\end{document}\n")
 
 # ── lazy SLiCAP import ────────────────────────────────────────────────────────
 # Imported on first use so that startup is unaffected.
@@ -534,14 +542,10 @@ def _render_cached(expr_str: str, cache_dir=None) -> bytes | None:
     if path.exists():
         _touch(cache, path.name)
         return path.read_bytes()
-    svg = _render_fresh(expr_str, cache)
-    if svg is not None:
-        path.write_bytes(svg)
-        _touch(cache, path.name)
-    return svg
+    return _render_fresh(expr_str, path)
 
 
-def _render_fresh(expr_str: str, cache: Path) -> bytes | None:
+def _render_fresh(expr_str: str, path: Path) -> bytes | None:
     if not _latex_installed() or not _ensure_slicap():
         return None
     if _is_placeholder(expr_str):
@@ -549,7 +553,7 @@ def _render_fresh(expr_str: str, cache: Path) -> bytes | None:
     latex_str = _expression_latex(expr_str)      # the one parse boundary
     if not latex_str:
         return None
-    return _latex_to_svg(latex_str, cache)
+    return _latex_to_svg(latex_str, path)
 
 
 def _render_latex_str(latex_str: str, cache_dir=None) -> bytes | None:
@@ -562,46 +566,204 @@ def _render_latex_str(latex_str: str, cache_dir=None) -> bytes | None:
     if path.exists():
         _touch(cache, path.name)
         return path.read_bytes()
-    svg = _latex_to_svg(latex_str, cache)
+    return _latex_to_svg(latex_str, path)
+
+
+def _latex_to_svg(latex_str: str, path: Path) -> bytes | None:
+    """Render a LaTeX math string as a label into the cache file *path*."""
+    return _render_into(path, _LABEL_OPTIONS, _LABEL_PREAMBLE,
+                        f"${latex_str}$")[0]
+
+
+def _render_into(path: Path, options: str, preamble: str, body: str,
+                 shared: bool = True) -> "tuple[bytes | None, str]":
+    """Render one document into the cache file *path*: ``(svg, error)``.
+
+    Inside a render batch for the cache of *path* (:func:`render_batch`)
+    the document is queued instead, and ``(None, "")`` returned. A
+    document that must not share a pdflatex run (*shared* False, see
+    :func:`render_latex_raw`) is rendered at once, also in a batch."""
+    batch = _batches.get(path.parent)
+    if batch is not None and shared:
+        batch.queue(options, preamble, body, path)
+        return None, ""
+    svg, err = _compile(options, preamble, body, path.parent)
     if svg is not None:
         path.write_bytes(svg)
-        _touch(cache, path.name)
-    return svg
+        _touch(path.parent, path.name)
+    return svg, err
 
 
-def _latex_to_svg(latex_str: str, cache: Path) -> bytes | None:
-    """Compile a LaTeX math string to SVG via pdflatex (DVI) + dvisvgm.
+def _compile(options: str, preamble: str, body: str,
+             workdir: Path) -> "tuple[bytes | None, str]":
+    """Compile one document to SVG via pdflatex (DVI) + dvisvgm:
+    ``(svg, "")``, or ``(None, reason)``.
 
     pdflatex is run with ``-output-format=dvi`` so dvisvgm reads a DVI, not a
     PDF.  DVI needs NO Ghostscript (``dvisvgm --pdf`` on a PDF would), so a
     plain TeX distribution is the only prerequisite -- no extra packages."""
-    with tempfile.TemporaryDirectory(dir=cache) as tmp:
-        tmpdir   = Path(tmp)
-        tex_file = tmpdir / "expr.tex"
-        tex_file.write_text(
-            _TEX_TEMPLATE % f"${latex_str}$",
-            encoding="utf-8",
-        )
+    with tempfile.TemporaryDirectory(dir=workdir) as tmp:
+        tmpdir = Path(tmp)
+        (tmpdir / "expr.tex").write_text(_document(options, preamble, body),
+                                         encoding="utf-8")
         subprocess.run(
             [_latex_tools()[0], "-interaction=batchmode",
              "-output-format=dvi", "expr.tex"],
-            cwd=tmpdir,
-            capture_output=True,
+            cwd=tmpdir, capture_output=True,
         )
-        dvi_file = tmpdir / "expr.dvi"
-        if not dvi_file.exists():
-            return None
-
-        svg_file = tmpdir / "expr.svg"
+        if not (tmpdir / "expr.dvi").exists():
+            errs = _tex_errors(tmpdir / "expr.log")
+            return None, ("\n".join(errs[:5]) if errs else
+                          "pdflatex failed" if (tmpdir / "expr.log").exists()
+                          else "pdflatex failed (no output)")
         subprocess.run(
             [_latex_tools()[1], *_dvisvgm_args(), "expr.dvi", "-o", "expr.svg"],
-            cwd=tmpdir,
-            capture_output=True,
+            cwd=tmpdir, capture_output=True,
         )
-        if not svg_file.exists():
-            return None
+        svg = tmpdir / "expr.svg"
+        if not svg.exists():
+            return None, "dvisvgm failed"
+        return svg.read_bytes(), ""
 
-        return svg_file.read_bytes()
+
+def _tex_errors(log: Path) -> list:
+    """The error lines ("! ...") of a pdflatex log, [] without a log."""
+    if not log.exists():
+        return []
+    return [l for l in log.read_text(encoding="utf-8", errors="replace").splitlines()
+            if l.startswith("!")]
+
+
+# ── batch render (Anton, 2026-10-21) ──────────────────────────────────────────
+# Opening a schematic with a cold cache cost one pdflatex and one dvisvgm run
+# per label, about 0.4 s each: seconds per schematic, with the window frozen.
+# A batch renders every miss of a bulk build (SchematicScene.from_data) in ONE
+# pdflatex and ONE dvisvgm run per document head (class options + preamble):
+# the standalone class in multi-page mode puts every body on its own page,
+# wrapped exactly as it wraps the body of a single document, and dvisvgm
+# writes one SVG per page.  The pages draw exactly what single renders draw.
+# Only internal ids differ (the font numbers in the glyph ids, the page
+# number), and the export prefixes those anyway.  The cache keys and the
+# single render of a label edited afterwards are unchanged.
+#
+# Only code that changes no LaTeX state may share a run.  A user's fragment
+# renders in a document of its own: a numbered equation on a shared page
+# would continue the numbering of the page before it.  A batch with a LaTeX
+# error in its pages, or without one page per body, writes nothing.  The
+# caller's second build then renders those documents one by one, as before.
+#
+# Batching fragments with the counters reset on every page was considered
+# and REJECTED: a fragment can also define a macro or change a catcode for
+# the pages after it.  Failing a batch on ANY error was tried and REVERTED
+# (2026-10-21): the SLiCAP report preamble, the default of a parameter
+# table, always reports one, so every such table cost an extra run.  One
+# preamble for labels and tables was considered and REJECTED: it changes
+# the documents, and a table's preamble is part of its cache key.
+
+_PAGE_ENV   = "slicappage"
+_PAGES_MARK = "SLiCAP render batch: pages"
+
+_batches: "dict[Path, _Batch]" = {}
+
+
+class _Batch:
+    """The cache misses queued by one render batch, per document head."""
+
+    def __init__(self):
+        self._jobs: dict = {}           # (options, preamble) -> {path: body}
+
+    def queue(self, options: str, preamble: str, body: str, path: Path) -> None:
+        self._jobs.setdefault((options, preamble), {})[path] = body
+
+    @property
+    def queued(self) -> int:
+        """The number of documents queued: renders that returned None."""
+        return sum(len(pages) for pages in self._jobs.values())
+
+    def render(self) -> None:
+        """Render the queue, one run per document head, into the cache."""
+        for (options, preamble), pages in self._jobs.items():
+            paths = list(pages)
+            svgs = _compile_pages(options, preamble, [pages[p] for p in paths],
+                                  paths[0].parent)
+            for path, svg in zip(paths, svgs):
+                if svg is not None:
+                    path.write_bytes(svg)
+                    _touch(path.parent, path.name)
+
+
+def _compile_pages(options: str, preamble: str, bodies: list,
+                   workdir: Path) -> list:
+    """Compile *bodies* as the pages of ONE document: the SVG of every body,
+    in order, or None for a body whose page did not come out.  All None
+    when pdflatex reports an error in the pages, or wrote another number
+    of pages than there are bodies: page n would then not be body n.
+
+    An error of the PREAMBLE is no reason: it occurs in every document
+    with that preamble, single or batch (the SLiCAP report preamble loads
+    a data file by a path relative to the report, which a render does not
+    find).  The log tells them apart by a mark written before the pages."""
+    pages = "".join("\\begin{%s}\\ignorespaces\n%s\n\\ifhmode\\unskip\\fi"
+                    "\\end{%s}\n" % (_PAGE_ENV, body, _PAGE_ENV)
+                    for body in bodies)
+    doc = _document(options + ",multi=" + _PAGE_ENV,
+                    preamble + "\\newenvironment{%s}{}{}\n" % _PAGE_ENV,
+                    "\\typeout{%s}\n" % _PAGES_MARK + pages)
+    with tempfile.TemporaryDirectory(dir=workdir) as tmp:
+        tmpdir = Path(tmp)
+        (tmpdir / "batch.tex").write_text(doc, encoding="utf-8")
+        subprocess.run(
+            [_latex_tools()[0], "-interaction=batchmode",
+             "-output-format=dvi", "batch.tex"],
+            cwd=tmpdir, capture_output=True,
+        )
+        log = tmpdir / "batch.log"
+        text = (log.read_text(encoding="utf-8", errors="replace")
+                if log.exists() else "")
+        lines = text.splitlines()
+        written = re.search(r"Output written on batch\.dvi \((\d+) pages?", text)
+        if (_PAGES_MARK not in lines
+                or any(l.startswith("!") for l in lines[lines.index(_PAGES_MARK):])
+                or written is None or int(written.group(1)) != len(bodies)):
+            return [None] * len(bodies)
+        subprocess.run(
+            [_latex_tools()[1], *_dvisvgm_args(), "--page=1-", "batch.dvi",
+             "-o", "page-%p.svg"],
+            cwd=tmpdir, capture_output=True,
+        )
+        # %p is zero-padded to the width of the page count: read the number.
+        svgs = {int(f.stem.split("-")[1]): f.read_bytes()
+                for f in tmpdir.glob("page-*.svg")}
+        return [svgs.get(n) for n in range(1, len(bodies) + 1)]
+
+
+@contextlib.contextmanager
+def render_batch(cache_dir=None):
+    """Render the cache misses for *cache_dir* in a batch.
+
+    Inside the context a render into that cache that misses is queued and
+    returns None: the item shows its plain text.  Leaving the context
+    renders the queue and fills the cache.  The caller then builds once
+    more, from the cache.  ``batch.queued`` tells whether that is needed::
+
+        with render_batch(scene.cache_dir) as batch:
+            build()
+        if batch.queued:
+            build()
+
+    Renders into other caches are not affected.  Not re-entrant per cache.
+    The cache directory is not created here: a schematic that renders
+    nothing (LaTeX off, NGspice) gets no sidecar.
+    """
+    cache = session_cache_dir() if cache_dir is None else Path(cache_dir)
+    if cache in _batches:
+        raise RuntimeError("a render batch is already open for %s" % cache)
+    batch = _batches[cache] = _Batch()
+    try:
+        yield batch
+    finally:
+        del _batches[cache]
+    batch.render()
 
 
 # ── standalone fragment rendering ─────────────────────────────────────────────
@@ -609,7 +771,8 @@ def _latex_to_svg(latex_str: str, cache: Path) -> bytes | None:
 def render_latex_raw(latex_code: str,
                      preamble_path: str = "",
                      max_width: str = "",
-                     cache_dir=None) -> tuple[bytes | None, str]:
+                     cache_dir=None,
+                     generated: bool = False) -> tuple[bytes | None, str]:
     """
     Compile arbitrary LaTeX code to SVG via pdflatex + dvisvgm.
 
@@ -617,9 +780,16 @@ def render_latex_raw(latex_code: str,
     If preamble_path is a readable file its content is included before
     \\begin{document}; otherwise amsmath + amssymb are loaded.
 
+    *generated* marks code that SLiCAP built (a table of
+    :func:`slicap_table`): it changes no counter or definition, so in a
+    render batch it may share a pdflatex run with other renders.  Code a
+    user wrote always renders in a document of its own (see
+    :func:`render_batch`).
+
     Returns (svg_bytes, error_text).  On success error_text is "".
     Results are cached in ``cache_dir`` (session temp when omitted),
-    keyed on content hash.
+    keyed on content hash.  In a render batch a generated miss returns
+    (None, "").
     """
     if not _latex_installed():
         return None, "pdflatex or dvisvgm not found"
@@ -647,38 +817,5 @@ def render_latex_raw(latex_code: str,
     # (viewer math, snippet tables) pass a huge max_width so the page
     # grows to fit instead.
     varwidth = f"varwidth={max_width}" if max_width else "varwidth=true"
-    doc = (
-        rf"\documentclass[preview,{varwidth},border=2pt]{{standalone}}" + "\n"
-        + preamble + "\n"
-        + r"\begin{document}" + "\n"
-        + latex_code + "\n"
-        + r"\end{document}" + "\n"
-    )
-    with tempfile.TemporaryDirectory(dir=cache) as tmp:
-        tmpdir = Path(tmp)
-        tex = tmpdir / "frag.tex"
-        tex.write_text(doc, encoding="utf-8")
-        subprocess.run(
-            [_latex_tools()[0], "-interaction=batchmode",
-             "-output-format=dvi", "frag.tex"],
-            cwd=tmpdir, capture_output=True,
-        )
-        dvi = tmpdir / "frag.dvi"
-        if not dvi.exists():
-            log = tmpdir / "frag.log"
-            if log.exists():
-                lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
-                errs = [l for l in lines if l.startswith("!")]
-                return None, "\n".join(errs[:5]) if errs else "pdflatex failed"
-            return None, "pdflatex failed (no output)"
-        svg = tmpdir / "frag.svg"
-        subprocess.run(
-            [_latex_tools()[1], *_dvisvgm_args(), "frag.dvi", "-o", "frag.svg"],
-            cwd=tmpdir, capture_output=True,
-        )
-        if not svg.exists():
-            return None, "dvisvgm failed"
-        data = svg.read_bytes()
-        cached.write_bytes(data)
-        _touch(cache, cached.name)
-        return data, ""
+    return _render_into(cached, f"preview,{varwidth},border=2pt",
+                        preamble + "\n", latex_code, shared=generated)

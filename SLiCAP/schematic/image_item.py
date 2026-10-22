@@ -333,6 +333,12 @@ class ImageItem(QGraphicsItem):
         of an image into a symbol."""
         target = self.picture_rect(box)
         if self._renderer is not None:
+            # Not clipped to the box: what a drawing has outside its frame
+            # stays visible on the canvas (Qt ignores the clip path of an
+            # export), while the export itself is clipped. Clipping here was
+            # considered and REJECTED (Anton, 2026-10-21: "clipped on export,
+            # not on the canvas, this is OK"). Such an overflow lies outside
+            # boundingRect, so a moved picture can leave traces of it.
             self._renderer.render(painter, target)
         elif self._pixmap is not None and not self._pixmap.isNull():
             painter.setRenderHint(QPainter.SmoothPixmapTransform)

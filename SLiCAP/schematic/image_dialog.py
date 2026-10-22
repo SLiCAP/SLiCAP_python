@@ -160,7 +160,9 @@ class ImageDialog(QDialog):
         date here, with the rule the poster export applies (children
         first), so the item has its image and its size when it is placed.
         Without this the item was a grey box until the poster's first
-        export (Anton, 2026-10-09). A figure's image comes from a run."""
+        export (Anton, 2026-10-09). A figure's image comes from a run.
+        update_drawings leaves the editor's current schematic alone:
+        export_images moved it, and the log, to the chosen drawing."""
         if self._link_kind not in ("schematic", "poster"):
             return
         from . import project
@@ -168,16 +170,16 @@ class ImageDialog(QDialog):
         if src is None:
             return
         from PySide6.QtWidgets import QApplication, QMessageBox
-        from . import export_images
+        from . import update_drawings, _failures
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            export_images(src)
-        except Exception as exc:
+            failed = update_drawings([src])
+        finally:
             QApplication.restoreOverrideCursor()
+        if failed:
             QMessageBox.warning(self, self._TITLES[self._link_kind],
-                                f"{src.name} could not be exported:\n\n{exc}")
-            return
-        QApplication.restoreOverrideCursor()
+                                f"{src.name} could not be exported:\n\n"
+                                + _failures(failed))
 
     def link(self) -> str:
         """The typed link, "<kind>:<name>" ("" for a plain image)."""

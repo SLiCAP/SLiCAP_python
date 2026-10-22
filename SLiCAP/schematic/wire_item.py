@@ -41,7 +41,7 @@ class _NetLabel(QGraphicsSimpleTextItem):
         super().__init__(parent)
         self._apply_style(style_of(self))
         self.setPen(QPen(Qt.NoPen))
-        # Dragging is SCENE-driven (canvas label drag); no ItemIsMovable.
+        # Dragged by the scene (selection_drag); no ItemIsMovable.
         self.setFlag(QGraphicsItem.ItemIsSelectable)   # selectable independently
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setAcceptedMouseButtons(Qt.LeftButton)
@@ -77,6 +77,20 @@ class _NetLabel(QGraphicsSimpleTextItem):
             painter.drawRect(self.content_rect())
             painter.restore()
 
+    def drag_started(self) -> None:
+        """The scene pressed this label (selection_drag): the wire draws
+        the leader line to it while the button is down."""
+        wire = self.parentItem()
+        if wire is not None:
+            wire._label_active = True
+            wire.update()
+
+    def drag_ended(self) -> None:
+        wire = self.parentItem()
+        if wire is not None:
+            wire._label_active = False
+            wire.update()
+
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
             self._apply_style(style_of(self))
@@ -107,7 +121,7 @@ class _DCLabel(QGraphicsSimpleTextItem):
     def __init__(self, parent: "WireItem"):
         super().__init__(parent)
         self.setPen(QPen(Qt.NoPen))
-        # Dragging is SCENE-driven (canvas label drag); no ItemIsMovable.
+        # Dragged by the scene (selection_drag); no ItemIsMovable.
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setAcceptedMouseButtons(Qt.LeftButton)
@@ -140,6 +154,19 @@ class _DCLabel(QGraphicsSimpleTextItem):
         path = QPainterPath()
         path.addRect(self.boundingRect().adjusted(-3, -2, 3, 2))
         return path
+
+    def drag_started(self) -> None:
+        """See _NetLabel.drag_started."""
+        wire = self.parentItem()
+        if wire is not None:
+            wire._dc_label_active = True
+            wire.update()
+
+    def drag_ended(self) -> None:
+        wire = self.parentItem()
+        if wire is not None:
+            wire._dc_label_active = False
+            wire.update()
 
     def itemChange(self, change, value):
         wire = self.parentItem()

@@ -185,7 +185,7 @@ logic**.  Its fields map one-to-one onto the item types in the scene layer:
 ``JunctionData``
     Position of a junction dot.
 
-``FreeTextData``, ``CommandData``, ``LibraryData``, ``HyperlinkData``
+``FreeTextData``, ``LibraryData``, ``HyperlinkData``
     Position and text/URL content.
 
 ``ImageData``
@@ -252,10 +252,9 @@ The item types divide into two groups:
     A filled circle drawn at T-intersections.  Created and removed automatically
     by ``_sync_junctions()``; the user can also place one manually.
 
-``FreeTextItem``, ``CommandItem``
-    Editable ``QGraphicsTextItem`` subclasses.  ``CommandItem`` renders in a
-    distinct colour/font to distinguish SLiCAP commands (``.param``, ``.lib``,
-    etc.) from free annotation text.
+``FreeTextItem``
+    A ``QGraphicsTextItem`` subclass for annotation text, edited through its
+    dialog.
 
 ``BorderItem``
     A rectangle marking the schematic page boundary.  Only one border is
@@ -318,7 +317,6 @@ keyboard events:
     WIRING               ← drawing wires (click adds waypoints)
     PLACING_JUNCTION     ← placing a junction dot
     PLACING_TEXT         ← placing a free-text item
-    PLACING_COMMAND      ← placing a command text item
     PLACING_BORDER       ← placing the page border
     PLACING_LIBRARY      ← placing a .lib annotation
     PLACING_IMAGE        ← placing an embedded image
@@ -348,9 +346,12 @@ is within ``_HIT_TOL`` of a vertex (endpoint).
 * **Vertex drag** — ``_vdrag_wire`` / ``_vdrag_idx`` track the wire and which
   endpoint is moving.  The opposite endpoint stays fixed; one rubber-band wire
   tracks each adjacent connection.
-* **Body drag** — the whole segment (and any rubber-band wires tracking its
-  endpoints) moves rigidly.  A body drag is only triggered when the cursor is
-  closer to the wire interior than to either vertex.
+* **Body drag** — the drag of the selection (``selection_drag.SelectionDrag``,
+  the one engine behind every move on the canvas): the wire moves rigidly
+  with the rest of the selection, and every unselected wire point and
+  junction dot that sits on any of its points follows.  A body drag is only
+  triggered when the cursor is closer to the wire interior than to either
+  vertex, or when the wire is part of a group selection.
 
 On mouse release both paths call ``_sync_junctions()`` (which can split, merge,
 or remove the wire), then ``_reselect_on_footprint()`` to restore the Qt
@@ -495,7 +496,7 @@ produces vector PDF output with the same fidelity as the SVG.
 
 **Netlist export (``netlist.py``):**
 Walks the scene to collect ``ComponentItem``\s, ``WireItem``\s, ``LibraryItem``\s,
-and ``CommandItem``\s.  Calls ``connectivity.resolve_nets()`` to assign net
+and ``AnalysisItem``\s.  Calls ``connectivity.resolve_nets()`` to assign net
 names, then formats each component as a SLiCAP/SPICE element line.  The
 resulting ``.cir`` file is written to ``cir/<name>.cir``.  If the schematic is
 marked as a subcircuit (``DocumentProperties.is_subcircuit``), the netlist is

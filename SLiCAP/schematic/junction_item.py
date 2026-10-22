@@ -7,10 +7,6 @@ from .config import snap, style_of, default_style, Z_JUNCTION, SELECTION_COLOR
 _SEL_PAD = 3.0  # extra space around the dot: an easier click target
 
 
-def _pt_key(pt: QPointF) -> tuple:
-    return (round(pt.x()), round(pt.y()))
-
-
 class JunctionItem(QGraphicsEllipseItem):
     GRID_CRITICAL = True      # always snaps: connectivity (config.snap_pos)
     """
@@ -59,21 +55,9 @@ class JunctionItem(QGraphicsEllipseItem):
         if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
             self._apply_style(style_of(self))
         if change == QGraphicsItem.ItemPositionChange:
-            snapped = snap(value)
-            if self.scene() and not getattr(self.scene(), '_group_drag_active', False):
-                delta = snapped - self.pos()
-                if delta.x() or delta.y():
-                    self._rubber_band_wires(delta)
-            return snapped
+            # The grid, always. The wires at the dot do NOT follow from
+            # here: the scene's drag moves them (selection_drag); the
+            # rubber band that lived here ran on every setPos from code
+            # (REMOVED 2026-10-22, 6.4.1).
+            return snap(value)
         return super().itemChange(change, value)
-
-    def _rubber_band_wires(self, delta: QPointF) -> None:
-        """Move wire endpoints that currently touch this junction."""
-        from .wire_item import WireItem
-        pos_key = _pt_key(self.pos())
-        for item in self.scene().items():
-            if not isinstance(item, WireItem):
-                continue
-            hits = {i for i, pt in enumerate(item.points) if _pt_key(pt) == pos_key}
-            if hits:
-                item.move_points(hits, delta)

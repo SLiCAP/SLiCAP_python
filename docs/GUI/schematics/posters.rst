@@ -57,6 +57,16 @@ for its scale. To edit the drawing itself, open it from the project tree.
 Updating and exporting
 ======================
 
+A poster follows the drawings it shows, because it places them by their
+file name. When the poster opens, the drawings that changed since their
+last export are exported again and shown. The same happens when you save
+such a drawing in another tab while the poster is open. A drawing changed
+when its file, its sidecars, its operating-point results or the images it
+shows changed. An install of SLiCAP is no change. A drawing that cannot be
+exported keeps its previous image, and a message names it. Who wants a
+drawing that no longer follows its source places a copy under another
+name.
+
 The export of a poster first brings the exports of the drawings it shows up
 to date, children before parents, then writes the poster. In a script that
 is ``sl.updateImages("<poster name>")``, at the end of the instruction

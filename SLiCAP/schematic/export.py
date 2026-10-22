@@ -143,7 +143,6 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
     from .wire_item import WireItem
     from .junction_item import JunctionItem
     from .free_text_item import FreeTextItem
-    from .command_item import CommandItem
     from .analysis_item import AnalysisItem
     from .hyperlink_item import HyperlinkItem
     from .shape_item import ShapeItem
@@ -245,7 +244,7 @@ def _build_svg(scene, title: str = "", source: str = "") -> bytes:
                                   pos.x(), pos.y(),
                                   item.display_width, item.display_height,
                                   aspect_fit=True)
-        elif isinstance(item, (FreeTextItem, CommandItem, AnalysisItem, LibraryItem)):
+        elif isinstance(item, (FreeTextItem, AnalysisItem, LibraryItem)):
             if (isinstance(item, (AnalysisItem, LibraryItem))
                     and not item.isVisible()):
                 continue        # "Show on schematic" off: netlisted, not drawn

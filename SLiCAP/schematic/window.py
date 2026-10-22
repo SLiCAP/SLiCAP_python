@@ -917,6 +917,7 @@ class CanvasPanel(QWidget):
                 "from the netlist. Check the symbol libraries and this "
                 "schematic's .symbols cache.".format(
                     ", ".join(sorted(set(missing)))))
+        self.follow_drawings()                    # a poster: before the history starts
         self._scene.clear_history()
         self._doc_props = data.properties
         self._current_path = path
@@ -931,6 +932,62 @@ class CanvasPanel(QWidget):
         from PySide6.QtCore import QTimer
         QTimer.singleShot(100, self._view.zoom_fit)
         return True
+
+    # -- the drawings a poster shows ------------------------------------------
+
+    def _shown_drawings(self) -> list:
+        """The source files of the drawings this poster shows directly, read
+        from the scene, so a link placed but not saved yet counts too."""
+        from .image_item import ImageItem
+        root = project.root_for(self._current_path)
+        out = []
+        for item in self._scene.items():
+            if isinstance(item, ImageItem) and item.link_kind in ("schematic", "poster"):
+                src = project.link_source(item.link, root)
+                if src is not None and src not in out:
+                    out.append(src)
+        return out
+
+    def shows_drawing(self, path) -> bool:
+        """True when this poster shows the drawing *path*, directly or
+        through a poster it shows."""
+        if self._sch_type != 'poster' or self._current_path is None:
+            return False
+        from .provenance import poster_contains
+        return any(poster_contains(d, path) for d in self._shown_drawings())
+
+    def follow_drawings(self) -> None:
+        """A poster shows its drawings by their file name, so it follows
+        those files (Anton, 2026-10-21): the drawings whose source changed
+        are exported again, the drawings a poster shows first, and the
+        images reload. Called when the poster opens, when a drawing it
+        shows is saved in another panel, and before File -> Export, as the
+        manual describes it (posters.rst). A drawing whose export failed
+        keeps its previous image, and a message names it. The poster's own
+        export is written by Export and by updateImages only.
+
+        Marking the out-of-date drawings and leaving the update to a script
+        (updateImages) was considered and REJECTED (Anton, 2026-10-21):
+        many projects have no script, and a placement follows its source
+        file, as everywhere in SLiCAP."""
+        if self._sch_type != 'poster' or self._current_path is None:
+            return
+        drawings = self._shown_drawings()
+        if not drawings:
+            return
+        from PySide6.QtWidgets import QApplication
+        from . import update_drawings, _failures
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            failed = update_drawings(drawings)
+        finally:
+            QApplication.restoreOverrideCursor()
+        self._scene.reload_links()
+        if failed:
+            QMessageBox.warning(
+                self, "Drawings not updated",
+                "These drawings could not be exported. The poster shows "
+                "their previous images.\n\n" + _failures(failed))
 
     # -- save -----------------------------------------------------------------
 
@@ -1066,6 +1123,8 @@ class CanvasPanel(QWidget):
             QMessageBox.critical(self, "Save failed", str(exc))
             return
         self._set_dock_title(path.name)
+        if self._main_win is not None:
+            self._main_win.drawing_saved(path, saver=self)   # posters and other tabs on it follow
 
     def _sync_page_properties(self) -> None:
         """The stored page size is the border's, or "Drawing size" without
@@ -1224,6 +1283,7 @@ class CanvasPanel(QWidget):
         p = Path(path)
         if p.suffix.lower() != ".svg":
             p = p.with_suffix(".svg")
+        self.follow_drawings()       # a poster exports its drawings up to date
         from .export import export_svg
         title = self._doc_props.title or (self._current_path.stem if self._current_path else "schematic")
         try:
@@ -1245,6 +1305,7 @@ class CanvasPanel(QWidget):
         p = Path(path)
         if p.suffix.lower() != ".pdf":
             p = p.with_suffix(".pdf")
+        self.follow_drawings()       # a poster exports its drawings up to date
         from .export import export_pdf
         try:
             export_pdf(self._scene, p,
@@ -3214,6 +3275,29 @@ class MainWindow(QMainWindow):
             panel = dock.widget()
             if isinstance(panel, CanvasPanel):
                 panel.refresh_op_annotations()
+
+    def drawing_saved(self, path, saver=None) -> None:
+        """A drawing was saved by *saver*: every open poster that shows it,
+        directly or through another poster, follows it
+        (CanvasPanel.follow_drawings), and every OTHER panel that has that
+        file open reloads it (Anton, 2026-10-22: a Save As over a file open
+        in another tab left that tab showing the old drawing). The
+        overwrite was confirmed in the file dialog; the reloaded tab's
+        unsaved edits, if any, are superseded by that decision."""
+        path = Path(path)
+        for dock in list(self._canvas_docks):
+            panel = dock.widget()
+            if not isinstance(panel, CanvasPanel) or panel is saver:
+                continue
+            if panel.shows_drawing(path):
+                panel.follow_drawings()
+            current = getattr(panel, "_current_path", None)
+            try:
+                same = current is not None and Path(current).resolve() == path.resolve()
+            except OSError:
+                same = False
+            if same:
+                panel._load_file(path)
 
     def _on_instr_finished(self, rc: int):
         if self._schematic_only:

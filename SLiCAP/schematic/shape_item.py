@@ -491,6 +491,12 @@ class ShapeItem(QGraphicsItem):
                 return i
         return None
 
+    def owns_press(self, scene_pos: QPointF) -> bool:
+        """A press on a handle of a selected shape reshapes it, the shape's
+        own gesture; the scene delivers it to Qt instead of starting its
+        drag (selection_drag.takes_own_press)."""
+        return self.isSelected() and self._handle_at(self.mapFromScene(scene_pos)) is not None
+
     def mousePressEvent(self, event):
         self._vertex = None
         self._snap_ref = None

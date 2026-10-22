@@ -149,13 +149,6 @@ class HyperlinkData:
     z: float = 0.0        # stacking order among annotations AND the circuit layers
 
 
-@dataclass
-class CommandData:
-    x: float
-    y: float
-    text: str
-
-
 def _latex_scale_in(d: dict):
     """The LaTeX scale of an item as stored: a number (its own scale in %),
     "default" (None: the schematic's default), or absent: "legacy", an item
@@ -351,7 +344,6 @@ class SchematicData:
     junctions:   list[JunctionData]   = field(default_factory=list)
     free_texts:  list[FreeTextData]   = field(default_factory=list)
     hyperlinks:  list[HyperlinkData]  = field(default_factory=list)
-    commands:    list[CommandData]    = field(default_factory=list)
     libs:             list[LibraryData]          = field(default_factory=list)
     images:           list[ImageData]            = field(default_factory=list)
     border:           BorderData | None          = None
@@ -425,10 +417,6 @@ class SchematicData:
                 {"x": h.x, "y": h.y, "url": h.url, "label": h.label,
                  **({"z": h.z} if h.z else {})}
                 for h in self.hyperlinks
-            ],
-            "commands": [
-                {"x": c.x, "y": c.y, "text": c.text}
-                for c in self.commands
             ],
             "libs": [
                 {
@@ -641,10 +629,6 @@ class SchematicData:
                           z=float(h.get("z", 0.0)))
             for h in data.get("hyperlinks", [])
         ]
-        commands = [
-            CommandData(x=c["x"], y=c["y"], text=c.get("text", ""))
-            for c in data.get("commands", [])
-        ]
         libs = []
         for l in data.get("libs", []):
             if "entries" in l:
@@ -788,7 +772,7 @@ class SchematicData:
         )
         return cls(components=components, wires=wires,
                    junctions=junctions, free_texts=free_texts,
-                   commands=commands, libs=libs, images=images,
+                   libs=libs, images=images,
                    border=border, latex_fragments=latex_fragments,
                    parameters=parameters, analysis_items=analysis_items,
                    hyperlinks=hyperlinks, shapes=shapes,
@@ -815,7 +799,7 @@ class SchematicData:
                 xs.append(px); ys.append(py)
         for j in self.junctions:
             xs.append(j.x); ys.append(j.y)
-        for item in (*self.free_texts, *self.hyperlinks, *self.commands,
+        for item in (*self.free_texts, *self.hyperlinks,
                      *self.libs, *self.images, *self.latex_fragments,
                      *self.parameters, *self.analysis_items, *self.model_defs):
             xs.append(item.x); ys.append(item.y)
@@ -840,7 +824,7 @@ class SchematicData:
             w.points = [(px - dx, py - dy) for px, py in w.points]
         for j in self.junctions:
             j.x -= dx; j.y -= dy
-        for item in (*self.free_texts, *self.hyperlinks, *self.commands,
+        for item in (*self.free_texts, *self.hyperlinks,
                      *self.libs, *self.images, *self.latex_fragments,
                      *self.parameters, *self.analysis_items, *self.model_defs):
             item.x -= dx; item.y -= dy

@@ -345,9 +345,10 @@ def updateImages(circuit, force=False):
     ``updateImages()`` at the END of the instruction file, after the
     figures, to export the schematic with the plots the run has just
     written. The export is skipped when the images are newer than the
-    schematic, its sidecars, the symbol libraries, the operating-point
-    results and the linked images. A drawing that is not a valid circuit,
-    e.g. one with a '?' value, is exported as well.
+    schematic, its sidecars, the operating-point results and the linked
+    images. An install of SLiCAP changes none of these, so it exports
+    nothing again. A drawing that is not a valid circuit, e.g. one with a
+    '?' value, is exported as well.
 
     :param circuit: The circuit object returned by ``makeCircuit()`` for a
                     ".slicap_sch" schematic, or a string: the name of the

@@ -150,7 +150,7 @@ def definition_lines(params, model_defs, param_lines) -> list[str]:
 def build_netlist(
     components: list,        # list[ComponentItem]
     wires:      list,        # list[WireItem]
-    commands:   list,        # list[CommandItem]
+    analyses:   list,        # list[AnalysisItem]: the .source/.detector/.lgref lines
     title:      str = "schematic",
     libs:       list = None, # list[LibraryItem]
     params:     list = None, # list[ParameterItem]
@@ -162,7 +162,7 @@ def build_netlist(
     Format:
         <title>            (quoted if the title contains spaces)
 
-        .command lines...
+        .source / .detector / .lgref lines...
 
         RefDes nodes... refs... Model param=val...
 
@@ -178,10 +178,10 @@ def build_netlist(
     lines.extend(library_lines(libs, lambda item, root: item.netlist_lines(root)))
     lines.extend(definition_lines(params, model_defs, lambda item: item.param_lines()))
 
-    # ── command blocks ────────────────────────────────────────────────────────
+    # ── analysis blocks ───────────────────────────────────────────────────────
     cmd_lines: list[str] = []
-    for cmd_item in commands:
-        cmd_lines.extend(cmd_item.commands())
+    for item in analyses:
+        cmd_lines.extend(item.commands())
     if cmd_lines:
         lines.append("")
         lines.extend(cmd_lines)

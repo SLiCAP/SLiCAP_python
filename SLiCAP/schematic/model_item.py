@@ -79,7 +79,8 @@ class ModelItem(QGraphicsItem):
                 svg = None
             else:
                 svg, err = render_latex_raw(latex, self.preamble_path,
-                                            cache_dir=cache_dir_of(self))
+                                            cache_dir=cache_dir_of(self),
+                                            generated=True)
                 self._render_error = err or ""
             if svg:
                 self._svg_bytes = svg  # keep stored bytes up to date

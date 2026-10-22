@@ -156,11 +156,10 @@ def netlist_for(input_path, scene, props, title, program: bool = True):
             program_netlist=program, model_defs=models,
             control_section="" if program else getattr(props, "control_section", ""))
         return text, _default_output(input_path, "cir", ".cir" if program else ".sp"), "Netlist "
-    from .command_item import CommandItem
     from .analysis_item import AnalysisItem
     from .netlist import build_netlist
-    cmds = [i for i in items if isinstance(i, (CommandItem, AnalysisItem))]
-    text = build_netlist(comps, wires, cmds, title,
+    analyses = [i for i in items if isinstance(i, AnalysisItem)]
+    text = build_netlist(comps, wires, analyses, title,
                          libs=libs, params=prms, model_defs=models)
     return text, _default_output(input_path, "cir", ".cir"), "Netlist "
 

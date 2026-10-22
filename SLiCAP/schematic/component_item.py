@@ -11,11 +11,6 @@ from . import config
 from .config import snap, style_of, default_style, SELECTION_MARGIN, selection_pen
 
 
-def _pt_key(pt: "QPointF") -> tuple[int, int]:
-    """Round a scene point to the nearest integer grid key."""
-    return (round(pt.x()), round(pt.y()))
-
-
 def _sign(v: float) -> float:
     return 0.0 if v == 0 else (1.0 if v > 0 else -1.0)
 
@@ -397,11 +392,12 @@ class _PropertyLabel(QGraphicsItem):
         self._prefix_w: float = 0.0         # cached width of prefix string
         self.setFlag(QGraphicsItem.ItemIsMovable)
         # Selectable like a component (Anton, 2026-09-13; designed 2026-08-04):
-        # a rubber band or a Ctrl-click collects labels, and Qt moves every
-        # selected movable item together - a label whose component is
-        # selected too is skipped by Qt, so nothing moves twice. The scene
-        # keeps the rules: Delete on a label HIDES it, labels never rotate,
-        # copy and cut ignore them, a label move is one undo step.
+        # a rubber band or a Ctrl-click collects labels, and the scene's
+        # drag (selection_drag) moves the selection together - a label
+        # whose component is selected too rides with it, so nothing moves
+        # twice. The scene keeps the rules: Delete on a label HIDES it,
+        # labels never rotate, copy and cut ignore them, a label move is
+        # one undo step.
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setAcceptedMouseButtons(Qt.LeftButton)
@@ -420,20 +416,20 @@ class _PropertyLabel(QGraphicsItem):
                 p.update()
         return super().itemChange(change, value)
 
-    def mousePressEvent(self, event):
+    def drag_started(self) -> None:
+        """The scene pressed this label (selection_drag): its leader line
+        shows while the button is down, without selecting the parent."""
         p = self.parentItem()
         if p is not None:
             p._active_label_key = self.prop_key
-            p._show_leaders = True     # draw leaders without selecting the parent
+            p._show_leaders = True
             p.update()
-        super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def drag_ended(self) -> None:
         p = self.parentItem()
         if p is not None:
             p._show_leaders = False
             p.update()
-        super().mouseReleaseEvent(event)
 
     # ── public setters ────────────────────────────────────────────────────────
 
@@ -693,12 +689,6 @@ class ComponentItem(_ViewBoxSvgItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setZValue(config.Z_COMPONENT)   # above wires so labels stay selectable
-        self._prev_pos: "QPointF | None" = None
-        # Wires captured at the start of a drag (as [(wire, point_index), …]) so
-        # they follow this component's pins. None until the first move of a drag;
-        # reset to None by the scene at every mouse press. See _rubber_band_wires.
-        self._drag_wires: "list | None" = None
-        self._drag_junctions: "list | None" = None   # the dots at those wire ends
         # Indices of pins with nothing connected to them — drawn as grey markers.
         # Starts with all pins unconnected; the scene refreshes this on every
         # topology change (via _sync_junctions → _refresh_pin_markers).
@@ -1112,11 +1102,10 @@ class ComponentItem(_ViewBoxSvgItem):
             self._unconnected_pins = new
             self.update()
 
-    def mousePressEvent(self, event):
-        # Clicking the symbol body (not a label) clears the focused attribute,
-        # so all leader lines show again.
+    def drag_started(self) -> None:
+        """The scene pressed the symbol body, not a label (selection_drag):
+        the focused attribute is cleared, so all leader lines show again."""
         self._active_label_key = None
-        super().mousePressEvent(event)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSceneHasChanged and self.scene() is not None:
@@ -1129,15 +1118,13 @@ class ComponentItem(_ViewBoxSvgItem):
         if change == QGraphicsItem.ItemSelectedHasChanged and not value:
             self._active_label_key = None      # deselected → forget focused label
         if change == QGraphicsItem.ItemPositionChange and self.scene():
-            # Save old position here — self.pos() is still the old value at this point.
-            self._prev_pos = self.pos()
+            # The grid, always: connectivity is computed from the pins. The
+            # wires do NOT follow from here: a setPos moves the component
+            # and nothing else. The scene's drag (selection_drag) moves
+            # the attached wires; the rubber band that lived here ran on
+            # every setPos from code and had to be silenced by a scene
+            # flag (REMOVED 2026-10-22, 6.4.1).
             return snap(value)
-        if change == QGraphicsItem.ItemPositionHasChanged and self.scene():
-            if (self._prev_pos is not None
-                    and not getattr(self.scene(), '_group_drag_active', False)):
-                delta = self.pos() - self._prev_pos
-                if delta.x() or delta.y():
-                    self._rubber_band_wires(delta)
         if change == QGraphicsItem.ItemRotationChange:
             self._save_label_offsets()        # under the old turn
         if change == QGraphicsItem.ItemRotationHasChanged:
@@ -1146,49 +1133,6 @@ class ComponentItem(_ViewBoxSvgItem):
                 lbl.setTransform(ct)
             self._place_labels()
         return super().itemChange(change, value)
-
-    def _rubber_band_wires(self, delta: QPointF) -> None:
-        """Stretch the wires attached to this component's pins so they follow it.
-
-        Only wires that were attached AT THE START of the drag move — captured
-        lazily on the first move and reused for the rest of the drag. A wire the
-        component merely passes over mid-drag is never captured, so moving a
-        component can never steal (and thereby disconnect) another element's
-        wire. The captured set is reset to None by the scene on every press.
-        """
-        from .wire_item import WireItem
-        # After ItemPositionHasChanged, self.pos() is the new position; the wires
-        # are still at the previous pin positions = current pins minus this delta.
-        from .junction_item import JunctionItem
-        if self._drag_wires is None:
-            start_keys = {_pt_key(p - delta) for p in self.pin_scene_pos()}
-            self._drag_wires = [
-                (item, i)
-                for item in self.scene().items()
-                if isinstance(item, WireItem) and not getattr(item, "_preview", False)
-                for i, pt in enumerate(item.points) if _pt_key(pt) in start_keys
-            ]
-            self._drag_junctions = [
-                j for j in self.scene().items()
-                if isinstance(j, JunctionItem) and _pt_key(j.pos()) in start_keys
-            ]
-        by_wire: dict = {}
-        for wire, idx in self._drag_wires:
-            if wire.scene() is not None:
-                by_wire.setdefault(wire, set()).add(idx)
-        for wire, idxs in by_wire.items():
-            wire.move_points(idxs, delta)
-        # The junction dots at the moved pins follow (Anton, 2026-10-21:
-        # they jumped to their place only at the drop). The scene flag keeps
-        # the dots' own rubber band out of it: their wires moved above.
-        scene = self.scene()
-        if scene is not None and self._drag_junctions:
-            was = getattr(scene, "_group_drag_active", False)
-            scene._group_drag_active = True
-            for j in self._drag_junctions:
-                if j.scene() is not None:
-                    j.setPos(j.pos() + delta)
-            scene._group_drag_active = was
 
     def paint(self, painter, option, widget=None):
         super().paint(painter, option, widget)

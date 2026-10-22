@@ -108,6 +108,13 @@ class BorderItem(QGraphicsRectItem):
         self.unsetCursor()
         super().hoverLeaveEvent(event)
 
+    def owns_press(self, scene_pos: QPointF) -> bool:
+        """A press on an edge is a resize, the border's own gesture; the
+        scene delivers it to Qt instead of starting its drag
+        (selection_drag.takes_own_press)."""
+        ex, ey = self._edge_at(self.mapFromScene(scene_pos))
+        return bool(ex or ey)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             ex, ey = self._edge_at(event.pos())

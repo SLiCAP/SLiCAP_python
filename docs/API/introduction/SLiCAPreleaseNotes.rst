@@ -155,6 +155,73 @@ canvas fixes follows the first weeks of use.
      paste after a tab click went to the hidden schematic, where it
      waited for a click, and Escape could not cancel it.
 
+Version 6.4.1
+-------------
+
+#. **Faster opening of a schematic with LaTeX rendering.** A schematic
+   opened for the first time, for instance in a cloned project, has an
+   empty render cache. Its LaTeX labels, tables and blocks are now
+   rendered together, in one pdflatex run and one dvisvgm run. Before,
+   each of them took its own pair of runs, about 0.4 s. A schematic with
+   25 labels took about 10 s to open, with the window frozen. It now
+   takes about 1 s. The labels look the same as before. An existing
+   render cache stays valid. LaTeX fragments are still rendered one by
+   one. An equation number in a fragment would otherwise depend on the
+   fragments before it.
+
+#. **A poster follows its drawings.** A poster places schematics and other
+   posters by their file name, so it follows those files. When a poster
+   opens, the drawings that changed since their last export are exported
+   again and shown. The same happens when you save such a drawing in
+   another tab, and before :menuselection:`File --> Export`. Before, a
+   poster showed the old exports until the instruction file ran
+   ``updateImages()``. A drawing that cannot be exported keeps its previous
+   image, and a message names it.
+
+#. **An install no longer exports the images again.** An image is exported
+   again only when one of its sources changed: the schematic, its sidecars,
+   the operating-point results or the linked images. A new version of
+   SLiCAP therefore leaves the figures of a book as they are, until you
+   change their drawings. ``updateImages(..., force=True)`` exports them on
+   request. The netlist still counts SLiCAP itself. ``makeCircuit()``
+   rebuilds it once after an install, so that a correction of the
+   netlister reaches it.
+
+#. **Bug fix.** Choosing a drawing to place on a poster switched the
+   editor's log to the log file of that drawing. The log now stays with
+   the poster.
+
+#. **One drag for everything on the canvas.** A component, a group, a
+   wire moved by its body, a label of a component and a net label were
+   dragged by four different mechanisms, each with its own rules. They
+   are now one gesture of the schematic editor. The rules are the same
+   for every drag: the attached wires and junction dots follow, a pin
+   or wire end pulled off a pin shows and gets a bridge wire, and the
+   move is one undo step. Three things changed as a result. A wire
+   moved by its body takes a wire that ends on its interior with it,
+   where it was left behind before. Moving a net label can be undone.
+   A group whose wires were merged at the drop stays selected. The
+   cursor is the arrow during every drag, where a group showed the
+   cross.
+
+#. **The command block is gone.** The schematic editor once had a text
+   block for raw netlist lines. It lost its menu entry long ago, no
+   schematic was found that holds one, and the parameter, model and
+   analysis blocks cover what it did. Its remains are removed from the
+   editor, the file format and the netlister.
+
+#. **Bug fix: ground overrides a net name.** A net that you had named and
+   then connected to a ground symbol kept its name on the schematic, and
+   stayed renamable, while the netlist already used node 0. The wires of
+   such a net now show the name 0 and are locked, as the wires of a net
+   with a port symbol were. A ground on the same net as a port wins.
+   Removing the ground gives the net its name back.
+
+#. **Bug fix: a saved file updates the tab that shows it.** Saving a
+   schematic under the name of a file that is open in another tab, after
+   the overwrite warning, left that tab showing the old drawing. The tab
+   now reloads the file.
+
 SLiCAP version 6.3 release notes
 ================================
 
