@@ -412,6 +412,12 @@ class SchematicScene(QGraphicsScene):
 
         self._undo_stack: list = []
         self._redo_stack: list = []
+        # Two named nets joined: the panel's dialog picks the name the net
+        # keeps (window.CanvasPanel._ask_net_name). None headless: both
+        # names stay and the netlister refuses the net. Never asked while
+        # a file is being loaded (_loading).
+        self.net_conflict_resolver = None
+        self._loading = False
         self._library    = None   # set by from_data; used by _restore
 
         self._vdrag_snapshot     = None   # the undo step of a vertex drag
@@ -2044,18 +2050,27 @@ class SchematicScene(QGraphicsScene):
                 return
 
     def _do_wire_split(self, wire, pts1: list, pts2: list) -> None:
+        """The first piece keeps the net name and its label (the label is
+        anchored at points[0]); the second piece carries a user name no
+        further: ONE owner per net (_sync_user_net_names). A locked name
+        (a port's or ground's) goes on both, as on every wire of its net."""
         net_name      = wire.net_name
         display_name  = wire.display_name
         net_locked    = wire.net_locked
         user_net_name = wire._user_net_name
+        label_offset  = QPointF(wire.label_offset)
         self.removeItem(wire)
         for i, pts in enumerate([pts1, pts2]):
             if len(pts) >= 2:
                 w = WireItem(pts)
-                w.net_name      = net_name
-                w.display_name  = display_name if i == 0 else False
-                w.net_locked    = net_locked
-                w._user_net_name = user_net_name
+                w.net_locked = net_locked
+                if i == 0:
+                    w.net_name       = net_name
+                    w._user_net_name = user_net_name
+                    w.display_name   = display_name
+                    w.label_offset   = label_offset
+                elif net_locked:
+                    w.net_name = net_name
                 self.addItem(w)
                 w.update_label()
 
@@ -2174,6 +2189,9 @@ class SchematicScene(QGraphicsScene):
                 if on_y and (dy1 > 0) != (dy2 > 0):
                     continue
 
+                if (w1.net_name and w2.net_name and w1.net_name != w2.net_name
+                        and not (w1.net_locked or w2.net_locked)):
+                    continue        # two owners: a merge never drops a name
                 # k is a collinear midpoint — drop it
                 merged_pts = pts1[:-1] + pts2[1:]
                 if len(merged_pts) < 2:
@@ -2237,6 +2255,7 @@ class SchematicScene(QGraphicsScene):
                     self.removeItem(item)
         self._split_through_wires()
         self._split_wire_elbows()
+        self._sync_user_net_names()       # before a merge can drop an owner
         self._merge_collinear_wires()
         wires    = [i for i in self.items() if isinstance(i, WireItem)]
         comps    = [i for i in self.items() if isinstance(i, ComponentItem)]
@@ -2254,6 +2273,7 @@ class SchematicScene(QGraphicsScene):
             if k not in kept:
                 self.addItem(JunctionItem(QPointF(k[0], k[1])))
         self._sync_node_net_names()
+        self._sync_user_net_names()       # a symbol removed restores one owner
         self._refresh_pin_markers(wires, comps)
 
     def _refresh_pin_markers(self, wires=None, comps=None) -> None:
@@ -2290,6 +2310,64 @@ class SchematicScene(QGraphicsScene):
                 if not connected:
                     unconnected.add(idx)
             c.set_unconnected_pins(unconnected)
+
+    def _sync_user_net_names(self) -> None:
+        """ONE owner per net (Anton, 2026-10-23). A user net name lives on
+        the wire the user named, its owner; the other wires of the net
+        carry no name and show the net's name derived from the owner. So a
+        net that is split keeps its name on the part that holds the owner
+        and the other part has none, deleting the owner takes the name
+        away, and two parts joined again have one name at once.
+
+        Before, every wire of the net carried a copy, kept in step only by
+        the net-name dialog: a deleted middle segment left two drawn nets
+        that the netlist still merged by their common name, and a rename of
+        one part followed by a reconnection showed two names until a
+        double-click. Those copies still come from files written before
+        6.4.2 and from the node-symbol pass (locked names, restored as user
+        names when the symbol goes): equal names on one net reduce to the
+        displayed owner, else the first in canonical order.
+
+        Different names on one net, two owners just joined: the scene's
+        net_conflict_resolver (the panel's dialog) picks the name that
+        stays and the other owner is cleared. Without a resolver, or while
+        a file loads, both stay and the netlister refuses the net
+        (connectivity.net_name_conflicts)."""
+        from .connectivity import _build_net_uf, _rpt
+
+        comps = [i for i in self.items() if isinstance(i, ComponentItem)]
+        wires = [i for i in self.items() if isinstance(i, WireItem)]
+        owners = sorted((w for w in wires if w.points and w.net_name and not w.net_locked),
+                        key=lambda w: (round(w.points[0].y()), round(w.points[0].x())))
+        if len(owners) < 2:
+            return
+        uf = _build_net_uf(comps, wires)
+        owners_by_net: dict[tuple, list] = {}
+        for w in owners:
+            owners_by_net.setdefault(uf.find(_rpt(w.points[0])), []).append(w)
+        for owners in owners_by_net.values():
+            if len(owners) < 2:
+                continue
+            names: list[str] = []
+            for w in owners:
+                if w.net_name not in names:
+                    names.append(w.net_name)
+            if len(names) > 1:
+                if self.net_conflict_resolver is None or self._loading:
+                    continue
+                keep_name = self.net_conflict_resolver(list(names))
+                if keep_name not in names:
+                    keep_name = names[0]
+            else:
+                keep_name = names[0]
+            keep = (next((w for w in owners if w.net_name == keep_name and w.display_name), None)
+                    or next(w for w in owners if w.net_name == keep_name))
+            for w in owners:
+                if w is not keep:
+                    w.net_name       = None
+                    w._user_net_name = None
+                    w.display_name   = False
+                    w.update_label()
 
     def _sync_node_net_names(self) -> None:
         """Lock the net names of the wires on a net that holds a node
@@ -2561,6 +2639,13 @@ class SchematicScene(QGraphicsScene):
 
     def _populate(self, data, library) -> list:
         """The scene from *data*: see from_data()."""
+        self._loading = True
+        try:
+            return self._populate_items(data, library)
+        finally:
+            self._loading = False
+
+    def _populate_items(self, data, library) -> list:
         self._library = library
         self.reset()
         missing: list[str] = []
@@ -3040,12 +3125,17 @@ class SchematicScene(QGraphicsScene):
         if dlg.exec():
             self._push_undo()
             new_name = dlg.net_name() if not wire.net_locked else wire.net_name
-            # Propagate the name to every segment on the same net.
+            # The clicked wire owns the net's name; the other wires of the
+            # net carry none (_sync_user_net_names). Copies on every
+            # segment were REPLACED by the owner on 2026-10-23.
             for w in net_wires:
-                if not w.net_locked:
-                    w.net_name       = new_name
-                    w._user_net_name = new_name
-            # Display flag: only show the label on the right-clicked segment.
+                if not w.net_locked and w is not wire:
+                    w.net_name       = None
+                    w._user_net_name = None
+                    w.display_name   = False
+            if not wire.net_locked:
+                wire.net_name       = new_name
+                wire._user_net_name = new_name
             wire.display_name = dlg.display()
             if ngspice:
                 # DC annotation belongs to the clicked segment only (one

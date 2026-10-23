@@ -92,6 +92,23 @@ def _build_net_uf(components: list, wires: list) -> "_UF":
     return uf
 
 
+def net_name_conflicts(components: list, wires: list) -> list[list[str]]:
+    """The nets that carry MORE THAN ONE user name: one list of names per
+    such net, in canonical order. A net name lives on one wire of its
+    net, the owner (canvas._sync_user_net_names); two owners with
+    different names meet when two named nets are joined. The editor asks
+    the user which name stays; a netlister refuses the ambiguity instead
+    of choosing (Anton, 2026-10-23)."""
+    uf = _build_net_uf(components, wires)
+    names: dict[tuple, list[str]] = {}
+    for wire in sorted((w for w in wires if w.points and w.net_name and not w.net_locked),
+                       key=lambda w: (round(w.points[0].y()), round(w.points[0].x()))):
+        lst = names.setdefault(uf.find(_rpt(wire.points[0])), [])
+        if wire.net_name not in lst:
+            lst.append(wire.net_name)
+    return [lst for lst in names.values() if len(lst) > 1]
+
+
 def nets_from_netlist(components: list, wires: list,
                       netlist_text: str) -> dict[tuple[int, int], str]:
     """Map rounded scene position → net name AS THE NETLIST NAMES IT.

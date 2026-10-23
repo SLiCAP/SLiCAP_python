@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QLayout,
-    QLineEdit, QCheckBox, QDialogButtonBox, QLabel,
+    QLineEdit, QCheckBox, QDialogButtonBox, QLabel, QRadioButton,
 )
 from PySide6.QtCore import Qt
 from .sizing import chars
@@ -37,6 +37,11 @@ class NetLabelDialog(QDialog):
         self._display_cb = QCheckBox("Display net name on schematic")
         self._display_cb.setChecked(display)
         outer.addWidget(self._display_cb)
+        # Typing a name checks "Display" (Anton, 2026-10-23): a name that is
+        # not shown is invisible on the canvas and only the netlist knows
+        # it. The user can still uncheck it before OK.
+        self._name_edit.textEdited.connect(
+            lambda text: self._display_cb.setChecked(True) if text.strip() else None)
 
         # DC operating-point back-annotation — NGspice schematics only.
         self._dc_cb = QCheckBox("Show DC operating voltage")
@@ -67,3 +72,37 @@ class NetLabelDialog(QDialog):
 
     def show_dc(self) -> bool:
         return self._dc_cb.isChecked()
+
+
+class NetConflictDialog(QDialog):
+    """Two named nets were just joined into one. The user picks the name
+    the net keeps; the other label disappears (Anton, 2026-10-23: direct
+    feedback at the moment of the connection, a forced choice with radio
+    buttons, as in Pulsonix). There is no Cancel: Undo reverts the
+    connection itself."""
+
+    def __init__(self, names: list, parent=None):
+        super().__init__(parent, Qt.Window)
+        self.setWindowTitle("Net names")
+        outer = QVBoxLayout()
+        outer.setSizeConstraint(QLayout.SetFixedSize)
+        self.setLayout(outer)
+        note = QLabel("This connection joins nets with different names.\n"
+                      "Which name does the net keep? (Undo reverts the connection.)")
+        note.setWordWrap(True)
+        outer.addWidget(note)
+        self._buttons = []
+        for i, name in enumerate(names):
+            rb = QRadioButton(name)
+            rb.setChecked(i == 0)
+            outer.addWidget(rb)
+            self._buttons.append(rb)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok)
+        buttons.accepted.connect(self.accept)
+        outer.addWidget(buttons)
+
+    def chosen(self) -> str:
+        for rb in self._buttons:
+            if rb.isChecked():
+                return rb.text()
+        return self._buttons[0].text()

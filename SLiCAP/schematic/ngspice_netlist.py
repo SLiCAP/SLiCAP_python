@@ -87,6 +87,10 @@ def _wrap(value: str, key: str = "") -> str:
 
 
 def _node_resolver(components: list, wires: list):
+    from .connectivity import net_name_conflicts
+    conflicts = net_name_conflicts(components, wires)
+    if conflicts:
+        raise NetlistError(["net with several names: " + ", ".join(c) for c in conflicts])
     net_map = resolve_nets(components, wires)
 
     def _node(comp, lx: float, ly: float) -> str:

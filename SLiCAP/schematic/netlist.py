@@ -23,7 +23,12 @@ class NetlistError(Exception):
 
 
 def _node_resolver(components: list, wires: list):
-    """Return a function mapping a component pin (local x, y) to its net name."""
+    """Return a function mapping a component pin (local x, y) to its net name.
+    A net with several user names is refused, never silently named."""
+    from .connectivity import net_name_conflicts
+    conflicts = net_name_conflicts(components, wires)
+    if conflicts:
+        raise NetlistError(["net with several names: " + ", ".join(c) for c in conflicts])
     net_map = resolve_nets(components, wires)
 
     def _node(comp, lx: float, ly: float) -> str:

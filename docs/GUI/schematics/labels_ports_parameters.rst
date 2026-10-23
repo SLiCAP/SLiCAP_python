@@ -17,7 +17,8 @@ is used in the netlist and shown on the drawing.
 
 #. Choose :menuselection:`Circuit --> Net Label` (shortcut :kbd:`L`) and click the
    wire, **or** double-click a wire segment to open its net-label dialog.
-#. Type the name and choose whether to display it.
+#. Type the name. Typing checks **Display net name on schematic**; uncheck
+   it if the name must not show.
 
 .. figure:: /GUI/img/net_label.png
    :alt: A net label on a wire
@@ -25,7 +26,16 @@ is used in the netlist and shown on the drawing.
 
    A net label naming the output node ``out``.
 
-All wires that are electrically the same net share one name.
+All wires that are electrically the same net share one name. The name
+belongs to the segment you named, where its label sits. The other
+segments of the net carry it along. This decides what happens when the
+net changes:
+
+* Delete a segment so that the net falls apart: the part with the label
+  keeps the name, the other part has none and gets a number.
+* Delete the labelled segment: the net loses its name.
+* Join two nets that both have a name: a dialog asks which name the net
+  keeps. The other label disappears. Undo reverts the connection.
 
 Ports
 =====

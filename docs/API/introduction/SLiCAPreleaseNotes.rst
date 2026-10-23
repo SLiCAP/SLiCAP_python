@@ -222,6 +222,22 @@ Version 6.4.1
    the overwrite warning, left that tab showing the old drawing. The tab
    now reloads the file.
 
+Version 6.4.2
+-------------
+
+#. **A net name belongs to one segment.** A net name used to be copied
+   onto every segment of its net, and only the net-label dialog kept the
+   copies in step. Deleting a middle segment left two drawn nets that the
+   netlist still joined by their common name. Renaming one part and
+   reconnecting showed two names until a double-click. The name now lives
+   on the segment you named, where its label is. When a net falls apart,
+   the part with the label keeps the name and the other part gets a
+   number. Deleting the labelled segment removes the name. Joining two
+   named nets opens a dialog that asks which name the net keeps, with
+   Undo to revert the connection. A netlist of a net with two names is
+   refused, which can only happen in a file written before this version.
+   Typing a net name checks "Display net name on schematic".
+
 SLiCAP version 6.3 release notes
 ================================
 

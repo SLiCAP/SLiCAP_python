@@ -234,6 +234,7 @@ class CanvasPanel(QWidget):
         self._view  = SchematicView(self._scene)
         self._scene.data_changed.connect(lambda: setattr(self, '_dirty', True))
         self._scene.placing_cancelled.connect(self._on_placement_cancelled)
+        self._scene.net_conflict_resolver = self._ask_net_name
         # The scene's double-click edit of an analysis block uses the same
         # candidate lists as Place → Define src / det / lg ref.
         self._scene.analysis_candidates = self._analysis_candidates
@@ -244,6 +245,14 @@ class CanvasPanel(QWidget):
         # Focus given to the panel lands on the canvas, so the panel-scoped
         # editor shortcuts (W, F, …) work without an extra click.
         self.setFocusProxy(self._view)
+
+    def _ask_net_name(self, names: list) -> str:
+        """Two named nets were joined (SchematicScene._sync_user_net_names):
+        the user picks the name the net keeps."""
+        from .net_label_dialog import NetConflictDialog
+        dlg = NetConflictDialog(names, self)
+        dlg.exec()
+        return dlg.chosen()
 
     # -- per-file context -------------------------------------------------------
 
