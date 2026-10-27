@@ -238,6 +238,15 @@ Version 6.4.2
    refused, which can only happen in a file written before this version.
    Typing a net name checks "Display net name on schematic".
 
+Version 6.4.3
+-------------
+
+#. **Bug fix: the first save of a subcircuit.** The Create Subcircuit
+   dialog opened by Save keeps the name read-only, so that Save keeps the
+   name and only settles the node order. On the first save there is no
+   name yet, and the empty field could not be filled. The name is now
+   editable whenever the subcircuit has none.
+
 SLiCAP version 6.3 release notes
 ================================
 

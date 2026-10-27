@@ -43,8 +43,11 @@ class CreateSubcircuitDialog(QDialog):
             "The .subckt name and the stem of the files in lib/.\n"
             "Another name saves a copy of the subcircuit under that name.")
         # Save keeps the name: the dialog then only settles the node order
-        # (first save, new port). Save as makes it editable.
-        self._name.setReadOnly(not name_editable)
+        # (a new port). Save as makes it editable. A subcircuit without a
+        # name yet, the first save, has no name to keep: the field is
+        # editable then, whatever the caller asked (Anton, 2026-10-23: the
+        # read-only empty field could not be filled and the save was stuck).
+        self._name.setReadOnly(not name_editable and bool(name.strip()))
         head.addWidget(self._name, 0, 1)
         outer.addLayout(head)
 
