@@ -1906,6 +1906,8 @@ class CanvasPanel(QWidget):
             return cache[path]
         full = project.root_for(self._current_path) / path
         cir = makeCircuit(str(full))
+        # par_defs are display text in the dialog (par_source_table rounds
+        # them with roundN; the call emits parameter NAMES, never values)
         data = {
             "sources":   sorted(cir.indepVars),
             "detectors": sorted(cir.depVars()),

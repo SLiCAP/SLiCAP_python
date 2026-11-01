@@ -134,7 +134,24 @@ class StepWidget(QGroupBox):
         self._stack.addWidget(arr)
 
         outer.addWidget(self._stack)
+        # The stack's size hint is the LARGEST page (the array table), which
+        # left a dead band under the lin/log fields and took height the
+        # parameter table above needs (Anton, 2026-11-01): size to the
+        # current page only.
+        self._stack.currentChanged.connect(self._fit_stack)
         self._on_method(self._method.currentIndex())
+        self._fit_stack(self._stack.currentIndex())
+
+    def _fit_stack(self, idx: int) -> None:
+        from PySide6.QtWidgets import QSizePolicy
+        for i in range(self._stack.count()):
+            page = self._stack.widget(i)
+            pol = page.sizePolicy()
+            pol.setVerticalPolicy(QSizePolicy.Preferred if i == idx
+                                  else QSizePolicy.Ignored)
+            page.setSizePolicy(pol)
+        self._stack.adjustSize()
+        self.updateGeometry()
 
     # ── UI plumbing ───────────────────────────────────────────────────────────
 

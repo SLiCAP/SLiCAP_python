@@ -805,7 +805,7 @@ class NGspiceAnalysisDialog(QDialog):
                                   positions=(CIRCUIT, SPECS, USER),
                                   title="Circuit parameters (params=)")
         self._pd.changed.connect(self._update)
-        right.addWidget(self._pd)
+        right.addWidget(self._pd, 1)
 
         # ── per-instruction simulator options (options=, right) ───────────────
         self._options_table = ParamTable(

@@ -297,7 +297,7 @@ class SLiCAPAnalysisDialog(QDialog):
         self._pd = ParSourceTable(par_defs, undefined_params, spec_files,
                                   csv_dir, pardefs_preset)
         self._pd.changed.connect(self._update)
-        layout.addWidget(self._pd)
+        layout.addWidget(self._pd, 1)
 
         # ── 5./6. numeric + convtype ──────────────────────────────────────────
         orow = QHBoxLayout()
@@ -340,8 +340,8 @@ class SLiCAPAnalysisDialog(QDialog):
         self._step.changed.connect(self._update)
         layout.addWidget(self._step)
 
-        # extra vertical space goes here, not into the group boxes
-        layout.addStretch(1)
+        # no trailing stretch: the parameter table (stretch 1 above) is the
+        # one item that grows with the dialog (Anton, 2026-11-01)
 
         # ── buttons ───────────────────────────────────────────────────────────
         buttons = QDialogButtonBox()
@@ -357,6 +357,20 @@ class SLiCAPAnalysisDialog(QDialog):
         self._func.currentTextChanged.connect(self._on_func_changed)
         self._group.setCurrentIndex(1)      # default: Laplace / DC → doLaplace
         self._on_group_changed(self._group.currentIndex())
+        self._open_to_fit_rows()
+
+    def _open_to_fit_rows(self) -> None:
+        """Open tall enough to show every parameter row, capped at 90 % of
+        the screen; beyond the cap the table scrolls.  The user may still
+        resize: the table takes the stretch (Anton, 2026-11-01)."""
+        from PySide6.QtGui import QGuiApplication
+        extra = self._pd.rows_beyond_minimum_height()
+        hint = self.sizeHint()
+        height = hint.height() + extra
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if screen is not None:
+            height = min(height, int(screen.availableGeometry().height() * 0.9))
+        self.resize(max(hint.width(), self.minimumWidth()), height)
 
     # ── cascade handlers ──────────────────────────────────────────────────────
 

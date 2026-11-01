@@ -45,7 +45,7 @@ from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QTableWidget,
     QTableWidgetItem, QAbstractItemView, QHeaderView, QRadioButton,
-    QButtonGroup, QLineEdit, QWidget,
+    QButtonGroup, QLineEdit, QWidget, QSizePolicy,
 )
 
 from .value_fields import is_value
@@ -87,6 +87,25 @@ def read_spec_values(csv_dir: str, file_name: str) -> dict[str, str]:
 
 def _q(text: str) -> str:
     return '"' + str(text).replace('"', "'") + '"'
+
+
+def display_value(text: str) -> str:
+    """A circuit definition or a spec value AS DISPLAYED in the table: SLiCAP
+    notation read, rounded to the project's display digits with ``roundN``
+    (the one SLiCAP display rule), so ``1/100000000000`` shows as
+    ``1.000e-11`` and ``q`` as ``1.602e-19``.  Text SLiCAP cannot read (an
+    NGspice ``agauss(...)``) is shown as written.  Display only: the emitted
+    call names parameters, never these values (Anton, 2026-11-01)."""
+    text = str(text).strip()
+    if not text:
+        return text
+    try:
+        import sympy as sp
+        from SLiCAP.SLiCAPlex import _replaceScaleFactors
+        from SLiCAP.SLiCAPmath import roundN
+        return str(roundN(sp.sympify(_replaceScaleFactors(text)), numeric=True))
+    except Exception:
+        return text
 
 
 class ParSourceTable(QGroupBox):
@@ -146,10 +165,21 @@ class ParSourceTable(QGroupBox):
         self._table.setColumnWidth(0, name_width(self._table))
         self._table.setSelectionMode(QAbstractItemView.NoSelection)
         self._table.verticalHeader().setVisible(False)
-        self._table.setMinimumHeight(110)
-        layout.addWidget(self._table)
+        layout.addWidget(self._table, 1)
         for row, name in enumerate(self._names):
             self._build_row(row, name)
+        # Opens showing up to eight rows, scrolls beyond that, and grows with
+        # the dialog: the group takes the stretch of the dialog's layout, so
+        # a taller window shows more rows (Anton, 2026-11-01).
+        self._table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        if self._names:
+            self._table.resizeRowsToContents()
+            row_h = self._table.rowHeight(0)
+            shown = min(len(self._names), 8)
+            self._table.setMinimumHeight(
+                self._table.horizontalHeader().height() + shown * row_h
+                + 2 * self._table.frameWidth())
 
         if not self._names:
             lbl = QLabel("This circuit has no parameters.")
@@ -166,6 +196,12 @@ class ParSourceTable(QGroupBox):
         self._select_default_file()
         self._reload_specs()
         self.apply_preset(preset)
+
+    def rows_beyond_minimum_height(self) -> int:
+        """Pixels the table needs above its minimum to show EVERY row."""
+        if len(self._names) <= 8:
+            return 0
+        return (len(self._names) - 8) * self._table.rowHeight(0)
 
     # ── rows ─────────────────────────────────────────────────────────────
 
@@ -192,7 +228,7 @@ class ParSourceTable(QGroupBox):
                 rb.toggled.connect(edit.setEnabled)
             rb.toggled.connect(self._on_toggled)
             self._table.setCellWidget(row, col, cell)
-        radios[CIRCUIT].setText(self._par_defs.get(name, ""))
+        radios[CIRCUIT].setText(display_value(self._par_defs.get(name, "")))
         radios[CIRCUIT].setEnabled(name in self._par_defs)
         # the resting position: undefined where it exists; otherwise user,
         # so that a parameter no preset can serve asks for a value
@@ -226,7 +262,7 @@ class ParSourceTable(QGroupBox):
                                              self._file.currentText())
         for name, r in self._rows.items():
             rb = r["radios"][SPECS]
-            rb.setText(self._spec_values.get(name, ""))
+            rb.setText(display_value(self._spec_values.get(name, "")))
             rb.setEnabled(name in self._spec_values)
 
     # ── state ─────────────────────────────────────────────────────────────
