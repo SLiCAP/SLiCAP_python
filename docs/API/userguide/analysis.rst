@@ -229,7 +229,22 @@ The parameter definitions
 - None: Analysis will be performed without substitution of parameters
 - 'circuit': Analysis will be performed with all parameters defined with the circuit (cir.parDefs), recursively substituted
 - dict: Analysis will be performed with all parameters defined in dict (key = parameter name, value = parameter value or expression)
-   
+
+A dictionary for a selection of parameters is built with `selectPars() <../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.selectPars>`__. It takes the names of the parameters per source: definitions of the circuit, values of specification items, and user-defined values. Parameters that are not named stay undefined. The circuit definitions and the specification values are read when the instruction runs, so a specification written to the CSV file by a design script is used in the next analysis.
+
+.. code-block:: python
+
+    import SLiCAP as sl
+    sl.initProject("my Project")
+    cir   = sl.makeCircuit(<myCircuit>)
+    specs = sl.csv2specs("specs.csv")
+    # R_s from the circuit, C_f from the specifications, V_s given here;
+    # all other parameters stay undefined.
+    pardefs = sl.selectPars(cir, specs, circuit=["R_s"], specs=["C_f"], user={"V_s": 1})
+    result  = sl.doLaplace(cir, pardefs=pardefs)
+
+The schematic editor composes this call in the *Parameter substitution* group of the instruction dialog, see `Composing an instruction <../../GUI/instruction/instructions.html#composing-an-instruction>`_.
+
 Example: obtain a dictionary with the circuit parameter definitions and a list with undefined parameters:
    
 .. code-block:: python

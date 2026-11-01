@@ -133,3 +133,10 @@ black wires show white, white fills dark, red stays red; LaTeX renders
 black as white. A change of the desktop scheme while SLiCAP runs is followed
 at once. The schematic style, and therefore every SVG and PDF export, keeps
 the document colours.
+
+Instruction dialog
+==================
+
+The same dialog has **Parameter substitution, set all to**: the preset the
+parameter table of a new SLiCAP instruction opens in, *specs first*,
+*circuit first* or *all undefined*. See :ref:`parameter-substitution`.

@@ -124,6 +124,18 @@ def circuit_objects(text: str) -> list:
     return out
 
 
+def spec_var_name(file_name: str) -> str:
+    """The variable an instruction file loads a spec CSV into:
+    ``SPECS_<stem>`` with the stem made a valid identifier fragment
+    (``specs.csv`` -> ``SPECS_specs``).  Shared by the snippet dialog and
+    the analysis dialog so one CSV is loaded into ONE variable."""
+    stem = file_name.strip().rsplit(".", 1)[0] if "." in file_name else file_name.strip()
+    frag = re.sub(r"\W", "_", stem).strip("_") or "specs"
+    if frag[0].isdigit():
+        frag = "_" + frag
+    return f"SPECS_{frag}"
+
+
 def assigned_names(text: str) -> set:
     """Every name the instruction file assigns to - the namespace a new
     circuit object must not silently collide with."""

@@ -14,6 +14,8 @@ Example output::
 """
 from __future__ import annotations
 
+import re
+
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
     QLabel, QLineEdit, QComboBox, QTabWidget, QWidget,
@@ -24,6 +26,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 
 from .param_table import ParamTable
+from .par_source_table import ParSourceTable, CIRCUIT, SPECS, USER
 from .sizing import cap_chars, fit_contents
 from .source_stimuli_table import SourceStimuliTable, _ANALYSIS_DOMAIN
 from .step_widget import StepWidget
@@ -685,9 +688,20 @@ class NGspiceAnalysisDialog(QDialog):
     def __init__(self, cir_stem: str, output_vars: list[str] = (),
                  noise_vars: list[str] = (),
                  param_names: list[str] = (), existing_text: str = "",
-                 sources: list[str] = (), parent=None):
+                 sources: list[str] = (), parent=None,
+                 param_defs: dict | None = None, csv_dir: str = "",
+                 pardefs_preset: str | None = None):
+        """*param_defs*: ``{name: value text}`` of the netlist's ``.param``
+        definitions (``_get_param_defs``), the 'circuit' column of the
+        parameter table; *param_names* (its keys) feeds the step widget.
+        *csv_dir*: the project csv/ folder, for the 'specs' column."""
         super().__init__(parent, Qt.Window)
         self._cir_stem = cir_stem
+        if param_defs is None:
+            param_defs = {str(n): "" for n in param_names}
+        if pardefs_preset is None:
+            from . import app_prefs
+            pardefs_preset = app_prefs.get_pardefs_preset()
         self._existing_text = existing_text or ""
         self.setWindowTitle("Create / Edit NGspice Instruction")
 
@@ -779,16 +793,19 @@ class NGspiceAnalysisDialog(QDialog):
         right.addWidget(self._save)
 
         # ── per-instruction circuit parameters (params=, right) ───────────────
-        self._params_table = ParamTable(
-            "Circuit parameters (params=; unchecked = netlist definitions)",
-            key_candidates=param_names,
-            ordered=True, checkable=True,
-            hint="Definitions are applied in order — each parameter must be "
-                 "numerically evaluable when defined; NGspice errors on "
-                 "undefined parameters. Existing netlist parameters are "
-                 "overridden for this instruction only.")
-        self._params_table.changed.connect(self._update)
-        right.addWidget(self._params_table)
+        # The SAME table as the SLiCAP dialog (par_source_table, 2026-11-01)
+        # without the 'undefined' column: NGspice cannot run with an
+        # undefined parameter. 'circuit' = the .param definitions of the
+        # .cir generated from the schematic; the row then emits nothing.
+        from pathlib import Path
+        from .design_data_panel import find_spec_csvs
+        spec_files = [p.name for p in find_spec_csvs(Path(csv_dir))] if csv_dir else []
+        self._pd = ParSourceTable(param_defs, (), spec_files, csv_dir,
+                                  pardefs_preset,
+                                  positions=(CIRCUIT, SPECS, USER),
+                                  title="Circuit parameters (params=)")
+        self._pd.changed.connect(self._update)
+        right.addWidget(self._pd)
 
         # ── per-instruction simulator options (options=, right) ───────────────
         self._options_table = ParamTable(
@@ -902,8 +919,7 @@ class NGspiceAnalysisDialog(QDialog):
         tab._step.set_from_dict(_lit(kw.get("step")))
         self._save.set_from(_lit(kw.get("save")),
                              _lit(kw.get("savecurrents")))
-        params = _lit(kw.get("params"))
-        self._params_table.set_entries(params or [], active=bool(params))
+        self._pd.load_from_source(kw.get("params"))
         options = _lit(kw.get("options"))
         self._options_table.set_entries(options or {}, active=bool(options))
         stimuli = _lit(kw.get("stimuli")) or {}
@@ -925,7 +941,8 @@ class NGspiceAnalysisDialog(QDialog):
             ok = False
         if tab is not None and not all_valid(tab):
             ok = False              # a marked field cannot become a netlist
-        if not self._params_table.is_valid():
+        self._pd.show_reason()
+        if not self._pd.is_valid():
             ok = False
         if not self._options_table.is_valid():
             ok = False
@@ -934,10 +951,11 @@ class NGspiceAnalysisDialog(QDialog):
         self._add_btn.setEnabled(ok)
 
     def _params_kwarg(self) -> str:
-        if not self._params_table.active():
+        """``, params=sl.selectPars("<cir>", ...)`` for a selection; nothing
+        when every parameter keeps its netlist definition."""
+        if self._pd.mode() != "select":
             return ""
-        lit = self._params_table.list_literal()
-        return f", params={lit}" if lit else ""
+        return f", params={self._pd.emission(_q(self._cir_stem))}"
 
     def _options_kwarg(self) -> str:
         if not self._options_table.active():
@@ -966,4 +984,11 @@ class NGspiceAnalysisDialog(QDialog):
         extra   = (self._save.kwarg() + self._params_kwarg()
                    + self._options_kwarg() + self._stimuli_kwarg()
                    + self._behavior.kwarg())
-        return tab.snippet(self._cir_stem, varname, extra)
+        line = tab.snippet(self._cir_stem, varname, extra)
+        # the spec CSV is loaded once per file into SPECS_<stem> (the SLiCAP
+        # dialog's convention); the load line precedes the first reader
+        var = self._pd.spec_var()
+        if var and not re.search(r"^\s*" + re.escape(var) + r"\s*=",
+                                 self._existing_text, re.M):
+            return f'{var} = sl.csv2specs("{self._pd.spec_file()}")\n{line}'
+        return line

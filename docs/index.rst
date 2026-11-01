@@ -23,7 +23,7 @@ SLiCAP Manual
 
     >>> pip install slicap        # then start the environment with:  slicap
     
-    Read more about the `Structured Electronic Design Environment <index.html#structured-electronic-design-environment>`_
+    Read more about the `Structured Electronic Design Environment <index.html#structured-electronic-design-environment>`__
 
 .. admonition:: Video Presentation SLiCAP KiCON Europe 2025
     :class: note

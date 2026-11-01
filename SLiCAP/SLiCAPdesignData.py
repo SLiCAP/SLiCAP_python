@@ -225,6 +225,118 @@ def specs2circuit(specList, cir):
         if item.value != '':
             cir.defPar(item.symbol, item.value)
 
+def selectPars(cir, specList=None, circuit=(), specs=(), user=None):
+    """
+    Returns a dictionary with parameter definitions for the 'pardefs'
+    argument of an instruction, selected from three sources: definitions
+    of the circuit, values of specification items, and user-defined values.
+    Parameters that are not selected stay undefined in the analysis.
+
+    Each source is given as a list with parameter names. The values of
+    'circuit' and 'specs' parameters are read when this function is called,
+    so a specification written to the CSV file by a design script is used
+    in the next analysis.
+
+    :param cir: Circuit from which 'circuit' definitions are taken: a SLiCAP
+                circuit object, or the name (without extension) of an NGspice
+                circuit file in the cir folder, whose '.param' definitions
+                are then used.
+    :type cir: SLiCAPprotos.circuit, str
+
+    :param specList: List with specification items from which 'specs' values
+                     are taken. Defaults to None.
+    :type specList: list
+
+    :param circuit: Names of parameters that take the definition of the
+                    circuit (cir.parDefs), or 'all' for all of them. Defaults
+                    to an empty tuple.
+    :type circuit: list, tuple, str
+
+    :param specs: Names of parameters that take the value of the specification
+                  item with the same symbol, or 'all' for all items that have
+                  a value. Defaults to an empty tuple.
+    :type specs: list, tuple, str
+
+    :param user: Dictionary with user-defined values: key = parameter name,
+                 value = number or expression. Defaults to None.
+    :type user: dict
+
+    :return: Dictionary with key-value pairs: key = parameter name
+             (sympy.Symbol), value = parameter value (sympy.Expr)
+    :rtype: dict
+
+    :raises ValueError: a parameter selected from two sources, a 'circuit'
+                        parameter without a definition in the circuit, a
+                        'specs' parameter without a specification item or
+                        with an empty value.
+
+    :Example:
+
+    >>> import SLiCAP as sl
+    >>> cir = sl.makeCircuit("myCircuit.cir")
+    >>> specs = sl.csv2specs("specs.csv")
+    >>> pardefs = sl.selectPars(cir, specs, circuit=["C_L"], specs=["C_f"],
+    ...                         user={"R_s": "50"})
+    >>> result = sl.doLaplace(cir, pardefs=pardefs)
+
+    The same selection for an NGspice analysis, the circuit given by its
+    file name:
+
+    >>> AC1 = sl.ac("myCircuit", "dec", 20, 1, 1e9,
+    ...             params=sl.selectPars("myCircuit", specs, specs=["C_f"]))
+    """
+    out    = {}
+    origin = {}
+    if isinstance(cir, str):
+        from SLiCAP.SLiCAPngspice import _netlist_par_defs
+        parDefs = _netlist_par_defs(cir)
+    else:
+        parDefs = cir.parDefs
+
+    def claim(name, source):
+        symbol = sp.Symbol(str(name))
+        if symbol in origin:
+            raise ValueError("selectPars(): parameter '%s' is selected from "
+                             "'%s' and from '%s'." % (symbol, origin[symbol],
+                                                      source))
+        origin[symbol] = source
+        return symbol
+
+    if isinstance(circuit, str):
+        if circuit != 'all':
+            raise ValueError("selectPars(): 'circuit' must be a list with "
+                             "parameter names or 'all'.")
+        circuit = list(parDefs.keys())
+    for name in circuit:
+        symbol = claim(name, 'circuit')
+        if symbol not in parDefs:
+            raise ValueError("selectPars(): the circuit has no definition "
+                             "of parameter '%s'." % symbol)
+        out[symbol] = parDefs[symbol]
+
+    items = {}
+    for item in (specList or []):
+        items[sp.Symbol(str(item.symbol))] = item
+    if isinstance(specs, str):
+        if specs != 'all':
+            raise ValueError("selectPars(): 'specs' must be a list with "
+                             "parameter names or 'all'.")
+        specs = [symbol for symbol, item in items.items() if item.value != '']
+    for name in specs:
+        symbol = claim(name, 'specs')
+        if symbol not in items:
+            raise ValueError("selectPars(): there is no specification item "
+                             "'%s'." % symbol)
+        if items[symbol].value == '':
+            raise ValueError("selectPars(): specification item '%s' has no "
+                             "value." % symbol)
+        out[symbol] = items[symbol].value
+
+    for name, value in (user or {}).items():
+        symbol = claim(name, 'user')
+        out[symbol] = _checkExpression(value)
+    return out
+
 def createSubstDict(specs):
     """
     Returns a subsitutution dictionary from a list with specifications.

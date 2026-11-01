@@ -11,5 +11,5 @@ from .snippet_dialog import (  # noqa: F401
     LatexSnippetDialog, RstSnippetDialog,
     LATEX_TARGET, RST_TARGET,
     KIND_TEXT, KIND_FILE, KIND_OBJECT, KIND_SPECS,
-    _q, _ident,
+    _q,
 )

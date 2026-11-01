@@ -1956,6 +1956,7 @@ class CanvasPanel(QWidget):
             return
         self._status("")
 
+        import SLiCAP.SLiCAPconfigure as ini
         from .slicap_analysis_dialog import SLiCAPAnalysisDialog
         dlg = SLiCAPAnalysisDialog(cir_var=mine[0]["name"],
                                    sources=data["sources"],
@@ -1964,7 +1965,8 @@ class CanvasPanel(QWidget):
                                    par_defs=data["par_defs"],
                                    undefined_params=data["undefined_params"],
                                    existing_text=existing, parent=self,
-                                   circuits=mine)
+                                   circuits=mine,
+                                   csv_dir=os.path.join(os.getcwd(), ini.csv_path))
         if dlg.exec() and self._main_win:
             snippet = dlg.generated_snippet()
             if snippet:
@@ -2002,7 +2004,10 @@ class CanvasPanel(QWidget):
         output_vars = _get_output_vars(netlist_text)
         from SLiCAP.SLiCAPngspice import _get_noise_vars
         noise_vars  = _get_noise_vars(netlist_text, contributions=True)
-        param_names = _get_param_names(netlist_text)
+        from SLiCAP.SLiCAPngspice import _get_param_defs
+        import SLiCAP.SLiCAPconfigure as ini
+        param_defs  = _get_param_defs(netlist_text)
+        param_names = list(param_defs)
         sources     = _indep_source_refs(cir_stem)
         existing = self._main_win._instr_editor.text() if self._main_win else ""
         # Non-modal so the window can be moved freely: an application-modal
@@ -2019,7 +2024,8 @@ class CanvasPanel(QWidget):
                                     noise_vars=noise_vars,
                                     param_names=param_names,
                                     existing_text=existing, sources=sources,
-                                    parent=self)
+                                    parent=self, param_defs=param_defs,
+                                    csv_dir=os.path.join(os.getcwd(), ini.csv_path))
         dlg.setModal(False)
 
         def _accept():

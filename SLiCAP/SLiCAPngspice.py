@@ -1506,18 +1506,31 @@ def _deck_value(value, what):
     return _deck_expr(value, what)
 
 
+def _param_items(params):
+    """The ``params=`` argument of an analysis as an ordered list of
+    ``(name, value)`` text pairs: from a list of pairs, or from a dict such
+    as :func:`SLiCAP.SLiCAPdesignData.selectPars` returns (insertion order
+    kept; sympy names and values become text).  ``None`` gives ``[]``."""
+    if not params:
+        return []
+    if isinstance(params, dict):
+        return [(str(k), str(v)) for k, v in params.items()]
+    return [(str(n), str(v)) for n, v in params]
+
+
 def _apply_instr_params(netlist_text, params):
     """Apply per-instruction parameter definitions to the netlist text.
 
-    *params* is an **ordered** list of ``(name, value)`` tuples (the
-    ``params=`` argument of ``op/dc/ac/tran/noise``).  A name already defined
-    in the netlist is replaced **in place** — NGspice honours the *first*
-    definition it encounters, so appending a redefinition would be silently
-    ignored.  A new name is appended as a ``.param`` line **in list order**,
-    so each definition can be evaluated non-recursively (the same contract as
-    the legacy ``ngspice2traces`` ``parList``).
+    *params* is an **ordered** list of ``(name, value)`` tuples or a dict
+    (the ``params=`` argument of ``op/dc/ac/tran/noise``; see
+    :func:`_param_items`).  A name already defined in the netlist is
+    replaced **in place** — NGspice honours the *first* definition it
+    encounters, so appending a redefinition would be silently ignored.  A
+    new name is appended as a ``.param`` line **in list order**, so each
+    definition can be evaluated non-recursively (the same contract as the
+    legacy ``ngspice2traces`` ``parList``).
     """
-    for name, value in params or []:
+    for name, value in _param_items(params):
         # _deck_value reads the SLiCAP notation and returns deck-ready text:
         # a plain number, or an expression in braces for NGspice to resolve.
         sval = _deck_value(value, name)
@@ -1802,11 +1815,11 @@ def _get_noise_vars(netlist: str, contributions: bool = False) -> list[str]:
     return out
 
 
-def _get_param_names(netlist: str) -> list[str]:
-    """Parse an NGspice netlist text and return the ``.param`` names defined
-    in it, in definition order (continuation lines joined).  Used by the GUI
-    to populate the parameter dropdowns of the Add Instruction dialog.
-    """
+def _get_param_defs(netlist: str) -> dict:
+    """The ``.param`` definitions of an NGspice netlist text, ``{name: value
+    text}`` in definition order (continuation lines joined), the value as
+    written without its braces.  The GUI shows them as the 'circuit' column
+    of the parameter table of the Add Instruction dialog."""
     lines: list[str] = []
     for raw in netlist.splitlines():
         s = raw.strip()
@@ -1814,15 +1827,23 @@ def _get_param_names(netlist: str) -> list[str]:
             lines[-1] += ' ' + s[1:].strip()
         else:
             lines.append(s)
-    names: list[str] = []
+    defs: dict = {}
     for line in lines:
         if not line.lower().startswith('.param'):
             continue
-        body = line[len('.param'):]
-        for m in re.finditer(r'([A-Za-z_][A-Za-z_0-9]*)\s*=', body):
-            if m.group(1) not in names:
-                names.append(m.group(1))
-    return names
+        for name, value in _PARDEF.findall(line[len('.param'):]):
+            value = value.strip()
+            if value.startswith('{') and value.endswith('}'):
+                value = value[1:-1].strip()
+            if name not in defs:
+                defs[name] = value
+    return defs
+
+
+def _get_param_names(netlist: str) -> list[str]:
+    """The ``.param`` names of an NGspice netlist text, in definition order
+    (the keys of :func:`_get_param_defs`)."""
+    return list(_get_param_defs(netlist))
 
 
 def make_netlist(filename, title=None, force=False):
@@ -1953,9 +1974,9 @@ def _netlist_par_defs(cirFile, instr_params=None):
     :param cirFile: circuit file name without extension.
     :type cirFile: str
 
-    :param instr_params: ordered list of ``(name, value)`` tuples, the
-                         ``params=`` argument of the analysis.
-    :type instr_params: list, NoneType
+    :param instr_params: the ``params=`` argument of the analysis: an
+                         ordered list of ``(name, value)`` tuples or a dict.
+    :type instr_params: list, dict, NoneType
 
     :return: ``{sympy.Symbol: sympy expression or number}``
     :rtype: dict
@@ -1975,8 +1996,8 @@ def _netlist_par_defs(cirFile, instr_params=None):
             continue
         for name, value in _PARDEF.findall(line[len('.param'):]):
             definitions[name] = value
-    for name, value in instr_params or []:
-        definitions[str(name)] = str(value)
+    for name, value in _param_items(instr_params):
+        definitions[name] = value
 
     par_defs = {}
     for name, text in definitions.items():
@@ -2013,7 +2034,7 @@ def _dict_to_instruction(result, cmd, cirFile, x_name, step,
     instr.gainType = "vi"
     instr.dataType = dataType
     instr.simArgs  = parts[1:]
-    instr.simParams = list(params) if params else []
+    instr.simParams = _param_items(params)
     instr.lgRef    = None
     instr.source   = source
     instr.detector = detector
@@ -2119,12 +2140,14 @@ def op(cirFile, save=None, step=None, params=None, options=None,
     :type step: dict, NoneType
 
     :param params: Per-instruction parameter definitions: **ordered** list of
-                   ``(name, value)`` tuples.  A name already defined in the
-                   netlist gets its value replaced in place (overriding the
-                   schematic value for this run only); a new name is appended
-                   as a ``.param`` line in list order.  Order the entries so
-                   that every parameter is numerically evaluable in a
-                   non-recursive way, e.g.
+                   ``(name, value)`` tuples, or a dict such as
+                   :func:`SLiCAP.SLiCAPdesignData.selectPars` returns (its
+                   insertion order is the list order).  A name already
+                   defined in the netlist gets its value replaced in place
+                   (overriding the schematic value for this run only); a new
+                   name is appended as a ``.param`` line in list order.
+                   Order the entries so that every parameter is numerically
+                   evaluable in a non-recursive way, e.g.
                    ``[("R", "1k"), ("C", "1n"), ("tau", "{1/(R*C)}")]``.
     :type params: list, NoneType
 

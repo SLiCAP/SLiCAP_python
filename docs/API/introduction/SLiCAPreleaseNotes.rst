@@ -247,6 +247,54 @@ Version 6.4.3
    name yet, and the empty field could not be filled. The name is now
    editable whenever the subcircuit has none.
 
+Version 6.4.4
+-------------
+
+#. **selectPars().** The new function ``selectPars(cir, specList,
+   circuit=[...], specs=[...], user={...})`` returns a ``pardefs``
+   dictionary with the parameters named per source: the definition of the
+   circuit, the value of the specification item with the same symbol, or a
+   value given in the call. Parameters not named stay undefined. The
+   circuit definitions and the specification values are read when the
+   instruction runs, so a value a design script writes to the specification
+   CSV is used by the next analysis. A parameter named under two sources, a
+   circuit parameter without a definition and a specification without a
+   value raise an error that names the parameter. The circuit may also be
+   the file name of an NGspice circuit; its ``.param`` definitions are then
+   the circuit source, and the ``params`` argument of the NGspice analyses
+   accepts the returned dictionary next to the list of pairs.
+
+#. **Parameter substitution in the instruction dialog.** The pardefs group
+   of the SLiCAP instruction dialog lists every parameter of the circuit
+   and asks per row where its value comes from: undefined, circuit, specs
+   or user. Positions without a value are greyed out. "Set all to" applies
+   *specs first*, *circuit first* or *all undefined* to every row, and the
+   preset the dialog opens in is a preference. The emitted call is
+   ``pardefs='circuit'`` or no ``pardefs`` where that says the same, and
+   ``pardefs=sl.selectPars(...)`` otherwise. The table of value literals,
+   with its "Load circuit definitions" button, is gone: it copied values
+   into the file at compose time. The NGspice instruction dialog has the
+   same table in place of its ordered parameter list, without the
+   *undefined* position: *circuit* is the ``.param`` definition from the
+   schematic, and only rows that take a specification or a user value
+   reach the ``params`` argument.
+
+#. **Instruction files and the main script.** The manual describes how
+   GUI-generated instruction files and a designer's own script work
+   together: instruction files are self-contained steps owned by the GUI,
+   the main script imports them and computes between them, and the
+   specification CSV carries values from the script to the next step.
+
+#. **Bug fix: circuit object in snippets.** The snippet dialog emitted the
+   literal ``cir`` for the element data, parameter definitions and
+   undefined parameters tables, whether or not the instruction file
+   defined it. It now offers the circuit objects the file defines. The
+   Result list no longer accepts typed names, for the same reason.
+
+#. **Snippet dialog wording and manual.** The kind "Text output (txt file
+   + include)" is called "Text output". The manual has a page on snippets
+   that explains the two lines it emits.
+
 SLiCAP version 6.3 release notes
 ================================
 
@@ -261,7 +309,7 @@ formatters print the terms of an equation in the order they were written.
    :math:`\mathbf{C} = \mathbf{N}_r \mathbf{C}_r \mathbf{N}_r^T`. They give 
    the time-constant matrix 
    :math:`\mathbf{T} = \mathbf{N}_r^T \mathbf{G}^{-1} \mathbf{N}_r \mathbf{C}_r`
-   of the    network. See :doc:`/userguide/matrices`.
+   of the    network. See :doc:`/API/userguide/matrices`.
 
 #. **Readable state-space realizations.** ``doStateSpace()`` chooses the
    state coordinates on the pivots of the reduced row echelon form of the
@@ -274,7 +322,7 @@ formatters print the terms of an equation in the order they were written.
    exactly. The poles, the transfers and the feedthrough are unchanged.
    Symbolic realizations of networks with fixed reactances come out much
    smaller and faster: a transimpedance amplifier with a phantom-zero
-   capacitor takes 0.06 s instead of 50 s. See :doc:`/userguide/statespace`.
+   capacitor takes 0.06 s instead of 50 s. See :doc:`/API/userguide/statespace`.
 
 #. **Order of the terms in equations.** The method ``eqn()`` of the LaTeX
    and RST formatters, and the function ``exprLatex()``, have an argument

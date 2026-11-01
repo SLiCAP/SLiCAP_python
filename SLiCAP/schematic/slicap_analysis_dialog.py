@@ -22,11 +22,10 @@ import re
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QLabel,
-    QLineEdit, QComboBox, QCheckBox, QDialogButtonBox, QRadioButton,
-    QButtonGroup,
+    QLineEdit, QComboBox, QCheckBox, QDialogButtonBox,
 )
 
-from .param_table import ParamTable
+from .par_source_table import ParSourceTable
 from .step_widget import StepWidget
 from .instr_file import next_result_name, parse_calls
 from .sizing import cap_chars, chars
@@ -138,17 +137,25 @@ class SLiCAPAnalysisDialog(QDialog):
     :param detectors:        Valid detector names (``cir.depVars()``).
     :param lgrefs:           Controlled-source refdes strings (``cir.controlled``).
     :param par_defs:         ``{name: value}`` strings of the circuit's defined
-                             parameters (``cir.parDefs``) — pre-fills the
-                             pardefs table's "Load circuit definitions".
-    :param undefined_params: Names of undefined parameters (``cir.params``).
+                             parameters (``cir.parDefs``): the rows of the
+                             parameter-substitution table that may take the
+                             circuit's definition.
+    :param undefined_params: Names of undefined parameters (``cir.params``):
+                             rows that may take a spec or a user value.
     :param existing_text:    Instruction-file content, used to auto-increment
                              the result-variable name.
+    :param csv_dir:          The project ``csv/`` folder; its spec CSVs are
+                             offered as the source of 'specs' values.
+    :param pardefs_preset:   The "Set all to" preset the table opens in
+                             (``par_source_table.PRESETS``); None reads the
+                             user preference.
     """
 
     def __init__(self, cir_var: str = "cir", sources=(), detectors=(),
                  lgrefs=(), par_defs: dict | None = None,
                  undefined_params=(), existing_text: str = "", parent=None,
-                 circuits=()):
+                 circuits=(), csv_dir: str = "",
+                 pardefs_preset: str | None = None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit SLiCAP Instruction")
         self.setMinimumWidth(chars(self, 80))
@@ -161,6 +168,10 @@ class SLiCAPAnalysisDialog(QDialog):
         par_defs = {str(k): str(v) for k, v in (par_defs or {}).items()}
         param_names = list(par_defs.keys()) + [
             str(p) for p in undefined_params if str(p) not in par_defs]
+        self._csv_dir = csv_dir
+        if pardefs_preset is None:
+            from . import app_prefs
+            pardefs_preset = app_prefs.get_pardefs_preset()
 
         layout = QVBoxLayout(self)
 
@@ -277,29 +288,16 @@ class SLiCAPAnalysisDialog(QDialog):
                                    items=[str(i) for i in items])
         layout.addWidget(self._refs_box)
 
-        # ── 4. pardefs ────────────────────────────────────────────────────────
-        pd_box = QGroupBox("Parameter substitution (pardefs)")
-        pv = QVBoxLayout(pd_box)
-        prow = QHBoxLayout()
-        self._pd_group = QButtonGroup(self)
-        for i, text in enumerate(("None", "'circuit'", "Custom dict")):
-            rb = QRadioButton(text)
-            self._pd_group.addButton(rb, i)
-            prow.addWidget(rb)
-            if i == 0:
-                rb.setChecked(True)
-        prow.addStretch(1)
-        pv.addLayout(prow)
-        self._pd_table = ParamTable(
-            "Custom definitions", key_candidates=param_names,
-            load_values=par_defs,
-            hint="These definitions replace the circuit definitions — "
-                 "parameters not listed stay symbolic.")
-        self._pd_table.setVisible(False)
-        self._pd_table.changed.connect(self._update)
-        pv.addWidget(self._pd_table)
-        self._pd_group.idClicked.connect(self._on_pardefs_mode)
-        layout.addWidget(pd_box)
+        # ── 4. pardefs: where each parameter takes its value from ─────────
+        # (par_source_table; SLNG.md "Instruction files, the main script and
+        # selectPars()", 2026-11-01)
+        from pathlib import Path
+        from .design_data_panel import find_spec_csvs
+        spec_files = [p.name for p in find_spec_csvs(Path(csv_dir))] if csv_dir else []
+        self._pd = ParSourceTable(par_defs, undefined_params, spec_files,
+                                  csv_dir, pardefs_preset)
+        self._pd.changed.connect(self._update)
+        layout.addWidget(self._pd)
 
         # ── 5./6. numeric + convtype ──────────────────────────────────────────
         orow = QHBoxLayout()
@@ -461,25 +459,12 @@ class SLiCAPAnalysisDialog(QDialog):
         if convtype is not None:
             self._convtype.setCurrentText(str(convtype))
         self._use_submatrix.setChecked(bool(lit(kw.get("use_submatrix"), False)))
-        pardefs = lit(kw.get("pardefs"), "__absent__")
-        if pardefs == "circuit":
-            mode = 1
-        elif isinstance(pardefs, dict):
-            mode = 2
-            self._pd_table.set_entries(pardefs)
-        else:
-            mode = 0
-        self._pd_group.button(mode).setChecked(True)
-        self._on_pardefs_mode(mode)
+        self._pd.load_from_source(kw.get("pardefs"))
         self._numeric.setChecked(bool(lit(kw.get("numeric"), False)))
         self._step.set_from_dict(lit(kw.get("stepdict")))
         method = lit(kw.get("method"))
         self._method.setCurrentText(method if method in ("det", "state") else "default")
         self._result_var.setText(entry["name"])
-        self._update()
-
-    def _on_pardefs_mode(self, idx: int) -> None:
-        self._pd_table.setVisible(idx == 2)
         self._update()
 
     def _current_transfer(self) -> str | None:
@@ -545,7 +530,8 @@ class SLiCAPAnalysisDialog(QDialog):
             warn = "name already used — it will shadow the earlier result"
         self._name_warn.setText(warn)
 
-        if self._pd_group.checkedId() == 2 and not self._pd_table.is_valid():
+        self._pd.show_reason()
+        if not self._pd.is_valid():
             ok = False
         if not self._step.is_valid():
             ok = False
@@ -602,13 +588,9 @@ class SLiCAPAnalysisDialog(QDialog):
             parts.append(f"convtype='{ct}'")
         if self._use_submatrix.isEnabled() and self._use_submatrix.isChecked():
             parts.append("use_submatrix=True")
-        pd_mode = self._pd_group.checkedId()
-        if pd_mode == 1:
-            parts.append("pardefs='circuit'")
-        elif pd_mode == 2:
-            lit = self._pd_table.dict_literal()
-            if lit:
-                parts.append(f"pardefs={lit}")
+        pardefs = self._pd.emission(cirv)
+        if pardefs is not None:
+            parts.append(f"pardefs={pardefs}")
         if self._numeric.isChecked():
             parts.append("numeric=True")
         if rules.get("step", True):
@@ -620,4 +602,11 @@ class SLiCAPAnalysisDialog(QDialog):
             if m in ("det", "state"):
                 parts.append(f"method='{m}'")
 
-        return f"{res} = sl.{func}({', '.join([cirv] + parts)})"
+        line = f"{res} = sl.{func}({', '.join([cirv] + parts)})"
+        # the spec CSV is loaded ONCE per file into SPECS_<stem> (the snippet
+        # dialog's convention): the load line precedes the first instruction
+        # that reads it and is not repeated.
+        var = self._pd.spec_var()
+        if var and not re.search(r"^\s*" + re.escape(var) + r"\s*=", self._existing, re.M):
+            return f'{var} = sl.csv2specs("{self._pd.spec_file()}")\n{line}'
+        return line

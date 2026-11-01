@@ -166,3 +166,29 @@ def apply_color_scheme(app=None) -> None:
     except Exception:
         pass
 
+
+
+# ── instruction dialog: parameter substitution preset ─────────────────────────
+
+PARDEFS_PRESETS = ("specs", "circuit", "undefined")
+
+
+def get_pardefs_preset() -> str:
+    """The "Set all to" preset the SLiCAP instruction dialog opens in:
+    'specs' (specs first - the default: values a design script wrote to the
+    CSV reach the analysis without manual work), 'circuit' (circuit first)
+    or 'undefined' (all undefined).  Anton, 2026-11-01."""
+    cfg = _read()
+    try:
+        value = cfg["instruction"]["pardefs_preset"].strip().lower()
+    except KeyError:
+        return "specs"
+    return value if value in PARDEFS_PRESETS else "specs"
+
+
+def set_pardefs_preset(value: str) -> None:
+    cfg = _read()
+    if "instruction" not in cfg:
+        cfg["instruction"] = {}
+    cfg["instruction"]["pardefs_preset"] = value if value in PARDEFS_PRESETS else "specs"
+    _write(cfg)

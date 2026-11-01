@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from . import instr_file
+from .instr_file import spec_var_name
 
 # ── result-variable classification by producing function ────────────────────
 _PZ_FUNCS      = {"doPoles", "doZeros", "doPZ"}
@@ -77,11 +78,15 @@ _OBJECT_METHODS = [
 ]
 
 # Signature parameter → the input widget that supplies it. Parameters not
-# listed either need no widget (``circuitObject`` → ``cir``; ``name`` → the
-# always-present snippet-name field) or are left to their default (LaTeX
-# ``color``/``style``). A REQUIRED parameter must be renderable (see
-# _param_fragment); every method above satisfies that for both formatters.
+# listed either need no widget (``name`` → the always-present snippet-name
+# field) or are left to their default (LaTeX ``color``/``style``). A REQUIRED
+# parameter must be renderable (see _param_fragment); every method above
+# satisfies that for both formatters.
+# ``circuitObject`` was emitted as the LITERAL "cir" until 6.4.3 - an object
+# the inventory never confirmed (latest_bugs.md 2026-11-01). It is now a
+# non-editable pick from the circuit objects the instruction file defines.
 _PARAM_WIDGET = {
+    "circuitObject": "circuit",
     "resultObject": "result", "transferCoeffs": "result",
     "Iv": "result", "M": "result", "Dv": "result",
     "LHS": "lhs", "RHS": "expr", "expr": "expr",
@@ -136,15 +141,6 @@ def _q(text: str) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def _ident(text: str, fallback: str = "specs") -> str:
-    """A valid Python identifier from arbitrary text (spec-file stem →
-    variable-name fragment)."""
-    import re
-    stem = re.sub(r"\W", "_", text.strip()).strip("_") or fallback
-    if stem[0].isdigit():
-        stem = "_" + stem
-    return stem
-
 
 # Snippets are ASSIGNED so they appear as named objects in the Design data
 # panel via the run manifest. The variable name IS the user's snippet name;
@@ -168,6 +164,7 @@ class SnippetDialog(QDialog):
         self._csv_dir = csv_dir
         self._calls = [c for c in instr_file.parse_calls(instr_text)
                        if c["assigned"]]
+        self._circuits = [c["name"] for c in instr_file.circuit_objects(instr_text)]
 
         # Methods this formatter actually implements (a format missing one just
         # doesn't offer it).
@@ -185,7 +182,7 @@ class SnippetDialog(QDialog):
         grid.addWidget(QLabel("Create"), row, 0)
         self.kind = QComboBox()
         self.kind.addItems([
-            "Text output (txt file + include)",
+            "Text output",
             "Snippet from a file",
             "Snippet from an object",
             "Specification table (from a CSV)",
@@ -200,12 +197,26 @@ class SnippetDialog(QDialog):
         grid.addWidget(self.source, row, 1); row += 1
         self.source.currentIndexChanged.connect(self._update_fields)
 
-        # result variable (editable: free typing stays possible)
+        # result variable: NOT editable - a snippet is composed only for a
+        # result the file defines, so that the inventory shown and the call
+        # emitted name the same object (the analysis dialog's rule of
+        # 2026-08-16; here since 2026-11-01)
         self._lbl_result = QLabel("Result")
         self.result = QComboBox()
-        self.result.setEditable(True)
         grid.addWidget(self._lbl_result, row, 0)
         grid.addWidget(self.result, row, 1); row += 1
+
+        # circuit object, for the formatter methods that take one
+        # (elementData, parDefs, params): the circuits the file defines
+        self._lbl_circuit = QLabel("Circuit")
+        self.circuit = QComboBox()
+        self.circuit.addItems(self._circuits)
+        self.circuit.setToolTip(
+            "A circuit object the instruction file defines with "
+            "sl.makeCircuit(). None here: add one with Instruction -> "
+            "Create circuit object... first.")
+        grid.addWidget(self._lbl_circuit, row, 0)
+        grid.addWidget(self.circuit, row, 1); row += 1
 
         # kind 4 (specs): spec CSV file + specType
         self._lbl_spec_file = QLabel("Spec file")
@@ -310,7 +321,8 @@ class SnippetDialog(QDialog):
         outer.addWidget(self._buttons)
 
         self.name.textChanged.connect(self._validate)
-        self.result.editTextChanged.connect(self._validate)
+        self.result.currentTextChanged.connect(self._validate)
+        self.circuit.currentTextChanged.connect(self._validate)
         self.expr.editTextChanged.connect(self._validate)
         self.path.textChanged.connect(self._validate)
         self.spec_file.currentTextChanged.connect(self._validate)
@@ -416,6 +428,7 @@ class SnippetDialog(QDialog):
 
         vis = {
             "result":   (self._lbl_result, self.result),
+            "circuit":  (self._lbl_circuit, self.circuit),
             "expr":     (self._lbl_expr, self.expr),
             "lhs":      (self._lbl_lhs, self.lhs),
             "units":    (self._lbl_units, self.units),
@@ -443,7 +456,7 @@ class SnippetDialog(QDialog):
             self.result.clear()
             self.result.addItems(items)
             if cur in items:
-                self.result.setEditText(cur)
+                self.result.setCurrentText(cur)
         if "expr" in show:
             cur = self.expr.currentText()
             items = self._expr_candidates()
@@ -472,6 +485,8 @@ class SnippetDialog(QDialog):
             fields = self._fields_for(self._current_entry()[0])
             if "result" in fields:
                 ok = ok and bool(self.result.currentText().strip())
+            if "circuit" in fields:
+                ok = ok and bool(self.circuit.currentText().strip())
             if "expr" in fields:
                 ok = ok and bool(self.expr.currentText().strip())
         else:  # KIND_SPECS
@@ -497,7 +512,7 @@ class SnippetDialog(QDialog):
         it (empty optional, or a parameter left to its default)."""
         res = self.result.currentText().strip()
         if pname == "circuitObject":
-            return ("pos", "cir")
+            return ("pos", self.circuit.currentText().strip())
         if pname == "resultObject":
             return ("pos", res)
         if pname == "transferCoeffs":
@@ -524,7 +539,7 @@ class SnippetDialog(QDialog):
         if pname == "language":
             val = self.language.currentText().strip()
             return ("kw", f"language={_q(val)}") if val else None
-        return None            # circuitObject handled above; color/style default
+        return None            # color/style: left to their defaults
 
     def _emit_call(self, method: str, name: str) -> str:
         """A ``<name> = <var>.<method>(…).save(…)`` line, arguments and the
@@ -571,7 +586,7 @@ class SnippetDialog(QDialog):
         else:  # KIND_SPECS
             lines = self._init_lines(need_txt=False)
             fname = self.spec_file.currentText().strip()
-            specs_var = f"SPECS_{_ident(fname.rsplit('.', 1)[0])}"
+            specs_var = spec_var_name(fname)
             load = f'{specs_var} = sl.csv2specs({_q(fname)})'
             if load not in self._instr_text:
                 lines.append(load)

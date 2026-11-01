@@ -3,9 +3,10 @@ SPEC", 2026-07-15).
 
 A pure CSV editor: it reads a spec CSV with ``csv2specs`` and writes it with
 ``specs2csv`` (the core functions are the only builders). It emits NOTHING
-into the instruction file — assigning specs to a circuit (``specs2circuit``)
-lives in the user's design-step scripts, per command, per Anton's
-iterative-flow decision.
+into the instruction file.  Spec values reach an analysis per instruction,
+through ``pardefs=sl.selectPars(...)`` composed in the analysis dialog
+(SLNG.md "Instruction files, the main script and selectPars()",
+2026-11-01); ``specs2circuit`` stays a function for the user's main script.
 
 The value field takes any SLiCAP expression, validated with
 ``_checkExpression`` on OK (empty allowed — a spec without an assigned value

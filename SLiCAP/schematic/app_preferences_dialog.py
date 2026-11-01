@@ -113,6 +113,22 @@ class AppPreferencesDialog(QDialog):
         df.addRow("Colour scheme:", self._scheme)
         lay.addWidget(disp)
 
+        # -- Instruction dialog: the preset the parameter-substitution table
+        #    opens in (par_source_table.PRESETS; Anton, 2026-11-01) ---------
+        from .par_source_table import PRESETS
+        instr = QGroupBox("Instruction dialog")
+        inf = QFormLayout(instr)
+        self._pardefs_preset = QComboBox()
+        for key, label in PRESETS.items():
+            self._pardefs_preset.addItem(label, key)
+        self._pardefs_preset.setCurrentIndex(
+            self._pardefs_preset.findData(app_prefs.get_pardefs_preset()))
+        self._pardefs_preset.setToolTip(
+            "Where the parameters of a new SLiCAP instruction take their "
+            "values from, before you change single rows.")
+        inf.addRow("Parameter substitution, set all to:", self._pardefs_preset)
+        lay.addWidget(instr)
+
         # ── Design data panel: visible object kinds ────────────────────────
         dd = QGroupBox("Design data panel — visible object types")
         grid = QGridLayout(dd)
@@ -234,6 +250,7 @@ class AppPreferencesDialog(QDialog):
         """Persist the choices to the user ini (~/SLiCAP_gui.ini)."""
         app_prefs.set_color_scheme(self._scheme.currentText())
         app_prefs.apply_color_scheme()
+        app_prefs.set_pardefs_preset(self._pardefs_preset.currentData())
         app_prefs.set_visible_kinds(
             [k for k, cb in self._kind_boxes.items() if cb.isChecked()])
         if not self._had_project:

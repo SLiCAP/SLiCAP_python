@@ -21,6 +21,50 @@ directly.  The editor generates a small ``main.py`` beside it that calls
 itself stays import-safe: it has no side effects of its own and can be reused
 from another script.
 
+The main script
+===============
+
+A design is more than its analyses. Between two analyses a designer computes:
+the compensation capacitance from the poles of the uncompensated loop gain,
+the bias current from a noise budget. That computation needs sympy or numpy
+and belongs in a Python file written in your own editor. The environment
+divides the work so that every file has one owner:
+
+* **Instruction files** are generated and edited by the GUI. Each one is a
+  self-contained step: it creates its own circuit object, loads the
+  specifications it needs, runs its instructions and makes its plots and
+  snippets. It does not import another instruction file.
+* **The main script** is yours, in any editor. It calls ``sl.initProject()``
+  once, imports the instruction files in order, computes between them, and
+  writes the values it finds into the specification CSV with
+  ``sl.specs2csv()``. The ``main.py`` the editor generates is the trivial
+  form of this script: one import.
+* **The specification CSV** is the handover. The main script writes it, the
+  next instruction file reads it.
+
+A GUI-generated instruction therefore refers only to objects defined
+earlier in the same file. Its analysis inputs are schematics and
+specification CSV files, nothing else. Results leave an instruction file by
+``import``; values enter it per instruction, through the parameter
+substitution described below. Compose an instruction file after the main
+script has run through the previous step, so that every specification it
+needs is in the CSV.
+
+.. code-block:: python
+
+   # main.py, written by the designer
+   import SLiCAP as sl
+   sl.initProject("Compensated amplifier")
+   specs = [sl.specItem("R_s", "source resistance", "50", "Ohm", "Interface"),
+            sl.specItem("C_L", "load capacitance", "10p", "F", "Interface")]
+   sl.specs2csv(specs, "specs.csv")      # the initial specifications
+   import step1                          # LG1: the uncompensated loop gain
+   C_f = design_equation(step1.LG1)      # your sympy work
+   specs = sl.csv2specs("specs.csv")
+   specs.append(sl.specItem("C_f", "compensation", C_f, "F", "Design"))
+   sl.specs2csv(specs, "specs.csv")
+   import step2                          # LG2: C_f taken from the specifications
+
 Circuit objects
 ===============
 
@@ -97,6 +141,53 @@ The restriction applies to the *editor*, not to the file: a hand-written
 instruction file may mix circuits and instructions of any number of schematics
 in any order, and it will run exactly as written.
 
+.. _parameter-substitution:
+
+Parameter substitution
+----------------------
+
+The **Parameter substitution** group lists every parameter of the circuit,
+defined and undefined, one row each, and asks where the analysis takes its
+value from:
+
+* **undefined**: nothing is substituted. The element keeps its value
+  attribute, ``C_f`` stays ``C_f`` in the result. This is ``pardefs=None``.
+  A circuit definition ``C_f = 0`` is a definition like any other, so
+  choosing *undefined* is the way to keep a parameter symbolic.
+* **circuit**: the definition from the schematic, read when the instruction
+  runs. Offered only where the circuit defines the parameter. The value is
+  shown next to the button.
+* **specs**: the value of the specification with the same symbol in the
+  **Spec file** chosen above the table, read when the instruction runs, so a
+  value your main script writes later is used. Offered only where that CSV
+  has the symbol with a value.
+* **user**: a value typed in the row. Always offered. A row set to *user*
+  without a value blocks **Add instruction** and says why.
+
+**Set all to** applies one choice to every row at once. *specs first* takes
+the specification where there is one, else the circuit definition, else
+leaves the parameter undefined. *circuit first* takes the circuit definition
+where there is one. *all undefined* clears every substitution. The dialog
+opens in the preset chosen under :menuselection:`File --> Preferences...`,
+*specs first* unless you change it. Single rows are changed afterwards.
+
+The emitted call stays short where it can. All rows undefined: no
+``pardefs`` argument. Every defined parameter from the circuit and nothing
+else: ``pardefs='circuit'``. Any other selection:
+
+.. code-block:: python
+
+   SPECS_specs = sl.csv2specs("specs.csv")
+   LG2 = sl.doLaplace(cir, transfer='loopgain', lgref='E1',
+                      pardefs=sl.selectPars(cir, SPECS_specs, circuit=["R_s", "C_L"], specs=["C_f"]))
+
+The CSV is loaded once per instruction file, into ``SPECS_<file stem>``.
+``selectPars()`` reads the circuit definitions and the specification values
+when it runs and raises an error that names the parameter when a
+specification has disappeared or lost its value. See `selectPars()
+<../../API/userguide/analysis.html#the-parameter-definitions>`_ in the API
+manual.
+
 Editing an existing instruction
 ===============================
 
@@ -123,6 +214,21 @@ applies to included libraries only; a model in PSpice syntax inside the
 circuit needs PSpice together with "whole netlist", which becomes
 ``behavior="psa"`` in the instruction file.  See `Compatibility mode
 <../../API/userguide/ngspice.html#compatibility-mode>`_ in the API manual.
+
+The **Circuit parameters** group is the parameter table described under
+:ref:`parameter-substitution`, with the same presets and the same preference.
+*circuit* means the ``.param`` definitions that the netlist export wrote from
+the schematic's parameter table. There is no *undefined* position, because
+NGspice cannot run with an undefined parameter. When every parameter keeps
+its circuit definition the call has no ``params`` argument. Otherwise the
+dialog writes the same call as for SLiCAP, with the circuit name in place of
+the circuit object:
+
+.. code-block:: python
+
+   SPECS_specs = sl.csv2specs("specs.csv")
+   AC1 = sl.ac("amp", "dec", 20, 1, 1e9,
+               params=sl.selectPars("amp", SPECS_specs, circuit=["R_s"], specs=["C_f"]))
 
 The **NGspice options** table sets simulator options for this instruction
 only: convergence aids, tolerances, iteration limits, the integration method.

@@ -2,10 +2,11 @@
 
 Two modes (see SLNG.md — "one shared widget, two modes"):
 
-- **dict mode** (SLiCAP ``pardefs=``): row order irrelevant (substitution is
-  recursive).  Optional "Load circuit definitions" button.  Emits a Python
-  dict literal.  A pardefs dict *replaces* the circuit parameter definitions,
-  so parameters not listed stay symbolic.
+- **dict mode** (NGspice ``options=``): row order irrelevant.  Emits a
+  Python dict literal.  (Until 6.4.4 the SLiCAP ``pardefs=`` table too, with
+  a "Load circuit definitions" button that copied VALUES into the file; the
+  SLiCAP dialog now selects the SOURCE per parameter in
+  ``par_source_table.ParSourceTable``, so the button was REMOVED.)
 - **ordered mode** (NGspice ``params=``): row order is significant — SPICE
   evaluates ``.param`` lines non-recursively, so every parameter must be
   numerically evaluable when defined.  Up/Down reorder buttons.  Emits a
@@ -61,16 +62,14 @@ class ParamTable(QGroupBox):
     changed = Signal()
 
     def __init__(self, title: str, key_candidates=(), ordered: bool = False,
-                 load_values: dict | None = None, hint: str = "",
-                 checkable: bool = False, allow_empty: bool = False,
-                 parent=None):
+                 hint: str = "", checkable: bool = False,
+                 allow_empty: bool = False, parent=None):
         """*allow_empty*: a row with a name and no value is valid and is
         emitted as ``None`` (an NGspice option flag such as ``noopiter``)."""
         super().__init__(title, parent)
         self._candidates = [str(k) for k in key_candidates]
         self._ordered = bool(ordered)
         self._allow_empty = bool(allow_empty)
-        self._load_values = dict(load_values) if load_values else None
         if checkable:
             self.setCheckable(True)
             self.setChecked(False)
@@ -103,10 +102,6 @@ class ParamTable(QGroupBox):
             down_btn.clicked.connect(lambda: self._move(+1))
             btn_row.addWidget(up_btn)
             btn_row.addWidget(down_btn)
-        if self._load_values is not None:
-            load_btn = QPushButton("Load circuit definitions")
-            load_btn.clicked.connect(self._load)
-            btn_row.addWidget(load_btn)
         btn_row.addStretch(1)
         outer.addLayout(btn_row)
 
@@ -193,12 +188,6 @@ class ParamTable(QGroupBox):
         self._set_row(r, *b)
         self._set_row(t, *a)
         self._table.setCurrentCell(t, max(self._table.currentColumn(), 0))
-        self.changed.emit()
-
-    def _load(self) -> None:
-        self._table.setRowCount(0)
-        for name, value in (self._load_values or {}).items():
-            self.add_row(name, value)
         self.changed.emit()
 
     # ── state & validation ────────────────────────────────────────────────────

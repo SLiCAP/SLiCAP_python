@@ -130,6 +130,23 @@ The output below, shows the circuit parameters. The parameter definitions includ
     sigma_R
     I_D            
 
+Select specifications per instruction
+=====================================
+
+`specs2circuit() <../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.specs2circuit>`__ assigns every specification that has a value to the circuit. An analysis in which some parameters must stay symbolic, or in which one parameter takes the value from the specifications and another the definition from the circuit, selects its parameters per instruction with `selectPars() <../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.selectPars>`__. The function returns the dictionary for the ``pardefs`` argument of the instruction, see `The parameter definitions <analysis.html#the-parameter-definitions>`_.
+
+.. code-block:: python
+
+    # The uncompensated amplifier: C_f takes the circuit definition (zero)
+    LG1 = sl.doLaplace(cir, transfer="loopgain", lgref="E1",
+                       pardefs=sl.selectPars(cir, specs, circuit="all"))
+    # The compensated amplifier: C_f takes the value a design script wrote
+    # to the specifications; the other parameters keep the circuit definitions
+    LG2 = sl.doLaplace(cir, transfer="loopgain", lgref="E1",
+                       pardefs=sl.selectPars(cir, specs, circuit=["R_s", "C_L"], specs=["C_f"]))
+
+The circuit definitions and the specification values are read when the instruction runs. A parameter named under two sources, a circuit parameter without a definition, or a specification without a value raises an error that names the parameter.
+
 Display tables with specifications in LaTeX documents and on HTML pages
 =======================================================================
     

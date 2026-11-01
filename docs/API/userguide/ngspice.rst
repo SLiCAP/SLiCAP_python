@@ -23,7 +23,7 @@ One function per NGspice analysis runs the simulation and returns a result objec
 All of them accept:
 
 - ``step``: a parameter step dictionary, ``{"param": "C_c", "method": "lin", "start": "2p", "stop": "20p", "num": 10}``, with method ``"lin"``, ``"log"`` or ``"list"`` (``"values": [...]``); the temperature is stepped with ``"param": "TEMP"``.
-- ``params``: an ordered list of ``(name, value)`` parameter definitions for this run only, overriding the values on the schematic.
+- ``params``: parameter definitions for this run only, overriding the values on the schematic: an ordered list of ``(name, value)`` pairs, or the dictionary returned by `selectPars() <../reference/SLiCAPdesignData.html#SLiCAP.SLiCAPdesignData.selectPars>`__ with the circuit given by its file name, ``params=sl.selectPars("amp", specs, specs=["C_f"])``. The definitions are applied in order.
 - ``stimuli``: another stimulus for an independent source for this run only, e.g. ``{"V1": ["SIN", 0, "{V_p}", "100k"]}``.
 
 Numbers are written in SLiCAP notation (``"10M"``, ``"2p"``), not in NGspice notation (``10MEG``).
