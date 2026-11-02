@@ -295,6 +295,23 @@ Version 6.4.4
    + include)" is called "Text output". The manual has a page on snippets
    that explains the two lines it emits.
 
+Version 6.4.5
+-------------
+
+#. **Bug fix: crash after the net-name dialog.** Joining two named nets
+   and choosing the name could end in a segmentation fault at the next
+   repaint, not every time. The wire that lost its name hid its label, and
+   the label is part of the wire's bounding rectangle. The change was not
+   announced to the scene index, so when the merge that follows removed
+   that wire, a stale entry stayed behind. The wire now announces every
+   label change before it happens.
+
+#. **Bug fix: a chosen net name could disappear.** When the connecting
+   wire lay exactly over the segment that carried the chosen name, the
+   duplicate removal dropped whichever segment came second, the owner
+   included, and the net had no name left. The segment that carries a name
+   is now the one that stays.
+
 SLiCAP version 6.3 release notes
 ================================
 

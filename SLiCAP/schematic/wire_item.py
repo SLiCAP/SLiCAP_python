@@ -233,6 +233,15 @@ class WireItem(QGraphicsPathItem):
         ``_dc_net``, Anton 2026-07-12) — display-only, never persisted, so
         an unnamed net shows its auto number after netlisting/refresh."""
         name = self.net_name or self._dc_net
+        # boundingRect() unites the VISIBLE label, so showing, hiding or
+        # re-texting it changes this item's geometry: announce it first.
+        # Without this the scene index kept the old rectangle; when the
+        # wire was then removed (a merge after a net-name conflict), the
+        # index was cleaned under the new rectangle only and a dangling
+        # entry stayed under the old one - a segfault at the next repaint
+        # (Anton, 2026-11-02; the 2026-10-10 rule: announce BEFORE the state
+        # that boundingRect reads changes).
+        self.prepareGeometryChange()
         if self.display_name and name:
             if self._net_label is None:
                 self._net_label = _NetLabel(self)
@@ -260,6 +269,7 @@ class WireItem(QGraphicsPathItem):
         2026-07-12 after the live check); None keeps the last known one."""
         if net is not None:
             self._dc_net = net
+        self.prepareGeometryChange()        # the label is part of boundingRect()
         if self.show_dc_voltage:
             if self._dc_label is None:
                 self._dc_label = _DCLabel(self)

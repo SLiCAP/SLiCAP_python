@@ -2132,6 +2132,10 @@ class SchematicScene(QGraphicsScene):
             }
 
             # ── Phase 1: remove exact duplicates (straight segments only) ─────
+            # The survivor carries the net annotation: a wire drawn or dragged
+            # onto the owner of a name must not take the name with it when
+            # the duplicate goes (Anton, 2026-11-02: after choosing a name in
+            # the conflict dialog, no owner was left).
             canonical: dict[tuple, object] = {}
             for w in wires:
                 if len(w.points) != 2:
@@ -2140,6 +2144,9 @@ class SchematicScene(QGraphicsScene):
                 kn = _pt_key(w.points[-1])
                 key = (min(k0, kn), max(k0, kn))
                 if key in canonical:
+                    keep = canonical[key]
+                    if (w.net_locked or w.net_name) and not (keep.net_locked or keep.net_name):
+                        keep, w = w, keep
                     self.removeItem(w)
                     changed = True
                     break
