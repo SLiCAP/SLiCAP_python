@@ -200,9 +200,24 @@ behind your back.
 NGspice schematics
 ==================
 
-NGspice schematics have no circuit object: they reference the exported netlist
-by name, so :menuselection:`Instruction --> Create / edit NGspice instruction…`
-composes its call directly, and
+NGspice schematics have no circuit object. Their netlist step is a bare
+line:
+
+.. code-block:: python
+
+   sl.makeCircuit("sch/myAmp.spice_sch")
+
+It writes ``cir/myAmp.spice_cir``, and the instructions name the circuit:
+``sl.op("myAmp")`` runs that file as it is. :menuselection:`Instruction -->
+Create netlist…` on the schematic's own tab appends the line, once per
+schematic. An NGspice instruction or control section can only be added
+when the instruction file has that line, as a SLiCAP instruction needs a
+circuit object; the editor says so otherwise. A netlist left in ``cir/`` by
+an earlier session does not count: the file, not the disk, says which
+netlists the run makes.
+
+:menuselection:`Instruction --> Create / edit NGspice instruction…`
+composes the call, and
 :menuselection:`Instruction --> Create / edit NGspice control section…`
 adds a ``.control`` block.  Everything above about the instruction file, the
 append-only editing and running through ``main.py`` applies unchanged.
@@ -217,9 +232,15 @@ circuit needs PSpice together with "whole netlist", which becomes
 
 The **Circuit parameters** group is the parameter table described under
 :ref:`parameter-substitution`, with the same presets and the same preference.
-*circuit* means the ``.param`` definitions that the netlist export wrote from
-the schematic's parameter table. There is no *undefined* position, because
-NGspice cannot run with an undefined parameter. When every parameter keeps
+It lists every parameter the netlist needs: the ``.param`` definitions and
+every name used in an element value, a source stimulus or the expression of
+a ``.param``. *circuit* means the ``.param`` definitions that the netlist
+export wrote from the schematic's parameter table; a parameter the netlist
+uses without defining it has no *circuit* position and takes its value from
+the specs, else from you. There is no *undefined* position, because NGspice
+cannot run with an undefined parameter: the dialog does not add the
+instruction while a parameter has no value, and the run stops before NGspice
+starts when the deck still lacks one. When every parameter keeps
 its circuit definition the call has no ``params`` argument. Otherwise the
 dialog writes the same call as for SLiCAP, with the circuit name in place of
 the circuit object:

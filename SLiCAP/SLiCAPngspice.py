@@ -597,7 +597,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
     """
     Creates a dictionary with values or traces from an ngspice run.
 
-    :param cirFile: Name of the circuit file withouit '.cir' extension, located
+    :param cirFile: Name of the circuit (netlist cir/<name>.spice_cir or cir/<name>.cir), located
                     in the cir folder.
 
     :type cirFile: str
@@ -720,7 +720,7 @@ def ngspice2traces(cirFile, simCmd, namesDict, stepCmd=None, parList=None,
             mode = mode.lower()
         labels = {}
         simType = simCmd.split()[0].lower()
-        with open(ini.cir_path + cirFile + '.cir', 'r') as f:
+        with open(_netlist_path(cirFile), 'r') as f:
             netlistlines = f.readlines()
         netlist = ""
         for line in netlistlines:
@@ -1598,10 +1598,10 @@ def _sim_files(cirFile):
 
 def _run_raw(cirFile, control_section, behavior, timeout,
              instr_params=None, stimuli=None, savecurrents=False):
-    """Append control_section to cirFile.cir, run NGspice; return True on success.
+    """Append control_section to the netlist, run NGspice; return True on success.
 
     Writes ONE self-contained ngspice deck ``<cir_path>/<cirFile>.sp``: the
-    ``<cirFile>.cir`` netlist followed by the analysis ``.control`` section
+    netlist (:func:`_netlist_path`) followed by the analysis ``.control`` section
     (which sits at the end and does not affect the netlist above it).  It is
     regenerated on every run and doubles as the GUI's "Export NGspice Netlist"
     file — one file is enough.  The sibling ``.log`` (ngspice ``-o``) and
@@ -1612,7 +1612,7 @@ def _run_raw(cirFile, control_section, behavior, timeout,
     """
     sim_file, log_file, stdout_file = _sim_files(cirFile)
 
-    with open(ini.cir_path + cirFile + '.cir', 'r') as f:
+    with open(_netlist_path(cirFile), 'r') as f:
         netlist = f.read()
     stripped = "\n".join(l for l in netlist.splitlines()
                          if l.strip().upper() != '.END')
@@ -1620,6 +1620,7 @@ def _run_raw(cirFile, control_section, behavior, timeout,
         stripped = _apply_instr_params(stripped, instr_params)
     if stimuli:
         stripped = _apply_stimuli(stripped, stimuli)
+    _check_param_defs(stripped)
     if savecurrents:
         # Device currents, including those inside subcircuits (@r.x1.r1[i]).
         # It must be set when the circuit is PARSED: "set savecurrents" in the
@@ -1840,22 +1841,86 @@ def _get_param_defs(netlist: str) -> dict:
     return defs
 
 
+# Words that look like parameters in a brace expression but are not: the
+# constants and the simulator variables NGspice resolves itself.
+_NOT_A_PARAM = {"pi", "e", "temper", "time", "hertz", "true", "false"}
+_IDENT = re.compile(r'(?<![\w.])([A-Za-z_]\w*)\b(?!\s*\()')
+
+
+def _expression_params(text: str) -> list[str]:
+    """The parameter names an NGspice expression refers to, in order of
+    appearance: identifiers that are not function calls (``sqrt(``), not
+    numbers with a scale factor (``2meg``, ``1e-9``) and not the words of
+    :data:`_NOT_A_PARAM`."""
+    out = []
+    for name in _IDENT.findall(text):
+        if name.lower() in _NOT_A_PARAM or name in out:
+            continue
+        out.append(name)
+    return out
+
+
 def _get_param_names(netlist: str) -> list[str]:
-    """The ``.param`` names of an NGspice netlist text, in definition order
-    (the keys of :func:`_get_param_defs`)."""
-    return list(_get_param_defs(netlist))
+    """Every parameter the NGspice netlist text NEEDS a definition for, in
+    order of appearance: the ``.param`` names, and every name used in a
+    ``{...}`` expression of an element line or in the expression of a
+    ``.param`` definition (``.param V_p = {2*V_x}`` needs ``V_x``).
+
+    NGspice runs only when all of them are defined, so the GUI lists all
+    of them, not only the ``.param`` names (Anton, 2026-11-07: a schematic
+    with ``R1 out 1 {R_s}`` and no ``.param`` showed an empty table); a name
+    without a ``.param`` must come from the specs or the user."""
+    defs = _get_param_defs(netlist)
+    names = list(defs)
+    lines = []
+    for raw in netlist.splitlines():
+        s = raw.strip()
+        if s.startswith('+') and lines:
+            lines[-1] += ' ' + s[1:].strip()
+        else:
+            lines.append(s)
+    for line in lines:
+        if line.startswith('*'):
+            continue
+        texts = re.findall(r'\{([^}]*)\}', line)
+        if line.lower().startswith('.param'):
+            texts += [v for _, v in _PARDEF.findall(line[len('.param'):])
+                      if not v.startswith('{')]
+        for text in texts:
+            for name in _expression_params(text):
+                if name not in names:
+                    names.append(name)
+    return names
+
+
+def _check_param_defs(netlist: str) -> None:
+    """Raise ``ValueError`` naming every parameter the deck uses without a
+    ``.param`` definition: NGspice stops on the first one with a message
+    in its log, this says all of them before the run, with the fix
+    (Anton, 2026-11-07: an automatic check needs the definitions too).
+    Called on the deck AS RUN, after the ``params=`` and ``stimuli=`` of
+    the instruction are applied."""
+    defs = _get_param_defs(netlist)
+    missing = [n for n in _get_param_names(netlist) if n not in defs]
+    if missing:
+        raise ValueError(
+            "Undefined circuit parameter(s): {0}. NGspice needs a value for "
+            "each: a .param in the schematic, or params=sl.selectPars(...) "
+            "with the name under specs= or user=.".format(", ".join(missing)))
 
 
 def make_netlist(filename, title=None, force=False):
-    """Generate a program netlist (``.cir``) from a schematic file.
+    """Generate a program netlist from a schematic file.
 
     Calls the ``SLiCAP.schematic.cli`` tool in a subprocess (headless Qt).
-    When *force* is False the subprocess is skipped if the ``.cir`` is
+    When *force* is False the subprocess is skipped if the netlist is
     already newer than the schematic and its style sidecar.
-    The file extension determines which builder is used:
+    The file extension determines which builder is used and the extension
+    of the netlist (Anton, 2026-11-07):
 
-    - ``.spice_sch`` → NGspice plain netlist (no ``.control`` section)
-    - ``.slicap_sch`` → SLiCAP netlist
+    - ``.spice_sch`` → NGspice plain netlist ``cir/<stem>.spice_cir``
+      (no ``.control`` section)
+    - ``.slicap_sch`` → SLiCAP netlist ``cir/<stem>.slicap_cir``
 
     :param filename: Schematic filename **with extension**, relative to
                      ``ini.schematic_path`` (e.g. ``"VampQspice.spice_sch"``).
@@ -1865,7 +1930,7 @@ def make_netlist(filename, title=None, force=False):
                   schematic or, if empty, to the file stem.
     :type title: str, NoneType
 
-    :returns: ``Path`` to the generated ``.cir`` file, or ``None`` on failure.
+    :returns: ``Path`` to the generated netlist file, or ``None`` on failure.
     :rtype: pathlib.Path, NoneType
     """
     import sys
@@ -1876,10 +1941,12 @@ def make_netlist(filename, title=None, force=False):
         print(f"make_netlist: schematic not found: {sch_path}")
         return None
 
-    cir_path = Path(ini.cir_path) / (sch_path.stem + ".cir")
+    ext = (".spice_cir" if sch_path.suffix.lower() == ".spice_sch"
+           else ".slicap_cir")
+    cir_path = Path(ini.cir_path) / (sch_path.stem + ext)
 
-    # Skip the subprocess when the netlist is already current — the .cir is
-    # newer than the schematic AND its style sidecar. Opening the NGspice
+    # Skip the subprocess when the netlist is already current — the netlist
+    # is newer than the schematic AND its style sidecar. Opening the NGspice
     # instruction dialog on an unchanged schematic then costs no cold
     # Python+Qt subprocess (Anton, 2026-07-16; mirrors make_schematic).
     if not force:
@@ -1911,9 +1978,9 @@ def make_netlist(filename, title=None, force=False):
 
 def _indep_source_refs(cirFile):
     """Reference designators of the independent sources (V, I) in the program
-    netlist ``<cirFile>.cir`` — used to populate ``circuit.indepVars``."""
+    netlist of circuit *cirFile* — used to populate ``circuit.indepVars``."""
     try:
-        lines = (Path(ini.cir_path) / (cirFile + ".cir")).read_text(
+        lines = _netlist_path(cirFile).read_text(
             encoding="utf-8").splitlines()
     except OSError:
         return []
@@ -1987,7 +2054,7 @@ def _netlist_par_defs(cirFile, instr_params=None):
 
     definitions = {}
     try:
-        lines = (Path(ini.cir_path) / (cirFile + ".cir")).read_text(
+        lines = _netlist_path(cirFile).read_text(
             encoding="utf-8").splitlines()
     except OSError:
         lines = []
@@ -2177,7 +2244,7 @@ def op(cirFile, save=None, step=None, params=None, options=None,
     if ini.ngspice == "":
         print("NGspice not configured.")
         return {}
-    _ensure_netlist(cirFile)
+    cirFile = _netlist_stem(cirFile)
     step_param, step_vals = _step_values(step)
     # The op raw gets its OWN file name so operating-point data survives
     # later ac/tran/... runs of the same circuit (which overwrite
@@ -2259,7 +2326,7 @@ def dc(cirFile, source, start, stop, incr, save=None,
     if ini.ngspice == "":
         print("NGspice not configured.")
         return {}
-    _ensure_netlist(cirFile)
+    cirFile = _netlist_stem(cirFile)
     cmd = (f"dc {source} {_deck_number(start, 'start')} "
            f"{_deck_number(stop, 'stop')} "
            f"{_deck_number(incr, 'incr')}")
@@ -2345,7 +2412,7 @@ def ac(cirFile, method, n, fstart, fstop, save=None,
     if ini.ngspice == "":
         print("NGspice not configured.")
         return {}
-    _ensure_netlist(cirFile)
+    cirFile = _netlist_stem(cirFile)
     cmd = (f"ac {method} {_deck_number(n, 'n')} "
            f"{_deck_number(fstart, 'fstart')} "
            f"{_deck_number(fstop, 'fstop')}")
@@ -2372,27 +2439,54 @@ def ac(cirFile, method, n, fstart, fstop, save=None,
                                 step_param, step_vals, params=params)
 
 
-def _ensure_netlist(cirFile):
-    """Regenerate ``cir/<cirFile>.cir`` from the saved schematic when the
-    schematic file is NEWER — the sims run the .cir as-is, and without this
-    a stimulus edited in the GUI after the last netlist export would
-    silently not reach the simulation (Anton, 2026-07-12). No-op when no
-    schematic exists (hand-written netlists) or the .cir is up to date."""
-    cir = Path(ini.cir_path) / (cirFile + ".cir")
-    # One line per run says which netlist the simulation uses and where it
-    # came from, as makeCircuit reports "Checking netlist" for a SLiCAP
-    # circuit (Anton, 2026-09-28: an up-to-date NGspice netlist was used
-    # in silence). ASCII only: the Windows console.
-    for ext in (".spice_sch", ".slicap_sch"):
-        sch = Path(ini.schematic_path) / (cirFile + ext)
-        if sch.is_file():
-            if not cir.is_file() or sch.stat().st_mtime > cir.stat().st_mtime:
-                make_netlist(cirFile + ext)        # prints "Netlist --> ..."
-            else:
-                print("Netlist  --> {0} (up to date with {1})".format(
-                    cir, sch.name))
-            return
-    print("Netlist  --> {0} (no schematic; used as it is)".format(cir))
+_NETLIST_EXTS = (".spice_cir", ".cir")
+
+
+def _netlist_path(stem):
+    """The NGspice netlist of circuit *stem*: ``cir/<stem>.spice_cir``, the
+    netlist ``makeCircuit("sch/<stem>.spice_sch")`` writes, else the
+    hand-written ``cir/<stem>.cir``. ONE owner of the lookup rule; the
+    callers that read the netlist ask here.
+
+    The extension names the dialect (Anton, 2026-11-07): a SLiCAP schematic
+    of the same name writes cir/<stem>.slicap_cir, so the two never
+    overwrite each other. Regenerating the netlist inside an instruction
+    was REJECTED the same day: as with a SLiCAP circuit object, the netlist
+    is made by an explicit ``makeCircuit`` line of the instruction file,
+    and an instruction runs the file that line wrote."""
+    for ext in _NETLIST_EXTS:
+        path = Path(ini.cir_path) / (stem + ext)
+        if path.is_file():
+            return path
+    return Path(ini.cir_path) / (stem + _NETLIST_EXTS[0])
+
+
+def _netlist_stem(cirFile):
+    """The circuit *stem* of the ``cirFile`` argument of an NGspice
+    instruction: ``"x"``, ``"x.spice_cir"``, ``"cir/x.cir"`` all name the
+    circuit ``x``; the outputs of the run (``.sp``, ``.log``, ``_op.raw``,
+    csv) carry that stem. Checks that the netlist exists and prints which
+    file the run uses, as makeCircuit reports "Checking netlist" (Anton,
+    2026-09-28: a netlist was used in silence). ASCII only: the Windows
+    console."""
+    name = str(cirFile).replace("\\", "/").split("/")[-1]
+    for ext in _NETLIST_EXTS:
+        if name.lower().endswith(ext):
+            name = name[:-len(ext)]
+            break
+    else:
+        if "." in name and name.rsplit(".", 1)[1].lower() in ("spice_sch", "slicap_sch", "slicap_cir"):
+            raise ValueError(
+                "An NGspice instruction takes the circuit name or its netlist "
+                "(cir/<name>.spice_cir or cir/<name>.cir), not '{0}'. Create the "
+                "netlist first with makeCircuit('sch/<name>.spice_sch').".format(cirFile))
+    path = _netlist_path(name)
+    if not path.is_file():
+        raise FileNotFoundError(
+            "NGspice netlist not found: {0} (nor cir/{1}.cir). Create it first "
+            "with makeCircuit('sch/{1}.spice_sch').".format(path, name))
+    print("Netlist  --> {0}".format(path))
+    return name
 
 
 def _fourier_post_args(fourier):
@@ -2542,7 +2636,7 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
     if ini.ngspice == "":
         print("NGspice not configured.")
         return {}
-    _ensure_netlist(cirFile)
+    cirFile = _netlist_stem(cirFile)
     cmd = (f"tran {_deck_number(tstep, 'tstep')} "
            f"{_deck_number(tstop, 'tstop')} "
            f"{_deck_number(tstart, 'tstart')}")
@@ -2708,7 +2802,7 @@ def noise(cirFile, output, input_src, method, n, fstart, fstop, save=None,
     if ini.ngspice == "":
         print("NGspice not configured.")
         return {}
-    _ensure_netlist(cirFile)
+    cirFile = _netlist_stem(cirFile)
     cmd = (f"noise {output} {input_src} {method} {n} "
            f"{_deck_number(fstart, 'fstart')} "
            f"{_deck_number(fstop, 'fstop')}")
@@ -2784,7 +2878,7 @@ def ngspice_control(cirFile, control, params=None, stimuli=None,
     if ini.ngspice == "":
         print("NGspice not configured.")
         return False
-    _ensure_netlist(cirFile)
+    cirFile = _netlist_stem(cirFile)
     text = str(control)
     try:
         if Path(text).is_file():

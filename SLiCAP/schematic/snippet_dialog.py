@@ -79,9 +79,13 @@ _OBJECT_METHODS = [
 
 # Signature parameter → the input widget that supplies it. Parameters not
 # listed either need no widget (``name`` → the always-present snippet-name
-# field) or are left to their default (LaTeX ``color``/``style``). A REQUIRED
+# field) or are left to their default (LaTeX ``style``). A REQUIRED
 # parameter must be renderable (see _param_fragment); every method above
 # satisfies that for both formatters.
+# ``color`` was left to its default until 6.4.5; the row colour of the LaTeX
+# tables is now a pick (Anton, 2026-11-04, workshop request: switch it off
+# or use grey). The field follows the signature, so it shows only for the
+# methods that take ``color``, never for RST. ``style`` stays at its default.
 # ``circuitObject`` was emitted as the LITERAL "cir" until 6.4.3 - an object
 # the inventory never confirmed (latest_bugs.md 2026-11-01). It is now a
 # non-editable pick from the circuit objects the instruction file defines.
@@ -94,7 +98,15 @@ _PARAM_WIDGET = {
     "units": "units", "label": "label", "caption": "caption",
     "lineRange": "linerange", "firstNumber": "firstnumber",
     "language": "language", "multiline": "multiline",
+    "color": "color",
 }
+
+# Row colours of the LaTeX tables: the colours preambuleSLiCAP.tex defines,
+# plus "none" (``color=None``, no \rowcolor). The first entry is the
+# signature default and emits no argument.
+TABLE_COLOR_DEFAULT = "myyellow"
+TABLE_COLORS = (TABLE_COLOR_DEFAULT, "none", "mygray", "mygreen", "myblue",
+                "myred")
 
 
 class SnippetTarget:
@@ -260,6 +272,12 @@ class SnippetDialog(QDialog):
         grid.addWidget(self._lbl_caption, row, 0)
         grid.addWidget(self.caption, row, 1); row += 1
 
+        self._lbl_color = QLabel("Row colour")
+        self.color = QComboBox()
+        self.color.addItems(list(TABLE_COLORS))
+        grid.addWidget(self._lbl_color, row, 0)
+        grid.addWidget(self.color, row, 1); row += 1
+
         self.multiline = QCheckBox("Multiline equation")
         grid.addWidget(self.multiline, row, 1); row += 1
 
@@ -419,8 +437,9 @@ class SnippetDialog(QDialog):
         elif kind in (KIND_FILE, KIND_OBJECT):
             _, _, result_funcs = self._current_entry()
             show = self._fields_for(self._current_entry()[0])
-        else:  # KIND_SPECS
-            show = {"spec_file", "spec_type", "label", "caption"}
+        else:  # KIND_SPECS: label/caption, and color where the formatter
+            # has it (LaTeX) - from the signature, like the other kinds
+            show = {"spec_file", "spec_type"} | self._fields_for("specs")
 
         # the source (method) combo is meaningless for specs
         self._lbl_source.setVisible(kind != KIND_SPECS)
@@ -434,6 +453,7 @@ class SnippetDialog(QDialog):
             "units":    (self._lbl_units, self.units),
             "label":    (self._lbl_label, self.label),
             "caption":  (self._lbl_caption, self.caption),
+            "color":    (self._lbl_color, self.color),
             "multiline": (self.multiline,),
             "text":     (self._lbl_text, self.text_edit),
             "path":     (self._lbl_path, self.path.parentWidget()),
@@ -539,7 +559,13 @@ class SnippetDialog(QDialog):
         if pname == "language":
             val = self.language.currentText().strip()
             return ("kw", f"language={_q(val)}") if val else None
-        return None            # color/style: left to their defaults
+        if pname == "color":
+            val = self.color.currentText()
+            if val == TABLE_COLOR_DEFAULT:
+                return None                      # the signature default
+            return ("kw", "color=None" if val == "none"
+                    else f"color={_q(val)}")
+        return None            # style: left to its default
 
     def _emit_call(self, method: str, name: str) -> str:
         """A ``<name> = <var>.<method>(…).save(…)`` line, arguments and the
@@ -593,6 +619,10 @@ class SnippetDialog(QDialog):
             spectype = self.spec_type.currentText().strip()
             opts = kw("label", self.label.text()) + kw("caption",
                                                        self.caption.text())
+            if "color" in self._fields_for("specs"):
+                frag = self._param_fragment("color", name)
+                if frag is not None:
+                    opts += ", " + frag[1]
             lines.append(f"{name} = {var}.specs({specs_var}, "
                          f"{_q(spectype)}{opts}).save({_q(name)})")
         return "\n".join(lines) + "\n"

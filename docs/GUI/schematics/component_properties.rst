@@ -122,6 +122,23 @@ as :menuselection:`Circuit --> New subcircuit symbol…` does, so the netlist or
 ports is unchanged and other schematics of the project pick it up with
 :menuselection:`Tools --> Load symbols from library`.
 
+Source stimuli (NGspice)
+========================
+
+On NGspice schematics an independent voltage or current source has no
+parameter rows. Its stimuli are set in one place: the **View / Edit source
+stimuli…** button opens the **Source stimuli** dialog with three sections.
+
+* **DC** — the **DC VALUE** of the source. It serves every analysis, not
+  only the operating point.
+* **AC** — the small-signal magnitude and phase for an AC analysis.
+* **TRAN** — the transient waveform: PULSE, SIN, EXP, SFFM, AM, TRNOISE,
+  TRRANDOM or PWL, with the parameters of the chosen waveform.
+
+Each section has a **Show** check-box that places the section's values as
+a label on the canvas. A section that is switched off is left out of the
+netlist line.
+
 DC operating-point annotation (NGspice)
 =======================================
 

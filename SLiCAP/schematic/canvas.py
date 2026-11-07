@@ -14,7 +14,9 @@ from .config import (
     GRID_SIZE, GRID_MAJOR, DEFAULT_ZOOM, snap, snap_pos,
     Z_WIRE, Z_WIRE_DRAG,
 )
-from .component_item import ComponentItem, NODE_SYMBOLS, make_ghost, _discard_label, _PropertyLabel
+from .component_item import (ComponentItem, NODE_SYMBOLS, make_ghost,
+                             _discard_label, _PropertyLabel,
+                             migrate_source_value)
 from .wire_item import WireItem
 from .junction_item import JunctionItem
 from .free_text_item import FreeTextItem
@@ -2664,6 +2666,7 @@ class SchematicScene(QGraphicsScene):
                 missing.append(cd.symbol_name)
                 continue
             item = ComponentItem(sym, cd.instance_id)
+            prefix = sym.prefix or "X"
             item.setPos(QPointF(cd.x, cd.y))
             item.setRotation(cd.rotation)
             item.h_flip       = cd.h_flip
@@ -2685,11 +2688,16 @@ class SchematicScene(QGraphicsScene):
             if cd.symbol_name in ("0", "port"):
                 item.params.setdefault("name", "0" if cd.symbol_name == "0" else "")
                 item.prop_display.setdefault("name", (True, False))
+            # Sources of an NGspice schematic saved before 2026-11-07 carry
+            # the generic "value" next to the stimuli dialog's "dc".
+            if (getattr(self, "sch_type", "slicap") == "ngspice"
+                    and prefix in ("V", "I")):
+                migrate_source_value(item.params, item.prop_display,
+                                     item.prop_offsets)
             item.update_labels()
             self.addItem(item)
             # Keep counters above highest loaded number — keyed by PREFIX, to
             # match _next_id (otherwise X / M counters reset and refdes collide).
-            prefix = sym.prefix or "X"
             m = re.match(rf"^{re.escape(prefix)}(\d+)$", cd.instance_id)
             if m:
                 n = int(m.group(1))
@@ -3517,6 +3525,13 @@ class SchematicScene(QGraphicsScene):
         from .component_item import _PropertyLabel
         if isinstance(item, _PropertyLabel) and isinstance(item.parentItem(), ComponentItem):
             comp = item.parentItem()
+            if (getattr(self, "sch_type", "slicap") == "ngspice"
+                    and comp.prefix in ("V", "I")
+                    and item.prop_key in ("dc", "ac", "tran")):
+                # the stimuli of a source have one editor (Anton, 2026-11-07)
+                from .source_stimuli_dialog import edit_source_stimuli
+                edit_source_stimuli(comp, on_accept=self._push_undo)
+                return
             from .attribute_dialog import AttributeDialog
             dlg = AttributeDialog(comp, item.prop_key)
             if dlg.exec():

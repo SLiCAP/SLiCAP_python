@@ -8,12 +8,12 @@ import SLiCAP as sl
 
 fileName = "VampQspice"
 
-# Operating point: NGspice writes cir/VampQspice_op.raw, which the schematic
-# export reads for the bias annotations on the schematic
-OP = sl.op(fileName)
-
-# Netlist, schematic image with the bias annotations, and HTML circuit page
+# Netlist cir/VampQspice.spice_cir, schematic image and HTML circuit page
 netlist = sl.makeCircuit("sch/" + fileName + ".spice_sch")
+
+# Operating point: runs the netlist and writes cir/VampQspice_op.raw, which
+# the schematic export reads for the bias annotations on the schematic
+OP = sl.op(fileName)
 
 # Operating point information: the result holds every saved NGspice vector
 # under its NGspice name; pick the ones of interest under names of your own

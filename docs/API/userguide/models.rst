@@ -137,7 +137,7 @@ The figure below shows the SLiCAP circuit diagram.
 
 The netlist of the circuit:
 
-.. literalinclude:: ../cir/ZtoV.cir
+.. literalinclude:: ../cir/ZtoV.slicap_cir
 
 The sub circuit definition of the model ``OV`` is found in ``SLiCAPmodels.lib`` in the folder given in ``ini.main_lib_path``.
 

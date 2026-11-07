@@ -16,7 +16,7 @@ Select a project folder and name. The application initializes a SLiCAP project a
 The created folders are: ::
 
     + project folder          # Project root directory for python scripts and jupyter notebooks
-    +-- cir                   # Directory for netlists ('.cir' files)
+    +-- cir                   # Directory for netlists
     +-- csv                   # Directory for csv files generated or imported by SLiCAP
     +-+ html                  # Directory of standard SLiCAP html project report
     | | - index.html          # Main html report page

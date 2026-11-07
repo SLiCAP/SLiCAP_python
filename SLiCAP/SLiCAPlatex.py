@@ -1131,6 +1131,33 @@ def symbolLatex(name):
 
 # Non-public functions for creating table snippets
 
+def _texText(text):
+    """
+    Returns the text of a table cell as LaTeX: text with inline maths.
+
+    The text between ``$...$`` spans is plain text: the characters ``%``,
+    ``&``, ``#`` and ``_`` are escaped there, unless the author escaped them
+    already. A ``$...$`` span is maths and is passed unchanged. So
+    "Settling time to 0.1% of final value" and "output voltage at $I_{max}$"
+    both render as intended (Anton, 2026-11-04: a '%' started a LaTeX
+    comment that swallowed the rest of the row and the next row). An
+    unclosed ``$`` is text: it is escaped and shown, so the table never
+    breaks.
+
+    :param text: Text of a table cell
+    :type text: str
+
+    :return: LaTeX text
+    :rtype: str
+    """
+    parts = re.split(r'(?<!\\)\$', text)
+    if len(parts) % 2 == 0:                       # an unclosed $: all text
+        parts = [text.replace('$', '\\$')]
+    for i in range(0, len(parts), 2):
+        parts[i] = re.sub(r'(?<!\\)([%&#_])', r'\\\1', parts[i])
+    return '$'.join(parts)
+
+
 def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption='', label='', color="myyellow", value_fn=None, title=None, title_align='c', upright=None):
     """
     Creates and returns a LaTeX table snippet that can be included in a LaTeX document.
@@ -1221,7 +1248,7 @@ def _TEXcreateCSVtable(headerList, linesList, alignstring, unitpos=None, caption
                 TEX += ('$\\mathrm{' + field + '}$ &') if field != '' else ' &'
             elif type(field) == str:
                 if field != '':
-                    TEX +=  '\\small{' + field.replace('_', '\\_') + '} &'
+                    TEX +=  '\\small{' + _texText(field) + '} &'
                 else:
                     TEX += ' &'
             elif value_fn is not None:

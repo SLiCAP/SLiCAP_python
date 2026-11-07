@@ -232,6 +232,29 @@ def _parse_params_field(
     return defaults, display
 
 
+def _migrate_stimuli_params(g_element) -> None:
+    """Drop the ``value``, ``ac`` and ``tran`` entries from the data-params
+    of an NGspice V/I symbol frozen before 2026-11-07.
+
+    Those entries made the Properties dialog a second editor of the source
+    stimuli, next to the source-stimuli dialog that owns ``dc``, ``ac`` and
+    ``tran`` (Anton, 2026-11-07: one editor). The system library no longer
+    declares them. A schematic's frozen ``<name>.symbols`` cache overrides
+    the library, so the cache is migrated here, at the symbol: the element
+    is edited BEFORE it is parsed and copied to ``g_xml``, so the next save
+    writes the clean definition. The SLiCAP V/I symbols declare ``value``
+    and ``dc`` but never ``ac`` + ``tran``, which keeps them untouched."""
+    if g_element.get("data-prefix") not in ("V", "I"):
+        return
+    entries = [e.strip() for e in (g_element.get("data-params") or "").split(";")
+               if e.strip()]
+    names = [e.split("|")[0].strip() for e in entries]
+    if not ("ac" in names and "tran" in names):
+        return
+    keep = [e for e, n in zip(entries, names) if n not in ("value", "ac", "tran")]
+    g_element.set("data-params", "; ".join(keep))
+
+
 class Symbol:
     """All metadata + render SVG for a single library symbol."""
 
@@ -250,6 +273,7 @@ class Symbol:
         self.refs        = (g_element.get("data-refs") or "").split()
         self.model, self.model_show = _parse_model_field(
             g_element.get("data-model", ""), source, name)
+        _migrate_stimuli_params(g_element)
         self.param_defaults, self.param_display = _parse_params_field(
             g_element.get("data-params", ""), source, name)
         self.params      = list(self.param_defaults.keys())

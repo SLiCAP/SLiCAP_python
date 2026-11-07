@@ -264,7 +264,8 @@ class ProjectPanel(QDockWidget):
         before breaking a link (spec CSV, netlist, library, …). A full
         dependency graph is an ACDE Phase-2 (project index) concern."""
         name = path.name
-        scan_ext = {".py", ".cir", ".net", ".slicap_sch", ".spice_sch", ".slicap_poster",
+        scan_ext = {".py", ".cir", ".slicap_cir", ".spice_cir", ".net",
+                    ".slicap_sch", ".spice_sch", ".slicap_poster",
                     ".sch", ".tex", ".rst", ".csv", ".lib"}
         refs = []
         root = Path(self._root)

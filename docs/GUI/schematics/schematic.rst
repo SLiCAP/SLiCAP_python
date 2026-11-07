@@ -121,8 +121,9 @@ By default each schematic is displayed in a separate tab, but each open schemati
        Define src / det / lg ref, Model definition.
    * - **Instruction**
      - Create circuit object and Create / edit SLiCAP instruction (SLiCAP
-       schematics), or Create / edit NGspice instruction and control section
-       (NGspice schematics) — see :doc:`/GUI/instruction/instructions`.
+       schematics), or Create netlist, Create / edit NGspice instruction and
+       control section (NGspice schematics) — see
+       :doc:`/GUI/instruction/instructions`.
 
 Creating and opening schematics, and application-wide actions, live in the
 **main window's** menu bar:
@@ -170,7 +171,7 @@ A first schematic in five steps
 
 #. **Save and export.**  :menuselection:`File --> Save schematic` writes the
    ``.slicap_sch`` file; :menuselection:`File --> Export netlist…` produces a
-   ``.cir`` netlist for SLiCAP.  See :doc:`/GUI/schematics/netlist_and_export`.
+   ``.slicap_cir`` netlist for SLiCAP.  See :doc:`/GUI/schematics/netlist_and_export`.
 
 A schematic can also be saved as a reusable **subcircuit** and placed as a
 block in other schematics; see :doc:`/GUI/schematics/hierarchical_blocks`.

@@ -7,7 +7,7 @@ Interface with NGspice
 SLiCAP runs NGspice simulations from a Python script and turns the results into traces, measurements and plots. It requires:
 
 #. `NGspice <https://ngspice.sourceforge.io/>`_ for circuit simulation (`NGspice manual <https://ngspice.sourceforge.io/docs/ngspice-manual.pdf>`_); its location is set in the ``[commands]`` section of the SLiCAP configuration file (see `Installation <install.html>`_).
-#. An NGspice schematic (``.spice_sch``), drawn with the SLiCAP schematic editor and its NGspice symbol library, or a hand-written netlist ``cir/<name>.cir``. See `NGspice schematics <../../GUI/schematics/schematic.html>`_ in the GUI manual.
+#. An NGspice schematic (``.spice_sch``), drawn with the SLiCAP schematic editor and its NGspice symbol library, or a hand-written netlist ``cir/<name>.cir``. ``makeCircuit()`` writes the netlist of the schematic to ``cir/<name>.spice_cir``; the instructions name the circuit and run that file, or ``cir/<name>.cir`` when there is no ``.spice_cir``. See `NGspice schematics <../../GUI/schematics/schematic.html>`_ in the GUI manual.
 
 Supported analysis
 ==================
@@ -89,7 +89,7 @@ The circuit is a two-stage transistor amplifier drawn with the NGspice symbols o
     :lines: 9-16
     :lineno-start: 9
 
-`op() <../reference/SLiCAPngspice.html#SLiCAP.SLiCAPngspice.op>`__ takes the circuit name, exports the netlist from the schematic when it is newer than the netlist, and writes the operating point to ``cir/VampQspice_op.raw``. `makeCircuit() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__ recognizes the NGspice schematic by its extension, exports the netlist, the schematic image and an HTML page with the circuit data, and returns the netlist text. The image carries the **operating point annotations**: the DC voltages of the nets and the DC currents of the sources for which they were switched on in the schematic editor (see `Component properties <../../GUI/schematics/component_properties.html>`_), read from the most recent unstepped operating-point run. Whenever a new operating point is simulated, the image is exported again. A schematic that shows its own simulation plots as placed images is exported again with `updateImages() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.updateImages>`__ at the end of the script, after the figures; see `Updating the images <circuit.html#updating-the-images-updateimages>`_.
+`makeCircuit() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__ recognizes the NGspice schematic by its extension, exports the netlist ``cir/VampQspice.spice_cir``, the schematic image and an HTML page with the circuit data, and returns the netlist text. It is the netlist step of the script, as a circuit object is for a SLiCAP circuit. `op() <../reference/SLiCAPngspice.html#SLiCAP.SLiCAPngspice.op>`__ takes the circuit name, runs that netlist as it is, and writes the operating point to ``cir/VampQspice_op.raw``. The image carries the **operating point annotations**: the DC voltages of the nets and the DC currents of the sources for which they were switched on in the schematic editor (see `Component properties <../../GUI/schematics/component_properties.html>`_), read from the most recent unstepped operating-point run. Whenever a new operating point is simulated, the image is exported again. A schematic that shows its own simulation plots as placed images is exported again with `updateImages() <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.updateImages>`__ at the end of the script, after the figures; see `Updating the images <circuit.html#updating-the-images-updateimages>`_.
 
 .. image:: /API/img/VampQspice.svg
     :scale: 80 %
@@ -97,7 +97,7 @@ The circuit is a two-stage transistor amplifier drawn with the NGspice symbols o
 Netlist
 -------
 
-.. literalinclude:: ../cir/VampQspice.cir
+.. literalinclude:: ../cir/VampQspice.spice_cir
     :linenos:
 
 Operating point information

@@ -79,7 +79,7 @@ A signal source can be specified in three different ways:
   
 - In the circuit file
 
-  Place the above commands in the netlist (.cir) file
+  Place the above commands in the netlist file
   
 - With the instruction
 
@@ -142,7 +142,7 @@ A signal detector can be specified in three different ways:
   
 - In the circuit file
 
-  Place the above commands in the netlist (.cir) file
+  Place the above commands in the netlist file
   
 - With the instruction
 
@@ -188,7 +188,7 @@ A loop gain reference source can be specified in three different ways:
   
 - In the circuit file
 
-  Place the above commands in the netlist (.cir) file
+  Place the above commands in the netlist file
   
 - With the instruction
 

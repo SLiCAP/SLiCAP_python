@@ -63,7 +63,7 @@ _FILTER_SLICAP      = "SLiCAP Schematic (*.slicap_sch)"
 _FILTER_NGSPICE     = "NGspice Schematic (*.spice_sch)"
 _FILTER_POSTER      = "SLiCAP Poster (*.slicap_poster)"
 _FILE_FILTER        = f"{_FILTER_SLICAP};;{_FILTER_NGSPICE};;{_FILTER_POSTER};;All Files (*)"
-_NET_FILTER_SLICAP  = "SLiCAP Netlist (*.cir);;All Files (*)"
+_NET_FILTER_SLICAP  = "SLiCAP Netlist (*.slicap_cir);;All Files (*)"
 _NET_FILTER_NGSPICE = "NGspice Netlist (*.sp);;All Files (*)"
 
 
@@ -870,6 +870,12 @@ class CanvasPanel(QWidget):
         if self._schematic_only:
             menu.setEnabled(False)
             return
+        act = QAction("Create &netlist…", self)
+        act.setToolTip("Add  sl.makeCircuit(\"<this schematic>\")  to the "
+                       "instruction file: it writes cir/<name>.spice_cir, "
+                       "the netlist the NGspice instructions run")
+        act.triggered.connect(self._on_ngspice_create_netlist)
+        menu.addAction(act)
         act = QAction("Create / edit &NGspice instruction…", self)
         act.triggered.connect(self._on_ngspice_add_instruction)
         menu.addAction(act)
@@ -1330,7 +1336,7 @@ class CanvasPanel(QWidget):
     def _on_export_netlist(self):
         """File -> Export netlist: the netlist the headless export writes
         (cli.netlist_for, one builder), to a file of the user's choice.
-        A circuit goes to cir/ (.cir for SLiCAP, .sp with the control
+        A circuit goes to cir/ (.slicap_cir for SLiCAP, .sp with the control
         section for NGspice); a subcircuit schematic gives its library,
         lib/<title>.slicap_lib or .spice_lib (Anton, 2026-10-10: the
         editor wrote a flat .sp of a subcircuit into cir/)."""
@@ -1350,7 +1356,7 @@ class CanvasPanel(QWidget):
             return
         text, default, label = result
         ext = default.suffix
-        filt = {".cir": _NET_FILTER_SLICAP, ".sp": _NET_FILTER_NGSPICE,
+        filt = {".slicap_cir": _NET_FILTER_SLICAP, ".sp": _NET_FILTER_NGSPICE,
                 ".slicap_lib": "SLiCAP subcircuit library (*.slicap_lib);;All Files (*)",
                 ".spice_lib": "NGspice subcircuit library (*.spice_lib);;All Files (*)"}[ext]
         path, _ = QFileDialog.getSaveFileName(
@@ -1895,15 +1901,37 @@ class CanvasPanel(QWidget):
         editor.raise_()
         self._status(f"Circuit object '{name}' added to the instruction file.")
 
+    def _save_before_instruction(self) -> bool:
+        """The instruction dialogs netlist the schematic FILE, not the
+        drawing: an unsaved edit is not in what they offer (Anton,
+        2026-11-04: parameters deleted on the canvas were still listed).
+        Same rule as Run's "Unsaved schematic changes" warning. Returns
+        False when the user cancels."""
+        if not self._dirty or self._symbol_mode:
+            return True
+        box = QMessageBox(QMessageBox.Icon.Warning,
+                          "Unsaved schematic changes",
+                          "This schematic has unsaved changes. The "
+                          "instruction dialog reads the file on disk, so "
+                          "it would show the outdated circuit.\n\n"
+                          "Save it and continue?",
+                          parent=self)
+        b_save = box.addButton("Save && continue",
+                               QMessageBox.ButtonRole.AcceptRole)
+        box.addButton(QMessageBox.StandardButton.Cancel)
+        box.setDefaultButton(b_save)
+        box.exec()
+        if box.clickedButton() is not b_save:
+            return False
+        return self.panel_save()
+
     def _circuit_data(self, path: str) -> dict:
         """Signal and parameter lists of the circuit built from *path*
-        (project-relative), cached per run of the dialog."""
+        (project-relative). Built FRESH on every call: a per-window cache
+        here was tried and REVERTED (2026-11-04) - nothing invalidated it,
+        so the dialog kept showing the circuit of the first opening for
+        the whole session."""
         from SLiCAP.SLiCAPshell import makeCircuit
-        cache = getattr(self, "_cir_data_cache", None)
-        if cache is None:
-            cache = self._cir_data_cache = {}
-        if path in cache:
-            return cache[path]
         full = project.root_for(self._current_path) / path
         cir = makeCircuit(str(full))
         # par_defs are display text in the dialog (par_source_table rounds
@@ -1917,7 +1945,6 @@ class CanvasPanel(QWidget):
                 str(p) for p in (cir.params if isinstance(cir.params, list)
                                  else cir.params.keys())),
         }
-        cache[path] = data
         return data
 
     def _on_slicap_add_instruction(self):
@@ -1933,6 +1960,8 @@ class CanvasPanel(QWidget):
         """
         from .instr_file import circuit_objects
         if self._current_path is None or self._main_win is None:
+            return
+        if not self._save_before_instruction():
             return
         existing = self._main_win._instr_editor.text()
         relpath = self._schematic_relpath()
@@ -1975,10 +2004,64 @@ class CanvasPanel(QWidget):
                 self._main_win._instr_editor.ensure_header('slicap')
                 self._main_win._instr_editor.insert_snippet(snippet)
 
+    def _on_ngspice_create_netlist(self):
+        """Instruction -> Create netlist: append
+        ``sl.makeCircuit("<this schematic>")`` to the instruction file.
+
+        The NGspice counterpart of "Create circuit object" (Anton,
+        2026-11-07): an NGspice schematic has no circuit object, its
+        netlist step is this line, which writes cir/<name>.spice_cir. The
+        instructions name the circuit by its stem and run that file. As
+        with the circuit object, the line is APPENDED, and the file - not
+        the active tab - decides which netlists the run makes.
+        """
+        from .instr_file import netlist_calls
+        if self._current_path is None or self._main_win is None:
+            return
+        editor = self._main_win._instr_editor
+        relpath = self._schematic_relpath()
+        if relpath in netlist_calls(editor.text()):
+            QMessageBox.information(
+                self, "Create netlist",
+                "The instruction file already creates the netlist of\n"
+                f"    {relpath}")
+            return
+        editor.ensure_header('ngspice')
+        editor.insert_snippet(f'sl.makeCircuit("{relpath}")')
+        editor.show()
+        editor.raise_()
+        self._status("Netlist step added to the instruction file.")
+
+    def _require_ngspice_netlist(self, what: str) -> bool:
+        """True when the instruction file creates this schematic's netlist
+        (its ``sl.makeCircuit("sch/<name>.spice_sch")`` line); else explain
+        and return False. An NGspice instruction runs cir/<name>.spice_cir
+        as it is, so the file must make it first - the counterpart of the
+        SLiCAP dialog's circuit-object requirement (Anton, 2026-11-07).
+        The instruction FILE is checked, not the disk: a .spice_cir left by
+        an earlier session is not a netlist step of this file."""
+        from .instr_file import netlist_calls
+        if self._main_win is None:
+            return False
+        relpath = self._schematic_relpath()
+        if relpath in netlist_calls(self._main_win._instr_editor.text()):
+            return True
+        QMessageBox.information(
+            self, what,
+            "Create the netlist first.\n\nThe instruction file has no\n"
+            f'    sl.makeCircuit("{relpath}")\n'
+            "line yet. Add it with Instruction -> Create netlist…, then "
+            "add the instruction.")
+        return False
+
     def _on_ngspice_add_instruction(self):
         if not self._current_path:
             return
         if not _check_ngspice(self):
+            return
+        if not self._save_before_instruction():
+            return
+        if not self._require_ngspice_netlist("NGspice instruction"):
             return
         cir_stem = self._current_path.stem
         self._status("Building netlist…")
@@ -2009,7 +2092,8 @@ class CanvasPanel(QWidget):
         from SLiCAP.SLiCAPngspice import _get_param_defs
         import SLiCAP.SLiCAPconfigure as ini
         param_defs  = _get_param_defs(netlist_text)
-        param_names = list(param_defs)
+        # every parameter the netlist needs, defined or not (2026-11-07)
+        param_names = _get_param_names(netlist_text)
         sources     = _indep_source_refs(cir_stem)
         existing = self._main_win._instr_editor.text() if self._main_win else ""
         # Non-modal so the window can be moved freely: an application-modal
@@ -2047,9 +2131,12 @@ class CanvasPanel(QWidget):
 
     def _on_ngspice_add_control(self):
         """Create / edit an NGspice control-section instruction (raw mode,
-        item 5). No netlist build needed — the runner regenerates it; the
-        dialog only picks a control-section text file."""
+        item 5). The dialog only picks a control-section text file; the
+        run uses the netlist the instruction file's makeCircuit line
+        writes, so that line must exist (Anton, 2026-11-07)."""
         if not self._current_path or not self._main_win:
+            return
+        if not self._require_ngspice_netlist("NGspice control section"):
             return
         import SLiCAP.SLiCAPconfigure as ini
         from .ngspice_control_dialog import NGspiceControlDialog

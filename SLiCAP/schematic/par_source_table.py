@@ -58,8 +58,13 @@ POSITIONS = (UNDEFINED, CIRCUIT, SPECS, USER)
 # preference key -> label; the order in which a preset tries the sources
 PRESETS = {"specs": "specs first", "circuit": "circuit first",
            "undefined": "all undefined"}
+# "circuit first" ends with SPECS for the NGspice table only: there UNDEFINED
+# is absent, and a parameter the netlist does not define must still get a
+# value, from the specs before it asks the user (Anton, 2026-11-07). With
+# UNDEFINED present (SLiCAP) that position is always enabled and reached
+# first, so the SLiCAP presets are unchanged.
 _PRESET_ORDER = {"specs": (SPECS, CIRCUIT, UNDEFINED),
-                 "circuit": (CIRCUIT, UNDEFINED),
+                 "circuit": (CIRCUIT, UNDEFINED, SPECS),
                  "undefined": (UNDEFINED,)}
 NO_FILE = "(none)"
 

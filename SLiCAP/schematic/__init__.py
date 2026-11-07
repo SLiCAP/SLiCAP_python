@@ -16,8 +16,11 @@ def schematic_properties(sch_path):
 
 
 def _netlist_output(sch_path: Path, title=None) -> Path:
-    """The netlist file the export writes for ``sch_path``: cir/<stem>.cir
-    for a circuit, lib/<name>.slicap_lib (or .spice_lib) for a subcircuit
+    """The netlist file the export writes for ``sch_path``:
+    cir/<stem>.slicap_cir or cir/<stem>.spice_cir for a circuit (the
+    extension names the dialect, so a SLiCAP and an NGspice schematic of
+    the same name never overwrite each other's netlist - Anton,
+    2026-11-07), lib/<name>.slicap_lib (or .spice_lib) for a subcircuit
     schematic, with <name> the given title, else the schematic's title,
     else its stem - the rule the CLI applies (Anton, 2026-09-16)."""
     from . import project
@@ -29,7 +32,9 @@ def _netlist_output(sch_path: Path, title=None) -> Path:
         name = title or props.title or sch_path.stem
         sch_type = "ngspice" if sch_path.suffix.lower() == ".spice_sch" else "slicap"
         return lib_path_for(sch_path, name, sch_type)
-    return project.subdir_for(sch_path, "cir") / sch_path.with_suffix(".cir").name
+    suffix = (".spice_cir" if sch_path.suffix.lower() == ".spice_sch"
+              else ".slicap_cir")
+    return project.subdir_for(sch_path, "cir") / sch_path.with_suffix(suffix).name
 
 
 def _image_paths(sch_path: Path):

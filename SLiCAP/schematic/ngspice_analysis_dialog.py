@@ -693,7 +693,10 @@ class NGspiceAnalysisDialog(QDialog):
                  pardefs_preset: str | None = None):
         """*param_defs*: ``{name: value text}`` of the netlist's ``.param``
         definitions (``_get_param_defs``), the 'circuit' column of the
-        parameter table; *param_names* (its keys) feeds the step widget.
+        parameter table; *param_names*: every parameter the netlist needs
+        (``_get_param_names``), it feeds the step widget, and a name not in
+        *param_defs* gets a row without the circuit position: it must come
+        from the specs or the user (Anton, 2026-11-07).
         *csv_dir*: the project csv/ folder, for the 'specs' column."""
         super().__init__(parent, Qt.Window)
         self._cir_stem = cir_stem
@@ -796,11 +799,14 @@ class NGspiceAnalysisDialog(QDialog):
         # The SAME table as the SLiCAP dialog (par_source_table, 2026-11-01)
         # without the 'undefined' column: NGspice cannot run with an
         # undefined parameter. 'circuit' = the .param definitions of the
-        # .cir generated from the schematic; the row then emits nothing.
+        # netlist generated from the schematic; the row then emits nothing.
+        # A parameter the netlist USES without defining it (2026-11-07) has
+        # a row too, with specs / user only: the run defines it from there.
         from pathlib import Path
         from .design_data_panel import find_spec_csvs
         spec_files = [p.name for p in find_spec_csvs(Path(csv_dir))] if csv_dir else []
-        self._pd = ParSourceTable(param_defs, (), spec_files, csv_dir,
+        undefined = [str(n) for n in param_names if str(n) not in param_defs]
+        self._pd = ParSourceTable(param_defs, undefined, spec_files, csv_dir,
                                   pardefs_preset,
                                   positions=(CIRCUIT, SPECS, USER),
                                   title="Circuit parameters (params=)")

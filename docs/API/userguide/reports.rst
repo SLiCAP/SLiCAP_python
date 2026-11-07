@@ -99,15 +99,15 @@ The instruction ``makeCircuit()`` creates a new circuit index page on the main i
     label : netlist_myFirstRCnetwork
 	    type        : data
 	    href        : myFirstRCnetwork_Circuit-data.html
-	    description : "Netlist of myFirstRCnetwork.cir."
+	    description : "Netlist of myFirstRCnetwork.slicap_cir."
     label : elementdata_myFirstRCnetwork
 	    type        : data
 	    href        : myFirstRCnetwork_Circuit-data.html
-	    description : "Expanded netlist of myFirstRCnetwork.cir."
+	    description : "Expanded netlist of myFirstRCnetwork.slicap_cir."
     label : params_myFirstRCnetwork
 	    type        : data
 	    href        : myFirstRCnetwork_Circuit-data.html
-	    description : "Parameter definitions of myFirstRCnetwork.cir."
+	    description : "Parameter definitions of myFirstRCnetwork.slicap_cir."
 
 Complete website
 ----------------
@@ -140,15 +140,15 @@ After running the complete example a complete website has been created and some 
     label : netlist_myFirstRCnetwork
 	    type        : data
 	    href        : myFirstRCnetwork_Circuit-data.html
-	    description : "Netlist of myFirstRCnetwork.cir."
+	    description : "Netlist of myFirstRCnetwork.slicap_cir."
     label : elementdata_myFirstRCnetwork
 	    type        : data
 	    href        : myFirstRCnetwork_Circuit-data.html
-	    description : "Expanded netlist of myFirstRCnetwork.cir."
+	    description : "Expanded netlist of myFirstRCnetwork.slicap_cir."
     label : params_myFirstRCnetwork
 	    type        : data
 	    href        : myFirstRCnetwork_Circuit-data.html
-	    description : "Parameter definitions of myFirstRCnetwork.cir."
+	    description : "Parameter definitions of myFirstRCnetwork.slicap_cir."
     label : MNA
 	    type        : eqn
 	    href        : myFirstRCnetwork_Matrix-equations.html

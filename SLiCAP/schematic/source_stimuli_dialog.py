@@ -5,7 +5,8 @@ Edits the DC / AC / TRAN stimuli of an independent source.  The dialog is
 optional ``prop_display`` dict for canvas show/hide flags) using the flat-dict
 convention shared by the rest of the schematic:
 
-  dc           -- DC/TRAN value string (written as "dc <val>" in netlist)
+  dc           -- DC value string (written as "dc <val>" in netlist);
+                  the DC value of EVERY analysis, not only tran (Anton, 2026-11-07)
   ac           -- "<ACMAG> <ACPHASE>" string (written as "ac <val>" in netlist)
   tran         -- full waveform string e.g. "PULSE({1} {0} {1n} ...)"
   _tran_type   -- active waveform name (internal; stripped by netlist builder)
@@ -68,6 +69,30 @@ def _param_key(wf_name: str, field: str) -> str:
     return f"_{wf_name.lower()}_{field.lower()}"
 
 
+def edit_source_stimuli(item, parent=None, on_accept=None) -> bool:
+    """Open the stimuli dialog for the V/I source *item* and, on OK, write
+    the stimuli into it and redraw its labels. ONE entry point for the
+    Properties dialog's button and the canvas (a double-click on a dc/ac/tran
+    label of a source on an NGspice schematic opens THIS dialog, not the
+    plain text editor of the label - Anton, 2026-11-07). *on_accept* is
+    called after OK and before the item changes: the scene records its
+    undo step there. Returns True when the item changed."""
+    # parent=None so the modal dialog is freely movable rather than a frozen,
+    # centered sheet under GNOME/Mutter (Anton, 2026-07-16).
+    dlg = SourceStimuliDialog(item.params, item.prop_display,
+                              is_current=(item.prefix == "I"),
+                              title=f"Source stimuli — {item.instance_id}",
+                              parent=parent)
+    if not dlg.exec():
+        return False
+    if on_accept is not None:
+        on_accept()
+    dlg.apply()
+    item._save_label_offsets()
+    item.update_labels()
+    return True
+
+
 class SourceStimuliDialog(QDialog):
     """Edit DC / AC / TRAN stimuli of an NGspice independent source.
 
@@ -114,7 +139,7 @@ class SourceStimuliDialog(QDialog):
         grp.setChecked(bool(p.get("dc", "").strip()))
 
         layout = QHBoxLayout(grp)
-        layout.addWidget(QLabel("DC/TRAN VALUE"))
+        layout.addWidget(QLabel("DC VALUE"))
         self._dc_edit = QLineEdit(p.get("dc", ""))
         layout.addWidget(self._dc_edit)
         if self._show_display:

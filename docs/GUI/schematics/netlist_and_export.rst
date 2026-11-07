@@ -9,8 +9,9 @@ From the GUI
 ============
 
 * :menuselection:`File --> Export netlist…` (:kbd:`Ctrl+E`) writes the
-  netlist to ``cir/``: ``.cir`` for a SLiCAP circuit, ``.sp`` for an NGspice
-  circuit. For a subcircuit schematic it writes the subcircuit library to
+  netlist to ``cir/``: ``.slicap_cir`` for a SLiCAP circuit, ``.sp`` with
+  the control section for an NGspice circuit. For a subcircuit schematic it
+  writes the subcircuit library to
   ``lib/`` instead, ``<title>.slicap_lib`` or ``<title>.spice_lib``, the
   same file as the headless export and as saving the subcircuit.
 * :menuselection:`File --> Export SVG…` writes a vector figure.
@@ -37,9 +38,13 @@ scripts and Makefiles:
 
 If ``-o <file>`` is omitted, the output takes the schematic's name with the
 appropriate extension and lands in the project's ``cir/`` (netlist) or
-``img/`` (SVG / PDF) directory automatically.  For a schematic saved as a
-subcircuit the ``netlist`` command writes the library
-``lib/<name>.slicap_lib`` instead of a ``.cir`` file (see
+``img/`` (SVG / PDF) directory automatically.  The netlist extension names
+the dialect: a ``.slicap_sch`` writes ``cir/<name>.slicap_cir``, a
+``.spice_sch`` writes ``cir/<name>.spice_cir``. A SLiCAP and an NGspice
+schematic of the same name therefore keep their own netlists. A netlist
+written by hand keeps the extension ``.cir``, in either dialect.  For a
+schematic saved as a subcircuit the ``netlist`` command writes the library
+``lib/<name>.slicap_lib`` instead of a netlist file (see
 :doc:`/GUI/schematics/hierarchical_blocks`).
 
 Running it in SLiCAP

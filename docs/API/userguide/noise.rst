@@ -28,7 +28,7 @@ During noise analysis, SLiCAP uses the ``noise`` parameter of independent voltag
 .. image:: /API/img/noiseSources.svg
     :scale: 80 %
     
-.. literalinclude:: ../cir/noiseSources.cir
+.. literalinclude:: ../cir/noiseSources.slicap_cir
     :linenos:
 
 Noise voltage sources

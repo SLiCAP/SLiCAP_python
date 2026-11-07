@@ -291,10 +291,10 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
     fileParts = fileName.split('/')
     netlist   = None
     subckt    = False
+    nameParts = fileParts[-1].split('.')
+    cirType   = nameParts[-1].lower()
     if cirTitle == None:
-        nameParts = fileParts[-1].split('.')
         cirTitle = nameParts[0]
-        cirType  = nameParts[-1].lower()
     elif " " in cirTitle and (cirTitle[0] != '"' or cirTitle[-1] != '"'):
         cirTitle = '"' + cirTitle + '"'
     if cirType == "asc":
@@ -314,7 +314,7 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
             subckt = cirTitle
     elif cirType == "spice_sch":
         # An NGspice schematic of the schematic editor: the same headless
-        # export as .slicap_sch writes cir/<name>.cir, the SVG and the PDF
+        # export as .slicap_sch writes cir/<name>.slicap_cir, the SVG and the PDF
         # (with the operating-point annotations when cir/<name>_op.raw
         # exists). As with a KiCad schematic and language="SPICE", the
         # netlist text is returned (Anton, 2026-09-21).
@@ -323,8 +323,8 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
         if language.upper() == "SPICE" and cirPath is not None:
             with open(cirPath, "r", encoding="utf-8") as f:
                 netlist = f.read()
-    elif cirType == "cir":
-        pass
+    elif cirType in ("cir", "slicap_cir", "spice_cir"):
+        pass                                     # a netlist: nothing to make
     else:
         print("Cannot determine netlister for file extension: {}"
               .format(cirType))
@@ -434,6 +434,8 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
     """
     #. Creates and returns a circuit object from:
 
+       - A netlist written by the schematic editor (".slicap_cir" file in
+         the cir folder of the project, written from a ".slicap_sch")
        - A netlist file (".cir" file: always in the cir folder of the project
          folder)
        - A native SLiCAP schematic file (".slicap_sch" file, made with the
@@ -515,17 +517,26 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
     :type language: str
     """
     cirName, ext = fileName.replace('\\', '/').split('/')[-1].split('.')
-    if ext.lower() == "spice_sch":
+    # The netlist a schematic of the editor writes carries its dialect in
+    # the extension (Anton, 2026-11-07): sch/x.slicap_sch -> cir/x.slicap_cir,
+    # sch/x.spice_sch -> cir/x.spice_cir. A netlist from another tool or
+    # written by hand is cir/x.cir, in either dialect.
+    ext = ext.lower()
+    if ext in ("spice_sch", "spice_cir"):
         language = "SPICE"
-    elif ext.lower() == "slicap_sch":
+        netName  = cirName + ".spice_cir"
+    elif ext in ("slicap_sch", "slicap_cir"):
         language = "SLiCAP"
+        netName  = cirName + ".slicap_cir"
+    else:
+        netName  = cirName + ".cir"
     cir, subckt = _makeNetlist(fileName, cirTitle=cirTitle, language=language)
     if not subckt:
         language = language.upper()
         if language == "SLICAP":
-            cir = _checkCircuit(cirName + ".cir")
+            cir = _checkCircuit(netName)
             # the schematic the circuit was made from, for updateImages()
-            cir.schematic = fileName if ext.lower() == "slicap_sch" else None
+            cir.schematic = fileName if ext == "slicap_sch" else None
         elif language == "SPICE":
             ini.html_prefix = ('-'.join(cirName.split()) + '_')
             ini.html_index = 'index.html'
@@ -539,16 +550,16 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
             img2html(cirName + ".svg", 
                      imgWidth, caption = 'Circuit diagram of {}.'.format(cirName), 
                      label = 'fig_{}'.format(cirName + '.' + ext))
-        netlist2html(cirName + ".cir", label = 'netlist_{}'.format(cirName), 
-                     labelText='Netlist of {}.'.format(cirName + ".cir"))
+        netlist2html(netName, label = 'netlist_{}'.format(cirName), 
+                     labelText='Netlist of {}.'.format(netName))
         # was 'language == "SLiCAP"' after language.upper(): never true, so
         # the expanded netlist and the parameter table were never shown and
         # the 'expansion' keyword did nothing (found 2026-09-21).
         if language == "SLICAP" and expansion and not cir.errors:
             elementData2html(cir, label='elementdata_{}'.format(cirName), 
-                             caption="Expanded netlist of {}.".format(cirName + ".cir"))
+                             caption="Expanded netlist of {}.".format(netName))
             params2html(cir, label='params_{}'.format(cirName), 
-                        caption="Parameter definitions of {}.".format(cirName + ".cir"))
+                        caption="Parameter definitions of {}.".format(netName))
     return cir
 
 def doMatrix(cir, source='circuit', detector='circuit', lgref='circuit', 

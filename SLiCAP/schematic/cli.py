@@ -4,7 +4,7 @@ SLiCAP schematic command-line tools.
 
 Usage
 -----
-  python -m SLiCAP.schematic.cli netlist  sch/design.slicap_sch [-o cir/design.cir]
+  python -m SLiCAP.schematic.cli netlist  sch/design.slicap_sch [-o cir/design.slicap_cir]
   python -m SLiCAP.schematic.cli svg      sch/design.slicap_sch [-o img/design.svg]
   python -m SLiCAP.schematic.cli pdf      sch/design.slicap_sch [-o img/design.pdf]
 
@@ -155,13 +155,14 @@ def netlist_for(input_path, scene, props, title, program: bool = True):
             comps, wires, title, libs=libs, params=prms,
             program_netlist=program, model_defs=models,
             control_section="" if program else getattr(props, "control_section", ""))
-        return text, _default_output(input_path, "cir", ".cir" if program else ".sp"), "Netlist "
+        return text, _default_output(input_path, "cir",
+                                     ".spice_cir" if program else ".sp"), "Netlist "
     from .analysis_item import AnalysisItem
     from .netlist import build_netlist
     analyses = [i for i in items if isinstance(i, AnalysisItem)]
     text = build_netlist(comps, wires, analyses, title,
                          libs=libs, params=prms, model_defs=models)
-    return text, _default_output(input_path, "cir", ".cir"), "Netlist "
+    return text, _default_output(input_path, "cir", ".slicap_cir"), "Netlist "
 
 
 def _write_netlist(input_path, scene, data, output_path, title) -> bool:
@@ -189,7 +190,8 @@ def _write_netlist(input_path, scene, data, output_path, title) -> bool:
 
 
 def cmd_netlist(args):
-    """Generate the .cir netlist (extension picks the SLiCAP/NGspice builder)."""
+    """Generate the netlist (the input extension picks the SLiCAP/NGspice
+    builder and the output extension: .slicap_cir or .spice_cir)."""
     _qt_app()
     input_path  = Path(args.input)
     scene, data = _load_scene(input_path)
@@ -275,10 +277,10 @@ def main():
 
     p_net = sub.add_parser(
         "netlist",
-        help="Generate a .cir netlist (.slicap_sch → SLiCAP, .spice_sch → NGspice)")
+        help="Generate a netlist (.slicap_sch -> .slicap_cir, .spice_sch -> .spice_cir)")
     p_net.add_argument("input", help=_input_help)
     p_net.add_argument("-o", "--output", metavar="FILE",
-                       help="Output file (default: <input>.cir)")
+                       help="Output file (default: cir/<input>.slicap_cir or .spice_cir)")
     p_net.add_argument("--title", metavar="TITLE", default=None,
                        help="Circuit title (default: from schematic or file stem)")
 

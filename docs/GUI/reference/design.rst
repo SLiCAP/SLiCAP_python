@@ -55,7 +55,7 @@ The following diagram shows the main modules and their relationships::
 
     ┌─────────────────────────────────────────────────────────────────────┐
     │  export.py / netlist.py  ─── read scene items, write files          │
-    │  SVG / PDF / Print  /  SLiCAP .cir netlist                         │
+    │  SVG / PDF / Print  /  .slicap_cir / .spice_cir netlist            │
     └─────────────────────────────────────────────────────────────────────┘
 
     ┌─────────────────────────────────────────────────────────────────────┐
@@ -462,7 +462,8 @@ A SLiCAP project directory has a fixed layout::
              <name>.cache/         ← rendered LaTeX SVGs (one per fragment)
              <name>.ini            ← per-schematic style overrides
              <name>.symbols        ← frozen symbol bundle
-      cir/   <name>.cir            ← exported SLiCAP / NGspice netlist
+      cir/   <name>.slicap_cir     ← exported SLiCAP netlist
+             <name>.spice_cir      ← exported NGspice netlist
       lib/   <name>.lib            ← exported subcircuit library
              *.svg                 ← user symbol definitions
       img/   <name>.svg            ← exported schematic image
@@ -498,7 +499,8 @@ produces vector PDF output with the same fidelity as the SVG.
 Walks the scene to collect ``ComponentItem``\s, ``WireItem``\s, ``LibraryItem``\s,
 and ``AnalysisItem``\s.  Calls ``connectivity.resolve_nets()`` to assign net
 names, then formats each component as a SLiCAP/SPICE element line.  The
-resulting ``.cir`` file is written to ``cir/<name>.cir``.  If the schematic is
+resulting netlist is written to ``cir/<name>.slicap_cir`` (``.spice_cir``
+for an NGspice schematic).  If the schematic is
 marked as a subcircuit (``DocumentProperties.is_subcircuit``), the netlist is
 wrapped in a ``.subckt`` / ``.ends`` block and written to ``lib/<name>.lib``
 instead.

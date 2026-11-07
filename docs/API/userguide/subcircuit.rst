@@ -166,9 +166,9 @@ Create subcircuits with the GUI
        :scale: 80 %
 
    
-   The netlist of ``cir/mainAmp.cir`` is:
+   The netlist of ``cir/mainAmp.slicap_cir`` is:
    
-   .. literalinclude:: ../cir/mainAmp.cir
+   .. literalinclude:: ../cir/mainAmp.slicap_cir
        :linenos:
    
    The expanded circuit data and the parameter definitions are as above:

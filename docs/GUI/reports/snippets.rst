@@ -62,3 +62,20 @@ Specification table
 A table of the specifications of one type in a specification CSV of the
 project. The dialog loads the CSV once, into ``SPECS_<file stem>``, and
 emits the table call for the chosen type.
+
+Row colour of LaTeX tables
+==========================
+
+The LaTeX tables, the specification table among them, colour their rows.
+The **Row colour** field offers the colours that ``preambuleSLiCAP.tex``
+defines, and ``none`` for a table without row colour. The default,
+``myyellow``, emits no argument. Another choice is emitted as
+``color="mygray"``, ``none`` as ``color=None``. The field appears only for
+the methods that take a colour, so never for RST.
+
+A Beamer document needs ``\documentclass[xcolor=table]{beamer}`` for the
+row colour, and the colour definitions of ``preambuleSLiCAP.tex``. That
+preamble itself cannot be loaded in Beamer, its page geometry conflicts.
+With the ``mathpazo`` font package in Beamer, ``\mathrm{\Omega}`` renders as
+a black box, so every unit in ohms is affected. Without it the units render
+correctly.

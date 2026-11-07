@@ -30,7 +30,7 @@ rst.parDefs(cir, caption="Expanded circuit parameter definitions").save(
     "table-hierarchy-pardefs")
 rst.params(cir, caption="Expanded circuit undefined parameters").save(
     "table-hierarchy-params")
-rst.elementData(mainAmp, caption="Expanded netlist data of mainAmp.cir").save(
+rst.elementData(mainAmp, caption="Expanded netlist data of mainAmp.slicap_cir").save(
     "table-mainamp-expanded")
 rst.parDefs(mainAmp, caption="Expanded circuit parameter definitions").save(
     "table-mainamp-pardefs")
@@ -46,7 +46,7 @@ ltx.parDefs(cir, caption="Expanded circuit parameter definitions").save(
     "table-hierarchy-pardefs")
 ltx.params(cir, caption="Expanded circuit undefined parameters").save(
     "table-hierarchy-params")
-ltx.elementData(mainAmp, caption="Expanded netlist data of mainAmp.cir").save(
+ltx.elementData(mainAmp, caption="Expanded netlist data of mainAmp.slicap_cir").save(
     "table-mainamp-expanded")
 ltx.parDefs(mainAmp, caption="Expanded circuit parameter definitions").save(
     "table-mainamp-pardefs")

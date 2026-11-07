@@ -1288,6 +1288,18 @@ def _updateCirData(circuitObject):
                 circuitObject.params += circuitObject.elements[elmt].params[par].atoms(sp.Symbol)
             except:
                 pass
+        # The thermal-noise model of a resistor uses Boltzmann's constant k
+        # (SLiCAPexecute._addResNoiseSources: 4*k*noisetemp/value). The
+        # netlist never names k, so it is claimed here, where the circuit
+        # declares which parameters it uses; the global definition is then
+        # added below like any other (Anton, 2026-11-04: k was injected at
+        # execution time instead, invisible to the instruction dialog and
+        # to selectPars()).
+        if circuitObject.elements[elmt].model.upper() == 'R':
+            elPars = circuitObject.elements[elmt].params
+            Temp = elPars.get('noisetemp', 0)
+            if Temp != False and Temp != 0 and elPars.get('value', 0) != 0:
+                circuitObject.params.append(sp.Symbol('k'))
  
     # Add parameters used in parDef expressions to circuit.params
     for par in list(circuitObject.parDefs.keys()):

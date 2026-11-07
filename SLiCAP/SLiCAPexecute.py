@@ -939,10 +939,10 @@ def _addResNoiseSources(instr):
                     noiseCurrent.nodes           = instr.circuit.elements[el].nodes
                     instr.circuit.elements[noiseCurrent.refDes] = noiseCurrent
                     instr.circuit.indepVars.append(noiseCurrent.refDes)
-    # Add the global parameter k to the circuit parameter definitions
-    Boltzmann = sp.Symbol('k')
-    if Boltzmann not in list(instr.circuit.parDefs.keys()):
-        instr.circuit.parDefs[Boltzmann] = ini.SLiCAPPARAMS['k']
+    # k is a circuit parameter since 2026-11-04: SLiCAPyacc._updateCirData
+    # claims it for every noisy resistor, so the user decides through
+    # pardefs whether it is substituted. Injecting it here was REMOVED:
+    # it bypassed the instruction dialog and selectPars().
     return instr
 
 def _delResNoiseSources(instr):

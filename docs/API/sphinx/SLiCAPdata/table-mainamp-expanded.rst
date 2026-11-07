@@ -1,4 +1,4 @@
-.. csv-table:: Expanded netlist data of mainAmp.cir
+.. csv-table:: Expanded netlist data of mainAmp.slicap_cir
     :header: "ID", "Nodes", "Refs", "Model", "Param", "Symbolic", "Numeric"
     :widths: auto
 

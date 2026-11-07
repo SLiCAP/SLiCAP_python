@@ -35,11 +35,11 @@ Creation of a `SLiCAP circuit object <../reference/SLiCAPprotos.html#SLiCAP.SLiC
     :lines: 9-13
     :lineno-start: 9
     
-SLiCAP netlist files will obtain the extension ".cir" and are placed in the ``ini.cir_path`` directory. If a file with extension ".cir" is passed to ``makeCircuit()``, no netlist is generated, but the circuit object is created from the existing netlist file.
+The netlist written from a SLiCAP schematic obtains the extension ".slicap_cir" and is placed in the ``ini.cir_path`` directory. The extension names the dialect: an NGspice schematic of the same name writes a ".spice_cir" next to it, so the two never overwrite each other. If a file with extension ".cir" or ".slicap_cir" is passed to ``makeCircuit()``, no netlist is generated, but the circuit object is created from the existing netlist file.
 
 Below the netlist file created with the above script.
 
-.. literalinclude:: ../cir/Transimpedance.cir
+.. literalinclude:: ../cir/Transimpedance.slicap_cir
 
 Drawing-size images in ``pdf`` and ``svg`` format are placed in the ``img/`` folder of the project directory.
 
@@ -69,9 +69,15 @@ SLiCAP selects the netlister from the file extension and the operating system.
    * - .sch
      - gschem gnetlist noqsi
      - Lepton-EDA gnetlist noqsi
+   * - .slicap_cir
+     - Netlist written from a .slicap_sch
+     - -
+   * - .spice_cir
+     - -
+     - Netlist written from a .spice_sch
    * - .cir
-     - Use exsisting netlist
-     - Use exsisting netlist
+     - Use existing netlist
+     - Use existing netlist
 
 For a complete description of the function ``makeCircuit()`` see `makeCircuit <../reference/SLiCAPshell.html#SLiCAP.SLiCAPshell.makeCircuit>`__.
 
@@ -350,8 +356,8 @@ Below a project directory structure according to this principle.
    |   - slicap_circuit_2.slicap_sch
    |   - ...
    +-- cir
-   |   - slicap_circuit_1.cir     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
-   |   - slicap_circuit_2.cir     <-- created with: sl.makeCircuit("sch/slicap_circuit_2.slicap_sch")
+   |   - slicap_circuit_1.slicap_cir  <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
+   |   - slicap_circuit_2.slicap_cir  <-- created with: sl.makeCircuit("sch/slicap_circuit_2.slicap_sch")
    +-- lib
    +-- posters
    |   - overview.slicap_poster   <-- a poster made in the schematic editor
@@ -361,7 +367,7 @@ Below a project directory structure according to this principle.
        - overview.svg             <-- created with: sl.updateImages("overview")
        - overview.pdf             <-- created with: sl.updateImages("overview")
 
-Netlist files (``.cir`` extension) and image files (``.svg`` and ``.pdf`` extensions) shown above, are created with **makeCircuit()** and by default placed in the ``cir`` folder and the ``img`` folder of the project directory, respectively. A poster (``posters`` folder) has no netlist; ``updateImages()`` writes its images.
+Netlist files (``.slicap_cir`` extension) and image files (``.svg`` and ``.pdf`` extensions) shown above, are created with **makeCircuit()** and by default placed in the ``cir`` folder and the ``img`` folder of the project directory, respectively. A poster (``posters`` folder) has no netlist; ``updateImages()`` writes its images.
 
 Below an example of creating a circuit object from a SLiCAP schematic file. The project folder is ``/USR/myProject/``.
 

@@ -136,10 +136,14 @@ def _format_params(prefix: str, params: dict) -> list[str]:
                 parts.append(f"{k}={_wrap(v, k)}")
 
     elif prefix in ("V", "I"):
-        # "dc" comes from the stimuli dialog; a source whose only entry is
-        # its plain value (the symbol's default field) is a DC source of
-        # that value (a Windows user's "V1 1 0" lost its 1 V, 2026-09-28)
-        dc = params.get("dc", "").strip() or params.get("value", "").strip()
+        # dc/ac/tran are owned by the source-stimuli dialog, nothing else.
+        # The symbol's generic "value" field was a second key for the DC
+        # value (a Windows user's "V1 1 0" lost its 1 V, 2026-09-28) and
+        # was REMOVED from the NGspice V/I symbols on 2026-11-07; old files
+        # and frozen symbol caches are migrated on load. A source without
+        # any stimulus netlists as "V1 1 0", a 0 V source: INTENDED, a
+        # missing-value check was offered and DECLINED (Anton, 2026-11-07).
+        dc = params.get("dc", "").strip()
         if dc:
             parts.append(f"dc {_wrap(dc)}")
         ac = params.get("ac", "").strip()

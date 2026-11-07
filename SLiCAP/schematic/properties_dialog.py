@@ -236,33 +236,12 @@ class PropertiesDialog(QDialog):
         return self._descend_path
 
     def _open_stimuli_dialog(self) -> None:
-        from .source_stimuli_dialog import SourceStimuliDialog
-        item = self._item
-        # parent=None so the modal dialog is freely movable rather than a frozen,
-        # centered sheet under GNOME/Mutter (Anton, 2026-07-16).
-        dlg = SourceStimuliDialog(item.params, item.prop_display,
-                                  is_current=self._is_current,
-                                  title=f"Source stimuli — {item.instance_id}",
-                                  parent=None)
-        if dlg.exec():
-            dlg.apply()
-            item._save_label_offsets()
-            item.update_labels()
-            self._refresh_stimuli_rows()
-
-    def _refresh_stimuli_rows(self) -> None:
-        """Sync the dc/ac/tran rows with what the stimuli dialog just wrote
-        into the item — otherwise this dialog's OK writes the STALE row
-        texts back over the fresh stimuli (Anton, 2026-07-12: switching
-        pulse → sine and OK-ing both dialogs lost all stimuli)."""
-        for key in ("dc", "ac", "tran"):
-            edit = self._param_edits.get(key)
-            if edit is not None:
-                edit.setText(strip_braces(self._item.params.get(key, "")))
-            sv = self._param_sv.get(key)
-            if sv is not None:
-                sv.setChecked(
-                    self._item.prop_display.get(key, (False, False))[0])
+        from .source_stimuli_dialog import edit_source_stimuli
+        edit_source_stimuli(self._item)
+        # The stimuli dialog is the ONLY editor of dc/ac/tran: the NGspice
+        # V/I symbols declare no value/ac/tran rows since 2026-11-07, so
+        # there is no row to re-sync (the earlier _refresh_stimuli_rows
+        # kept two editors of one quantity consistent - REMOVED).
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
@@ -340,9 +319,9 @@ class PropertiesDialog(QDialog):
             self._item.model = self._model_edit.text().strip()
             disp["model"] = (self._model_sv.isChecked(), self._model_sn.isChecked())
 
-        # The rows are authoritative ONLY for the keys they show: keys
-        # managed elsewhere — the stimuli dialog's dc/ac/tran and its
-        # internal _<wf>_* bookkeeping — are preserved. A wholesale rebuild
+        # The rows are authoritative ONLY for the keys they show. Keys
+        # owned by another editor - the stimuli dialog's dc/ac/tran and its
+        # internal _<wf>_* bookkeeping - are preserved. A wholesale rebuild
         # from the rows alone silently dropped them (Anton, 2026-07-12:
         # OK-ing the properties dialog after editing stimuli lost them).
         new_params = {k: v for k, v in self._item.params.items()

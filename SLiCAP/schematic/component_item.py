@@ -311,6 +311,28 @@ def wrap_braces(value: str) -> str:
         return s
     return "{" + s + "}"
 
+def migrate_source_value(params: dict, prop_display: dict,
+                         prop_offsets: dict) -> None:
+    """Migrate an NGspice V/I source saved before 2026-11-07, in place.
+
+    The symbol's generic ``value`` field was a second key for the DC value
+    next to the stimuli dialog's ``dc``. A real value moves to ``dc`` when
+    ``dc`` is absent, with its label flags and position; the ``?``
+    reminder of an unset value is dropped. The dialog's ``ac`` and ``tran``
+    keys are unchanged."""
+    if "value" not in params:
+        return
+    value = params.pop("value", "").strip()
+    flags = prop_display.pop("value", None)
+    offset = prop_offsets.pop("value", None)
+    if value and value != "?" and not params.get("dc", "").strip():
+        params["dc"] = value
+        if flags is not None:
+            prop_display.setdefault("dc", flags)
+        if offset is not None:
+            prop_offsets.setdefault("dc", offset)
+
+
 def _vi_stimuli_display(key: str, params: dict) -> "tuple[str, list[tuple[str,str]]]":
     """Return (prefix, pairs) for render_stimuli_label from canonical V/I source params.
 

@@ -312,6 +312,95 @@ Version 6.4.5
    included, and the net had no name left. The segment that carries a name
    is now the one that stays.
 
+Version 6.4.6
+-------------
+
+#. **Bug fix: a percent sign in a specification description.** The text
+   cells of the LaTeX tables, among them the description of a
+   specification, escaped only the underscore. A ``%`` in a description
+   started a LaTeX comment that swallowed the rest of the row and the
+   whole next row. A text cell is now text with inline maths: outside
+   ``$...$`` spans the characters ``%``, ``&``, ``#`` and ``_`` are
+   escaped, unless they are escaped already, and a ``$...$`` span is
+   passed to LaTeX unchanged. "Output voltage at $I_{max}$" renders with
+   its subscript, and "0.1% of final value" renders as typed. An unclosed
+   ``$`` is shown as text.
+
+#. **Boltzmann's constant is a circuit parameter.** The thermal-noise model
+   of a resistor uses ``k``. The netlist never names it, so the circuit did
+   not list it: ``k`` was inserted at execution time, just before the
+   parameter substitution. ``pardefs='circuit'`` therefore substituted it,
+   but the instruction dialog and ``selectPars()`` never saw it, and a
+   ``selectPars()`` dict always left it symbolic. The circuit now claims
+   ``k`` for every resistor with a non-zero ``noisetemp``, like ``T``. It
+   appears in ``parDefs``, in the parameter tables and in the instruction
+   dialog, where it can be set to circuit, specs, user or undefined. A
+   ``.param k=...`` in the netlist still wins.
+
+#. **Bug fix: the instruction dialog showed an outdated circuit.** The
+   circuit data for the dialog were built once per schematic and kept for
+   the whole session. Parameters deleted from the schematic were still
+   offered. The circuit is now rebuilt every time the dialog opens.
+
+#. **Unsaved schematic changes before an instruction.** The instruction
+   dialogs netlist the schematic file on disk, so an unsaved edit is not in
+   what they offer. A schematic with unsaved changes now asks to be saved
+   first, the same rule as Run.
+
+#. **Row colour of LaTeX tables in the snippet dialog.** The table methods
+   of the LaTeX formatter take ``color``, but the snippet dialog left it at
+   its default. A **Row colour** field now offers the colours of
+   ``preambuleSLiCAP.tex`` and ``none``. The default ``myyellow`` emits no
+   argument, ``none`` emits ``color=None``, another choice its name. The
+   field appears only for methods that take a colour, never for RST.
+
+#. **One editor for the stimuli of an NGspice source.** The Properties
+   dialog of an independent source on an NGspice schematic showed the
+   rows ``value``, ``ac`` and ``tran`` next to the button that opens the
+   **Source stimuli** dialog. Both edited the same stimuli. The rows are
+   gone. The Properties dialog keeps the refdes, the orientation, the
+   symbol and the operating-point check-box. The **Source stimuli** dialog
+   sets the DC value, the AC magnitude and phase, and the transient
+   waveform, each with its own **Show** check-box for the canvas label.
+   The DC value serves every analysis, so its field is named **DC VALUE**.
+   A double-click on a dc, ac or tran label of a source on an NGspice
+   schematic opens that dialog too.
+   A source saved by an earlier version is converted when the schematic
+   is loaded: its ``value`` becomes the DC value, the ``?`` reminder of an
+   unset value is dropped, and the schematic's frozen symbol cache is
+   updated at the next save.
+
+#. **The netlist extension names the dialect.** A SLiCAP schematic
+   ``sch/x.slicap_sch`` now writes ``cir/x.slicap_cir``, an NGspice
+   schematic ``sch/x.spice_sch`` writes ``cir/x.spice_cir``. Both wrote
+   ``cir/x.cir`` before. A project with a SLiCAP and an NGspice schematic
+   of the same name then ran NGspice on the SLiCAP netlist, whichever was
+   written last. A netlist written by hand keeps ``.cir``, in either
+   dialect. ``makeCircuit()`` accepts ``.slicap_cir`` next to ``.cir``. An
+   NGspice instruction names the circuit, as before: ``sl.op("x")`` runs
+   ``cir/x.spice_cir``, else ``cir/x.cir``. The old ``cir/x.cir`` of a
+   schematic stays behind as a dead file.
+
+#. **The netlist step of an NGspice schematic is explicit.** An NGspice
+   instruction no longer regenerates the netlist when the schematic is
+   newer. The line ``sl.makeCircuit("sch/x.spice_sch")`` in the
+   instruction file writes the netlist, as a circuit object does for a
+   SLiCAP circuit; the manual's example already had it. The schematic
+   editor's Instruction menu has **Create netlist…**, which appends that
+   line, and an NGspice instruction or control section can only be added
+   when the instruction file has it. The instruction functions report a
+   missing netlist with the line to add.
+
+#. **Every parameter an NGspice netlist needs is listed.** The parameter
+   table of the NGspice instruction dialog listed the ``.param``
+   definitions only. A schematic with ``R1 out 1 {R_s}`` and no ``.param``
+   showed an empty table. The table now lists every name used in an
+   element value, a source stimulus or a ``.param`` expression. A name
+   without a ``.param`` has no *circuit* position and takes its value from
+   the specs, else from the user. The NGspice functions check the deck
+   before the run and name every parameter that is still undefined,
+   instead of leaving the search to the NGspice log.
+
 SLiCAP version 6.3 release notes
 ================================
 

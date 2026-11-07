@@ -96,7 +96,7 @@ Specifications can be assigned to circuit parameters using `specs2circuit() <../
     
 Below the netlist file created with the above script. It shows the expressions and parameters associated with circuit elements.
 
-.. literalinclude:: ../cir/Transimpedance.cir
+.. literalinclude:: ../cir/Transimpedance.slicap_cir
 
 Below the ``.svg`` image file created with the above script.
 
@@ -129,6 +129,8 @@ The output below, shows the circuit parameters. The parameter definitions includ
     sigma_ID
     sigma_R
     I_D            
+
+The description of a specification is text with inline maths: ``output voltage at $I_{max}$`` renders with the subscript in LaTeX tables, and the characters ``%``, ``&``, ``#`` and ``_`` outside a ``$...$`` span are escaped for you.
 
 Select specifications per instruction
 =====================================

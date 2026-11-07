@@ -124,6 +124,27 @@ def circuit_objects(text: str) -> list:
     return out
 
 
+def netlist_calls(text: str) -> list:
+    """The paths of every ``sl.makeCircuit(...)`` call in the instruction
+    file, assigned or not, in file order: ``["sch/amp.spice_sch", …]``.
+
+    An NGspice schematic has no circuit object. Its netlist step is a bare
+    ``sl.makeCircuit("sch/<name>.spice_sch")`` line, which writes
+    cir/<name>.spice_cir. An NGspice instruction may only be added when
+    that line exists (Anton, 2026-11-07: the file, not the disk, says
+    which netlists the run makes; a .spice_cir left by an earlier session
+    does not count)."""
+    out = []
+    for call in parse_calls(text):
+        if call["func"] != "makeCircuit":
+            continue
+        arg = (call["args"] or [""])[0].strip()
+        if len(arg) >= 2 and arg[0] in "\"'" and arg[-1] == arg[0]:
+            arg = arg[1:-1]
+        out.append(arg)
+    return out
+
+
 def spec_var_name(file_name: str) -> str:
     """The variable an instruction file loads a spec CSV into:
     ``SPECS_<stem>`` with the stem made a valid identifier fragment
