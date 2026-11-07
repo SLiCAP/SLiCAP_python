@@ -1,0 +1,14 @@
+VampIdeal
+
+.source V1
+.detector V_L
+
+V1 1 0 V value={0}
+R1 in 1 R value={R_s}
+R2 L 2 R value={R_a}
+R3 2 0 R value={R_b}
+R4 L 0 R value={R_L}
+C1 L 0 C value={C_L}
+N1 L 0 in 2 N
+
+.end

@@ -1,0 +1,13 @@
+BJTdiffAmp
+
+.lib lib/myBJTamp.slicap_lib
+
+X1P inP fbP outP myBJTamp
+X1N inN fbN outN myBJTamp
+R1 fbP fbN R value={R_a}
+R1P srcP inP R value={R_s}
+R1N srcN inN R value={R_s}
+V1P srcP 0 V value={0}
+V1N srcN 0 V value={0}
+
+.end

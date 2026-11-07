@@ -1,0 +1,12 @@
+ACcoupling
+
+.detector V_out
+
+V1 B 0 V value={V_B/s}
+V2 1 0 V value={V_p*2*pi*f_s/(s^2+(2*pi*f_s)^2)}
+R1 2 1 R value={R_s}
+R2 B out R value={R_a}
+R3 out 0 R value={R_b}
+C1 out 2 C value={C_c}
+
+.end
