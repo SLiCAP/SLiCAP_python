@@ -314,13 +314,18 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
             subckt = cirTitle
     elif cirType == "spice_sch":
         # An NGspice schematic of the schematic editor: the same headless
-        # export as .slicap_sch writes cir/<name>.slicap_cir, the SVG and the PDF
+        # export as .slicap_sch writes cir/<name>.spice_cir, the SVG and the PDF
         # (with the operating-point annotations when cir/<name>_op.raw
         # exists). As with a KiCad schematic and language="SPICE", the
         # netlist text is returned (Anton, 2026-09-21).
-        from SLiCAP.schematic import make_schematic
+        from SLiCAP.schematic import make_schematic, schematic_properties
         cirPath = make_schematic(fileName, cir_title=cirTitle)
-        if language.upper() == "SPICE" and cirPath is not None:
+        if schematic_properties(fileName).is_subcircuit:
+            # The export wrote lib/<name>.spice_lib and no circuit netlist:
+            # skip the HTML page, as for a .slicap_sch subcircuit (found
+            # 2026-11-08: makeCircuit tried to show cir/<name>.spice_cir).
+            subckt = cirTitle
+        elif language.upper() == "SPICE" and cirPath is not None:
             with open(cirPath, "r", encoding="utf-8") as f:
                 netlist = f.read()
     elif cirType in ("cir", "slicap_cir", "spice_cir"):
@@ -350,14 +355,14 @@ def updateImages(circuit, force=False):
     nothing again. A drawing that is not a valid circuit, e.g. one with a
     '?' value, is exported as well.
 
-    :param circuit: The circuit object returned by ``makeCircuit()`` for a
-                    ".slicap_sch" schematic, or a string: the name of the
-                    circuit (the schematic ``sch/<name>.slicap_sch`` or
-                    ``sch/<name>.spice_sch`` of the project), or the path
-                    of the schematic file relative to the project root.
-                    An NGspice schematic has no circuit object, so its
-                    name is used, as in ``sl.op()``.
-    :type circuit: SLiCAP.SLiCAPprotos.circuit, str
+    :param circuit: The schematic file, relative to the project root:
+                    ``"sch/<name>.slicap_sch"``, ``"sch/<name>.spice_sch"``
+                    or ``"posters/<name>.slicap_poster"``. The circuit
+                    object ``makeCircuit()`` returned for a ".slicap_sch"
+                    schematic is accepted too: it carries that file. A bare
+                    name is refused (Anton, 2026-11-08): a SLiCAP and an
+                    NGspice schematic of one name would be ambiguous.
+    :type circuit: str, SLiCAP.SLiCAPprotos.circuit
 
     :param force: True exports even when the images are current.
     :type force: bool
@@ -371,7 +376,7 @@ def updateImages(circuit, force=False):
     >>> sl.makeCircuit("sch/myAmp.spice_sch")
     >>> TR1 = sl.tran("myAmp", "1n", "1u")
     >>> FIG1 = sl.makeFigure([[sl.traceAxis("", "lin", sl.make_traces(TR1, [{"y": "v(out)", "x": "time"}]))]], "tran")
-    >>> sl.updateImages("myAmp")   # img/myAmp.svg and .pdf now show img/tran.svg
+    >>> sl.updateImages("sch/myAmp.spice_sch")   # img/myAmp.svg and .pdf now show img/tran.svg
     """
     from SLiCAP.schematic import export_images
     _publishDesignData()
@@ -408,8 +413,10 @@ def _publishDesignData():
 
 def _schematicFile(circuit):
     """The schematic file behind *circuit* (see updateImages): a circuit
-    object made from a schematic of the editor, a schematic path, or a
-    circuit name whose schematic lies in the project's ``sch`` folder."""
+    object made from a schematic of the editor, or the schematic's path.
+    The bare-name lookup (sch/<name>.slicap_sch, then .spice_sch, then
+    posters/) was REMOVED (Anton, 2026-11-08): with two dialects of one
+    name it silently took the SLiCAP one."""
     sch = getattr(circuit, "schematic", None)
     if sch:
         return sch
@@ -420,14 +427,9 @@ def _schematicFile(circuit):
     name = circuit.replace("\\", "/")
     if name.lower().endswith((".slicap_sch", ".spice_sch", ".slicap_poster")):
         return name
-    for folder, ext in ((ini.schematic_path, ".slicap_sch"), (ini.schematic_path, ".spice_sch"),
-                        (ini.poster_path, ".slicap_poster")):
-        candidate = os.path.join(folder, name + ext)   # the project root is the cwd
-        if os.path.isfile(candidate):
-            return candidate
-    raise FileNotFoundError("updateImages: no schematic sch/{0}.slicap_sch or "
-                            "sch/{0}.spice_sch, and no poster posters/{0}.slicap_poster "
-                            "in this project.".format(name))
+    raise ValueError("updateImages: give the schematic file, e.g. "
+                     "'sch/{0}.slicap_sch', 'sch/{0}.spice_sch' or "
+                     "'posters/{0}.slicap_poster', not '{0}'.".format(name))
 
 def makeCircuit(fileName, cirTitle=None, imgWidth=500, 
                  expansion=True, description=None, language="SLiCAP"):

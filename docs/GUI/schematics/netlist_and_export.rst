@@ -13,7 +13,7 @@ From the GUI
   the control section for an NGspice circuit. For a subcircuit schematic it
   writes the subcircuit library to
   ``lib/`` instead, ``<title>.slicap_lib`` or ``<title>.spice_lib``, the
-  same file as the headless export and as saving the subcircuit.
+  same file as the export from the command line and as saving the subcircuit.
 * :menuselection:`File --> Export SVG…` writes a vector figure.
 * :menuselection:`File --> Export PDF…` writes a PDF figure.
 * :menuselection:`File --> Print schematic…` (:kbd:`Ctrl+P`) prints the drawing.
@@ -42,7 +42,18 @@ appropriate extension and lands in the project's ``cir/`` (netlist) or
 the dialect: a ``.slicap_sch`` writes ``cir/<name>.slicap_cir``, a
 ``.spice_sch`` writes ``cir/<name>.spice_cir``. A SLiCAP and an NGspice
 schematic of the same name therefore keep their own netlists. A netlist
-written by hand keeps the extension ``.cir``, in either dialect.  For a
+written by hand keeps the extension ``.cir``, in either dialect.
+
+The images carry no dialect. Every drawing of the project, a schematic in
+``sch/`` or ``lib/`` or a poster, writes ``img/<name>.svg`` and
+``img/<name>.pdf`` into the one ``img/`` folder. **Give every drawing of a
+project its own name.** Two drawings with one name overwrite each other's
+images, and the last export wins. The editor refuses a name in use when a
+poster is created, when a schematic is saved under a new name and when a
+subcircuit is saved, and names the drawing that has it. Name the NGspice
+twin of ``amp.slicap_sch`` for instance ``amp_ng.spice_sch``.
+
+For a
 schematic saved as a subcircuit the ``netlist`` command writes the library
 ``lib/<name>.slicap_lib`` instead of a netlist file (see
 :doc:`/GUI/schematics/hierarchical_blocks`).
@@ -62,8 +73,8 @@ netlist and figures automatically before parsing:
 
 The export can also be run on its own with ``sl.updateImages()``, which
 rewrites the schematic's images (and its netlist) without creating a
-circuit object. It takes the circuit object of a SLiCAP schematic, or the
-name of the circuit, which is how an NGspice schematic is addressed. Its
+circuit object. It takes the schematic file, ``sch/<name>.slicap_sch`` or
+``sch/<name>.spice_sch``, or the circuit object of a SLiCAP schematic. Its
 place is the end of the instruction file. A schematic that links plots
 (:menuselection:`Insert --> Image…` with a file in ``img/``) inlines them at
 export time, and ``makeCircuit()`` at the top of the file exports before
@@ -75,9 +86,9 @@ plots of this run:
    cir = sl.makeCircuit("sch/my_circuit.spice_sch")   # exports + parses
    TR1 = sl.tran("my_circuit", "1n", "1u")
    FIG1 = sl.makeFigure([[AX1]], "tran")               # writes img/tran.svg
-   sl.updateImages("my_circuit")                       # exports with the new plot
+   sl.updateImages("sch/my_circuit.spice_sch")         # exports with the new plot
 
-:menuselection:`Instruction --> Update schematic images…` on the schematic's tab
+:menuselection:`Instruction --> Update schematic images…` on the main menu
 appends that last line. Both calls skip the export when the netlist and
 the images are newer than everything they depend on: the schematic, its
 sidecars, the symbol libraries, the operating-point results and the linked

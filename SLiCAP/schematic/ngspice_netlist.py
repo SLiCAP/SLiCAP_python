@@ -261,7 +261,7 @@ def build_ngspice_netlist(
 
     When *program_netlist* is ``False`` (default) a ``.control save all … .endc``
     block is emitted for interactive use.  When ``True`` the control block is
-    omitted, producing a plain program netlist (``.cir``) suitable for use with
+    omitted, producing a plain program netlist (``.spice_cir``) suitable for use with
     the SLiCAP simulation API (``sl.op``, ``sl.ac``, etc.), which appends its
     own control block at run time.
 

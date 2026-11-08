@@ -335,9 +335,9 @@ A schematic can show images placed with the schematic editor (:menuselection:`In
 
    sl.makeCircuit("sch/myAmp.spice_sch")          # an NGspice schematic: no circuit object
    ...                                            # op(), tran(), ..., makeFigure() calls
-   sl.updateImages("myAmp")                       # the circuit name, as in sl.op("myAmp")
+   sl.updateImages("sch/myAmp.spice_sch")         # the schematic file
 
-Both forms work for both schematic types: a circuit object made from a ``.slicap_sch`` file remembers its schematic, and a name is looked up as ``sch/<name>.slicap_sch`` or ``sch/<name>.spice_sch`` in the project. An NGspice schematic has no circuit object, because ``makeCircuit()`` returns its netlist text, so there the name is the form to use. The images are exported again only when one of their sources changed: the schematic, its sidecars, the operating-point results or the linked images. An install of SLiCAP is no such change, so an image changes only when you change its drawing. The netlist also counts SLiCAP itself. After an install it is rebuilt once, so that a correction of the netlister reaches it. The images then stay as they are. ``force=True`` exports everything. In the schematic editor, :menuselection:`Instruction --> Update schematic images…` appends the call to the instruction file.
+Both forms work for both schematic types: a circuit object made from a ``.slicap_sch`` file remembers its schematic, and the schematic file is given with its folder and extension, ``sch/<name>.slicap_sch``, ``sch/<name>.spice_sch`` or ``posters/<name>.slicap_poster``. A bare name is refused, because a SLiCAP and an NGspice schematic of one name would be ambiguous. An NGspice schematic has no circuit object, because ``makeCircuit()`` returns its netlist text, so there the file is the form to use. The images are exported again only when one of their sources changed: the schematic, its sidecars, the operating-point results or the linked images. An install of SLiCAP is no such change, so an image changes only when you change its drawing. The netlist also counts SLiCAP itself. After an install it is rebuilt once, so that a correction of the netlister reaches it. The images then stay as they are. ``force=True`` exports everything. In the GUI, :menuselection:`Instruction --> Update schematic images…` on the main menu lets you pick the drawings and appends the calls to the instruction file.
 
 Schematic file locations
 ========================
@@ -364,8 +364,8 @@ Below a project directory structure according to this principle.
    +-- img
        - slicap_circuit_1.svg     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
        - slicap_circuit_1.pdf     <-- created with: sl.makeCircuit("sch/slicap_circuit_1.slicap_sch")
-       - overview.svg             <-- created with: sl.updateImages("overview")
-       - overview.pdf             <-- created with: sl.updateImages("overview")
+       - overview.svg             <-- created with: sl.updateImages("posters/overview.slicap_poster")
+       - overview.pdf             <-- created with: sl.updateImages("posters/overview.slicap_poster")
 
 Netlist files (``.slicap_cir`` extension) and image files (``.svg`` and ``.pdf`` extensions) shown above, are created with **makeCircuit()** and by default placed in the ``cir`` folder and the ``img`` folder of the project directory, respectively. A poster (``posters`` folder) has no netlist; ``updateImages()`` writes its images.
 

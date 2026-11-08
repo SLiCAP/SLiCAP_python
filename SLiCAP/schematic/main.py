@@ -66,7 +66,7 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
             "  slicap                      Full GUI: both schematic types + analysis panels\n"
             "  slicap-schematics           Schematic-only editor (no analysis panels)\n"
             "  python -m SLiCAP.schematic.cli netlist|svg|pdf FILE\n"
-            "                              Headless export to .cir / .svg / .pdf (no GUI)\n"
+            "                              Export the netlist (.slicap_cir / .spice_cir), .svg or .pdf without the GUI\n"
             "\n"
             "From Python:\n"
             "  import SLiCAP as sl;  sl.startSchematic(config=..., file=...)\n"

@@ -401,6 +401,55 @@ Version 6.4.6
    before the run and name every parameter that is still undefined,
    instead of leaving the search to the NGspice log.
 
+#. **Bug fix: operating-point annotation read the wrong netlist.** The
+   schematic editor takes the net names of an operating-point run from the
+   netlist that produced the raw file. It asked for ``cir/<stem>.cir`` by
+   name, while an NGspice schematic now runs ``cir/<stem>.spice_cir``. It
+   now uses the same lookup as the run: ``.spice_cir``, else the
+   hand-written ``.cir``.
+
+#. **Bug fix: netlist snippet from the Browse button.** ``ltx.netlist()``
+   and ``rst.netlist()`` take a file name in the project's cir folder and
+   add the folder themselves. The snippet dialog's Browse button filled an
+   absolute path, so the snippet pointed nowhere. For a netlist snippet
+   Browse now opens the cir folder and fills the file name only. A path
+   with a directory part is refused there. A snippet from any other file
+   still takes a full path.
+
+#. **updateImages() takes the schematic file.** ``sl.updateImages()``
+   accepted a bare circuit name and looked it up as ``sch/<name>.slicap_sch``,
+   then ``sch/<name>.spice_sch``, then a poster. With a SLiCAP and an
+   NGspice schematic of one name it silently took the SLiCAP one. It now
+   takes the file: ``"sch/<name>.slicap_sch"``, ``"sch/<name>.spice_sch"``
+   or ``"posters/<name>.slicap_poster"``. A circuit object made from a
+   ``.slicap_sch`` is still accepted, it carries that file. A bare name
+   raises a ``ValueError`` that names the three forms. Instruction files
+   with ``sl.updateImages("<name>")`` must be changed to the file.
+
+#. **Update schematic images moved to the main Instruction menu.** The
+   entry lived on the schematic tab's Instruction menu and emitted only
+   the active schematic. It now lives on the main menu and offers every
+   drawing of the project: the schematics of ``sch/`` and ``lib/`` and the
+   posters. Each pick appends one ``sl.updateImages("<file>")`` line. A
+   line the file already has is not repeated.
+
+#. **A drawing name is unique in a project.** Every drawing, a schematic
+   in ``sch/`` or ``lib/`` or a poster, writes ``img/<name>.svg`` and
+   ``.pdf`` into the one ``img/`` folder. Two drawings with one name, for
+   instance ``amp.slicap_sch`` and ``amp.spice_sch``, overwrote each
+   other's images, and the last export won without a message. New poster,
+   Save as and the subcircuit save now refuse a name that another drawing
+   of the project has, and name that drawing. Existing files are not
+   touched. A project with two drawings of one name should rename one of
+   them.
+
+#. **Bug fix: makeCircuit() of an NGspice subcircuit schematic.** A
+   ``.spice_sch`` saved as a subcircuit exports ``lib/<name>.spice_lib``
+   and no circuit netlist. ``makeCircuit()`` nevertheless made the HTML
+   circuit page and printed ``could not open 'cir/<name>.spice_cir'``. It
+   now skips the page and returns ``None``, as for a ``.slicap_sch``
+   subcircuit.
+
 SLiCAP version 6.3 release notes
 ================================
 

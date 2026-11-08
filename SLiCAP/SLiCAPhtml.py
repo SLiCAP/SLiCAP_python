@@ -153,7 +153,7 @@ def _readFile(fileName):
         txt = f.read()
         f.close()
     except:
-        print("Error: could note open '{0}'.".format(fileName))
+        print("Error: could not open '{0}'.".format(fileName))
         txt = ''
     return txt
 

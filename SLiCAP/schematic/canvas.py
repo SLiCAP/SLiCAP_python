@@ -342,7 +342,7 @@ class SchematicScene(QGraphicsScene):
         # DC operating-point results for bias back-annotation (NGspice):
         # lower-case vector name → float, from the circuit's most recent
         # UNSTEPPED op run in this session (<cir>_op.raw, loaded by the
-        # panel after every instruction run). op_netlist is the .cir the
+        # panel after every instruction run). op_netlist is the netlist the
         # raw was produced from — the NAMING AUTHORITY for the nets (the
         # sims run on that file as last exported). Values are never
         # persisted; a NETLIST-RELEVANT edit marks them stale (greyed) —
@@ -1146,8 +1146,11 @@ class SchematicScene(QGraphicsScene):
                     results[k.lower()] = float(v[0].real)
             if not results:
                 return False
-            # The .cir the raw was produced from names the nets.
-            cir = raw.with_name(f"{sch_path.stem}.cir")
+            # The netlist the raw was produced from names the nets:
+            # cir/<stem>.spice_cir, else the hand-written .cir - the one
+            # lookup rule of the NGspice run (Anton, 2026-11-08).
+            from SLiCAP.SLiCAPngspice import _netlist_path
+            cir = _netlist_path(sch_path.stem, raw.parent)
             try:
                 netlist_text = cir.read_text(encoding="utf-8", errors="replace")
             except OSError:
@@ -1159,7 +1162,7 @@ class SchematicScene(QGraphicsScene):
     def set_op_results(self, results: "dict | None",
                        netlist_text: "str | None" = None) -> None:
         """Install fresh op results (panel calls this after a run).
-        *netlist_text* is the .cir the raw was produced from.
+        *netlist_text* is the netlist the raw was produced from.
         An OWN run supersedes any context borrowed via descend."""
         self.op_results = results
         self.op_netlist = netlist_text
@@ -1231,7 +1234,7 @@ class SchematicScene(QGraphicsScene):
     def refresh_bias_annotations(self) -> None:
         # Effective nets come FROM THE NETLIST the op raw was produced
         # with (scene.op_netlist — round 3, Anton 2026-07-12: the sims run
-        # cir/<stem>.cir exactly as last exported, so no live resolver can
+        # cir/<stem>.spice_cir (or .cir) as last exported, so no live resolver can
         # be trusted to reproduce its numbers; the file is the naming
         # authority). Fallback when no netlist is known yet: the builder's
         # own resolver. The map also feeds the NET-NAME labels of unnamed

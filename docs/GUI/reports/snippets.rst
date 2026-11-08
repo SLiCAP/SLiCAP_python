@@ -41,7 +41,9 @@ Snippet from a file
 ===================
 
 Any text file, or a netlist, included verbatim: the file name, and for LaTeX
-the listing language, for RST the first line number.
+the listing language, for RST the first line number. A netlist is named by
+its file name in the project's cir folder, for example ``amp.slicap_cir``.
+The Browse button opens that folder. Any other file takes its full path.
 
 Snippet from an object
 ======================

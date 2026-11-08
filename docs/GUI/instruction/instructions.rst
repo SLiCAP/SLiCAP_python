@@ -79,9 +79,10 @@ Creating that object is an explicit, separate step:
 tab.  You choose the variable name (the schematic's name is offered); the line
 is **appended** to the instruction file.
 
-:menuselection:`Instruction --> Update schematic images…` on the same tab appends
-``sl.updateImages("<schematic name>")``, the export of the schematic to its
-netlist and images without a circuit object. Placed after the figures it
+:menuselection:`Instruction --> Update schematic images…` on the main menu lets
+you pick drawings of the project and appends one
+``sl.updateImages("sch/<name>.slicap_sch")`` line per drawing, the export of
+the schematic to its netlist and images without a circuit object. Placed after the figures it
 exports the schematic with the plots the run has written (see
 :doc:`/GUI/schematics/netlist_and_export`).
 

@@ -13,7 +13,9 @@ or a figure of several circuits for a book.
 A poster is **not a schematic**: it holds no circuit and is never netlisted.
 Its file is ``posters/<name>.slicap_poster``, an edited source beside the
 schematics in ``sch/``; its export goes to ``img/<name>.svg`` and ``.pdf``
-like every other drawing.
+like every other drawing. A poster therefore needs a name no schematic of
+the project uses, and :menuselection:`File --> New poster` refuses one in
+use (see :doc:`netlist_and_export`).
 
 Making a poster
 ===============
@@ -69,7 +71,7 @@ name.
 
 The export of a poster first brings the exports of the drawings it shows up
 to date, children before parents, then writes the poster. In a script that
-is ``sl.updateImages("<poster name>")``, at the end of the instruction
+is ``sl.updateImages("posters/<name>.slicap_poster")``, at the end of the instruction
 file, after the figures; in the editor it is :menuselection:`File --> Export
 SVG…` or :menuselection:`Export PDF…`. Figures, snippets and placed trace
 curves follow every run as they do on a schematic.

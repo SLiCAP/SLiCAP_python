@@ -113,10 +113,11 @@ def nets_from_netlist(components: list, wires: list,
                       netlist_text: str) -> dict[tuple[int, int], str]:
     """Map rounded scene position → net name AS THE NETLIST NAMES IT.
 
-    The simulations run on ``cir/<stem>.cir`` exactly as it was last
+    The simulations run on ``cir/<stem>.spice_cir`` (or a hand-written
+    ``cir/<stem>.cir``) exactly as it was last
     exported — regardless of which numbering the current code would assign
     (bias back-annotation round 3, Anton 2026-07-12: the raw's numbers come
-    from a .cir that may predate any resolver change). So the netlist FILE
+    from a netlist that may predate any resolver change). So the netlist FILE
     is the naming authority: its element lines carry ``<refdes> <node…>``;
     matching refdes against the scene's components ties every node name to
     the pin positions, and the union-find propagates them along the wires.

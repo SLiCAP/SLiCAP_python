@@ -5,7 +5,8 @@ A SLiCAP project directory is organised into subdirectories (mirroring the
 SLiCAP Python project structure, plus a new ``sch/``)::
 
   sch/   schematic sources and their sidecars
-  cir/   exported top-level netlists (``<name>.cir``)
+  cir/   exported top-level netlists (``<name>.slicap_cir`` / ``<name>.spice_cir``)
+         and hand-written ones (``<name>.cir``)
   lib/   subcircuit libraries (``<name>.lib``) and their symbols
   img/   exported images (``<name>.svg`` / ``<name>.pdf``)
 
@@ -137,6 +138,66 @@ def project_schematics(root=None) -> list:
             out += sorted(p for p in d.iterdir()
                           if p.suffix.lower() in SCHEMATIC_SUFFIXES)
     return out
+
+
+def project_drawings(root=None) -> list:
+    """Every drawing of the project that exports an image: the schematics
+    of sch/ and lib/ (project_schematics) and then the posters, sorted."""
+    base = Path(root) if root is not None else project_root()
+    out = list(project_schematics(base))
+    posters = folder("posters", base)
+    if posters.is_dir():
+        out += sorted(p for p in posters.iterdir()
+                      if p.suffix.lower() == POSTER_SUFFIX)
+    return out
+
+
+def drawing_with_stem(stem: str, root=None, exclude=None):
+    """The drawing of the project whose file stem is *stem*, other than
+    *exclude* (the file being saved), or None.
+
+    Every drawing writes img/<stem>.svg and img/<stem>.pdf into the one
+    img folder of the project. Two drawings with one stem - a SLiCAP and
+    an NGspice schematic of one circuit, a schematic in sch/ and one in
+    lib/, a poster and a schematic - overwrite each other's images, and
+    the last export wins without a message. A stem is therefore unique
+    across sch/, lib/, posters/ and both dialects, and New poster, Save
+    as and the subcircuit save refuse a stem in use (Anton, 2026-11-08).
+    Carrying the dialect in the image name instead was considered and
+    REJECTED for now: consistency would ask for <name>_<dialect>.<type>
+    on every associated file and undo the dialect extensions of
+    2026-11-07."""
+    ex = None
+    if exclude is not None:
+        try:
+            ex = Path(exclude).resolve()
+        except OSError:
+            ex = Path(exclude)
+    for p in project_drawings(root):
+        if p.stem != stem:
+            continue
+        try:
+            same = ex is not None and p.resolve() == ex
+        except OSError:
+            same = False
+        if not same:
+            return p
+    return None
+
+
+def drawing_name_conflict(path, root=None) -> "str | None":
+    """The message that refuses saving a drawing at *path*, or None when
+    its stem is free (drawing_with_stem). Shared by the GUI entry points
+    so the wording is one."""
+    path = Path(path)
+    base = Path(root) if root is not None else root_for(path)
+    other = drawing_with_stem(path.stem, base, exclude=path)
+    if other is None:
+        return None
+    return ("A drawing called '{0}' already exists:\n    {1}\n\nEvery drawing "
+            "of a project needs its own name: all drawings write img/{0}.svg "
+            "and img/{0}.pdf. Choose another name.".format(
+                path.stem, relative_to_root(other, other)))
 
 
 def schematic_ref(path, root=None) -> str:

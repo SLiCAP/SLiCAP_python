@@ -2023,7 +2023,7 @@ def _join_continuations(lines):
 def _netlist_par_defs(cirFile, instr_params=None):
     """Circuit parameters AS SIMULATED, as a SLiCAP ``parDefs`` dictionary.
 
-    The ``.param`` definitions of ``<cirFile>.cir`` in file order, with the
+    The ``.param`` definitions of the netlist in file order, with the
     per-instruction ``params=`` overrides applied on top — the same
     precedence NGspice sees in the deck (:func:`_apply_instr_params`).  The
     values are read in SLiCAP notation ('1k', '2*R_a'), BEFORE the NGspice
@@ -2168,7 +2168,7 @@ def op(cirFile, save=None, step=None, params=None, options=None,
 
     With stepping returns ``{"<param>": 1-D array, signal_name: 1-D array, ...}``.
 
-    :param cirFile: Circuit filename without the ``.cir`` extension
+    :param cirFile: Circuit name: the stem of ``cir/<name>.spice_cir`` or ``cir/<name>.cir``
                     (file must be in ``ini.cir_path``).
     :type cirFile: str
 
@@ -2278,7 +2278,7 @@ def dc(cirFile, source, start, stop, incr, save=None,
     """
     Run an NGspice DC sweep analysis.
 
-    :param cirFile: Circuit filename without the ``.cir`` extension.
+    :param cirFile: Circuit name: the stem of ``cir/<name>.spice_cir`` or ``cir/<name>.cir``.
     :type cirFile: str
 
     :param source: Source name to sweep (e.g. ``"V1"``), or ``"TEMP"`` for a
@@ -2364,7 +2364,7 @@ def ac(cirFile, method, n, fstart, fstop, save=None,
     :func:`~SLiCAP.SLiCAPmath.phase`, and :func:`~SLiCAP.SLiCAPmath.delay`
     for post-processing.
 
-    :param cirFile: Circuit filename without the ``.cir`` extension.
+    :param cirFile: Circuit name: the stem of ``cir/<name>.spice_cir`` or ``cir/<name>.cir``.
     :type cirFile: str
 
     :param method: Frequency sweep type: ``"dec"`` (per decade),
@@ -2442,11 +2442,14 @@ def ac(cirFile, method, n, fstart, fstop, save=None,
 _NETLIST_EXTS = (".spice_cir", ".cir")
 
 
-def _netlist_path(stem):
+def _netlist_path(stem, cir_dir=None):
     """The NGspice netlist of circuit *stem*: ``cir/<stem>.spice_cir``, the
     netlist ``makeCircuit("sch/<stem>.spice_sch")`` writes, else the
     hand-written ``cir/<stem>.cir``. ONE owner of the lookup rule; the
-    callers that read the netlist ask here.
+    callers that read the netlist ask here. *cir_dir* is the netlist
+    folder; default ``ini.cir_path``. The GUI passes the folder of the
+    raw file it annotates from (Anton, 2026-11-08: its op back-annotation
+    read ``<stem>.cir`` by name and missed the ``.spice_cir`` it ran).
 
     The extension names the dialect (Anton, 2026-11-07): a SLiCAP schematic
     of the same name writes cir/<stem>.slicap_cir, so the two never
@@ -2454,11 +2457,12 @@ def _netlist_path(stem):
     was REJECTED the same day: as with a SLiCAP circuit object, the netlist
     is made by an explicit ``makeCircuit`` line of the instruction file,
     and an instruction runs the file that line wrote."""
+    cir_dir = Path(ini.cir_path if cir_dir is None else cir_dir)
     for ext in _NETLIST_EXTS:
-        path = Path(ini.cir_path) / (stem + ext)
+        path = cir_dir / (stem + ext)
         if path.is_file():
             return path
-    return Path(ini.cir_path) / (stem + _NETLIST_EXTS[0])
+    return cir_dir / (stem + _NETLIST_EXTS[0])
 
 
 def _netlist_stem(cirFile):
@@ -2586,7 +2590,7 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
     ``save=["v_ac = v(out) - 4.3"]`` for the output with its operating
     point removed; the transform then works on ``name``.
 
-    :param cirFile: Circuit filename without the ``.cir`` extension.
+    :param cirFile: Circuit name: the stem of ``cir/<name>.spice_cir`` or ``cir/<name>.cir``.
     :type cirFile: str
 
     :param tstep: Suggested internal time step.
@@ -2747,7 +2751,7 @@ def noise(cirFile, output, input_src, method, n, fstart, fstop, save=None,
     Use ``dB(np.sqrt(result["S_u"]))`` or ``dB(result["S_u"], power=True)``
     for a dB spectral density plot.
 
-    :param cirFile: Circuit filename without the ``.cir`` extension.
+    :param cirFile: Circuit name: the stem of ``cir/<name>.spice_cir`` or ``cir/<name>.cir``.
     :type cirFile: str
 
     :param output: Output node expression, e.g. ``"V(out)"``.
@@ -2850,7 +2854,7 @@ def ngspice_control(cirFile, control, params=None, stimuli=None,
     schematic-derived netlist (components, models, ``params`` and ``stimuli``
     overrides) is still SLiCAP's; only the control block is yours.
 
-    :param cirFile: Circuit filename without the ``.cir`` extension.
+    :param cirFile: Circuit name: the stem of ``cir/<name>.spice_cir`` or ``cir/<name>.cir``.
     :type cirFile: str
 
     :param control: Path to a control-section text file, or the control text

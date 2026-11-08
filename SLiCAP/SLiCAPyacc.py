@@ -1380,8 +1380,8 @@ def _checkCircuit(fileName):
 
     PASS 4: Complete data for instructions
 
-    :param fileName: Name of the netlist file, residing in the .cir subdirectory
-                     of the product folder.
+    :param fileName: Name of the netlist file, with extension, residing in
+                     the cir folder of the project (ini.cir_path).
 
     :type fileName: str
 

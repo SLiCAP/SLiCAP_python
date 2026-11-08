@@ -205,9 +205,10 @@ def make_schematic(sch_path, cir_title=None, force=False):
     :param cir_title: Circuit title override.  Defaults to the title stored
                       in the schematic or, if empty, to the file stem.
     :param force:     True exports even when the outputs are current.
-    :returns:         ``Path`` to the generated ``.cir`` netlist file, or to
-                      the generated ``lib/<title>.slicap_lib`` when the
-                      schematic is a subcircuit (no ``.cir`` is written).
+    :returns:         ``Path`` to the generated netlist, ``cir/<name>.slicap_cir``
+                      or ``cir/<name>.spice_cir`` by dialect, or to the
+                      generated ``lib/<title>.slicap_lib`` when the
+                      schematic is a subcircuit (no netlist is written).
     """
     from . import project
     sch_path = Path(sch_path).resolve()

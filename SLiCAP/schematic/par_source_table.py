@@ -29,7 +29,7 @@ the names per source.
 The NGspice instruction dialog uses the same table with ``positions``
 circuit / specs / user: NGspice cannot run with an undefined parameter, so
 that column is absent, and "circuit" means the ``.param`` definitions of
-the ``.cir`` generated from the schematic.  The NGspice dialog writes
+the ``.spice_cir`` generated from the schematic.  The NGspice dialog writes
 ``params=sl.selectPars("<cir>", ...)`` for mode "select" and nothing for
 mode "circuit" (the netlist definitions apply as they are) - the SAME
 method as for SLiCAP (Anton, 2026-11-01).  The old table of VALUE literals ("Load circuit

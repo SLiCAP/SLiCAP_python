@@ -113,6 +113,12 @@ class NewPosterDialog(QDialog):
             return
         from . import project
         path = project.folder("posters", self._root) / (name + ".slicap_poster")
+        # one img folder for all drawings: the stem must be free across
+        # sch/, lib/ and posters/ (project.drawing_with_stem)
+        conflict = project.drawing_name_conflict(path, self._root)
+        if conflict:
+            QMessageBox.warning(self, "New poster", conflict)
+            return
         if path.exists():
             if QMessageBox.question(
                     self, "New poster", f"{path.name} exists. Replace it?",

@@ -466,6 +466,10 @@ class SnippetDialog(QDialog):
         for key, widgets in vis.items():
             for w in widgets:
                 w.setVisible(key in show)
+        if "path" in show:
+            self.path.setPlaceholderText(
+                "file name in the cir folder, e.g. amp.slicap_cir"
+                if self._path_is_netlist() else "path of the file")
 
         # refill pickers; keep the user's text only while it is still a
         # valid candidate for the new selection (otherwise the first
@@ -486,7 +490,32 @@ class SnippetDialog(QDialog):
                 self.expr.setEditText(cur)
         self._validate()
 
+    def _path_is_netlist(self) -> bool:
+        """True when the path field serves ``netlistFile``: a NAME in the
+        project's cir folder, which ``netlist()`` prepends itself. Browse
+        used to fill an absolute path there, and the snippet pointed at
+        cir/<absolute path> (Anton, 2026-11-08). ``fileName`` (``file()``)
+        takes any path."""
+        if self.kind.currentIndex() not in (KIND_FILE, KIND_OBJECT):
+            return False
+        return any(p.name == "netlistFile"
+                   for p in self._params(self._current_entry()[0]))
+
+    def _cir_dir(self) -> str:
+        import os
+        import SLiCAP.SLiCAPconfigure as ini
+        return os.path.join(os.getcwd(), ini.cir_path)
+
     def _browse(self):
+        import os
+        if self._path_is_netlist():
+            fn, _ = QFileDialog.getOpenFileName(
+                self, "Select netlist", self._cir_dir(),
+                "Netlists (*.slicap_cir *.spice_cir *.cir);;All files (*)")
+            if fn:
+                # the snippet names the file, netlist() adds cir/
+                self.path.setText(os.path.basename(fn))
+            return
         fn, _ = QFileDialog.getOpenFileName(self, "Select file")
         if fn:
             self.path.setText(fn)
@@ -500,7 +529,12 @@ class SnippetDialog(QDialog):
             if method != "text":
                 ok = ok and bool(self.result.currentText().strip())
         elif kind == KIND_FILE:
-            ok = ok and bool(self.path.text().strip())
+            txt = self.path.text().strip()
+            ok = ok and bool(txt)
+            if self._path_is_netlist():
+                # a bare name in cir/ (it may not exist yet: a makeCircuit
+                # line earlier in the file may write it)
+                ok = ok and "/" not in txt and "\\" not in txt
         elif kind == KIND_OBJECT:
             fields = self._fields_for(self._current_entry()[0])
             if "result" in fields:

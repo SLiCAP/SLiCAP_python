@@ -831,39 +831,10 @@ class CanvasPanel(QWidget):
         act = QAction("Create / edit &SLiCAP instruction…", self)
         act.triggered.connect(self._on_slicap_add_instruction)
         menu.addAction(act)
-        menu.addAction(self._export_schematic_action())
         # Run/Stop live on the MAIN-window Instruction menu only (Anton,
-        # 2026-07-16: they don't belong on the schematic editor).
-
-    def _export_schematic_action(self) -> QAction:
-        act = QAction("&Update schematic images…", self)
-        act.setToolTip("Add  sl.updateImages(\"<this schematic>\")  to the "
-                       "instruction file: re-exports the schematic with the "
-                       "plots it links after the simulation wrote them")
-        act.triggered.connect(self._on_add_export_schematic)
-        return act
-
-    def _on_add_export_schematic(self):
-        """Instruction -> Update schematic images: append
-        ``sl.updateImages("<this schematic>")``. Placed AFTER the figures
-        in the instruction file it re-exports the schematic with the plots
-        the run has just written (Anton, 2026-10-06); makeCircuit() at the
-        top of the file exports before the run."""
-        if self._current_path is None or self._main_win is None:
-            return
-        from .instr_file import circuit_objects
-        editor = self._main_win._instr_editor
-        relpath = self._schematic_relpath()
-        # a SLiCAP schematic with a circuit object in the file: pass the
-        # object; otherwise (an NGspice schematic has none) the circuit name
-        owners = [c["name"] for c in circuit_objects(editor.text())
-                  if c["path"] == relpath]
-        arg = owners[-1] if owners else f'"{Path(self._current_path).stem}"'
-        editor.ensure_header('slicap')
-        editor.insert_snippet(f'sl.updateImages({arg})')
-        editor.show()
-        editor.raise_()
-        self._status("Image update added to the instruction file.")
+        # 2026-07-16: they don't belong on the schematic editor). "Update
+        # schematic images..." MOVED there too (Anton, 2026-11-08): it
+        # addresses every drawing of the project, not this tab's.
 
     def _build_ngspice_instr_menu(self):
         menu = self._menu_bar.addMenu("&Instruction")
@@ -882,8 +853,8 @@ class CanvasPanel(QWidget):
         act = QAction("Create / edit NGspice &control section…", self)
         act.triggered.connect(self._on_ngspice_add_control)
         menu.addAction(act)
-        menu.addAction(self._export_schematic_action())
-        # Run/Stop live on the MAIN-window Instruction menu only.
+        # Run/Stop and "Update schematic images..." live on the MAIN-window
+        # Instruction menu only.
 
     # -- library --------------------------------------------------------------
 
@@ -1036,6 +1007,12 @@ class CanvasPanel(QWidget):
         p = Path(path)
         if p.suffix.lower() != ext:
             p = p.with_suffix(ext)
+        # one img folder for all drawings: the stem must be free across
+        # sch/, lib/ and posters/ (project.drawing_with_stem)
+        conflict = project.drawing_name_conflict(p)
+        if conflict:
+            QMessageBox.warning(self, "Save as", conflict)
+            return
         self._save_to(p)
 
     def _save_subcircuit(self, ask: bool):
@@ -1094,7 +1071,11 @@ class CanvasPanel(QWidget):
         libdir = (project.subdir_for(base, "lib") if base
                   else project.subdir("lib"))
         sch_path = libdir / f"{title}{sch_ext}"
-        # The same builder and file as the headless export of a subcircuit
+        conflict = project.drawing_name_conflict(sch_path)
+        if conflict:
+            QMessageBox.warning(self, "Subcircuit not saved", conflict)
+            return
+        # The same builder and file as the export of a subcircuit
         # schematic (schematic.cli, makeCircuit), 2026-09-16.
         from .subcircuit import build_lib, lib_path_for
         lib_path = lib_path_for(sch_path, title, self._sch_type)
@@ -2543,6 +2524,12 @@ class MainWindow(QMainWindow):
         act = QAction("Create / Edit &specifications…", self)
         act.triggered.connect(self._on_edit_specifications)
         instr_menu.addAction(act)
+        act = QAction("&Update schematic images…", self)
+        act.setToolTip("Add  sl.updateImages(\"<drawing>\")  lines to the "
+                       "instruction file: re-exports the chosen drawings "
+                       "with the plots they link, after the run wrote them")
+        act.triggered.connect(self._on_update_images)
+        instr_menu.addAction(act)
         instr_menu.addSeparator()
         instr_menu.addAction(self._act_run)
         instr_menu.addAction(self._act_stop)
@@ -3218,6 +3205,31 @@ class MainWindow(QMainWindow):
             snippet = dlg.generated_snippet()
             if snippet:
                 self._instr_editor.insert_snippet(snippet)
+
+    def _on_update_images(self):
+        """Instruction -> Update schematic images... Appends one
+        ``sl.updateImages("<path>")`` line per chosen drawing of the
+        project (sch/, lib/, posters/). Placed AFTER the figures the lines
+        re-export the drawings with the plots the run has just written
+        (Anton, 2026-10-06); makeCircuit() at the top of the file exports
+        before the run. On the main menu since 2026-11-08: it addresses
+        every drawing, and by FILE."""
+        if self._instr_editor is None:
+            return
+        from .update_images_dialog import UpdateImagesDialog
+        dlg = UpdateImagesDialog(project.project_root(),
+                                 instr_text=self._instr_editor.text(),
+                                 parent=self)
+        if dlg.exec():
+            snippet = dlg.generated_snippet()
+            if snippet:
+                self._instr_editor.ensure_header('slicap')
+                self._instr_editor.insert_snippet(snippet)
+                self.statusBar().showMessage(
+                    "Image update added to the instruction file.")
+            else:
+                self.statusBar().showMessage(
+                    "The instruction file already updates these images.")
 
     def _on_edit_specifications(self):
         """Instruction → Create / Edit specifications… A pure CSV editor
