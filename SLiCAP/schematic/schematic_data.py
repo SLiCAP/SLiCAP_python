@@ -30,8 +30,8 @@ class DocumentProperties:
     page_width_mm:  float = 210.0
     page_height_mm: float = 297.0
     # ── hierarchy ──────────────────────────────────────────────────────────────
-    # When True, Save writes this schematic as a SLiCAP subcircuit (.lib) in
-    # addition to its .slicap_sch source.  subcircuit_ports is the user-chosen
+    # When True, Save writes this schematic as a subcircuit (.slicap_lib or
+    # .spice_lib) next to its schematic source.  subcircuit_ports is the user-chosen
     # node order; subcircuit_params are the overridable .subckt parameters.
     is_subcircuit:     bool = False
     subcircuit_ports:  list = field(default_factory=list)   # ordered port names

@@ -3149,7 +3149,8 @@ class MainWindow(QMainWindow):
         import SLiCAP.SLiCAPconfigure as ini
         from .traces_dialog import TracesDialog
         dlg = TracesDialog(existing_text=self._instr_editor.text(),
-                           results_dir=ini.results_path, parent=self)
+                           results_dir=ini.results_path, parent=self,
+                           csv_dir=ini.csv_path)
         if dlg.exec():
             snippet = dlg.generated_snippet()
             if snippet:
@@ -3198,9 +3199,16 @@ class MainWindow(QMainWindow):
             return
         import SLiCAP.SLiCAPconfigure as ini
         from .snippet_dialog import SnippetDialog
+        from .design_data import manifest_expressions
+        # The expressions of the file's last run, from the Design data; an
+        # unsaved buffer has no run and gets an empty list.
+        expressions = []
+        if self._instr_editor.path is not None:
+            p = Path(self._instr_editor.path)
+            expressions = manifest_expressions(project.root_for(p), p.name)
         dlg = SnippetDialog(target, instr_text=self._instr_editor.text(),
                             csv_dir=os.path.join(os.getcwd(), ini.csv_path),
-                            parent=self)
+                            parent=self, expressions=expressions)
         if dlg.exec():
             snippet = dlg.generated_snippet()
             if snippet:

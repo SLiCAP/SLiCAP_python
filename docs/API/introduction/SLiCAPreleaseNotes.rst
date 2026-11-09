@@ -443,12 +443,57 @@ Version 6.4.6
    touched. A project with two drawings of one name should rename one of
    them.
 
+#. **Schematic properties: the subcircuit box.** Its text read "Save this
+   schematic as a SLiCAP subcircuit (.lib)". The box applies to both
+   dialects, and the file is ``.slicap_lib`` or ``.spice_lib``. It now
+   reads "Save this schematic as a subcircuit".
+
+#. **Snippet dialog: the Expression list.** For ``eqn``, ``eqnInline`` and
+   ``expr`` the dialog offered only ``<name>.laplace``, and only for the
+   results of ``doLaplace()``, ``doNumer()``, ``doDenom()`` and ``doDC()``.
+   A ``doTime()`` or ``doNoise()`` result was never offered. The list now
+   comes from the Design data of the file's last run: every expression
+   attribute of every result, and every variable that holds an expression.
+   The list is empty until the file has run. The field stays editable.
+
 #. **Bug fix: makeCircuit() of an NGspice subcircuit schematic.** A
    ``.spice_sch`` saved as a subcircuit exports ``lib/<name>.spice_lib``
    and no circuit netlist. ``makeCircuit()`` nevertheless made the HTML
    circuit page and printed ``could not open 'cir/<name>.spice_cir'``. It
    now skips the page and returns ``None``, as for a ``.slicap_sch``
    subcircuit.
+
+#. **Bug fix: "Create the netlist first" with the netlist line present.**
+   The NGspice instruction dialog reads the netlist lines from the
+   instruction file. The file inventory kept one entry per first argument,
+   so ``sl.updateImages("sch/x.spice_sch")`` hid the earlier
+   ``sl.makeCircuit("sch/x.spice_sch")`` of the same schematic. Bare calls
+   are now identified by function and argument together.
+
+#. **Simulation settings from parameters.** A numeric argument of an
+   NGspice analysis, the stop time of ``tran()``, a frequency limit of
+   ``ac()`` or ``noise()``, the limits of ``dc()``, the start, stop and
+   number of steps of a ``lin`` or ``log`` ``step``, may name a parameter
+   instead of a number. The run resolves
+   it from the ``.param`` definitions of the netlist with the ``params``
+   argument on top, so the value comes from the circuit, the specs or a
+   user value through ``selectPars()``, like a component value. The value
+   is read when the line runs. A parameter without a value stops the run
+   before NGspice starts, with a message that names it. The limits of
+   ``sweepData()`` may name a parameter of the result in the same way. In
+   the NGspice instruction dialog every setting field has a source
+   selector, *manual*, *circuit* or *specs*, and for a parameter source a
+   list of the parameters with a numeric value, from the netlist or from
+   the chosen spec file, with the value of the chosen one shown. A spec parameter the netlist does not have gets a
+   row in the parameter table, so ``params`` passes it with the run. The
+   sweep limits of the Traces dialog offer the circuit parameters of the
+   result and every numeric item of the spec file. A specification the
+   instruction did not select is passed to the sweep with its own
+   ``params`` argument. The sweep fields of the Traces and the Axes
+   dialogs open empty, and all three values are required.
+   The start, stop and number of steps of a SLiCAP ``stepdict`` resolve
+   from the ``pardefs`` of the instruction in the same way, and the
+   stepping fields of both instruction dialogs offer the parameters.
 
 SLiCAP version 6.3 release notes
 ================================

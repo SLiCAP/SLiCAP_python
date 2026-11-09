@@ -583,6 +583,31 @@ def manifest_figures(project_root) -> list:
     return out
 
 
+def manifest_expressions(project_root, source_name: str) -> list[str]:
+    """The expressions one instruction file produced, from the Design data:
+    ``["TIME1.laplace", "TIME1.time", "NOISE1.onoise", "H", ...]``.
+
+    Every attribute of kind ``expression`` of every result, as
+    ``NAME.attribute``, plus every variable of kind ``expression`` by its
+    name, in the order of the last run of *source_name*. This is what the
+    snippet dialog offers for ``eqn``, ``eqnInline`` and ``expr`` (Anton,
+    2026-11-09: "I can only select DC1.laplace? but there's much more").
+    The list is empty until the file has run.
+    """
+    from . import project
+    manifest = read_manifest(project.folder("results", project_root))
+    section = manifest.get("sections", {}).get(source_name, {})
+    out = []
+    for entry in section.get("variables", []):
+        kind, name = entry.get("kind"), entry.get("name", "")
+        if kind == "expression":
+            out.append(name)
+        elif kind == "result":
+            out.extend(f"{name}.{a['name']}" for a in entry.get("attributes", [])
+                       if a.get("kind") == "expression")
+    return out
+
+
 def manifest_snippets(project_root) -> list:
     """The LaTeX snippet objects of the last runs, from the Design data:
     ``[(name, latex_code), ...]``. The text is the snippet itself, so a

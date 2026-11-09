@@ -31,7 +31,7 @@ Any schematic can be turned into a reusable subcircuit:
 #. Add **port** symbols and name them — the names become the subcircuit's
    external nodes.  A ``ground`` (node 0) stays global and is never a port.
 #. In :menuselection:`File --> Schematic properties…`, tick **Save this
-   schematic as a SLiCAP subcircuit (.lib)** and give the document a
+   schematic as a subcircuit** and give the document a
    *Title*: the subcircuit name, and the name of its files.
 
    .. TODO screenshot: the Schematic Properties dialog with the subcircuit box ticked and a title

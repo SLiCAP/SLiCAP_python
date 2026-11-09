@@ -1479,8 +1479,33 @@ _FREQ_TYPES      = ['laplace', 'numer', 'denom', 'noise']
 _TIME_TYPES      = ['time', 'impulse', 'step']
 
 
+def _sweep_limit(value, parDefs):
+    """A sweep limit as a float: a number in SLiCAP notation, or the name
+    of a parameter with a numeric value in *parDefs*. Raises ValueError
+    naming the parameter otherwise."""
+    from SLiCAP.SLiCAPmath import _checkNumber
+    number = _checkNumber(value, parDefs)
+    if number is None:
+        raise ValueError("'{0}' is not a number and not a numeric parameter "
+                         "of the sweep: give it a value with params="
+                         "sl.selectPars(...) or in the pardefs of the "
+                         "instruction.".format(value))
+    return float(number)
+
+
+def _sweep_par_defs(results, params):
+    """The parameters a sweep limit is resolved from: those of the result
+    (the pardefs of its instruction) with the ``params`` of the sweep on
+    top, as the ``params`` of an NGspice analysis (Anton, 2026-11-09)."""
+    from SLiCAP.SLiCAPmath import _checkExpression
+    par_defs = dict(getattr(results, "parDefs", None) or {})
+    for key, value in (params or {}).items():
+        par_defs[sp.Symbol(str(key))] = _checkExpression(str(value))
+    return par_defs
+
+
 def sweepData(results, sweepStart, sweepStop, sweepNum, sweepMethod='auto',
-              sweepVar='auto'):
+              sweepVar='auto', params=None):
     """
     Evaluates a SLiCAP result over a sweep and returns the numbers as a
     :class:`SLiCAPtraces.dataset`, ready for
@@ -1519,10 +1544,15 @@ def sweepData(results, sweepStart, sweepStop, sweepNum, sweepMethod='auto',
     :param results: result of one SLiCAP instruction.
     :type results: SLiCAPinstruction.instruction
 
-    :param sweepStart: start of the sweep; SLiCAP notation ('10', '1M').
+    :param sweepStart: start of the sweep; SLiCAP notation ('10', '1M'), or
+                       the name of a parameter, ``"f_min"``, resolved from
+                       the parameter definitions of the result (the
+                       ``pardefs`` of the instruction) with *params* on top.
+                       A sweep limit then follows the specs like a component
+                       value does (Anton, 2026-11-09).
     :type sweepStart: str, float, int
 
-    :param sweepStop: end of the sweep.
+    :param sweepStop: end of the sweep; as *sweepStart*.
     :type sweepStop: str, float, int
 
     :param sweepNum: number of points.
@@ -1536,6 +1566,13 @@ def sweepData(results, sweepStart, sweepStop, sweepNum, sweepMethod='auto',
                      'auto' for the frequency or time sweep of the other data
                      types.
     :type sweepVar: str
+
+    :param params: parameter definitions for the sweep limits, on top of
+                   those of the result: the dictionary ``selectPars()``
+                   returns, ``params=sl.selectPars(cir, specs,
+                   specs=["t_settle"])``, for a specification the
+                   instruction itself did not select.
+    :type params: dict, NoneType
 
     :return: the evaluated data, or None when the result cannot be swept.
     :rtype: SLiCAPtraces.dataset, NoneType
@@ -1559,13 +1596,14 @@ def sweepData(results, sweepStart, sweepStop, sweepNum, sweepMethod='auto',
         print("Error: cannot sweep dataType '{0}'.".format(dataType))
         return None
     try:
-        start = _scale_float(sweepStart)
-        stop  = _scale_float(sweepStop)
+        par_defs = _sweep_par_defs(results, params)
+        start = _sweep_limit(sweepStart, par_defs)
+        stop  = _sweep_limit(sweepStop, par_defs)
         num   = int(_scale_float(sweepNum))
-    except (ValueError, TypeError):
-        print("Error: the sweep needs numbers in SLiCAP notation "
-              "('10', '1M'); got {0}, {1}, {2}.".format(sweepStart, sweepStop,
-                                                        sweepNum))
+    except (ValueError, TypeError) as exc:
+        print("Error: the sweep needs numbers in SLiCAP notation ('10', "
+              "'1M') or parameters of the result; got {0}, {1}, {2}. {3}"
+              .format(sweepStart, sweepStop, sweepNum, exc))
         return None
     if sweepMethod == 'auto':
         sweepMethod = 'lin' if dataType in _TIME_TYPES else 'log'

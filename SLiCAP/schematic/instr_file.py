@@ -37,16 +37,20 @@ def parse_calls(text: str) -> list[dict]:
     - Assignments ``NAME = sl.<func>(…)`` are keyed by the target name and
       get ``assigned=True`` (their value is reachable as a variable — the
       plot wizard's "from other plots" mode needs this).
-    - Bare calls ``sl.plot*("fileName", …)`` are keyed by their first-argument
-      string literal (the figure fileName).
-    - Assignment targets and bare-call fileNames are SEPARATE namespaces: a
-      figure named like a result variable (``sl.plot("TRAN1", …)`` next to
-      ``TRAN1 = sl.tran(…)``) must not shadow the result.
-    - Only the LAST definition of each name is kept (within its namespace) —
-      instructions execute top-to-bottom, so the last one wins at runtime.
-      This is what makes the append-only edit model work (SLNG.md): dialogs
-      prefill from the parsed last definition and append the regenerated
-      call.
+    - The list is in file order. Only the LAST assignment of each name is
+      kept — instructions execute top-to-bottom, so the last one wins at
+      runtime. This is what makes
+      the append-only edit model work (SLNG.md): dialogs prefill from the
+      parsed last definition and append the regenerated call.
+    - Bare calls ``sl.<func>("fileName", …)`` are listed as they are, in
+      file order, keyed by their first-argument string literal and with
+      ``assigned=False``. Merging bare calls by that literal was the
+      previous form and was REMOVED (2026-11-09): it dated from the plot
+      era (``sl.plot("FIG", …)``, last one wins) and had no reader left,
+      while the netlist line ``sl.makeCircuit("sch/x.spice_sch")`` and the
+      image line ``sl.updateImages("sch/x.spice_sch")`` of one schematic
+      merged into one entry, so the NGspice instruction dialog reported a
+      netlist line that was in the file as missing.
 
     Unparseable text (the user is mid-edit) yields ``[]``.
     """
@@ -63,7 +67,7 @@ def parse_calls(text: str) -> list[dict]:
             return node
         return None
 
-    out: dict[tuple[bool, str], dict] = {}
+    out: list[dict] = []
     for stmt in tree.body:
         name = call = None
         assigned = False
@@ -80,7 +84,7 @@ def parse_calls(text: str) -> list[dict]:
                 name = call.args[0].value
         if call is None or name is None:
             continue
-        out[(assigned, name)] = {
+        entry = {
             "name":     name,
             "func":     call.func.attr,
             "assigned": assigned,
@@ -88,7 +92,57 @@ def parse_calls(text: str) -> list[dict]:
             "kwargs":   {kw.arg: ast.get_source_segment(text, kw.value)
                          for kw in call.keywords if kw.arg},
         }
-    return list(out.values())
+        if assigned:
+            out = [e for e in out if not (e["assigned"] and e["name"] == name)]
+        out.append(entry)
+    return out
+
+
+def pardef_sources(src) -> dict:
+    """The parameters a ``pardefs=`` / ``params=`` source text defines, per
+    source, for the fields that may name one (a sweep limit):
+    ``{"circuit": [...], "specs": [...], "user": [...], "spec_var": name}``
+    from an ``sl.selectPars(...)`` call (``spec_var`` is the variable its
+    specs are read from, ``SPECS_<stem>``, or None). A list is ``None`` when its names are not
+    in the text - ``pardefs='circuit'``, or ``circuit="all"`` /
+    ``specs="all"`` - so every identifier must be allowed for that source
+    (Anton, 2026-11-09). A dict or a list of pairs counts as user values."""
+    out = {"circuit": [], "specs": [], "user": [], "spec_var": None}
+    if src is None:
+        return out
+    try:
+        node = ast.parse(str(src).strip(), mode="eval").body
+    except SyntaxError:
+        return out
+    try:
+        value = ast.literal_eval(node)
+    except (ValueError, SyntaxError):
+        value = node
+    if value == "circuit":
+        out["circuit"] = None
+        return out
+    if isinstance(value, dict):
+        out["user"] = [str(k) for k in value]
+        return out
+    if isinstance(value, (list, tuple)):
+        out["user"] = [str(p[0]) for p in value
+                       if isinstance(p, (list, tuple)) and len(p) == 2]
+        return out
+    if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "selectPars"):
+        return out
+    if len(node.args) > 1 and isinstance(node.args[1], ast.Name):
+        out["spec_var"] = node.args[1].id        # SPECS_<stem>: the spec file
+    for kw in node.keywords:
+        try:
+            v = ast.literal_eval(kw.value)
+        except (ValueError, SyntaxError):
+            continue
+        if kw.arg in ("circuit", "specs"):
+            out[kw.arg] = None if v == "all" else [str(n) for n in (v or [])]
+        elif kw.arg == "user" and isinstance(v, dict):
+            out["user"] = [str(n) for n in v]
+    return out
 
 
 def next_result_name(base: str, text: str) -> str:

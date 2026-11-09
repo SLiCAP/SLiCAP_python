@@ -10,14 +10,22 @@ literal follows the back-end's key convention:
 - key_style ``"ngspice"`` → key ``"param"`` (singular) for lin/log/list and
   ``"params"`` for array; array values are emitted with one row **per run**
   (``_step_values``: shape (n_runs, n_params)) — the widget transposes its
-  per-parameter rows.  All values must be plain numbers (the NGspice step
-  path converts with ``dtype=float``).
+  per-parameter rows.  List and array values must be plain numbers (the
+  NGspice step path converts with ``dtype=float``).
+
+The start, stop and num of a lin or log stepping are parameter fields
+(param_field): a number, or the name of a parameter with a numeric value
+from the circuit or the spec file, which the run resolves like an analysis
+argument (Anton, 2026-11-09). The dialog feeds the names with
+``set_param_choices`` and reads the names in use with ``named_parameters``,
+to give the parameter table a row for each.
 """
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
 
 from .value_fields import watch
+from .param_field import ParamField
 from PySide6.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
     QComboBox, QStackedWidget, QWidget, QPushButton, QTableWidget,
@@ -75,20 +83,17 @@ class StepWidget(QGroupBox):
         # page 0 — lin/log range
         rng = QWidget()
         rg = QGridLayout(rng)
-        self._start = QLineEdit()
-        self._stop = QLineEdit()
-        self._num = QLineEdit()
-        for r, (lbl, edit, ph) in enumerate([("Start", self._start, "e.g. 100"),
-                                             ("Stop", self._stop, "e.g. 1k"),
-                                             ("Num", self._num, "e.g. 11")]):
+        # a number, or a parameter with a numeric value (module docstring);
+        # marked while the text is neither, the refusal visible where it
+        # happens (value_fields kind 'parameter')
+        self._start = ParamField("e.g. 100", 16)
+        self._stop = ParamField("e.g. 1k", 16)
+        self._num = ParamField("e.g. 11", 16)
+        for r, (lbl, edit) in enumerate([("Start", self._start),
+                                         ("Stop", self._stop),
+                                         ("Num", self._num)]):
             rg.addWidget(QLabel(lbl), r, 0, Qt.AlignmentFlag.AlignRight)
-            edit.setPlaceholderText(ph)
-            cap_chars(edit, 16)
             edit.textChanged.connect(lambda *_: self.changed.emit())
-            # marked while the text is not a number in SLiCAP notation; the
-            # value was already refused by dict_literal(), this makes the
-            # refusal visible where it happens (value_fields)
-            watch(edit, "number")
             rg.addWidget(edit, r, 1)
         rg.setColumnStretch(2, 1)
         rg.setRowStretch(3, 1)              # keep the rows together at the top
@@ -217,6 +222,29 @@ class StepWidget(QGroupBox):
                 return None
         return '"' + v.replace('"', "'") + '"'
 
+    def _limit_fields(self):
+        return (self._start, self._stop, self._num)
+
+    def set_param_choices(self, choices, any_name: bool = False) -> None:
+        """The parameters the start, stop and num fields may name
+        (ParamField.set_choices)."""
+        for field in self._limit_fields():
+            field.set_choices(choices, any_name)
+
+    def named_parameters(self) -> list[str]:
+        """The parameters the active lin or log limits name, in field order."""
+        if not self.isChecked() or self._method.currentText() not in ("lin", "log"):
+            return []
+        return [n for n in (f.parameter() for f in self._limit_fields()) if n]
+
+    def _fmt_limit(self, field) -> str | None:
+        """A lin/log limit for the literal: a number as _fmt, a parameter
+        name as a quoted string, else None."""
+        name = field.parameter()
+        if name is not None:
+            return '"' + name + '"'
+        return self._fmt(field.text())
+
     def is_valid(self) -> bool:
         return not self.isChecked() or self.dict_literal() is not None
 
@@ -273,15 +301,18 @@ class StepWidget(QGroupBox):
                        self._num.text().strip())
             if not (p and s and e and n):
                 return None
-            try:
-                int(n)
-            except ValueError:
-                return None
-            fs, fe = self._fmt(s), self._fmt(e)
+            if self._num.parameter() is not None:
+                fn = '"' + n + '"'
+            else:
+                try:
+                    fn = str(int(n))
+                except ValueError:
+                    return None
+            fs, fe = self._fmt_limit(self._start), self._fmt_limit(self._stop)
             if fs is None or fe is None:
                 return None
             return (f'{{"method": "{m}", "{single_key}": "{p}", '
-                    f'"start": {fs}, "stop": {fe}, "num": {n}}}')
+                    f'"start": {fs}, "stop": {fe}, "num": {fn}}}')
 
         if m == "list":
             p = self._param.currentText().strip()

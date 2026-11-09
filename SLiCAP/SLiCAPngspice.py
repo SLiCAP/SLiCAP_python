@@ -1196,7 +1196,7 @@ _STEP_KEY_HINT = ('single-parameter stepping uses "param" (a name), the '
                   '"array" method uses "params" (a list of names).')
 
 
-def _step_values(step):
+def _step_values(step, cirFile=None, params=None):
     """Parse a step dict; return (param, vals) where:
 
     - Single-parameter methods (lin / log / list):
@@ -1208,6 +1208,9 @@ def _step_values(step):
         vals   → 2-D ndarray, shape (n_runs, n_params)
 
     Values may be numbers or strings with a SLiCAP scale factor ('5p', '2.2k').
+    The start, stop and num of a lin or log stepping may also name a
+    parameter of the run, resolved as an analysis argument is
+    (:func:`_deck_number` with *cirFile* and *params*).
 
     Returns (None, None) when *step* is None, and likewise - with a message -
     when the definition names no parameter or lacks its values: this is the
@@ -1245,14 +1248,12 @@ def _step_values(step):
     elif not step.get("values"):
         return _no_stepping('step method "{0}" without "values"'.format(method))
 
-    if method == "lin":
-        return names, np.linspace(_scale_float(step["start"]),
-                                  _scale_float(step["stop"]),
-                                  int(step["num"]))
-    if method == "log":
-        return names, np.geomspace(_scale_float(step["start"]),
-                                   _scale_float(step["stop"]),
-                                   int(step["num"]))
+    if method in ("lin", "log"):
+        start = float(_deck_number(step["start"], "step start", cirFile, params))
+        stop  = float(_deck_number(step["stop"], "step stop", cirFile, params))
+        num   = int(float(_deck_number(step["num"], "step num", cirFile, params)))
+        space = np.linspace if method == "lin" else np.geomspace
+        return names, space(start, stop, num)
     if method == "list":
         return names, np.asarray([_scale_float(v) for v in step["values"]])
     vals = np.asarray([[_scale_float(v) for v in row]
@@ -1389,15 +1390,26 @@ def _stepped_control_block(analysis_cmd, raw_path, step_param, step_vals,
     return "\n".join(lines)
 
 
-def _deck_number(value, what):
+def _deck_number(value, what, cirFile=None, params=None):
     """A NUMBER for NGspice input, or a ValueError naming the offender.
 
     For positions where NGspice needs a plain number and no expression is
-    possible: the arguments of an analysis command, the fourier frequency.
-    The value is read in SLiCAP notation - a scale factor is exactly ONE
-    case-sensitive character - so the SPICE spellings are refused HERE rather
-    than reaching the simulator, where '10K' or '1MEG' would silently mean
-    something else or nothing at all (Anton, 2026-07-31).
+    possible: the arguments of an analysis command, the limits of a
+    stepping, the fourier frequency. The value is read in SLiCAP notation -
+    a scale factor is exactly ONE case-sensitive character - so the SPICE
+    spellings are refused HERE rather than reaching the simulator, where
+    '10K' or '1MEG' would silently mean something else or nothing at all
+    (Anton, 2026-07-31).
+
+    A value that names a parameter, ``"t_stop"`` or ``"10*tau"``, is
+    resolved from the parameters of the run: the ``.param`` definitions of
+    the netlist with the ``params=`` argument of the analysis on top
+    (:func:`_netlist_par_defs`, the same table NGspice sees). A simulation
+    setting then comes from the circuit, the specs or a user value, through
+    ``selectPars``, exactly like a component value (Anton, 2026-11-09).
+    NGspice cannot do this itself: the control-section commands take
+    numbers only, so SLiCAP evaluates here. Without *cirFile* a symbol is
+    refused.
 
     :param value: the value as the user wrote it.
     :type value: str, int, float
@@ -1405,16 +1417,38 @@ def _deck_number(value, what):
     :param what: what is being converted, for the error message ('fstop', …).
     :type what: str
 
+    :param cirFile: circuit name, the stem of its netlist; None when the
+                    value cannot name a parameter.
+    :type cirFile: str, NoneType
+
+    :param params: the ``params=`` argument of the analysis.
+    :type params: list, dict, NoneType
+
     :return: the number as deck text.
     :rtype: str
     """
     text = _deck_expr(value, what)
-    if text.startswith("{"):
+    if not text.startswith("{"):
+        return text
+    if cirFile is not None:
+        import sympy as sp
+        from SLiCAP.SLiCAPlex import _replaceScaleFactors
+        from SLiCAP.SLiCAPmath import fullSubs
+        expr = _sympify(_replaceScaleFactors(text[1:-1]))
+        expr = sp.N(fullSubs(expr, _netlist_par_defs(cirFile, params)))
+        if expr.is_number and expr.is_real:
+            return _deck_expr(str(expr), what)
+        missing = sorted(str(a) for a in expr.atoms(sp.Symbol))
         raise ValueError(
-            "{0} = '{1}' must be a number here; it still contains a symbol "
-            "({2}). An analysis argument cannot be resolved by NGspice from "
-            "a .param.".format(what, value, text))
-    return text
+            "{0} = '{1}': the parameter{2} {3} ha{4} no value in this run. "
+            "Give it one with params=sl.selectPars(...) (circuit, specs or "
+            "user), or define it in the netlist.".format(
+                what, value, "s" if len(missing) > 1 else "",
+                ", ".join(missing), "ve" if len(missing) > 1 else "s"))
+    raise ValueError(
+        "{0} = '{1}' must be a number here; it still contains a symbol "
+        "({2}). An analysis argument cannot be resolved by NGspice from "
+        "a .param.".format(what, value, text))
 
 
 def _eng_repr(number):
@@ -2245,7 +2279,7 @@ def op(cirFile, save=None, step=None, params=None, options=None,
         print("NGspice not configured.")
         return {}
     cirFile = _netlist_stem(cirFile)
-    step_param, step_vals = _step_values(step)
+    step_param, step_vals = _step_values(step, cirFile, params)
     # The op raw gets its OWN file name so operating-point data survives
     # later ac/tran/... runs of the same circuit (which overwrite
     # <cirFile>.raw) — the schematic back-annotation reads it after a run.
@@ -2327,10 +2361,10 @@ def dc(cirFile, source, start, stop, incr, save=None,
         print("NGspice not configured.")
         return {}
     cirFile = _netlist_stem(cirFile)
-    cmd = (f"dc {source} {_deck_number(start, 'start')} "
-           f"{_deck_number(stop, 'stop')} "
-           f"{_deck_number(incr, 'incr')}")
-    step_param, step_vals = _step_values(step)
+    cmd = (f"dc {source} {_deck_number(start, 'start', cirFile, params)} "
+           f"{_deck_number(stop, 'stop', cirFile, params)} "
+           f"{_deck_number(incr, 'incr', cirFile, params)}")
+    step_param, step_vals = _step_values(step, cirFile, params)
     raw_path = ini.cir_path + cirFile + '.raw'
     raw_paths = _run_stepped(cirFile, cmd, raw_path, step_param, step_vals,
                              options=options, behavior=behavior, timeout=timeout,
@@ -2413,10 +2447,10 @@ def ac(cirFile, method, n, fstart, fstop, save=None,
         print("NGspice not configured.")
         return {}
     cirFile = _netlist_stem(cirFile)
-    cmd = (f"ac {method} {_deck_number(n, 'n')} "
-           f"{_deck_number(fstart, 'fstart')} "
-           f"{_deck_number(fstop, 'fstop')}")
-    step_param, step_vals = _step_values(step)
+    cmd = (f"ac {method} {_deck_number(n, 'n', cirFile, params)} "
+           f"{_deck_number(fstart, 'fstart', cirFile, params)} "
+           f"{_deck_number(fstop, 'fstop', cirFile, params)}")
+    step_param, step_vals = _step_values(step, cirFile, params)
     savecurrents = _no_currents_in("AC", savecurrents)
     raw_path = ini.cir_path + cirFile + '.raw'
     raw_paths = _run_stepped(cirFile, cmd, raw_path, step_param, step_vals,
@@ -2493,15 +2527,15 @@ def _netlist_stem(cirFile):
     return name
 
 
-def _fourier_post_args(fourier):
+def _fourier_post_args(fourier, cirFile=None, params=None):
     """Normalize the ``fourier=`` argument: value or {"freq":…, "nfreqs":…}
-    → (freq_text, nfreqs)."""
+    → (freq_text, nfreqs). The frequency may name a parameter of the run."""
     if isinstance(fourier, dict):
         freq = fourier.get("freq")
         nfreqs = int(fourier.get("nfreqs", 10))
     else:
         freq, nfreqs = fourier, 10
-    return _deck_number(freq, "fourier frequency"), nfreqs
+    return _deck_number(freq, "fourier frequency", cirFile, params), nfreqs
 
 
 def _parse_fourier_log(txt_path):
@@ -2641,12 +2675,12 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
         print("NGspice not configured.")
         return {}
     cirFile = _netlist_stem(cirFile)
-    cmd = (f"tran {_deck_number(tstep, 'tstep')} "
-           f"{_deck_number(tstop, 'tstop')} "
-           f"{_deck_number(tstart, 'tstart')}")
+    cmd = (f"tran {_deck_number(tstep, 'tstep', cirFile, params)} "
+           f"{_deck_number(tstop, 'tstop', cirFile, params)} "
+           f"{_deck_number(tstart, 'tstart', cirFile, params)}")
     if tmax is not None:
-        cmd += f" {_deck_number(tmax, 'tmax')}"
-    step_param, step_vals = _step_values(step)
+        cmd += f" {_deck_number(tmax, 'tmax', cirFile, params)}"
+    step_param, step_vals = _step_values(step, cirFile, params)
 
     # Post-processing control lines. ``let`` creates the analysed vectors
     # under the USER keys, so derived expressions work; after ``fft`` the
@@ -2686,7 +2720,7 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
             print("ERROR: fourier= is not supported for stepped runs "
                   "(use fft= or run per step value).")
             return {}
-        freq_text, nfreqs = _fourier_post_args(fourier)
+        freq_text, nfreqs = _fourier_post_args(fourier, cirFile, params)
         post_lines.append(f"set nfreqs={nfreqs}")
         post_lines.append(f"fourier {freq_text} " + " ".join(analysed))
     if fft:
@@ -2723,9 +2757,9 @@ def tran(cirFile, tstep, tstop, tstart=0, save=None,
         # Frequency-domain result: its own dataType; simArgs keep the tran
         # provenance.
         instr = _dict_to_instruction(result,
-                                     f"fft {_deck_number(tstep, 'tstep')}"
-                                     f" {_deck_number(tstop, 'tstop')}"
-                                     f" {_deck_number(tstart, 'tstart')}",
+                                     f"fft {_deck_number(tstep, 'tstep', cirFile, params)}"
+                                     f" {_deck_number(tstop, 'tstop', cirFile, params)}"
+                                     f" {_deck_number(tstart, 'tstart', cirFile, params)}",
                                      cirFile, "frequency", step,
                                      step_param, step_vals, params=params)
         if fourier is not None:
@@ -2808,14 +2842,14 @@ def noise(cirFile, output, input_src, method, n, fstart, fstop, save=None,
         return {}
     cirFile = _netlist_stem(cirFile)
     cmd = (f"noise {output} {input_src} {method} {n} "
-           f"{_deck_number(fstart, 'fstart')} "
-           f"{_deck_number(fstop, 'fstop')}")
+           f"{_deck_number(fstart, 'fstart', cirFile, params)} "
+           f"{_deck_number(fstop, 'fstop', cirFile, params)}")
     if contributions:
         # the summary interval: its VALUE only spaces NGspice's printed
         # summaries, but giving it at all is what makes NGspice compute the
         # per-source vectors, which is what we are after
         cmd += " 1"
-    step_param, step_vals = _step_values(step)
+    step_param, step_vals = _step_values(step, cirFile, params)
     savecurrents = _no_currents_in("noise", savecurrents)
     raw_path = ini.cir_path + cirFile + '.raw'
     raw_paths = _run_stepped(cirFile, cmd, raw_path, step_param, step_vals,

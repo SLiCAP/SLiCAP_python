@@ -165,6 +165,13 @@ value from:
 * **user**: a value typed in the row. Always offered. A row set to *user*
   without a value blocks **Add instruction** and says why.
 
+The start, stop and number of steps of a *lin* or *log* **Parameter
+stepping** have the same source selector: *manual* for a number, *circuit*
+or *specs* for a parameter with a numeric value, shown with its value. A
+parameter of the specs that the circuit does not have gets a row in this
+table, set to *specs*, so the ``pardefs`` pass its value with the run. The
+same fields exist on the NGspice instruction dialog.
+
 **Set all to** applies one choice to every row at once. *specs first* takes
 the specification where there is one, else the circuit definition, else
 leaves the parameter undefined. *circuit first* takes the circuit definition
@@ -230,6 +237,24 @@ applies to included libraries only; a model in PSpice syntax inside the
 circuit needs PSpice together with "whole netlist", which becomes
 ``behavior="psa"`` in the instruction file.  See `Compatibility mode
 <../../API/userguide/ngspice.html#compatibility-mode>`_ in the API manual.
+
+Every numeric setting of an analysis, a stop time, a frequency limit, the
+limits of a DC sweep, starts with a source selector: *manual*, *circuit*
+or *specs*. With *manual* you type a number in SLiCAP notation. With
+*circuit* or *specs* a list offers the parameters of that source that
+have a numeric value, the ``.param`` definitions of the netlist, or the
+items of the spec file chosen in the parameter table, and the value of
+the chosen parameter is shown next to it. A parameter without a numeric
+value is not offered.
+A value that must be computed from other values is computed in the main
+script, and its numeric result is written to the specs. The instruction
+file names the parameter, ``sl.tran("amp", "1n", "t_stop", ...)``, and the
+run reads its value when it runs, so a new value in the specs is used
+without an edit. A parameter of the specs that the netlist does not have
+gets a row in the parameter table below, set to *specs*, so the ``params``
+argument passes it with the run. See `Simulation settings from parameters
+<../../API/userguide/ngspice.html#simulation-settings-from-parameters>`_ in
+the API manual.
 
 The **Circuit parameters** group is the parameter table described under
 :ref:`parameter-substitution`, with the same presets and the same preference.

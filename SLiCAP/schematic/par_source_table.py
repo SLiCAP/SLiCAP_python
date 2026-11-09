@@ -134,6 +134,9 @@ class ParSourceTable(QGroupBox):
         self._csv_dir = csv_dir
         self._spec_values: dict[str, str] = {}
         self._rows: dict[str, dict] = {}
+        # rows added for the parameters the simulation SETTINGS name
+        # (set_extra_names): not of the netlist, so specs or user only
+        self._extra: list[str] = []
 
         layout = QVBoxLayout(self)
         top = QHBoxLayout()
@@ -269,6 +272,46 @@ class ParSourceTable(QGroupBox):
             rb = r["radios"][SPECS]
             rb.setText(display_value(self._spec_values.get(name, "")))
             rb.setEnabled(name in self._spec_values)
+
+    def spec_values(self) -> dict[str, str]:
+        """``{symbol: value text}`` of the chosen spec file (read_spec_values)."""
+        return dict(self._spec_values)
+
+    def circuit_values(self) -> dict[str, str]:
+        """``{name: value text}`` of the circuit's defined parameters."""
+        return dict(self._par_defs)
+
+    def set_extra_names(self, names) -> None:
+        """The parameters the simulation settings name that are not
+        parameters of the netlist (a stop time from the specs): one row
+        each, with the specs and user positions, resting on specs where
+        the chosen spec file has a value. Rows of names no longer named are
+        removed. Nothing happens, and nothing is emitted, when the set is
+        unchanged (Anton, 2026-11-09)."""
+        wanted = list(dict.fromkeys(
+            str(n) for n in names
+            if str(n) in self._extra or str(n) not in self._names))
+        if wanted == self._extra:
+            return
+        self.blockSignals(True)         # one 'changed' at the end, from a consistent table
+        for name in [n for n in self._extra if n not in wanted]:
+            self._table.removeRow(self._names.index(name))
+            self._names.remove(name)
+            self._rows.pop(name)
+        for name in [n for n in wanted if n not in self._extra]:
+            row = len(self._names)
+            self._table.insertRow(row)
+            self._names.append(name)
+            self._build_row(row, name)
+            rb = self._rows[name]["radios"][SPECS]
+            rb.setText(display_value(self._spec_values.get(name, "")))
+            rb.setEnabled(name in self._spec_values)
+            if name in self._spec_values:
+                rb.setChecked(True)
+        self._extra = wanted
+        self._table.resizeRowsToContents()
+        self.blockSignals(False)
+        self.changed.emit()
 
     # ── state ─────────────────────────────────────────────────────────────
 

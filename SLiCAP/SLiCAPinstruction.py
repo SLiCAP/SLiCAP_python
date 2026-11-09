@@ -1072,7 +1072,10 @@ class instruction(object):
         """
         Start value for parameter stepping methods 'lin' and 'log'.
 
-        :param stepStart: Start value for parameter stepping methods 'lin' and 'log'.
+        :param stepStart: Start value for parameter stepping methods 'lin' and
+                          'log': a number in SLiCAP notation, or the name of a
+                          parameter with a numeric value in the instruction's
+                          parameter definitions (Anton, 2026-11-09).
         :type stepStart: str, int, float
 
         :Example:
@@ -1105,12 +1108,13 @@ class instruction(object):
             self.errors += 1
             print("Error: missing stepStart value.")
         else:
-            value = float(_checkNumber(self.stepStart))
+            value = _checkNumber(self.stepStart, self._stepParDefs())
             if value == None:
                 self.errors += 1
-                print("Error: cannot determine numeric value of stepStart.")
+                print("Error: cannot determine numeric value of stepStart "
+                      "'{0}'.".format(self.stepStart))
             else:
-                self.stepStart = value
+                self.stepStart = float(value)
         return
 
     def setStepStop(self, stepStop):
@@ -1149,12 +1153,13 @@ class instruction(object):
             self.errors += 1
             print("Error: missing stepStop value.")
         else:
-            value = float(_checkNumber(self.stepStop))
+            value = _checkNumber(self.stepStop, self._stepParDefs())
             if value == None:
                 self.errors += 1
-                print("Error: cannot determine numeric value of stepStop.")
+                print("Error: cannot determine numeric value of stepStop "
+                      "'{0}'.".format(self.stepStop))
             else:
-                self.stepStop = value
+                self.stepStop = float(value)
         return
 
     def setStepNum(self, stepNum):
@@ -1195,14 +1200,27 @@ class instruction(object):
             self.errors += 1
             print("Error: missing stepNum value.")
         else:
-            if type(self.stepNum) == int:
-                if self.stepNum <= 0:
+            if type(self.stepNum) != int:
+                # a number as text, or the name of a parameter of the run
+                value = _checkNumber(self.stepNum, self._stepParDefs())
+                if value == None or value != int(value):
                     self.errors += 1
-                    print("Error: step number must be a positive nonzero integer.")
-            else:
+                    print("Error: step number '{0}' must be a positive "
+                          "nonzero integer, or a parameter with such a "
+                          "value.".format(self.stepNum))
+                    return
+                self.stepNum = int(value)
+            if self.stepNum <= 0:
                 self.errors += 1
-                print("Error: step number type must be 'int'.")
+                print("Error: step number must be a positive nonzero integer.")
         return
+
+    def _stepParDefs(self):
+        """The parameter definitions a stepping limit is resolved from: those
+        of the instruction (its pardefs), else the circuit's."""
+        if self.parDefs:
+            return self.parDefs
+        return self.circuit.parDefs if self.circuit is not None else {}
 
     def setStepList(self, stepList):
         """

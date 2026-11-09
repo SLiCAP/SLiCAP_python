@@ -46,7 +46,7 @@ from PySide6.QtWidgets import (
 )
 
 from .instr_file import parse_calls
-from .value_fields import watch
+from .value_fields import watch, all_valid
 from .sizing import name_width, cap_chars, fit_contents
 from .traces_dialog import (next_name, trace_entries, result_entries,
                             is_symbolic, _abscissa, _lit, _q)
@@ -276,11 +276,12 @@ class AxesDialog(QDialog):
         self._func.addItems(list(_FUNC_TYPES))
         self._func.currentIndexChanged.connect(self._on_func_changed)
         sweep.addWidget(QLabel("Sweep:"))
-        self._sweep_start = QLineEdit("1")
-        self._sweep_stop = QLineEdit("1M")
-        self._sweep_num = QLineEdit("200")
-        for edit, width, tip in ((self._sweep_start, 12, "start"),
-                                 (self._sweep_stop, 12, "stop"),
+        # no preset numbers: the limits are the user's (Anton, 2026-11-09)
+        self._sweep_start = QLineEdit()
+        self._sweep_stop = QLineEdit()
+        self._sweep_num = QLineEdit()
+        for edit, width, tip in ((self._sweep_start, 12, "e.g. 1"),
+                                 (self._sweep_stop, 12, "e.g. 1M"),
                                  (self._sweep_num, 9, "points")):
             cap_chars(edit, width)
             edit.setPlaceholderText(tip)
@@ -924,9 +925,9 @@ class AxesDialog(QDialog):
         """
         start = self._sweep_start.text().strip()
         stop = self._sweep_stop.text().strip()
-        num = self._sweep_num.text().strip() or "200"
-        if not (start and stop):
-            return ""
+        num = self._sweep_num.text().strip()
+        if not (start and stop and num) or not all_valid(self._sweep_row):
+            return ""             # the three sweep values are required
         # the checked items split into RESULTS (swept by sweepAxis) and
         # trace references (added to the same axis via traces=)
         result_names = {entry["name"] for entry in self._sources()}

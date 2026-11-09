@@ -164,9 +164,17 @@ class SnippetDialog(QDialog):
     and argument specifics come from *target* and the formatter signatures."""
 
     def __init__(self, target: SnippetTarget, instr_text: str = "",
-                 csv_dir: str = "", parent=None):
+                 csv_dir: str = "", parent=None, expressions=()):
         super().__init__(parent, Qt.Window)
         self._target = target
+        # The expressions the file's last run produced (NAME.attribute for
+        # every result expression, plus expression variables), read from
+        # the Design-data manifest by the caller: design_data
+        # .manifest_expressions(). Until 2026-11-09 the list was derived
+        # from the instruction TEXT as <VAR>.laplace for four functions
+        # only, so doTime/doNoise/doPZ results were never offered. REPLACED:
+        # the manifest is the one record of what a result holds.
+        self._expressions = list(expressions)
         # Lazy: importing the formatter class pulls the (heavier) core module,
         # paid once when the snippet dialog is first opened.
         self._fmt_cls = target.formatter_class()
@@ -244,7 +252,8 @@ class SnippetDialog(QDialog):
         grid.addWidget(self._lbl_spec_type, row, 0)
         grid.addWidget(self.spec_type, row, 1); row += 1
 
-        # expression (editable combo prefilled with <VAR>.laplace candidates)
+        # expression (editable combo prefilled from the manifest; any
+        # expression can be typed, e.g. a derived one computed in the file)
         self._lbl_expr = QLabel("Expression")
         self.expr = QComboBox()
         self.expr.setEditable(True)
@@ -397,8 +406,7 @@ class SnippetDialog(QDialog):
             self.spec_type.setEditText(cur)
 
     def _expr_candidates(self) -> list:
-        return [f"{c['name']}.laplace" for c in self._calls
-                if c["func"] in _LAPLACE_FUNCS]
+        return list(self._expressions)
 
     def _methods_for_kind(self, kind):
         return self._file_methods if kind == KIND_FILE else self._object_methods
@@ -665,14 +673,18 @@ class SnippetDialog(QDialog):
 class LatexSnippetDialog(SnippetDialog):
     """LaTeX instantiation of the generic snippet dialog."""
 
-    def __init__(self, instr_text: str = "", csv_dir: str = "", parent=None):
+    def __init__(self, instr_text: str = "", csv_dir: str = "", parent=None,
+                 expressions=()):
         super().__init__(LATEX_TARGET, instr_text=instr_text,
-                         csv_dir=csv_dir, parent=parent)
+                         csv_dir=csv_dir, parent=parent,
+                         expressions=expressions)
 
 
 class RstSnippetDialog(SnippetDialog):
     """RST (Sphinx) instantiation of the generic snippet dialog."""
 
-    def __init__(self, instr_text: str = "", csv_dir: str = "", parent=None):
+    def __init__(self, instr_text: str = "", csv_dir: str = "", parent=None,
+                 expressions=()):
         super().__init__(RST_TARGET, instr_text=instr_text,
-                         csv_dir=csv_dir, parent=parent)
+                         csv_dir=csv_dir, parent=parent,
+                         expressions=expressions)

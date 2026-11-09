@@ -39,6 +39,8 @@ with what ``make_traces`` accepts.
 """
 from __future__ import annotations
 
+import re
+
 import ast
 
 from PySide6.QtCore import Qt
@@ -49,8 +51,10 @@ from PySide6.QtWidgets import (
     QTabWidget,
 )
 
-from .instr_file import parse_calls
-from .value_fields import watch, is_latex_safe, mark_item, LATEX_HINT
+from .instr_file import parse_calls, pardef_sources, spec_var_name
+from .par_source_table import display_value
+from .param_field import ParamField
+from .value_fields import watch, all_valid, is_number, is_latex_safe, mark_item, LATEX_HINT
 from .sizing import name_width, cap_chars, chars
 
 from SLiCAP.SLiCAPtraces import (goal_names, function_names, reduces,
@@ -247,10 +251,18 @@ def _is_stepped(entry: dict) -> bool:
 class TracesDialog(QDialog):
     """Create or edit ONE named trace set from ONE simulation result."""
 
-    def __init__(self, existing_text: str = "", results_dir=None, parent=None):
+    def __init__(self, existing_text: str = "", results_dir=None, parent=None,
+                 csv_dir: str = ""):
+        """*csv_dir*: the project csv/ folder; its spec files feed the
+        *specs* source of the sweep limits (Anton, 2026-11-09: a spec the
+        instruction did not select must be selectable for the sweep)."""
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit Traces and Measurements")
         self.setMinimumWidth(chars(self, 103))
+        self._existing_text = existing_text or ""
+        self._csv_dir = csv_dir
+        self._spec_file = ""              # the spec file of the sweep limits
+        self._sweep_srcs = pardef_sources(None)
         calls = parse_calls(existing_text or "")
         self._results = result_entries(calls)
         self._existing = trace_entries(calls)
@@ -295,16 +307,19 @@ class TracesDialog(QDialog):
         sweep = QHBoxLayout(self._sweep_row)
         sweep.setContentsMargins(0, 0, 0, 0)
         self._sweep_lbl = QLabel("Sweep:")
-        self._sweep_start = QLineEdit("1")
-        self._sweep_stop = QLineEdit("1M")
-        self._sweep_num = QLineEdit("200")
-        for edit, width, tip in ((self._sweep_start, 12, "start"),
-                                 (self._sweep_stop, 12, "stop"),
-                                 (self._sweep_num, 9, "points")):
-            cap_chars(edit, width)
-            edit.setPlaceholderText(tip)
-            edit.textChanged.connect(self._update)
-            watch(edit, "number")
+        # start and stop take a number or a parameter of the result
+        # (param_field): sl.sweepData() resolves the name from the
+        # result's pardefs (Anton, 2026-11-09)
+        # no preset numbers: the limits are the user's (Anton, 2026-11-09)
+        self._sweep_start = ParamField("e.g. 1", 12)
+        self._sweep_stop = ParamField("e.g. 1M", 12)
+        self._sweep_start.textChanged.connect(self._update)
+        self._sweep_stop.textChanged.connect(self._update)
+        self._sweep_num = QLineEdit()
+        cap_chars(self._sweep_num, 9)
+        self._sweep_num.setPlaceholderText("points")
+        self._sweep_num.textChanged.connect(self._update)
+        watch(self._sweep_num, "number")
         self._sweep_method = QComboBox()
         self._sweep_method.addItems(["log", "lin"])
         self._sweep_method.currentIndexChanged.connect(self._update)
@@ -1106,6 +1121,57 @@ class TracesDialog(QDialog):
 
     # ── state ─────────────────────────────────────────────────────────────
 
+    def _offer_sweep_parameters(self, entry: dict) -> None:
+        """The sources of the simulation dialogs, circuit and specs. The
+        circuit names come from the result's selectPars call; when they are
+        not in the file (pardefs='circuit', "all") the source is offered
+        with a free name and sweepData checks the run. The specs source
+        offers EVERY numeric item of the spec file, selected by the
+        instruction or not: a limit the instruction did not select is
+        passed to the sweep with params= (_sweep_params_kwarg)."""
+        from pathlib import Path
+        from .design_data_panel import find_spec_csvs
+        from .par_source_table import read_spec_values
+        srcs = pardef_sources(entry["kwargs"].get("pardefs"))
+        self._sweep_srcs = srcs
+        files = [p.name for p in find_spec_csvs(Path(self._csv_dir))] if self._csv_dir else []
+        self._spec_file = next((f for f in files if spec_var_name(f) == srcs["spec_var"]),
+                               "specs.csv" if "specs.csv" in files else (files[0] if files else ""))
+        spec_values = read_spec_values(self._csv_dir, self._spec_file)
+        choices = [("circuit", n, "") for n in (srcs["circuit"] or [])]
+        choices += [("specs", n, v) for n, v in spec_values.items()
+                    if is_number(display_value(v))]
+        offered = ["circuit"] if srcs["circuit"] is None or srcs["circuit"] else []
+        offered += ["specs"] if spec_values else []
+        for field in (self._sweep_start, self._sweep_stop):
+            field.set_choices(choices, sources=offered,
+                              any_name=srcs["circuit"] is None)
+
+    def _sweep_params_kwarg(self, entry: dict) -> str:
+        """``, params=sl.selectPars(<cir>, SPECS_<stem>, specs=[...])`` for
+        the limits that name a parameter the result does not carry."""
+        srcs = self._sweep_srcs
+        circuit, specs = [], []
+        for field in (self._sweep_start, self._sweep_stop):
+            name = field.parameter()
+            if name is None:
+                continue
+            src = field._source.currentText()
+            known = srcs.get(src)
+            if known is None or name in known or name in (circuit + specs):
+                continue
+            (circuit if src == "circuit" else specs).append(name)
+        if not circuit and not specs:
+            return ""
+        parts = [str(entry["args"][0]) if entry["args"] else "cir"]
+        if specs:
+            parts.append(spec_var_name(self._spec_file))
+        if circuit:
+            parts.append("circuit=[" + ", ".join(_q(n) for n in circuit) + "]")
+        if specs:
+            parts.append("specs=[" + ", ".join(_q(n) for n in specs) + "]")
+        return ", params=sl.selectPars(" + ", ".join(parts) + ")"
+
     def _data_expression(self) -> str:
         """What the statements read from: the result itself, or the result
         wrapped in sl.sweepData() when it is a SYMBOLIC one."""
@@ -1115,11 +1181,12 @@ class TracesDialog(QDialog):
         if not is_symbolic(entry):
             return entry["name"]
         method = self._sweep_method.currentText()
-        return 'sl.sweepData({0}, {1}, {2}, {3}{4})'.format(
+        return 'sl.sweepData({0}, {1}, {2}, {3}{4}{5})'.format(
             entry["name"], _q(self._sweep_start.text().strip()),
             _q(self._sweep_stop.text().strip()),
-            self._sweep_num.text().strip() or "200",
-            ', "{0}"'.format(method) if method != "log" else "")
+            self._sweep_num.text().strip(),
+            ', "{0}"'.format(method) if method != "log" else "",
+            self._sweep_params_kwarg(entry))
 
     def _on_result_selected(self, *_args):
         """Changing the analysis result CLEARS what was built from the
@@ -1164,6 +1231,8 @@ class TracesDialog(QDialog):
         # signals are its own attributes, already Python names, so the
         # assignment table has nothing to do (TRACES.md phase 6f)
         self._sweep_row.setVisible(symbolic)
+        if symbolic:
+            self._offer_sweep_parameters(entry)
         self._names_table.setVisible(not symbolic)
         self._names_buttons.setVisible(not symbolic)
         self._names_label.setVisible(not symbolic)
@@ -1268,10 +1337,18 @@ class TracesDialog(QDialog):
         self._flag_names()
         snippet = self.generated_snippet()
         self._preview.setText(snippet or "")
-        ok = (self._selected_entry() is not None
+        entry = self._selected_entry()
+        ok = (entry is not None
               and (bool(self._rows()) and bool(self._name.text().strip())
                    or bool(self._meas_rows())))
+        if entry is not None and is_symbolic(entry) and not self._sweep_complete():
+            ok = False                  # a formula needs its three sweep values
         self._add_btn.setEnabled(ok)
+
+    def _sweep_complete(self) -> bool:
+        return (all(w.text().strip() for w in (self._sweep_start, self._sweep_stop,
+                                               self._sweep_num))
+                and all_valid(self._sweep_row))
 
     # ── emission ──────────────────────────────────────────────────────────
 
@@ -1316,4 +1393,10 @@ class TracesDialog(QDialog):
             statements.append(f'{name} = sl.make_traces({data}, '
                               f'{spec_text}{names})')
         statements += self._measurement_statements(data)
+        # the spec CSV is loaded once per file into SPECS_<stem>, before
+        # its first reader (the instruction dialogs' convention)
+        var = spec_var_name(self._spec_file) if self._spec_file else ""
+        if var and "params=" in data and var in data and not re.search(
+                r"^\s*" + re.escape(var) + r"\s*=", self._existing_text, re.M):
+            statements.insert(0, f'{var} = sl.csv2specs("{self._spec_file}")')
         return "\n".join(statements)

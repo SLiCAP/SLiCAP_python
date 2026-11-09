@@ -31,25 +31,28 @@ from .sizing import cap_chars, fit_contents
 from .source_stimuli_table import SourceStimuliTable, _ANALYSIS_DOMAIN
 from .step_widget import StepWidget
 from .instr_file import next_result_name, parse_calls
-from .value_fields import watch, all_valid
+from .value_fields import watch, all_valid, is_number
+from .param_field import ParamField
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def _field(label: str, placeholder: str = "", width: int = 16,
-           kind: str = "number") -> tuple[QLabel, QLineEdit]:
+           kind: str = "number"):
     """A labelled field, at most *width* digit widths wide (sizing.chars).
-    *kind* 'number' is watched: the field is marked while
-    its text is not a number in SLiCAP notation, and the dialog refuses to
-    build an instruction from it (value_fields). Fields that hold a NAME - a
-    source, a node - pass kind='name' and are not checked."""
-    lbl  = QLabel(label)
+    *kind* 'number' is a simulation setting: a ParamField that takes a
+    number in SLiCAP notation or the name of a parameter with a numeric
+    value, from the circuit or the spec file (Anton, 2026-11-09). It is
+    marked while its text is neither, and the dialog refuses to build an
+    instruction from it (value_fields). Fields that hold a NAME - a source,
+    a node - pass kind='name' and are not checked."""
+    lbl = QLabel(label)
+    if kind == "number":
+        return lbl, ParamField(placeholder, width)
     edit = QLineEdit()
     if placeholder:
         edit.setPlaceholderText(placeholder)
     cap_chars(edit, width)
-    if kind == "number":
-        watch(edit, "number")
     return lbl, edit
 
 
@@ -774,6 +777,8 @@ class NGspiceAnalysisDialog(QDialog):
         for cls in _TAB_CLASSES:
             tab = cls(list(param_names))
             tab._step.changed.connect(self._update)
+            for field in tab._body.findChildren(ParamField):
+                field.textChanged.connect(self._update)
             if hasattr(tab, "_contrib"):        # noise: contributions switch
                 tab._contrib.toggled.connect(self._update)
                 tab._contrib.toggled.connect(self._refresh_output_vars)
@@ -810,6 +815,7 @@ class NGspiceAnalysisDialog(QDialog):
                                   pardefs_preset,
                                   positions=(CIRCUIT, SPECS, USER),
                                   title="Circuit parameters (params=)")
+        self._pd.changed.connect(self._refresh_param_choices)
         self._pd.changed.connect(self._update)
         right.addWidget(self._pd, 1)
 
@@ -846,6 +852,7 @@ class NGspiceAnalysisDialog(QDialog):
         outer.addWidget(buttons)
 
         self._refresh_output_vars()   # the tab the dialog OPENS on
+        self._refresh_param_choices()
         self._update()
         self._set_default_size(left_panel, right_panel, content, buttons)
 
@@ -925,6 +932,7 @@ class NGspiceAnalysisDialog(QDialog):
         tab._step.set_from_dict(_lit(kw.get("step")))
         self._save.set_from(_lit(kw.get("save")),
                              _lit(kw.get("savecurrents")))
+        self._sync_sim_params(tab)      # rows for the named settings first
         self._pd.load_from_source(kw.get("params"))
         options = _lit(kw.get("options"))
         self._options_table.set_entries(options or {}, active=bool(options))
@@ -938,10 +946,44 @@ class NGspiceAnalysisDialog(QDialog):
         self._refresh_output_vars()
         self._update()
 
+    # ── simulation settings that name a parameter ────────────────────────
+
+    def _param_fields(self, tab=None) -> list:
+        """The setting fields of *tab*, or of every tab."""
+        tabs = [tab] if tab is not None else self._tabs
+        return [f for t in tabs for f in t._body.findChildren(ParamField)]
+
+    def _refresh_param_choices(self, *_args) -> None:
+        """Offer every parameter with a NUMERIC value to the setting fields:
+        the ``.param`` definitions of the netlist and the items of the
+        chosen spec file. An expression is not offered: the computation
+        belongs in the main script, its numeric result in the specs
+        (Anton, 2026-11-09)."""
+        from .par_source_table import display_value
+        choices = [("circuit", n, v) for n, v in self._pd.circuit_values().items()
+                   if is_number(display_value(v))]
+        choices += [("specs", n, v) for n, v in self._pd.spec_values().items()
+                    if is_number(display_value(v))
+                    and n not in self._pd.circuit_values()]
+        for field in self._param_fields():
+            field.set_choices(choices)
+        for tab in self._tabs:
+            tab._step.set_param_choices(choices)
+
+    def _sync_sim_params(self, tab) -> None:
+        """Give the parameter table a row for every parameter the settings
+        and the stepping limits of *tab* name and the netlist does not
+        have, so the emitted ``selectPars`` passes its value with the run."""
+        names = [f.parameter() for f in self._param_fields(tab)]
+        names += tab._step.named_parameters()
+        self._pd.set_extra_names([n for n in names if n])
+
     def _update(self, *_args):
         """Enable "Add instruction" only for a valid composition."""
         idx = self._tab_widget.currentIndex()
         tab = self._tabs[idx] if 0 <= idx < len(self._tabs) else None
+        if tab is not None:
+            self._sync_sim_params(tab)
         ok = bool(self._varname.text().strip())
         if tab is not None and not tab._step.is_valid():
             ok = False

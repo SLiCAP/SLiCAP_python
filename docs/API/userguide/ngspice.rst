@@ -28,6 +28,21 @@ All of them accept:
 
 Numbers are written in SLiCAP notation (``"10M"``, ``"2p"``), not in NGspice notation (``10MEG``).
 
+Simulation settings from parameters
+-----------------------------------
+
+A numeric argument of an analysis, the stop time of ``tran()``, a frequency limit of ``ac()`` or ``noise()``, the limits of ``dc()``, and the start, stop and number of steps of a ``lin`` or ``log`` ``step``, may name a parameter instead of a number. The values of a ``list`` or ``array`` step stay numbers. The run resolves the name from the parameters of the run: the ``.param`` definitions of the netlist with the ``params`` argument on top. A simulation setting therefore comes from the circuit, from the specs or from a user value, through ``selectPars()``, exactly like a component value:
+
+.. code-block:: python
+
+   SPECS_specs = sl.csv2specs("specs.csv")
+   TRAN1 = sl.tran("amp", "1n", "t_stop",
+                   params=sl.selectPars("amp", SPECS_specs, specs=["C_f", "t_stop"]))
+
+The value is read when the line runs. A design step that writes a new ``t_stop`` to the spec file is picked up by the next run without an edit of the instruction file. A parameter without a value in the run stops the analysis before NGspice starts, with a message that names it. The parameter must have a numeric value: a value that is an expression in other parameters is computed in the main script, and its numeric result is written to the specs. NGspice cannot resolve a parameter in an analysis command itself, so SLiCAP evaluates it before the deck is written.
+
+The same holds for a SLiCAP instruction. The start, stop and number of steps of a ``lin`` or ``log`` ``stepdict`` may name a parameter of its ``pardefs``, and the limits of a sweep of its result, ``sl.sweepData(LAPLACE1, "f_min", "f_max", 200)``, are read from the same definitions. A specification the instruction did not select is passed to the sweep itself: ``sl.sweepData(TIME1, 0, "tau_s", 100, "lin", params=sl.selectPars(cir, SPECS_specs, specs=["tau_s"]))``.
+
 Compatibility mode
 ------------------
 

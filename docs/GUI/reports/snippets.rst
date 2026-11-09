@@ -55,8 +55,11 @@ a pole-zero table takes a result of ``doPoles()``, ``doZeros()`` or
 offers the circuit objects the file defines for the methods that describe a
 circuit: the element data, the parameter definitions and the undefined
 parameters. Both lists are picks, not text fields: a snippet is composed only
-for an object that exists in the file. Equations and expressions take the
-expression as text, seeded with the Laplace results of the file.
+for an object that exists in the file. The **Expression** list offers every
+expression the last run of the file produced, as shown in the Design data:
+``TIME1.laplace``, ``TIME1.time``, ``NOISE1.onoise``, and every variable
+that holds an expression. The list is empty until the file has run. The
+field is editable, so a derived expression can be typed as well.
 
 Specification table
 ===================

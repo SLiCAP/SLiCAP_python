@@ -207,7 +207,7 @@ class DocumentPropertiesDialog(QDialog):
                  else (210.0, 297.0))
         self._format = BorderFormatFields(layout, presets, border_mm, fixed, size0)
 
-        self._subcircuit = QCheckBox("Save this schematic as a SLiCAP subcircuit (.lib)")
+        self._subcircuit = QCheckBox("Save this schematic as a subcircuit")
         self._subcircuit.setChecked(props.is_subcircuit)
         self._subcircuit.setToolTip(
             "When checked, File → Save writes the package <title>.*_sch + "

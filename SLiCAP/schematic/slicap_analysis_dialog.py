@@ -296,6 +296,7 @@ class SLiCAPAnalysisDialog(QDialog):
         spec_files = [p.name for p in find_spec_csvs(Path(csv_dir))] if csv_dir else []
         self._pd = ParSourceTable(par_defs, undefined_params, spec_files,
                                   csv_dir, pardefs_preset)
+        self._pd.changed.connect(self._refresh_param_choices)
         self._pd.changed.connect(self._update)
         layout.addWidget(self._pd, 1)
 
@@ -339,6 +340,7 @@ class SLiCAPAnalysisDialog(QDialog):
         self._step = StepWidget(param_names, key_style="slicap")
         self._step.changed.connect(self._update)
         layout.addWidget(self._step)
+        self._refresh_param_choices()
 
         # no trailing stretch: the parameter table (stretch 1 above) is the
         # one item that grows with the dialog (Anton, 2026-11-01)
@@ -473,9 +475,10 @@ class SLiCAPAnalysisDialog(QDialog):
         if convtype is not None:
             self._convtype.setCurrentText(str(convtype))
         self._use_submatrix.setChecked(bool(lit(kw.get("use_submatrix"), False)))
+        self._step.set_from_dict(lit(kw.get("stepdict")))
+        self._pd.set_extra_names(self._step.named_parameters())   # rows first
         self._pd.load_from_source(kw.get("pardefs"))
         self._numeric.setChecked(bool(lit(kw.get("numeric"), False)))
-        self._step.set_from_dict(lit(kw.get("stepdict")))
         method = lit(kw.get("method"))
         self._method.setCurrentText(method if method in ("det", "state") else "default")
         self._result_var.setText(entry["name"])
@@ -544,12 +547,28 @@ class SLiCAPAnalysisDialog(QDialog):
             warn = "name already used — it will shadow the earlier result"
         self._name_warn.setText(warn)
 
+        # a stepping limit that names a parameter the circuit does not have
+        # gets a row, so the pardefs pass its value with the run
+        self._pd.set_extra_names(self._step.named_parameters())
         self._pd.show_reason()
         if not self._pd.is_valid():
             ok = False
         if not self._step.is_valid():
             ok = False
         self._add_btn.setEnabled(ok)
+
+    def _refresh_param_choices(self, *_args) -> None:
+        """Offer every parameter with a NUMERIC value to the stepping limits:
+        the circuit's definitions and the items of the chosen spec file
+        (the NGspice dialog does the same for its settings)."""
+        from .par_source_table import display_value
+        from .value_fields import is_number
+        choices = [("circuit", n, v) for n, v in self._pd.circuit_values().items()
+                   if is_number(display_value(v))]
+        choices += [("specs", n, v) for n, v in self._pd.spec_values().items()
+                    if is_number(display_value(v))
+                    and n not in self._pd.circuit_values()]
+        self._step.set_param_choices(choices)
 
     # ── emission ──────────────────────────────────────────────────────────────
 

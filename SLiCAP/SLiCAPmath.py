@@ -605,25 +605,38 @@ def _initServoResults(fcorner, order, value):
         result['hpo'] = order
     return result
 
-def _checkNumber(var):
+def _checkNumber(var, parDefs=None):
     """
-    Returns a number with its value represented by var.
+    Returns a number with its value represented by var, or None.
 
-    :param var: Variable that may represent a number.
+    With *parDefs* a var that names a parameter with a numeric value in
+    them is resolved to that value (fullSubs). A simulation setting - a
+    stepping limit, a sweep limit - then follows the specs like a
+    component value does (Anton, 2026-11-09).
+
+    :param var: Variable that may represent a number, or the name of a
+                parameter of *parDefs*.
     :type var: str, sympy object, int, float
+
+    :param parDefs: parameter definitions, as circuit.parDefs; None resolves
+                    nothing.
+    :type parDefs: dict, NoneType
 
     :return: Rational number
     :rtype: sympy.rational
     """
-    if type(var) == str:
-        var = _replaceScaleFactors(var)
-    else:
-        var = str(var)
+    text = _replaceScaleFactors(var) if type(var) == str else str(var)
     try:
-        var = sp.Rational(var)
+        return sp.Rational(text)
     except BaseException:
-        var = None
-    return var
+        pass
+    if parDefs and str(var).strip().isidentifier():
+        symbol = sp.Symbol(str(var).strip())
+        if symbol in parDefs:
+            value = sp.N(fullSubs(parDefs[symbol], parDefs))
+            if value.is_number and value.is_real:
+                return sp.Rational(str(float(value)))
+    return None
 
 def str2number(var):
     """
