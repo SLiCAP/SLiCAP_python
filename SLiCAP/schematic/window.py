@@ -990,7 +990,44 @@ class CanvasPanel(QWidget):
         elif self._current_path is None:
             self._on_save_as()
         else:
-            self._save_to(self._current_path)
+            # a subcircuit no longer: back from lib/ to sch/ (project.moves_to)
+            target = project.moves_to(self._current_path, False)
+            if target is None:
+                self._save_to(self._current_path)
+                return
+            old = self._current_path
+            conflict = project.drawing_name_conflict(target, exclude=[old])
+            if conflict:
+                QMessageBox.warning(self, "Schematic not saved", conflict)
+                return
+            from .subcircuit import lib_path_for
+            extra = [lib_path_for(old, old.stem, self._sch_type)]
+            if not self._confirm_move(old, extra, "sch",
+                                      "No longer a subcircuit: the schematic moves to sch/."):
+                return
+            self._save_to(target)
+            if self._dirty:                    # the save failed; nothing moved
+                return
+            project.remove_drawing(old, extra=extra)
+            self._status("Moved to sch/; the old files in lib/ are removed.")
+
+    def _confirm_move(self, old: Path, extra, folder: str, why: str) -> bool:
+        """Ask before a save MOVES the drawing (project.moves_to): the files
+        that the move removes are named, Cancel leaves everything as it is
+        (Anton, 2026-11-10: "a warning that everything is moved instead of
+        copied"). Asking after the fact was the first form, REPLACED."""
+        files = project.drawing_files(old, extra)
+        names = "\n  ".join(project.relative_to_root(p, old) for p in files)
+        ret = QMessageBox.question(
+            self, "Move schematic",
+            f"{why}\n\nThe drawing is moved, not copied. These files are "
+            f"removed after the save:\n  {names}\n\nContinue?",
+            QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Yes)
+        return ret == QMessageBox.Yes
+
+    def _status(self, text: str) -> None:
+        if self._main_win is not None:
+            self._main_win.statusBar().showMessage(text, 8000)
 
     def _on_save_as(self):
         if self._symbol_mode:
@@ -1076,15 +1113,28 @@ class CanvasPanel(QWidget):
         libdir = (project.subdir_for(base, "lib") if base
                   else project.subdir("lib"))
         sch_path = libdir / f"{title}{sch_ext}"
-        conflict = project.drawing_name_conflict(sch_path)
+        # A schematic that became a subcircuit MOVES into lib/: its file in
+        # sch/ is the same drawing, not a conflict, and is removed after
+        # the save (project.moves_to; Anton, 2026-11-10). Save as under
+        # another name is a copy: the original stays.
+        moving = (base is not None and base.stem == sch_path.stem
+                  and project.moves_to(base, True) is not None)
+        conflict = project.drawing_name_conflict(sch_path,
+                                                 exclude=[base] if moving else ())
         if conflict:
             QMessageBox.warning(self, "Subcircuit not saved", conflict)
+            return
+        if moving and not self._confirm_move(
+                base, (), "lib", "A subcircuit lives in lib/: the schematic moves there."):
             return
         # The same builder and file as the export of a subcircuit
         # schematic (schematic.cli, makeCircuit), 2026-09-16.
         from .subcircuit import build_lib, lib_path_for
         lib_path = lib_path_for(sch_path, title, self._sch_type)
         self._save_to(sch_path)
+        if self._dirty:                        # the save failed; nothing moved
+            return
+        moved = project.remove_drawing(base) if moving else []
         try:
             lib_text = build_lib(self._sch_type, comps, wires, title,
                                  self._doc_props.subcircuit_ports,
@@ -1095,8 +1145,9 @@ class CanvasPanel(QWidget):
         except Exception as exc:
             QMessageBox.critical(self, "Subcircuit save failed", str(exc))
             return
+        note = "\n\nMoved into lib/; the old files are removed." if moved else ""
         QMessageBox.information(self, "Subcircuit saved",
-                                f"Wrote:\n  lib/{sch_path.name}\n  lib/{lib_path.name}")
+                                f"Wrote:\n  lib/{sch_path.name}\n  lib/{lib_path.name}" + note)
 
     def _save_to(self, path: Path):
         self._doc_props.last_modified = _date.today().isoformat()

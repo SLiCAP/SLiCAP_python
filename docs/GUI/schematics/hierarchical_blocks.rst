@@ -59,6 +59,33 @@ Any schematic can be turned into a reusable subcircuit:
    (``lib/<title>.slicap_lib`` or ``.spice_lib``). The schematic is saved in
    ``lib/`` from then on, not in ``sch/``.
 
+A schematic moves with its box
+==============================
+
+A schematic lives in ``sch/``, a subcircuit in ``lib/``. Ticking the box
+on a schematic that was saved in ``sch/`` therefore **moves** it: the next
+save writes the package to ``lib/`` and removes the file in ``sch/`` with
+its sidecars, the style ``.ini``, the frozen ``.symbols`` and the render
+cache. Before the save a question names these files and says that the
+drawing is moved, not copied; *Cancel* leaves everything as it is.
+Nothing else changes: the images in ``img/`` keep their name, and a
+poster that shows the schematic finds it at the new place, because a
+drawing's name is unique in a project. Only a save under the **same
+name** moves; *Save as* under another name makes a copy and leaves the
+original where it is.
+
+Unticking the box moves the schematic back, with the same question: the
+next save writes it to ``sch/`` and removes the schematic and the library
+file from ``lib/``. A block symbol drawn for it (``lib/<title>.slicap_sym``
+or ``.spice_sym``) is kept, since it is your own drawing. A parent
+schematic that placed the block then misses its library and must be
+given another one.
+
+Before this, the box left the ``sch/`` file behind, and the project held
+two drawings of one name, which the unique-name rule refuses to save.
+Such a pair from an older project is repaired by renaming or removing
+one of the two files.
+
 The library file holds one ``.subckt`` definition; the ports appear in the
 chosen order, and a parameter passed in on the ``.subckt`` line is **not**
 redefined internally — the passed value (or its default) supersedes it.

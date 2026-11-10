@@ -526,6 +526,22 @@ Version 6.4.6
    from the ``pardefs`` of the instruction in the same way, and the
    stepping fields of both instruction dialogs offer the parameters.
 
+Version 6.4.7
+-------------
+
+#. **A schematic moves with its subcircuit box.** A schematic saved in
+   ``sch/`` and then ticked as a subcircuit got its package in ``lib/``
+   and left the ``sch/`` file behind: two drawings of one name, which
+   the unique-name rule refuses to save, so Save failed and a project
+   switch could not proceed. The next save now moves the schematic:
+   into ``lib/`` when the box is ticked, back into ``sch/`` when it is
+   unticked. A question before the save names the files that the move
+   removes and says that the drawing is moved, not copied; Cancel
+   leaves everything as it is. The old file goes with its sidecars, and
+   on the way back the library file too. A drawn block symbol is kept.
+   Save as under another name still copies. A poster that shows the
+   schematic finds it at the new place.
+
 SLiCAP version 6.3 release notes
 ================================
 

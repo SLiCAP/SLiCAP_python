@@ -170,17 +170,21 @@ def drawing_with_stem(stem: str, root=None, exclude=None):
     REJECTED for now: consistency would ask for <name>_<dialect>.<type>
     on every associated file and undo the dialect extensions of
     2026-11-07."""
-    ex = None
-    if exclude is not None:
+    if exclude is None:
+        exclude = ()
+    elif isinstance(exclude, (str, Path)):
+        exclude = (exclude,)
+    ex = set()
+    for e in exclude:
         try:
-            ex = Path(exclude).resolve()
+            ex.add(Path(e).resolve())
         except OSError:
-            ex = Path(exclude)
+            ex.add(Path(e))
     for p in project_drawings(root):
         if p.stem != stem:
             continue
         try:
-            same = ex is not None and p.resolve() == ex
+            same = p.resolve() in ex
         except OSError:
             same = False
         if not same:
@@ -188,19 +192,87 @@ def drawing_with_stem(stem: str, root=None, exclude=None):
     return None
 
 
-def drawing_name_conflict(path, root=None) -> "str | None":
+def drawing_name_conflict(path, root=None, exclude=()) -> "str | None":
     """The message that refuses saving a drawing at *path*, or None when
     its stem is free (drawing_with_stem). Shared by the GUI entry points
-    so the wording is one."""
+    so the wording is one. *exclude*: further files that are the SAME
+    drawing, such as the file a schematic moves away from when it becomes
+    a subcircuit (move_drawing).
+
+    The check also applies to a file saved over itself when another
+    drawing of that stem exists: the project then holds a duplicate, and
+    the user repairs it by renaming (Anton, 2026-11-10, after a subcircuit
+    left in sch/ next to its copy in lib/ blocked every Save and the
+    project switch). Letting an existing file through without the check
+    was built and REVERTED the same day: "don't change the program,
+    better change the file names". The cause of such a pair, a schematic
+    that became a subcircuit and left its sch/ file behind, is removed
+    by the move (move_drawing)."""
     path = Path(path)
     base = Path(root) if root is not None else root_for(path)
-    other = drawing_with_stem(path.stem, base, exclude=path)
+    other = drawing_with_stem(path.stem, base, exclude=[path, *exclude])
     if other is None:
         return None
     return ("A drawing called '{0}' already exists:\n    {1}\n\nEvery drawing "
             "of a project needs its own name: all drawings write img/{0}.svg "
             "and img/{0}.pdf. Choose another name.".format(
                 path.stem, relative_to_root(other, other)))
+
+
+def drawing_files(path, extra=()) -> list:
+    """The files a move of the drawing *path* leaves behind and removes:
+    the file, its sidecars (the style .ini, the frozen .symbols, the
+    render .cache folder) and the *extra* files, those that exist, as
+    paths. The editor shows them BEFORE the move (Anton, 2026-11-10: a
+    warning that everything is moved, not copied)."""
+    path = Path(path)
+    return [p for p in [path, ini_path_for(path), symbols_path_for(path),
+                        cache_path_for(path), *map(Path, extra)]
+            if p.exists()]
+
+
+def remove_drawing(path, extra=()) -> list:
+    """Remove the drawing file *path* with its sidecars and the *extra*
+    files (drawing_files); the removed paths, relative to the project
+    root. Used by the move of a schematic between sch/ and lib/
+    (moves_to): the old place is the same drawing, not a second one."""
+    import shutil
+    removed = []
+    for p in drawing_files(path, extra):
+        try:
+            if p.is_dir():
+                shutil.rmtree(p)
+            else:
+                p.unlink()
+        except OSError:
+            continue
+        removed.append(relative_to_root(p, path))
+    return removed
+
+
+def moves_to(path, is_subcircuit: bool):
+    """Where the drawing *path* belongs: a subcircuit in lib/, any other
+    schematic in sch/ (Anton, 2026-08-05: the package lives in lib/). The
+    target path when the file is not there yet, else None.
+
+    A schematic saved in sch/ and then ticked as a subcircuit used to get
+    a copy in lib/ and leave the sch/ file behind: two drawings of one
+    stem, which the unique-name rule then refused to save (Anton,
+    2026-11-10: "if you create a circuit, save first as normal circuit
+    and later as subcircuit, you may create name conflicts"). Ticking or
+    unticking the box therefore MOVES the schematic on the next save, in
+    both directions; the editor removes the old place (remove_drawing)."""
+    path = Path(path)
+    if path.suffix.lower() == POSTER_SUFFIX:
+        return None
+    root = root_for(path)
+    target_dir = folder("lib" if is_subcircuit else "sch", root)
+    try:
+        if path.parent.resolve() == target_dir.resolve():
+            return None
+    except OSError:
+        return None
+    return target_dir / path.name
 
 
 def latex_snippet_files(root=None) -> list:
@@ -240,7 +312,11 @@ def schematic_file_for(ref: str, root=None):
     base = Path(root) if root is not None else project_root()
     if "/" in ref or Path(ref).suffix.lower() in SCHEMATIC_SUFFIXES:
         p = base / ref
-        return p if p.is_file() else None
+        if p.is_file():
+            return p
+        # the drawing moved between sch/ and lib/ (moves_to): its stem is
+        # unique in the project, so the name alone finds it (2026-11-10)
+        ref = Path(ref).stem
     for name in ("sch", "lib"):
         for ext in SCHEMATIC_SUFFIXES:
             p = folder(name, base) / (ref + ext)
