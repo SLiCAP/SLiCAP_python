@@ -745,6 +745,11 @@ class CanvasPanel(QWidget):
                        "with its own scale and colour; it follows every run")
         act.triggered.connect(self._on_place_snippet)
         menu.addAction(act)
+        act = QAction("LaTeX snippet &file…", self)
+        act.setToolTip("A LaTeX snippet file of the project (tex/SLiCAPdata), "
+                       "with its own scale and colour; it follows the file")
+        act.triggered.connect(lambda checked=False: self._on_place_snippet(files=True))
+        menu.addAction(act)
         act = QAction("&Image…", self)
         act.triggered.connect(self._on_place_image)
         menu.addAction(act)
@@ -1522,14 +1527,17 @@ class CanvasPanel(QWidget):
                                               dlg.image_height(), link=dlg.link(),
                                               size_scale=dlg.image_scale())
 
-    def _on_place_snippet(self):
-        """Place -> LaTeX snippet: a snippet OBJECT of the Design data by
-        name, its text from the run manifest, with its own scale and colour."""
+    def _on_place_snippet(self, files: bool = False):
+        """Insert -> LaTeX from design data: a snippet OBJECT of the Design
+        data by name, its text from the run manifest. Insert -> LaTeX
+        snippet file (*files*): a snippet FILE of the project, its text from
+        the file. Scale and colour are the item's own either way."""
         from .latex_fragment_dialog import LatexFragmentDialog
-        from .design_data import manifest_snippets
+        from .latex_fragment_item import snippet_choices
+        root = (project.root_for(self._current_path) if self._current_path
+                else project.project_root())
         dlg = LatexFragmentDialog(style=self._style, parent=self,
-                                  snippets=manifest_snippets(project.root_for(self._current_path)
-                                                             if self._current_path else project.project_root()))
+                                  snippets=snippet_choices(root=root, files=files))
         if dlg.exec() and dlg.snippet():
             self._scene.start_latex_placement(dlg.latex_code(), dlg.preamble_path(),
                                               dlg.display_width(), dlg.display_height(),

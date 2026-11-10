@@ -87,7 +87,7 @@ rst.pz(pzResult, label="tab-pz", caption="Poles and zeros of the transfer").save
 rst.pz(symZeros, label="tab-symzeros", caption="Symbolic zeros of the transfer").save("symzeros")
 rst.expr(pzResult.DCvalue, name="dcValue").save("substitutions")
 
-f = rst.file("../../cir/myPassiveNetwork.slicap_cir").save("f")
+f = rst.file("cir/myPassiveNetwork.slicap_cir").save("f")
 
 specs = []
 specs.append(sl.specItem("f_min", "Lower limit noise bandwidth", 10, units="Hz", specType="performance"))

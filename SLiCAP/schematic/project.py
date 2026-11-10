@@ -88,13 +88,16 @@ def _project_paths(root: Path) -> dict:
 
 def folder_rel(name: str, root=None) -> str:
     """The project folder *name* (cir, img, lib, sch, posters, results, txt,
-    ...) as the project's SLiCAP.ini names it, relative to the root and
-    without a trailing slash, in POSIX form: ``"img"`` or ``"../Figures"``.
-    The form a schematic stores in a link."""
+    tex_snippets, ...) as the project's SLiCAP.ini names it, relative to
+    the root and without a trailing slash, in POSIX form: ``"img"`` or
+    ``"../Figures"``. The form a schematic stores in a link. Without an
+    ini entry the core's default location is used (``tex/SLiCAPdata`` for
+    tex_snippets); until 2026-11-09 the KEY name was returned, which is
+    right only for the folders named after their key."""
+    from SLiCAP.SLiCAPconfigure import DEFAULT_PROJECT_PATHS
     base = Path(root) if root is not None else project_root()
-    value = _project_paths(base).get(name, "")
-    value = value.strip().replace("\\", "/").rstrip("/") if value else ""
-    return value or name
+    value = _project_paths(base).get(name, "") or DEFAULT_PROJECT_PATHS.get(name, name)
+    return value.strip().replace("\\", "/").rstrip("/") or name
 
 
 def folder(name: str, root=None, create: bool = False) -> Path:
@@ -198,6 +201,26 @@ def drawing_name_conflict(path, root=None) -> "str | None":
             "of a project needs its own name: all drawings write img/{0}.svg "
             "and img/{0}.pdf. Choose another name.".format(
                 path.stem, relative_to_root(other, other)))
+
+
+def latex_snippet_files(root=None) -> list:
+    """The LaTeX snippet files of the project: ``[(path, text), ...]`` for
+    every ``.tex`` in the tex_snippets folder (``tex/SLiCAPdata/``), the
+    path relative to the project root in POSIX form, sorted by name. A
+    snippet item placed from this list follows the FILE (Anton,
+    2026-11-09): a script run outside the GUI rewrites it too."""
+    folder_ = folder("tex_snippets", root)
+    rel = folder_rel("tex_snippets", root)
+    out = []
+    if not folder_.is_dir():
+        return out
+    for p in sorted(folder_.glob("*.tex")):
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        out.append((rel + "/" + p.name, text))
+    return out
 
 
 def schematic_ref(path, root=None) -> str:

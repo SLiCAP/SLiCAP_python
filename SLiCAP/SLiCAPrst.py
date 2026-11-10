@@ -7,10 +7,18 @@ and included in other RST files.
 import SLiCAP.SLiCAPconfigure as ini
 import sympy as sp
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX
-from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet
+from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet, _file_listing
 from SLiCAP.SLiCAPlex import _sympify
 from SLiCAP.SLiCAPlatex import _stateSpaceLines, exprLatex
 import os
+
+def _code_block(lines, first):
+    """A Sphinx ``code-block`` directive (the document's default highlight
+    language) with *lines* as its content, numbered from *first*."""
+    out = ".. code-block::\n    :linenos:\n    :lineno-start: %d\n\n" % int(first)
+    out += "".join("    " + line + "\n" if line.strip() else "\n" for line in lines)
+    return out + "\n"
+
 
 class RSTformatter(_BaseFormatter):
     """
@@ -61,17 +69,15 @@ class RSTformatter(_BaseFormatter):
         
         .. code::
         
-            .. literalinclude:: <full path to myFirstRCnetwork.cir>
+            .. code-block::
                 :linenos:
+                :lineno-start: 1
+
+                <the lines of the netlist>
         """
-        RST = '.. literalinclude:: /' + ini.project_path 
-        RST += ini.cir_path + netlistFile + '\n'
-        RST += '    :linenos:\n'
-        if lineRange != None:
-            RST += '    :lines: ' + lineRange + '\n'
-            if firstNumber != None:
-                RST += '    :lineno-start: ' + str(firstNumber) + '\n'
-        return Snippet(RST, self.format)
+        lines, first = _file_listing(os.path.join(ini.cir_path, netlistFile),
+                                     lineRange, firstNumber)
+        return Snippet(_code_block(lines, first), self.format)
                 
     def elementData(self, circuitObject, label="", caption=""):
         """
@@ -702,28 +708,29 @@ class RSTformatter(_BaseFormatter):
     def file(
         self, fileName, lineRange=None, firstNumber=None):
         """
-        Creates a n RST *.. literalinclude::* command for literally displaying a file.
+        Creates an RST code block with the text of a file as it is when the
+        snippet is made, so the document needs no path to the file. A
+        *literalinclude* with a path was the previous form, REPLACED
+        2026-11-09: Sphinx resolved it from the including document's
+        folder, which differs per document.
         
         :param fileName: Name of the file. Path is absolute or relative to the 
                          project directory
         :type fileName: str
         
-        :param lineRange: range of lines to be included
+        :param lineRange: lines to be included, 1-based and inclusive:
+                          "3-10", "3" or "1-2, 8-10"
         :type lineRange: str
         
-        :param firstNumber: start number of the displayed line numbers
+        :param firstNumber: displayed number of the first line; defaults to
+                            the number of the first included line
         :type firstNumber: str
         
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
-        RST = '.. literalinclude:: ' + fileName + '\n'
-        RST += '    :linenos:\n'
-        if lineRange != None:
-            RST += '    :lines: ' + lineRange + '\n'
-            if firstNumber != None:
-                RST += '    :lineno-start: ' + str(firstNumber) + '\n'
-        return Snippet(RST, self.format)
+        lines, first = _file_listing(fileName, lineRange, firstNumber)
+        return Snippet(_code_block(lines, first), self.format)
 
     def expr(self, expr, units="", name=None, intlen=0):
         """

@@ -5,11 +5,12 @@
 SLiCAP formatterfor generating snippets that can be stored as LaTeX files
 and included in other LaTeX files.
 """
+import os
 import sympy as sp
 import SLiCAP.SLiCAPconfigure as ini
 from SLiCAP.SLiCAPmath import fullSubs, roundN, _checkNumeric, units2TeX, ENG
 from pathlib import PureWindowsPath
-from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet, upright_subscripts
+from SLiCAP.SLiCAPprotos import _BaseFormatter, Snippet, upright_subscripts, _file_listing
 from SLiCAP.SLiCAPlex import _sympify
 import re
 
@@ -45,6 +46,16 @@ def _stateSpaceLines(ss, parts=None):
     return lines
 
 
+def _lstlisting(lines, first, option=""):
+    """A ``lstlisting`` environment with *lines* as its content, numbered
+    from *first*; *option* is the language or style option, or empty."""
+    if any("\\end{lstlisting}" in line for line in lines):
+        raise ValueError("a listing snippet cannot contain \\end{lstlisting}")
+    opts = ([option] if option else []) + ["numbers=left", "firstnumber=%d" % int(first)]
+    return ("\\begin{lstlisting}[" + ", ".join(opts) + "]\n"
+            + "\n".join(lines) + "\n\\end{lstlisting}\n\n")
+
+
 class LaTeXformatter(_BaseFormatter):
     """
     Latex formatter. The methods return LaTeX snippets.
@@ -62,8 +73,8 @@ class LaTeXformatter(_BaseFormatter):
 
     def netlist(self, netlistFile, lineRange=None, firstNumber=None):
         """
-        Creates a LaTeX `\\input{}` or an RST '.. literalinclude:: '
-        command for including a netlist file.
+        Creates a LaTeX listing of a netlist file. The snippet holds the
+        text of the file as it is when the snippet is made.
         
         :param netlistFile: Name of the netlist file relative to the project circuit directory
         :type netlistFile: str
@@ -90,22 +101,19 @@ class LaTeXformatter(_BaseFormatter):
         .. code::
         
             \\textbf{Netlist: myFirstRCnetwork.cir}
-            \\lstinputlisting[language=ltspice, numbers=left]{<full path to myFirstRCnetwork.cir>}
+            \\begin{lstlisting}[language=ltspice, numbers=left, firstnumber=1]
+            <the lines of the netlist>
+            \\end{lstlisting}
         
         The netlist file is assumed to reside in the folder given by `sl.ini.cir_path`.
         If you want to include a file from any other location, use: 
         
         >>> ltx.file()
         """
-        netlistFile  = netlistFile.replace("_", "\\_")
-        TEX = '\\textbf{Netlist: ' + netlistFile + '}\n\n'
-        TEX += '\\lstinputlisting[language=ltspice, numbers=left'
-        if lineRange != None:
-            TEX += ', linerange={' + lineRange + '}'
-        if firstNumber != None:
-            TEX += ', firstnumber=' + str(int(firstNumber))
-        TEX += ']{' + ini.project_path + ini.cir_path + netlistFile + '}\n\n'
-        
+        lines, first = _file_listing(os.path.join(ini.cir_path, netlistFile),
+                                     lineRange, firstNumber)
+        TEX = '\\textbf{Netlist: ' + netlistFile.replace("_", "\\_") + '}\n\n'
+        TEX += _lstlisting(lines, first, 'language=ltspice')
         return Snippet(TEX, self.format)
                 
     def elementData(self, circuitObject, label="", caption="", 
@@ -857,19 +865,27 @@ class LaTeXformatter(_BaseFormatter):
         self, fileName, lineRange=None, firstNumber=None, language=None, 
         style=None):
         """
-        Creates a LaTeX `\\input{}` command for literally displaying a file.
+        Creates a LaTeX listing of a file. The snippet holds the text of
+        the file as it is when the snippet is made, so the report needs no
+        path to the file and compiles from any folder. A path in the
+        snippet (`\\lstinputlisting`) was the previous form, REPLACED
+        2026-11-09: LaTeX resolved it from the folder the report compiles
+        in, which differs per document.
         
         :param fileName: Name of the file. Path is absolute or relative to the 
                          project directory
         :type fileName: str
         
-        :param lineRange: range of lines to be included
+        :param lineRange: lines to be included, 1-based and inclusive:
+                          "3-10", "3" or "1-2, 8-10"
         :type lineRange: str
         
-        :param firstNumber: start number of the displayed line numbers
+        :param firstNumber: displayed number of the first line; defaults to
+                            the number of the first included line
         :type firstNumber: str
         
-        :param language: SLiCAP built-in languages:
+        :param language: SLiCAP built-in languages, or any language the
+                         LaTeX listings package knows (python, ...):
                          
                          - ltspice
                          
@@ -885,22 +901,15 @@ class LaTeXformatter(_BaseFormatter):
         :return: SLiCAP Snippet object
         :rtype: SLiCAP.SLiCAPprotos.Snippet
         """
-        short_name = PureWindowsPath(fileName).parts[-1]
-        fileName   = fileName.replace("_", "\\_")
-        short_name = short_name.replace("_", "\\_")
+        lines, first = _file_listing(fileName, lineRange, firstNumber)
+        short_name = PureWindowsPath(fileName).parts[-1].replace("_", "\\_")
         TEX = '{\\textbf{File:} ' + short_name + '}\n\n'
-        
         if type(language) == str and len(language) > 0:
-            TEX += '\\lstinputlisting[language=%s, numbers=left'%(language)
+            TEX += _lstlisting(lines, first, 'language=%s' % language)
         elif type(style) == str and len(style) > 0:
-            TEX += '\\lstinputlisting[style=%s, numbers=left'%(style)
+            TEX += _lstlisting(lines, first, 'style=%s' % style)
         else:
-            TEX += '\\lstinputlisting[numbers=left'
-        if lineRange != None:
-            TEX += ', linerange={' + lineRange + '}'
-        if firstNumber != None:
-            TEX += ', firstnumber=' + str(int(firstNumber))
-        TEX += ']{' + fileName + '}\n\n'
+            TEX += _lstlisting(lines, first, '')
         return Snippet(TEX, self.format)
 
     def expr(self, expr, units="", intlen=0):

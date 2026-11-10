@@ -119,10 +119,15 @@ def linked_images(sch_path) -> list:
             p = project.resolve_from_root(fp, sch_path)
             if p.resolve() not in own:
                 out.append(p)
-    # a snippet item's text lives in the run manifest (Design data): a run
-    # that changed it must re-export the schematic
-    if any(isinstance(f, dict) and f.get("snippet")
-           for f in data.get("latex_fragments", []) or []):
+    # a snippet item's text lives in the run manifest (Design data) or in
+    # its snippet file: a run that changed either must re-export the
+    # schematic (the file form since 2026-11-09, also for updateImages)
+    from .latex_fragment_item import snippet_file
+    snippets = [f.get("snippet", "") for f in data.get("latex_fragments", []) or []
+                if isinstance(f, dict) and f.get("snippet")]
+    for rel in filter(None, map(snippet_file, snippets)):
+        out.append(project.resolve_from_root(rel, sch_path))
+    if any(not snippet_file(s) for s in snippets):
         from .design_data import manifest_path
         out.append(manifest_path(project.folder("results", project.root_for(sch_path))))
     return out

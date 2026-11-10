@@ -456,6 +456,37 @@ Version 6.4.6
    attribute of every result, and every variable that holds an expression.
    The list is empty until the file has run. The field stays editable.
 
+#. **Insert → LaTeX snippet file…** places a LaTeX snippet file of the
+   project (``tex/SLiCAPdata/``) on a schematic or poster. The item
+   follows the file: it re-renders after a run, when the drawing opens,
+   before an export and with ``updateImages()``, so a snippet written by
+   a script outside the GUI stays up to date too. A missing file gives a
+   warning, not an error. Insert → LaTeX from design data…, which places
+   a snippet object by name, is unchanged.
+
+#. **Listing snippets hold the text of the file.** ``file()`` and
+   ``netlist()`` of the LaTeX and RST formatters wrote a path into the
+   snippet, as ``\lstinputlisting`` or ``literalinclude``. LaTeX and
+   Sphinx resolve such a path from the folder of the document, which
+   differs per report: a book has its main document above the chapter
+   folders. The snippet now holds the lines of the file as a
+   ``lstlisting`` environment or a ``code-block``, read when the run
+   happens. It compiles from any folder, and the listing is the file as
+   it was at the last run. The line range and the first line number work
+   as before; ``lineRange`` also takes ``"3"`` and ``"1-2, 8-10"``. A
+   file that cannot be read stops the run with a clear message. In the
+   snippet dialog, Browse for a file starts in the project folder and
+   stores the project-relative path. Its *Listing style* field offers
+   SLiCAP's listing styles, ``slicap`` and ``latex``, before the
+   languages: a style carries the colours of the preamble, a bare
+   language such as ``python`` does not.
+
+#. **Bug fix: the Border dialog gave portrait only.** Its Format row had
+   no Landscape box, so a paper format always set the portrait size and
+   a landscape poster could not be made from the border. The box is
+   there now, for paper formats, and the dialog opens on the format of
+   the present border.
+
 #. **Bug fix: makeCircuit() of an NGspice subcircuit schematic.** A
    ``.spice_sch`` saved as a subcircuit exports ``lib/<name>.spice_lib``
    and no circuit netlist. ``makeCircuit()`` nevertheless made the HTML

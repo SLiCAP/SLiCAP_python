@@ -94,7 +94,11 @@ class BorderDialog(QDialog):
         self._units_per = units_per
         # The formats (document_properties_dialog.border_formats): choosing
         # one fills the size rows and their Fixed boxes; a free side keeps
-        # its size (Anton, 2026-10-09).
+        # its size (Anton, 2026-10-09). A paper format is portrait or
+        # landscape: the Landscape box, shown for paper only, as in the
+        # Schematic properties dialog. Until 2026-11-09 this dialog had no
+        # such box, so a format always gave portrait (Anton: "it becomes
+        # portrait and cannot be set to landscape").
         self._formats = formats or {}
         self._format = QComboBox()
         self._format.addItems(["(size below)"] + list(self._formats))
@@ -102,12 +106,25 @@ class BorderDialog(QDialog):
                                 "the Preferences (Border formats).")
         self._format.activated.connect(self._on_format)
         fit_contents(self._format)
+        self._landscape = QCheckBox("Landscape")
+        self._landscape.setChecked(width > height)
+        self._landscape.toggled.connect(
+            lambda *_: self._on_format(self._format.currentIndex()))
         grid.addWidget(QLabel("Format"), 0, 0)
-        grid.addWidget(self._format, 0, 1, 1, 3)
+        grid.addWidget(self._format, 0, 1, 1, 2)
+        grid.addWidget(self._landscape, 0, 3)
         self._w_row = _SizeRow(grid, 1, "Width", width, fixed_w, unit,
                                units_per)
         self._h_row = _SizeRow(grid, 2, "Height", height, fixed_h, unit,
                                units_per)
+        # the present border's format, when it has one
+        from .document_properties_dialog import page_name_of, CUSTOM
+        upm = units_per["mm"]
+        name = page_name_of(width / upm, height / upm, (fixed_w, fixed_h),
+                            formats=self._formats)
+        if name != CUSTOM and self._format.findText(name) >= 0:
+            self._format.setCurrentText(name)
+        self._show_landscape(self._format.currentText())
 
         grid.addWidget(QLabel("Line"), 3, 0)
         self._line_color = ColorButton(line_color)
@@ -163,14 +180,20 @@ class BorderDialog(QDialog):
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
 
+    def _show_landscape(self, name: str) -> None:
+        from .document_properties_dialog import is_paper
+        self._landscape.setVisible(is_paper(name))
+
     def _on_format(self, index: int) -> None:
         name = self._format.itemText(index)
+        self._show_landscape(name)
         if name not in self._formats:
             return
         from .document_properties_dialog import resolve_format
         upm = self._units_per["mm"]
         current = (self._w_row.units() / upm, self._h_row.units() / upm)
-        w, h, fw, fh = resolve_format(self._formats, name, current=current)
+        w, h, fw, fh = resolve_format(self._formats, name,
+                                      self._landscape.isChecked(), current)
         self._w_row.set_units(w * upm); self._w_row.set_fixed(fw)
         self._h_row.set_units(h * upm); self._h_row.set_fixed(fh)
 

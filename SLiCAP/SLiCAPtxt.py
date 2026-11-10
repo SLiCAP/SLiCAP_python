@@ -5,7 +5,7 @@ SLiCAP module with the TXT formatter.
 
 The TXT formatter produces plain-text snippets saved in the project's
 ``txt/`` folder (``sl.ini.txt_path``). Together with
-``LaTeXformatter.file()`` (``\\lstinputlisting``) this makes terminal-style
+``LaTeXformatter.file()`` (a ``lstlisting`` of the file) this makes terminal-style
 output — pole-zero listings, servo-bandwidth results, phase margins, or any
 captured print output — reportable in LaTeX documents (SLNG.md, "LaTeX
 formatter GUI", 2026-07-15).

@@ -40,10 +40,19 @@ verbatim environment. Include the snippet as any other.
 Snippet from a file
 ===================
 
-Any text file, or a netlist, included verbatim: the file name, and for LaTeX
-the listing language, for RST the first line number. A netlist is named by
+Any text file, or a netlist, as a listing: the file name, and for LaTeX
+the listing style, for RST the first line number. The *Listing style*
+offers SLiCAP's styles first: ``slicap`` shows Python with the colours of
+the SLiCAP preamble, ``latex`` shows TeX with those colours, ``ltspice``
+is for netlists. Any other entry is a language of the LaTeX listings
+package, shown without colours. A netlist is named by
 its file name in the project's cir folder, for example ``amp.slicap_cir``.
-The Browse button opens that folder. Any other file takes its full path.
+The Browse button opens that folder. Any other file is named by its path
+relative to the project, for example ``design.py``; Browse starts in the
+project folder and stores that path. The run reads the file and copies its
+text into the snippet, so the report holds the listing itself and needs no
+path to the file. It therefore compiles from any folder, and the listing
+is the file as it was at the last run.
 
 Snippet from an object
 ======================

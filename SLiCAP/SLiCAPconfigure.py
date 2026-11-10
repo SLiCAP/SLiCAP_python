@@ -109,25 +109,32 @@ def _find_ngspice_fallback():
             return cand
     return ''
 
+# The project folders and their default locations, relative to the project
+# root. Written to a new project's SLiCAP.ini [projectpaths]; the schematic
+# editor falls back on them for a project without that section
+# (project.folder_rel), so "tex_snippets" resolves to tex/SLiCAPdata there
+# too (2026-11-09).
+DEFAULT_PROJECT_PATHS = {"html"          : 'html/',
+                         "cir"           : 'cir/',
+                         "lib"           : 'lib/',
+                         "csv"           : 'csv/',
+                         "txt"           : 'txt/',
+                         "img"           : 'img/',
+                         "sch"           : 'sch/',
+                         "posters"       : 'posters/',
+                         "results"       : 'results/',
+                         "sphinx"        : 'sphinx/',
+                         "tex"           : 'tex/',
+                         "tex_snippets"  : 'tex/SLiCAPdata/',
+                         "rst_snippets"  : 'sphinx/SLiCAPdata/',
+                         "html_snippets" : 'sphinx/SLiCAPdata/',
+                         "myst_snippets" : 'sphinx/SLiCAPdata/',
+                         "md_snippets"   : 'sphinx/SLiCAPdata/',
+                        }
+
 def _generate_project_config():
-    project_paths = {"html"          : 'html/',
-                     "cir"           : 'cir/',
-                     "lib"           : 'lib/',
-                     "csv"           : 'csv/',
-                     "txt"           : 'txt/',
-                     "img"           : 'img/',
-                     "sch"           : 'sch/',
-                     "posters"       : 'posters/',
-                     "results"       : 'results/',
-                     "sphinx"        : 'sphinx/',
-                     "tex"           : 'tex/',
-                     "tex_snippets"  : 'tex/SLiCAPdata/',
-                     "rst_snippets"  : 'sphinx/SLiCAPdata/',
-                     "html_snippets" : 'sphinx/SLiCAPdata/',
-                     "myst_snippets" : 'sphinx/SLiCAPdata/',
-                     "md_snippets"   : 'sphinx/SLiCAPdata/',
-                     "project"       : os.path.abspath('.') + '/'
-                    }
+    project_paths = dict(DEFAULT_PROJECT_PATHS)
+    project_paths["project"] = os.path.abspath('.') + '/'
     project_config = configparser.ConfigParser()
     project_config['math']         = {"laplace"               : "s",
                                     "frequency"             : "f",

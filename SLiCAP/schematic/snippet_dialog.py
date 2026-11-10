@@ -97,7 +97,7 @@ _PARAM_WIDGET = {
     "fileName": "path", "netlistFile": "path",
     "units": "units", "label": "label", "caption": "caption",
     "lineRange": "linerange", "firstNumber": "firstnumber",
-    "language": "language", "multiline": "multiline",
+    "language": "language", "style": "language", "multiline": "multiline",
     "color": "color",
 }
 
@@ -146,6 +146,24 @@ RST_TARGET = SnippetTarget(
     name="RST (Sphinx)", var="rst", ctor="sl.RSTformatter()",
     ctor_marker="RSTformatter()",
     formatter=("SLiCAP.SLiCAPrst", "RSTformatter"))
+
+
+# The listing styles preambuleSLiCAP.tex defines (\lstdefinestyle); every
+# other entry of the Listing style field is a language.
+_LISTING_STYLES = ("slicap", "latex")
+
+
+def _project_relative(path: str) -> str:
+    """*path* relative to the project root (the cwd) in POSIX form when it
+    lies inside the project, else unchanged."""
+    import os
+    try:
+        rel = os.path.relpath(path, os.getcwd())
+    except ValueError:            # another drive on Windows
+        return path
+    if rel.startswith(".."):
+        return path
+    return rel.replace(os.sep, "/")
 
 
 def _q(text: str) -> str:
@@ -307,10 +325,19 @@ class SnippetDialog(QDialog):
         grid.addWidget(self._lbl_path, row, 0)
         grid.addWidget(pw, row, 1); row += 1
 
-        self._lbl_language = QLabel("Language")
+        # One field for file()'s style= and language=: the SLiCAP listing
+        # STYLES first (preambuleSLiCAP.tex: slicap = Python with the book's
+        # colours, latex = TeX), then languages. A style carries the
+        # colours; a bare language gives the listings package's plain look,
+        # which is why "python" showed no colours (Anton, 2026-11-10).
+        self._lbl_language = QLabel("Listing style")
         self.language = QComboBox()
-        self.language.addItems(["", "ltspice"])
+        self.language.addItems([""] + list(_LISTING_STYLES) + ["ltspice", "python"])
         self.language.setEditable(True)
+        self.language.setToolTip(
+            "slicap: Python with SLiCAP's colours (as in the book); latex: TeX "
+            "with those colours; ltspice: netlists. Any other entry is a "
+            "language of the LaTeX listings package, shown without colours.")
         grid.addWidget(self._lbl_language, row, 0)
         grid.addWidget(self.language, row, 1); row += 1
 
@@ -477,7 +504,8 @@ class SnippetDialog(QDialog):
         if "path" in show:
             self.path.setPlaceholderText(
                 "file name in the cir folder, e.g. amp.slicap_cir"
-                if self._path_is_netlist() else "path of the file")
+                if self._path_is_netlist() else
+                "path of the file, relative to the project, e.g. design.py")
 
         # refill pickers; keep the user's text only while it is still a
         # valid candidate for the new selection (otherwise the first
@@ -524,9 +552,16 @@ class SnippetDialog(QDialog):
                 # the snippet names the file, netlist() adds cir/
                 self.path.setText(os.path.basename(fn))
             return
-        fn, _ = QFileDialog.getOpenFileName(self, "Select file")
+        # Browse starts in the project root (the cwd of the GUI). Without a
+        # start folder Qt reused the last folder visited, the package's
+        # preamble folder after a preamble browse (Anton, 2026-11-09). A
+        # file inside the project is stored by its project-relative path:
+        # file() reads it from the project root when the run happens and
+        # copies the text into the snippet, so the path never reaches the
+        # report.
+        fn, _ = QFileDialog.getOpenFileName(self, "Select file", os.getcwd())
         if fn:
-            self.path.setText(fn)
+            self.path.setText(_project_relative(fn))
 
     def _validate(self):
         kind = self.kind.currentIndex()
@@ -598,9 +633,12 @@ class SnippetDialog(QDialog):
         if pname in text_fields:
             val = text_fields[pname].text().strip()
             return ("kw", f"{pname}={_q(val)}") if val else None
-        if pname == "language":
+        if pname in ("language", "style"):
             val = self.language.currentText().strip()
-            return ("kw", f"language={_q(val)}") if val else None
+            is_style = val in _LISTING_STYLES
+            if not val or is_style != (pname == "style"):
+                return None
+            return ("kw", f"{pname}={_q(val)}")
         if pname == "color":
             val = self.color.currentText()
             if val == TABLE_COLOR_DEFAULT:

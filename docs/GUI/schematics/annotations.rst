@@ -112,6 +112,16 @@ numbers to refer to, while the snippet keeps its number in the report. Only
 LaTeX snippets are offered: an RST or HTML snippet cannot be typeset on a
 schematic.
 
+:menuselection:`Insert --> LaTeX snippet file…` places a **LaTeX snippet
+file** of the project, chosen from ``tex/SLiCAPdata/``. The item takes its
+text from the file and follows it: it re-renders after a run, when the
+drawing opens, before an export and with
+:menuselection:`Instruction --> Update schematic images…`. The file exists
+without a run in the GUI, so a project whose snippets are written by a
+plain script shows them as well. A file that does not exist yet gives a
+warning on the console, and the item keeps the text it last had. Scale,
+colour and the unnumbered rendering are as for a snippet object.
+
 Drawing primitives
 ==================
 
@@ -179,7 +189,9 @@ Borders and document properties
   and an item that crosses it is cut at the border. Without a border the
   export is exactly as large as the drawing. Only a text at the edge gets
   a small guard against clipping. The Border dialog has a *Format* row
-  that fills the width, the height and their Fixed boxes from a format.
+  that fills the width, the height and their Fixed boxes from a format,
+  with a *Landscape* box for the paper formats. It opens on the format
+  of the present border.
 * :menuselection:`File --> Schematic properties…` sets the title, author and
   the border. The *Border* field shows the border's format, a format creates
   or resizes the border, and **Drawing size** removes it.

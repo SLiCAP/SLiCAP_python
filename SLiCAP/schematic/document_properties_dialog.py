@@ -44,14 +44,18 @@ def is_paper(name: str) -> bool:
 
 
 def page_name_of(width_mm: float, height_mm: float, fixed=(True, True),
-                 presets=None) -> str:
+                 presets=None, formats=None) -> str:
     """The format name of a border of that size with those fixed sides,
     portrait or landscape for paper, else "Custom". A one-sided preset
-    matches on its fixed side when the other side is free."""
+    matches on its fixed side when the other side is free. The formats
+    are border_formats(*presets*), or *formats* when the caller holds that
+    dict already (the Border dialog)."""
     def same(a, b):
         return abs(a - b) < 0.5
     fw, fh = fixed
-    for name, (w, h) in border_formats(presets).items():
+    if formats is None:
+        formats = border_formats(presets)
+    for name, (w, h) in formats.items():
         if w is not None and h is not None:
             if fw and fh and (same(w, width_mm) and same(h, height_mm) or
                               is_paper(name) and same(h, width_mm) and same(w, height_mm)):

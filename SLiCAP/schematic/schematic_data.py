@@ -268,8 +268,9 @@ class LatexFragmentData:
     display_height: int
     svg_b64: str = ""  # kept for reading old files; no longer written
     color: str = ""    # "" = the document black of the LaTeX render
-    snippet: str = ""  # a LaTeX snippet item: the save name of the snippet
-                       # (tex/SLiCAPdata/<name>.tex) the code is read from
+    snippet: str = ""  # a LaTeX snippet item: the snippet OBJECT's name in
+                       # the Design data, or "file:<path>" for the saved
+                       # snippet file (latex_fragment_item.FILE_PREFIX)
     z: float = 0.0        # stacking order among annotations AND the circuit layers
     latex_scale: object = "legacy"   # see _latex_scale_in
 

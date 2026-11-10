@@ -3381,8 +3381,7 @@ class SchematicScene(QGraphicsScene):
             return
         if isinstance(item, LatexFragmentItem):
             from .latex_fragment_dialog import LatexFragmentDialog
-            from .design_data import manifest_snippets
-            from . import project
+            from .latex_fragment_item import snippet_choices
             dlg = LatexFragmentDialog(
                 latex_code=item.latex_code,
                 preamble_path=item.preamble_path,
@@ -3391,7 +3390,7 @@ class SchematicScene(QGraphicsScene):
                 display_height=item.display_height,
                 color=item.color,
                 style=self.style,
-                snippets=manifest_snippets(project.project_root()) if item.snippet else None,
+                snippets=snippet_choices(item.snippet) if item.snippet else None,
                 snippet=item.snippet,
                 latex_scale=item.latex_scale,
             )

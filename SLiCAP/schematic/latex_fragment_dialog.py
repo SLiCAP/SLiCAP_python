@@ -58,11 +58,14 @@ class LatexFragmentDialog(QDialog):
                  color: str = "",
                  snippets=None, snippet: str = "",
                  latex_scale=None):
-        """*snippets*: ``[(name, latex_code), ...]`` from the Design data
-        (design_data.manifest_snippets) turns the dialog into the SNIPPET
-        dialog: the snippet is chosen by name, its text shown read-only and
-        rendered with SLiCAP's preamble; scale and colour are the item's
-        own (Anton, 2026-10-06). *snippet* preselects one."""
+        """*snippets*: ``[(key, latex_code), ...]`` turns the dialog into
+        the SNIPPET dialog: the snippet is chosen from the list, its text
+        shown read-only and rendered with SLiCAP's preamble; scale and
+        colour are the item's own (Anton, 2026-10-06). The keys are object
+        names from the Design data (design_data.manifest_snippets) or
+        "file:<path>" links to the project's snippet files
+        (project.latex_snippet_files, 2026-11-09); the list shows a file by
+        its name. *snippet* preselects one."""
         super().__init__(parent, Qt.Window)
         from .config import default_style
         self._style = style or default_style()
@@ -96,15 +99,21 @@ class LatexFragmentDialog(QDialog):
         # ── snippet combo (snippet mode) ──────────────────────────────────────
         self._snippet_combo = None
         if self._snippet_mode:
+            from .latex_fragment_item import snippet_file
+            files = any(snippet_file(k) for k, _c in self._snippets) or \
+                bool(snippet_file(snippet))
             srow = QHBoxLayout()
-            srow.addWidget(QLabel("Snippet:"))
+            srow.addWidget(QLabel("Snippet file:" if files else "Snippet:"))
             self._snippet_combo = QComboBox()
-            for name, _code in self._snippets:
-                self._snippet_combo.addItem(name, name)
+            for key, _code in self._snippets:
+                self._snippet_combo.addItem(Path(snippet_file(key)).name
+                                            if snippet_file(key) else key, key)
             if self._snippet_combo.findData(snippet) >= 0:
                 self._snippet_combo.setCurrentIndex(self._snippet_combo.findData(snippet))
             if not self._snippets:
-                self._snippet_combo.addItem("(no LaTeX snippets in the instruction file)")
+                self._snippet_combo.addItem(
+                    "(no LaTeX snippet files in the project)" if files
+                    else "(no LaTeX snippets in the instruction file)")
                 self._snippet_combo.setEnabled(False)
             srow.addWidget(self._snippet_combo, stretch=1)
             outer.addLayout(srow)
@@ -240,7 +249,8 @@ class LatexFragmentDialog(QDialog):
             self._ok_btn.setEnabled(False)
 
     def snippet(self) -> str:
-        """The chosen snippet name ("" for a typed fragment)."""
+        """The chosen snippet link: an object name or "file:<path>" ("" for
+        a typed fragment)."""
         return (self._snippet_combo.currentData() or "") if self._snippet_combo else ""
 
     # ── slots ─────────────────────────────────────────────────────────────────

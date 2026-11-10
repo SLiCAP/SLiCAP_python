@@ -7,6 +7,30 @@ from .config import style_of
 _PLACEHOLDER_COLOR = QColor(240, 240, 180)   # light yellow
 _PLACEHOLDER_TEXT  = "LaTeX\n(not rendered)"
 _NUMBERED = ("equation", "align", "gather", "multline", "eqnarray", "flalign")
+# A snippet item links its text by OBJECT name ("EX1", the Design data) or
+# by FILE ("file:tex/SLiCAPdata/EX1.tex", the saved snippet), the way an
+# image item's link reads "figure:FIG1" (Anton, 2026-11-09: the two halves
+# of the placement rule; a file exists without a GUI run).
+FILE_PREFIX = "file:"
+
+
+def snippet_file(snippet: str) -> str:
+    """The project-relative path of a file-linked snippet, "" for an object
+    link or none."""
+    return snippet[len(FILE_PREFIX):] if snippet.startswith(FILE_PREFIX) else ""
+
+
+def snippet_choices(snippet: str = "", root=None, files: bool = False) -> list:
+    """The ``[(key, latex_code), ...]`` list the snippet dialog picks from:
+    the project's snippet files as "file:<path>" keys when *files* is set
+    or *snippet* is a file link, else the LaTeX snippet objects of the
+    Design data by name."""
+    from . import project
+    if files or snippet_file(snippet):
+        return [(FILE_PREFIX + rel, code)
+                for rel, code in project.latex_snippet_files(root)]
+    from .design_data import manifest_snippets
+    return manifest_snippets(root if root is not None else project.project_root())
 
 
 def unnumbered(code: str) -> str:
@@ -92,7 +116,12 @@ class LatexFragmentItem(QGraphicsItem):
         # file is not needed. Scale and colour are the item's own (Anton,
         # 2026-10-06). Reading tex/SLiCAPdata/<name>.tex by save name was
         # tried first and REPLACED: the Variable pane is the source.
+        # Since 2026-11-09 a snippet can ALSO be placed by its FILE
+        # ("file:<path>", see FILE_PREFIX): then the file is the source and
+        # the item follows it, like an image. The object form is unchanged.
         self.snippet:       str        = snippet or ""
+        self._file_mtime:   float      = 0.0    # of a file-linked snippet
+        self._warned_missing = False
         self._svg_bytes:    bytes | None = None
         self.display_width:  int       = display_width
         self.display_height: int       = display_height
@@ -106,24 +135,41 @@ class LatexFragmentItem(QGraphicsItem):
     # ── loading ───────────────────────────────────────────────────────────────
 
     def _resolve_snippet(self) -> bool:
-        """A snippet item takes its LaTeX from the Design data (the run
-        manifest records the snippet's text); True when the text changed.
-        Without an entry (no run yet) the stored text stays, so the item
-        still renders and exports."""
+        """A snippet item takes its LaTeX from its source: the Design data
+        (the run manifest records the snippet's text) for an object link,
+        the file for a file link; True when the text changed. Without an
+        entry (no run yet) or without the file (not written yet) the stored
+        text stays, so the item still renders and exports. A missing file
+        is reported once, on the console (Anton, 2026-11-09: no exception,
+        a warning)."""
         if not self.snippet:
             return False
         from . import project
-        from .design_data import manifest_snippets
-        code = dict(manifest_snippets(project.project_root())).get(self.snippet)
+        rel = snippet_file(self.snippet)
+        if rel:
+            path = project.resolve_from_root(rel)
+            try:
+                mtime = path.stat().st_mtime
+                code = path.read_text(encoding="utf-8")
+            except OSError:
+                if not self._warned_missing:
+                    print("Warning: LaTeX snippet file not found: " + rel)
+                    self._warned_missing = True
+                return False
+            self._warned_missing = False
+            self._file_mtime = mtime
+        else:
+            from .design_data import manifest_snippets
+            code = dict(manifest_snippets(project.project_root())).get(self.snippet)
         if code is not None and code != self.latex_code:
             self.latex_code = code
             return True
         return False
 
     def reload_if_changed(self) -> bool:
-        """Re-render a snippet item whose text in the Design data changed
-        (a run rewrote it); True when it did. A typed fragment never
-        changes this way."""
+        """Re-render a snippet item whose text changed at its source: in
+        the Design data, or in its file (a run rewrote it); True when it
+        did. A typed fragment never changes this way."""
         if not self._resolve_snippet():
             return False
         self.prepareGeometryChange()

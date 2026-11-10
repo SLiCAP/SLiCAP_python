@@ -683,6 +683,46 @@ def upright_subscripts(text: str, digits: bool = False) -> str:
     return _SUBSCRIPT.sub(upright, text)
 
 
+def _file_listing(fileName, lineRange=None, firstNumber=None):
+    """The lines of a file for a listing snippet, and the number of the
+    first one: ``(lines, first)``. *fileName* is absolute or relative to
+    the project directory (the working directory of the run). *lineRange*
+    selects lines, 1-based and inclusive: ``"3-10"``, ``"3"`` or
+    ``"1-2, 8-10"``. *firstNumber* is the displayed number of the first
+    line; it defaults to the first selected line. A file that cannot be
+    read raises FileNotFoundError at the run: the snippet holds the
+    content, so the file is read when the snippet is made (2026-11-09).
+    """
+    import os
+    path = fileName if os.path.isabs(fileName) else os.path.join(os.getcwd(), fileName)
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            all_lines = fh.read().splitlines()
+    except OSError:
+        raise FileNotFoundError(
+            "cannot read '%s' for a listing snippet (project directory: %s)"
+            % (fileName, os.getcwd()))
+    if lineRange is None or str(lineRange).strip() == "":
+        lines, first = all_lines, 1
+    else:
+        lines, first = [], None
+        for part in str(lineRange).split(","):
+            part = part.strip()
+            if not part:
+                continue
+            a, _, b = part.partition("-")
+            start = int(a)
+            stop = int(b) if b.strip() else start
+            if first is None:
+                first = start
+            lines += all_lines[start - 1:stop]
+        if first is None:
+            first = 1
+    if firstNumber is not None:
+        first = int(firstNumber)
+    return lines, first
+
+
 class Snippet:
     """
     Text snippet created by the formatters. For the formats that carry math
