@@ -617,7 +617,7 @@ def _initAll():
     SPICEMODELS['H']     = ['m']  
     SPICEMODELS['BV']    = ['v', 'temp', 'dtemp', 'tc1', 'tc2'] 
     SPICEMODELS['BI']    = ['i', 'temp', 'dtemp', 'tc1', 'tc2'] 
-    SPICEMODELS['T']     = ['z0', 'td', 'f', 'nl', 'is']
+    SPICEMODELS['T']     = ['z0', 'td', 'f', 'nl', 'ic']
     SPICEMODELS['O']     = []
     SPICEMODELS['U']     = ['l', 'n']
     SPICEMODELS['Y']     = ['len']

@@ -62,7 +62,8 @@ class _InstrThread(QThread):
         # matplotlib figures keep the process alive after the script ends
         # (SLiCAPplots._show_nonblocking), the run would LOOK blocked at the
         # first plot even though every instruction already executed.
-        cmd = [sys.executable, "-u", "-m", self._stem]
+        from .child_process import NO_WINDOW, python
+        cmd = [python(), "-u", "-m", self._stem]
         # SLICAP_GUI_RUN makes the plot atexit handler print _SCRIPT_DONE_SENTINEL
         # before it blocks on open figures, so we can report the run finished
         # (and free the runner for a new run) while the plots stay on screen.
@@ -77,6 +78,7 @@ class _InstrThread(QThread):
                 text=True,
                 cwd=str(self._cwd),
                 env=env,
+                creationflags=NO_WINDOW,
             )
             for line in self._proc.stdout:
                 line = line.rstrip()
@@ -94,6 +96,10 @@ class _InstrThread(QThread):
     def stop(self):
         if self._proc is not None and self._proc.poll() is None:
             self._proc.terminate()
+
+    def kill(self):
+        if self._proc is not None and self._proc.poll() is None:
+            self._proc.kill()
 
 
 class InstrRunner(QObject):
@@ -138,6 +144,23 @@ class InstrRunner(QObject):
 
     def is_running(self) -> bool:
         return self._thread is not None and self._thread.isRunning()
+
+    def shutdown(self, timeout_ms: int = 3000) -> None:
+        """The application quits: end the process of the running run and
+        of every lingering one (their figure windows close with the GUI)
+        and wait for the reader threads. A QThread destroyed while its
+        thread still reads the pipe aborts the interpreter ("QThread:
+        Destroyed while thread is still running", two lingering runs
+        with open figures, Anton, 2026-11-17)."""
+        threads = [t for t in [self._thread] + self._lingering if t is not None]
+        for t in threads:
+            t.stop()
+        for t in threads:
+            if not t.wait(timeout_ms):
+                t.kill()
+                t.wait(timeout_ms)
+        self._thread = None
+        self._lingering.clear()
 
     def _on_script_done(self, t: _InstrThread) -> None:
         # The script executed to completion; its process now only holds figure

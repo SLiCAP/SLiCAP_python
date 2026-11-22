@@ -6,7 +6,7 @@ A snippet is a small file with a piece of a report: an equation, a table, a
 listing, a figure reference. The instruction file writes it when it runs, and
 the report includes it, so the report follows the design without copying.
 :menuselection:`Instruction --> Create LaTeX snippet…` and
-:menuselection:`Instruction --> Create RST snippet…` compose the formatter
+:menuselection:`Instruction --> Create RST (Sphinx) snippet…` compose the formatter
 call that writes one snippet and append it to the instruction file. The
 dialog is the same for both formats; it offers the methods the chosen
 formatter has, with the arguments its signature takes.

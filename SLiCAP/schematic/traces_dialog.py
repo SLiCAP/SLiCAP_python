@@ -41,8 +41,6 @@ from __future__ import annotations
 
 import re
 
-import ast
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
@@ -51,11 +49,12 @@ from PySide6.QtWidgets import (
     QTabWidget,
 )
 
-from .instr_file import parse_calls, pardef_sources, spec_var_name
+from .instr_file import (parse_calls, pardef_sources, spec_var_name, quoted,
+                         bound_names, literal as _lit)
 from .par_source_table import display_value
 from .param_field import ParamField
 from .value_fields import watch, all_valid, is_number, is_latex_safe, mark_item, LATEX_HINT
-from .sizing import name_width, cap_chars, chars
+from .sizing import name_width, cap_chars, chars, scroll_body, fit_to_screen
 
 from SLiCAP.SLiCAPtraces import (goal_names, function_names, reduces,
                                  units_of, automatic_color)
@@ -67,6 +66,8 @@ _FUNCTIONS = function_names()
 
 # Results that carry numeric arrays straight away.
 _NG_FUNCS = {"op", "dc", "ac", "tran", "noise"}
+# the system-level run (sl.runSystem): numeric, swept over time
+_SYSTEM_FUNCS = {"runSystem"}
 # SLiCAP results are SYMBOLIC: they hold a formula, so they need a sweep
 # before there are numbers (TRACES.md phase 6f). sl.sweepData() supplies it,
 # which is why these results show a sweep row and the NGspice ones do not.
@@ -99,7 +100,12 @@ _EXPRESSION_COLUMNS = (_YEXPR, _XEXPR)
 
 # Abscissa of an analysis that does NOT reduce: what the simulator swept.
 _SWEEP_NAME = {"ac": "frequency", "noise": "frequency", "tran": "time",
-               "fft": "frequency"}
+               "fft": "frequency", "runSystem": "time"}
+
+# the x axes of a system run's dataset (SystemResult.X_AXES): the x name
+# is an identifier, so a row's x cell can carry it into the expression
+_SYSTEM_X = {"time": "time [s]", "tick": "master tick (integer)",
+             "sample": "sample index of the domain (integer)"}
 
 # matplotlib's one-letter colours as Qt knows them, for the swatch only: the
 # emitted value stays whatever matplotlib understands ('#rrggbb' or 'r').
@@ -145,22 +151,12 @@ def gain_type_of(entry) -> str:
     return str(transfer) if transfer else "gain"
 
 
-def _lit(src):
-    try:
-        return ast.literal_eval(src) if src else None
-    except (ValueError, SyntaxError):
-        return None
-
-
-def _q(text) -> str:
-    return '"' + str(text).replace('"', "'") + '"'
-
-
 def result_entries(calls: list[dict]) -> list[dict]:
     """The result variables a trace can be built from: NGspice runs and
     SLiCAP (symbolic) analyses."""
     return [c for c in calls
-            if (c["func"] in _NG_FUNCS or c["func"] in _SLICAP_FUNCS)
+            if (c["func"] in _NG_FUNCS or c["func"] in _SLICAP_FUNCS
+                or c["func"] in _SYSTEM_FUNCS)
             and c["assigned"]]
 
 
@@ -172,6 +168,26 @@ def is_symbolic(entry: dict) -> bool:
 def trace_entries(calls: list[dict]) -> list[dict]:
     """Existing named trace sets (``NAME = sl.make_traces(…)``)."""
     return [c for c in calls if c["func"] == "make_traces" and c["assigned"]]
+
+
+def recorded_trace_sets(section: dict, known=()) -> list[dict]:
+    """The trace sets a RUN recorded that no ``sl.*`` call names: variables
+    of kind "traces" in the file's manifest *section*
+    (``design_data.manifest_section``), such as ``TR1 = R1.traces`` of a
+    system run (SystemExtensionSpecs.md 6.9.4). Entries are shaped like
+    those of :func:`trace_entries`, with an empty ``func``. A trace set is
+    a top-level variable, however it was made: offering a result's
+    ``traces`` attribute as an item of its own was tried and REVERTED
+    (Anton, 2026-11-17), a patch per holder of traces."""
+    out = []
+    for variable in section.get("variables", []):
+        name = variable.get("name", "")
+        if (variable.get("kind") == "traces" and name
+                and name not in known
+                and name not in {e["name"] for e in out}):
+            out.append({"name": name, "func": "", "args": [],
+                        "kwargs": {}, "assigned": True})
+    return out
 
 
 def measurement_entries(calls: list[dict]) -> list[dict]:
@@ -200,7 +216,7 @@ def next_name(base: str, taken) -> str:
     return f"{base}{i}"
 
 
-def signal_names(entry: dict, manifest: dict) -> list[str]:
+def signal_names(entry: dict, section: dict) -> list[str]:
     """Signals of a result: what the RUN recorded, and nothing else.
 
     The manifest holds the keys the result actually produced. Two other
@@ -209,13 +225,42 @@ def signal_names(entry: dict, manifest: dict) -> list[str]:
     "can only exist after a run" - before that the dialog offers nothing, and
     says so.
     """
+    if is_system(entry):
+        return [s for signals in system_domains(entry, section).values()
+                for s in signals]
     names = []
-    for section in (manifest.get("sections") or {}).values():
-        for variable in section.get("variables", []):
-            if variable.get("name") == entry["name"]:
-                names += [a.get("name", "") for a in
-                          variable.get("attributes", [])]
+    for variable in section.get("variables", []):
+        if variable.get("name") == entry["name"]:
+            names += [a.get("name", "") for a in
+                      variable.get("attributes", [])]
     return [n for n in names if n]
+
+
+def is_system(entry: dict) -> bool:
+    """True for a system run (sl.runSystem): its signals lie in clock
+    domains, and a trace set is built from ONE domain's dataset."""
+    return entry.get("func") in _SYSTEM_FUNCS
+
+
+def system_domains(entry: dict, section: dict) -> dict:
+    """``{clock domain: [signal, ...]}`` of a system run, from the result's
+    ``domains`` record in the file's manifest *section*
+    (SystemExtensionSpecs.md 6.9.3): one child per domain, whose
+    ``signals`` field names its stored signals."""
+    out = {}
+    for variable in section.get("variables", []):
+        if variable.get("name") != entry["name"]:
+            continue
+        for attr in variable.get("attributes", []):
+            if attr.get("name") != "domains":
+                continue
+            for domain in attr.get("attributes", []):
+                fields = {f.get("name"): f.get("value", "")
+                          for f in domain.get("attributes", [])}
+                names = str(fields.get("signals", "")).split(",")
+                out[domain.get("name", "")] = [n.strip() for n in names
+                                           if n.strip()]
+    return out
 
 
 def param_names(entry: dict) -> list[str]:
@@ -252,10 +297,12 @@ class TracesDialog(QDialog):
     """Create or edit ONE named trace set from ONE simulation result."""
 
     def __init__(self, existing_text: str = "", results_dir=None, parent=None,
-                 csv_dir: str = ""):
+                 csv_dir: str = "", source_name: str = ""):
         """*csv_dir*: the project csv/ folder; its spec files feed the
         *specs* source of the sweep limits (Anton, 2026-11-09: a spec the
-        instruction did not select must be selectable for the sweep)."""
+        instruction did not select must be selectable for the sweep).
+        *source_name*: the instruction file being edited, whose manifest
+        section is the only one the dialog reads."""
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit Traces and Measurements")
         self.setMinimumWidth(chars(self, 103))
@@ -267,14 +314,18 @@ class TracesDialog(QDialog):
         self._results = result_entries(calls)
         self._existing = trace_entries(calls)
         self._measurements = measurement_entries(calls)
-        self._taken = {c["name"] for c in calls}
+        # every name the file binds, not only the sl.* calls: a hand-merged
+        # TR3 = {**TR1, **TR2} is taken too (instr_file.bound_names). The
+        # names of the sl.* calls were the taken set until 2026-11-22.
+        # REPLACED 2026-11-22: they missed every other binding.
+        self._taken = bound_names(self._existing_text)
         try:
-            from .design_data import read_manifest
-            self._manifest = read_manifest(results_dir)
+            from .design_data import read_manifest, manifest_section
+            self._section = manifest_section(read_manifest(results_dir), source_name)
         except Exception:
-            self._manifest = {"sections": {}}
+            self._section = {}
 
-        outer = QVBoxLayout(self)
+        frame, outer, self._scroll = scroll_body(self)
         head = QGridLayout()
         outer.addLayout(head)
 
@@ -333,6 +384,29 @@ class TracesDialog(QDialog):
         sweep.addWidget(self._sweep_method)
         sweep.addStretch(1)
         outer.addWidget(self._sweep_row)
+
+        # ── the clock domain and the x axis of a SYSTEM run ──────────────
+        #
+        # The signals of a system run lie in clock domains, each with its
+        # own sample instants; an expression needs one grid, so a trace set
+        # is built from the dataset of ONE domain. The x axis is a choice
+        # at plotting time: time, the integer master tick, or the sample
+        # index of the domain (SystemExtensionSpecs.md 6.9.4, 6.9.5).
+        self._system_row = QWidget()
+        system_row = QHBoxLayout(self._system_row)
+        system_row.setContentsMargins(0, 0, 0, 0)
+        self._domain = QComboBox()
+        self._domain.currentIndexChanged.connect(self._on_domain_selected)
+        self._x_axis = QComboBox()
+        self._x_axis.addItems(list(_SYSTEM_X))
+        self._x_axis.currentIndexChanged.connect(self._on_x_axis_changed)
+        system_row.addWidget(QLabel("Clock domain:"))
+        system_row.addWidget(self._domain)
+        system_row.addWidget(QLabel("X axis:"))
+        system_row.addWidget(self._x_axis)
+        system_row.addStretch(1)
+        self._system_row.setVisible(False)
+        outer.addWidget(self._system_row)
 
         # ── simulation results -> Python variables (TRACES.md phase 6d) ───
         #
@@ -503,7 +577,7 @@ class TracesDialog(QDialog):
         buttons.addButton("Close", QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        outer.addWidget(buttons)
+        frame.addWidget(buttons)
 
         self._complex_result = False
         self._previous_result = self._result.currentIndex()
@@ -512,6 +586,7 @@ class TracesDialog(QDialog):
         self._tabs.currentChanged.connect(self._on_result_changed)
         self._add_row()
         self._on_result_changed()
+        fit_to_screen(self, self._scroll)
 
     # ── table plumbing ────────────────────────────────────────────────────
 
@@ -559,7 +634,39 @@ class TracesDialog(QDialog):
 
     def _candidates(self) -> list[str]:
         entry = self._selected_entry()
-        return signal_names(entry, self._manifest) if entry else []
+        if entry is None:
+            return []
+        if is_system(entry):
+            # the signals of the chosen clock domain only: one grid
+            domains = system_domains(entry, self._section)
+            return list(domains.get(self._domain.currentText(), []))
+        return signal_names(entry, self._section)
+
+    def _on_domain_selected(self, *_args):
+        """Another clock domain has other signals: rows built for the
+        previous one are cleared, as on a change of result."""
+        if self._domain.signalsBlocked():
+            return
+        if self._built_anything():
+            self._clear_built()
+        self._refresh_all_x()
+        self._refresh_signal_menus()
+        self._update()
+
+    def _on_x_axis_changed(self, *_args):
+        self._refresh_all_x()
+        self._update()
+
+    def _offer_domains(self, entry: dict):
+        """Fill the clock-domain choice of a system run from the manifest,
+        keeping the chosen domain when it is still there."""
+        chosen = self._domain.currentText()
+        self._domain.blockSignals(True)
+        self._domain.clear()
+        self._domain.addItems(list(system_domains(entry, self._section)))
+        index = self._domain.findText(chosen)
+        self._domain.setCurrentIndex(max(index, 0))
+        self._domain.blockSignals(False)
 
     def _add_row(self, expression="", x_expression="", label="", color="",
                  y_units="", x_units=""):
@@ -709,10 +816,18 @@ class TracesDialog(QDialog):
     # expression (TRACES.md phase 6e).
 
     def _add_meas_row(self, name="", expression="", condition="", units=""):
+        if not name:
+            # free in the file AND in this table, so two new rows are MEAS1
+            # and MEAS2 (2026-11-22). The name column is read directly:
+            # _meas_rows() skips a row without an expression.
+            listed = {self._meas.item(r, _MNAME).text().strip()
+                      for r in range(self._meas.rowCount())
+                      if self._meas.item(r, _MNAME)}
+            name = _next_meas_name(self._taken | listed)
         r = self._meas.rowCount()
         self._meas.insertRow(r)
         self._meas.blockSignals(True)
-        for column, text in ((_MNAME, name or _next_meas_name(self._taken)),
+        for column, text in ((_MNAME, name),
                              (_MEXPR, expression), (_MCOND, condition),
                              (_MUNITS, units)):
             self._meas.setItem(r, column, QTableWidgetItem(str(text)))
@@ -748,7 +863,7 @@ class TracesDialog(QDialog):
         names = ""
         if assignments:
             names = ", variables={" + ", ".join(
-                "{0}: {1}".format(_q(n), _q(v)) for n, v in assignments) + "}"
+                "{0}: {1}".format(quoted(n), quoted(v)) for n, v in assignments) + "}"
         out = []
         for row in self._meas_rows():
             condition = ""
@@ -758,12 +873,12 @@ class TracesDialog(QDialog):
                 if "=" in text:
                     key, _, value = text.partition("=")
                     condition = ", step={{{0}: {1}}}".format(
-                        _q(key.strip()), _q(value.strip()))
+                        quoted(key.strip()), quoted(value.strip()))
                 else:
                     condition = ", run={0}".format(text)
-            units = ", units={0}".format(_q(row["units"])) if row["units"] else ""
+            units = ", units={0}".format(quoted(row["units"])) if row["units"] else ""
             out.append("{0} = sl.measure({1}, {2}{3}{4}{5})".format(
-                row["name"], result_name, _q(row["y"]), condition, names,
+                row["name"], result_name, quoted(row["y"]), condition, names,
                 units))
         return out
 
@@ -886,6 +1001,8 @@ class TracesDialog(QDialog):
         reduced = reduces(y_expression, assigned or None)
         if kind == "op" or reduced:
             return str(step_name) if step_name else "run"
+        if is_system(entry):
+            return self._x_axis.currentText()
         if kind == "dc":
             # the swept source is the second argument of sl.dc(...)
             args = entry.get("args") or []
@@ -1167,9 +1284,9 @@ class TracesDialog(QDialog):
         if specs:
             parts.append(spec_var_name(self._spec_file))
         if circuit:
-            parts.append("circuit=[" + ", ".join(_q(n) for n in circuit) + "]")
+            parts.append("circuit=[" + ", ".join(quoted(n) for n in circuit) + "]")
         if specs:
-            parts.append("specs=[" + ", ".join(_q(n) for n in specs) + "]")
+            parts.append("specs=[" + ", ".join(quoted(n) for n in specs) + "]")
         return ", params=sl.selectPars(" + ", ".join(parts) + ")"
 
     def _data_expression(self) -> str:
@@ -1178,14 +1295,20 @@ class TracesDialog(QDialog):
         entry = self._selected_entry()
         if entry is None:
             return ""
+        if is_system(entry):
+            # the dataset of ONE clock domain, against the chosen x axis
+            x = self._x_axis.currentText()
+            return '{0}.dataset({1}{2})'.format(
+                entry["name"], quoted(self._domain.currentText()),
+                ', x={0}'.format(quoted(x)) if x != "time" else "")
         if not is_symbolic(entry):
             return entry["name"]
         method = self._sweep_method.currentText()
         return 'sl.sweepData({0}, {1}, {2}, {3}{4}{5})'.format(
-            entry["name"], _q(self._sweep_start.text().strip()),
-            _q(self._sweep_stop.text().strip()),
+            entry["name"], quoted(self._sweep_start.text().strip()),
+            quoted(self._sweep_stop.text().strip()),
             self._sweep_num.text().strip(),
-            ', "{0}"'.format(method) if method != "log" else "",
+            ", {0}".format(quoted(method)) if method != "log" else "",
             self._sweep_params_kwarg(entry))
 
     def _on_result_selected(self, *_args):
@@ -1233,6 +1356,10 @@ class TracesDialog(QDialog):
         self._sweep_row.setVisible(symbolic)
         if symbolic:
             self._offer_sweep_parameters(entry)
+        system = entry is not None and is_system(entry)
+        self._system_row.setVisible(system)
+        if system:
+            self._offer_domains(entry)
         self._names_table.setVisible(not symbolic)
         self._names_buttons.setVisible(not symbolic)
         self._names_label.setVisible(not symbolic)
@@ -1353,18 +1480,18 @@ class TracesDialog(QDialog):
     # ── emission ──────────────────────────────────────────────────────────
 
     def _spec_literal(self, row: dict) -> str:
-        parts = [f'"y": {_q(row["y"])}']
+        parts = [f'"y": {quoted(row["y"])}']
         if row["x"]:
-            parts.append(f'"x": {_q(row["x"])}')
+            parts.append(f'"x": {quoted(row["x"])}')
         if row["label"]:
-            parts.append(f'"label": {_q(row["label"])}')
+            parts.append(f'"label": {quoted(row["label"])}')
         if row["color"]:
-            parts.append(f'"color": {_q(row["color"])}')
+            parts.append(f'"color": {quoted(row["color"])}')
         # Empty units are NOT emitted: make_traces then fills what the
         # producer knows, which beats an empty string from the dialog.
         for key in ("yUnits", "xUnits"):
             if row[key]:
-                parts.append('"{0}": {1}'.format(key, _q(row[key])))
+                parts.append("{0}: {1}".format(quoted(key), quoted(row[key])))
         return "{" + ", ".join(parts) + "}"
 
     def generated_snippet(self) -> str:
@@ -1386,7 +1513,7 @@ class TracesDialog(QDialog):
         names = ""
         if assignments:
             names = ", variables={" + ", ".join(
-                "{0}: {1}".format(_q(n), _q(v)) for n, v in assignments) + "}"
+                "{0}: {1}".format(quoted(n), quoted(v)) for n, v in assignments) + "}"
         data = self._data_expression()
         statements = []
         if rows:
@@ -1398,5 +1525,6 @@ class TracesDialog(QDialog):
         var = spec_var_name(self._spec_file) if self._spec_file else ""
         if var and "params=" in data and var in data and not re.search(
                 r"^\s*" + re.escape(var) + r"\s*=", self._existing_text, re.M):
-            statements.insert(0, f'{var} = sl.csv2specs("{self._spec_file}")')
+            statements.insert(
+                0, f"{var} = sl.csv2specs({quoted(self._spec_file)})")
         return "\n".join(statements)

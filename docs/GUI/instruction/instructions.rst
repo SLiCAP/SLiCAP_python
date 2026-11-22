@@ -15,6 +15,12 @@ The instruction file lives at the **project root** (not in ``sch/``), and it is
 purpose is to produce variables — results, traces, figures — that design
 scripts and reports import.
 
+The instruction pane shows the file with line numbers. :kbd:`Ctrl` with the
+mouse wheel, :kbd:`Ctrl++` and :kbd:`Ctrl+-` change the text size, and
+:kbd:`Ctrl+0` resets it. The size is kept for the next session, and the
+other code boxes of the editor use it too. The log pane zooms in the same
+way and keeps its own size.
+
 Running it (:menuselection:`Instruction --> Run`) does not execute the file
 directly.  The editor generates a small ``main.py`` beside it that calls
 ``sl.initProject(...)`` and then imports your instruction file, so the file

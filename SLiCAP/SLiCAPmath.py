@@ -161,8 +161,7 @@ def _detME(M):
 
 # State for the external C++/GiNaC determinant engine (method 'MECPP') and
 # one-time deprecation warnings; see SLiCAP_GiNAC.md.
-_mecpp_state = {"checked": False, "ok": False,
-                "warned_missing": False, "warned_bs": False}
+_mecpp_state = {"checked": False, "ok": False, "warned_bs": False}
 
 def _detMECPP(M):
     """
@@ -174,18 +173,21 @@ def _detMECPP(M):
     is not configured, incompatible, or fails — det() then falls back to
     the Python 'ME' implementation, which remains the reference.
 
+    An engine that is not installed falls back silently: 'MECPP' means
+    "the fast engine when it is installed", and the main configuration
+    knows whether it is (Anton, 2026-11-20, workshop: the warning at
+    every run made users set 'ME' in every new project). A platform check
+    at installation that writes 'ME' or 'MECPP' into the projects was
+    considered and REJECTED: availability, not the platform, decides. An
+    engine that is configured but incompatible still warns.
+
     :param M: Square sympy matrix with rational numeric entries
               (float2rational must have been applied).
     :type M: sympy.Matrix
     """
     cmd = ini.slicap_det
     if cmd == "":
-        if not _mecpp_state["warned_missing"]:
-            print("Warning: no 'slicap_det' command configured in "
-                  "the main configuration file [commands]; det(method='MECPP') falls "
-                  "back to 'ME'.")
-            _mecpp_state["warned_missing"] = True
-        return None
+        return None                         # not installed: 'ME', silently
     if not _mecpp_state["checked"]:
         _mecpp_state["checked"] = True
         try:
@@ -1033,6 +1035,19 @@ def _evalHeavisideTerms(yFunc, xVar, x):
     :return: y values (complex if the expression is)
     :rtype: numpy.ndarray
     """
+    # step2PeriodicPulse writes every delay as UnevaluatedExpr(t - t_d): the
+    # wrapping keeps SymPy from splitting exp(-a*(t - t_d)) into
+    # exp(a*t_d)*exp(-a*t), which overflows. The expression is unwrapped
+    # HERE, where it is evaluated after its switch only. Inside the wrapping
+    # the slope of a step argument read as Derivative(t - t_d, t), not as a
+    # number, so every delayed term was evaluated at all times: before its
+    # switch exp(a*(t_d - t)) overflowed once a*t_d > 709, and 0*inf = nan
+    # (2026-11-21: 20 pulses of a 22.5k rad/s pole gave 373 nan of 2000
+    # samples). Removing the wrapping from step2PeriodicPulse was considered
+    # and REJECTED (Anton, 2026-11-21): it is right for the expression, the
+    # evaluator must read it.
+    yFunc = yFunc.replace(lambda e: isinstance(e, sp.UnevaluatedExpr),
+                          lambda e: e.args[0])
     y = np.zeros(len(x), dtype=complex)
     for term in sp.Add.make_args(yFunc):
         steps = [h for h in term.atoms(sp.Heaviside) if h.args[0].has(xVar)]
@@ -2275,6 +2290,69 @@ def roundN(expr, numeric=False, intlen=0):
         pass
     return expr
 
+def _poles_residues(num, den, s, integrate=False):
+    """Poles with multiplicity and, for simple poles, the residues of the
+    rational ``num/den`` in *s* with numeric coefficients.
+
+    This is the partial fraction expansion of SLiCAP, lifted out of
+    :func:`ilt` on 2026-11-16 so that :func:`laplace2z` uses the same
+    roots and residues (scipy's ``residue()`` was REJECTED: it has given
+    wrong residues; Anton, 2026-11-16). The numerics are those of
+    :func:`ilt` unchanged: roots from numpy's polynomial root finder on
+    coefficients scaled by their largest magnitude (roots are
+    scale-invariant, and leading-coefficient ratios can overflow
+    float64), residues as num(p_k) / prod(p_k - p_j) in sympy precision.
+
+    A numeric shortcut for simple poles (_ilt_numeric_simple, 2026-07-13)
+    was tried and REMOVED on 2026-09-11: its float64 residue chop
+    flattened genuine pole pairs for two months, and once made accurate
+    (mpmath) it was no faster than this path (0.91 s vs 0.67 s on a
+    17-pole driver). Anton: "maybe my ILT was slow, but scipy residues
+    are wrong."
+
+    :param num: numerator, polynomial in *s*
+    :param den: denominator, polynomial in *s*
+    :param s: the variable
+    :param integrate: True appends a pole at s = 0 (multiplies by 1/s)
+
+    :return: ``(rootDict, numPoly, residues)``: the poles with their
+             multiplicity in the order of the root finder; the numerator
+             as ``sympy.Poly`` divided by the leading denominator
+             coefficient; and ``{pole: complex residue}`` when all poles
+             are simple, else None.
+    :rtype: tuple
+    """
+    polyDen = sp.Poly(den, s)
+    gainD = sp.Poly.LC(polyDen)
+    denCoeffs = polyDen.all_coeffs()
+    scaleD = max(sp.Abs(c) for c in denCoeffs)
+    denCoeffs = [sp.N(coeff/scaleD) for coeff in denCoeffs]
+    if integrate:
+        denCoeffs.append(0)
+    denP = Polynomial(np.array(denCoeffs[::-1], dtype=float))
+    rts = denP.roots()
+    rootDict = {}
+    for rt in rts:
+        if rt not in rootDict.keys():
+            rootDict[rt] = 1
+        else:
+            rootDict[rt] += 1
+    polyNum = sp.Poly(num, s)
+    numCoeffs = polyNum.all_coeffs()
+    numCoeffs = [sp.N(numCoeff/gainD) for numCoeff in numCoeffs]
+    numP = sp.Poly(numCoeffs, s)
+    residues = None
+    if len(rootDict) and max(rootDict.values()) == 1:
+        residues = {}
+        for root in rootDict.keys():
+            fs = numP.as_expr()
+            for rt in rootDict.keys():
+                if rt != root:
+                    fs /= (s-rt)
+            residues[root] = complex(sp.N(fs.xreplace({s: root})))
+    return rootDict, numP, residues
+
+
 def ilt(expr, s, t, integrate=False):
     """
     Returns the Inverse Laplace Transform f(t) of an expression F(s) for t > 0.
@@ -2314,39 +2392,12 @@ def ilt(expr, s, t, integrate=False):
                 num, den = sp.cancel(num/den).as_numer_denom()
             except sp.PolynomialError:
                 pass
-            polyDen = sp.Poly(den, s)
-            gainD = sp.Poly.LC(polyDen)
-            denCoeffs = polyDen.all_coeffs()
-            # Scale for root finding by the largest coefficient magnitude —
-            # roots are scale-invariant and LC-relative ratios can overflow
-            # float64 (the residue formula below keeps using gainD).
-            scaleD = max(sp.Abs(c) for c in denCoeffs)
-            denCoeffs = [sp.N(coeff/scaleD) for coeff in denCoeffs]
-            if integrate:
-                denCoeffs.append(0)
-            den = Polynomial(np.array(denCoeffs[::-1], dtype=float))
-            rts = den.roots()
-            rootDict = {}
-            for rt in rts:
-                if rt not in rootDict.keys():
-                    rootDict[rt] = 1
-                else:
-                    rootDict[rt] += 1
+            rootDict, num, residues = _poles_residues(num, den, s,
+                                                      integrate=integrate)
             rts = rootDict.keys()
-            polyNum = sp.Poly(num, s)
-            numCoeffs = polyNum.all_coeffs()
-            numCoeffs = [sp.N(numCoeff/gainD) for numCoeff in numCoeffs]
-            # A numeric shortcut for simple poles (_ilt_numeric_simple,
-            # 2026-07-13) was tried and REMOVED on 2026-09-11: its float64
-            # residue chop flattened genuine pole pairs for two months, and
-            # once made accurate (mpmath) it was no faster than this path
-            # (0.91 s vs 0.67 s on a 17-pole driver). Anton: "maybe my ILT
-            # was slow, but scipy residues are wrong."
-            num = sp.Poly(numCoeffs, s)
-            if len(rootDict) and max(rootDict.values()) == 1:
-                # All poles simple. The residues are the ones of the general
-                # path below, c_k = num(p_k)/prod(p_k - p_j); the real time
-                # function is assembled term by term,
+            if residues is not None:
+                # All poles simple. The real time function is assembled
+                # term by term from the residues of _poles_residues(),
                 # Re(c e^(p t)) = e^(sigma t) (Re c cos(omega t) - Im c sin(omega t)),
                 # summed over ALL roots (a conjugate pair adds to its real
                 # part by construction). This replaces as_real_imag() on the
@@ -2356,12 +2407,7 @@ def ilt(expr, s, t, integrate=False):
                 # real root of a real polynomial comes back with an exactly
                 # zero imaginary part (Anton, 2026-09-11).
                 terms = []
-                for root in rts:
-                    fs = num.as_expr()
-                    for rt in rts:
-                        if rt != root:
-                            fs /= (s-rt)
-                    c = complex(sp.N(fs.xreplace({s: root})))
+                for root, c in residues.items():
                     sigma, omega = float(sp.re(root)), float(sp.im(root))
                     decay = sp.exp(sigma*t) if sigma != 0.0 else sp.S.One
                     if omega == 0.0:
@@ -2427,6 +2473,459 @@ def _symilt(expr, s, t, integrate=False):
     inv_laplace = sp.inverse_laplace_transform(expr, s, t)
     # Remove the Heaviside function; positive time only
     return inv_laplace.replace(sp.Heaviside(t), 1)
+
+# ---------------------------------------------------------------------------
+# Discrete time: Laplace to z, sections, z to Fourier (2026-11-16)
+# ---------------------------------------------------------------------------
+
+_BILINEAR = ("bilinear", "tustin")
+
+
+def _laplaceRational(expr):
+    """``(num, den)`` as ``sympy.Poly`` in ``ini.laplace`` of a rational
+    expression, common factors cancelled. Raises ``ValueError`` when
+    *expr* is not rational in the Laplace variable."""
+    expr = _checkExpression(expr)
+    s = ini.laplace
+    num, den = sp.cancel(sp.together(expr)).as_numer_denom()
+    try:
+        return sp.Poly(num, s), sp.Poly(den, s)
+    except sp.PolynomialError:
+        raise ValueError("expression is not rational in %s" % s) from None
+
+
+def _floatCoeffs(poly, what):
+    coeffs = poly.all_coeffs()
+    try:
+        return [float(c) for c in coeffs]
+    except TypeError:
+        raise ValueError(
+            "%s has symbolic coefficients; substitute the parameters "
+            "first, or use the bilinear method with laplace2z()" % what
+            ) from None
+
+
+def _zRational(numd, dend):
+    """Rational in ``ini.z`` from coefficient lists in decreasing powers
+    of z, both of the same length, normalised to a leading denominator
+    coefficient of one."""
+    z = ini.z
+    a0 = float(dend[0])
+    num = sp.Poly([sp.Float(float(c) / a0) for c in numd], z)
+    den = sp.Poly([sp.Float(float(c) / a0) for c in dend], z)
+    return num.as_expr() / den.as_expr()
+
+
+def _discretise(num, den, Ts, method):
+    """z-domain coefficients ``(b, a)`` in powers of 1/z, a[0] = 1, of a
+    proper section with float coefficient lists *num*, *den* in s.
+
+    The section is first scaled to the sample period (s = s'/Ts, so that
+    the coefficients are those of a system sampled at Ts = 1) and its
+    numerator to order one, the factor being put back afterwards. The
+    hold methods and the bilinear transform commute with time scaling,
+    so the result is the same in exact arithmetic. In floating point it
+    is not: a monic second-order lowpass at 80 kHz sampled at 5 ns has a
+    denominator constant of 2.5e11 against a numerator of 1, and
+    scipy's state-space route then returns a numerator of rounding
+    noise (DC gain 4.45 instead of 1; zero at 1 ns). Found 2026-11-16 on
+    a second-order loop filter sampled at 200 MHz.
+    """
+    # decreasing powers: den[k] multiplies s^(n-k), num[k] s^(m-k);
+    # s = s'/Ts and the whole times Ts^n gives den[k] Ts^k, num[k] Ts^(n-m+k)
+    n, m = len(den) - 1, len(num) - 1
+    Ts = float(Ts)
+    lead = den[0]
+    den = [c / lead * Ts ** k for k, c in enumerate(den)]
+    num = [c / lead * Ts ** (n - m + k) for k, c in enumerate(num)]
+    scale = max(abs(c) for c in num) or 1.0
+    num = [c / scale for c in num]
+    if method in _BILINEAR:
+        s, z = ini.laplace, ini.z
+        Hs = sp.Poly(num, s).as_expr() / sp.Poly(den, s).as_expr()
+        Hz = sp.cancel(sp.together(Hs.subs(s, 2 * (z - 1) / (z + 1))))
+        nm, d = Hz.as_numer_denom()
+        nb, da = sp.Poly(nm, z).all_coeffs(), sp.Poly(d, z).all_coeffs()
+        order = max(len(nb), len(da))
+        nb = [0.0] * (order - len(nb)) + [float(c) for c in nb]
+        da = [0.0] * (order - len(da)) + [float(c) for c in da]
+    else:
+        from scipy import signal
+        nb, da, _ = signal.cont2discrete((num, den), 1.0, method=method)
+        nb, da = [float(c) for c in nb[0]], [float(c) for c in da]
+    a0 = da[0]
+    return [scale * c / a0 for c in nb], [c / a0 for c in da]
+
+
+def _sectionsZ(sections):
+    """z-domain transfer of a list of section dicts, as ``(expr per
+    section)``."""
+    out = []
+    for sec in sections:
+        order = len(sec["a"])
+        numd = sec["b"] + [0.0] * (order - len(sec["b"]))
+        out.append(_zRational(numd, sec["a"]))
+    return out
+
+
+def _numericRoots(coeffs):
+    """Roots of a polynomial with float coefficients in decreasing powers,
+    with the numerics of :func:`_poles_residues`: numpy's root finder on
+    the coefficients scaled by their largest magnitude."""
+    coeffs = np.asarray(coeffs, dtype=float)
+    if len(coeffs) < 2:
+        return []
+    coeffs = coeffs / np.max(np.abs(coeffs))
+    return [complex(r) for r in Polynomial(coeffs[::-1]).roots()]
+
+
+def _pairPoles(rts):
+    """Group the roots (a list of complex) into sections: a list of lists
+    of 1 or 2 roots. Conjugate pairs together, real roots two at a time,
+    a remaining real root alone. A section takes two poles whenever two
+    are left (Specs 10.3.5: a real pair that turns complex at an update
+    stays one section)."""
+    rts = [complex(r) for r in rts]
+    cplx = sorted([r for r in rts if abs(r.imag) > 0.0], key=lambda r: (r.real, abs(r.imag), r.imag))
+    real = sorted([r for r in rts if r.imag == 0.0], key=lambda r: r.real)
+    groups = []
+    used = [False] * len(cplx)
+    for i, r in enumerate(cplx):
+        if used[i] or r.imag < 0:
+            continue
+        # its conjugate: the nearest unused root with negative imaginary part
+        best, dist = None, None
+        for j, q in enumerate(cplx):
+            if used[j] or q.imag >= 0:
+                continue
+            dd = abs(q - r.conjugate())
+            if dist is None or dd < dist:
+                best, dist = j, dd
+        if best is None:
+            raise ValueError("complex pole without its conjugate: %s" % r)
+        used[i] = used[best] = True
+        groups.append([r, cplx[best]])
+    for k in range(0, len(real) - 1, 2):
+        groups.append([real[k], real[k + 1]])
+    if len(real) % 2:
+        groups.append([real[-1]])
+    return groups
+
+
+def _realPoly(roots, what="roots"):
+    """Real coefficient list (decreasing powers) of prod (s - r). Refuses
+    a group whose product is not real: at an update of a programmable
+    filter a complex root tracked into a section without its conjugate
+    (Specs 10.3.5)."""
+    coeffs = np.poly(np.array(roots, dtype=complex)) if roots else np.array([1.0])
+    scale = np.max(np.abs(coeffs)) or 1.0
+    if np.max(np.abs(coeffs.imag)) > 1e-9 * scale:
+        raise ValueError("the %s %s of a section are not a real pair: "
+                         "the poles crossed between sections at an update"
+                         % (what, roots))
+    return [float(c.real) for c in coeffs]
+
+
+def _qOf(group):
+    """Pole quality of a section, for ordering: high Q first."""
+    r = group[0]
+    if abs(r.imag) == 0.0:
+        return 0.5
+    return abs(r) / (2.0 * abs(r.real)) if r.real != 0.0 else float("inf")
+
+
+def _stripLeadingZeros(coeffs):
+    """Float coefficient list without leading zeros: a parameter value
+    that makes a leading coefficient zero lowers the degree (the pole
+    count changes, which an update refuses)."""
+    coeffs = [float(c) for c in coeffs]
+    while len(coeffs) > 1 and coeffs[0] == 0.0:
+        coeffs.pop(0)
+    if not coeffs:
+        coeffs = [0.0]
+    return coeffs
+
+
+def _track(roots, previous, what):
+    """Assign the *roots* to the sections of an earlier realisation by
+    continuity: *previous* is a list per section of the roots it held,
+    the result is the same list structure filled with the nearest new
+    roots. The count must not change (Specs 10.3.5: the structure is
+    fixed at the start of the run, the values move)."""
+    old = [(r, k, n) for k, grp in enumerate(previous) for n, r in enumerate(grp)]
+    if len(old) != len(roots):
+        raise ValueError(
+            "the %s count changed from %d to %d: the structure of the "
+            "filter is fixed at the start of the run" % (what, len(old),
+                                                         len(roots)))
+    groups = [[None] * len(grp) for grp in previous]
+    left = list(roots)
+    while old:
+        best = min(((abs(r - o), i, j) for i, r in enumerate(left)
+                    for j, (o, _, _) in enumerate(old)), key=lambda t: t[0])
+        _, i, j = best
+        _, k, n = old.pop(j)
+        groups[k][n] = left.pop(i)           # the slot of the root it follows
+    return groups
+
+
+def coeffs2sections(b, a, Ts, method="bilinear", previous=None):
+    """The numeric core of :func:`laplace2sections`: realises the proper
+    rational transfer with float coefficient lists *b* (numerator) and
+    *a* (denominator), decreasing powers of s, as a cascade of
+    first-order and second-order sections sampled with *Ts*.
+
+    Poles and zeros are found numerically, paired into sections with
+    real coefficients, ordered by decreasing Q, each pole pair with the
+    nearest zeros, and every section is discretised on its own with
+    *method*. The overall gain is kept apart.
+
+    With *previous*, the ``structure`` of an earlier realisation of the
+    same design, the new poles and zeros are assigned to the earlier
+    sections by continuity, nearest first, and the section order and
+    the pairing are kept: this is the update of a programmable filter
+    (Specs 10.3.5). A changed pole or zero count is refused.
+
+    No sympy inside: this function runs at every parameter update of a
+    programmable filter. The z-domain transfer as an expression is
+    built by :func:`laplace2sections`.
+
+    :param b: numerator coefficients, decreasing powers of s
+    :type b: list of float
+    :param a: denominator coefficients, decreasing powers of s
+    :type a: list of float
+    :param Ts: sample period [s]
+    :type Ts: float
+    :param method: "bilinear" (default), "zoh", "foh", ... as
+                   :func:`laplace2z`
+    :type method: str
+    :param previous: the ``structure`` of an earlier realisation
+    :type previous: list or None
+    :return: dictionary with keys
+
+             - ``Ts``, ``method``
+             - ``gain``: overall gain
+             - ``sections``: list of ``{"kind": "biquad" | "bilin",
+               "b": [...], "a": [1, ...]}`` in powers of 1/z
+             - ``structure``: per section ``{"poles": [...], "zeros":
+               [...]}``, complex, for the next update
+    :rtype: dict
+    """
+    b = _stripLeadingZeros(b)
+    a = _stripLeadingZeros(a)
+    Ts = float(Ts)
+    if len(b) > len(a):
+        raise ValueError(
+            "improper transfer function: numerator degree %d above "
+            "denominator degree %d. Make it proper (a series resistance "
+            "with a capacitance, for example)." % (len(b) - 1, len(a) - 1))
+    result = {"Ts": Ts, "method": method, "gain": b[0] / a[0],
+              "sections": [], "structure": []}
+    poles = _numericRoots(a)
+    zeros = _numericRoots(b)
+    if previous is None:
+        groups = sorted(_pairPoles(poles), key=_qOf, reverse=True)
+        zlist = list(zeros)
+        picked = []
+        for grp in groups:
+            # nearest zeros, as many as the section order allows
+            mine = []
+            for _ in range(len(grp)):
+                if not zlist:
+                    break
+                p0 = grp[0]
+                j = min(range(len(zlist)), key=lambda k: abs(zlist[k] - p0))
+                zr = zlist.pop(j)
+                mine.append(zr)
+                if abs(zr.imag) > 0.0 and len(mine) < len(grp):
+                    # take its conjugate along
+                    jj = min(range(len(zlist)),
+                             key=lambda k: abs(zlist[k] - zr.conjugate()))
+                    mine.append(zlist.pop(jj))
+            picked.append(mine)
+        if zlist:
+            raise ValueError("zeros left over after pairing: %s" % zlist)
+    else:
+        groups = _track(poles, [sec["poles"] for sec in previous], "pole")
+        picked = _track(zeros, [sec["zeros"] for sec in previous], "zero")
+    for grp, mine in zip(groups, picked):
+        if len(mine) == 1 and abs(mine[0].imag) > 0.0:
+            raise ValueError("cannot split a complex zero pair over "
+                             "two first-order sections")
+        bs = _realPoly(mine, "zeros")
+        as_ = _realPoly(grp, "poles")
+        bz, az = _discretise(bs, as_, Ts, method)
+        kind = "biquad" if len(as_) == 3 else "bilin"
+        result["sections"].append({"kind": kind, "b": bz, "a": az})
+        result["structure"].append({"poles": list(grp), "zeros": list(mine)})
+    return result
+
+
+def coeffs2taps(b, a, Ts, length):
+    """The samples ``Ts * h(k Ts)``, k = 0 ... length-1, of the impulse
+    response of the proper rational transfer with float coefficient
+    lists *b*, *a* (decreasing powers of s), the direct term of a
+    transfer with equal degrees added to the first sample. These are
+    the taps of a FIR filter before windowing (``createFIR()``).
+
+    Numeric throughout: the impulse-invariant discretisation of the
+    strictly proper part, time-scaled as in :func:`_discretise`, driven
+    by a unit sample. Equals the sampled inverse Laplace transform to
+    rounding (checked 2026-11-17 against :func:`ilt` for orders 1, 2
+    and 5), without sympy, so that a programmable FIR can update its
+    taps during a run.
+
+    :param b: numerator coefficients, decreasing powers of s
+    :type b: list of float
+    :param a: denominator coefficients, decreasing powers of s
+    :type a: list of float
+    :param Ts: sample period [s]
+    :type Ts: float
+    :param length: number of taps
+    :type length: int
+    :return: the taps
+    :rtype: numpy.ndarray
+    """
+    from scipy import signal
+    b = _stripLeadingZeros(b)
+    a = _stripLeadingZeros(a)
+    Ts, length = float(Ts), int(length)
+    if length < 1:
+        raise ValueError("length must be at least 1")
+    if len(b) > len(a):
+        raise ValueError(
+            "improper transfer function: numerator degree %d above "
+            "denominator degree %d has no impulse response"
+            % (len(b) - 1, len(a) - 1))
+    direct = 0.0
+    if len(b) == len(a):
+        direct = b[0] / a[0]
+        b = [bi - direct * ai for bi, ai in zip(b, a)][1:]
+    taps = np.zeros(length)
+    if any(c != 0.0 for c in b):
+        n, m = len(a) - 1, len(b) - 1
+        lead = a[0]
+        a2 = [c / lead * Ts ** k for k, c in enumerate(a)]
+        b2 = [c / lead * Ts ** (n - m + k) for k, c in enumerate(b)]
+        bz, az, _ = signal.cont2discrete((b2, a2), 1.0, method="impulse")
+        unit = np.zeros(length)
+        unit[0] = 1.0
+        taps = signal.lfilter(bz[0], az, unit)
+    taps[0] += direct
+    return taps
+
+
+def laplace2z(expr, Ts, method="bilinear"):
+    """Returns the z-domain transfer function of a Laplace transfer
+    function, sampled with period *Ts*.
+
+    The bilinear method is a substitution, s = 2/Ts (z-1)/(z+1), and
+    keeps symbolic parameters. The other methods ("zoh", "foh", "euler",
+    "backward_diff", "impulse", those of scipy's ``cont2discrete``)
+    need numeric coefficients and a proper transfer (numerator degree
+    not above denominator degree).
+
+    The variable of the result is ``ini.z``. Use :func:`z2fourier` for
+    the frequency response and :func:`laplace2sections` for a
+    realisation as first-order and second-order sections.
+
+    :param expr: Laplace transfer function, rational in ``ini.laplace``
+    :type expr: sympy.Expr or str
+    :param Ts: sample period [s]
+    :type Ts: float or sympy.Expr (bilinear only)
+    :param method: conversion method, default "bilinear"
+    :type method: str
+    :return: transfer function in ``ini.z``
+    :rtype: sympy.Expr
+    """
+    num, den = _laplaceRational(expr)
+    s, z = ini.laplace, ini.z
+    if method in _BILINEAR:
+        Hs = num.as_expr() / den.as_expr()
+        Hz = Hs.subs(s, 2 / sp.sympify(Ts) * (z - 1) / (z + 1))
+        return sp.cancel(sp.together(Hz))
+    b = _floatCoeffs(num, "numerator")
+    a = _floatCoeffs(den, "denominator")
+    if len(b) > len(a):
+        raise ValueError(
+            "improper transfer function (numerator degree %d > denominator "
+            "degree %d): method %r is not defined for it. Use the bilinear "
+            "method, or make it proper (a series resistance with a "
+            "capacitance, for example)." % (len(b) - 1, len(a) - 1, method))
+    bz, az = _discretise(b, a, float(Ts), method)
+    return sp.cancel(_zRational(bz, az))
+
+
+def laplace2sections(expr, Ts, method="bilinear"):
+    """Realises a Laplace transfer function as a cascade of discrete-time
+    first-order and second-order sections.
+
+    The front end of :func:`coeffs2sections`, the numeric core: this
+    function takes the expression to float coefficients, realises them
+    and adds the z-domain transfer of the realisation as an expression.
+    The poles and zeros are found with the root finder of :func:`ilt`,
+    paired into sections with real coefficients, ordered by decreasing
+    Q, each pole pair with the nearest zeros, and every section is
+    discretised on its own. The overall gain is kept apart. A cascade
+    of per-section conversions equals the conversion of the whole for
+    the bilinear method and approximates it for the hold methods.
+    Repeated poles give identical sections.
+
+    The transfer must be proper (numerator degree not above the
+    denominator degree) and its coefficients numeric.
+
+    A PARALLEL form (partial fractions in s, one section per term) was
+    built and REMOVED (Anton, 2026-11-16): a repeated conjugate pair
+    has no second-order partial fraction, and filter design does not
+    ask for it.
+
+    :param expr: Laplace transfer function, rational in ``ini.laplace``
+    :type expr: sympy.Expr or str
+    :param Ts: sample period [s]
+    :type Ts: float
+    :param method: "bilinear" (default), "zoh", "foh", ... as
+                   :func:`laplace2z`
+    :type method: str
+    :return: the dictionary of :func:`coeffs2sections` plus
+             ``ztransfer``: the z-domain transfer of the realisation
+             in ``ini.z``
+    :rtype: dict
+    """
+    num, den = _laplaceRational(expr)
+    b = _floatCoeffs(num, "numerator")
+    a = _floatCoeffs(den, "denominator")
+    result = coeffs2sections(b, a, Ts, method)
+    result["ztransfer"] = sectionsZ(result["gain"], result["sections"])
+    return result
+
+
+def sectionsZ(gain, sections):
+    """The z-domain transfer in ``ini.z`` of a realisation: *gain* times
+    the product of the *sections* of :func:`coeffs2sections`."""
+    Hz = sp.Float(gain)
+    for e in _sectionsZ(sections):
+        Hz = Hz * e
+    return sp.cancel(sp.together(Hz))
+
+
+def z2fourier(expr, Ts):
+    """Returns the frequency response of a z-domain transfer function:
+    ``ini.z`` is replaced with exp(2 pi j f Ts), f = ``ini.frequency``.
+
+    The result is a function of the frequency, for :func:`mag`,
+    :func:`dB`, :func:`phase` and :func:`sampleExpr`.
+
+    :param expr: transfer function in ``ini.z``
+    :type expr: sympy.Expr or str
+    :param Ts: sample period [s]
+    :type Ts: float or sympy.Expr
+    :return: expression in ``ini.frequency``
+    :rtype: sympy.Expr
+    """
+    expr = _checkExpression(expr)
+    return expr.subs(ini.z, sp.exp(2 * sp.pi * sp.I * ini.frequency
+                                   * sp.sympify(Ts)))
+
 
 def nonPolyCoeffs(expr, var):
     """
@@ -3023,7 +3522,8 @@ def units2text(units):
     """
     return _renderUnits(units, tex=False)
 
-def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
+def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1,
+               f_c=None, B=None):
     """
     Returns a f_type prototype function based on a f_char polynomial:
 
@@ -3036,6 +3536,13 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
     - f_type = bp : band-pass, requires f_low and f_high
     - f_type = bs : band-stop, requires f_low and f_high
     - f_type = ap : all-pass,  requires f_high
+
+    The corners can also be given as one corner or centre frequency f_c
+    and, for bp and bs, a bandwidth B (one definition for all types,
+    Anton, 2026-11-18). f_c is the -3dB corner of lp, hp and ap, and the
+    geometric centre of the band of bp and bs: f_c = sqrt(f_low*f_high),
+    B = f_high - f_low, the width between the two -3dB points. B is
+    positive for bp and bs alike: the lp-to-bs transform uses +Q = f_c/B.
 
     :param f_char: filter characteristic: Butterworth or Bessel
     :type f_char:  str
@@ -3055,12 +3562,38 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
     :param ripple: pass-band ripple in [dB]
     :type ripple: int, float
 
+    :param f_c: corner frequency (lp, hp, ap) or centre frequency (bp, bs)
+                [Hz], instead of f_low and f_high
+    :type f_c: sympy.Symbol, float, int, str
+
+    :param B: bandwidth of bp and bs [Hz], with f_c
+    :type B: sympy.Symbol, float, int, str
+
     :return: Filter prototype function (Laplace Transform)
     :rtype: sympy.Expr
     """
     f_char = f_char.lower()
     f_type = f_type.lower()
     f_order = int(f_order)
+    # a corner given in SLiCAP notation ("10k") or as a name ("f_c") is
+    # accepted like everywhere else (2026-11-18, the Transfer function
+    # dialog writes them so); a name stays a symbol of the prototype
+    f_low = _checkExpression(f_low) if isinstance(f_low, str) else f_low
+    f_high = _checkExpression(f_high) if isinstance(f_high, str) else f_high
+    ripple = _checkExpression(ripple) if isinstance(ripple, str) else ripple
+    if f_c is not None:
+        f_c = _checkExpression(f_c) if isinstance(f_c, str) else f_c
+        if f_type in ("lp", "ap"):
+            f_high = f_c
+        elif f_type == "hp":
+            f_low = f_c
+        elif B is None:
+            print("Error: missing B")
+        else:
+            # the inverse of f_c = sqrt(f_low*f_high), B = f_high - f_low
+            B = _checkExpression(B) if isinstance(B, str) else B
+            f_low = sp.sqrt(f_c**2 + B**2/4) - B/2
+            f_high = f_low + B
     if f_char == "butterworth":
         proto = butterworthPoly(f_order)
     elif f_char == "bessel":
@@ -3103,6 +3636,68 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1):
         else:
             print("Error: missing f_high")
     return proto
+
+def sectionFunc(f_type, f_0, Q=None):
+    """Returns the Laplace transfer function of one filter section: first
+    order by type and corner frequency, second order by type, centre
+    frequency and quality factor. The prototype of a section block
+    (``Bilin``, ``Biquad``) and of a tunable filter: *f_0* and *Q* may be
+    symbols (2026-11-18).
+
+    First order (*Q* None), with p = s/(2 pi f_0):
+
+    - lp: 1/(1 + p)
+    - hp: p/(1 + p)
+    - ap: (1 - p)/(1 + p)
+
+    Second order, with D = 1 + p/Q + p^2:
+
+    - lp: 1/D
+    - hp: p^2/D
+    - bp: (p/Q)/D, unity at f_0
+    - bs: (1 + p^2)/D
+    - ap: (1 - p/Q + p^2)/D
+
+    :param f_type: "lp", "hp", "bp", "bs" or "ap" ("bp" and "bs" need *Q*)
+    :type f_type: str
+    :param f_0: corner (first order) or centre (second order) frequency [Hz]
+    :type f_0: float, int, sympy.Symbol, str
+    :param Q: quality factor of a second-order section, None for first order
+    :type Q: float, int, sympy.Symbol, str, None
+    :return: transfer function in ``ini.laplace``
+    :rtype: sympy.Expr
+    """
+    f_type = str(f_type).lower()
+    p = ini.laplace / (2 * sp.pi * _checkExpression(f_0))
+    if Q is None:
+        forms = {"lp": 1 / (1 + p), "hp": p / (1 + p), "ap": (1 - p) / (1 + p)}
+        if f_type not in forms:
+            raise ValueError("sectionFunc: a first-order section is lp, hp or "
+                             "ap, not %r (bp and bs need Q)" % f_type)
+        return forms[f_type]
+    q = _checkExpression(Q)
+    den = 1 + p / q + p ** 2
+    forms = {"lp": 1 / den, "hp": p ** 2 / den, "bp": (p / q) / den,
+             "bs": (1 + p ** 2) / den, "ap": (1 - p / q + p ** 2) / den}
+    if f_type not in forms:
+        raise ValueError("sectionFunc: f_type must be lp, hp, bp, bs or ap, "
+                         "not %r" % f_type)
+    return forms[f_type]
+
+
+def transferFunc(expr):
+    """Returns the transfer function typed as text in SLiCAP notation, as a
+    sympy expression in ``ini.laplace``: the way to put a known transfer
+    into the design data without a circuit (2026-11-18).
+
+    :param expr: the transfer function, e.g. ``"1/(1 + s*T)"`` or
+                 ``"1/(1 + s/(2*pi*10k))"``
+    :type expr: str, sympy.Expr
+    :return: transfer function in ``ini.laplace``
+    :rtype: sympy.Expr
+    """
+    return _checkExpression(expr)
+
 
 def DIN_A(f_0=1000):
     """

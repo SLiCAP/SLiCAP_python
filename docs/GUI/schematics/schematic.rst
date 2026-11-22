@@ -62,9 +62,11 @@ restricts which schematic type may be created or opened:
      - the NGspice symbol library
      - NGspice only (SLiCAP disabled)
 
-In a restricted mode the disallowed :menuselection:`File --> New ... Schematic`
-entry is greyed out and :menuselection:`File --> Open` lists only files of the
-permitted type.
+In a restricted mode the entry of the other type,
+:menuselection:`File --> New SLiCAP Schematic` or
+:menuselection:`File --> New NGspice Schematic`, is greyed out.
+:menuselection:`File --> Open schematic…` lists only files of the permitted
+type.
 
 ``file`` is the path to a schematic to open at startup; its type is inferred from
 the extension (``.slicap_sch`` or ``.spice_sch``).  **A canvas is shown only when
@@ -103,27 +105,38 @@ By default each schematic is displayed in a separate tab, but each open schemati
      - Save schematic (:kbd:`Ctrl+S`), Save schematic as
        (:kbd:`Ctrl+Shift+S`), Schematic properties, Export netlist
        (:kbd:`Ctrl+E`), Export SVG, Export PDF, Print schematic
-       (:kbd:`Ctrl+P`), Schematic drawing preferences.
+       (:kbd:`Ctrl+P`), Drawing preferences.
    * - **Edit**
-     - Undo (:kbd:`Ctrl+Z`), Redo (:kbd:`Ctrl+Y`).
+     - Undo (:kbd:`Ctrl+Z`), Redo (:kbd:`Ctrl+Y`), Bring to front
+       (:kbd:`Ctrl+Shift+]`), Bring forward (:kbd:`Ctrl+]`), Send backward
+       (:kbd:`Ctrl+[`), Send to back (:kbd:`Ctrl+Shift+[`).
    * - **View**
      - Fit (:kbd:`F`), Zoom In (:kbd:`+`), Zoom Out (:kbd:`-`),
        Reset Zoom (:kbd:`Ctrl+0`).
+   * - **Circuit**
+     - What reaches the netlist: Symbol (:kbd:`S`), Wire (:kbd:`W`), Net
+       Label (:kbd:`L`), Junction (:kbd:`J`), Library, New subcircuit symbol
+       (see :doc:`/GUI/schematics/hierarchical_blocks`), Parameters, Define
+       src / det / lg ref, Model definition.
+   * - **Insert**
+     - Objects that follow the runs: Figure from design data, LaTeX from
+       design data, LaTeX snippet file, Image.
    * - **Draw**
-     - Line, Rectangle, Circle, Text (:kbd:`T`), Hyperlink, LaTeX.
+     - Annotation by hand: Line, Rectangle, Ellipse, Polygon, Arc, Curve,
+       Function curve, Text (:kbd:`T`), Hyperlink, LaTeX text.
+   * - **Document**
+     - Document properties, Border (:kbd:`B`).
    * - **Tools**
      - Rename Components, Load selected symbols from library, Update symbols
-       from library.
-   * - **Place**
-     - Symbol (:kbd:`S`), Wire (:kbd:`W`), Net Label (:kbd:`L`),
-       Junction (:kbd:`J`), Border (:kbd:`B`), Library, New subcircuit
-       symbol (see :doc:`/GUI/schematics/hierarchical_blocks`), Image, Parameters,
-       Define src / det / lg ref, Model definition.
+       from library, Import symbols from file.
    * - **Instruction**
-     - Create circuit object and Create / edit SLiCAP instruction (SLiCAP
-       schematics), or Create netlist, Create / edit NGspice instruction and
-       control section (NGspice schematics) — see
-       :doc:`/GUI/instruction/instructions`.
+     - Create circuit object, Create / edit SLiCAP instruction and Transfer
+       function (SLiCAP schematics). Create netlist, Create / edit NGspice
+       instruction and Create / edit NGspice control section (NGspice
+       schematics). See :doc:`/GUI/instruction/instructions`.
+
+A poster has no Circuit, Tools or Instruction menu. Its Insert menu also
+places a schematic or another poster (see :doc:`/GUI/schematics/posters`).
 
 Creating and opening schematics, and application-wide actions, live in the
 **main window's** menu bar:
@@ -135,17 +148,49 @@ Creating and opening schematics, and application-wide actions, live in the
    * - Menu
      - Contents
    * - **File**
-     - New project, Select project folder, Save project, Close project;
+     - New project, Select project folder, Save project, Close project.
        New SLiCAP Schematic, New NGspice Schematic, Open schematic
-       (:kbd:`Ctrl+O`), New Instruction file, Open instruction file;
-       Preferences, Edit main configuration file; Exit (:kbd:`Ctrl+Q`).
-   * - **Instruction**
-     - Create / edit Traces, Axes, Figures and specifications;
-       Run (:kbd:`F5`), Stop (:kbd:`F6`).
+       (:kbd:`Ctrl+O`), New poster (see :doc:`/GUI/schematics/posters`), New
+       symbol, Edit symbol (see :doc:`/GUI/schematics/symbol_editor`), New
+       Instruction file, Open instruction file. Preferences, Edit main
+       configuration file. Exit (:kbd:`Ctrl+Q`).
    * - **View**
-     - Show/hide the Project, Instructions, and Log panels.
+     - Show/hide the Project, Design data, Instructions and Log panels.
+       Reset panel layout.
+   * - **Instruction**
+     - Create / Edit Traces and Measurements, Axes and Figures. Create LaTeX
+       snippet, Create RST (Sphinx) snippet (see :doc:`/GUI/reports/snippets`).
+       Create / Edit specifications. Update schematic images. Run
+       (:kbd:`F5`), Stop (:kbd:`F6`).
    * - **Help**
-     - Show HTML Documentation (:kbd:`F1`), Check for updates, About.
+     - Show HTML Documentation (:kbd:`F1`), Keyboard shortcuts, Create
+       shortcut, Check for updates, About.
+
+*Help > Keyboard shortcuts* lists every shortcut: those of the menus, and the
+keys the canvas handles itself, such as :kbd:`R` to rotate, :kbd:`M` to
+mirror, :kbd:`/` to switch the corner of a wire, :kbd:`Del`, :kbd:`Esc` and
+:kbd:`Enter`. The list is read from the program, so it always matches it.
+
+*Help > Create shortcut* puts SLiCAP in the launcher of your system, with
+the icon of SLiCAP:
+
+* On Windows it makes a shortcut in the start menu and one on the desktop.
+  To keep SLiCAP in the taskbar, right-click it in the start menu and
+  choose *Pin to taskbar*.
+* On Linux it makes the entry ``slicap.desktop`` in
+  ``~/.local/share/applications``. SLiCAP then appears in the applications
+  overview. To keep it in the dock, right-click it there and choose *Add to
+  Favorites*.
+
+The shortcut starts SLiCAP with the Python environment that runs the GUI
+when you create it. In an Anaconda environment on Windows, the shortcut
+first activates that environment, as Anaconda's own shortcuts do. When you
+start SLiCAP from another environment, create the shortcut again: it then
+replaces the old one.
+
+Started from the shortcut, SLiCAP has no console window. Its messages go to
+the file ``gui.log`` in the folder ``SLiCAP`` of your home folder. Look
+there when SLiCAP does not start. The file is new at every start.
 
 A first schematic in five steps
 ===============================
@@ -180,7 +225,27 @@ block in other schematics; see :doc:`/GUI/schematics/hierarchical_blocks`.
 Below an example of a SLiCAP schematic with default preferences and LaTeX rendering enabled.
 
 .. Figure:: /GUI/img/RCcircuit.png
-   
+
+LaTeX labels
+============
+
+With LaTeX rendering on, pdflatex and dvisvgm typeset the values and
+reference designators of the components. The editor renders them in the
+background:
+
+* A placed, edited or pasted component shows its labels as plain text at
+  once. The typeset labels replace them when they are ready. Meanwhile the
+  status bar says *Rendering n LaTeX labels*.
+* Opening a schematic, undo, redo, export and print wait until their labels
+  are rendered, with the window responsive. After half a second a window
+  says that LaTeX is rendering. *Continue with plain text* ends the wait.
+* MiKTeX may ask in a window of its own to install a missing package. That
+  window can open behind the editor. The rendering waits for the answer.
+* A value whose LaTeX does not compile keeps its plain text.
+
+The rendered labels are kept in the ``.cache`` sidecar, so the next opening
+renders nothing.
+
 Sidecar files
 =============
 

@@ -3,7 +3,7 @@ Posters: drawings that show other drawings (Anton, 2026-10-06).
 
 A poster is a canvas file, posters/<name>.slicap_poster, without a circuit:
 it is never netlisted. It holds text, shapes, LaTeX, images and the links
-of the Place menu - schematics and other posters of the project, figures
+of the Insert menu - schematics and other posters of the project, figures
 and snippets of the Design data - and its export to img/<name>.svg and .pdf
 first brings the exports of the drawings it shows up to date (children
 before parents, see schematic.make_schematic). In a browser a click on a

@@ -490,10 +490,17 @@ text items, and shapes are each rendered to SVG geometry.  LaTeX fragments and
 images are embedded as ``<image>`` elements with ``data:`` URIs.  The output
 is a self-contained SVG file with no external dependencies.
 
-**PDF / Print export (``export.py``):**
-The SVG generated above is fed to ``QSvgRenderer`` and rendered onto a
-``QPainter`` backed by a ``QPrinter`` (PDF mode or system printer).  This
-produces vector PDF output with the same fidelity as the SVG.
+**PDF export (``export.py``):**
+``svg2pdf`` converts the SVG generated above with svglib and reportlab.  It
+needs no Qt application, so it also works from the command line.  The PDF
+embeds the DejaVu fonts that matplotlib ships (``fonts.register_pdf_fonts``).
+
+**Print (``export.py``):**
+The same SVG is fed to ``QSvgRenderer`` and rendered onto a ``QPainter``
+backed by a ``QPrinter``.  The print is vector output.  ``QSvgRenderer``
+takes the font-family list of the SVG as one family name.
+``fonts.load_qt_fonts`` registers that string as a Qt font substitution, so
+the print uses the same fonts as the canvas.
 
 **Netlist export (``netlist.py``):**
 Walks the scene to collect ``ComponentItem``\s, ``WireItem``\s, ``LibraryItem``\s,
@@ -512,10 +519,18 @@ Layer 9 — Application Window (``window.py``, ``canvas.py``)
 ------------------------------------------------------------
 
 ``MainWindow(QMainWindow)``
-    Top-level window.  Builds the menu bar (File, Edit, View, Draw, Place,
-    Tools, Help) and connects menu actions to scene methods and file-dialog
-    handlers.  Manages ``_dirty`` state (set by ``scene.data_changed``).
-    Owns the ``SymbolLibrary`` instance and rebuilds it on every New / Open.
+    Top-level window.  Builds the main menu bar (File, View, Instruction,
+    Help).  Hosts one ``CanvasPanel`` per open drawing, and the shared
+    Project, Design data, Instructions and Log panels.
+
+``CanvasPanel(QWidget)``
+    One drawing with its own menu bar.  A schematic has File, Edit, View,
+    Circuit, Insert, Draw, Document, Tools and Instruction.  A poster has no
+    Circuit, Tools or Instruction menu.  The symbol editor has File, Edit,
+    View, Symbol and Draw.  Connects menu actions to scene methods and
+    file-dialog handlers.  Manages ``_dirty`` state (set by
+    ``scene.data_changed``).  Owns the ``SymbolLibrary`` instance and
+    rebuilds it on every New / Open.
 
 ``SchematicView(QGraphicsView)``
     The viewport.  Renders the grid (minor grey lines every ``GRID_SIZE``

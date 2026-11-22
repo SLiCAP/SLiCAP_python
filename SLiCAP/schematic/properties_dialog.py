@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QGridLayout,
+    QDialog, QGridLayout,
     QLineEdit, QComboBox, QCheckBox, QDialogButtonBox, QPushButton,
-    QLabel, QWidget, QFrame, QLayout,
+    QLabel, QWidget, QFrame,
 )
 from PySide6.QtCore import Qt
 
@@ -13,7 +13,7 @@ from . import project
 from .component_item import (
     ComponentItem, fixed_params_for_symbol, strip_braces,
 )
-from .sizing import cap_chars
+from .sizing import cap_chars, scroll_body, fit_to_screen
 
 _HDR_ROW    = 0
 _SEP_ROW    = 1
@@ -32,20 +32,25 @@ class PropertiesDialog(QDialog):
     "Show value" is also on (the checkbox is disabled otherwise).
     """
 
-    def __init__(self, item: ComponentItem, parent=None, library=None,
-                 show_stimuli: bool = False, is_current: bool = False,
+    def __init__(self, item: ComponentItem, parent=None, library=None, extra=None,
+                 editor=None, is_current: bool = False,
                  offer_dc_current: bool = False,
                  sch_ext=".slicap_sch"):
+        """*editor* is ``(button text, function(item))`` when the dialect
+        edits this component's own quantity in a dialog of its own, the
+        stimuli of an NGspice source or the waveform of a system signal
+        source (2026-11-17): the button opens it."""
         super().__init__(parent, Qt.Window)
         self._item = item
-        self._show_stimuli = show_stimuli
+        self._editor = editor
         self._is_current   = is_current
         self._dc_cb = None
         self.setWindowTitle(f"Properties — {item.instance_id}")
 
-        outer = QVBoxLayout()
-        outer.setSizeConstraint(QLayout.SetFixedSize)
-        self.setLayout(outer)
+        # the body scrolls on a small screen; it was a layout of fixed size,
+        # which an NGspice transistor with every instance parameter made
+        # taller than a laptop screen (2026-11-20)
+        frame, outer, self._scroll = scroll_body(self)
 
         # ── description + clickable info link (from the symbol's data-* meta) ──
         desc = item.symbol.description
@@ -113,6 +118,16 @@ class PropertiesDialog(QDialog):
             self._model_sv = self._model_sn = None
             self._params_start = _MODEL_ROW
 
+        # what the dialect adds (the scene's properties_extra hook): keys
+        # shown but not editable, and a descend target of its own
+        extra = extra or {}
+        self._fixed = tuple(extra.get("fixed", ()))
+        if self._model_edit is not None and "model" in self._fixed:
+            # a filter block of a system diagram: the model is its design,
+            # changed by Design... (Anton, 2026-11-19: a typed model named
+            # a design that did not exist)
+            self._model_edit.setReadOnly(True)
+            self._model_edit.setToolTip("The design of the block: Design\u2026 changes it")
         # Dynamic params rows
         self._param_edits:   dict[str, QLineEdit] = {}
         self._param_sv:      dict[str, QCheckBox] = {}
@@ -187,10 +202,30 @@ class PropertiesDialog(QDialog):
                                f"lib/{item.model}{sch_ext}")
             outer.addWidget(btn)
 
-        if show_stimuli:
+        descend = extra.get("descend")
+        if descend is not None:
+            text, src, tip = descend
+            btn = QPushButton(text)
+            if src is not None:
+                btn.clicked.connect(lambda _=False, p=Path(src): self._descend(p))
+            else:
+                btn.setEnabled(False)
+            if tip:
+                btn.setToolTip(tip)
+            outer.addWidget(btn)
+        # ``actions``: ``[(button text, function), ...]`` of the dialect, each
+        # a dialog of its own on the component (the design of a filter
+        # block, 2026-11-18): the button closes this dialog without applying
+        # its rows and runs the function once the dialog has returned
+        for text, fn in extra.get("actions", ()):
+            btn = QPushButton(text)
+            btn.clicked.connect(lambda _=False, f=fn: self._run_action(f))
+            outer.addWidget(btn)
+
+        if editor is not None:
             outer.addWidget(_hline())
-            stim_btn = QPushButton("View / Edit source stimuli…")
-            stim_btn.clicked.connect(self._open_stimuli_dialog)
+            stim_btn = QPushButton(editor[0])
+            stim_btn.clicked.connect(self._open_editor)
             outer.addWidget(stim_btn)
 
         # DC operating-point back-annotation — offered for independent
@@ -211,7 +246,8 @@ class PropertiesDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        outer.addWidget(buttons)
+        frame.addWidget(buttons)
+        fit_to_screen(self, self._scroll)
 
     def _change_symbol(self) -> None:
         from .change_symbol_dialog import ChangeSymbolDialog
@@ -228,20 +264,28 @@ class PropertiesDialog(QDialog):
         return self._symbol_change
 
     def _descend(self, src: Path) -> None:
-        """Close the dialog and signal the caller to open ``src`` for editing."""
+        """Close the dialog as OK does and signal the caller to open ``src``
+        for editing: the caller applies the values first, then descends
+        (Anton, 2026-11-21: "first apply values then descend"). Closing as
+        Cancel was the first form and was REPLACED: a value typed before
+        Descend was dropped without a word."""
         self._descend_path = src
-        self.reject()
+        self.accept()
 
     def descend_path(self) -> "Path | None":
         return self._descend_path
 
-    def _open_stimuli_dialog(self) -> None:
-        from .source_stimuli_dialog import edit_source_stimuli
-        edit_source_stimuli(self._item)
-        # The stimuli dialog is the ONLY editor of dc/ac/tran: the NGspice
-        # V/I symbols declare no value/ac/tran rows since 2026-11-07, so
-        # there is no row to re-sync (the earlier _refresh_stimuli_rows
-        # kept two editors of one quantity consistent - REMOVED).
+    def _run_action(self, fn) -> None:
+        from PySide6.QtCore import QTimer
+        self.reject()
+        QTimer.singleShot(0, fn)
+
+    def _open_editor(self) -> None:
+        self._editor[1](self._item)
+        # The editor is the ONLY editor of its quantity: the NGspice V/I
+        # symbols declare no value/ac/tran rows since 2026-11-07, so there
+        # is no row to re-sync (the earlier _refresh_stimuli_rows kept two
+        # editors of one quantity consistent - REMOVED).
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
@@ -266,6 +310,9 @@ class PropertiesDialog(QDialog):
             sv_val, sn_val = existing_display.get(name, (True, False) if name == "value" else (False, False))
             lbl  = QLabel(name)
             edit = QLineEdit(strip_braces(existing_values.get(name, "")))
+            if name in self._fixed:
+                edit.setReadOnly(True)       # set by the dialect, not typed
+                edit.setToolTip("Set when the block was placed")
             sv, sn = _make_pair(sv_val, sn_val)
             self._grid.addWidget(lbl,  row, 0)
             self._grid.addWidget(edit, row, 1)

@@ -55,7 +55,7 @@ KNOWN_KINDS = ["result", "circuit", "figure", "traces", "measurements",
 # Without this a single measurement fell through to "other", which is hidden
 # by default, so MEAS4 was silently absent from the panel (Anton, 2026-08-03).
 KIND_FAMILY = {"measurement": "measurements", "trace": "traces",
-               "axis": "figure", "statespace": "matrix"}
+               "axis": "figure", "statespace": "matrix", "numbers": "list"}
 
 
 def filter_kind(kind: str) -> str:
@@ -72,6 +72,22 @@ _RESULT_ATTRS = ["laplace", "numer", "denom", "poles", "zeros", "DCvalue",
                  "time", "impulse", "stepResp", "solve", "M", "Iv", "Dv",
                  "Nr", "Cr", "Rr", "reactances", "stateSpace"]
 
+# A result object of another kind than a SLiCAP instruction presents
+# itself to the Design data with the class attribute ``design_data_attrs``,
+# the tuple of attribute names to list as its children (2026-11-16). It
+# is classified "result"; ``dataType`` and ``simType`` go into the header
+# when it has them, and ``laplace`` gives the typeset preview as for an
+# instruction result.
+_SELF_DESCRIBING = "design_data_attrs"
+
+
+def _is_numbers(value) -> bool:
+    """A non-empty list or tuple of plain real numbers (no bool)."""
+    import numpy as np
+    return (isinstance(value, (list, tuple)) and bool(value) and all(
+        isinstance(v, (int, float, np.integer, np.floating))
+        and not isinstance(v, bool) for v in value))
+
 
 def _class_name(value) -> str:
     c = type(value)
@@ -84,6 +100,8 @@ def classify(value) -> str:
     import numpy as np
     cname = _class_name(value)
     if cname.endswith("SLiCAPinstruction.instruction"):
+        return "result"
+    if hasattr(type(value), _SELF_DESCRIBING):
         return "result"
     if cname.endswith("SLiCAPprotos.circuit"):
         return "circuit"
@@ -114,6 +132,12 @@ def classify(value) -> str:
     if isinstance(value, dict) and value and all(
             isinstance(v, _meas) for v in value.values()):
         return "measurements"
+    # any other dict is a record ({signal: clock domain} of a system run,
+    # for instance): filtered with the lists and shown field by field, so
+    # it does not fall through to "other", which the panel cannot open
+    # (Anton, 2026-11-17: "the whole domain is not viewable")
+    if isinstance(value, dict):
+        return "list"
     if isinstance(value, sp.MatrixBase):
         return "matrix"
     if isinstance(value, sp.Basic):
@@ -124,6 +148,10 @@ def classify(value) -> str:
         return "number"
     if isinstance(value, np.ndarray):
         return "array"
+    # coefficient lists are kept as JSON numbers, so a GUI can read them
+    # back (filtered with the lists: KIND_FAMILY)
+    if _is_numbers(value):
+        return "numbers"
     if isinstance(value, (list, tuple)):
         return "list"
     if isinstance(value, str):
@@ -196,7 +224,24 @@ def _preview(value, kind: str) -> dict:
                     "y^T = " + sp.pretty(value.y.T, use_unicode=False)]
             return {"value": f"{r} states, {m} inputs, {p} outputs",
                     "pprint": "\n".join(rows)[:2000]}
+        if kind == "numbers":
+            nums = [float(v) for v in value]
+            return {"value": nums,
+                    "pprint": ", ".join("{0:.6g}".format(v) for v in nums)[:2000]}
         if kind == "list":
+            if isinstance(value, dict):
+                # a record: one child row per field, each classified
+                return {"value": "{0} field{1}".format(
+                            len(value), "" if len(value) == 1 else "s"),
+                        "pprint": "\n".join(
+                            "{0}: {1}".format(k, v)
+                            for k, v in list(value.items())[:50])[:2000],
+                        "attributes": _dict_entries(value)}
+            if value and all(isinstance(it, str) for it in value):
+                # a list of names (the parameters of a filter design):
+                # the names themselves, not "3 items"
+                return {"value": ", ".join(value)[:200],
+                        "pprint": "\n".join(value)[:2000]}
             items = list(value)[:6]
             parts = []
             for it in items:
@@ -206,8 +251,19 @@ def _preview(value, kind: str) -> dict:
                     parts.append(repr(it))
             if len(value) > 6:
                 parts.append(f"… ({len(value)} items in total)")
-            return {"value": f"{len(value)} items",
-                    "pprint": "\n".join(parts)[:2000]}
+            out = {"value": f"{len(value)} items",
+                   "pprint": "\n".join(parts)[:2000]}
+            # a list of records (dicts): one expandable child per record,
+            # the record's fields as its children, so a table of sections
+            # or rows shows as rows (2026-11-16)
+            if all(isinstance(it, dict) for it in value):
+                out["attributes"] = [
+                    {"name": f"[{i}]", "kind": "list", "class": "builtins.dict",
+                     "value": ", ".join(str(it.get(k)) for k in it
+                                        if isinstance(it.get(k), str)),
+                     "attributes": _dict_entries(it)}
+                    for i, it in enumerate(value[:100])]
+            return out
         if kind == "figure":
             return {"fileName": getattr(value, "fileName", ""),
                     "fileType": getattr(value, "fileType", ""),
@@ -424,7 +480,7 @@ def subsample(points: list, n: int) -> list:
 
 def manifest_traces(project_root) -> list:
     """The traces of the Design data with their decimated data:
-    ``[(trace_var, label, [[x, y], ...]), ...]`` (Place -> Function curve,
+    ``[(trace_var, label, [[x, y], ...]), ...]`` (Draw -> Function curve,
     trace source)."""
     out = []
     for e in _manifest_entries(project_root, "traces"):
@@ -481,6 +537,17 @@ def _trace_entries(traces) -> list[dict]:
     return out
 
 
+def _dict_entries(d: dict) -> list[dict]:
+    """Child entries for the fields of a record (dict), each classified."""
+    out = []
+    for name, v in d.items():
+        kind = classify(v)
+        entry = {"name": str(name), "kind": kind, "class": _class_name(v)}
+        entry.update(_preview(v, kind))
+        out.append(entry)
+    return out
+
+
 def _attr_entries(result) -> list[dict]:
     """Child entries for a result's non-empty return-value attributes."""
     out = []
@@ -512,7 +579,7 @@ def _attr_entries(result) -> list[dict]:
                 # text preview caps at 500 chars)
                 entry["value"] = v[:5000]
             out.append(entry)
-    for attr in _RESULT_ATTRS:
+    for attr in getattr(type(result), _SELF_DESCRIBING, _RESULT_ATTRS):
         v = getattr(result, attr, None)
         if v is None:
             continue
@@ -566,6 +633,22 @@ def _manifest_entries(project_root, kind: str) -> list[dict]:
             if entry.get("kind") == kind and entry.get("name") not in seen:
                 seen.add(entry["name"])
                 out.append(entry)
+    return out
+
+
+def manifest_results(project_root, data_type=None) -> list:
+    """The result objects of the last runs, from the Design data, as
+    ``[(name, dataType), ...]``, newest first; *data_type* (a string or a
+    tuple of strings) keeps only the results of those data types. This is
+    what a dialog offers when an instruction takes an earlier result as
+    its input (2026-11-16)."""
+    if isinstance(data_type, str):
+        data_type = (data_type,)
+    out = []
+    for e in _manifest_entries(project_root, "result"):
+        dt = e.get("dataType", "")
+        if data_type is None or dt in data_type:
+            out.append((e["name"], dt))
     return out
 
 
@@ -625,6 +708,17 @@ def manifest_path(results_dir=None) -> Path:
         import SLiCAP.SLiCAPconfigure as ini
         results_dir = ini.results_path
     return Path(results_dir) / MANIFEST_NAME
+
+
+def manifest_section(manifest: dict, source_name: str) -> dict:
+    """The section of the instruction file *source_name* (its file name,
+    the key ``write_manifest`` stores it under), or an empty section.
+    A variable name is a name in ONE file's namespace: the dialogs that
+    compose an instruction for a file read that file's section and no
+    other (a scan over every section took the TR1 of an older file
+    for the TR1 of the file being edited, Anton, 2026-11-19)."""
+    section = (manifest.get("sections") or {}).get(source_name or "")
+    return section if isinstance(section, dict) else {}
 
 
 def read_manifest(results_dir=None) -> dict:

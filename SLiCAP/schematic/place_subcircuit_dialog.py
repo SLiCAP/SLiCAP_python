@@ -1,5 +1,5 @@
 """
-Place Subcircuit dialog (Place → Subcircuit…).
+Place Subcircuit dialog (Circuit → New subcircuit symbol…).
 
 Pick a subcircuit ``.lib`` file; the dialog parses its ``.subckt`` header and
 shows the block's name, overridable parameters and whether a matching editable
@@ -25,7 +25,7 @@ from PySide6.QtCore import Qt, QByteArray
 
 from . import project
 from .config import GRID_SIZE
-from .subcircuit import (parse_subckt, box_symbol_svg, reskin_symbol_svg,
+from .subcircuit import (schematic_subckt_def, parse_subckt, box_symbol_svg, reskin_symbol_svg,
                          SubcktDef, min_half, schematic_placement,
                          find_subckt_schematic, _normalize_placement, _FLOOR)
 from .symbol_library import Symbol
@@ -73,7 +73,8 @@ class _SymbolPreview(QWidget):
         renderer.render(p, vb)
         if self._sym.show_pinnames:
             draw_subckt_pin_names(p, self._sym.nodes, self._sym.pins,
-                                  style=display_style(default_style()))
+                                  style=display_style(default_style()),
+                                  box=self._sym.pin_box)
         p.end()
 
 
@@ -90,13 +91,19 @@ class PlaceSubcircuitDialog(QDialog):
     def __init__(self, parent=None, sch_type='slicap', library=None):
         super().__init__(parent, Qt.Window)
         self._library = library
-        self.setWindowTitle("New Subcircuit Symbol")
-        self.setMinimumWidth(chars(self, 80))
         # Type-tagged names keep a SLiCAP and an NGspice subcircuit of the same
         # device from colliding (mirrors .slicap_sch / .spice_sch).
-        self._lib_ext    = ".spice_lib" if sch_type == 'ngspice' else ".slicap_lib"
-        self._sch_ext    = ".spice_sch" if sch_type == 'ngspice' else ".slicap_sch"
-        self._sch_type   = sch_type
+        from .dialects import by_name
+        dialect = by_name(sch_type)
+        self._dialect    = dialect
+        self._lib_ext    = dialect.lib_ext       # None: the block is its diagram
+        self._sch_ext    = dialect.sch_ext
+        self._sch_type   = dialect.name
+        # the title names the menu entry; both dialogs said "New Subcircuit
+        # Symbol" and Anton took the SLiCAP one for the system one (2026-11-19)
+        self.setWindowTitle("New Subcircuit Symbol" if self._lib_ext
+                            else "Place %s" % dialect.block_label)
+        self.setMinimumWidth(chars(self, 80))
         self._defn: SubcktDef | None = None
         self._lib_path: str | None = None
         self._source_pins: list[str] = []
@@ -114,7 +121,9 @@ class PlaceSubcircuitDialog(QDialog):
         # ── library file picker ─────────────────────────────────────────────────
         file_row = QHBoxLayout()
         self._file = QLineEdit(); self._file.setReadOnly(True)
-        self._file.setPlaceholderText(f"Select a subcircuit {self._lib_ext} file…")
+        self._file.setPlaceholderText(
+            f"Select a subcircuit {self._lib_ext} file…" if self._lib_ext
+            else f"Select the {self._sch_ext} diagram of the block in lib/…")
         browse = QPushButton("Browse…"); browse.clicked.connect(self._choose_file)
         file_row.addWidget(self._file); file_row.addWidget(browse)
         outer.addLayout(file_row)
@@ -190,19 +199,26 @@ class PlaceSubcircuitDialog(QDialog):
     # ── file selection ────────────────────────────────────────────────────────────
 
     def _choose_file(self):
+        """The block's file: its library (``parse_subckt``) or, for a
+        dialect without one, its diagram (``schematic_subckt_def``)."""
         from PySide6.QtWidgets import QFileDialog
+        if self._lib_ext:
+            filt = f"Subcircuit Library (*{self._lib_ext});;All Files (*)"
+        else:
+            filt = self._dialect.sch_filter() + ";;All Files (*)"
         path, _ = QFileDialog.getOpenFileName(
-            self, "Select Library File", str(project.subdir("lib")),
-            f"Subcircuit Library (*{self._lib_ext});;All Files (*)",
-        )
+            self, "Select the block's file", str(project.subdir("lib")), filt)
         if not path:
             return
         try:
-            defn = parse_subckt(
-                path, dialect=("ngspice" if self._lib_ext == ".spice_lib"
-                               else "slicap"))
+            if self._lib_ext:
+                defn = parse_subckt(path, dialect=self._sch_type)
+            else:
+                defn = schematic_subckt_def(path)
         except Exception as exc:
-            QMessageBox.critical(self, "Invalid library", str(exc))
+            QMessageBox.critical(self, "Invalid %s" % ("library" if self._lib_ext
+                                                       else self._dialect.block_label),
+                                 str(exc))
             return
 
         self._defn = defn

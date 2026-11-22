@@ -81,6 +81,7 @@ Plot settings are found in the **[plot]** section of the ``SLiCAP.ini`` file in 
     ini.default_markers        = ['']
     ini.plot_file_type         = svg
     ini.svg_margin             = 1
+    ini.plot_points            = 4000
     
 .. admonition:: note
     :class: note
@@ -96,6 +97,11 @@ Showing plots
 -------------
 
 All plot functions have a keyword argument ``show=False`` by default. In this way they don't pop up running a script blocking further execution of the script during pop-up.
+
+Large traces
+------------
+
+A trace with more than twice ``ini.plot_points`` points, such as an NGspice transient with millions of samples, is drawn reduced. The visible range is cut into ``ini.plot_points`` bins and every bin contributes its minimum and its maximum, in order. The envelope and every peak survive at any zoom, as on an oscilloscope. The reduction is redone on every zoom, pan and home. When the visible range holds fewer points than twice the bins, the samples themselves are drawn. The saved image holds the reduced trace of the full range. The A/B cursors read the full data. The crosshair reads the reduced line. Only a trace whose x values are monotonic, a time or frequency sweep, is reduced. Set ``plotpoints`` to 0 in the ``[plot]`` section of ``SLiCAP.ini`` to draw every point.
 
 Saving plots
 ------------

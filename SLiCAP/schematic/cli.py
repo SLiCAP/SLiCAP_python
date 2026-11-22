@@ -25,8 +25,6 @@ import os
 import sys
 from pathlib import Path
 
-_SYMBOLS_SVG         = Path(__file__).parent.parent / "files" / "symbols" / "slicap"  / "Symbols.slicap_sym"
-_NGSPICE_SYMBOLS_SVG = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.spice_sym"
 
 
 # ── Qt bootstrap ─────────────────────────────────────────────────────────────
@@ -47,17 +45,19 @@ def _qt_app():
 # ── shared scene loader ───────────────────────────────────────────────────────
 
 def _load_scene(input_path: Path):
-    """Load a .slicap_sch or .spice_sch file and return (SchematicScene, SchematicData).
+    """Load a schematic file and return (SchematicScene, SchematicData).
 
-    The symbol library is selected automatically based on the file extension:
-    ``.slicap_sch`` → SLiCAP symbols; ``.spice_sch`` → NGspice symbols.
+    The symbol library follows the dialect of the file extension
+    (dialects.py): ``.slicap_sch`` SLiCAP symbols, ``.spice_sch`` NGspice
+    symbols, and so on.
     """
     from .schematic_data import SchematicData
     from .symbol_library import build_library
     from .canvas import SchematicScene
-    from . import project
+    from . import project, dialects
 
-    is_ngspice = input_path.suffix.lower() == ".spice_sch"
+    dialect = dialects.of_path(input_path)
+    is_ngspice = dialect is dialects.NGSPICE
 
     project.set_current(input_path)   # project-root fallback + sidecar migration
     from .config import Style
@@ -68,12 +68,16 @@ def _load_scene(input_path: Path):
     # project's lib/. A symbol's pin ORDER then came from the frozen bundle
     # instead of the library, and deleting that cache left the netlister
     # unable to find the symbol at all (Anton, 2026-08-03).
-    library = build_library(input_path,
-                            sch_type="ngspice" if is_ngspice else "slicap")
+    library = build_library(input_path, sch_type=dialect.name)
     scene   = SchematicScene()
-    scene.sch_type = "ngspice" if is_ngspice else "slicap"    # as the editor sets it
+    scene.sch_type = dialect.name                 # as the editor sets it
     scene.style = Style(project.ini_path_for(input_path))     # saved style
     scene.cache_dir = project.cache_path_for(input_path)      # render cache
+    scene.file_path = Path(input_path).resolve()  # as the editor sets it
+    if dialect is dialects.SYSTEM:
+        # the clock labels in the export, as the editor shows them
+        from . import system_dialect
+        system_dialect.attach_scene(scene)
     missing = scene.load_file_data(data, library)
     if is_ngspice and not missing:
         scene.load_op_raw(input_path)     # bias annotations in the export
@@ -136,10 +140,14 @@ def netlist_for(input_path, scene, props, title, program: bool = True):
     # "missing definition of model" and the analysis dialog had no
     # candidates to offer (Anton, 2026-09-14).
     models = [i for i in items if isinstance(i, ModelItem)]
-    sch_type = "ngspice" if Path(input_path).suffix.lower() == ".spice_sch" else "slicap"
+    from . import dialects
+    dialect  = dialects.of_path(input_path)
+    sch_type = dialect.name
     if props is not None and props.is_subcircuit:
         from .subcircuit import build_lib, lib_path_for
         from .netlist import schematic_ports
+        if lib_path_for(input_path, title, sch_type) is None:
+            return None             # the block is its diagram: nothing to write
         # The saved port order, completed with ports added since - the
         # default the GUI's Create-subcircuit dialog shows.
         present = schematic_ports(comps, wires)
@@ -149,6 +157,17 @@ def netlist_for(input_path, scene, props, title, program: bool = True):
                          props.subcircuit_params, params_items=prms,
                          libs=libs, model_defs=models)
         return text, lib_path_for(input_path, title, sch_type), "Library "
+    if dialect is dialects.SYSTEM:
+        # the run script, the netlist of the system dialect, in the
+        # project root (dialects.SYSTEM.net_dir == "")
+        from .system_script import build_run_script, check_run_script_target
+        root = project.root_for(input_path)
+        target = root / (Path(input_path).stem + dialect.net_ext)
+        check_run_script_target(target)      # never over a file that is not one
+        text = build_run_script(comps, wires, input_path, root,
+                                implicit_casts=getattr(props, "implicit_casts", True),
+                                libs=libs, prms=prms)
+        return text, target, "Run script "
     if sch_type == "ngspice":
         from .ngspice_netlist import build_ngspice_netlist
         text = build_ngspice_netlist(
@@ -273,7 +292,9 @@ def main():
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    _input_help = "Schematic file: .slicap_sch (SLiCAP) or .spice_sch (NGspice)"
+    from .dialects import DIALECTS
+    _input_help = "Schematic file: " + ", ".join(
+        "%s (%s)" % (d.sch_ext, d.label) for d in DIALECTS)
 
     p_net = sub.add_parser(
         "netlist",

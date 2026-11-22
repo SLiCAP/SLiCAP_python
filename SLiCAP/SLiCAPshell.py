@@ -328,6 +328,14 @@ def _makeNetlist(fileName, cirTitle=None, language="SLiCAP"):
         elif language.upper() == "SPICE" and cirPath is not None:
             with open(cirPath, "r", encoding="utf-8") as f:
                 netlist = f.read()
+    elif cirType == "system_sch":
+        # A system diagram of the schematic editor: the export writes the
+        # run script <project root>/<name>.py, the netlist of the system
+        # dialect, and the images. No circuit object is built: the run is
+        # sl.runSystem() on that script (2026-11-17).
+        from SLiCAP.schematic import make_schematic
+        make_schematic(fileName, cir_title=cirTitle)
+        subckt = True
     elif cirType in ("cir", "slicap_cir", "spice_cir"):
         pass                                     # a netlist: nothing to make
     else:
@@ -446,6 +454,9 @@ def makeCircuit(fileName, cirTitle=None, imgWidth=500,
          Schematic Properties): writes the subcircuit library
          "lib/<name>.slicap_lib" and the images, and returns None; no
          circuit object is created
+       - A system diagram (".system_sch" file): writes the run script
+         "<name>.py" into the project root and the images, and returns
+         None; the run is sl.runSystem("<name>", ...)
        - A KiCAD schematic file (".kicad_sch" file, full path or relative to
          project folder)
        - An LTspice schematic file (".asc" file, full path or relative to

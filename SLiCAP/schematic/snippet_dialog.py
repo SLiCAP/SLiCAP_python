@@ -32,7 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from . import instr_file
-from .instr_file import spec_var_name
+from .instr_file import spec_var_name, quoted
 
 # ── result-variable classification by producing function ────────────────────
 _PZ_FUNCS      = {"doPoles", "doZeros", "doPZ"}
@@ -164,11 +164,6 @@ def _project_relative(path: str) -> str:
     if rel.startswith(".."):
         return path
     return rel.replace(os.sep, "/")
-
-
-def _q(text: str) -> str:
-    """Python double-quoted string literal."""
-    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
 
@@ -617,13 +612,13 @@ class SnippetDialog(QDialog):
         if pname in ("Iv", "M", "Dv"):
             return ("pos", f"{res}.{pname}")
         if pname == "LHS":
-            return ("pos", _q(self.lhs.text().strip()))
+            return ("pos", quoted(self.lhs.text().strip()))
         if pname in ("RHS", "expr"):
             return ("pos", self.expr.currentText().strip())
         if pname in ("fileName", "netlistFile"):
-            return ("pos", _q(self.path.text().strip()))
+            return ("pos", quoted(self.path.text().strip()))
         if pname == "name":                        # RST expr/eqnInline
-            return ("kw", f"name={_q(name)}")
+            return ("kw", f"name={quoted(name)}")
         if pname == "multiline":
             return ("kw", "multiline=True") if self.multiline.isChecked() else None
         text_fields = {
@@ -632,19 +627,19 @@ class SnippetDialog(QDialog):
         }
         if pname in text_fields:
             val = text_fields[pname].text().strip()
-            return ("kw", f"{pname}={_q(val)}") if val else None
+            return ("kw", f"{pname}={quoted(val)}") if val else None
         if pname in ("language", "style"):
             val = self.language.currentText().strip()
             is_style = val in _LISTING_STYLES
             if not val or is_style != (pname == "style"):
                 return None
-            return ("kw", f"{pname}={_q(val)}")
+            return ("kw", f"{pname}={quoted(val)}")
         if pname == "color":
             val = self.color.currentText()
             if val == TABLE_COLOR_DEFAULT:
                 return None                      # the signature default
             return ("kw", "color=None" if val == "none"
-                    else f"color={_q(val)}")
+                    else f"color={quoted(val)}")
         return None            # style: left to its default
 
     def _emit_call(self, method: str, name: str) -> str:
@@ -661,7 +656,7 @@ class SnippetDialog(QDialog):
         pnames = {p.name for p in params}
         save_target = self._target.append_file if "name" in pnames else name
         return (f"{name} = {self._target.var}.{method}"
-                f"({', '.join(pos + kwargs)}).save({_q(save_target)})")
+                f"({', '.join(pos + kwargs)}).save({quoted(save_target)})")
 
     def generated_snippet(self) -> str:
         var  = self._target.var
@@ -669,7 +664,7 @@ class SnippetDialog(QDialog):
         name = self.name.text().strip()
 
         def kw(field, value):
-            return f", {field}={_q(value.strip())}" if value.strip() else ""
+            return f", {field}={quoted(value.strip())}" if value.strip() else ""
 
         if kind == KIND_TEXT:
             idx = max(self.source.currentIndex(), 0)
@@ -678,14 +673,14 @@ class SnippetDialog(QDialog):
             if method == "text":
                 content = self.text_edit.toPlainText()
                 lines.append(f"{name}_txt = "
-                             f"txt.text({_q(content)}).save({_q(name)})")
+                             f"txt.text({quoted(content)}).save({quoted(name)})")
             else:
                 res = self.result.currentText().strip()
                 lines.append(f"{name}_txt = "
-                             f"txt.{method}({res}).save({_q(name)})")
+                             f"txt.{method}({res}).save({quoted(name)})")
             lines.append(f"{name} = "
-                         f"{var}.file(sl.ini.txt_path + {_q(name + '.txt')})"
-                         f".save({_q(name)})")
+                         f"{var}.file(sl.ini.txt_path + {quoted(name + '.txt')})"
+                         f".save({quoted(name)})")
         elif kind in (KIND_FILE, KIND_OBJECT):
             lines = self._init_lines(need_txt=False)
             lines.append(self._emit_call(self._current_entry()[0], name))
@@ -693,7 +688,7 @@ class SnippetDialog(QDialog):
             lines = self._init_lines(need_txt=False)
             fname = self.spec_file.currentText().strip()
             specs_var = spec_var_name(fname)
-            load = f'{specs_var} = sl.csv2specs({_q(fname)})'
+            load = f'{specs_var} = sl.csv2specs({quoted(fname)})'
             if load not in self._instr_text:
                 lines.append(load)
             spectype = self.spec_type.currentText().strip()
@@ -704,7 +699,7 @@ class SnippetDialog(QDialog):
                 if frag is not None:
                     opts += ", " + frag[1]
             lines.append(f"{name} = {var}.specs({specs_var}, "
-                         f"{_q(spectype)}{opts}).save({_q(name)})")
+                         f"{quoted(spectype)}{opts}).save({quoted(name)})")
         return "\n".join(lines) + "\n"
 
 

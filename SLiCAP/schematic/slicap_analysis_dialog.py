@@ -21,14 +21,14 @@ import re
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QLabel,
+    QDialog, QHBoxLayout, QGridLayout, QGroupBox, QLabel,
     QLineEdit, QComboBox, QCheckBox, QDialogButtonBox,
 )
 
 from .par_source_table import ParSourceTable
 from .step_widget import StepWidget
-from .instr_file import next_result_name, parse_calls
-from .sizing import cap_chars, chars
+from .instr_file import next_result_name, parse_calls, quoted
+from .sizing import cap_chars, chars, scroll_body, fit_to_screen
 from .config import GROUND           # a detector side at node 0: None in the pair
 
 
@@ -173,7 +173,7 @@ class SLiCAPAnalysisDialog(QDialog):
             from . import app_prefs
             pardefs_preset = app_prefs.get_pardefs_preset()
 
-        layout = QVBoxLayout(self)
+        frame, layout, self._scroll = scroll_body(self)
 
         # ── help link ─────────────────────────────────────────────────────────
         from .doc_link import reference_url
@@ -352,7 +352,7 @@ class SLiCAPAnalysisDialog(QDialog):
         buttons.addButton("Close", QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        frame.addWidget(buttons)
 
         # ── wiring ────────────────────────────────────────────────────────────
         self._group.currentIndexChanged.connect(self._on_group_changed)
@@ -362,17 +362,12 @@ class SLiCAPAnalysisDialog(QDialog):
         self._open_to_fit_rows()
 
     def _open_to_fit_rows(self) -> None:
-        """Open tall enough to show every parameter row, capped at 90 % of
-        the screen; beyond the cap the table scrolls.  The user may still
-        resize: the table takes the stretch (Anton, 2026-11-01)."""
-        from PySide6.QtGui import QGuiApplication
-        extra = self._pd.rows_beyond_minimum_height()
-        hint = self.sizeHint()
-        height = hint.height() + extra
-        screen = self.screen() or QGuiApplication.primaryScreen()
-        if screen is not None:
-            height = min(height, int(screen.availableGeometry().height() * 0.9))
-        self.resize(max(hint.width(), self.minimumWidth()), height)
+        """Open tall enough to show every parameter row, capped by the
+        screen (sizing.fit_to_screen); beyond the cap the body scrolls.
+        The user may still resize: the table takes the stretch (Anton,
+        2026-11-01)."""
+        fit_to_screen(self, self._scroll,
+                      extra_height=self._pd.rows_beyond_minimum_height())
 
     # ── cascade handlers ──────────────────────────────────────────────────────
 
@@ -641,5 +636,5 @@ class SLiCAPAnalysisDialog(QDialog):
         # that reads it and is not repeated.
         var = self._pd.spec_var()
         if var and not re.search(r"^\s*" + re.escape(var) + r"\s*=", self._existing, re.M):
-            return f'{var} = sl.csv2specs("{self._pd.spec_file()}")\n{line}'
+            return f"{var} = sl.csv2specs({quoted(self._pd.spec_file())})\n{line}"
         return line

@@ -30,6 +30,12 @@ from SLiCAP.SLiCAPngspice import (MOS, ngspice2traces, selectTraces,
                                    NGspiceRaw2dict, RawFile, Analysis,
                                    instr2dataset)
 from SLiCAP.SLiCAPshell import *
+try:
+    # The system-level simulator is optional (SystemExtensionSpecs.md 13):
+    # the package works without SLiCAPsystem.py, as the editor does.
+    from SLiCAP.SLiCAPsystem import runSystem, createIIR, createFIR
+except ImportError:
+    pass
 from SLiCAP.SLiCAPhtml import *
 from SLiCAP.SLiCAPhtml import _startHTML
 from SLiCAP.SLiCAPkicad import backAnnotateSchematic
@@ -75,8 +81,8 @@ def startSchematic(config=None, file=None):
         - ``'ngspice'``: NGspice only, NGspice symbol library.  "New SLiCAP
           Schematic" is disabled.
 
-        In a restricted mode **File → Open** also lists only files of the
-        permitted type.
+        In a restricted mode **File → Open schematic…** also lists only files
+        of the permitted type.
 
     :type config: str or None
 

@@ -289,10 +289,8 @@ class SelectionDrag:
         moved_segs = [(QPointF(w.points[i]), QPointF(w.points[i + 1]))
                       for w, _ in self.wires if w.scene() is not None
                       for i in range(len(w.points) - 1)]
-        scene._sync_junctions()
-        scene._remove_short_circuit_wires()
-        scene._sync_junctions()
-        scene._reselect_on_footprint(moved_segs)
+        if scene._settle():
+            scene._reselect_on_footprint(moved_segs)
         scene.update()
         return True
 

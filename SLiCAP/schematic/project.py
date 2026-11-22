@@ -35,6 +35,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from . import dialects
+
 _base: Path | None = None          # the schematic path, or None when unsaved
 
 # The default project root — the directory holding the cir/ sch/ img/ lib/ and
@@ -116,23 +118,23 @@ def _has_project_ini(d: Path) -> bool:
 
 
 def doc_type(path) -> str:
-    """The document type of a canvas file by its suffix: 'ngspice'
-    (.spice_sch), 'poster' (.slicap_poster) or 'slicap' (.slicap_sch)."""
-    suffix = Path(path).suffix.lower()
-    if suffix == ".spice_sch":
-        return "ngspice"
-    if suffix == POSTER_SUFFIX:
+    """The document type of a canvas file by its suffix: 'poster'
+    (.slicap_poster) or the name of its dialect (dialects.py: 'slicap'
+    for .slicap_sch, 'ngspice' for .spice_sch, ...). An unknown suffix is
+    'slicap', as before."""
+    if Path(path).suffix.lower() == POSTER_SUFFIX:
         return "poster"
-    return "slicap"
+    return dialects.of_path(path).name
 
 
-SCHEMATIC_SUFFIXES = (".slicap_sch", ".spice_sch")
+SCHEMATIC_SUFFIXES = dialects.sch_suffixes()
 
 
 def project_schematics(root=None) -> list:
     """The schematic sources of the project, sorted: those of sch/ and then
-    those of lib/ (the subcircuit packages). What Place -> Schematic
-    offers (Anton, 2026-10-09: the subcircuits of a figure live in lib/)."""
+    those of lib/ (the subcircuit packages). What Insert -> Schematic...
+    offers on a poster (Anton, 2026-10-09: the subcircuits of a figure
+    live in lib/)."""
     base = Path(root) if root is not None else project_root()
     out = []
     for name in ("sch", "lib"):

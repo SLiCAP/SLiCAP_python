@@ -42,6 +42,11 @@ _NO_BRACES = {"noisy", "off"}
 # _element_lines) and therefore excluded from all param output here.
 _SKIP_PARAMS = {"onoff"}
 
+# Devices whose initial state "off" is the instance parameter onoff of
+# SLiCAPprotos.py (2026-11-20, the NGspice symbols carry every parameter of
+# that list): 0 writes the keyword off, 1 or empty leaves the default, on.
+_OFF_DEVICES = {"D", "Q", "J", "Z", "M"}
+
 
 def _convert_braced(text: str) -> str:
     """Convert every ``{…}`` group of a composed waveform string.
@@ -83,6 +88,11 @@ def _wrap(value: str, key: str = "") -> str:
     v = value.strip()
     if not v or key in _NO_BRACES:
         return _replaceScaleFactors(v)
+    if key.lower() == "ic" and "," in v:
+        # an initial condition of several values, vbe,vce of a BJT,
+        # vds,vgs,vbs of a MOSFET or v1,i1,v2,i2 of a transmission line
+        # (SLiCAPprotos.py): each one converted
+        return ",".join(_deck_expr(part.strip(), key) for part in v.split(","))
     return _deck_expr(v, key or "value")
 
 
@@ -221,6 +231,13 @@ def _element_lines(components: list, node_fn) -> list[str]:
         if prefix in ("S", "W"):
             onoff = params.get("onoff", "0").strip()
             parts.append("ON" if onoff == "1" else "OFF")
+        elif prefix in _OFF_DEVICES:
+            onoff = params.get("onoff", "").strip()
+            if onoff == "0":
+                parts.append("off")
+            elif onoff not in ("", "1"):
+                errors.append(f"{cid}: onoff is 0 (off) or 1 (on), not '{onoff}'.")
+                continue
 
         lines.append(" ".join(parts))
 

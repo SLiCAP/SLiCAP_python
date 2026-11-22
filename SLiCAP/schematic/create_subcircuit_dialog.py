@@ -1,11 +1,15 @@
 """
-Create-subcircuit dialog (File → Save with the "Subcircuit" box ticked).
+Create-subcircuit dialog (File → Save schematic with the "Subcircuit" box
+ticked).
 
-Shows the subcircuit name (the document title; editable from "Save as", where
-a new name saves a copy of the package under that name; read-only from "Save",
-which opens the dialog only while the node order is unsettled, Anton
-2026-10-09), the ordered list of port nodes (reorderable — the order here *is*
-the .subckt node order), and an editable table of overridable parameters.  On accept the window writes the schematic and the
+Shows the subcircuit name, the ordered list of port nodes (reorderable — the
+order here *is* the .subckt node order), and an editable table of overridable
+parameters. The name is the document title. "Save as" makes it editable: a
+new name saves a copy of the package under that name (Anton, 2026-10-09).
+"Save" opens the dialog while the node order is unsettled or while the title
+is not a valid name. It keeps a valid name read-only. An empty or invalid name
+is editable, so that the save can finish (2026-10-23, 2026-11-22).
+:func:`subcircuit.is_subckt_name` owns the name rule.  On accept the window writes the schematic and the
 subcircuit library, type-tagged so a SLiCAP and an NGspice device of the same
 name don't collide: ``<title>.slicap_sch`` + ``<title>.slicap_lib`` for
 SLiCAP schematics, ``<title>.spice_sch`` + ``<title>.spice_lib`` for NGspice
@@ -13,11 +17,13 @@ SLiCAP schematics, ``<title>.spice_sch`` + ``<title>.spice_lib`` for NGspice
 """
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QLineEdit, QListWidget, QPushButton, QTableWidget,
+    QLabel, QLineEdit, QListWidget, QPushButton,
     QTableWidgetItem, QDialogButtonBox, QMessageBox,
 )
 from PySide6.QtCore import Qt
+from .row_table import RowTable
 from .sizing import chars
+from .subcircuit import is_subckt_name
 
 
 class CreateSubcircuitDialog(QDialog):
@@ -43,11 +49,14 @@ class CreateSubcircuitDialog(QDialog):
             "The .subckt name and the stem of the files in lib/.\n"
             "Another name saves a copy of the subcircuit under that name.")
         # Save keeps the name: the dialog then only settles the node order
-        # (a new port). Save as makes it editable. A subcircuit without a
-        # name yet, the first save, has no name to keep: the field is
-        # editable then, whatever the caller asked (Anton, 2026-10-23: the
-        # read-only empty field could not be filled and the save was stuck).
-        self._name.setReadOnly(not name_editable and bool(name.strip()))
+        # (a new port). Save as makes it editable. Only a name that Create
+        # Subcircuit accepts can be kept. Any other name is editable,
+        # whatever the caller asked. That is an empty name on the first
+        # save (Anton, 2026-10-23: the read-only empty field could not be
+        # filled and the save was stuck). It is also a Title that is not
+        # a valid name, such as "Input stage" (2026-11-22: the same
+        # dead end, the locked name was refused).
+        self._name.setReadOnly(not name_editable and is_subckt_name(name.strip()))
         head.addWidget(self._name, 0, 1)
         outer.addLayout(head)
 
@@ -78,23 +87,33 @@ class CreateSubcircuitDialog(QDialog):
             outer.addWidget(warn)
 
         # ── parameters ─────────────────────────────────────────────────────────
-        outer.addWidget(QLabel("Parameters (overridable defaults):"))
-        self._params = QTableWidget(0, 2)
-        self._params.setHorizontalHeaderLabels(["Name", "Default"])
-        self._params.horizontalHeader().setStretchLastSection(True)
-        for pair in (params or []):
-            self._add_param_row(*(list(pair) + ["", ""])[:2])
-        outer.addWidget(self._params)
+        # *params* None: the block's parameters are the sheet's parameter
+        # table, not a list of their own (a system diagram, whose block
+        # is its diagram; SystemExtensionSpecs.md 10.4.6)
+        self._params = None
+        if params is None:
+            note = QLabel("Parameters: the sheet's parameter table (Insert > "
+                          "Parameters) declares them, with their defaults.")
+            note.setWordWrap(True)
+            outer.addWidget(note)
+        else:
+            outer.addWidget(QLabel("Parameters (overridable defaults):"))
+            self._params = RowTable(0, 2, add_row=lambda: self._add_param_row("", ""))
+            self._params.setHorizontalHeaderLabels(["Name", "Default"])
+            self._params.horizontalHeader().setStretchLastSection(True)
+            for pair in params:
+                self._add_param_row(*(list(pair) + ["", ""])[:2])
+            outer.addWidget(self._params)
 
-        param_btns = QHBoxLayout()
-        add_btn = QPushButton("Add parameter")
-        del_btn = QPushButton("Remove")
-        add_btn.clicked.connect(lambda: self._add_param_row("", ""))
-        del_btn.clicked.connect(self._remove_param_row)
-        param_btns.addWidget(add_btn)
-        param_btns.addWidget(del_btn)
-        param_btns.addStretch(1)
-        outer.addLayout(param_btns)
+            param_btns = QHBoxLayout()
+            add_btn = QPushButton("Add parameter")
+            del_btn = QPushButton("Remove")
+            add_btn.clicked.connect(lambda: self._add_param_row("", ""))
+            del_btn.clicked.connect(self._remove_param_row)
+            param_btns.addWidget(add_btn)
+            param_btns.addWidget(del_btn)
+            param_btns.addStretch(1)
+            outer.addLayout(param_btns)
 
         # ── actions ────────────────────────────────────────────────────────────
         buttons = QDialogButtonBox(QDialogButtonBox.Cancel)
@@ -133,9 +152,7 @@ class CreateSubcircuitDialog(QDialog):
 
     def _on_create(self) -> None:
         name = self.name()
-        # A netlist identifier (SLiCAPlex t_ID): a letter, then word
-        # characters. The same rule in both dialects, and a safe file stem.
-        if not (name and name[0].isalpha() and name.isidentifier()):
+        if not is_subckt_name(name):
             QMessageBox.warning(
                 self, "Subcircuit name",
                 f"'{name}' is not a valid subcircuit name.\n"
@@ -158,6 +175,8 @@ class CreateSubcircuitDialog(QDialog):
         return [self._ports.item(i).text() for i in range(self._ports.count())]
 
     def params(self) -> list[list[str]]:
+        if self._params is None:
+            return []
         out: list[list[str]] = []
         for r in range(self._params.rowCount()):
             name = (self._params.item(r, 0) or QTableWidgetItem()).text().strip()

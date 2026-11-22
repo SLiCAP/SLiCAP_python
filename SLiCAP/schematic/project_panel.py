@@ -50,13 +50,15 @@ from . import app_prefs
 from .instr_file import write_main_py
 from .sizing import chars
 
-_SCHEMATIC_SUFFIXES = ('.slicap_sch', '.spice_sch', '.slicap_poster')
-_SYMBOL_SUFFIXES    = ('.slicap_sym', '.spice_sym')     # open in the symbol editor
+from . import dialects
+
+_SCHEMATIC_SUFFIXES = dialects.sch_suffixes() + ('.slicap_poster',)
+_SYMBOL_SUFFIXES    = dialects.sym_suffixes()           # open in the symbol editor
 
 # Compound suffixes that must not be lumped with their plain suffix: a
 # schematic sidecar .slicap_sch.ini is a different type key than a user
 # .ini (Anton, 2026-07-11: exclusions are per type PER DIRECTORY).
-_COMPOUND_SUFFIXES = ('.slicap_sch.ini', '.spice_sch.ini')
+_COMPOUND_SUFFIXES = tuple(ext + '.ini' for ext in dialects.sch_suffixes())
 
 
 def type_key(name: str) -> str:
@@ -265,7 +267,7 @@ class ProjectPanel(QDockWidget):
         dependency graph is an ACDE Phase-2 (project index) concern."""
         name = path.name
         scan_ext = {".py", ".cir", ".slicap_cir", ".spice_cir", ".net",
-                    ".slicap_sch", ".spice_sch", ".slicap_poster",
+                    *dialects.sch_suffixes(), ".slicap_poster",
                     ".sch", ".tex", ".rst", ".csv", ".lib"}
         refs = []
         root = Path(self._root)
@@ -327,7 +329,17 @@ class ProjectPanel(QDockWidget):
 
 
 class NewProjectDialog(QDialog):
-    """Collects name/directory/author and creates the project (SLNG.md Q4–Q6).
+    """Collects name/folder/author and creates the project (SLNG.md Q4–Q6).
+
+    The project folder is a folder name in a location (Anton, 2026-11-21):
+    the location is an existing folder, chosen with Browse; the folder
+    name is typed; a read-only line shows the resulting project folder
+    before Create project. One field for both a path and a bare folder
+    name, with a second folder dialog for the bare name, was REPLACED: Browse
+    overwrote the typed name, and the second dialog started in the
+    program's working folder, so a project landed in ~/test instead of
+    ~/DATA/test. The project name is only the
+    project's title, never a folder name.
 
     After ``exec()`` returns Accepted, ``project_dir`` holds the created
     project directory."""
@@ -342,15 +354,33 @@ class NewProjectDialog(QDialog):
         self._name = QLineEdit(self)
         layout.addRow("Project name:", self._name)
 
-        self._dir = QLineEdit(directory or "", self)
+        # a given folder (Select project folder on a folder without a
+        # project): the location is its parent, the folder name its name
+        given = Path(directory).expanduser() if directory else None
+        self._location = QLineEdit(str(given.parent if given else Path.home()), self)
+        self._location.setToolTip("An existing folder in which the project folder is made.")
         browse = QPushButton("Browse…", self)
         browse.clicked.connect(self._on_browse)
         row = QWidget(self)
         h = QHBoxLayout(row)
         h.setContentsMargins(0, 0, 0, 0)
-        h.addWidget(self._dir)
+        h.addWidget(self._location)
         h.addWidget(browse)
-        layout.addRow("Project directory:", row)
+        layout.addRow("Location:", row)
+
+        self._folder = QLineEdit(given.name if given else "", self)
+        self._folder.setToolTip("The name of the project folder, made in the location.")
+        layout.addRow("Folder name:", self._folder)
+
+        # A display of the result, empty until location and folder name make
+        # a folder. Showing what is missing there ("Enter a folder name.")
+        # was tried and REVERTED (Anton, 2026-11-21): it read as a comment on
+        # an input; Create project names what is missing.
+        self._result = QLabel(self)
+        self._result.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        layout.addRow("Project folder:", self._result)
+        self._location.textChanged.connect(self._show_result)
+        self._folder.textChanged.connect(self._show_result)
 
         self._author = QLineEdit(ini.author, self)
         layout.addRow("Author:", self._author)
@@ -363,21 +393,41 @@ class NewProjectDialog(QDialog):
         buttons.accepted.connect(self._on_create)
         buttons.rejected.connect(self.reject)
         layout.addRow(buttons)
+        self._show_result()
+
+    def _target(self) -> "tuple[Path | None, str]":
+        """(the project folder, "") or (None, what is missing or wrong)."""
+        location = Path(self._location.text().strip()).expanduser()
+        folder = self._folder.text().strip()
+        if not self._location.text().strip():
+            return None, "Choose a location."
+        if not location.is_absolute() or not location.is_dir():
+            return None, "The location must be an existing folder."
+        if not folder:
+            return None, "Enter a folder name."
+        if any(sep in folder for sep in ("/", "\\")) or folder in (".", ".."):
+            return None, "The folder name is one name, without / or \\."
+        return location / folder, ""
+
+    def _show_result(self) -> None:
+        target, _problem = self._target()
+        self._result.setText(str(target) if target is not None else "")
 
     def _on_browse(self) -> None:
-        folder = QFileDialog.getExistingDirectory(
-            self, "Select Project Directory", self._dir.text() or os.getcwd())
+        start = self._location.text().strip() or str(Path.home())
+        folder = QFileDialog.getExistingDirectory(self, "Location of the project folder", start)
         if folder:
-            self._dir.setText(folder)
+            self._location.setText(folder)
 
     def _on_create(self) -> None:
         name = self._name.text().strip()
-        folder = self._dir.text().strip()
-        if not name or not folder:
-            QMessageBox.warning(self, "New project",
-                                "Please enter a project name and directory.")
+        if not name:
+            QMessageBox.warning(self, "New project", "Enter a project name.")
             return
-        folder = Path(folder)
+        folder, problem = self._target()
+        if folder is None:
+            QMessageBox.warning(self, "New project", problem)
+            return
         try:
             folder.mkdir(parents=True, exist_ok=True)
         except OSError as e:
@@ -402,9 +452,11 @@ class NewProjectDialog(QDialog):
         # directory as cwd — initProject() builds the structure there.
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
-            proc = subprocess.run([sys.executable, main_py.name],
+            from .child_process import NO_WINDOW, python
+            proc = subprocess.run([python(), main_py.name],
                                   cwd=str(folder), capture_output=True,
-                                  text=True, timeout=300)
+                                  text=True, timeout=300,
+                                  creationflags=NO_WINDOW)
         except (OSError, subprocess.TimeoutExpired) as e:
             QApplication.restoreOverrideCursor()
             QMessageBox.critical(self, "New project",

@@ -3,6 +3,37 @@ import os
 import sys
 
 
+def app_icon():
+    """The icon of SLiCAP, the nullor on a light badge (Anton, 2026-11-20),
+    in every size of SLiCAP/files/icons: Qt takes the one it needs for the
+    title bar, the taskbar and the task switcher. The files come from
+    slicap.svg through tools/make_icons.py."""
+    from pathlib import Path
+    from PySide6.QtGui import QIcon
+    icon = QIcon()
+    folder = Path(__file__).resolve().parent.parent / "files" / "icons"
+    for png in sorted(folder.glob("slicap_*.png")):
+        icon.addFile(str(png))
+    return icon
+
+
+def setup_application(app) -> None:
+    """The names and the icon by which the system knows the GUI: the same
+    names as its shortcut (shortcut.py, Help > Create shortcut), so the
+    taskbar or the dock shows a running SLiCAP under its own icon. Called
+    before any window is shown."""
+    from .shortcut import APP_ID, DESKTOP_ID, WM_CLASS
+    if sys.platform == "win32":
+        # Windows shows a Python program in the taskbar as python.exe, with
+        # the Python icon. An application id of its own gives SLiCAP a
+        # taskbar button of its own, with the window icon.
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+    app.setApplicationName(WM_CLASS)        # the window class on X11
+    app.setDesktopFileName(DESKTOP_ID)      # the application id on Wayland
+    app.setWindowIcon(app_icon())
+
+
 def resolve_schematic_only_mode(argv: list[str] | None = None) -> bool:
     """Resolve whether the launcher should open the schematic-only UI.
 
@@ -47,11 +78,10 @@ def resolve_startup_config(config: str | None, file: str | None) -> str | None:
 def _infer_schematic_kind(file: str | None) -> str | None:
     if file is None:
         return None
-    suffix = file.lower().rsplit(".", 1)[-1] if "." in file else ""
-    if suffix == "slicap_sch":
-        return "slicap"
-    if suffix == "spice_sch":
-        return "ngspice"
+    # absolute import: the launcher is also loaded as a stand-alone module
+    from SLiCAP.schematic.dialects import is_schematic, of_path
+    if is_schematic(file):
+        return of_path(file).name
     return None
 
 
@@ -117,7 +147,30 @@ def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
     return parser
 
 
+GUI_LOG = "gui.log"           # in ~/SLiCAP: the output of a GUI without a console
+
+
+def streams_without_console() -> None:
+    """Give a GUI without a console somewhere to write. pythonw.exe, which
+    the shortcut of Help > Create shortcut starts on Windows, sets
+    sys.stdout and sys.stderr to None. faulthandler.enable() then raised
+    at once, and SLiCAP did not start, without a message (Anton,
+    2026-11-20, Windows 10 with Anaconda). The output goes to
+    ~/SLiCAP/gui.log instead, the crash report of faulthandler too. The
+    file is new at every start. With a console nothing changes."""
+    if sys.stdout is not None and sys.stderr is not None:
+        return
+    folder = os.path.join(os.path.expanduser("~"), "SLiCAP")
+    os.makedirs(folder, exist_ok=True)
+    log = open(os.path.join(folder, GUI_LOG), "w", encoding="utf-8", buffering=1)
+    if sys.stdout is None:
+        sys.stdout = log
+    if sys.stderr is None:
+        sys.stderr = log
+
+
 def main():
+    streams_without_console()
     # A crash inside Qt (a segmentation fault) kills the process without a
     # Python traceback. faulthandler prints the Python frames of every
     # thread to the real stderr at that moment, so the console shows WHERE
@@ -194,6 +247,7 @@ def main():
     from PySide6.QtCore import QLoggingCategory
     QLoggingCategory.setFilterRules("qt.svg.warning=false")
     app = QApplication(sys.argv)
+    setup_application(app)
     from . import app_prefs
     app_prefs.apply_color_scheme(app)
 

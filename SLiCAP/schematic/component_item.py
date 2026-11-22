@@ -11,15 +11,12 @@ from . import config
 from .config import snap, style_of, default_style, SELECTION_MARGIN, selection_pen
 
 
-def _sign(v: float) -> float:
-    return 0.0 if v == 0 else (1.0 if v > 0 else -1.0)
-
-
 # Pin-name labels (subcircuit blocks): the generated box has stubs of this length
 # (see subcircuit._STUB), so the outline edge at a pin is the pin minus one stub.
 # Names sit this far inside that edge.
 _SUBCKT_STUB     = 10.0
-_PIN_LABEL_MARGIN = 4.0
+_PIN_LABEL_MARGIN = 6.0   # 4.0 until 2026-11-18; Anton: 0.2 grid step more room
+                          # between a pin's arrowhead or mark and its name
 
 
 def _pin_name_font(style) -> QFont:
@@ -30,35 +27,85 @@ def _pin_name_font(style) -> QFont:
 
 
 def draw_subckt_pin_names(painter, nodes, pins, rotation=0.0,
-                          h_flip=False, v_flip=False, style=None) -> None:
+                          h_flip=False, v_flip=False, style=None,
+                          box=None) -> None:
     """Draw subcircuit pin names just inside the outline, one per pin.
 
     Each name is counter-transformed so it stays horizontal and unmirrored under
     any rotation/flip, and anchored to grow inward from its box edge so it never
     pokes out.  Shared by ComponentItem.paint and the Place Subcircuit preview.
+    (A larger margin for clock pins alone was tried and REVERTED the same day,
+    2026-11-18: the room is the same for every pin.)
+
+    *box* is the symbol's outline (Symbol.pin_box), from which
+    pin_sides() takes the side of each pin.
     """
     style = style or default_style()
     ct = _counter_transform(rotation, h_flip, v_flip)
-    font = _pin_name_font(style)
-    fm = QFontMetricsF(font)
     painter.save()
     painter.setPen(style.SYMBOL_TEXT_COLOR)
-    painter.setFont(font)
-    for (px, py), name in zip(pins, nodes):
-        if abs(px) >= abs(py):                       # left / right pin
-            edge = px - _sign(px) * _SUBCKT_STUB
-            ax = edge - _sign(px) * (fm.horizontalAdvance(name) / 2 + _PIN_LABEL_MARGIN)
-            ay = py
-        else:                                        # top / bottom pin
-            edge = py - _sign(py) * _SUBCKT_STUB
-            ax = px
-            ay = edge - _sign(py) * (fm.height() / 2 + _PIN_LABEL_MARGIN)
+    painter.setFont(_pin_name_font(style))
+    for name, ax, ay in subckt_pin_name_anchors(nodes, pins, box, style):
         painter.save()
         painter.translate(ax, ay)
         painter.setTransform(ct, True)
         painter.drawText(QRectF(-100, -20, 200, 40), Qt.AlignCenter, name)
         painter.restore()
     painter.restore()
+
+
+def subckt_pin_name_anchors(nodes, pins, box=None, style=None) -> list:
+    """The centre of every pin name, ``(name, x, y)`` in symbol coordinates:
+    just inside the outline, grown inward from the edge of the pin's side
+    (pin_sides), so that a name never pokes out of the box.
+
+    ONE placement for the canvas (draw_subckt_pin_names) and the export
+    (export.py). The export wrote no pin names until 2026-11-21: the canvas
+    draws them in paint(), outside the symbol artwork, and the blocks of an
+    exported system sheet came out empty (Anton)."""
+    style = style or default_style()
+    fm = QFontMetricsF(_pin_name_font(style))
+    anchors = []
+    for (px, py), name, side in zip(pins, nodes, pin_sides(pins, box)):
+        out = -1.0 if side in ("left", "top") else 1.0     # away from the box
+        if side in ("left", "right"):
+            edge = px - out * _SUBCKT_STUB
+            ax = edge - out * (fm.horizontalAdvance(name) / 2 + _PIN_LABEL_MARGIN)
+            ay = py
+        else:                                        # top / bottom pin
+            edge = py - out * _SUBCKT_STUB
+            ax = px
+            ay = edge - out * (fm.height() / 2 + _PIN_LABEL_MARGIN)
+        anchors.append((name, ax, ay))
+    return anchors
+
+
+def pin_sides(pins, box=None) -> list:
+    """The side of the symbol each pin is on, "left", "right", "top" or
+    "bottom" (see draw_subckt_pin_names).
+
+    *box* is the outline of a generated box, ``(x, y, width, height)``
+    (Symbol.pin_box). A pin sits one stub beyond the edge of its own side
+    and inside the other two, so its side is the edge it is further
+    beyond: exact for every box. Without a box the quadrant from the
+    origin decides (|x| >= |y|: left or right), the rule of 6.4.7.
+
+    The quadrant rule alone put the name of the first bottom pin of a
+    filter block with three parameters, at (-40, 40), beside the stub
+    (Anton, 2026-11-19). The nearest side of the span of the pins
+    REPLACED it on 2026-11-19 and was REPLACED on 2026-11-20 (an audit
+    of the 6.4.8 changes): a default box of one, two or three pins has
+    no pin on its left, so its top pin tied, was taken for a left pin,
+    and got its name on the pin, outside the box."""
+    x, y, w, h = box if box is not None else (0.0, 0.0, 0.0, 0.0)
+    cx, cy, hw, hh = x + w / 2, y + h / 2, w / 2, h / 2
+    sides = []
+    for px, py in pins:
+        if abs(px - cx) - hw >= abs(py - cy) - hh:
+            sides.append("left" if px < cx else "right")
+        else:
+            sides.append("top" if py < cy else "bottom")
+    return sides
 
 
 def _counter_transform(rotation: float, h_flip: bool, v_flip: bool) -> "QTransform":
@@ -298,6 +345,32 @@ def strip_braces(value: str) -> str:
     return s
 
 
+# ── derived labels ─────────────────────────────────────────────────────────
+# A derived label shows a value the editor computes or a run produced, not
+# one the user entered: the operating-point current of an NGspice source
+# or inductor, the clock frequencies of a system diagram. ONE text form and
+# ONE style for all of them (Anton, 2026-11-17): "name: value" in the bias
+# font and colour. "name: —" is greyed and italic while the value is not
+# available. A value is greyed and italic while it is stale or provisional
+# (the master tick of a clock scheme before a block is clocked). Italic for
+# a stale value is decided (Anton, 2026-11-22). The export writes the same
+# face (export._font_face). A derived label never shows "?", which marks a
+# value the user must enter.
+
+def _derived_text(derived) -> str:
+    name, value, _stale = derived
+    return "%s: %s" % (name, "—" if value is None else value)
+
+
+def _derived_style(derived, style):
+    from PySide6.QtGui import QFont as _QFont
+    _name, value, stale = derived
+    dimmed = value is None or stale
+    font = _QFont(style.BIAS_FONT)
+    font.setItalic(dimmed)
+    return font, (QColor("#909090") if dimmed else style.BIAS_COLOR)
+
+
 def wrap_braces(value: str) -> str:
     """Wrap a parameter value in {…} unless already wrapped; empty stays empty.
 
@@ -521,17 +594,9 @@ class _PropertyLabel(QGraphicsItem):
         if (self.prop_key == "name" and parent is not None
                 and parent.symbol_name in NODE_SYMBOLS):
             return style.NET_LABEL_FONT, style.NET_LABEL_COLOR
-        if self.prop_key == "dc_current":
-            from PySide6.QtGui import QFont as _QFont
-            parent = self.parentItem()
-            scene = self.scene()
-            value = (scene.dc_current(parent.instance_id)
-                     if parent is not None and hasattr(scene, "dc_current")
-                     else None)
-            dimmed = value is None or getattr(scene, "op_stale", False)
-            font = _QFont(style.BIAS_FONT)
-            font.setItalic(dimmed)
-            return font, (QColor("#909090") if dimmed else style.BIAS_COLOR)
+        derived = parent._derived(self.prop_key) if parent is not None else None
+        if derived is not None:
+            return _derived_style(derived, style)
         return style.COMP_PARAM_FONT, style.COMP_PARAM_COLOR
 
     def content_rect(self) -> QRectF:
@@ -872,7 +937,18 @@ class ComponentItem(_ViewBoxSvgItem):
         # dialog enabled it (prop_display); never offered elsewhere.
         if self.symbol.prefix in ("V", "L"):
             keys.append("dc_current")
+        # Derived, read-only labels from the scene's annotator (the clock
+        # frequencies of a system diagram, 2026-11-17).
+        keys += [k for k in self._annotations() if k not in keys]
         return keys
+
+    def _annotations(self) -> dict:
+        """The derived labels of this component from the scene's annotator,
+        ``{key: value text or None}`` (SchematicScene.refresh_annotations)."""
+        scene = self.scene()
+        if scene is None:
+            return {}
+        return getattr(scene, "annotations", {}).get(self.instance_id, {})
 
     def _prop_value(self, key: str) -> str:
         """Raw value string for a property key."""
@@ -929,7 +1005,26 @@ class ComponentItem(_ViewBoxSvgItem):
         self.prop_offsets = {k: tuple(v) for k, v in offsets.items()}
 
     def update_labels(self) -> None:
-        """Rebuild visible property labels from prop_display."""
+        """Rebuild visible property labels from prop_display.
+
+        In a schematic that renders LaTeX in the background (the editor's:
+        SchematicScene.latex_in_background), a label whose picture is not
+        in the render cache shows its plain text, and the scene calls this
+        again when the worker has made the picture (SchematicScene.
+        await_labels; Anton, 2026-11-20: "With MikTeX it can be really slow
+        so users think it locks up")."""
+        scene = self.scene()
+        if scene is None or not getattr(scene, "latex_in_background", False):
+            self._build_labels()
+            return
+        from .latex_label import cache_dir_of, deferred_renders
+        with deferred_renders(cache_dir_of(self)) as deferred:
+            self._build_labels()
+        if deferred.paths:
+            scene.await_labels(self, deferred.cache)
+
+    def _build_labels(self) -> None:
+        """The labels of update_labels(), rendered or as plain text."""
         from .latex_label import (
             LATEX_INSTALLED, cache_dir_of, is_expression,
             render_expression, render_name_eq_value,
@@ -955,23 +1050,40 @@ class ComponentItem(_ViewBoxSvgItem):
             _discard_label(lbl)
         self._labels.clear()
 
-        # Ensure a default offset exists for every known property.
+        # Ensure an offset exists for every known property. A new label
+        # follows its siblings: it goes one line under the previous label,
+        # in that label's column, so that a parameter added later (the
+        # fields of another waveform of a signal source) lands where the
+        # user keeps the labels and not in the default column they were
+        # dragged away from (Anton, 2026-11-17: "a mess"). With nothing
+        # moved this equals the default column.
+        prev = None
         for i, key in enumerate(self._all_prop_keys()):
             if key not in self.prop_offsets:
-                self.prop_offsets[key] = self._default_label_offset(i)
+                if prev in self.prop_offsets:
+                    px, py = self.prop_offsets[prev]
+                    self.prop_offsets[key] = (px, py + _DEFAULT_LABEL_STEP)
+                else:
+                    self.prop_offsets[key] = self._default_label_offset(i)
+            prev = key
 
+        annotations = self._annotations()
         for key in self._all_prop_keys():
-            show_val, show_name = self.prop_display.get(key, (False, False))
+            show_val, show_name = self.prop_display.get(key, (key in annotations, False))
+            # (a derived label shows unless the user hid it; dc_current is
+            # offered to the Properties dialog and shown only when enabled)
             if not show_val:
                 continue
 
-            if key == "dc_current":
+            derived = self._derived(key)
+            if derived is not None:
                 lbl = _PropertyLabel(key, self)
-                lbl.set_text(self._dc_current_text())
-                lbl.setToolTip(
-                    "DC operating-point current i(%s) — NGspice convention: "
-                    "measured INTO the + terminal (a source driving a load "
-                    "reads negative)" % self.instance_id)
+                lbl.set_text(_derived_text(derived))
+                if key == "dc_current":
+                    lbl.setToolTip(
+                        "DC operating-point current i(%s) — NGspice convention: "
+                        "measured INTO the + terminal (a source driving a load "
+                        "reads negative)" % self.instance_id)
                 lbl.setPos(self._label_local(self.prop_offsets[key]))
                 lbl.setTransform(_counter_transform(self.rotation(),
                                                     self.h_flip, self.v_flip))
@@ -1009,8 +1121,10 @@ class ComponentItem(_ViewBoxSvgItem):
             # Parameter values are LaTeX expressions by default: the user enters
             # the bare expression and the braces that mark it as an expression
             # are added here for rendering (refdes/model/refs are left as-is).
-            # Power symbols' "name" param is a net name, not an expression.
-            is_param = key in self.params and self.symbol_name not in NODE_SYMBOLS
+            # Power symbols' "name" param is a net name, not an expression, and
+            # a symbol declares its other name-valued parameters (data-names).
+            is_param = (key in self.params and self.symbol_name not in NODE_SYMBOLS
+                        and key not in self.symbol.name_params)
             render_val = wrap_braces(raw_val) if is_param else raw_val
 
             if is_expression(render_val):
@@ -1048,16 +1162,28 @@ class ComponentItem(_ViewBoxSvgItem):
             lbl.setTransform(_counter_transform(self.rotation(), self.h_flip, self.v_flip))
             self._labels[key] = lbl
 
-    def _dc_current_text(self) -> str:
-        """The "I: <value>" bias annotation from the scene's op store —
-        placeholder "I: —" until an unstepped op run made values available."""
+    def _derived(self, key):
+        """The derived label *key* as ``(name, value text or None, stale)``
+        for _derived_text and _derived_style, or None when *key* is not a
+        derived label. ``dc_current`` comes from the scene's op store
+        (placeholder until an unstepped op run made values available,
+        stale after a netlist-relevant edit); every other derived label
+        from the scene's annotator (SchematicScene.refresh_annotations)."""
         scene = self.scene()
-        value = (scene.dc_current(self.instance_id)
-                 if hasattr(scene, "dc_current") else None)
-        if value is None:
-            return "I: —"
-        from SLiCAP.SLiCAPlex import _eng_notation
-        return f"I: {_eng_notation(value, style_of(self).BIAS_DIGITS)}"
+        if key == "dc_current":
+            value = (scene.dc_current(self.instance_id)
+                     if hasattr(scene, "dc_current") else None)
+            if value is not None:
+                from SLiCAP.SLiCAPlex import _eng_notation
+                value = _eng_notation(value, style_of(self).BIAS_DIGITS)
+            return ("I", value, getattr(scene, "op_stale", False))
+        annotations = self._annotations()
+        if key in annotations:
+            value = annotations[key]
+            if isinstance(value, tuple):         # (text, True): provisional
+                return (key, value[0], bool(value[1]))
+            return (key, value, False)
+        return None
 
     def refresh_svg_labels(self) -> None:
         """Re-scale all SVG-mode labels using the style's LABEL/PARAM SVG heights.
@@ -1193,7 +1319,7 @@ class ComponentItem(_ViewBoxSvgItem):
                 self.symbol.nodes,
                 self.symbol.pins,
                 self.rotation(), self.h_flip, self.v_flip,
-                style=style,
+                style=style, box=self.symbol.pin_box,
             )
 
         # Dashed leader lines from the symbol centre to its attribute labels,

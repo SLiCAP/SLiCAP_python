@@ -6,7 +6,7 @@ Interface with NGspice
 
 SLiCAP runs NGspice simulations from a Python script and turns the results into traces, measurements and plots. It requires:
 
-#. `NGspice <https://ngspice.sourceforge.io/>`_ for circuit simulation (`NGspice manual <https://ngspice.sourceforge.io/docs/ngspice-manual.pdf>`_); its location is set in the ``[commands]`` section of the SLiCAP configuration file (see `Installation <install.html>`_).
+#. `NGspice <https://ngspice.sourceforge.io/>`_ for circuit simulation (`NGspice manual <https://ngspice.sourceforge.io/docs/ngspice-manual.pdf>`_); its location is set in the ``[commands]`` section of the SLiCAP configuration file (see `Installation <install.html>`_). Under MS-Windows, use ``ngspice_con.exe``, which runs without a window. ``ngspice.exe`` opens a window of its own at every run.
 #. An NGspice schematic (``.spice_sch``), drawn with the SLiCAP schematic editor and its NGspice symbol library, or a hand-written netlist ``cir/<name>.cir``. ``makeCircuit()`` writes the netlist of the schematic to ``cir/<name>.spice_cir``; the instructions name the circuit and run that file, or ``cir/<name>.cir`` when there is no ``.spice_cir``. See `NGspice schematics <../../GUI/schematics/schematic.html>`_ in the GUI manual.
 
 Supported analysis

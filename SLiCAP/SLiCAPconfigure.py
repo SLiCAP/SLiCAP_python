@@ -138,6 +138,7 @@ def _generate_project_config():
     project_config = configparser.ConfigParser()
     project_config['math']         = {"laplace"               : "s",
                                     "frequency"             : "f",
+                                    "z"                     : "z",
                                     "numer"                 : "MECPP",
                                     "denom"                 : "MECPP",
                                     "pz_method"             : "det",
@@ -164,7 +165,8 @@ def _generate_project_config():
                                     "cursorfontsize"        : 10,
                                     "cursorbgcolor"         : "lightyellow",
                                     "subplothspace"         : 0.45,
-                                    "subplotwspace"         : 0.3
+                                    "subplotwspace"         : 0.3,
+                                    "plotpoints"            : 4000
                                     }                            
     project_config['gaincolors']   = {"asymptotic"            : "r",
                                     "gain"                  : "b",
@@ -567,6 +569,7 @@ def dump(section="all"):
         print("----")
         print('ini.laplace                =', laplace)
         print('ini.frequency              =', frequency)
+        print('ini.z                      =', z)
         print('ini.numer                  =', numer)
         print('ini.denom                  =', denom)
         print('ini.pz_method              =', pz_method)
@@ -686,6 +689,9 @@ eng_notation          = eval(project_config['display']['engnotation'])
 
 laplace               = Symbol(project_config['math']['laplace'])
 frequency             = Symbol(project_config['math']['frequency'])
+# z-domain variable of discrete-time transfer functions (2026-11-16).
+# Project ini files written before this key exist: default "z".
+z                     = Symbol(project_config['math'].get('z', 'z'))
 numer                 = project_config['math']['numer']
 denom                 = project_config['math']['denom']
 pz_method             = project_config['math']['pz_method']
@@ -733,6 +739,11 @@ default_colors        = [col.strip() for col in default_colors]
 default_markers       = project_config['plot']['defaultmarkers'].split(',')
 default_markers       = [mark.strip() for mark in default_markers]
 plot_file_type        = project_config['plot']['plotfiletype']
+# A trace with more points than twice this number is drawn reduced: the
+# visible range in this many bins, the minimum and the maximum of every bin,
+# recomputed at every zoom (SLiCAPplots._reduce). Read with a fallback for
+# project ini files written before the key existed (2026-11-20).
+plot_points           = eval(str(project_config['plot'].get('plotpoints', 4000)))
 svg_margin            = eval(project_config['plot']['svgmargin'])
 # Cursor read-out formatting; both cursor modes (A/B and crosshair) share
 # them. Read with a fallback: project ini files written before these keys

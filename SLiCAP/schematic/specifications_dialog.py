@@ -19,10 +19,13 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView,
-    QComboBox, QDialogButtonBox, QFileDialog, QMessageBox, QWidget,
+    QTableWidgetItem, QAbstractItemView, QHeaderView, QStyledItemDelegate,
+    QComboBox, QDialogButtonBox, QFileDialog, QMessageBox,
 )
 from PySide6.QtGui import QColor
+
+from .row_table import RowTable
+from .sizing import chars
 
 # canonical specType suggestions (manual "Work with Specifications"); the
 # field is editable — the type is free (specItem.specType is a free string)
@@ -31,6 +34,31 @@ _CANONICAL_TYPES = ["Interface", "Performance", "Functional",
 
 _COLS = ["Symbol", "Description", "Value", "Units", "Type"]
 _C_SYMBOL, _C_DESC, _C_VALUE, _C_UNITS, _C_TYPE = range(5)
+
+
+class _TypeEditor(QStyledItemDelegate):
+    """The cell editor of the Type column: an editable list of the types
+    in use and the canonical ones, open only while the cell is edited. The
+    value is the cell's own text, so Tab and sorting treat it as any other
+    cell. A combo box placed in every cell was the first form and was
+    REPLACED (workshop of 2026-11-17): Tab left the table from it, sorting
+    could not see its text and the column was narrower than the box."""
+
+    def __init__(self, suggestions, parent=None):
+        super().__init__(parent)
+        self._suggestions = suggestions
+
+    def createEditor(self, parent, option, index):
+        combo = QComboBox(parent)
+        combo.setEditable(True)
+        combo.addItems(self._suggestions())
+        return combo
+
+    def setEditorData(self, editor, index):
+        editor.setCurrentText(index.data() or "")
+
+    def setModelData(self, editor, model, index):
+        model.setData(index, editor.currentText().strip())
 
 
 class SpecificationsDialog(QDialog):
@@ -56,12 +84,19 @@ class SpecificationsDialog(QDialog):
         outer.addLayout(frow)
 
         # ── table ────────────────────────────────────────────────────────
-        self._table = QTableWidget(0, len(_COLS))
+        # Tab on the last cell adds a row, a header click sorts the rows
+        # (row_table). Every column can be dragged wider, the last one fills
+        # the rest: a stretched Description column in the middle made the
+        # Type column narrower than its text and moved the widths
+        # strangely when the last one was dragged (workshop of 2026-11-17).
+        self._table = RowTable(0, len(_COLS), add_row=self._add_row, sortable=True)
         self._table.setHorizontalHeaderLabels(_COLS)
         hdr = self._table.horizontalHeader()
-        hdr.setSectionResizeMode(_C_DESC, QHeaderView.Stretch)
-        for c in (_C_SYMBOL, _C_VALUE, _C_UNITS, _C_TYPE):
-            hdr.setSectionResizeMode(c, QHeaderView.Interactive)
+        hdr.setSectionResizeMode(QHeaderView.Interactive)
+        hdr.setStretchLastSection(True)
+        self._table.setColumnWidth(_C_DESC, chars(self._table, 32))
+        self._table.setItemDelegateForColumn(
+            _C_TYPE, _TypeEditor(self._type_suggestions, self._table))
         self._table.setSelectionBehavior(QAbstractItemView.SelectRows)
         outer.addWidget(self._table, 1)
 
@@ -105,46 +140,18 @@ class SpecificationsDialog(QDialog):
         canonical five stay as the structured-design nudge."""
         used = []
         for r in range(self._table.rowCount()):
-            w = self._table.cellWidget(r, _C_TYPE)
-            t = w.currentText().strip() if w else ""
+            item = self._table.item(r, _C_TYPE)
+            t = item.text().strip() if item is not None else ""
             if t and t not in used:
                 used.append(t)
         return used + [t for t in _CANONICAL_TYPES if t not in used]
 
-    def _type_combo(self, value=""):
-        combo = QComboBox()
-        combo.setEditable(True)
-        combo.addItems(self._type_suggestions())
-        combo.setCurrentText(value)
-        # when a row's type changes, refresh every combo's suggestion list
-        combo.editTextChanged.connect(self._refresh_type_suggestions)
-        return combo
-
-    def _refresh_type_suggestions(self, *_):
-        suggestions = self._type_suggestions()
-        for r in range(self._table.rowCount()):
-            combo = self._table.cellWidget(r, _C_TYPE)
-            if combo is None:
-                continue
-            cur = combo.currentText()
-            combo.blockSignals(True)          # no re-entrant refresh cascade
-            combo.clear()
-            items = list(suggestions)
-            if cur and cur not in items:       # keep what's being typed
-                items.insert(0, cur)
-            combo.addItems(items)
-            combo.setEditText(cur)
-            combo.blockSignals(False)
-
     def _add_row(self, symbol="", desc="", value="", units="", spectype=""):
         r = self._table.rowCount()
         self._table.insertRow(r)
-        self._table.setItem(r, _C_SYMBOL, QTableWidgetItem(symbol))
-        self._table.setItem(r, _C_DESC, QTableWidgetItem(desc))
-        self._table.setItem(r, _C_VALUE, QTableWidgetItem(value))
-        self._table.setItem(r, _C_UNITS, QTableWidgetItem(units))
-        self._table.setCellWidget(r, _C_TYPE, self._type_combo(spectype))
-        self._refresh_type_suggestions()
+        for col, text in ((_C_SYMBOL, symbol), (_C_DESC, desc), (_C_VALUE, value),
+                          (_C_UNITS, units), (_C_TYPE, spectype)):
+            self._table.setItem(r, col, QTableWidgetItem(text))
 
     def _remove_row(self):
         r = self._table.currentRow()
@@ -220,7 +227,8 @@ class SpecificationsDialog(QDialog):
                     if self._table.item(r, _C_DESC) else "")
             units = (self._table.item(r, _C_UNITS).text().strip()
                      if self._table.item(r, _C_UNITS) else "")
-            spectype = self._table.cellWidget(r, _C_TYPE).currentText().strip()
+            spectype = (self._table.item(r, _C_TYPE).text().strip()
+                        if self._table.item(r, _C_TYPE) else "")
             rows.append(specItem(sym, desc, val, units, spectype))
         return rows, None
 

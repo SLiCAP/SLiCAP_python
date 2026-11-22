@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
     QPushButton, QFileDialog, QDialogButtonBox, QWidget,
 )
 from PySide6.QtCore import Qt
+from .sizing import scroll_body, fit_to_screen
 from PySide6.QtGui import QFont
 
 
@@ -116,7 +117,7 @@ class SourceStimuliDialog(QDialog):
         self._show_display = show_display
         self.setWindowTitle(title or "Source stimuli")
 
-        outer = QVBoxLayout(self)
+        frame, outer, self._scroll = scroll_body(self)
 
         if "dc" in self._domains:
             outer.addWidget(self._build_dc_section())
@@ -128,7 +129,8 @@ class SourceStimuliDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        outer.addWidget(buttons)
+        frame.addWidget(buttons)
+        fit_to_screen(self, self._scroll)
 
     # ── section builders ──────────────────────────────────────────────────────
 

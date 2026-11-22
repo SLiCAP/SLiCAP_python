@@ -40,16 +40,16 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
+    QDialog, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
     QComboBox, QDialogButtonBox, QTreeWidget, QTreeWidgetItem, QWidget,
     QPushButton,
 )
 
-from .instr_file import parse_calls
+from .instr_file import parse_calls, quoted, bound_names, literal as _lit
 from .value_fields import watch, all_valid
-from .sizing import name_width, cap_chars, fit_contents
-from .traces_dialog import (next_name, trace_entries, result_entries,
-                            is_symbolic, _abscissa, _lit, _q)
+from .sizing import name_width, cap_chars, fit_contents, scroll_body, fit_to_screen
+from .traces_dialog import (next_name, trace_entries, recorded_trace_sets,
+                            result_entries, is_symbolic, _abscissa)
 
 from SLiCAP.SLiCAPplots import _SCALEFACTORS
 from SLiCAP.SLiCAPtraces import axis_label
@@ -145,7 +145,7 @@ def parse_data_argument(source) -> list[str]:
         if (isinstance(item, ast.Subscript)
                 and isinstance(item.value, ast.Name)
                 and isinstance(item.slice, ast.Constant)):
-            return "{0}[{1}]".format(item.value.id, _q(item.slice.value))
+            return "{0}[{1}]".format(item.value.id, quoted(item.slice.value))
         return ""
 
     if isinstance(node, (ast.List, ast.Tuple)):
@@ -199,7 +199,9 @@ class AxesDialog(QDialog):
     """Create or edit ONE named axis."""
 
     def __init__(self, existing_text: str = "", results_dir=None,
-                 parent=None):
+                 parent=None, source_name: str = ""):
+        """*source_name*: the instruction file being edited, whose manifest
+        section is the only one the dialog reads."""
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit Axes")
 
@@ -210,18 +212,31 @@ class AxesDialog(QDialog):
         # only be offered after a run, the rule already set for signals
         # (Anton, 2026-08-03).
         try:
-            from .design_data import read_manifest
-            self._manifest = read_manifest(results_dir)
+            from .design_data import read_manifest, manifest_section
+            self._section = manifest_section(read_manifest(results_dir), source_name)
         except Exception:
-            self._manifest = {"sections": {}}
-        self._traces = trace_entries(calls)
+            self._section = {}
         self._results = result_entries(calls)
+        # A trace set is a top-level variable holding traces: a make_traces
+        # dictionary, known from its call before any run, or any variable
+        # the RUN recorded as traces (``TR1 = R1.traces`` of a system run,
+        # SystemExtensionSpecs.md 6.9.4), known from the manifest. Offering
+        # a result's ``traces`` attribute as an item of its own was tried
+        # and REVERTED (Anton, 2026-11-17): a patch per holder of traces;
+        # the instruction assigns them to a variable instead.
+        self._traces = trace_entries(calls) + recorded_trace_sets(
+            self._section, {c["name"] for c in calls})
         self._pz = pz_entries(calls)
         self._existing = axis_entries(calls)
-        self._taken = {c["name"] for c in calls}
+        # every name the file binds (instr_file.bound_names), as in the
+        # Traces dialog. The sl.* call names above answer another question:
+        # which recorded trace sets no call names already. REPLACED
+        # 2026-11-22: the sl.* call names were the taken set, so AX1 = None
+        # did not count.
+        self._taken = bound_names(existing_text or "")
         self._suggested = {}          # field -> what WE last put in it
 
-        outer = QVBoxLayout(self)
+        frame, outer, self._scroll = scroll_body(self)
         head = QGridLayout()
         outer.addLayout(head)
 
@@ -391,9 +406,10 @@ class AxesDialog(QDialog):
         buttons.addButton("Close", QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        outer.addWidget(buttons)
+        frame.addWidget(buttons)
 
         self._on_kind_changed()
+        fit_to_screen(self, self._scroll)
 
     # ── construction helpers ──────────────────────────────────────────────
 
@@ -485,11 +501,10 @@ class AxesDialog(QDialog):
 
     def _traces_of(self, name: str) -> list[dict]:
         """The traces a RUN recorded for this dictionary: (label, units)."""
-        for section in (self._manifest.get("sections") or {}).values():
-            for variable in section.get("variables", []):
-                if variable.get("name") == name:
-                    return [a for a in variable.get("attributes", [])
-                            if a.get("kind") == "trace"]
+        for variable in self._section.get("variables", []):
+            if variable.get("name") == name:
+                return [a for a in variable.get("attributes", [])
+                        if a.get("kind") == "trace"]
         return []
 
     def _selected(self) -> list[tuple]:
@@ -523,7 +538,7 @@ class AxesDialog(QDialog):
         out = []
         for name, entry in self._selected():
             out.append(name if entry is None
-                       else '{0}[{1}]'.format(name, _q(entry.get("name", ""))))
+                       else '{0}[{1}]'.format(name, quoted(entry.get("name", ""))))
         return out
 
     def _set_all(self, state):
@@ -556,10 +571,10 @@ class AxesDialog(QDialog):
             item = QTreeWidgetItem([entry["name"]])
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(0, Qt.Unchecked)
-            item.setToolTip(0, "sl.{0}(…)".format(entry["func"]))
+            item.setToolTip(0, "sl.{0}(…)".format(entry["func"])
+                            if entry["func"] else "traces the run recorded")
             self._pick.addTopLevelItem(item)
-            if kind == _PZ or (kind == _SWEEP
-                               and entry["func"] != "make_traces"):
+            if kind == _PZ or (kind == _SWEEP and entry not in self._traces):
                 continue          # a whole result: it has no trace children
             for trace in self._traces_of(entry["name"]):
                 # WHAT IT PLOTS, not what it is called: the label is for the
@@ -787,7 +802,7 @@ class AxesDialog(QDialog):
             for j in range(parent.childCount()):
                 child = parent.child(j)
                 stored = child.data(0, Qt.ItemDataRole.UserRole) or {}
-                one = '{0}[{1}]'.format(name, _q(stored.get("name", "")))
+                one = '{0}[{1}]'.format(name, quoted(stored.get("name", "")))
                 child.setCheckState(0, Qt.Checked
                                     if whole or one in wanted
                                     else Qt.Unchecked)
@@ -850,9 +865,9 @@ class AxesDialog(QDialog):
                                 ("yscale", self._y_scale)):
                 if widget.currentText():
                     parts.append("{0}={1}".format(key,
-                                                  _q(widget.currentText())))
+                                                  quoted(widget.currentText())))
             extra = (", " + ", ".join(parts)) if parts else ""
-            return "{0} = sl.pzAxis({1}, {2}{3})".format(name, _q(title),
+            return "{0} = sl.pzAxis({1}, {2}{3})".format(name, quoted(title),
                                                          data, extra)
         axis_type = ("polar" if self._kind_key() == _POLAR
                      else self._type.currentText())
@@ -861,11 +876,11 @@ class AxesDialog(QDialog):
                             ("yName", self._y_name),
                             ("yUnits", self._y_units)):
             if widget.text().strip():
-                parts.append("{0}={1}".format(key, _q(widget.text().strip())))
+                parts.append("{0}={1}".format(key, quoted(widget.text().strip())))
         for key, widget in (("xScale", self._x_scale),
                             ("yScale", self._y_scale)):
             if widget.currentText():
-                parts.append("{0}={1}".format(key, _q(widget.currentText())))
+                parts.append("{0}={1}".format(key, quoted(widget.currentText())))
         for key, low, high in (("xLim", self._x_min, self._x_max),
                                ("yLim", self._y_min, self._y_max)):
             limits = self._limits(low, high)
@@ -873,7 +888,7 @@ class AxesDialog(QDialog):
                 parts.append("{0}={1}".format(key, limits))
         extra = (", " + ", ".join(parts)) if parts else ""
         return "{0} = sl.traceAxis({1}, {2}, {3}{4})".format(
-            name, _q(title), _q(axis_type), data, extra)
+            name, quoted(title), quoted(axis_type), data, extra)
 
     def _load_sweep(self, entry, args, kwargs):
         """Read a ``sweepAxis`` statement back into the sweep kind."""
@@ -891,7 +906,7 @@ class AxesDialog(QDialog):
                 child = item.child(j)
                 stored = child.data(0, Qt.ItemDataRole.UserRole) or {}
                 one = '{0}[{1}]'.format(item.text(0),
-                                        _q(stored.get("name", "")))
+                                        quoted(stored.get("name", "")))
                 child.setCheckState(0, Qt.Checked if whole or one in wanted
                                     else Qt.Unchecked)
         self._pick.blockSignals(False)
@@ -939,7 +954,7 @@ class AxesDialog(QDialog):
                 results.append(picked)
             else:
                 refs.append(picked if entry is None else '{0}[{1}]'.format(
-                    picked, _q(entry.get("name", ""))))
+                    picked, quoted(entry.get("name", ""))))
         if not results:
             return ""             # the sweep needs a result to sweep
         data = (results[0] if len(results) == 1
@@ -956,23 +971,23 @@ class AxesDialog(QDialog):
                     and self._y_var.text().strip()):
                 return ""
             parts.append("sweepVar={0}".format(
-                _q(self._sweep_var.text().strip())))
-            parts.append("yVar={0}".format(_q(self._y_var.text().strip())))
+                quoted(self._sweep_var.text().strip())))
+            parts.append("yVar={0}".format(quoted(self._y_var.text().strip())))
         if func != "auto":
-            parts.append("funcType={0}".format(_q(func)))
+            parts.append("funcType={0}".format(quoted(func)))
         if self._type.currentText() not in ("", "auto"):
-            parts.append("axisType={0}".format(_q(self._type.currentText())))
+            parts.append("axisType={0}".format(quoted(self._type.currentText())))
         # the x scale factor IS plotSweep's sweepScale: it scales the sweep
         # values and the axis display together, the old path's own coupling
         if self._x_scale.currentText():
             parts.append("sweepScale={0}".format(
-                _q(self._x_scale.currentText())))
+                quoted(self._x_scale.currentText())))
         if self._y_scale.currentText():
-            parts.append("yScale={0}".format(_q(self._y_scale.currentText())))
+            parts.append("yScale={0}".format(quoted(self._y_scale.currentText())))
         for key, widget in (("xUnits", self._x_units),
                             ("yUnits", self._y_units)):
             if widget.text().strip():
-                parts.append("{0}={1}".format(key, _q(widget.text().strip())))
+                parts.append("{0}={1}".format(key, quoted(widget.text().strip())))
         for key, low, high in (("xLim", self._x_min, self._x_max),
                                ("yLim", self._y_min, self._y_max)):
             limits = self._limits(low, high)
@@ -980,7 +995,7 @@ class AxesDialog(QDialog):
                 parts.append("{0}={1}".format(key, limits))
         extra = (", " + ", ".join(parts)) if parts else ""
         return "{0} = sl.sweepAxis({1}, {2}, {3}, {4}, {5}{6})".format(
-            name, _q(title), data, _q(start), _q(stop), num, extra)
+            name, quoted(title), data, quoted(start), quoted(stop), num, extra)
 
     def _update(self, *_args):
         snippet = self.generated_snippet()

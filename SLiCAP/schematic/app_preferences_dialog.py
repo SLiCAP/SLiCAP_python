@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 from . import app_prefs
 from .design_data import KNOWN_KINDS
 from .project_panel import type_key
-from .sizing import chars
+from .sizing import chars, scroll_body, fit_to_screen
 
 _KIND_LABELS = {"result":     "SLiCAP / NGspice results",
                 "circuit":    "Circuits",
@@ -101,7 +101,7 @@ class AppPreferencesDialog(QDialog):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Preferences")
         self.setMinimumWidth(chars(self, 63))
-        lay = QVBoxLayout(self)
+        frame, lay, self._scroll = scroll_body(self)
         # -- Display: colour scheme (chrome through Qt, canvases through
         #    config.display_style; the document colours never change) --------
         from PySide6.QtWidgets import QComboBox, QFormLayout
@@ -243,8 +243,9 @@ class AppPreferencesDialog(QDialog):
                                    | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        lay.addWidget(buttons)
+        frame.addWidget(buttons)
         self._had_project = project_root is not None
+        fit_to_screen(self, self._scroll)
 
     def apply(self) -> None:
         """Persist the choices to the user ini (~/SLiCAP_gui.ini)."""

@@ -33,6 +33,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QThread, Signal
 
+from .child_process import NO_WINDOW     # no console window (pythonw.exe)
+
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -81,6 +83,7 @@ class _RunThread(QThread):
                 stderr=subprocess.STDOUT,
                 text=True,
                 cwd=str(self._cwd),
+                creationflags=NO_WINDOW,
             )
             for line in self._proc.stdout:
                 self.line_ready.emit(line.rstrip())
@@ -169,6 +172,7 @@ class SimRunner(QObject):
             stderr=subprocess.STDOUT,
             text=True,
             cwd=str(cwd),
+            creationflags=NO_WINDOW,
         )
         for line in proc.stdout:
             if on_line is not None:

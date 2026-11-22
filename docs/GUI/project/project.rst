@@ -9,7 +9,7 @@ File - New project ...
 
 .. Figure:: /GUI/img/new_project.png
 
-Select a project folder and name. The application initializes a SLiCAP project and creates the folder structure. This is displayed in the "Project" panel.
+Give the project a name, a location and a folder name. The name is the project's title, not a folder name. The location is an existing folder: browse to it, or type its path. The folder name is the name of the project folder, which is made in the location. The line *Project folder* shows the result before you click *Create project*. The application initializes a SLiCAP project in the folder and creates the folder structure. This is displayed in the "Project" panel.
 
 .. Figure:: /GUI/img/my_project.png
 

@@ -542,6 +542,371 @@ Version 6.4.7
    Save as under another name still copies. A poster that shows the
    schematic finds it at the new place.
 
+Version 6.4.8
+-------------
+
+Many changes of version 6.4.8 follow the comments of a workshop. The bug
+fixes say what was wrong and how it is solved. The additions describe what
+is new.
+
+Bug fixes
+~~~~~~~~~
+
+#. **Large dialogs fit the screen.** Some dialogs were taller than a laptop
+   screen. Their OK button could then not be reached. Now these dialogs
+   scroll their contents. Their buttons stay visible below the scrolling
+   part. A dialog opens as large as its contents, but never larger than the
+   screen. This applies to the drawing and the application preferences, the
+   SLiCAP and NGspice instruction dialogs, the component properties, the
+   source stimuli, and the Traces, Axes and Transfer function dialogs.
+
+#. **Parameter tables when LaTeX fails.** LaTeX can be installed but unable
+   to compile a table, for instance when a package is missing. The preview
+   of the circuit parameters or of a model definition then disabled OK. The
+   table could not be placed at all. Now the preview offers *Place as plain
+   text*.
+
+#. **The project folder.** *File > New project* took the project name as a
+   folder name. It created that folder in the working directory of the
+   program, wherever the program had been started. Now the name is only the
+   title of the project. The dialog asks for a location, an existing folder
+   chosen with *Browse*, and a folder name. The line *Project folder* shows
+   the folder that *Create project* will make.
+
+#. **The Type column of the specifications.** The Type column was a
+   drop-down box in each row. :kbd:`Tab` did not pass through it. The last
+   column did not fill the width of the table. Now the Type column is an
+   ordinary cell. :kbd:`Tab` passes through it. The new sorting of the
+   specifications includes it. The last column fills the width of the table.
+
+#. **Old text behind an edited cell.** At a display scaling of 125 %, a
+   cell being edited showed the old text behind the new one. This happened
+   in the specifications, the subcircuit parameters and the border formats.
+   Now the edited cell hides the old text, as it already did in the other
+   tables.
+
+#. **The parameters of the transmission line.** The list of the
+   transmission line ``T`` in ``SLiCAPprotos.py`` named a parameter ``is``.
+   NGspice does not know that parameter. Now the list names ``ic``, the
+   initial condition.
+
+#. **A port takes the name of its net.** A port without a name stayed
+   unnamed, even on a net that already had a name. It was then no pin of
+   the subcircuit. Now such a port takes the name of its net. The name can
+   come from a net label or from another port. From then on the port names
+   the net, as if you had typed the name. The ground name ``0`` is not
+   taken over.
+
+#. **Pin names on subcircuit symbols.** On a wide box, a pin near a corner
+   could get its name beside its stub, outside the box. Now the side of
+   each pin name follows from the box itself. The names also sit a little
+   further from their pins.
+
+#. **A label switched on later goes under its neighbour.** A label without
+   a stored position went to its default place. That place could be far
+   from labels that had been moved. An example is an NGspice instance
+   parameter switched on after *Tools > Update symbols from library*. Now
+   such a label goes one line below the previous label, in the column of
+   that label. Nothing changes when no label was moved.
+
+#. **The Traces, Axes and Figures dialogs read one instruction file.**
+   These dialogs collected the results of every instruction file of the
+   project. A result with the same name in another file, such as an older
+   ``TR1``, then added its signals and traces. Now they offer only the
+   results of the instruction file being edited. An instruction file that
+   has never been run offers nothing.
+
+#. **New names are free in the whole instruction file.** *Create circuit
+   object* and the Traces, Axes and Figures dialogs propose a name for a
+   new object. They could propose a name that the instruction file already
+   used. They knew only the names assigned with an ``sl.`` call. So a plain
+   assignment such as ``gain = 5``, a merged trace set such as ``TR3 =
+   {**TR1, **TR2}``, an ``import numpy as np`` or a loop variable did not
+   count. Now every name that the file binds counts as used. Such a name is
+   not proposed. In *Create circuit object*, typing it gives *Name in use*.
+   Two new measurements in the Traces dialog no longer get the same name.
+
+#. **Quitting ends the instruction runs.** Quitting the GUI with figure
+   windows of earlier runs still open could crash the program. Now quitting
+   ends the running instruction run and every earlier run with open figure
+   windows. Their figure windows close.
+
+#. **No warning at every run without slicap_det.** A project can ask for
+   the determinant method ``MECPP``. Without the program ``slicap_det``,
+   SLiCAP uses ``ME`` instead. It then printed a warning at every run. Now
+   it uses ``ME`` without a warning. A ``slicap_det`` that is configured but
+   does not work still gives a warning.
+
+#. **An out-of-date netlist.** A netlist did not count as out of date after
+   a change of the symbol library. Now it does.
+
+#. **A poster that linked to itself.** A new poster, once saved, could
+   offer itself as one of its own links. Now it does not.
+
+#. **The license in pyproject.toml.** ``pyproject.toml`` gave the license
+   in a form that setuptools refuses from February 2027. Now it reads
+   ``license = "MIT"``. The build therefore requires setuptools 77 or
+   newer.
+
+#. **numpy and numba.** SLiCAP allowed any numpy from 2.4 on. pip could
+   then install a numpy that the installed numba does not support, and
+   numba stopped importing. Now SLiCAP requires numba 0.66 or newer. pip
+   then keeps numpy within the range that numba supports. numba runs the
+   system-level simulator.
+
+#. **Long periodic pulse responses.** ``step2PeriodicPulse()`` builds a
+   pulse train from delayed copies of a step response. Each copy is
+   switched on at its delay. Since version 6.0 a long train could show
+   gaps in its plot. Before its switch, a delayed copy was still evaluated,
+   and its exponential overflowed. Zero times infinity gave no number. This
+   happened when the magnitude of the fastest pole, in rad/s, times the
+   longest delay exceeded about 709. Now each copy is evaluated only after
+   its switch. The symbolic expression is unchanged.
+
+#. **Descend keeps the typed values.** *Descend into subcircuit* closed the
+   properties dialog as *Cancel* does. A value typed just before was lost
+   without a message. Now *Descend* applies the values, as *OK* does, and
+   then opens the subcircuit. *Undo* takes the change back in one step.
+
+#. **Pin names in the exported image.** A generated subcircuit box shows
+   the names of its pins on the canvas. The SVG and PDF export left them
+   out, so the box came out empty. Now the export writes them at the same
+   places as the canvas.
+
+#. **Instructions written by a dialog.** When a dialog added the line
+   ``import SLiCAP as sl`` to an instruction file, the editor lost its undo
+   history and its mark for unsaved changes. Text typed but not yet saved
+   could then be lost without a question. Now the line is added as an
+   ordinary edit, together with the instruction. *Undo* takes both back in
+   one step. The line goes after a module docstring and after ``from
+   __future__`` imports, which must stay first. The dialogs for traces,
+   axes, figures and snippets now also add the line when it is missing. A
+   dialog that added an instruction to a file whose last line held only
+   spaces wrote it on that line, indented. Now every added instruction
+   starts on a line of its own.
+
+#. **Save keeps the characters of the instruction file.** Save and Run
+   wrote the instruction file through Qt's plain-text export. A line
+   separator (U+2028) became a new line. A no-break space (U+00A0) became
+   a plain space. This changed characters you had not touched. A string
+   with a line separator then no longer compiled. Now the editor writes the
+   characters as they are. A file written in another editor can hold a
+   no-break space or a line separator in its code, outside a string or a
+   comment. Code copied from a PDF can carry them. Before, Save replaced
+   such a character without a message, and the file ran. Now Run stops
+   with a Python error that names the character. Without the GUI, Python
+   stopped on such a file already. Text pasted into the instruction pane
+   or the LaTeX fragment dialog still comes in with plain line breaks and
+   spaces. A paragraph separator (U+2029) in a file still becomes a line
+   break. The editor cannot keep it.
+
+#. **Text in generated instructions reads back as typed.** The Traces,
+   Axes and Figures dialogs and the parameter tables wrote a backslash as
+   it was. An axis name ``$\tau$`` then read back as a tab and "au". These
+   dialogs also turned a double quote into a single quote. No dialog wrote
+   a line break correctly, so a free-text snippet of two lines did not run.
+   One function now writes the typed texts of these dialogs and of the
+   snippet and NGspice dialogs. It doubles every backslash, so a LaTeX command reaches the plot as typed. It writes a
+   line break as ``\n``. It chooses the quotes as you would by hand:
+   ``"Gain 'open loop'"`` and ``'Gain "open loop"'``. Only a text with both
+   kinds of quote changes: its double quotes become single quotes. A
+   backslash in a dialog field is always a LaTeX backslash. A title typed
+   as ``Line 1\nLine 2`` therefore shows the ``\n``. Write such a title in
+   the instruction file by hand.
+
+#. **A subcircuit Title with a space.** A Title that is not a valid
+   subcircuit name, such as "Input stage", stopped the save. Save opened
+   *Create Subcircuit* with the name locked, and the dialog then refused
+   that name. Cancel was the only way out. After a Title change on a saved
+   subcircuit, Save even wrote ``lib/Input stage.*`` without a question.
+   Its ``.subckt`` line read ``stage`` as a port. Save now opens the
+   dialog with the name editable whenever the Title is not a valid name.
+   The manual and the tooltip of the Subcircuit box give the rule: a
+   letter, then letters, digits or underscores. A package whose name breaks
+   the rule, such as a ``lib/Input stage.*`` written by 6.4.7, therefore
+   needs a new name at its next Save. Save then writes a copy under the new
+   name. The old package stays in ``lib/``. Remove it by hand, and update
+   the parents that use it.
+
+#. **Dimmed labels in the export.** The canvas draws a dimmed
+   operating-point label grey and italic. Examples are the placeholder
+   "I: —" of a V source or an inductor and a stale current value. SVG, PDF,
+   Print and command-line images showed these labels grey but upright. They
+   are now italic in the export too. All other texts export unchanged.
+
+#. **Fonts in print and in placed drawings.** Print, and schematics and
+   posters placed on a sheet, drew serif and monospace text in the default
+   sans font. The component parameters are an example. Qt read the font
+   family of the exported SVG, such as "DejaVu Sans Mono, monospace", as one
+   unknown name. SLiCAP now tells Qt which font that name stands for. These
+   views now use the same fonts as the canvas. The SVG and PDF files do not
+   change. The fault dates from 6.2.4.
+
+#. **No console windows during a PDF export.** Under MS-Windows, every
+   PDF export flashed console windows. The PDF is made with svglib.
+   Versions of svglib before 2.1.0 split the font name "DejaVu Sans Mono,
+   monospace" at every space. They then looked up "DejaVu", "Sans" and
+   "Mono" with the program ``fc-match``, one console window each. SLiCAP
+   now requires svglib 2.3.0 or newer, and with it reportlab 4.4.3 or
+   newer.
+
+#. **NGspice on MS-Windows.** The example on the installation page named
+   ``ngspice.exe``. That program opens a window of its own at every run.
+   The page now names ``ngspice_con.exe``, which runs without a window. If
+   the ``ngspice`` line in ``~/SLiCAP/SLiCAP.ini`` ends in ``ngspice.exe``,
+   change it to ``ngspice_con.exe`` in the same folder.
+
+#. **Menu paths in messages and in the manual.** Version 6.4 named the
+   menus by function. Some texts kept the old paths. After *Tools > Import
+   symbols from file* the message named *Place -> Symbol*. Now it names
+   *Circuit > Symbol…*. The note after saving a symbol names *Tools > Load
+   selected symbols from library*. The tooltip of the subcircuit check box
+   names *File > Save schematic*. The manual names the menus as they are.
+   Its tables of the schematic menus and the main menus are complete again.
+   The manual described a dialog *File > Configure SLiCAP…* that was never
+   built. It now names *File > Edit main configuration file*, which opens
+   ``~/SLiCAP/SLiCAP.ini`` in the system's text editor. The installation
+   page still named the old location ``~/SLiCAP.ini`` of that file. It now
+   names ``~/SLiCAP/SLiCAP.ini``.
+
+Additions
+~~~~~~~~~
+
+#. **An icon for SLiCAP.** The GUI shows its own icon: the nullor of SLiCAP
+   on a light badge. It appears in the title bar, in the taskbar and in the
+   task switcher. On Windows, SLiCAP gets a taskbar button of its own. It no
+   longer shares the button and the icon of Python. The HTML report of a new
+   project shows the same icon as its logo. An existing project keeps its
+   logo. The icon files are in ``SLiCAP/files/icons``: an SVG, PNG pictures
+   from 16 to 256 pixels, and a Windows ``.ico`` file.
+
+#. **Help > Create shortcut.** This new entry puts SLiCAP in the launcher of
+   the system, with its icon. On Windows it makes a shortcut in the start
+   menu and on the desktop. From the start menu, SLiCAP can be pinned to the
+   taskbar. A pinned SLiCAP and the running one then share one taskbar
+   button. On Linux it makes the entry ``slicap.desktop``, which shows
+   SLiCAP in the applications overview. The shortcut starts SLiCAP with the
+   Python environment that runs the GUI when the shortcut is made. In an
+   Anaconda environment on Windows, it first activates that environment.
+   Started from the shortcut, SLiCAP has no console window. Its messages
+   then go to ``~/SLiCAP/gui.log``. The programs it starts, such as
+   pdflatex and NGspice, open no console window either.
+   See :doc:`/GUI/schematics/schematic`.
+
+#. **LaTeX renders in the background.** The editor no longer waits while
+   LaTeX renders a label. A placed, edited or pasted component shows its
+   labels as plain text at once. The LaTeX replaces the text when it is
+   ready. Meanwhile the status bar shows *Rendering n LaTeX labels*. A
+   label is never replaced while a mouse button is down. Opening a
+   schematic, undo, redo, export and print wait for their labels. The
+   window stays responsive during that wait. After half a second a window
+   says that LaTeX is rendering. It also says that MiKTeX may ask to
+   install a package in a window of its own. *Continue with plain text*
+   ends the wait. The components then get their LaTeX labels when the
+   rendering is done. Parameter tables and LaTeX fragments keep their plain
+   text until the schematic is opened again. A value whose LaTeX does not
+   compile keeps its plain text. Scripts and the command line render as
+   before. Before, the editor waited about half a second per label on
+   Linux. With MiKTeX it waited longer. A question of MiKTeX to install a
+   package could appear behind the editor's window. The editor then seemed
+   to hang. See :doc:`/GUI/schematics/schematic`.
+
+#. **Line numbers and zoom in the instruction pane and the log.** The
+   instruction pane shows line numbers. They are the line numbers of
+   Python's error messages. :kbd:`Shift+Enter` therefore starts a new line,
+   as :kbd:`Enter` does. In the instruction pane and in the log, :kbd:`Ctrl` with the mouse wheel, :kbd:`Ctrl++` and :kbd:`Ctrl+-`
+   change the text size. :kbd:`Ctrl+0` restores the default size. Each
+   pane keeps its size for the next session. The LaTeX fragment dialog uses
+   the size of the instruction pane.
+
+#. **Tables you type in.** :kbd:`Tab` on the last cell adds a row and moves
+   to it. This holds for the specifications, the circuit parameters, the
+   parameters of a model definition and of a subcircuit, and the border
+   formats. A click on a column header of the specifications sorts the rows
+   by that column. A second click sorts them the other way round.
+
+#. **Help > Keyboard shortcuts.** This new entry lists every keyboard
+   shortcut of the menus and of the canvas, such as :kbd:`R` to rotate and
+   :kbd:`M` to mirror. The list is read from the program, so it always
+   matches it.
+
+#. **NGspice instance parameters.** Every NGspice symbol offers the
+   instance parameters that ``SLiCAPprotos.py`` lists for its device type.
+   Examples are ``temp``, ``tc1`` and ``noisy`` of a resistor, and ``ic`` of
+   a transistor. They are empty by default. They are hidden on the
+   schematic. An empty parameter is not written to the netlist.
+   ``onoff = 0`` of a diode or a transistor writes the keyword ``off``. An
+   ``ic`` of several values, such as ``vbe,vce``, is written as one
+   comma-separated value. On a schematic made with an older version,
+   *Tools > Update symbols from library* adds the new parameters to the
+   placed components.
+
+#. **Instruction > Transfer function.** This new entry on the Instruction
+   menu of a SLiCAP schematic puts a Laplace transfer function into the
+   Design data without a circuit. Its dialog adds one line to the
+   instruction file, in one of three forms:
+
+   - a filter of a classic family:
+     ``H1 = sl.filterFunc("butterworth", "bp", 2, f_c="1k", B=100)``
+   - one section by type, frequency and quality factor:
+     ``H1 = sl.sectionFunc("bp", "10k", Q=5)``
+   - a typed expression: ``H1 = sl.transferFunc("1/(1+s*T)")``
+
+   A frequency or a quality factor typed as a name stays a symbol in the
+   transfer function.
+
+#. **Traces with millions of points.** A trace with millions of points,
+   such as a long NGspice transient, is now drawn reduced. Plotting and
+   zooming then stay fast. ``ini.plot_points`` sets the number of bins,
+   4000 by default. A trace with more than twice that number of points is
+   reduced. The visible range is cut into these bins. Each bin contributes
+   its minimum and its maximum. The envelope and every peak therefore stay
+   visible, as on an oscilloscope. Plotting only every n-th point would
+   hide narrow peaks. Every zoom or pan repeats the reduction. A close zoom
+   therefore shows the samples themselves. The A/B cursors read the full
+   data. The crosshair reads the reduced line. A saved image holds the
+   reduced trace of the full range. Only traces with monotonic x values are
+   reduced, such as time and frequency sweeps. ``plotpoints = 0`` in the
+   ``[plot]`` section of ``SLiCAP.ini`` switches the reduction off. See
+   :doc:`/API/userguide/plots`.
+
+#. **filterFunc() with a centre frequency.** ``filterFunc()`` also takes
+   one frequency ``f_c``. For a low-pass, high-pass or all-pass filter,
+   ``f_c`` is the -3 dB corner. For a band-pass or band-stop filter,
+   ``f_c`` is the geometric centre of the band. These two filters also take
+   the bandwidth ``B``. It is the difference between the two -3 dB
+   frequencies. ``f_low`` and ``f_high`` still work. A frequency, the
+   bandwidth or the ripple may now be text in SLiCAP notation, such as
+   ``"10k"``. It may also be a name, which stays a symbol. See
+   :doc:`/API/userguide/laplace`.
+
+#. **sectionFunc() and transferFunc().** These two new functions serve
+   *Instruction > Transfer function*. Scripts can use them as well.
+   ``sectionFunc(f_type, f_0, Q)`` returns the Laplace transfer function of
+   one filter section. Without ``Q`` it is a first-order low-pass,
+   high-pass or all-pass section with corner frequency ``f_0``. With ``Q``
+   it is a second-order section, which can also be a band-pass or a
+   band-stop. ``transferFunc(expr)`` turns a transfer function typed as
+   text in SLiCAP notation into an expression in ``ini.laplace``.
+
+#. **Discrete-time transfer functions.** New functions turn a Laplace
+   transfer function into a discrete-time one, with the sample period
+   ``Ts``.
+
+   - ``laplace2z()`` returns the z-domain transfer function.
+   - ``laplace2sections()`` realises it as a cascade of first-order and
+     second-order sections.
+   - ``coeffs2sections()`` does the same from numeric coefficients.
+   - ``sectionsZ()`` returns the z-domain transfer function of such a
+     cascade.
+   - ``coeffs2taps()`` returns the samples of the impulse response: the
+     taps of a FIR filter.
+   - ``z2fourier()`` returns the frequency response of a z-domain transfer
+     function.
+
+   The z-domain variable is ``ini.z``. The key ``z`` in the ``[math]``
+   section of ``SLiCAP.ini`` sets it. It is ``z`` by default.
+
 SLiCAP version 6.3 release notes
 ================================
 

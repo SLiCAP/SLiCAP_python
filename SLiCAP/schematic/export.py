@@ -2,9 +2,11 @@
 Schematic export utilities — shared by the GUI (window.py) and CLI (cli.py).
 
 SVG export builds the file manually by iterating scene items and embedding
-symbol SVG content inline, producing fully vector output.  PDF and Print
-load the generated SVG through QSvgRenderer and render it to QPainter on
-QPrinter, which also produces vector PDF/print output.
+symbol SVG content inline, producing fully vector output.  PDF export
+converts that SVG with svglib and reportlab. svg2pdf needs no Qt
+application.  Print renders the SVG with QSvgRenderer onto the QPrinter,
+also as vectors. Qt reads the font-family list of the SVG through the
+substitutions of fonts.load_qt_fonts.
 """
 from __future__ import annotations
 import base64
@@ -117,10 +119,17 @@ def _centred_baseline_y(y: float, size_px: float, style) -> float:
     so the +/- of a source sat higher in the PDF than in the SVG and on
     the canvas (Anton, 2026-10-10). An explicit baseline reads the same
     in a browser, in Qt and in svglib."""
-    from PySide6.QtGui import QFont, QFontMetricsF
+    from PySide6.QtGui import QFont
     f = QFont(style.SYMBOL_TEXT_FONT)
     f.setPixelSize(max(1, round(size_px)))
-    fm = QFontMetricsF(f)
+    return _baseline_centred_on(y, f)
+
+
+def _baseline_centred_on(y: float, font) -> float:
+    """The SVG baseline of a text in *font* whose line box is centred on y,
+    as Qt.AlignCenter draws it: below y by half of ascent minus descent."""
+    from PySide6.QtGui import QFontMetricsF
+    fm = QFontMetricsF(font)
     return y + (fm.ascent() - fm.descent()) / 2
 
 
@@ -135,10 +144,29 @@ def _qhex(c) -> str:
     return f"#{c.red():02x}{c.green():02x}{c.blue():02x}"
 
 
+def _font_face(el, font) -> None:
+    """Write the face of the QFont *font* onto the SVG text element *el*.
+    A bold font gives font-weight="bold". An italic font gives
+    font-style="italic". A regular font adds nothing.
+
+    Used by the component labels, the wire DC label and the text blocks.
+    The two per-site copies in the wire label and the text block were
+    REPLACED 2026-11-22. The component-label loop had no copy, so a dimmed
+    derived label ("I: —", a stale value) exported upright while the
+    canvas drew it italic."""
+    if font.bold():
+        el.set("font-weight", "bold")
+    if font.italic():
+        el.set("font-style", "italic")
+
+
 def _build_svg(scene, title: str = "", source: str = "") -> bytes:
     """Render all scene items to a vector SVG document, returning UTF-8 bytes.
     *source* is the schematic file name, written as a provenance comment
-    (see :mod:`SLiCAP.schematic.provenance`)."""
+    (see :mod:`SLiCAP.schematic.provenance`). Labels the editor still
+    renders in the background are waited for first (finish_latex), so an
+    export or a print never holds plain text by accident."""
+    scene.finish_latex()
     from .component_item import ComponentItem
     from .wire_item import WireItem
     from .junction_item import JunctionItem
@@ -326,8 +354,7 @@ def _wire(parent, item, stroke, width, net_color, net_fs):
         t.set("font-family", svg_family(style.BIAS_FONT_FAMILY))
         t.set("font-size", f"{style.BIAS_FONT_SIZE}pt")
         t.set("fill", _qhex(lbl.brush().color()))
-        if lbl.font().italic():
-            t.set("font-style", "italic")
+        _font_face(t, lbl.font())          # italic when greyed
         t.text = lbl.text()
 
 
@@ -558,6 +585,26 @@ def _component(parent, defs, item, lbl_color, lbl_fs, style=None):
             # in place, as readable_transform does on the canvas
             te.set("transform", f"rotate(-90 {sp.x():.2f} {sp.y():.2f})")
         te.text = content
+    # The pin names of a generated box. The canvas draws them in paint(),
+    # outside the artwork, so the export wrote none until 2026-11-21 (Anton:
+    # the blocks of an exported system sheet were empty). The anchors are
+    # the canvas's (subckt_pin_name_anchors). The names stay horizontal and
+    # unmirrored under any rotation or flip, as on the canvas.
+    sym_def = getattr(item, "symbol", None)
+    if sym_def is not None and sym_def.show_pinnames:
+        from .component_item import _pin_name_font, subckt_pin_name_anchors
+        font = _pin_name_font(style)
+        for name, ax, ay in subckt_pin_name_anchors(
+                sym_def.nodes, sym_def.pins, sym_def.pin_box, style):
+            sp = item.mapToScene(QPointF(ax, ay))
+            te = ET.SubElement(parent, f"{{{_SVG_NS}}}text")
+            te.set("x", f"{sp.x():.2f}")
+            te.set("y", f"{_baseline_centred_on(sp.y(), font):.2f}")
+            te.set("font-family", svg_family(font.family()))
+            te.set("font-size", f"{font.pointSizeF():.1f}pt")
+            te.set("text-anchor", "middle")
+            te.set("fill", _qhex(symbol_text_color))
+            te.text = name
     stroke_hex = _qhex(style.SYMBOL_STROKE_COLOR)
     for f in getattr(item, "symbol_latex", ()):
         try:
@@ -589,6 +636,8 @@ def _component(parent, defs, item, lbl_color, lbl_fs, style=None):
             t.set("font-family", svg_family(font.family()))
             t.set("font-size", f"{fs:.1f}pt")
             t.set("fill", clr)
+            # italic for a dimmed derived label (component_item._derived_style)
+            _font_face(t, font)
             # For h_flipped components the label's local origin is baseline-right;
             # use text-anchor="end" so SVG anchors the text on the same side.
             if item.h_flip:
@@ -756,10 +805,8 @@ def _text_block(parent, item, color, fs, family, font=None):
         t.set("y", f"{baseline_y + i * line_h:.2f}")
         t.set("font-family", svg_family(family))
         t.set("font-size", f"{fs}pt")
-        if font is not None and font.bold():
-            t.set("font-weight", "bold")
-        if font is not None and font.italic():
-            t.set("font-style", "italic")
+        if font is not None:
+            _font_face(t, font)
         t.set("fill", color)
         t.text = line
 
@@ -1049,7 +1096,10 @@ def print_scene(scene, parent=None) -> None:
 
     # ── step 4: render the SVG VECTOR onto the printer ────────────────────────
     # QSvgRenderer paints vectors straight onto the printer (no cairosvg, no
-    # temp PDF, no rasterisation) — crisp at any scale, same renderer as canvas.
+    # temp PDF, no rasterisation), crisp at any scale. The canvas does not
+    # draw text through it. Its items draw text with their own QFont. Print
+    # draws the font-family of the SVG. fonts.load_qt_fonts maps that string
+    # onto the same shipped family (2026-11-22).
     renderer = QSvgRenderer(QByteArray(_build_svg(scene)))
     painter  = QPainter(printer)
     painter.setRenderHint(QPainter.Antialiasing)

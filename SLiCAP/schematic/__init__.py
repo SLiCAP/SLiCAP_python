@@ -26,15 +26,16 @@ def _netlist_output(sch_path: Path, title=None) -> Path:
     from . import project
     if project.doc_type(sch_path) == "poster":
         return None                     # a poster is a drawing: no netlist
+    from . import dialects
     props = schematic_properties(sch_path)
+    dialect = dialects.of_path(sch_path)
     if props.is_subcircuit:
         from .subcircuit import lib_path_for
         name = title or props.title or sch_path.stem
-        sch_type = "ngspice" if sch_path.suffix.lower() == ".spice_sch" else "slicap"
-        return lib_path_for(sch_path, name, sch_type)
-    suffix = (".spice_cir" if sch_path.suffix.lower() == ".spice_sch"
-              else ".slicap_cir")
-    return project.subdir_for(sch_path, "cir") / sch_path.with_suffix(suffix).name
+        return lib_path_for(sch_path, name, dialect.name)
+    folder = (project.subdir_for(sch_path, dialect.net_dir) if dialect.net_dir
+              else project.root_for(sch_path))
+    return folder / sch_path.with_suffix(dialect.net_ext).name
 
 
 def _image_paths(sch_path: Path):
@@ -151,12 +152,11 @@ def _run_cli(command: str, sch_path: Path, extra=()) -> None:
     event dispatcher (e.g. a GUI background worker), which would otherwise
     produce QBasicTimer warnings and could corrupt the parent application's
     display state."""
-    import sys
     import subprocess
+    from .child_process import NO_WINDOW, python
     result = subprocess.run(
-        [sys.executable, "-m", "SLiCAP.schematic.cli", command, str(sch_path)] + list(extra),
-        capture_output=True, text=True,
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),  # no console flash on Windows
+        [python(), "-m", "SLiCAP.schematic.cli", command, str(sch_path)] + list(extra),
+        capture_output=True, text=True, creationflags=NO_WINDOW,
     )
     if result.stdout:
         print(result.stdout, end="")

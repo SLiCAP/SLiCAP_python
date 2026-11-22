@@ -36,7 +36,8 @@ DEFAULT_KINDS = [k for k in KNOWN_KINDS if k not in DEFAULT_HIDDEN_KINDS]
 # default — hiding is always an explicit user act.
 DEFAULT_EXCLUDED_DIRS = ["__pycache__", "*.cache"]
 DEFAULT_EXCLUDED_TYPES = [".pyc", ".symbols", ".cache", ".slicap_sch.ini",
-                          ".spice_sch.ini", "Makefile", "make.bat"]
+                          ".spice_sch.ini", ".system_sch.ini",
+                          "Makefile", "make.bat"]
 
 
 def _read() -> configparser.ConfigParser:
@@ -192,3 +193,26 @@ def set_pardefs_preset(value: str) -> None:
         cfg["instruction"] = {}
     cfg["instruction"]["pardefs_preset"] = value if value in PARDEFS_PRESETS else "specs"
     _write(cfg)
+
+
+# ── code boxes: the font size (code_editor.CodeEditor) ─────────────────────────
+
+def get_font_size(pane: str, default: int) -> int:
+    """The point size of a kind of text pane, zoomed by the user
+    (Ctrl+wheel, Ctrl+plus and Ctrl+minus; workshop of 2026-11-17):
+    *pane* is "code" for the code boxes, "log" for the log pane
+    (code_editor.ZoomText)."""
+    cfg = _read()
+    try:
+        return int(cfg["display"]["%s_font_size" % pane])
+    except (KeyError, ValueError):
+        return default
+
+
+def set_font_size(pane: str, size: int) -> None:
+    cfg = _read()
+    if "display" not in cfg:
+        cfg["display"] = {}
+    cfg["display"]["%s_font_size" % pane] = str(int(size))
+    _write(cfg)
+

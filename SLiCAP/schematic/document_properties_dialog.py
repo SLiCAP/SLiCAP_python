@@ -177,7 +177,8 @@ class DocumentPropertiesDialog(QDialog):
     *fixed* its fixed sides; *presets* the style's BORDER_PRESETS."""
 
     def __init__(self, props: DocumentProperties, parent=None, border_mm=None,
-                 is_poster: bool = False, fixed=(True, True), presets=None):
+                 is_poster: bool = False, fixed=(True, True), presets=None,
+                 sch_type: str = ""):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Poster properties" if is_poster else "Schematic Properties")
         self.setMinimumWidth(chars(self, 51))
@@ -214,13 +215,29 @@ class DocumentPropertiesDialog(QDialog):
         self._subcircuit = QCheckBox("Save this schematic as a subcircuit")
         self._subcircuit.setChecked(props.is_subcircuit)
         self._subcircuit.setToolTip(
-            "When checked, File → Save writes the package <title>.*_sch + "
-            "<title>.*_lib to lib/. The Create Subcircuit dialog opens on the "
-            "first save and when a new port appears (node order, parameters). "
-            "File → Save as… always opens it, with the name editable."
+            "When checked, File → Save schematic writes the package <title>.*_sch + "
+            "<title>.*_lib to lib/. The title is the subcircuit name: a "
+            "letter, then letters, digits or underscores. The Create Subcircuit dialog opens on the "
+            "first save, when a new port appears (node order, parameters), and "
+            "when the title is not a valid name. "
+            "File → Save schematic as… always opens it, with the name editable."
         )
         layout.addRow("Subcircuit:", self._subcircuit)
         layout.setRowVisible(self._subcircuit, not is_poster)
+
+        # The typed wires of the system dialect (SystemExtensionSpecs.md 5.1).
+        from . import dialects
+        self._casts = QCheckBox("Implicit safe casts on wires")
+        self._casts.setChecked(props.implicit_casts)
+        self._casts.setToolTip(
+            "A wire may connect an output to an input of another data type "
+            "when the conversion loses no value: integer to wider integer, "
+            "integer to float, float to wider float (numpy's safe cast).\n"
+            "Off: every type change needs a cast block, so a fixed-point "
+            "design shows all its bit-width changes."
+        )
+        layout.addRow("Data types:", self._casts)
+        layout.setRowVisible(self._casts, sch_type == dialects.SYSTEM.name)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -243,3 +260,4 @@ class DocumentPropertiesDialog(QDialog):
         props.page_width_mm  = border[0] if border else 0.0
         props.page_height_mm = border[1] if border else 0.0
         props.is_subcircuit  = self._subcircuit.isChecked()
+        props.implicit_casts = self._casts.isChecked()

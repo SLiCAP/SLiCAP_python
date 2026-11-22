@@ -23,6 +23,7 @@ from PySide6.QtCore import Signal
 
 from .value_fields import is_value
 from .sizing import name_width
+from .instr_file import quoted
 from PySide6.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView,
@@ -229,17 +230,13 @@ class ParamTable(QGroupBox):
 
     # ── emission ──────────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _q(text: str) -> str:
-        return '"' + str(text).replace('"', "'") + '"'
-
     def dict_literal(self) -> str | None:
         """Python dict literal (dict mode); multi-line beyond 2 entries."""
         entries = self.entries()
         if not entries:
             return None
-        items = [f"{self._q(n)}: " + ("None" if self._allow_empty and not v
-                                       else self._q(v))
+        items = [f"{quoted(n)}: " + ("None" if self._allow_empty and not v
+                                     else quoted(v))
                  for n, v in entries]
         if len(items) <= 2:
             return "{" + ", ".join(items) + "}"
@@ -250,7 +247,7 @@ class ParamTable(QGroupBox):
         entries = self.entries()
         if not entries:
             return None
-        items = [f"({self._q(n)}, {self._q(v)})" for n, v in entries]
+        items = [f"({quoted(n)}, {quoted(v)})" for n, v in entries]
         if len(items) <= 2:
             return "[" + ", ".join(items) + "]"
         return "[\n    " + ",\n    ".join(items) + "]"

@@ -81,6 +81,7 @@ ACTIONS.update({
     "text":       [("View", _act_view)],
     "array":      [("View", _act_view)],
     "list":       [("View", _act_view)],
+    "numbers":    [("View", _act_view)],
     # one clickable sub-item per specType (Anton, 2026-07-16); the CSV-file
     # node is just an expandable container
     "spectype":   [("View specification table", _act_open_spectype)],

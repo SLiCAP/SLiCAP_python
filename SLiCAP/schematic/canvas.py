@@ -6,10 +6,11 @@ from PySide6.QtWidgets import (
     QGraphicsView, QGraphicsScene, QGraphicsPathItem, QGraphicsItem,
     QGraphicsEllipseItem, QGraphicsSimpleTextItem,
 )
-from PySide6.QtCore import Qt, QPointF, QRectF, Signal, QTimer
+from PySide6.QtCore import Qt, QEvent, QPointF, QRectF, Signal, QTimer
 from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPainterPath, QTransform, QPixmap, QPolygonF
 
 from . import config as _config
+from . import dialects
 from .config import (
     GRID_SIZE, GRID_MAJOR, DEFAULT_ZOOM, snap, snap_pos,
     Z_WIRE, Z_WIRE_DRAG,
@@ -295,6 +296,9 @@ class SchematicScene(QGraphicsScene):
                                       # (window: offer that symbol again)
     wire_mode_started = Signal()
     wire_mode_ended   = Signal()
+    connection_refused = Signal(str)  # the dialect's net_check rejected the
+    net_problems_found = Signal(list) # a loaded file breaks the net rules
+                                      # wire just drawn; it is gone again
     data_changed      = Signal()   # emitted on every new undo snapshot
 
     def __init__(self):
@@ -419,6 +423,52 @@ class SchematicScene(QGraphicsScene):
         # names stay and the netlister refuses the net. Never asked while
         # a file is being loaded (_loading).
         self.net_conflict_resolver = None
+        # Dialect hooks, installed by the panel (system_dialect.attach):
+        # net_check(components, wires) returns the rules every net of the
+        # drawing breaks, as messages (typed signals, SystemExtensionSpecs.md
+        # 9.3): a gesture that leaves a problem the drawing did not have
+        # before is taken back (_settle), a loaded file with one is
+        # reported (net_problems_found). The check was on the wire just
+        # drawn only; a block moved onto a wire bypassed it and the sheet
+        # loaded with a node on the reference net, which the clock
+        # annotator could not label (Anton, 2026-11-19: "it should warn
+        # about wrong wiring"). annotator(components, wires)
+        # returns {instance_id: {key: value text or None}}, the derived
+        # read-only labels of the components (the clock frequencies),
+        # kept in self.annotations by refresh_annotations(). The component
+        # shows them as it shows the operating-point current, one text
+        # form and style for all derived labels (component_item
+        # _derived_text/_derived_style); None is a value that cannot be
+        # computed yet (Anton, 2026-11-17: "?" marks a value to enter);
+        # (text, True) is a provisional value, shown dimmed.
+        # component_editor(item) returns (button text, function(item,
+        # parent=None, on_accept=None)) when the dialect edits the
+        # component's own quantity in a dialog of its own, else None.
+        self.net_check = None
+        self.net_problems: list = []      # of the current drawing (_sync_junctions)
+        self._gesture = False             # a snapshot was pushed for a gesture
+        self.annotator = None
+        self.annotations: dict = {}
+        self.component_editor = None
+        # LaTeX in the background (latex_background; Anton, 2026-11-20).
+        # The editor's panel sets latex_in_background. A component's label
+        # that is not in the render cache shows its plain text. It is built
+        # again when the worker has made it (await_labels). Switching it on
+        # subscribes the scene to latex_background.relay().rendered, before
+        # any render can start. from_data and an export wait for their
+        # renders with the window responsive. Scripts and the command line
+        # keep rendering at once.
+        self._relay_connected = False         # before latex_in_background
+        self.latex_in_background = False
+        self._awaiting_labels: set = set()    # components, until rendered
+        self._awaiting_caches: set = set()    # the caches they wait for
+        self._buttons_down = False            # a mouse gesture is in progress
+        self._labels_due = False              # rendered during that gesture
+        # properties_extra(item) returns what the dialect adds to the
+        # Properties dialog of a block, or None: {"fixed": parameter keys
+        # shown but not editable, "descend": (button text, path or None,
+        # tooltip)} (2026-11-18: the filter block of the system dialect).
+        self.properties_extra = None
         self._loading = False
         self._library    = None   # set by from_data; used by _restore
 
@@ -677,9 +727,7 @@ class SchematicScene(QGraphicsScene):
                 # a wire left behind follows the moved pins and wire ends
                 w.points = [QPointF(anchors.get(_pt_key(p), p)) for p in old_pts[id(w)]]
             w._rebuild()
-        self._sync_junctions()
-        self._remove_short_circuit_wires()
-        self._sync_junctions()
+        self._settle()
         return True
 
     def _move_paste_ghosts(self, pos: QPointF) -> None:
@@ -960,9 +1008,7 @@ class SchematicScene(QGraphicsScene):
                 self.addItem(item)
                 item.setSelected(True)
 
-        self._sync_junctions()
-        self._remove_short_circuit_wires()
-        self._sync_junctions()
+        self._settle()
 
     # ── placement ─────────────────────────────────────────────────────────────
         self._paste_ref = None
@@ -1888,9 +1934,7 @@ class SchematicScene(QGraphicsScene):
             self._mode = _Mode.NORMAL
             self.wire_mode_ended.emit()
         if committed:
-            self._sync_junctions()
-            self._remove_short_circuit_wires()
-            self._sync_junctions()
+            self._settle()
 
     def _refresh_preview(self, cursor: QPointF | None):
         self._last_cursor = cursor
@@ -1916,6 +1960,7 @@ class SchematicScene(QGraphicsScene):
         at once, but Qt's event delivery in progress keeps a valid object."""
         super().removeItem(item)
         self._pinned.discard(item)
+        self._awaiting_labels.discard(item)
         if not self._retired:
             QTimer.singleShot(0, self._release_retired)
         self._retired.append(item)
@@ -1926,6 +1971,127 @@ class SchematicScene(QGraphicsScene):
     def clear(self) -> None:
         super().clear()
         self._pinned.clear()
+        self._awaiting_labels.clear()
+        self._labels_due = False
+
+    # ── LaTeX in the background (latex_background) ───────────────────────────
+
+    @property
+    def latex_in_background(self) -> bool:
+        """True in the editor: misses of a live edit render on a worker."""
+        return self._latex_in_background
+
+    @latex_in_background.setter
+    def latex_in_background(self, on: bool) -> None:
+        """Switched on, the scene subscribes to the rounds of the worker.
+        That happens once, on the editor's thread, before any render of
+        this scene can start. A cross-thread signal reaches only the
+        receivers connected when it is emitted. The relay is made here
+        too, so the worker reports from its first round on."""
+        self._latex_in_background = on
+        if on and not self._relay_connected:
+            from .latex_background import relay
+            relay().rendered.connect(self._on_rendered)
+            self._relay_connected = True
+
+    def await_labels(self, comp, cache) -> None:
+        """*comp* shows plain text for labels that the worker renders into
+        *cache*: build them again when a round for that cache is done
+        (ComponentItem.update_labels).
+
+        The scene subscribed to the rounds when latex_in_background was
+        switched on. The connect that was made here at the first call was
+        REPLACED 2026-11-22. It ran after deferred_renders had started the
+        worker, so a round that ended first was never heard. The component
+        then kept its plain text until the next round for that cache, or an
+        export. Calling this inside the
+        deferred_renders block was considered and REJECTED: it fixes only
+        update_labels, and _await_batch can register only after wait_for.
+        Checking here whether the cache is idle already was REJECTED too:
+        a check afterwards in a consumer."""
+        self._awaiting_labels.add(comp)
+        self._awaiting_caches.add(str(cache))
+
+    def _on_rendered(self, cache: str) -> None:
+        if cache not in self._awaiting_caches:
+            return
+        if self._buttons_down:
+            self._labels_due = True           # after the gesture (event())
+        else:
+            self._refresh_awaiting()
+
+    def _refresh_awaiting(self) -> None:
+        """Build the labels of the waiting components again: their pictures
+        are in the cache now, or the worker gave up and the plain text
+        stays. Between events and never during a mouse gesture, so no label
+        is replaced while it is pressed or dragged. Builds the labels only:
+        no undo step, the drawing is not changed."""
+        self._labels_due = False
+        comps = self._awaiting_labels
+        self._awaiting_labels = set()
+        self._awaiting_caches = set()
+        for comp in comps:
+            if comp.scene() is self:
+                comp.update_labels()
+
+    def finish_latex(self) -> None:
+        """Wait for the labels the worker still renders, then show them: an
+        export or a print draws the schematic as it will look."""
+        if not self._awaiting_labels:
+            return
+        from .latex_label import background
+        from pathlib import Path
+        caches = [Path(c) for c in self._awaiting_caches]
+        count = sum(background.pending(c) for c in caches)
+        if count:
+            from .latex_background import wait_for
+
+            def work():
+                for cache in caches:
+                    background.wait_idle(cache)
+            wait_for(work, count, self._wait_parent())
+        self._refresh_awaiting()
+
+    def _cache_path(self):
+        """This schematic's render cache as latex_label names it."""
+        from pathlib import Path
+        from .latex_label import session_cache_dir
+        return session_cache_dir() if self.cache_dir is None else Path(self.cache_dir)
+
+    def _await_batch(self) -> None:
+        """The user continued with plain text while the batch of from_data
+        renders: the components build their labels when it is done.
+
+        A narrow window remains (2026-11-22, no action). The batch emits
+        rendered before wait_for marks its work done. The wait line can
+        deliver that signal before this method registers the cache. A
+        Continue click in those few milliseconds leaves the components
+        with plain text until the next round for the cache."""
+        cache = self._cache_path()
+        for item in list(self._pinned):
+            if isinstance(item, ComponentItem):
+                self.await_labels(item, cache)
+
+    def _wait_parent(self):
+        """The window a LaTeX wait belongs to (latex_background.wait_for)."""
+        for view in self.views():
+            if view.isVisible():
+                return view.window()
+        from PySide6.QtWidgets import QApplication
+        return QApplication.activeWindow()
+
+    def event(self, event) -> bool:
+        """Note when a mouse gesture is in progress: labels rendered in the
+        meantime are built after the release (_on_rendered)."""
+        kind = event.type()
+        if kind == QEvent.Type.GraphicsSceneMousePress:
+            self._buttons_down = True
+        handled = super().event(event)
+        if kind == QEvent.Type.GraphicsSceneMouseRelease:
+            self._buttons_down = event.buttons() != Qt.MouseButton.NoButton
+            if self._labels_due and not self._buttons_down:
+                self._refresh_awaiting()
+        return handled
 
     def reset(self):
         """Clear scene and reset all state (for New / before Load)."""
@@ -1947,6 +2113,7 @@ class SchematicScene(QGraphicsScene):
         self._analysis_pending  = None
         self.clear()
         self._counters = {}
+        self.annotations = {}
 
     # ── undo / redo ───────────────────────────────────────────────────────────
 
@@ -1962,6 +2129,7 @@ class SchematicScene(QGraphicsScene):
         if len(self._undo_stack) > 50:
             self._undo_stack.pop(0)
         self._redo_stack.clear()
+        self._gesture = True
         self.data_changed.emit()
 
     def undo(self) -> None:
@@ -1990,7 +2158,7 @@ class SchematicScene(QGraphicsScene):
     # ── wire splitting ────────────────────────────────────────────────────────
 
     def _connect_wires_at(self, pos: QPointF) -> None:
-        """Place > Junction: CONNECT the wires that pass through *pos*.
+        """Circuit > Junction: CONNECT the wires that pass through *pos*.
 
         Junction dots are derived from the wire topology (_sync_junctions),
         so a dot placed by hand at a crossing used to vanish at the next sync
@@ -2287,6 +2455,52 @@ class SchematicScene(QGraphicsScene):
         self._sync_node_net_names()
         self._sync_user_net_names()       # a symbol removed restores one owner
         self._refresh_pin_markers(wires, comps)
+        self.refresh_annotations()
+        self.net_problems = self._net_problems()
+
+    def _net_problems(self) -> list:
+        """The rules the nets of the drawing break (the dialect's net_check),
+        or [] without a dialect check."""
+        if self.net_check is None:
+            return []
+        comps = [i for i in self.items() if isinstance(i, ComponentItem)]
+        wires = [i for i in self.items() if isinstance(i, WireItem)]
+        return list(self.net_check(comps, wires))
+
+    def _settle(self) -> bool:
+        """Finish a gesture that may join nets: a wire drawn, items moved or
+        pasted, a block placed, a wire end dragged. The junction sync
+        around the removal of the short-circuit wires, then the net rules
+        of the dialect: a problem the drawing did not have before the
+        gesture takes the gesture back (the snapshot the gesture pushed,
+        restored without a redo entry) and is reported through
+        connection_refused. Returns False when taken back. A problem the
+        drawing already had (a loaded file) does not block editing."""
+        before = self.net_problems
+        gesture, self._gesture = self._gesture, False
+        self._sync_junctions()
+        self._remove_short_circuit_wires()
+        self._sync_junctions()
+        new = [m for m in self.net_problems if m not in before]
+        if new and gesture and self._undo_stack:
+            self._restore(self._undo_stack.pop())
+            self.connection_refused.emit(new[0])
+            return False
+        return True
+
+    def refresh_annotations(self) -> None:
+        """Recompute the derived labels of the components (the annotator
+        hook) after the connectivity or a parameter changed, and rebuild
+        the labels of the components whose texts changed."""
+        if self.annotator is None:
+            return
+        comps = [i for i in self.items() if isinstance(i, ComponentItem)]
+        wires = [i for i in self.items() if isinstance(i, WireItem)]
+        new = self.annotator(comps, wires)
+        old, self.annotations = self.annotations, new
+        for comp in comps:
+            if old.get(comp.instance_id) != new.get(comp.instance_id):
+                comp.update_labels()
 
     def _refresh_pin_markers(self, wires=None, comps=None) -> None:
         """Tell each component which of its pins are unconnected, so it can draw
@@ -2388,6 +2602,15 @@ class SchematicScene(QGraphicsScene):
         (connectivity.resolve_nets). The user's own name of such a wire is
         kept in _user_net_name and restored when the symbol goes.
 
+        A port without a name adopts the name its net already has, from
+        a label or from another port: a port is a pin of the net and a
+        net has one name (Anton, 2026-11-19: an unnamed port on a wire
+        labelled Ix opened with an empty field, named nothing and was no
+        pin of the subcircuit). The ground's 0 is not adopted: a port on
+        the ground is no pin either. Prefilling only the dialog was
+        offered and REJECTED: the port would stay unnamed, and the pin
+        missing, until the dialog was opened.
+
         Was ports only, on its own copy of the union-find: a net the user
         had named and then grounded kept its name on the schematic, and
         stayed renamable, while the netlist said 0 (Anton, 2026-10-22:
@@ -2397,6 +2620,24 @@ class SchematicScene(QGraphicsScene):
         comps = [i for i in self.items() if isinstance(i, ComponentItem)]
         wires = [i for i in self.items() if isinstance(i, WireItem)]
         uf = _build_net_uf(comps, wires)
+
+        # the names the nets have: a named port first, else a wire label
+        net_names: dict[tuple, str] = {}
+        for wire in wires:
+            if wire.points and wire.net_name and wire.net_name != "0":
+                net_names.setdefault(uf.find(_rpt(wire.points[0])), wire.net_name)
+        ports = [c for c in comps if c.symbol_name == "port"]
+        for comp in ports:
+            name = comp.params.get("name", "").strip()
+            if name:
+                net_names[uf.find(_rpt(comp.mapToScene(QPointF(0.0, 0.0))))] = name
+        for comp in ports:
+            if comp.params.get("name", "").strip():
+                continue
+            name = net_names.get(uf.find(_rpt(comp.mapToScene(QPointF(0.0, 0.0)))))
+            if name:
+                comp.params["name"] = name
+                comp.update_labels()
 
         # root -> name; the ground after the ports, so it wins the net
         root_to_name: dict[tuple, str] = {}
@@ -2641,12 +2882,33 @@ class SchematicScene(QGraphicsScene):
         Re-rendering only the items with a miss was considered and
         REJECTED: every item type would need a public re-render, while the
         second population costs at most 0.1 s.
+
+        In the editor (latex_in_background) the batch renders on a worker
+        thread and the window stays responsive: after half a second a line
+        says that LaTeX is rendering (latex_background.wait_for). When the
+        user continues with plain text, the components get their LaTeX
+        labels once the batch is done (await_labels). Tables, fragments and
+        blocks keep their plain text until the next build.
         """
         from .latex_label import render_batch
-        with render_batch(self.cache_dir) as batch:
+        run = None
+        if self.latex_in_background:
+            from .latex_background import relay, wait_for
+            rel, cache = relay(), str(self._cache_path())
+
+            def run(work, count):
+                def work_then_tell():
+                    try:
+                        work()
+                    finally:
+                        rel.rendered.emit(cache)     # for _await_batch
+                return wait_for(work_then_tell, count, self._wait_parent())
+        with render_batch(self.cache_dir, run=run) as batch:
             missing = self._populate(data, library)
-        if batch.queued:
+        if batch.queued and batch.done:
             missing = self._populate(data, library)
+        elif batch.queued:
+            self._await_batch()
         return missing
 
     def _populate(self, data, library) -> list:
@@ -2818,6 +3080,8 @@ class SchematicScene(QGraphicsScene):
         # Derived net names for 'Display net name' wires without a
         # user label (transient; netlist authority arrives after a run).
         self.refresh_bias_annotations()
+        if self.net_problems:
+            self.net_problems_found.emit(list(self.net_problems))
         return missing
 
     # ── scene events ─────────────────────────────────────────────────────────
@@ -2901,9 +3165,7 @@ class SchematicScene(QGraphicsScene):
                 item.h_flip = bool(getattr(self, "_placing_hflip", False))
                 item.apply_transform()
             self.addItem(item)
-            self._sync_junctions()
-            self._remove_short_circuit_wires()
-            self._sync_junctions()
+            self._settle()
 
         elif self._mode == _Mode.PLACING_JUNCTION and event.button() == Qt.LeftButton:
             self._push_undo()
@@ -3272,9 +3534,7 @@ class SchematicScene(QGraphicsScene):
                     # Capture footprint before _sync_junctions may replace the wire.
                     moved_segs = [(QPointF(self._vdrag_wire.points[0]),
                                    QPointF(self._vdrag_wire.points[-1]))]
-                    self._sync_junctions()
-                    self._remove_short_circuit_wires()
-                    self._sync_junctions()
+                    self._settle()
                     self._reselect_on_footprint(moved_segs)
                     self.update()
                 self._vdrag_snapshot     = None
@@ -3534,6 +3794,13 @@ class SchematicScene(QGraphicsScene):
                 from .source_stimuli_dialog import edit_source_stimuli
                 edit_source_stimuli(comp, on_accept=self._push_undo)
                 return
+            editor = (self.component_editor(comp) if self.component_editor
+                      else None)
+            if editor is not None and item.prop_key in comp.params:
+                editor[1](comp, on_accept=self._push_undo)   # one editor
+                return
+            if item.prop_key in self.annotations.get(comp.instance_id, {}):
+                return                    # a derived label is not edited
             from .attribute_dialog import AttributeDialog
             dlg = AttributeDialog(comp, item.prop_key)
             if dlg.exec():
@@ -3541,6 +3808,7 @@ class SchematicScene(QGraphicsScene):
                 dlg.apply()
                 if comp.symbol_name in NODE_SYMBOLS:
                     self._sync_node_net_names()
+                self.refresh_annotations()
             return
         if isinstance(item, ComponentItem):
             if item.symbol_name in ("0", "port"):
@@ -3556,18 +3824,36 @@ class SchematicScene(QGraphicsScene):
                 view     = self.views()[0] if self.views() else None
                 panel    = view.parent() if view else None
                 sch_type = getattr(panel, '_sch_type', None)
-                show_stimuli = (sch_type == 'ngspice' and prefix in ("V", "I"))
+                if sch_type == 'ngspice' and prefix in ("V", "I"):
+                    from .source_stimuli_dialog import edit_source_stimuli
+                    editor = ("View / Edit source stimuli…", edit_source_stimuli)
+                else:
+                    editor = (self.component_editor(item)
+                              if self.component_editor else None)
                 offer_dc = (sch_type == 'ngspice' and prefix in ("V", "L"))
                 from .properties_dialog import PropertiesDialog
                 dlg = PropertiesDialog(item,
-                                       show_stimuli=show_stimuli,
+                                       editor=editor,
                                        is_current=(prefix == "I"),
                                        offer_dc_current=offer_dc,
-                                       sch_ext=(".spice_sch"
-                                                if sch_type == 'ngspice'
-                                                else ".slicap_sch"),
-                                       library=getattr(self, "_library", None))
+                                       sch_ext=dialects.by_name(sch_type).sch_ext,
+                                       library=getattr(self, "_library", None),
+                                       extra=(self.properties_extra(item)
+                                              if self.properties_extra else None))
                 result = dlg.exec()
+                # Descend closes the dialog as OK does: its values are
+                # applied first, then the child opens (Anton, 2026-11-21).
+                if result:
+                    self._push_undo()
+                    dlg.apply()
+                    self.refresh_annotations()
+                    change = dlg.symbol_change()
+                    if change is not None:
+                        sym, svg_text = change
+                        if svg_text is not None and panel is not None \
+                                and hasattr(panel, "adopt_symbol"):
+                            sym = panel.adopt_symbol(sym.name, svg_text) or sym
+                        self.change_symbol(item, sym)
                 if dlg.descend_path() is not None:
                     # Open the subcircuit's schematic so deeper hierarchies
                     # stay navigable. open_subschematic lives on the
@@ -3586,16 +3872,6 @@ class SchematicScene(QGraphicsScene):
                     else:
                         print("Error: cannot descend: no canvas panel "
                               "owns this scene.")
-                elif result:
-                    self._push_undo()
-                    dlg.apply()
-                    change = dlg.symbol_change()
-                    if change is not None:
-                        sym, svg_text = change
-                        if svg_text is not None and panel is not None \
-                                and hasattr(panel, "adopt_symbol"):
-                            sym = panel.adopt_symbol(sym.name, svg_text) or sym
-                        self.change_symbol(item, sym)
         else:
             super().mouseDoubleClickEvent(event)
 
@@ -3620,9 +3896,7 @@ class SchematicScene(QGraphicsScene):
                         moves.append((w, idx, n - w.points[idx]))
         for w, idx, delta in moves:
             w.move_points({idx}, delta)
-        self._sync_junctions()
-        self._remove_short_circuit_wires()
-        self._sync_junctions()
+        self._settle()
         self.data_changed.emit()
 
     # ── grid background ───────────────────────────────────────────────────────
@@ -3932,6 +4206,40 @@ class SchematicView(QGraphicsView):
 
     # ── keyboard ─────────────────────────────────────────────────────────────
 
+    # The keys the canvas handles itself, in the order they are tried: the
+    # key, the modifiers it needs (more may be held, as before), what Help >
+    # Keyboard shortcuts shows (None: not listed apart), what it does, and
+    # the method. ONE table for the handler and for the help (workshop of
+    # 2026-11-17: "create shortcut overview ... as help"); the menu
+    # shortcuts are listed from the menu actions themselves. Was a chain of
+    # branches in keyPressEvent, which no overview could read; the branch
+    # bodies are the methods below, unchanged.
+    _CTRL = Qt.KeyboardModifier.ControlModifier
+    _ANY = Qt.KeyboardModifier.NoModifier
+    CANVAS_KEYS = (
+        (Qt.Key_Escape, _ANY, "Esc",
+         "Finish the line or polygon, end the wire, stop placing", "_key_escape"),
+        (Qt.Key_Return, _ANY, "Enter",
+         "Finish the wire, line or polygon being drawn", "_key_enter"),
+        (Qt.Key_Enter, _ANY, None, None, "_key_enter"),          # the keypad's Enter
+        (Qt.Key_Slash, _ANY, "/", "Switch the corner of the wire being drawn",
+         "_key_elbow"),
+        (Qt.Key_Z, _CTRL | Qt.KeyboardModifier.ShiftModifier, "Ctrl+Shift+Z", "Redo",
+         "_key_redo"),
+        (Qt.Key_Z, _CTRL, "Ctrl+Z", "Undo", "_key_undo"),
+        (Qt.Key_Y, _CTRL, "Ctrl+Y", "Redo", "_key_redo"),
+        (Qt.Key_R, _ANY, "R",
+         "Rotate the selection, or the symbol being placed, a quarter turn", "_key_rotate"),
+        (Qt.Key_M, _ANY, "M", "Mirror the selection, or the symbol being placed",
+         "_key_mirror"),
+        (Qt.Key_Delete, _ANY, "Del", "Delete the selection", "_key_delete"),
+        (Qt.Key_Backspace, _ANY, "Backspace", "Delete the selection", "_key_delete"),
+        (Qt.Key_A, _CTRL, "Ctrl+A", "Select all", "_key_select_all"),
+        (Qt.Key_C, _CTRL, "Ctrl+C", "Copy the selection", "_key_copy"),
+        (Qt.Key_X, _CTRL, "Ctrl+X", "Cut the selection", "_key_cut"),
+        (Qt.Key_V, _CTRL, "Ctrl+V", "Paste", "_key_paste"),
+    )
+
     def keyPressEvent(self, event):
         scene = self.scene()
 
@@ -3946,97 +4254,108 @@ class SchematicView(QGraphicsView):
 
         key  = event.key()
         mods = event.modifiers()
+        for k, needed, _shown, _what, method in self.CANVAS_KEYS:
+            if key == k and (mods & needed) == needed:
+                getattr(self, method)(scene)
+                return
+        super().keyPressEvent(event)
 
-        if key == Qt.Key_Escape:
-            if scene._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON):
-                # Commit if we have a valid shape; otherwise just cancel
-                if len(scene._draw_pts) >= 2:
-                    scene._commit_shape(scene._draw_pts[-1])
-                else:
-                    scene._cancel_draw()
-            elif scene._mode in (_Mode.DRAWING_RECT, _Mode.DRAWING_ELLIPSE):
-                scene._cancel_draw()
-            elif scene._mode == _Mode.WIRING:
-                scene.finish_wire()
-            else:
-                scene.cancel_placement()
-        elif key in (Qt.Key_Return, Qt.Key_Enter):
-            if scene._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON) and len(scene._draw_pts) >= 2:
+    def _key_escape(self, scene):
+        if scene._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON):
+            # Commit if we have a valid shape; otherwise just cancel
+            if len(scene._draw_pts) >= 2:
                 scene._commit_shape(scene._draw_pts[-1])
             else:
-                scene.finish_wire()
-        elif key == Qt.Key_Slash:
-            scene.toggle_elbow()
-        elif key == Qt.Key_Z and mods & Qt.ControlModifier:
-            if mods & Qt.ShiftModifier:
-                scene.redo()
-            else:
-                scene.undo()
-        elif key == Qt.Key_Y and mods & Qt.ControlModifier:
-            scene.redo()
-        elif key == Qt.Key_R:
-            if scene.rotate_ghost():
-                return                    # a component being placed turns
-            if scene.transform_selection(quarter_turns=1):
-                return                    # a group turns as one
-            rotatable = [i for i in scene.selectedItems()
-                         if not isinstance(i, _PropertyLabel)]
-            if rotatable:
-                scene._push_undo()
-            for item in rotatable:
-                if isinstance(item, ShapeItem):
-                    item.rotate_quarter()      # on the points, see ShapeItem
-                else:
-                    item.setRotation(item.rotation() + 90)
-        elif key == Qt.Key_M:
-            if scene.mirror_ghost():
-                return
-            if scene.transform_selection(mirror=True):
-                return                    # a group mirrors as one
-            sel = [i for i in scene.selectedItems()
-                   if isinstance(i, (ComponentItem, ShapeItem))]
-            if sel:
-                scene._push_undo()
-                for item in sel:
-                    if isinstance(item, ShapeItem):
-                        item.mirror()
-                    else:
-                        item.h_flip = not item.h_flip
-                        item.apply_transform()
-                scene._sync_junctions()
-        elif key in (Qt.Key_Delete, Qt.Key_Backspace):
-            if scene.selectedItems():
-                scene._push_undo()
-                for item in scene.selectedItems():
-                    from .wire_item import WireItem as _WI
-                    parent = item.parentItem()
-                    if isinstance(parent, _WI):
-                        # Selected item is a net label child — clear the label.
-                        parent.net_name       = ""
-                        parent._user_net_name = ""
-                        parent.display_name   = False
-                        parent.update_label()
-                    elif isinstance(item, _PropertyLabel):
-                        scene.hide_label(item)
-                    else:
-                        scene.removeItem(item)
-                scene._sync_junctions()
-        elif key == Qt.Key_A and mods & Qt.ControlModifier:
-            scene.select_all()
-        elif key == Qt.Key_C and mods & Qt.ControlModifier:
-            scene._copy_selection()
-        elif key == Qt.Key_X and mods & Qt.ControlModifier:
-            sel = scene.selectedItems()
-            if sel:
-                scene._copy_selection()
-                scene._push_undo()
-                for item in sel:
-                    if isinstance(item, _PropertyLabel):
-                        scene.hide_label(item)
-                    else:
-                        scene.removeItem(item)
-                scene._sync_junctions()
-        elif key == Qt.Key_V and mods & Qt.ControlModifier:
-            scene._paste_clipboard()
+                scene._cancel_draw()
+        elif scene._mode in (_Mode.DRAWING_RECT, _Mode.DRAWING_ELLIPSE):
+            scene._cancel_draw()
+        elif scene._mode == _Mode.WIRING:
+            scene.finish_wire()
         else:
-            super().keyPressEvent(event)
+            scene.cancel_placement()
+
+    def _key_enter(self, scene):
+        if scene._mode in (_Mode.DRAWING_LINE, _Mode.DRAWING_POLYGON) and len(scene._draw_pts) >= 2:
+            scene._commit_shape(scene._draw_pts[-1])
+        else:
+            scene.finish_wire()
+
+    def _key_elbow(self, scene):
+        scene.toggle_elbow()
+
+    def _key_undo(self, scene):
+        scene.undo()
+
+    def _key_redo(self, scene):
+        scene.redo()
+
+    def _key_rotate(self, scene):
+        if scene.rotate_ghost():
+            return                    # a component being placed turns
+        if scene.transform_selection(quarter_turns=1):
+            return                    # a group turns as one
+        rotatable = [i for i in scene.selectedItems()
+                     if not isinstance(i, _PropertyLabel)]
+        if rotatable:
+            scene._push_undo()
+        for item in rotatable:
+            if isinstance(item, ShapeItem):
+                item.rotate_quarter()      # on the points, see ShapeItem
+            else:
+                item.setRotation(item.rotation() + 90)
+
+    def _key_mirror(self, scene):
+        if scene.mirror_ghost():
+            return
+        if scene.transform_selection(mirror=True):
+            return                    # a group mirrors as one
+        sel = [i for i in scene.selectedItems()
+               if isinstance(i, (ComponentItem, ShapeItem))]
+        if sel:
+            scene._push_undo()
+            for item in sel:
+                if isinstance(item, ShapeItem):
+                    item.mirror()
+                else:
+                    item.h_flip = not item.h_flip
+                    item.apply_transform()
+            scene._sync_junctions()
+
+    def _key_delete(self, scene):
+        if scene.selectedItems():
+            scene._push_undo()
+            for item in scene.selectedItems():
+                from .wire_item import WireItem as _WI
+                parent = item.parentItem()
+                if isinstance(parent, _WI):
+                    # Selected item is a net label child — clear the label.
+                    parent.net_name       = ""
+                    parent._user_net_name = ""
+                    parent.display_name   = False
+                    parent.update_label()
+                elif isinstance(item, _PropertyLabel):
+                    scene.hide_label(item)
+                else:
+                    scene.removeItem(item)
+            scene._sync_junctions()
+
+    def _key_select_all(self, scene):
+        scene.select_all()
+
+    def _key_copy(self, scene):
+        scene._copy_selection()
+
+    def _key_cut(self, scene):
+        sel = scene.selectedItems()
+        if sel:
+            scene._copy_selection()
+            scene._push_undo()
+            for item in sel:
+                if isinstance(item, _PropertyLabel):
+                    scene.hide_label(item)
+                else:
+                    scene.removeItem(item)
+            scene._sync_junctions()
+
+    def _key_paste(self, scene):
+        scene._paste_clipboard()

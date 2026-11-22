@@ -94,6 +94,15 @@ For each property there are two check-boxes:
 Labels you switch on can be dragged to any position around the symbol; a thin
 dashed leader line connects a label to its component while it is selected.
 
+On NGspice schematics a component offers every instance parameter of its
+device type, for instance ``temp``, ``m`` and ``ic`` of a diode, with both
+check-boxes off. A parameter you leave empty is not written to the netlist, so
+NGspice uses its own default. An ``ic`` of several values, such as
+``vbe,vce`` of a bipolar transistor, is written as one comma-separated value;
+``onoff`` is ``0`` for the keyword ``off`` and ``1`` or empty for the default.
+On a schematic made before version 6.4.8, *Tools > Update symbols from
+library* adds the parameters to the placed components.
+
 Orientation
 ===========
 
@@ -120,7 +129,7 @@ list (**Up** and **Down** move a port to another pin) and a preview. The
 result is written into the project's ``lib`` folder as the block's symbol,
 as :menuselection:`Circuit --> New subcircuit symbol…` does, so the netlist order of the
 ports is unchanged and other schematics of the project pick it up with
-:menuselection:`Tools --> Load symbols from library`.
+:menuselection:`Tools --> Load selected symbols from library`.
 
 Source stimuli (NGspice)
 ========================

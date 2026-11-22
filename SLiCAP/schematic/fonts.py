@@ -7,7 +7,10 @@ the decision of 2026-10-06. They are DRAWN with the DejaVu fonts that
 matplotlib, a SLiCAP dependency, ships as TTF files:
 
 - the editor loads the files into Qt and draws a generic family with the
-  shipped family (resolve_family);
+  shipped family (resolve_family). Qt also gets each font-family string of
+  the SVG as a substitution for the shipped family (load_qt_fonts).
+  QSvgRenderer takes that string as one family name. With the substitution,
+  print and placed drawings draw the shipped family too;
 - the SVG names the shipped family first and the generic family as the
   fallback (svg_family), so a browser with DejaVu shows the same outlines;
 - the PDF embeds the files: svglib and reportlab get them registered under
@@ -73,23 +76,44 @@ def generic_of(family: str) -> str | None:
 
 def load_qt_fonts() -> bool:
     """Load the shipped files into Qt's font database, once. False when there
-    is no GUI application yet or the files are missing."""
+    is no GUI application yet or the files are missing.
+
+    It also registers each string that svg_family writes, such as
+    "DejaVu Sans Mono, monospace", as a Qt font substitution. The shipped
+    family comes first and the generic family is the fallback. QSvgRenderer
+    does not split a CSS family list. It takes the whole string as one
+    family name. That family does not exist, so Qt drew the platform's
+    default font. Three consumers render an exported SVG with QSvgRenderer:
+    print (export.print_scene), the schematics, posters and SVG images
+    placed on a sheet (ImageItem) and the placement preview of an SVG image
+    (canvas.start_image_placement). They drew serif and monospace text in
+    sans until 2026-11-22. The substitution is registered
+    also when the files did not load. The generic family then remains the
+    fallback."""
     global _qt_loaded
     if _qt_loaded:
         return True
     try:
-        from PySide6.QtGui import QGuiApplication, QFontDatabase
+        from PySide6.QtGui import QGuiApplication, QFontDatabase, QFont
     except Exception:
         return False
     if QGuiApplication.instance() is None:
         return False
     ok = True
-    for generic in SHIPPED:
+    for generic, shipped in SHIPPED.items():
         for bold in (False, True):
             for italic in (False, True):
                 f = font_file(generic, bold, italic)
                 if f is None or QFontDatabase.addApplicationFont(str(f)) < 0:
                     ok = False
+        # Writing only the shipped family into the SVG was considered and
+        # REJECTED (2026-11-22). It loses the browser fallback of 2026-10-10.
+        # Rewriting the font-family in each Qt consumer of the SVG was
+        # considered and REJECTED (2026-11-22). It is a patch at three
+        # consumers, while this module owns the string.
+        # Printing via cairosvg or a PDF raster was REJECTED on 2026-07-16
+        # (Windows trouble, see SLNG.md 2026-07-16 "drop cairosvg").
+        QFont.insertSubstitutions(svg_family(generic), [shipped, generic])
     _qt_loaded = ok
     return ok
 

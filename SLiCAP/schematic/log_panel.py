@@ -1,9 +1,11 @@
 """Log panel — scrollable read-only output area for the NGspice subprocess."""
 from PySide6.QtWidgets import (
-    QDockWidget, QPlainTextEdit, QWidget,
+    QDockWidget, QWidget,
     QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog,
 )
-from PySide6.QtGui import QFont, QColor, QTextCharFormat, QTextCursor
+from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
+
+from .code_editor import LOG_SIZE, ZoomText
 
 
 class LogPanel(QDockWidget):
@@ -14,6 +16,9 @@ class LogPanel(QDockWidget):
     bottom on each new line.  Cleared at the start of each new run.
 
     Toolbar buttons: Clear log | Save log…
+
+    The text zooms like the code boxes (code_editor.ZoomText) and keeps its
+    own size.
     """
 
     def __init__(self, parent=None):
@@ -44,12 +49,8 @@ class LogPanel(QDockWidget):
         layout.addLayout(btn_row)
 
         # ── text area ─────────────────────────────────────────────────────────
-        self._edit = QPlainTextEdit()
+        self._edit = ZoomText(pane="log", default=LOG_SIZE)
         self._edit.setReadOnly(True)
-        font = QFont("Monospace")
-        font.setStyleHint(QFont.StyleHint.Monospace)
-        font.setPointSize(9)
-        self._edit.setFont(font)
         layout.addWidget(self._edit)
 
         self.setWidget(container)

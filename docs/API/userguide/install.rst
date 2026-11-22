@@ -88,7 +88,7 @@ SLiCAP comes with a KiCAD SPICE symbol library for all standard NGspice devices 
 Completing and testing the installation
 =======================================
 
-After installing or updating SLiCAP, you can use it as any other Python package. On its first import, SLiCAP creates a main configuration file in the **user home directory**: ``~/SLiCAP.ini``. Commands for programs found on the search PATH or in their default MS-Windows install locations (e.g. ``C:\Spice64\bin`` for NGspice) are filled in automatically; SLiCAP does **not** search the disk and does not access the internet.
+After installing or updating SLiCAP, you can use it as any other Python package. On its first import, SLiCAP creates a main configuration file in the folder ``SLiCAP`` of the **user home directory**: ``~/SLiCAP/SLiCAP.ini``. Commands for programs found on the search PATH or in their default MS-Windows install locations (e.g. ``C:\Spice64\bin`` for NGspice) are filled in automatically. SLiCAP does **not** search the disk and does not access the internet.
 
 .. admonition:: First import
 
@@ -96,26 +96,26 @@ After installing or updating SLiCAP, you can use it as any other Python package.
 
         >>> import SLiCAP as sl
 
-        Generating main configuration file: ~/SLiCAP.ini.
-        Generating project configuration file: SLiCAP.ini.
+        Generating main configuration file: /home/USR/SLiCAP/SLiCAP.ini
 
 Main configuration
 ==================
 
 Programs that were not detected automatically (under MS-Windows most
-installers do not extend the search PATH) are configured in one of two ways:
-
-#. In the SLiCAP GUI (started with the ``slicap`` command):
-   :menuselection:`File --> Configure SLiCAP…`. Enter or browse to the
-   program paths; *Detect* fills in programs found on the PATH or in their
-   default install locations, and *Test* verifies each entry.
-#. Manually, by editing the **[commands]** section of ``~/SLiCAP.ini``
-   (see the examples below).
+installers do not extend the search PATH) are configured in the
+**[commands]** section of ``~/SLiCAP/SLiCAP.ini`` (see the examples below). Edit
+this file in a text editor. The SLiCAP GUI (started with the ``slicap``
+command) opens it with :menuselection:`File --> Edit main configuration
+file`.
 
 Reconfiguration is only needed when one of these programs is installed,
 removed, or moved.
 
-Below an **example** of the command section for user "USR" under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:\\Users\\USR\\SLiCAP.ini
+Under MS-Windows, use ``ngspice_con.exe`` for NGspice, not ``ngspice.exe``.
+Both are in the folder ``bin`` of NGspice. ``ngspice_con.exe`` runs without a
+window. ``ngspice.exe`` opens a window of its own at every run.
+
+Below an **example** of the command section for user "USR" under MS-Windows with default installation of all apps (lepton-eda is not available under MS-Windows). The main configuration file is located at: C:\\Users\\USR\\SLiCAP\\SLiCAP.ini
 
 .. code-block:: python
 
@@ -124,12 +124,12 @@ Below an **example** of the command section for user "USR" under MS-Windows with
     kicad = C:\Program Files\KiCad\9.0\bin\kicad-cli.exe
     ltspice = C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe
     geda = C:\Program Files (x86)\gEDA\gEDA\bin\gnetlist.exe
-    ngspice = C:\Users\USR\ngspice\Spice64\bin\ngspice.exe 
+    ngspice = C:\Users\USR\ngspice\Spice64\bin\ngspice_con.exe
     pdflatex = C:\Users\<USR>\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex.EXE
     dvisvgm = C:\Users\<USR>\AppData\Local\Programs\MiKTeX\miktex\bin\x64\dvisvgm.EXE
     slicap_det = 
 
-Below an **example** of the command section for user "USR" under **Linux** or **MacOS** with default installation of LTspice under *wine*. The main configuration file is located at: ~/SLiCAP.ini:
+Below an **example** of the command section for user "USR" under **Linux** or **MacOS** with default installation of LTspice under *wine*. The main configuration file is located at: ~/SLiCAP/SLiCAP.ini:
 
 .. code-block:: python
 

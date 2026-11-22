@@ -9,19 +9,21 @@ Workflow (Anton, 2026-07-12, same pattern as the Circuit-parameters dialog):
 - Unchecked: the button reads "OK" — the definition is accepted without
   placement; the (hidden) item still netlists its .model line.
 - Edit mode: the button reads "OK"; changes apply in place.  Entering the
-  name of an EXISTING model in the Place-menu dialog edits that definition
-  in place (the route back to a hidden one), like the library-link dialog.
+  name of an EXISTING model in the dialog of Circuit → Model definition…
+  edits that definition in place (the route back to a hidden one), like
+  the library-link dialog.
 
 The block's on-canvas SCALE is a schematic preference (Preferences →
 "Scaling defaults"), deliberately not settable here.
 """
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-    QLabel, QLineEdit, QComboBox, QPushButton, QTableWidget,
+    QLabel, QLineEdit, QComboBox, QPushButton,
     QTableWidgetItem, QAbstractItemView, QHeaderView, QDialogButtonBox,
-    QCheckBox, QFileDialog, QApplication, QLayout,
+    QCheckBox, QFileDialog, QLayout,
 )
 from PySide6.QtCore import Qt
+from .row_table import RowTable
 from .sizing import chars
 
 
@@ -117,11 +119,8 @@ class ModelDialog(QDialog):
 
         # ── parameter table ───────────────────────────────────────────────────
         outer.addWidget(QLabel("Parameters (name = value):"))
-        self._table = QTableWidget(0, 2)
-        # an opaque cell editor: at a fractional display scale (Windows,
-        # 125 %) the editor's text sat a pixel off the cell's own text,
-        # showing as ghosting (a user's report, 2026-09-25)
-        self._table.setStyleSheet("QTableWidget QLineEdit { background: palette(base); }")
+        # Tab on the last cell adds a row; the opaque cell editor (row_table)
+        self._table = RowTable(0, 2, add_row=self._add_row)
         self._table.setHorizontalHeaderLabels(["Name", "Value"])
         self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
@@ -235,32 +234,13 @@ class ModelDialog(QDialog):
 
     def _on_action(self) -> None:
         if self._latex_ok:
-            from .latex_label import render_latex_raw
+            from .latex_preview_dialog import confirm_render
             from .model_item import ModelItem
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            try:
-                svg, error = render_latex_raw(
-                    ModelItem.build_latex(self.model_name(), self.model_type(),
-                                          self._current_params()),
-                    self._preamble_edit.text())
-            finally:
-                QApplication.restoreOverrideCursor()
-            if self._action_btn.text() == "Place":
-                # Modal LaTeX preview: Close returns to editing, OK accepts.
-                from .latex_preview_dialog import LatexPreviewDialog
-                if not LatexPreviewDialog(svg, error, self).exec():
-                    return                  # back to editing
-            elif svg is None:
-                # OK mode: surface the error, allow accept-with-fallback.
-                from PySide6.QtWidgets import QMessageBox
-                if QMessageBox.warning(
-                        self, "LaTeX error",
-                        "The model definition does not compile:\n\n"
-                        f"{error}\n\n"
-                        "Accept anyway? (The canvas shows plain text.)",
-                        QMessageBox.Yes | QMessageBox.No,
-                        QMessageBox.No) != QMessageBox.Yes:
-                    return                  # back to editing
+            if not confirm_render(self, ModelItem.build_latex(self.model_name(), self.model_type(),
+                                                              self._current_params()),
+                                  self._preamble_edit.text(), "The model definition",
+                                  placing=self._action_btn.text() == "Place"):
+                return                      # back to editing
         self.accept()
 
     # ── result accessors ──────────────────────────────────────────────────────

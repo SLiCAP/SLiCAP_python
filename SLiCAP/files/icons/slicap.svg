@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>SLiCAP</title>
+  <!-- The icon of SLiCAP: its nullor (nullator and norator, as the symbol N
+       of Symbols.slicap_sym) on a light badge (Anton, 2026-11-20). Edit this
+       file, then run tools/make_icons.py for the PNG sizes and slicap.ico. -->
+  <rect x="3" y="3" width="58" height="58" rx="12" fill="#ffffff" stroke="#1d4f91" stroke-width="2"/>
+  <g fill="none" stroke="#1d4f91" stroke-width="4" stroke-linecap="round">
+    <ellipse cx="20" cy="32" rx="8" ry="16"/>
+    <line x1="20" y1="9" x2="20" y2="16"/>
+    <line x1="20" y1="48" x2="20" y2="55"/>
+    <circle cx="44" cy="24" r="8"/>
+    <circle cx="44" cy="40" r="8"/>
+    <line x1="44" y1="9" x2="44" y2="16"/>
+    <line x1="44" y1="48" x2="44" y2="55"/>
+  </g>
+</svg>

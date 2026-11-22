@@ -3,7 +3,7 @@
 <g id="R"
    data-prefix="R"
    data-nodes="pos neg"
-   data-params="value|?|0|1"
+   data-params="value|?|0|1; ac||0|0; m||0|0; scale||0|0; temp||0|0; dtemp||0|0; tc1||0|0; tc2||0|0; noisy||0|0"
    data-description="Resistor">
 
        <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
@@ -18,7 +18,7 @@
 <g id="C"
    data-prefix="C"
    data-nodes="pos neg"
-   data-params="value|?|0|1; ic||1|0"
+   data-params="value|?|0|1; ic||1|0; m||0|0; scale||0|0; temp||0|0; dtemp||0|0; tc1||0|0; tc2||0|0"
    data-description="Capacitor">
 
        <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2"/>
@@ -36,7 +36,7 @@
 <g id="L"
    data-prefix="L"
    data-nodes="pos neg"
-   data-params="value|?|0|1; ic||1|0"
+   data-params="value|?|0|1; ic||1|0; nt||0|0; m||0|0; scale||0|0; temp||0|0; dtemp||0|0; tc1||0|0; tc2||0|0"
    data-description="Inductor">
 
        <!-- single path: lead + 3 right-side semicircular bumps + lead
@@ -87,7 +87,7 @@
 <g id="E"
    data-prefix="E"
    data-nodes="outp outn inp inn"
-   data-params="value|?|0|1"
+   data-params="value|?|0|1; m||0|0"
    data-description="Voltage-controlled voltage source (gain)">
 
        <line x1="10" y1="-20" x2="10" y2="20" stroke="black" stroke-width="1"/>
@@ -109,7 +109,7 @@
 <g id="G"
    data-prefix="G"
    data-nodes="outp outn inp inn"
-   data-params="value|?|0|1"
+   data-params="value|?|0|1; m||0|0"
    data-description="Voltage-controlled current source (gm)">
 
        <line x1="10" y1="-20" x2="10" y2="-10" stroke="black" stroke-width="1"/>
@@ -134,7 +134,7 @@
    data-prefix="F"
    data-nodes="outp outn"
    data-refs="Vc"
-   data-params="value|?|0|1"
+   data-params="value|?|0|1; m||0|0"
    data-description="Current-controlled current source (gain)">
 
        <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
@@ -153,7 +153,7 @@
    data-prefix="H"
    data-nodes="outp outn"
    data-refs="Vc"
-   data-params="value|?|0|1"
+   data-params="value|?|0|1; m||0|0"
    data-description="Current-controlled voltage source (Rm)">
 
        <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
@@ -182,7 +182,7 @@
    data-prefix="D"
    data-nodes="A C"
    data-model="?|1"
-   data-params="area||1|0; m||1|0"
+   data-params="area||1|0; m||1|0; pj||0|0; ic||0|0; temp||0|0; dtemp||0|0; lm||0|0; wm||0|0; lp||0|0; wp||0|0; onoff||0|0"
    data-description="Diode (requires .model)">
        
        <line x1="0" y1="-20" x2="0" y2="20" stroke="black" stroke-width="1"/>
@@ -222,7 +222,7 @@
 <g id="BV"
    data-prefix="B"
    data-nodes="outp outn"
-   data-params="v||1|1"
+   data-params="v||1|1; temp||0|0; dtemp||0|0; tc1||0|0; tc2||0|0"
    data-description="Behavioural voltage source (v=expr)">
 
        <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
@@ -238,7 +238,7 @@
 <g id="BI"
    data-prefix="B"
    data-nodes="outp outn"
-   data-params="i||1|1"
+   data-params="i||1|1; temp||0|0; dtemp||0|0; tc1||0|0; tc2||0|0"
    data-description="Behavioural current source (i=expr)">
 
        <polyline points="0 10 10 0 0 -10 -10 0 0 10" stroke="black" stroke-width="1" fill="none" />
@@ -257,7 +257,7 @@
    data-prefix="R"
    data-nodes="pos neg"
    data-model="?|1"
-   data-params="L||1|0; W||1|0"
+   data-params="L||1|0; W||1|0; ac||0|0; m||0|0; temp||0|0; dtemp||0|0; noisy||0|0"
    data-description="Semiconductor resistor (.model)">
 
        <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="black" stroke-width="1"/>
@@ -273,7 +273,7 @@
    data-prefix="C"
    data-nodes="pos neg"
    data-model="?|1"
-   data-params="L||1|0; W||1|0; ic||1|0"
+   data-params="L||1|0; W||1|0; ic||1|0; m||0|0; scale||0|0; temp||0|0; dtemp||0|0"
    data-description="Semiconductor capacitor (.model)">
 
        <line x1="-7" y1="-2" x2="7" y2="-2" stroke="black" stroke-width="2"/>
@@ -361,7 +361,7 @@
    data-prefix="Q"
    data-nodes="C B E S"
    data-model="?|1"
-   data-params="area||1|0; m||1|0"
+   data-params="area||1|0; m||1|0; areac||0|0; areab||0|0; ic||0|0; temp||0|0; dtemp||0|0; onoff||0|0"
    data-description="NPN bipolar transistor, 4-terminal (.model)">
        
        <!-- Symbol outline -->
@@ -383,7 +383,7 @@
    data-prefix="Q"
    data-nodes="C B E S"
    data-model="?|1"
-   data-params="area||1|0; m||1|0"
+   data-params="area||1|0; m||1|0; areac||0|0; areab||0|0; ic||0|0; temp||0|0; dtemp||0|0; onoff||0|0"
    data-description="PNP bipolar transistor, 4-terminal (.model)">
        
        <!-- Symbol outline -->
@@ -405,7 +405,7 @@
    data-prefix="Q"
    data-nodes="C B E"
    data-model="?|1"
-   data-params="area||1|0; m||1|0"
+   data-params="area||1|0; m||1|0; areac||0|0; areab||0|0; ic||0|0; temp||0|0; dtemp||0|0; onoff||0|0"
    data-description="NPN bipolar transistor, 3-terminal (.model)">
        
        <!-- Symbol outline -->
@@ -427,7 +427,7 @@
    data-prefix="Q"
    data-nodes="C B E"
    data-model="?|1"
-   data-params="area||1|0; m||1|0"
+   data-params="area||1|0; m||1|0; areac||0|0; areab||0|0; ic||0|0; temp||0|0; dtemp||0|0; onoff||0|0"
    data-description="PNP bipolar transistor, 3-terminal (.model)">
        
        <!-- Symbol outline -->
@@ -449,7 +449,7 @@
    data-prefix="M"
    data-nodes="D G S B"
    data-model="?|1"
-   data-params="W||1|1; L||1|1; M||1|0; AD||1|0; AS||1|0"
+   data-params="W||1|1; L||1|1; M||1|0; AD||1|0; AS||1|0; pd||0|0; ps||0|0; nrd||0|0; nrs||0|0; ic||0|0; temp||0|0; onoff||0|0"
    data-description="NMOS MOSFET, 4-terminal (.model)">
        
        <!-- Symbol outline -->
@@ -472,7 +472,7 @@
    data-prefix="M"
    data-nodes="D G S B"
    data-model="?|1"
-   data-params="W||1|1; L||1|1; M||1|0; AD||1|0; AS||1|0"
+   data-params="W||1|1; L||1|1; M||1|0; AD||1|0; AS||1|0; pd||0|0; ps||0|0; nrd||0|0; nrs||0|0; ic||0|0; temp||0|0; onoff||0|0"
    data-description="PMOS MOSFET, 4-terminal (.model)">
        
        <!-- Symbol outline -->
@@ -495,7 +495,7 @@
    data-prefix="M"
    data-nodes="D G S"
    data-model="?|1"
-   data-params="W||1|1; L||1|1; M||1|0"
+   data-params="W||1|1; L||1|1; M||1|0; ad||0|0; as||0|0; pd||0|0; ps||0|0; nrd||0|0; nrs||0|0; ic||0|0; temp||0|0; onoff||0|0"
    data-description="NMOS MOSFET, 3-terminal, bulk=source (.model)">
        
        <!-- Symbol outline -->
@@ -518,7 +518,7 @@
    data-prefix="M"
    data-nodes="D G S"
    data-model="?|1"
-   data-params="W||1|1; L||1|1; M||1|0"
+   data-params="W||1|1; L||1|1; M||1|0; ad||0|0; as||0|0; pd||0|0; ps||0|0; nrd||0|0; nrs||0|0; ic||0|0; temp||0|0; onoff||0|0"
    data-description="PMOS MOSFET, 3-terminal, bulk=source (.model)">
        
        <!-- Symbol outline -->
@@ -541,7 +541,7 @@
    data-prefix="J"
    data-nodes="D G S"
    data-model="?|1"
-   data-params="area||1|0"
+   data-params="area||1|0; ic||0|0; temp||0|0; onoff||0|0"
    data-description="N-channel JFET (.model)">
        
        <!-- Symbol outline -->
@@ -561,7 +561,7 @@
    data-prefix="J"
    data-nodes="D G S"
    data-model="?|1"
-   data-params="area||1|0"
+   data-params="area||1|0; ic||0|0; temp||0|0; onoff||0|0"
    data-description="P-channel JFET (.model)">
        
        <!-- Symbol outline -->
@@ -581,7 +581,7 @@
    data-prefix="Z"
    data-nodes="D G S"
    data-model="?|1"
-   data-params="area||1|0"
+   data-params="area||1|0; ic||0|0; onoff||0|0"
    data-description="N-channel MESFET (.model)">
        
        <!-- Symbol outline -->
@@ -601,7 +601,7 @@
    data-prefix="Z"
    data-nodes="D G S"
    data-model="?|1"
-   data-params="area||1|0"
+   data-params="area||1|0; ic||0|0; onoff||0|0"
    data-description="P-channel MESFET (.model)">
        
        <!-- Symbol outline -->
@@ -618,7 +618,7 @@
     <polyline points="-5 10 -1 8.5 -1 11.5" stroke="black" stroke-width="0" fill="black"/></g>
 
 <g id="SV"
-   data-prefix="S" data-nodes="outp outn inp inn" data-model="?|1"
+   data-prefix="S" data-params="onoff||0|0" data-nodes="outp outn inp inn" data-model="?|1"
    data-description="Voltage-controlled switch (.model)">
    <circle cx="0" cy="-20" r="0.5" class="node" data-node="outp"/>
    <circle cx="0" cy="20"  r="0.5" class="node" data-node="outn"/>
@@ -644,7 +644,7 @@
 </g>
 
 <g id="T"
-   data-prefix="T" data-nodes="ap an bp bn" data-params="Z0|?|1|1; Td|?|1|1"
+   data-prefix="T" data-nodes="ap an bp bn" data-params="Z0|?|1|1; Td|?|1|1; f||0|0; nl||0|0; ic||0|0"
    data-description="Lossless transmission line (Z0, Td)">
    <circle cx="-20" cy="-10" r="0.5" class="node" data-node="ap"/>
    <circle cx="-20" cy="10"  r="0.5" class="node" data-node="an"/>

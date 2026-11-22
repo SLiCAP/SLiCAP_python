@@ -12,6 +12,8 @@ SLiCAP Python package's model tables:
        data-refs="V?"                      referenced elements (CCCS/CCVS/K)
        data-model="F"                      SLiCAP model name
        data-params="value"                 overridable parameter names
+       data-names="design"                 parameters whose values are names (plain text)
+       data-lines="..."                    the instruction lines of a filter block (free text)
        data-description="..."              shown in Place / Properties dialogs
        data-info="https://..."             clickable help/datasheet link
        data-show-pinnames="true">          draw node names on canvas (block symbols)
@@ -34,6 +36,8 @@ reported, never silently worked around.
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from . import dialects
+
 SVG_NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NS)
 
@@ -46,6 +50,18 @@ _BBOX_PAD = 0.5
 
 class SymbolError(ValueError):
     """Raised when a symbol's definition is incomplete or malformed."""
+
+
+def _first_rect(g_element) -> "tuple | None":
+    """(x, y, width, height) of the first <rect> in *g_element*, or None."""
+    for el in g_element.iter():
+        if isinstance(el.tag, str) and _local(el.tag) == "rect":
+            try:
+                return tuple(float(el.get(k, "0"))
+                             for k in ("x", "y", "width", "height"))
+            except ValueError:
+                return None
+    return None
 
 
 def _local(tag) -> str:
@@ -204,6 +220,34 @@ def _parse_model_field(raw: str, source: str, sym: str) -> tuple[str, bool]:
     return name.strip(), show.strip() == "1"
 
 
+def _parse_types_field(field: str, source: str, name: str, nodes) -> dict:
+    """``data-types="x:float64 clk:clock"`` -> ``{"x": "float64", ...}``.
+    Every pin named must be a node of the symbol."""
+    types = {}
+    for tok in (field or "").split():
+        if ":" not in tok:
+            raise SymbolError(f"Symbol '{name}' in {source}: data-types entry "
+                              f"'{tok}' is not 'pin:type'.")
+        pin, typ = tok.split(":", 1)
+        if pin not in nodes:
+            raise SymbolError(f"Symbol '{name}' in {source}: data-types names "
+                              f"'{pin}', which is not in data-nodes.")
+        types[pin] = typ
+    return types
+
+
+def _parse_dirs_field(field: str, source: str, name: str, nodes) -> dict:
+    """``data-dirs="x:in y:out"`` -> ``{"x": "in", ...}``: the direction of
+    a signal pin, "in" or "out". A pin without an entry has no direction
+    (a port, a two-terminal element)."""
+    dirs = _parse_types_field(field, source, name, nodes)
+    for pin, direction in dirs.items():
+        if direction not in ("in", "out"):
+            raise SymbolError(f"Symbol '{name}' in {source}: data-dirs of pin "
+                              f"'{pin}' is '{direction}', not 'in' or 'out'.")
+    return dirs
+
+
 def _parse_params_field(
     raw: str, source: str, sym: str
 ) -> tuple[dict[str, str], dict[str, tuple[bool, bool]]]:
@@ -258,9 +302,9 @@ def _migrate_stimuli_params(g_element) -> None:
 class Symbol:
     """All metadata + render SVG for a single library symbol."""
 
-    __slots__ = ("name", "prefix", "nodes", "pins", "model", "model_show",
-                 "params", "param_defaults", "param_display",
-                 "refs", "description", "info", "show_pinnames",
+    __slots__ = ("name", "prefix", "nodes", "pins", "pin_types", "pin_dirs", "model",
+                 "model_show", "params", "param_defaults", "param_display", "name_params",
+                 "is_design", "schematic", "refs", "description", "info", "show_pinnames", "pin_box",
                  "select_box", "svg", "g_xml")
 
     def __init__(self, g_element, source: str):
@@ -270,6 +314,16 @@ class Symbol:
         self.name = name
         self.prefix      = g_element.get("data-prefix", "")
         self.nodes       = (g_element.get("data-nodes") or "").split()
+        # Optional data type per pin, ``data-types="pin:type pin:type"``: a
+        # pin without an entry has no declared type. Read by the dialects
+        # whose wires carry typed signals (2026-11-16).
+        self.pin_types   = _parse_types_field(g_element.get("data-types", ""),
+                                              source, name, self.nodes)
+        # Optional direction per pin, ``data-dirs="pin:in pin:out"``: which
+        # pin drives a wire and which reads it (the wire check of a typed
+        # dialect, 2026-11-17).
+        self.pin_dirs    = _parse_dirs_field(g_element.get("data-dirs", ""),
+                                             source, name, self.nodes)
         self.refs        = (g_element.get("data-refs") or "").split()
         self.model, self.model_show = _parse_model_field(
             g_element.get("data-model", ""), source, name)
@@ -277,6 +331,19 @@ class Symbol:
         self.param_defaults, self.param_display = _parse_params_field(
             g_element.get("data-params", ""), source, name)
         self.params      = list(self.param_defaults.keys())
+        # Optional ``data-names="design"``: parameters whose values are
+        # NAMES, not expressions: shown as plain text in the parameter font,
+        # never rendered as mathematics (the design of a filter block,
+        # Anton, 2026-11-18: "XT3 is a name, not a variable").
+        self.name_params = set((g_element.get("data-names") or "").split())
+        # Optional ``data-design="1"``: the symbol of a filter block of a
+        # system diagram, made from a design in a library file of the
+        # sheet; ``data-schematic``: the circuit schematic the design was
+        # made from, for the descent (2026-11-19). The design's instruction
+        # lines in the symbol (``data-lines``, 2026-11-18) were REPLACED by
+        # the library file.
+        self.is_design = g_element.get("data-design", "") == "1"
+        self.schematic = g_element.get("data-schematic", "")
         self.description = g_element.get("data-description", "")
         self.info        = g_element.get("data-info", "")
         # Whether to draw the SLiCAP node names on the canvas.  Block symbols
@@ -285,6 +352,11 @@ class Symbol:
         # their artwork already identifies each pin.
         self.show_pinnames = (g_element.get("data-show-pinnames", "")
                               .strip().lower() in ("true", "1", "yes"))
+        # The outline of a generated box, (x, y, width, height) of its first
+        # <rect> (subcircuit.box_symbol_svg): the side of each pin name
+        # follows from it (component_item.pin_sides). None for a symbol
+        # without pin names or without a rectangle.
+        self.pin_box = _first_rect(g_element) if self.show_pinnames else None
         self.pins        = self._read_pins(g_element, source)
 
         box = _geometry_bbox(g_element)
@@ -411,18 +483,19 @@ class SymbolLibrary:
         directory = Path(directory)
         if not directory.is_dir():
             return
-        kind = "ngspice" if sch_type == "ngspice" else "slicap"
-        other = "slicap" if kind == "ngspice" else "ngspice"
+        kind = dialects.by_name(sch_type).name
+        others = [d for d in dialects.DIALECTS if d.name != kind]
         files = sorted(directory.glob("*" + SYMBOL_EXT[kind]))
         files += sorted(directory.glob("*" + LEGACY_SUFFIX[kind]))
         for svg_file in sorted(directory.glob("*.svg")):
             if svg_file.name.endswith(LEGACY_SUFFIX[kind]):
                 continue                                  # counted above
-            if svg_file.name.endswith(LEGACY_SUFFIX[other]):
-                continue                                  # the other dialect
-            print("Warning: %s carries no dialect (.slicap_sym or "
-                  ".spice_sym) and is offered on every schematic type."
-                  % svg_file.name)
+            if any(svg_file.name.endswith(d.legacy_sym) for d in others):
+                continue                                  # another dialect
+            print("Warning: %s carries no dialect (%s) and is offered on "
+                  "every schematic type."
+                  % (svg_file.name,
+                     ", ".join(d.sym_ext for d in dialects.DIALECTS)))
             files.append(svg_file)
         for svg_file in files:
             if svg_file.stem in exclude_stems:
@@ -499,24 +572,25 @@ class SymbolLibrary:
 # 2026-09-25). Before that, project symbols were '<name>_slicap_symbol.svg'
 # and '<name>_spice_symbol.svg': still READ, and renamed on project load
 # (migrate_symbol_files).
-SYMBOL_EXT    = {"slicap": ".slicap_sym", "ngspice": ".spice_sym"}
-LEGACY_SUFFIX = {"slicap": "_slicap_symbol.svg", "ngspice": "_spice_symbol.svg"}
-SLICAP_SVG   = Path(__file__).parent.parent / "files" / "symbols" / "slicap" / "Symbols.slicap_sym"
-NGSPICE_SVG  = Path(__file__).parent.parent / "files" / "symbols" / "ngspice" / "Symbols.spice_sym"
+# The extensions per dialect live in dialects.py (one table, 2026-11-16).
+SYMBOL_EXT    = {d.name: d.sym_ext for d in dialects.DIALECTS}
+LEGACY_SUFFIX = {d.name: d.legacy_sym for d in dialects.DIALECTS}
+SLICAP_SVG   = dialects.SLICAP.symbols_file
+NGSPICE_SVG  = dialects.NGSPICE.symbols_file
 
 
 def symbol_file_name(name: str, sch_type: str) -> str:
-    """``<name>.slicap_sym`` or ``<name>.spice_sym``."""
-    return name + SYMBOL_EXT["ngspice" if sch_type == "ngspice" else "slicap"]
+    """``<name>.slicap_sym``, ``<name>.spice_sym``, ... per dialect."""
+    return name + dialects.by_name(sch_type).sym_ext
 
 
 def symbol_path_in(libdir, name: str, sch_type: str) -> Path:
     """Where a project symbol *name* of *sch_type* lives in ``libdir``: the
     current name, or the legacy one when only that exists."""
     libdir = Path(libdir)
-    kind = "ngspice" if sch_type == "ngspice" else "slicap"
-    current = libdir / (name + SYMBOL_EXT[kind])
-    legacy = libdir / (name + LEGACY_SUFFIX[kind])
+    d = dialects.by_name(sch_type)
+    current = libdir / (name + d.sym_ext)
+    legacy = libdir / (name + d.legacy_sym)
     return legacy if (legacy.is_file() and not current.is_file()) else current
 
 
@@ -569,9 +643,9 @@ def build_library(schematic_path=None, sch_type="slicap", config=None,
     Making the bundle supply GEOMETRY ONLY - with the pin order, prefix and
     model always taken from the library - was proposed and REJECTED (Anton,
     2026-08-03). A stale bundle can therefore still carry old electrical
-    metadata; the cure is "Tools -> Load symbols from library" on the
-    affected symbols, which replaces them from the library and rewrites the
-    bundle on save. That is how the op-amp pin order was repaired on
+    metadata; the cure is "Tools -> Load selected symbols from library" on
+    the affected symbols, which replaces them from the library and rewrites
+    the bundle on save. That is how the op-amp pin order was repaired on
     2026-08-03. (Since 2026-08-04 subcircuit block symbols load from the
     project lib/ as well, so the bundle is a true cache for them too.)
 
@@ -579,7 +653,8 @@ def build_library(schematic_path=None, sch_type="slicap", config=None,
                            ``lib/`` is loaded and its frozen bundle overlaid.
     :type schematic_path: pathlib.Path, str, NoneType
 
-    :param sch_type: 'slicap' or 'ngspice' - which system symbols to load.
+    :param sch_type: the dialect ('slicap', 'ngspice', ...) - which system
+                     symbols to load (dialects.py).
     :type sch_type: str
 
     :param config: 'basic' loads the system symbols only (no extras).
@@ -598,16 +673,14 @@ def build_library(schematic_path=None, sch_type="slicap", config=None,
     :rtype: SymbolLibrary
     """
     from . import project
-    if sch_type == "ngspice":
-        library = SymbolLibrary(NGSPICE_SVG)
-    else:
-        library = SymbolLibrary(SLICAP_SVG)
-        if config != "basic":
-            # every other library file beside the system one:
-            # Symbols-extended.slicap_sym
-            library.add_user_library(SLICAP_SVG.parent,
-                                     exclude_stems={"Symbols"},
-                                     sch_type="slicap")
+    dialect = dialects.by_name(sch_type)
+    library = SymbolLibrary(dialect.symbols_file)
+    if dialect is dialects.SLICAP and config != "basic":
+        # every other library file beside the system one:
+        # Symbols-extended.slicap_sym
+        library.add_user_library(SLICAP_SVG.parent,
+                                 exclude_stems={"Symbols"},
+                                 sch_type="slicap")
     if schematic_path is not None:
         libdir = project.subdir_for(schematic_path, "lib")
         stems = set(exclude_stems)

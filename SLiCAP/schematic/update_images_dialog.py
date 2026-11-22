@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QListWidget,
                                QAbstractItemView, QDialogButtonBox)
 
 from . import project
+from .instr_file import quoted
 
 
 def exportable_drawings(root=None) -> list:
@@ -28,7 +29,7 @@ def exportable_drawings(root=None) -> list:
 
 
 def update_images_line(ref: str) -> str:
-    return f'sl.updateImages("{ref}")'
+    return f"sl.updateImages({quoted(ref)})"
 
 
 class UpdateImagesDialog(QDialog):

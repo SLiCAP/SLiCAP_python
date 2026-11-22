@@ -85,7 +85,7 @@
    for LaTeX rendering (rendering is the default). Braces are stripped in the
    Properties dialog, and a bare "?" is never braced.
 
-4. File -> Export defaults the save-dialog filename to `<schematic>.cir`,
+4. File -> Export netlist... defaults the save-dialog filename to `<schematic>.cir`,
    `<schematic>.svg` and `<schematic>.pdf` respectively.
 
 5. Tools -> "Load selected symbols from library": replaces the cached definition of

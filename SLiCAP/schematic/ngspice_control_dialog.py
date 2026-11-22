@@ -16,12 +16,8 @@ from PySide6.QtWidgets import (
     QDialogButtonBox, QFileDialog, QWidget,
 )
 
-
-def _q(text: str) -> str:
-    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
-
-
-from .doc_link import reference_url   # noqa: E402  (shared resolver, 2026-09-28)
+from .doc_link import reference_url   # shared resolver, 2026-09-28
+from .instr_file import quoted
 
 
 class NGspiceControlDialog(QDialog):
@@ -95,4 +91,5 @@ class NGspiceControlDialog(QDialog):
         """A BARE ngspice_control call — no assignment, so it never becomes a
         Design-data variable (raw mode carries no result object)."""
         path = self._file.text().strip()
-        return (f"sl.ngspice_control({_q(self._cir_stem)}, {_q(path)})\n")
+        return (f"sl.ngspice_control({quoted(self._cir_stem)}, "
+                f"{quoted(path)})\n")

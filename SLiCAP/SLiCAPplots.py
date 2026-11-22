@@ -504,8 +504,15 @@ class figure(object):
                         scaleY = 10**eval(_SCALEFACTORS[axesList[i].yScaleFactor])
                     else:
                         scaleY = 1
-                    _line, = plt.plot(axesList[i].traces[j].xData/scaleX,
-                             axesList[i].traces[j].yData/scaleY,
+                    xData = axesList[i].traces[j].xData/scaleX
+                    yData = axesList[i].traces[j].yData/scaleY
+                    reduced = (None if ax.name == 'polar'
+                               else _reduce(xData, yData, ini.plot_points))
+                    if reduced is not None:
+                        xDraw, yDraw = reduced
+                    else:
+                        xDraw, yDraw = xData, yData
+                    _line, = plt.plot(xDraw, yDraw,
                              label = axesList[i].traces[j].label,
                              linewidth = axesList[i].traces[j].lineWidth,
                              color = Color, marker = Marker,
@@ -514,6 +521,8 @@ class figure(object):
                              markeredgewidth = 2,
                              markerfacecolor = axesList[i].traces[j].markerFaceColor,
                              linestyle = axesList[i].traces[j].lineType)
+                    if reduced is not None:
+                        _follow_zoom(_line, xData, yData)
                     if getattr(axesList[i].traces[j], 'polarParam',
                                None) is not None:
                         # the contour parameter travels with the LINE, so
@@ -644,6 +653,96 @@ class figure(object):
         return
 
 _atexit_show_registered = False
+
+
+# ── large traces: min/max reduction that follows the zoom ─────────────────
+# A trace of millions of points (an NGspice transient, for instance) cannot
+# be seen at full length and draws slowly; every n-th point would alias an
+# oscillation into a false envelope and lose a narrow peak. So the VISIBLE
+# range is cut into ini.plot_points bins and every bin contributes its
+# minimum and its maximum, in order: the envelope and every peak survive at
+# any zoom, as on an oscilloscope. When the range holds fewer points than
+# twice the bins the raw samples are drawn. The reduction is redone on every
+# zoom, pan and home (the axes' xlim_changed callback); the full arrays stay
+# with the line for the cursor read-out and the next zoom. The saved file
+# holds the reduced full-range line. Only a trace whose x is monotonic (a
+# time or frequency sweep) is reduced; a parametric curve is drawn as it is.
+# Asked by Anton (2026-11-20) for traces of 2.5 million points.
+
+def _reduce(x, y, bins):
+    """``(x, y)`` reduced for the full range, or None when the trace is
+    small, not monotonic in x, or the reduction is off (bins <= 0)."""
+    n = len(x)
+    if bins <= 0 or n <= 2 * bins or len(y) != n:
+        return None
+    try:
+        xa = np.asarray(x, dtype=float)
+    except (TypeError, ValueError):
+        return None
+    if not np.all(np.diff(xa) >= 0):
+        return None
+    return _minmax(xa, np.asarray(y), 0, n, bins)
+
+
+def _minmax(x, y, lo, hi, bins):
+    """The samples ``lo <= i < hi`` of the monotonic *x* with *y* as at most
+    ``2 * bins + 2`` points: per bin its minimum and maximum in index
+    order, plus the sample before *lo* and the one at *hi* so the line
+    runs past both edges of the view. Raw samples when the range holds
+    no more than ``2 * bins``."""
+    n = hi - lo
+    if n <= 0:
+        lo, hi = max(lo - 1, 0), min(hi + 1, len(x))
+        return x[lo:hi], y[lo:hi]
+    if n <= 2 * bins:
+        lo2, hi2 = max(lo - 1, 0), min(hi + 1, len(x))
+        return x[lo2:hi2], y[lo2:hi2]
+    width = -(-n // bins)                          # ceil
+    nbins = -(-n // width)
+    idx = lo + np.arange(nbins * width).reshape(nbins, width)
+    idx = np.minimum(idx, hi - 1)                  # the last bin, padded
+    yb = y[idx]
+    rows = np.arange(nbins)
+    imin = idx[rows, yb.argmin(axis=1)]
+    imax = idx[rows, yb.argmax(axis=1)]
+    pick = np.sort(np.stack([imin, imax], axis=1), axis=1).ravel()
+    edge0 = [lo - 1] if lo > 0 else []
+    edge1 = [hi] if hi < len(x) else []
+    pick = np.concatenate([np.asarray(edge0, dtype=int), pick,
+                           np.asarray(edge1, dtype=int)])
+    return x[pick], y[pick]
+
+
+def _line_data(line):
+    """The data of *line* for a read-out: the full arrays of a reduced
+    line (``_follow_zoom``), else what the line draws."""
+    full = getattr(line, "_slicap_full", None)
+    if full is not None:
+        return full
+    return line.get_xdata(), line.get_ydata()
+
+
+def _follow_zoom(line, x, y):
+    """Keep the reduced *line* in step with the view of its axes: on every
+    xlim_changed the visible part of the full *x*, *y* is reduced again
+    (``_minmax``). The full arrays are kept on the line
+    (``_slicap_full``) for the cursor read-out."""
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y)
+    line._slicap_full = (x, y)
+    ax = line.axes
+
+    def _update(axes):
+        lo_x, hi_x = axes.get_xlim()
+        if lo_x > hi_x:
+            lo_x, hi_x = hi_x, lo_x
+        lo = int(np.searchsorted(x, lo_x, side="left"))
+        hi = int(np.searchsorted(x, hi_x, side="right"))
+        xs, ys = _minmax(x, y, lo, hi, ini.plot_points)
+        line.set_data(xs, ys)
+
+    ax.callbacks.connect('xlim_changed', _update)
+
 
 def _report_useless_sharing(mode, name, rows, cols):
     """Say so when a sharing setting cannot do anything on THIS grid.
@@ -980,8 +1079,7 @@ def enable_ab_cursors(ax, readout_fn=None):
                     rows.append("")
                 rows.append(head)
             for line in one_ax.lines:
-                xd = line.get_xdata()
-                yd = line.get_ydata()
+                xd, yd = _line_data(line)
                 if len(xd) < 2:
                     continue
                 lbl = line.get_label() or "trace"
@@ -1084,8 +1182,8 @@ def enable_ab_cursors(ax, readout_fn=None):
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         pts_ax = []
         for line in ax.lines:
-            xd = np.asarray(line.get_xdata())
-            yd = np.real(line.get_ydata())
+            xd, yd = _line_data(line)
+            xd, yd = np.asarray(xd), np.real(yd)
             if len(xd) < 2 or (line.get_label() or '').startswith('_'):
                 continue
             mask = ((xd >= min(xlim)) & (xd <= max(xlim)) &

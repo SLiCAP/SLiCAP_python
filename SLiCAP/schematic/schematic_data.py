@@ -38,6 +38,10 @@ class DocumentProperties:
     subcircuit_params: list = field(default_factory=list)   # list of [name, default]
     # NGspice only: body of the .control…endc block (without the wrapper lines)
     control_section:   str  = ""
+    # System dialect only (SystemExtensionSpecs.md 5.1): a wire may change
+    # the data type when numpy's safe cast loses no value. Off: every
+    # change needs a cast block, so a fixed-point design shows all of them.
+    implicit_casts:    bool = True
 
     @staticmethod
     def new() -> "DocumentProperties":
@@ -552,6 +556,7 @@ class SchematicData:
                 "subcircuit_ports":  list(self.properties.subcircuit_ports),
                 "subcircuit_params": [list(p) for p in self.properties.subcircuit_params],
                 "control_section":   self.properties.control_section,
+                "implicit_casts":    self.properties.implicit_casts,
             },
         }
         if doc_type == "poster":
@@ -770,6 +775,7 @@ class SchematicData:
             subcircuit_ports=list(p.get("subcircuit_ports", [])),
             subcircuit_params=[list(pair) for pair in p.get("subcircuit_params", [])],
             control_section=p.get("control_section", ""),
+            implicit_casts=bool(p.get("implicit_casts", True)),
         )
         return cls(components=components, wires=wires,
                    junctions=junctions, free_texts=free_texts,

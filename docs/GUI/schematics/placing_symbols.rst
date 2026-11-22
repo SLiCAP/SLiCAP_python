@@ -81,7 +81,8 @@ Basic SLiCAP symbols
 Extended SLiCAP Symbols
 =======================
 
-The figure below shows the "Place" drop-down menu with all SLiCAP symbols.
+The figure below shows the Place Symbol dialog
+(:menuselection:`Circuit --> Symbol…`) with all SLiCAP symbols.
 
 .. Figure:: SLiCAP_symbols.png
     :width: 50%
@@ -89,7 +90,8 @@ The figure below shows the "Place" drop-down menu with all SLiCAP symbols.
 NGspice Symbols
 ===============
 
-The figure below shows the "Place" drop-down menu with all NGspice symbols.
+The figure below shows the Place Symbol dialog
+(:menuselection:`Circuit --> Symbol…`) with all NGspice symbols.
 
 .. Figure:: NGspice_symbols.png
     :width: 35%

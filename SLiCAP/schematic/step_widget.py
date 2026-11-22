@@ -26,6 +26,7 @@ from PySide6.QtCore import Qt, Signal
 
 from .value_fields import watch
 from .param_field import ParamField
+from .instr_file import quoted
 from PySide6.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit,
     QComboBox, QStackedWidget, QWidget, QPushButton, QTableWidget,
@@ -41,7 +42,8 @@ class StepWidget(QGroupBox):
     changed = Signal()
 
     def __init__(self, param_candidates=(), key_style: str = "slicap",
-                 methods=("lin", "log", "list", "array"), parent=None):
+                 methods=("lin", "log", "list", "array"), parent=None,
+                 offer_temp=None):
         super().__init__("Parameter stepping", parent)
         self._style = key_style
         self._numeric_only = key_style == "ngspice"
@@ -49,8 +51,10 @@ class StepWidget(QGroupBox):
         # TEMP is a whole-circuit property in NGspice (swept via `option temp`,
         # not a .param) — offer it as a ready-made choice so the reserved name
         # is never mistyped.  SLiCAP's symbolic back-end has no such step.
-        if self._style == "ngspice" and not any(
-                c.lower() == "temp" for c in self._candidates):
+        # *offer_temp* False: the dict form of NGspice without its TEMP, for
+        # the system run, whose runSystem has no such step (2026-11-21)
+        offer = self._style == "ngspice" if offer_temp is None else offer_temp
+        if offer and not any(c.lower() == "temp" for c in self._candidates):
             self._candidates.append("TEMP")
         self.setCheckable(True)
         self.setChecked(False)
@@ -220,7 +224,7 @@ class StepWidget(QGroupBox):
                 return repr(_scale_float(v))
             except ValueError:
                 return None
-        return '"' + v.replace('"', "'") + '"'
+        return quoted(v)
 
     def _limit_fields(self):
         return (self._start, self._stop, self._num)
@@ -242,7 +246,7 @@ class StepWidget(QGroupBox):
         name as a quoted string, else None."""
         name = field.parameter()
         if name is not None:
-            return '"' + name + '"'
+            return quoted(name)
         return self._fmt(field.text())
 
     def is_valid(self) -> bool:
@@ -302,7 +306,7 @@ class StepWidget(QGroupBox):
             if not (p and s and e and n):
                 return None
             if self._num.parameter() is not None:
-                fn = '"' + n + '"'
+                fn = quoted(n)
             else:
                 try:
                     fn = str(int(n))
@@ -311,7 +315,7 @@ class StepWidget(QGroupBox):
             fs, fe = self._fmt_limit(self._start), self._fmt_limit(self._stop)
             if fs is None or fe is None:
                 return None
-            return (f'{{"method": "{m}", "{single_key}": "{p}", '
+            return (f'{{"method": {quoted(m)}, {quoted(single_key)}: {quoted(p)}, '
                     f'"start": {fs}, "stop": {fe}, "num": {fn}}}')
 
         if m == "list":
@@ -319,7 +323,7 @@ class StepWidget(QGroupBox):
             vals = [self._fmt(v) for v in self._values.text().split()]
             if not (p and vals) or None in vals:
                 return None
-            return (f'{{"method": "list", "{single_key}": "{p}", '
+            return (f'{{"method": "list", {quoted(single_key)}: {quoted(p)}, '
                     f'"values": [{", ".join(vals)}]}}')
 
         # array
@@ -339,7 +343,7 @@ class StepWidget(QGroupBox):
             n_runs = len(fmt_rows[0])
             fmt_rows = [[fmt_rows[j][i] for j in range(len(fmt_rows))]
                         for i in range(n_runs)]
-        params_body = ", ".join(f'"{n}"' for n in names)
+        params_body = ", ".join(quoted(n) for n in names)
         rows_body = ",\n               ".join(
             "[" + ", ".join(r) + "]" for r in fmt_rows)
         return (f'{{"method": "array", "params": [{params_body}],\n'

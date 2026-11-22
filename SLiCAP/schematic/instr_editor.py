@@ -2,15 +2,48 @@ from pathlib import Path
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit,
+    QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QSizePolicy, QFileDialog, QMessageBox,
 )
-from PySide6.QtGui import QFont
 
-# A fresh instruction file starts empty; the header (import SLiCAP as sl) is
-# seeded on the first insert. Circuit objects are created explicitly, one per
-# schematic, and appended (Anton, 2026-08-16).
+from .code_editor import CodeEditor
+
+# A fresh instruction file starts empty. Every insert adds the header (import
+# SLiCAP as sl) when it is missing, in the same undo step (_seed_header).
+# Circuit objects are created explicitly, one per schematic, and appended
+# (Anton, 2026-08-16).
 _TEMPLATE = ""
+
+
+def _utf16(text: str, i: int) -> int:
+    """The position of character *i* of *text* in UTF-16 units, the form
+    of a QTextDocument position: a character outside the BMP (an emoji)
+    takes two."""
+    return len(text[:i].encode("utf-16-le")) // 2
+
+
+def run_script_clash(path) -> str:
+    """Why an instruction file cannot be saved as *path*, or "": the run
+    script of a system diagram is <project root>/<diagram stem>.py, so
+    an instruction file of that name in the project root is written over
+    by the next sl.makeCircuit() of the diagram (Anton, 2026-11-18: a
+    test project lost its instruction file so; SystemExtensionSpecs.md
+    10.3.9)."""
+    from . import project
+    from .dialects import SYSTEM
+    path = Path(path)
+    try:
+        root = project.root_for(path)
+    except Exception:
+        return ""
+    if path.parent.resolve() != Path(root).resolve():
+        return ""
+    diagram = project.folder("sch", root) / (path.stem + SYSTEM.sch_ext)
+    if diagram.exists():
+        return ("%s is the run script of the system diagram %s, written by "
+                "sl.makeCircuit(). Save the instruction file under another "
+                "name." % (path.name, diagram.name))
+    return ""
 
 
 class InstrEditor(QDockWidget):
@@ -49,11 +82,8 @@ class InstrEditor(QDockWidget):
         btn_row.addStretch(1)
         layout.addLayout(btn_row)
 
-        self._editor = QPlainTextEdit()
-        mono = QFont("Monospace")
-        mono.setStyleHint(QFont.StyleHint.Monospace)
-        mono.setPointSize(10)
-        self._editor.setFont(mono)
+        # line numbers and zoom (code_editor, workshop of 2026-11-17)
+        self._editor = CodeEditor()
         self._editor.setPlainText(_TEMPLATE)
         self._editor.document().setModified(False)
         layout.addWidget(self._editor)
@@ -87,30 +117,110 @@ class InstrEditor(QDockWidget):
         self._editor.setPlainText(_TEMPLATE)
         self._editor.document().setModified(False)
 
-    def ensure_header(self, sch_type: str = "") -> None:
-        """Prepend the instruction-file header (``import SLiCAP as sl``) if it
-        is not already present.  Circuit objects are NOT seeded here - they
-        are created explicitly and appended (Anton, 2026-08-16)."""
-        from .instr_file import ensure_header
-        cur = self._editor.toPlainText()
-        new = ensure_header(cur, sch_type)
-        if new != cur:
-            self._editor.setPlainText(new)
+    def _seed_header(self) -> None:
+        """Insert the instruction-file header where
+        instr_file.header_insertion puts it, when the file lacks it. Only
+        ``import SLiCAP as sl``, never a circuit object (Anton, 2026-08-16).
+
+        Every insert calls it inside its open edit block, AFTER its edit.
+        The header and the line are then one undo step. The header goes
+        where the resulting file needs it. A caller passes positions of the
+        text it read, and they stay valid.
+
+        It inserts with a cursor, not with setPlainText. That reset the
+        modified flag and the undo history of the whole file, so typing not
+        yet saved was later discarded without a prompt (a review,
+        2026-11-21).
+
+        REPLACED 2026-11-22: the add-instruction handlers seeded the header
+        themselves with a public InstrEditor.ensure_header() before their
+        insert (SLNG.md, 2026-07-07). That was an undo step of its own, so
+        one Ctrl+Z took back the line and left the header. The dialogs of
+        Traces, Axes, Figures and snippets did not seed it at all. An outer
+        edit block in every handler was considered and REJECTED: the rule
+        would stay in ten consumers instead of the editor."""
+        from PySide6.QtGui import QTextCursor
+        from .instr_file import header_insertion
+        full = self.text()
+        insertion = header_insertion(full)
+        if insertion is None:
+            return
+        position, line = insertion
+        cursor = QTextCursor(self._editor.document())
+        cursor.setPosition(_utf16(full, position))
+        cursor.insertText(line)
 
     def text(self) -> str:
-        """Current editor content (e.g. to derive unique result names)."""
-        return self._editor.toPlainText()
+        """The editor content as written (``CodeEditor.text``). Save and
+        Run write it, and every reader of the instructions takes it here."""
+        return self._editor.text()
+
+    def replace_range(self, start: int, end: int, text: str) -> bool:
+        """Replace the characters *start* to *end* of ``text()`` (Python
+        positions, end exclusive) with *text*, as one undo step with the
+        header when it is missing (_seed_header). False when the range
+        lies outside the text. The system run dialog edits a run in place
+        (instr_file.statement_range, 2026-11-21).
+
+        The positions are those of text(), converted to the UTF-16 units of
+        the document. Block numbers were the first form and were REPLACED
+        the same day. A Shift+Enter put a line separator (U+2028) inside a
+        block, and text() turned it into a newline. The lines of the parsed
+        text and the blocks of the document then disagreed, and the edit
+        hit the wrong line. Since 2026-11-22 text() keeps a U+2028 as
+        written, and Shift+Enter makes a new block (code_editor). A U+2028
+        now comes only from a file, inside a block. Positions in characters
+        are right in every case."""
+        return self._replace(start, end, text.rstrip("\n"))
+
+    def insert_at(self, position: int, text: str) -> bool:
+        """Insert *text* at character *position* of ``text()``, as one undo
+        step with the header when it is missing (a line before a given
+        statement: Create run script puts the makeCircuit line before the
+        first run of its diagram, 2026-11-21)."""
+        return self._replace(position, position, text)
+
+    def _replace(self, start: int, end: int, text: str) -> bool:
+        """Replace the characters *start* to *end* of ``text()`` with *text*
+        as one undo step with the header when it is missing. The positions
+        are converted to the document's UTF-16 units. False when the range
+        lies outside the text."""
+        from PySide6.QtGui import QTextCursor
+        full = self.text()
+        if not 0 <= start <= end <= len(full):
+            return False
+        cursor = QTextCursor(self._editor.document())
+        cursor.setPosition(_utf16(full, start))
+        cursor.setPosition(_utf16(full, end), QTextCursor.MoveMode.KeepAnchor)
+        cursor.beginEditBlock()
+        cursor.insertText(text)
+        self._seed_header()
+        cursor.endEditBlock()
+        self._editor.setTextCursor(cursor)
+        return True
 
     def insert_snippet(self, text: str) -> None:
-        """Append *text* to the end of the editor content."""
+        """Append *text* to the end of the editor content, on a line of its
+        own at column 0, as one undo step with the header when it is
+        missing (_seed_header). A last line of only blanks (an editor's
+        auto-indent) is cleared first: the snippet landed on it, indented,
+        and the file no longer parsed or the line ran inside the block
+        above it (a review, 2026-11-21)."""
         cursor = self._editor.textCursor()
+        cursor.beginEditBlock()
         cursor.movePosition(cursor.MoveOperation.End)
-        block_text = cursor.block().text().strip()
-        if block_text:
+        block_text = cursor.block().text()
+        if block_text.strip():
             cursor.insertText("\n")
+        elif block_text:
+            cursor.movePosition(cursor.MoveOperation.StartOfBlock,
+                                cursor.MoveMode.KeepAnchor)
+            cursor.removeSelectedText()
         cursor.insertText(text)
         if not text.endswith("\n"):
             cursor.insertText("\n")
+        self._seed_header()
+        cursor.endEditBlock()
         self._editor.setTextCursor(cursor)
 
     def maybe_save(self) -> bool:
@@ -181,9 +291,13 @@ class InstrEditor(QDockWidget):
         p = Path(path)
         if p.suffix.lower() != ".py":
             p = p.with_suffix(".py")
+        clash = run_script_clash(p)
+        if clash:
+            QMessageBox.warning(self, "Save instruction file", clash)
+            return
         try:
             p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(self._editor.toPlainText(), encoding="utf-8")
+            p.write_text(self.text(), encoding="utf-8")
             self._path = p
             self.setWindowTitle(p.name)
             self._editor.document().setModified(False)
@@ -206,7 +320,7 @@ class InstrEditor(QDockWidget):
             # project root.
             self._on_save_dialog()
             return self._path is not None and self._path.exists()
-        self._path.write_text(self._editor.toPlainText(), encoding="utf-8")
+        self._path.write_text(self.text(), encoding="utf-8")
         self._editor.document().setModified(False)
         return True
 

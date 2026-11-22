@@ -133,11 +133,49 @@ def linked_images(sch_path) -> list:
     return out
 
 
+def _drawing_sources(sch_path: Path) -> list:
+    """The files a drawing is made of: the file itself, its style and
+    frozen-symbols sidecars and the files it places by their file name."""
+    from . import project
+    sch_path = Path(sch_path)
+    candidates = [sch_path,
+                  project.ini_path_for(sch_path),
+                  project.symbols_path_for(sch_path)]
+    # The images the schematic links (a plot written by the simulation):
+    # the export inlines their content, so a newer plot re-exports the
+    # schematic (Anton, 2026-10-06). Without this a run that rewrote the
+    # plots left the exported schematic current and stale.
+    candidates += linked_images(sch_path)
+    return candidates
+
+
+def results_drawn(sch_path: Path) -> list:
+    """The result files a drawing SHOWS: sources of its images, not of its
+    netlist, which a run does not change.
+
+    - ``cir/<stem>_op.raw``: the operating point drawn on an NGspice
+      schematic (bias annotations): a newer sl.op() run re-exports the
+      image (2026-09-21).
+    - ``results/design_data.json`` for a system sheet: the run record its
+      clock labels show (Specs 10.4.9): a newer run re-exports the image
+      (Anton, 2026-11-21). The manifest is rewritten by every instruction
+      run of the project, so it counts for a system sheet only."""
+    from . import project
+    from .dialects import of_path, SYSTEM
+    sch_path = Path(sch_path)
+    out = [project.subdir_for(sch_path, "cir") / (sch_path.stem + "_op.raw")]
+    if of_path(sch_path) is SYSTEM:
+        from .design_data import manifest_path
+        out.append(manifest_path(project.folder("results",
+                                                project.root_for(sch_path))))
+    return out
+
+
 def source_mtime(sch_path: Path) -> float:
-    """The newest modification time of the SOURCES of a drawing: the file
-    itself, its style and frozen-symbols sidecars, the operating-point
-    results it draws and the files it places by their file name. The
-    images of a drawing are current when they are newer than this.
+    """The newest modification time of the SOURCES of a drawing's images:
+    the files it is made of (_drawing_sources) and the results it draws
+    (results_drawn). The images of a drawing are current when they are
+    newer than this.
 
     The rule (Anton, 2026-10-21): an object placed by its file name
     follows that file, and with it what that file places. The frozen
@@ -148,39 +186,32 @@ def source_mtime(sch_path: Path) -> float:
     that an install re-exported every image once (2026-09-13), was
     REVERTED for that reason. A netlist still counts them: see
     input_mtime."""
-    from . import project
-    sch_path = Path(sch_path)
-    candidates = [sch_path,
-                  project.ini_path_for(sch_path),
-                  project.symbols_path_for(sch_path)]
-    # The operating-point results drawn on an NGspice schematic (bias
-    # annotations): a newer sl.op() run re-exports the image (2026-09-21).
-    candidates.append(project.subdir_for(sch_path, "cir")
-                      / (sch_path.stem + "_op.raw"))
-    # The images the schematic links (a plot written by the simulation):
-    # the export inlines their content, so a newer plot re-exports the
-    # schematic (Anton, 2026-10-06). Without this a run that rewrote the
-    # plots left the exported schematic current and stale.
-    candidates += linked_images(sch_path)
-    return _newest(candidates)
+    return _newest(_drawing_sources(sch_path) + results_drawn(sch_path))
 
 
 def input_mtime(sch_path: Path) -> float:
     """The newest modification time of everything a NETLIST depends on:
-    the sources of the drawing (source_mtime), the symbol libraries
+    the files of the drawing (_drawing_sources), the symbol libraries
     (system and project) and the schematic package itself. A netlist is
     derived by SLiCAP's netlister, so an install or a symbol change
-    rebuilds every netlist once: a netlister fix must reach it."""
+    rebuilds every netlist once: a netlister fix must reach it.
+
+    The results a drawing shows (results_drawn) are no input of its
+    netlist. They counted through source_mtime until 2026-11-21: every
+    sl.op() run made the next makeCircuit rebuild the NGspice netlist, and
+    the run record of a system sheet would have rewritten its run script
+    after every run. REPLACED when the run record joined the image
+    sources (Anton, 2026-11-21)."""
     from . import project
     sch_path = Path(sch_path)
     here = Path(__file__).parent
-    kind = "ngspice" if sch_path.suffix.lower() == ".spice_sch" else "slicap"
-    candidates = list((here.parent / "files" / "symbols" / kind).glob("*.svg"))
+    from .dialects import of_path
+    candidates = list(of_path(sch_path).symbols_file.parent.glob("*"))
     candidates += list(here.glob("*.py"))
     lib = project.folder("lib", project.root_for(sch_path))
     if lib.is_dir():
         candidates += list(lib.glob("*"))
-    return max(source_mtime(sch_path), _newest(candidates))
+    return max(_newest(_drawing_sources(sch_path)), _newest(candidates))
 
 
 def _newest(paths) -> float:

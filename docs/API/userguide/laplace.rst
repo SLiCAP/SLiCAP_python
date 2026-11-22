@@ -253,6 +253,8 @@ Obtain a filter prototype function
 
 The function `filterFunc() <../reference/SLiCAPmath.html#SLiCAP.SLiCAPmath.filterFunc>`__ returns a prototype filter function.
 
+The corners can be given as the two -3dB frequencies ``f_low`` and ``f_high``, or as one corner or centre frequency ``f_c`` with, for band-pass and band-stop, the bandwidth ``B``. The centre frequency is the geometric mean of the two corners, the bandwidth their difference.
+
 The script below returns *low-pass, high-pass, band-pass, band-stop, * and *all-pass* filter functions of the order 2, based on a *Butterworth* polynomial (maximally-flat magnitude chraracteristic).
 
 .. literalinclude:: ../laplace.py

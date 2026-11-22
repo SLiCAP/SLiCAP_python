@@ -29,9 +29,12 @@ import os
 import shutil
 import subprocess
 import tempfile
+import threading
 import contextlib
 import re
 from pathlib import Path
+
+from .child_process import NO_WINDOW     # no console window (pythonw.exe)
 
 # ── cache directories ─────────────────────────────────────────────────────────
 # The render cache is PER-SCHEMATIC (the ``<name>.cache`` sidecar): every
@@ -524,7 +527,7 @@ def _dvisvgm_args() -> list:
     if _EXACT_BBOX is None:
         try:
             out = subprocess.run([_latex_tools()[1], "--help"], capture_output=True,
-                                 text=True, timeout=20).stdout
+                                 text=True, timeout=20, creationflags=NO_WINDOW).stdout
         except Exception:
             out = ""
         _EXACT_BBOX = "--exact-bbox" in out
@@ -580,18 +583,34 @@ def _render_into(path: Path, options: str, preamble: str, body: str,
     """Render one document into the cache file *path*: ``(svg, error)``.
 
     Inside a render batch for the cache of *path* (:func:`render_batch`)
-    the document is queued instead, and ``(None, "")`` returned. A
+    the document is queued instead, and ``(None, "")`` returned. Inside
+    :func:`deferred_renders` for that cache it is left to the worker
+    thread (:class:`BackgroundRenders`), also with ``(None, "")``. A
     document that must not share a pdflatex run (*shared* False, see
-    :func:`render_latex_raw`) is rendered at once, also in a batch."""
+    :func:`render_latex_raw`) is rendered at once in both cases."""
     batch = _batches.get(path.parent)
     if batch is not None and shared:
         batch.queue(options, preamble, body, path)
         return None, ""
+    deferred = _deferred.get(path.parent)
+    if deferred and shared:
+        if background.queue(options, preamble, body, path):
+            deferred[-1].paths.append(path)
+        return None, ""
     svg, err = _compile(options, preamble, body, path.parent)
     if svg is not None:
-        path.write_bytes(svg)
-        _touch(path.parent, path.name)
+        _store(path, svg)
     return svg, err
+
+
+def _store(path: Path, svg: bytes) -> None:
+    """Write a render into the cache: under a temporary name first, then
+    renamed, so that a reader never sees half a file. The worker thread of
+    the background renders writes while the editor reads."""
+    part = path.with_name("%s.%d.part" % (path.name, threading.get_ident()))
+    part.write_bytes(svg)
+    os.replace(part, path)
+    _touch(path.parent, path.name)
 
 
 def _compile(options: str, preamble: str, body: str,
@@ -609,7 +628,7 @@ def _compile(options: str, preamble: str, body: str,
         subprocess.run(
             [_latex_tools()[0], "-interaction=batchmode",
              "-output-format=dvi", "expr.tex"],
-            cwd=tmpdir, capture_output=True,
+            cwd=tmpdir, capture_output=True, creationflags=NO_WINDOW,
         )
         if not (tmpdir / "expr.dvi").exists():
             errs = _tex_errors(tmpdir / "expr.log")
@@ -618,7 +637,7 @@ def _compile(options: str, preamble: str, body: str,
                           else "pdflatex failed (no output)")
         subprocess.run(
             [_latex_tools()[1], *_dvisvgm_args(), "expr.dvi", "-o", "expr.svg"],
-            cwd=tmpdir, capture_output=True,
+            cwd=tmpdir, capture_output=True, creationflags=NO_WINDOW,
         )
         svg = tmpdir / "expr.svg"
         if not svg.exists():
@@ -671,6 +690,7 @@ class _Batch:
 
     def __init__(self):
         self._jobs: dict = {}           # (options, preamble) -> {path: body}
+        self.done = True                # False: the wait was given up (run)
 
     def queue(self, options: str, preamble: str, body: str, path: Path) -> None:
         self._jobs.setdefault((options, preamble), {})[path] = body
@@ -688,8 +708,7 @@ class _Batch:
                                   paths[0].parent)
             for path, svg in zip(paths, svgs):
                 if svg is not None:
-                    path.write_bytes(svg)
-                    _touch(path.parent, path.name)
+                    _store(path, svg)
 
 
 def _compile_pages(options: str, preamble: str, bodies: list,
@@ -715,7 +734,7 @@ def _compile_pages(options: str, preamble: str, bodies: list,
         subprocess.run(
             [_latex_tools()[0], "-interaction=batchmode",
              "-output-format=dvi", "batch.tex"],
-            cwd=tmpdir, capture_output=True,
+            cwd=tmpdir, capture_output=True, creationflags=NO_WINDOW,
         )
         log = tmpdir / "batch.log"
         text = (log.read_text(encoding="utf-8", errors="replace")
@@ -729,7 +748,7 @@ def _compile_pages(options: str, preamble: str, bodies: list,
         subprocess.run(
             [_latex_tools()[1], *_dvisvgm_args(), "--page=1-", "batch.dvi",
              "-o", "page-%p.svg"],
-            cwd=tmpdir, capture_output=True,
+            cwd=tmpdir, capture_output=True, creationflags=NO_WINDOW,
         )
         # %p is zero-padded to the width of the page count: read the number.
         svgs = {int(f.stem.split("-")[1]): f.read_bytes()
@@ -738,7 +757,7 @@ def _compile_pages(options: str, preamble: str, bodies: list,
 
 
 @contextlib.contextmanager
-def render_batch(cache_dir=None):
+def render_batch(cache_dir=None, run=None):
     """Render the cache misses for *cache_dir* in a batch.
 
     Inside the context a render into that cache that misses is queued and
@@ -748,8 +767,15 @@ def render_batch(cache_dir=None):
 
         with render_batch(scene.cache_dir) as batch:
             build()
-        if batch.queued:
+        if batch.queued and batch.done:
             build()
+
+    *run* runs the render of the queue as ``run(render, count)`` and
+    returns False when the caller gave up waiting: the editor renders on
+    a worker thread and keeps its window responsive meanwhile
+    (``latex_background.wait_for``).  ``batch.done`` is then False, the
+    cache fills later, and the items keep their plain text.  Without
+    *run* the queue renders here, as it always did.
 
     Renders into other caches are not affected.  Not re-entrant per cache.
     The cache directory is not created here: a schematic that renders
@@ -763,7 +789,184 @@ def render_batch(cache_dir=None):
         yield batch
     finally:
         del _batches[cache]
-    batch.render()
+    if not batch.queued:
+        return
+    if run is None:
+        batch.render()
+    else:
+        batch.done = run(batch.render, batch.queued)
+
+
+# ── background renders (Anton, 2026-11-20) ────────────────────────────────────
+# A placement, a value edit or a paste rendered its labels on the editor's
+# thread: pdflatex and dvisvgm, 0.45 s per label on Linux, more with MiKTeX,
+# and without end while MiKTeX waits for an answer to its package prompt
+# ("With MikTeX it can be really slow so users think it locks up").  Inside
+# deferred_renders() a miss is queued and the label shows its plain text.  A
+# worker thread renders everything queued at that moment in one run per
+# document head (_compile_pages, the batch render's pages), a page that does
+# not come out alone (_compile), and writes the cache (_store).  The editor
+# hears of every finished round through BackgroundRenders.notify and builds
+# the waiting labels again, from the cache (SchematicScene.await_labels).
+#
+# Only the editor defers, and only the labels of components: a parameter
+# table, a model definition or a fragment comes from a dialog with a
+# preview, and a script or the command line (make_schematic) renders as it
+# always did.  A path that failed once is not queued again: the label keeps
+# its plain text, and the next edit of the value makes another path.  The
+# worker never runs SymPy and never calls _ensure_slicap (it changes the
+# working directory of the process): the LaTeX of every page is made on the
+# editor's thread before it is queued.
+
+class _Deferred:
+    """The renders one deferred_renders() context left to the worker."""
+
+    def __init__(self, cache: Path):
+        self.cache = cache
+        self.paths: list = []
+
+
+_deferred: "dict[Path, list]" = {}      # cache -> stack of open contexts
+
+
+@contextlib.contextmanager
+def deferred_renders(cache_dir=None):
+    """Leave the cache misses of a live edit to a worker thread.
+
+    Inside the context a render into *cache_dir* that misses is queued and
+    returns None: the item shows its plain text.  The context yields a
+    :class:`_Deferred` whose ``paths`` lists the renders it queued.
+    Leaving the outermost context for the cache starts the worker
+    (:class:`BackgroundRenders`).  A render batch for the cache
+    (:func:`render_batch`) comes first: inside it nothing is deferred.
+    """
+    cache = session_cache_dir() if cache_dir is None else Path(cache_dir)
+    deferred = _Deferred(cache)
+    stack = _deferred.setdefault(cache, [])
+    stack.append(deferred)
+    try:
+        yield deferred
+    finally:
+        stack.pop()
+        if not stack:
+            del _deferred[cache]
+            background.start(cache)
+
+
+class BackgroundRenders:
+    """The renders that live edits leave to worker threads, one thread per
+    cache at a time.  All methods may be called from any thread.
+
+    ``notify(cache, finished)`` is set by the editor
+    (``latex_background.relay``).  It is called from the thread that
+    changed the state: ``finished`` True after a round of renders,
+    False when a worker starts.
+    """
+
+    def __init__(self):
+        self._cond = threading.Condition()
+        self._jobs: dict = {}       # cache -> {(options, preamble): {path: body}}
+        self._inflight: dict = {}   # cache -> paths being rendered now
+        self._failed: set = set()   # paths that did not render
+        self._stopped = False
+        self.notify = None
+
+    def queue(self, options: str, preamble: str, body: str, path: Path) -> bool:
+        """Queue the render of *path*.  False when it failed before: the
+        label keeps its plain text and nothing is queued."""
+        with self._cond:
+            if path in self._failed:
+                return False
+            cache = path.parent
+            if path not in self._inflight.get(cache, ()):
+                self._jobs.setdefault(cache, {}).setdefault(
+                    (options, preamble), {})[path] = body
+            return True
+
+    def start(self, cache: Path) -> None:
+        """Render the queue of *cache* on a worker thread, unless one runs
+        for it already: that one takes the new renders in its next round."""
+        with self._cond:
+            if cache in self._inflight or not self._jobs.get(cache):
+                return
+            self._inflight[cache] = set()
+        threading.Thread(target=self._drain, args=(cache,), daemon=True,
+                         name="SLiCAP LaTeX render").start()
+        self._report(cache, False)
+
+    def pending(self, cache: "Path | None" = None) -> int:
+        """The renders queued or in progress, for *cache* or for all."""
+        with self._cond:
+            caches = ([cache] if cache is not None
+                      else set(self._jobs) | set(self._inflight))
+            return sum(sum(len(pages) for pages in self._jobs.get(c, {}).values())
+                       + len(self._inflight.get(c, ())) for c in caches)
+
+    def wait_idle(self, cache: Path) -> None:
+        """Block until *cache* has nothing queued or in progress.  Not on
+        the editor's thread: latex_background.wait_for runs it."""
+        with self._cond:
+            while self._jobs.get(cache) or cache in self._inflight:
+                self._cond.wait()
+
+    def stop(self) -> None:
+        """No notifications any more: the application quits."""
+        with self._cond:
+            self._stopped = True
+
+    def _drain(self, cache: Path) -> None:
+        while True:
+            with self._cond:
+                heads = self._jobs.pop(cache, None)
+                if not heads:
+                    del self._inflight[cache]
+                    self._cond.notify_all()
+                    return
+                paths = {p for pages in heads.values() for p in pages}
+                self._inflight[cache] = paths
+            try:
+                failed = _render_heads(heads)
+            except Exception:        # whatever went wrong, the paths of this
+                failed = paths       # round are settled: they stay plain text
+            with self._cond:
+                self._failed |= failed
+                self._inflight[cache] = set()
+            self._report(cache, True)
+
+    def _report(self, cache: Path, finished: bool) -> None:
+        notify = self.notify
+        if notify is not None and not self._stopped:
+            notify(cache, finished)
+
+
+def _render_heads(heads: dict) -> set:
+    """Render queued documents into their cache, one pdflatex run per
+    document head; a page that does not come out is tried alone.  Returns
+    the paths that did not render."""
+    failed = set()
+    for (options, preamble), pages in heads.items():
+        paths = list(pages)
+        workdir = paths[0].parent
+        try:
+            svgs = (_compile_pages(options, preamble, [pages[p] for p in paths],
+                                   workdir)
+                    if len(paths) > 1 else [None])
+        except OSError:                          # the cache folder is gone
+            svgs = [None] * len(paths)
+        for path, svg in zip(paths, svgs):
+            try:
+                if svg is None:
+                    svg, _err = _compile(options, preamble, pages[path], workdir)
+                if svg is None:
+                    failed.add(path)
+                else:
+                    _store(path, svg)
+            except OSError:
+                failed.add(path)
+    return failed
+
+
+background = BackgroundRenders()
 
 
 # ── standalone fragment rendering ─────────────────────────────────────────────

@@ -2,6 +2,13 @@
 Modal "LaTeX preview" shown by the Place flow of the Circuit-parameters and
 Model-definition dialogs (Anton, 2026-07-12): the rendered table with a Close
 button (back to editing) and an OK button (accept and place).
+
+The table is data for the netlist; its picture is cosmetic. A render that
+fails therefore never blocks: OK places the table as plain text, with the
+error in its tooltip (``confirm_render``, the one rule of both dialogs).
+OK disabled on a failed render was the first form and was REPLACED
+(Anton, 2026-11-20, workshop: a MiKTeX that misses a package made placing
+a parameter table impossible, while editing one offered "accept anyway").
 """
 from __future__ import annotations
 
@@ -16,8 +23,8 @@ _MAX_H = 500
 
 
 class LatexPreviewDialog(QDialog):
-    """Shows a rendered LaTeX SVG (or the render error).  OK is offered only
-    when there is something to place."""
+    """Shows a rendered LaTeX SVG, or the render error. OK places; after a
+    failed render it reads "Place as plain text"."""
 
     def __init__(self, svg_bytes: bytes | None, error: str = "", parent=None):
         super().__init__(parent, Qt.Window)
@@ -37,7 +44,8 @@ class LatexPreviewDialog(QDialog):
                 body.setText("(invalid SVG)")
                 svg_bytes = None
         else:
-            body.setText(f"Render failed:\n{error}" if error else "(nothing rendered)")
+            body.setText((f"Render failed:\n{error}" if error else "(nothing rendered)")
+                         + "\n\nThe canvas shows the table as plain text.")
 
         scroll = QScrollArea()
         scroll.setWidget(body)
@@ -48,7 +56,9 @@ class LatexPreviewDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Close)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        buttons.button(QDialogButtonBox.Ok).setEnabled(svg_bytes is not None)
+        if svg_bytes is None:
+            buttons.button(QDialogButtonBox.Ok).setText("Place as plain text")
+        self._buttons = buttons
         outer.addWidget(buttons)
 
     @staticmethod
@@ -72,3 +82,29 @@ class LatexPreviewDialog(QDialog):
         renderer.render(p)
         p.end()
         return px
+
+
+def confirm_render(parent, latex, preamble, what, placing) -> bool:
+    """Render the LaTeX of a table block (circuit parameters, a model
+    definition) and let the user confirm it: True to accept. *placing*:
+    the Place flow, which shows the preview; OK places, also after a
+    failed render (plain text). Otherwise a failed render asks whether to
+    accept anyway, as the canvas then shows plain text. *what* names the
+    table in the question, "The parameter table"."""
+    from PySide6.QtWidgets import QApplication, QMessageBox
+    from .latex_label import render_latex_raw
+    QApplication.setOverrideCursor(Qt.WaitCursor)
+    try:
+        svg, error = render_latex_raw(latex, preamble)
+    finally:
+        QApplication.restoreOverrideCursor()
+    if placing:
+        return bool(LatexPreviewDialog(svg, error, parent).exec())
+    if svg is not None:
+        return True
+    return QMessageBox.warning(
+        parent, "LaTeX error",
+        "%s does not compile:\n\n%s\n\nAccept anyway? (The canvas shows "
+        "plain text.)" % (what, error),
+        QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes
+

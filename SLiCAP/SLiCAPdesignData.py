@@ -225,6 +225,33 @@ def specs2circuit(specList, cir):
         if item.value != '':
             cir.defPar(item.symbol, item.value)
 
+def _run_script_par_defs(name):
+    """The parameter table of the run script ``<project root>/<name>.py``
+    of a system diagram, ``{Symbol: expression}``, or None when no such
+    run script exists: the file starts with the header every run script
+    carries and holds ``PARAMS = {...}`` (the sheet's parameter table).
+    The 'circuit' of a system run for :func:`selectPars`."""
+    import ast
+    import os
+    path = os.path.join(ini.project_path, str(name) + ".py")
+    if not os.path.isfile(path):
+        path = os.path.join(os.getcwd(), str(name) + ".py")     # the root, as loadProject takes it
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
+    if not text.startswith('"""Run script of '):
+        return None
+    for node in ast.parse(text).body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == "PARAMS"):
+            params = ast.literal_eval(node.value)
+            return {sp.Symbol(str(k)): _checkExpression(str(v))
+                    for k, v in dict(params).items()}
+    return {}
+
+
 def selectPars(cir, specList=None, circuit=(), specs=(), user=None):
     """
     Returns a dictionary with parameter definitions for the 'pardefs'
@@ -238,9 +265,11 @@ def selectPars(cir, specList=None, circuit=(), specs=(), user=None):
     in the next analysis.
 
     :param cir: Circuit from which 'circuit' definitions are taken: a SLiCAP
-                circuit object, or the name (without extension) of an NGspice
+                circuit object, the name (without extension) of an NGspice
                 circuit file in the cir folder, whose '.param' definitions
-                are then used.
+                are then used, or the name of the run script of a system
+                diagram in the project root, whose parameter table (the
+                sheet's) is then used.
     :type cir: SLiCAPprotos.circuit, str
 
     :param specList: List with specification items from which 'specs' values
@@ -288,8 +317,10 @@ def selectPars(cir, specList=None, circuit=(), specs=(), user=None):
     out    = {}
     origin = {}
     if isinstance(cir, str):
-        from SLiCAP.SLiCAPngspice import _netlist_par_defs
-        parDefs = _netlist_par_defs(cir)
+        parDefs = _run_script_par_defs(cir)
+        if parDefs is None:
+            from SLiCAP.SLiCAPngspice import _netlist_par_defs
+            parDefs = _netlist_par_defs(cir)
     else:
         parDefs = cir.parDefs
 

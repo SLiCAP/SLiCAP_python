@@ -50,7 +50,7 @@ from PySide6.QtWidgets import (
 
 from .value_fields import is_value
 from .sizing import name_width
-from .instr_file import spec_var_name
+from .instr_file import spec_var_name, quoted
 
 UNDEFINED, CIRCUIT, SPECS, USER = "undefined", "circuit", "specs", "user"
 POSITIONS = (UNDEFINED, CIRCUIT, SPECS, USER)
@@ -90,10 +90,6 @@ def read_spec_values(csv_dir: str, file_name: str) -> dict[str, str]:
     return out
 
 
-def _q(text: str) -> str:
-    return '"' + str(text).replace('"', "'") + '"'
-
-
 def display_value(text: str) -> str:
     """A circuit definition or a spec value AS DISPLAYED in the table: SLiCAP
     notation read, rounded to the project's display digits with ``roundN``
@@ -125,9 +121,14 @@ class ParSourceTable(QGroupBox):
                  spec_files=(), csv_dir: str = "", preset: str = "specs",
                  positions=POSITIONS,
                  title: str = "Parameter substitution (pardefs)",
-                 parent=None):
+                 parent=None, labels=None):
+        """*labels*: the column header per position where it differs from
+        the position's name (the system run dialog shows "system" for the
+        circuit position: a sheet at that level is a system, Anton,
+        2026-11-19; the emitted keyword stays ``circuit=``)."""
         super().__init__(title, parent)
         self._positions = tuple(positions)
+        labels = dict(labels or {})
         self._par_defs = {str(k): str(v) for k, v in (par_defs or {}).items()}
         self._names = list(self._par_defs) + [
             str(p) for p in undefined if str(p) not in self._par_defs]
@@ -164,7 +165,8 @@ class ParSourceTable(QGroupBox):
 
         ncol = len(self._positions)
         self._table = QTableWidget(len(self._names), ncol + 1)
-        self._table.setHorizontalHeaderLabels(["Parameter"] + list(self._positions))
+        self._table.setHorizontalHeaderLabels(
+            ["Parameter"] + [labels.get(p, p) for p in self._positions])
         hh = self._table.horizontalHeader()
         hh.setSectionResizeMode(0, QHeaderView.Interactive)
         for col in range(1, ncol):
@@ -421,12 +423,14 @@ class ParSourceTable(QGroupBox):
         if sel[SPECS]:
             parts.append(self.spec_var())
         if sel[CIRCUIT]:
-            parts.append("circuit=[" + ", ".join(_q(n) for n in sel[CIRCUIT]) + "]")
+            parts.append("circuit=["
+                         + ", ".join(quoted(n) for n in sel[CIRCUIT]) + "]")
         if sel[SPECS]:
-            parts.append("specs=[" + ", ".join(_q(n) for n in sel[SPECS]) + "]")
+            parts.append("specs=["
+                         + ", ".join(quoted(n) for n in sel[SPECS]) + "]")
         if sel[USER]:
             parts.append("user={" + ", ".join(
-                f"{_q(n)}: {_q(v)}" for n, v in sel[USER].items()) + "}")
+                f"{quoted(n)}: {quoted(v)}" for n, v in sel[USER].items()) + "}")
         return "sl.selectPars(" + ", ".join(parts) + ")"
 
     # ── read-back (append-only editing) ──────────────────────────────────

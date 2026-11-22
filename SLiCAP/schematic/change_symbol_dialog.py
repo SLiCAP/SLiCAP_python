@@ -7,10 +7,11 @@ prefix (another prefix would be another element, not another look).
 
 For a subcircuit (prefix X) any symbol with the right pin count qualifies.
 With the ports assigned to the pins in the symbol's own order the component
-simply takes that library symbol, by name, so Tools → Load symbols from
-library keeps it (Anton, 2026-09-27: a copy under the old name reverted).
-Only a changed assignment needs a copy: the artwork re-skinned the way
-Place → Subcircuit does it (``subcircuit.reskin_symbol_svg``), named after
+simply takes that library symbol, by name, so Tools → Load selected
+symbols from library keeps it (Anton, 2026-09-27: a copy under the old name
+reverted). Only a changed assignment needs a copy: the artwork re-skinned
+the way Circuit → New subcircuit symbol… does it
+(``subcircuit.reskin_symbol_svg``), named after
 the component's model and written into the project's lib folder, the
 ports on the pin markers, so the netlist order is unchanged.  For a
 built-in element the pin order is the element's syntax, which a symbol
@@ -172,9 +173,9 @@ class ChangeSymbolDialog(QDialog):
         return all(m.get(pin) == port for pin, port in zip(self._source_pins, cur))
 
     def _copy_name(self) -> str:
-        """The name of a re-skinned copy: the component's model, as Place ->
-        Subcircuit names a block's symbol; a placeholder model falls back to
-        <symbol>_<refdes>."""
+        """The name of a re-skinned copy: the component's model, as Circuit
+        -> New subcircuit symbol... names a block's symbol; a placeholder
+        model falls back to <symbol>_<refdes>."""
         model = (self._item.model or "").strip()
         if re.match(r"^[A-Za-z0-9_\-]+$", model):
             return model

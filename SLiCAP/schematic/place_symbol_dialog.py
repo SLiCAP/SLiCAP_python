@@ -21,7 +21,7 @@ _PAD_GRID_H = 2
 
 class PlaceSymbolDialog(QDialog):
     """
-    Symbol picker for Place → Component….
+    Symbol picker for Circuit → Symbol….
 
     Scroll through the list to preview each symbol.
     Double-click a symbol to close the dialog and start placement.

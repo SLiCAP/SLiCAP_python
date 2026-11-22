@@ -74,10 +74,32 @@ def _signature(node) -> str:
     return "(" + ", ".join(parts) + ")"
 
 
+def _git_ignored(paths: list) -> set:
+    """The *paths* that git ignores, as a set. Empty without git.
+
+    API.md lists the committed surface. A module that git ignores is
+    local work in progress; listing it here would publish its name
+    (2026-11-16).
+    """
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "--stdin"],
+            input="\n".join(str(p) for p in paths), capture_output=True,
+            text=True, cwd=str(ROOT), timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    return {ln.strip() for ln in result.stdout.splitlines() if ln.strip()}
+
+
 def inventory() -> str:
     lines = [HEADER]
-    for path in sorted(PACKAGE.rglob("*.py")):
+    paths = sorted(PACKAGE.rglob("*.py"))
+    ignored = _git_ignored(paths)
+    for path in paths:
         if "__pycache__" in str(path) or path.name == "__init__.py":
+            continue
+        if str(path) in ignored:
             continue
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))

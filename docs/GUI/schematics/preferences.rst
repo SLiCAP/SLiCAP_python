@@ -2,7 +2,7 @@
 Preferences
 ===========
 
-:menuselection:`File --> Schematic drawing preferences…` controls the **appearance** of the
+:menuselection:`File --> Drawing preferences…` controls the **appearance** of the
 current schematic — line widths, colours and fonts.
 
 .. figure:: /GUI/img/preferences.png
@@ -96,7 +96,7 @@ Border
 ======
 
 The **Border** group sets the look that a *new* border gets when it is placed
-(Place > Border): line colour, width and style (solid, dashed, dotted,
+(:menuselection:`Document --> Border`): line colour, width and style (solid, dashed, dotted,
 dash-dot), background colour and opacity, and whether the line is drawn in
 the exported SVG/PDF. An existing border
 keeps its own values, edited in the Border dialog. A background at opacity

@@ -20,17 +20,16 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
     QLabel, QLineEdit, QComboBox, QTabWidget, QWidget,
     QDialogButtonBox, QPushButton,
-    QButtonGroup, QRadioButton, QScrollArea, QCheckBox, QMenu,
+    QButtonGroup, QRadioButton, QCheckBox, QMenu,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
 
 from .param_table import ParamTable
 from .par_source_table import ParSourceTable, CIRCUIT, SPECS, USER
-from .sizing import cap_chars, fit_contents
+from .sizing import cap_chars, fit_contents, scroll_body, fit_to_screen
 from .source_stimuli_table import SourceStimuliTable, _ANALYSIS_DOMAIN
 from .step_widget import StepWidget
-from .instr_file import next_result_name, parse_calls
+from .instr_file import next_result_name, parse_calls, quoted, literal as _lit
 from .value_fields import watch, all_valid, is_number
 from .param_field import ParamField
 
@@ -71,23 +70,6 @@ _NGSPICE_OPTIONS = [
 ]
 
 
-def _q(text: str) -> str:
-    """Python double-quoted string literal."""
-    return '"' + str(text).replace("\\", "\\\\").replace('"', '\\"') + '"'
-
-
-def _lit(src, default=None):
-    """Literal value of an argument's source text ('"1n"' → '1n', '50' → 50);
-    unparseable source (an expression) returns *default*."""
-    import ast as _ast
-    if src is None:
-        return default
-    try:
-        return _ast.literal_eval(src)
-    except (ValueError, SyntaxError):
-        return default
-
-
 def _py_num(value: str) -> str:
     """Field text → Python literal for the generated sl.*() call.
 
@@ -105,7 +87,7 @@ def _py_num(value: str) -> str:
         float(value)
         return value
     except ValueError:
-        return '"' + value.replace('"', "'") + '"'
+        return quoted(value)
 
 
 # ── behavior selector ─────────────────────────────────────────────────────────
@@ -164,7 +146,7 @@ class _BehaviorSelector(QGroupBox):
 
     def kwarg(self) -> str:
         mode = self.mode()
-        return f', behavior="{mode}"' if mode else ""
+        return f", behavior={quoted(mode)}" if mode else ""
 
     def set_mode(self, mode: str | None) -> None:
         """Tick the flags found in *mode* the way NGspice reads it: by
@@ -280,7 +262,7 @@ class _SaveWidget(QGroupBox):
         parts = ""
         signals = self.signals()
         if signals:
-            parts += ", save=[" + ", ".join(_q(s) for s in signals) + "]"
+            parts += ", save=[" + ", ".join(quoted(s) for s in signals) + "]"
         if self._currents.isChecked() and self._currents.isEnabled():
             parts += ", savecurrents=True"
         return parts
@@ -332,7 +314,7 @@ class _OpTab(_AnalysisTab):
 
     def snippet(self, cir_stem, varname, extra_kwargs=""):
         step = self._step_kwarg()
-        return f'{varname} = sl.op("{cir_stem}"{step}{extra_kwargs})'
+        return f"{varname} = sl.op({quoted(cir_stem)}{step}{extra_kwargs})"
 
 
 # ── tran ──────────────────────────────────────────────────────────────────────
@@ -425,15 +407,15 @@ class _TranTab(_AnalysisTab):
                         f'"order": {self._fft_order.value()}}}')
             if window == "hanning":
                 return ", fft=True"                # the default window
-            return f', fft={{"window": "{window}"}}'
+            return f', fft={{"window": {quoted(window)}}}'
         if mode == 2:
             freq = self._four_freq.text().strip()
             if not freq:
                 return ""
             n = self._four_n.value()
             if n != 10:
-                return f', fourier={{"freq": "{freq}", "nfreqs": {n}}}'
-            return f', fourier="{freq}"'
+                return f', fourier={{"freq": {quoted(freq)}, "nfreqs": {n}}}'
+            return f", fourier={quoted(freq)}"
         return ""
 
     def snippet(self, cir_stem, varname, extra_kwargs=""):
@@ -442,7 +424,7 @@ class _TranTab(_AnalysisTab):
         tstart = self._tstart.text().strip()
         tmax   = self._tmax.text().strip()
         step   = self._step_kwarg()
-        args   = f'"{cir_stem}", {tstep}, {tstop}'
+        args   = f"{quoted(cir_stem)}, {tstep}, {tstop}"
         if tstart:
             args += f", tstart={_py_num(tstart)}"
         if tmax:
@@ -509,7 +491,7 @@ class _AcTab(_AnalysisTab):
         step = self._step_kwarg()
         return (
             f'{varname} = sl.ac('
-            f'"{cir_stem}", "{self._sweep.currentText()}", '
+            f'{quoted(cir_stem)}, {quoted(self._sweep.currentText())}, '
             f'{_py_num(self._pts.text())}, '
             f'{_py_num(self._fstart.text())}, '
             f'{_py_num(self._fstop.text())}'
@@ -547,7 +529,7 @@ class _DcTab(_AnalysisTab):
         step = self._step_kwarg()
         return (
             f'{varname} = sl.dc('
-            f'"{cir_stem}", "{self._src.text().strip()}", '
+            f'{quoted(cir_stem)}, {quoted(self._src.text().strip())}, '
             f'{_py_num(self._start.text())}, '
             f'{_py_num(self._stop.text())}, '
             f'{_py_num(self._incr.text())}'
@@ -584,7 +566,7 @@ class _DcTempTab(_AnalysisTab):
         step = self._step_kwarg()
         return (
             f'{varname} = sl.dc('
-            f'"{cir_stem}", "TEMP", '
+            f'{quoted(cir_stem)}, "TEMP", '
             f'{_py_num(self._start.text())}, '
             f'{_py_num(self._stop.text())}, '
             f'{_py_num(self._incr.text())}'
@@ -640,9 +622,9 @@ class _NoiseTab(_AnalysisTab):
         contrib = ", contributions=True" if self._contrib.isChecked() else ""
         return (
             f'{varname} = sl.noise('
-            f'"{cir_stem}", "{self._out.text().strip()}", '
-            f'"{self._src.text().strip()}", '
-            f'"{self._sweep.currentText()}", '
+            f'{quoted(cir_stem)}, {quoted(self._out.text().strip())}, '
+            f'{quoted(self._src.text().strip())}, '
+            f'{quoted(self._sweep.currentText())}, '
             f'{_py_num(self._pts.text())}, '
             f'{_py_num(self._fstart.text())}, '
             f'{_py_num(self._fstop.text())}'
@@ -711,22 +693,15 @@ class NGspiceAnalysisDialog(QDialog):
         self._existing_text = existing_text or ""
         self.setWindowTitle("Create / Edit NGspice Instruction")
 
-        # The two-column body still lives in a QScrollArea: it keeps the
+        # The two-column body lives in a scroll area (sizing.scroll_body): it keeps the
         # dialog's own layout free of heightForWidth (the word-wrapped hint
         # labels no longer feed back into the window width during an interactive
         # resize — the "jumpy width" bug), and on a short screen the content
         # scrolls instead of squishing.  With two columns the natural height is
         # roughly half the old single-column stack, so scrolling is rarely
         # needed and the source-stimulus editor is visible without hunting.
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QScrollArea.NoFrame)
-        outer.addWidget(scroll, 1)
-        content = QWidget()
-        scroll.setWidget(content)
-        layout = QVBoxLayout(content)
+        outer, layout, self._scroll = scroll_body(self)
+        content = self._scroll.widget()
 
         # ── load existing (append-only editing, SLNG.md) ──────────────────────
         # Only THIS schematic's instructions are editable here: the snippet
@@ -848,7 +823,6 @@ class NGspiceAnalysisDialog(QDialog):
         buttons.addButton("Close", QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        buttons.setContentsMargins(9, 6, 9, 9)
         outer.addWidget(buttons)
 
         self._refresh_output_vars()   # the tab the dialog OPENS on
@@ -877,14 +851,7 @@ class NGspiceAnalysisDialog(QDialog):
         spacing = 6 * 2 + 24            # column spacing + the scroll bar
         width = (left_panel.sizeHint().width() + right_panel.sizeHint().width()
                  + m.left() + m.right() + spacing)
-        height = (content.sizeHint().height() + buttons.sizeHint().height()
-                  + m.top() + m.bottom() + 12)
-        screen = self.screen() or QGuiApplication.primaryScreen()
-        if screen is not None:
-            available = screen.availableGeometry()
-            width  = min(width, int(available.width() * 0.95))
-            height = min(height, int(available.height() * 0.9))
-        self.resize(width, height)
+        fit_to_screen(self, self._scroll, width=width)
 
     def _on_tab_changed(self, idx: int):
         key = _TAB_CLASSES[idx].key if idx < len(_TAB_CLASSES) else "op"
@@ -1003,7 +970,7 @@ class NGspiceAnalysisDialog(QDialog):
         when every parameter keeps its netlist definition."""
         if self._pd.mode() != "select":
             return ""
-        return f", params={self._pd.emission(_q(self._cir_stem))}"
+        return f", params={self._pd.emission(quoted(self._cir_stem))}"
 
     def _options_kwarg(self) -> str:
         if not self._options_table.active():
@@ -1018,8 +985,8 @@ class NGspiceAnalysisDialog(QDialog):
             return ""
         items = []
         for src, flat in self._stimuli_table.stimuli_dict().items():
-            lst = "[" + ", ".join(_q(t) for t in flat) + "]"
-            items.append(f"{_q(src)}: {lst}")
+            lst = "[" + ", ".join(quoted(t) for t in flat) + "]"
+            items.append(f"{quoted(src)}: {lst}")
         return f", stimuli={{{', '.join(items)}}}" if items else ""
 
     def generated_snippet(self) -> str:
@@ -1038,5 +1005,5 @@ class NGspiceAnalysisDialog(QDialog):
         var = self._pd.spec_var()
         if var and not re.search(r"^\s*" + re.escape(var) + r"\s*=",
                                  self._existing_text, re.M):
-            return f'{var} = sl.csv2specs("{self._pd.spec_file()}")\n{line}'
+            return f"{var} = sl.csv2specs({quoted(self._pd.spec_file())})\n{line}"
         return line

@@ -84,4 +84,4 @@ them. Each label turns about its own centre, so it stays where it was
 drawn. The same rule is applied by the SVG and PDF export.
 
 A schematic that already uses the symbol keeps its frozen copy until
-:menuselection:`Tools --> Load symbols from library`.
+:menuselection:`Tools --> Load selected symbols from library`.

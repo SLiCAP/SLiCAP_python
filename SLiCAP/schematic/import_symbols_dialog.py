@@ -67,14 +67,16 @@ class ImportSymbolsDialog(QDialog):
         self._libdir = Path(libdir)
         self._found = []
         self.imported: list[Path] = []
-        kind = "NGspice" if sch_type == "ngspice" else "SLiCAP"
+        from .dialects import by_name, sym_suffixes
+        kind = by_name(sch_type).label
         self.setWindowTitle(f"Import symbols from file ({kind} schematic)")
         self.setMinimumWidth(chars(self, 91))
         lay = QVBoxLayout(self)
 
         row = QHBoxLayout()
         self._path = QLineEdit()
-        self._path.setPlaceholderText("a .slicap_sym, .spice_sym or .svg symbol library file")
+        self._path.setPlaceholderText(
+            "a %s or .svg symbol library file" % ", ".join(sym_suffixes()))
         browse = QPushButton("Browse…")
         browse.clicked.connect(self._browse)
         row.addWidget(QLabel("File:")); row.addWidget(self._path, 1); row.addWidget(browse)

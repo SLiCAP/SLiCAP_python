@@ -46,8 +46,8 @@ def parse_subckt(path, dialect=None) -> SubcktDef:
     phantom PORT and the symbol got a pin too many.
     """
     if dialect is None:
-        suffix = Path(path).suffix.lower()
-        dialect = "ngspice" if suffix == ".spice_lib" else "slicap"
+        from .dialects import of_path
+        dialect = of_path(path).name
     text = Path(path).read_text(encoding="utf-8")
 
     # Join continuation lines: a line whose first non-blank char is '+' extends
@@ -249,8 +249,26 @@ def _spread(k: int, half: float) -> list[float]:
 
 
 def box_symbol_svg(defn: SubcktDef, placement=None,
-                   extra_w: float = 0.0, extra_h: float = 0.0) -> str:
+                   extra_w: float = 0.0, extra_h: float = 0.0,
+                   prefix: str = "X", description: str = None,
+                   arrows: dict = None, types: dict = None,
+                   model: str = None, params_field: str = None) -> str:
     """Return a standalone SVG holding a default block symbol for ``defn``.
+
+    ``model`` is the ``data-model`` field, default ``<name>|1``: the block
+    name shown as the label. ``params_field`` replaces the ``data-params``
+    field built from ``defn.params`` (every parameter shown with its
+    name); a block generated from a design result uses both, its model
+    being a class and its label the design's name (2026-11-17).
+
+    ``prefix`` is the reference designator prefix (``X`` for a subcircuit),
+    ``description`` the symbol description (default "Subcircuit <name>").
+    ``arrows`` marks pins with a direction, ``{"x": "in", "y": "out"}``: an
+    arrowhead at the box edge, pointing into the box for "in" and out of it
+    for "out" (the signal pins of a block diagram, 2026-11-16); the same
+    directions are written as ``data-dirs``, so the editor knows which pin
+    drives a wire. ``types`` gives data types per pin, written as
+    ``data-types``.
 
     ``placement`` is the **visual** pin arrangement (default: the ``.subckt``
     node order): either a flat clockwise-from-top-left list (sides filled by
@@ -306,6 +324,9 @@ def box_symbol_svg(defn: SubcktDef, placement=None,
             f'<line x1="{_f(ex)}" y1="{_f(ey)}" x2="{_f(nx)}" y2="{_f(ny)}" '
             f'stroke="black" stroke-width="1"/>'
         )
+        direction = (arrows or {}).get(port)
+        if direction in ("in", "out"):
+            lines.append(_arrowhead(ex, ey, nx, ny, direction == "in", _f))
     lines.append("")
     for port in ports:
         _ex, _ey, nx, ny = pos[port]
@@ -324,34 +345,87 @@ def box_symbol_svg(defn: SubcktDef, placement=None,
     # auto-creation long time ago"). The model shows (the block name is
     # drawn through the model label, kept upright by ComponentItem).
     param_field = ";".join(f"{k}|{v}|1|1" for k, v in defn.params)
+    if params_field is not None:
+        param_field = params_field
+    if model is None:
+        model = f"{defn.name}|1"
+    if description is None:
+        description = f"Subcircuit {defn.name}"
+    return symbol_file_svg(defn.name, prefix, ports, model, param_field,
+                           types, arrows, description, body)
+
+
+def symbol_file_svg(name: str, prefix: str, ports: list, model: str,
+                    params_field: str, types: dict, dirs: dict,
+                    description: str, body: str, names=(), extra=None) -> str:
+    """The text of a symbol file: the metadata of a generated block (the
+    ``data-*`` fields the symbol parser reads) around the artwork *body*.
+    One writer for every generated symbol: the subcircuit box and the
+    blocks of a system diagram (2026-11-18). *extra* adds ``data-<key>``
+    attributes with free text as their values, newlines and quotes
+    included (the instruction lines of a filter block, ``data-lines``)."""
+    from xml.sax.saxutils import quoteattr
+    extra_attr = "".join(f'     data-{k}={quoteattr(str(v))}\n'
+                         for k, v in (extra or {}).items() if v not in (None, ""))
+    types_attr = ""
+    if types:
+        types_field = " ".join(f"{k}:{v}" for k, v in types.items() if k in ports)
+        types_attr = f'     data-types="{types_field}"\n'
+    dirs_attr = ""
+    dirs = {k: v for k, v in (dirs or {}).items() if k in ports and v in ("in", "out")}
+    if dirs:
+        dirs_attr = f'     data-dirs="{" ".join(f"{k}:{v}" for k, v in dirs.items())}"\n'
+    names_attr = f'     data-names="{" ".join(names)}"\n' if names else ""
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg">\n'
-        f'  <g id="{defn.name}"\n'
-        f'     data-prefix="X"\n'
+        f'  <g id="{name}"\n'
+        f'     data-prefix="{prefix}"\n'
         f'     data-nodes="{" ".join(ports)}"\n'
-        f'     data-model="{defn.name}|1"\n'
-        f'     data-params="{param_field}"\n'
+        f'     data-model="{model}"\n'
+        f'     data-params="{params_field}"\n'
+        f'{types_attr}'
+        f'{dirs_attr}'
+        f'{names_attr}'
+        f'{extra_attr}'
         f'     data-show-pinnames="true"\n'
-        f'     data-description="Subcircuit {defn.name}">\n'
+        f'     data-description="{description}">\n'
         f'      {body}\n'
         f'  </g>\n'
         f'</svg>\n'
     )
 
 
+def _arrowhead(ex, ey, nx, ny, inward: bool, _f) -> str:
+    """A small filled triangle on the pin stub at the box edge (ex, ey),
+    pointing along the stub into the box or away from it."""
+    dx, dy = ex - nx, ey - ny                    # stub direction towards the box
+    length = math.hypot(dx, dy) or 1.0
+    ux, uy = dx / length, dy / length
+    if not inward:
+        ux, uy = -ux, -uy
+    size = 4.0
+    tip = (ex + (ux * size if inward else 0.0), ey + (uy * size if inward else 0.0))
+    base = (tip[0] - ux * size, tip[1] - uy * size)
+    px, py = -uy * size / 2, ux * size / 2
+    pts = [tip, (base[0] + px, base[1] + py), (base[0] - px, base[1] - py)]
+    return ('<polygon points="%s" fill="black" stroke="none"/>'
+            % " ".join(f"{_f(x)} {_f(y)}" for x, y in pts))
+
+
 def _lib_companions(lib_path) -> list:
     """The sidecar files that travel with a subcircuit ``.lib``: the block
     symbol SVG and the subcircuit's own schematic, per the type-tagged naming
     convention (names are the CONVENTION, never stored paths)."""
-    from .symbol_library import SYMBOL_EXT, LEGACY_SUFFIX
+    from .dialects import of_path
     lib_path = Path(lib_path)
-    kind  = "ngspice" if lib_path.suffix == ".spice_lib" else "slicap"
-    stem  = lib_path.stem
-    return [
-        lib_path.with_name(stem + SYMBOL_EXT[kind]),
-        lib_path.with_name(stem + LEGACY_SUFFIX[kind]),      # still read
-        lib_path.with_name(f"{stem}{'.spice_sch' if kind == 'ngspice' else '.slicap_sch'}"),
+    d = of_path(lib_path)
+    stem = lib_path.stem
+    out = [
+        lib_path.with_name(stem + d.sym_ext),
+        lib_path.with_name(stem + d.legacy_sym),             # still read
+        lib_path.with_name(stem + d.sch_ext),
     ]
+    return [c for c in out if c != lib_path]     # the diagram itself was chosen
 
 
 def ensure_in_project_lib(lib_path, libdir):
@@ -461,21 +535,75 @@ def find_subckt_schematic(name, sch_ext, lib_path=None):
     return None
 
 
+def is_subckt_name(name: str) -> bool:
+    """True when *name* can name a subcircuit: a letter, then letters,
+    digits or underscores. The name is the ``.subckt`` name in both
+    dialects and the stem of the package files in ``lib/``. A space
+    makes the ``.subckt`` line read the rest of the name as a port.
+    For ASCII names the rule is the netlist identifier of SLiCAPlex
+    (``t_ID``). For non-ASCII characters the two can differ. ``t_ID``
+    requires an ASCII first letter, for example. The Create Subcircuit
+    dialog and the Save of the panel both use it (2026-11-22)."""
+    return name[:1].isalpha() and name.isidentifier()
+
+
 def lib_path_for(sch_path, name, sch_type):
     """The library file of the subcircuit package of ``sch_path``:
     ``lib/<name>.slicap_lib`` (SLiCAP) or ``lib/<name>.spice_lib`` (NGspice)
     in the project of the schematic. The GUI's Save-as-subcircuit and the
-    headless export (makeCircuit) write the SAME file (Anton, 2026-09-16)."""
+    headless export (makeCircuit) write the SAME file (Anton, 2026-09-16).
+    None for a dialect whose hierarchical block is its diagram alone
+    (``Dialect.lib_ext`` None)."""
     from . import project
-    ext = ".spice_lib" if sch_type == "ngspice" else ".slicap_lib"
-    return project.subdir_for(sch_path, "lib") / f"{name}{ext}"
+    from .dialects import by_name
+    ext = by_name(sch_type).lib_ext
+    if ext is None:
+        return None
+    return project.subdir_for(sch_path, "lib") / (name + ext)
+
+
+def schematic_subckt_def(path) -> SubcktDef:
+    """The interface of a hierarchical block that is its diagram alone:
+    the name and the ports in the saved order from the document
+    properties of the schematic *path* (Subcircuit checked in its
+    Schematic properties, as Save as hierarchical block leaves it), and
+    the parameters with their defaults from the diagram's own parameter
+    table (SystemExtensionSpecs.md 10.4.6: the table declares them). A
+    parameter list typed in the save dialog was a second authority and
+    drifted from the table (Ax against A_x; Anton, 2026-11-20). What
+    ``parse_subckt`` reads from a ``.subckt`` line for a dialect with a
+    library file. Raises ValueError for a schematic that is not a
+    hierarchical block."""
+    from .schematic_data import SchematicData
+    from .dialects import of_path
+    path = Path(path)
+    data = SchematicData.load(path)
+    props = data.properties if data is not None else None
+    if props is None or not props.is_subcircuit:
+        raise ValueError("%s is not a %s: save it as one first (Subcircuit "
+                         "in its Schematic properties)."
+                         % (path.name, of_path(path).block_label))
+    params = {}
+    for item in getattr(data, "parameters", None) or []:
+        for pair in getattr(item, "params", None) or []:
+            name, value = (list(pair) + ["", ""])[:2]
+            if str(name).strip():
+                params[str(name).strip()] = str(value).strip()
+    return SubcktDef(name=props.title or path.stem,
+                     ports=list(props.subcircuit_ports),
+                     params=list(params.items()))
 
 
 def build_lib(sch_type, components, wires, name, ports, params=None,
               params_items=None, libs=None, model_defs=None) -> str:
     """The subcircuit library text in the dialect of ``sch_type``: one
     builder call shared by the GUI and the headless export."""
-    if sch_type == "ngspice":
+    from . import dialects
+    dialect = dialects.by_name(sch_type)
+    if dialect.lib_ext is None:
+        raise ValueError("a %s of the %s dialect has no library file: its "
+                         "diagram is the block" % (dialect.block_label, dialect.label))
+    if dialect is dialects.NGSPICE:
         from .ngspice_netlist import build_ngspice_subckt as build
     else:
         from .netlist import build_subcircuit as build

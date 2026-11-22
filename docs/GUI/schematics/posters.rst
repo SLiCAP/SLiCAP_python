@@ -27,7 +27,8 @@ schematic (see :ref:`border-formats`): no border, a paper or screen format,
 a border format of your own, or a custom size. The border is drawn with the
 border look of the drawing preferences. The poster opens in its own tab with
 the menus of a drawing: Draw for lines, shapes, curves, text, hyperlinks and
-LaTeX, and Place for what the poster shows.
+LaTeX, Insert for what the poster shows, and Document for its properties and
+border.
 
 A figure for a book is a poster with the border format of the document
 column: a fixed width and a free height. Place the circuits on it at one

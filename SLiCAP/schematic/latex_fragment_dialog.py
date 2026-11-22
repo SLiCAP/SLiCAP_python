@@ -10,12 +10,13 @@ from PySide6.QtWidgets import (
     QComboBox,
     QCheckBox,
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QPlainTextEdit, QSpinBox, QDialogButtonBox,
+    QPushButton, QSpinBox, QDialogButtonBox,
     QFileDialog, QApplication, QLayout,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QPixmap, QPainter
+from PySide6.QtGui import QPixmap, QPainter
 from .sizing import chars
+from .code_editor import CodeEditor
 
 
 def _find_slicap_preamble() -> str:
@@ -121,10 +122,7 @@ class LatexFragmentDialog(QDialog):
                 self._preamble_edit.setText(_find_slicap_preamble())
 
         # ── code editor ───────────────────────────────────────────────────────
-        mono = QFont("Courier New", 10)
-        mono.setStyleHint(QFont.Monospace)
-        self._code_edit = QPlainTextEdit()
-        self._code_edit.setFont(mono)
+        self._code_edit = CodeEditor()
         self._code_edit.setMinimumHeight(130)
         self._code_edit.setPlainText(latex_code)
         outer.addWidget(self._code_edit)
@@ -274,7 +272,7 @@ class LatexFragmentDialog(QDialog):
 
     def _render(self) -> None:
         from .latex_label import render_latex_raw
-        code     = self._code_edit.toPlainText()
+        code     = self._code_edit.text()
         if self._snippet_mode:
             from .latex_fragment_item import unnumbered
             code = unnumbered(code)        # no equation numbers on a schematic
@@ -360,7 +358,7 @@ class LatexFragmentDialog(QDialog):
     # ── result accessors ──────────────────────────────────────────────────────
 
     def latex_code(self) -> str:
-        return self._code_edit.toPlainText()
+        return self._code_edit.text()
 
     def preamble_path(self) -> str:
         return self._preamble_edit.text()

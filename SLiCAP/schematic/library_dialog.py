@@ -26,12 +26,15 @@ def _project_relative(path: str) -> str:
 
 class _LibRow(QWidget):
     """One library line.  SLiCAP: file only (always .lib, no corner).
-    NGspice/SPICE: .inc/.lib selector + file + corner (corner only on .lib)."""
+    NGspice/SPICE: .inc/.lib selector + file + corner (corner only on .lib).
+    System diagram: a Python file (directive ``import``), run by the run
+    script for the filter designs it assigns (Specs 10.3.1, 2026-11-19)."""
 
     def __init__(self, spice: bool, entry: dict, on_delete,
-                 browse_title: str, browse_dir: str):
+                 browse_title: str, browse_dir: str, directive: str = "lib"):
         super().__init__()
         self._spice = spice
+        self._directive = directive
         self._browse_title = browse_title
         self._browse_dir = browse_dir
 
@@ -75,12 +78,13 @@ class _LibRow(QWidget):
         path, _ = QFileDialog.getOpenFileName(
             self, self._browse_title,
             self._file.text() or self._browse_dir,
-            "Library Files (*.lib *.spi *.sp *.inc);;All Files (*)")
+            "Python Files (*.py);;All Files (*)" if self._directive == "import"
+            else "Library Files (*.lib *.spi *.sp *.inc);;All Files (*)")
         if path:
             self._file.setText(_project_relative(path))
 
     def value(self) -> dict:
-        directive = self._dir.currentText().lstrip(".") if self._dir else "lib"
+        directive = self._dir.currentText().lstrip(".") if self._dir else self._directive
         corner = ""
         if self._corner is not None and directive == "lib":
             corner = self._corner.text().strip()
@@ -97,6 +101,7 @@ class LibraryDialog(QDialog):
                  default_scale: float = 150.0):
         super().__init__(parent, Qt.Window)
         self._spice = (sch_type == "ngspice")
+        self._directive = "import" if sch_type == "system" else "lib"
         self.setWindowTitle("Add / Edit libraries")
         self.setMinimumWidth(chars(self, 80))
         from . import project
@@ -105,12 +110,16 @@ class LibraryDialog(QDialog):
         except Exception:
             self._browse_dir = ""
         self._browse_title = ("Select SPICE library" if self._spice
+                              else "Select library file" if sch_type == "system"
                               else "Select SLiCAP library")
 
         outer = QVBoxLayout(self)
         outer.addWidget(QLabel(
             "Choose .lib or .inc per line; .lib may take a corner."
             if self._spice else
+            "Python files the run script runs as instruction files; the "
+            "filter designs they assign are the designs of the blocks."
+            if sch_type == "system" else
             "SLiCAP libraries are included with .lib (no corner)."))
 
         self._rows: list = []
@@ -148,7 +157,7 @@ class LibraryDialog(QDialog):
 
     def _add_row(self, entry=None) -> None:
         row = _LibRow(self._spice, entry or {}, self._delete_row,
-                      self._browse_title, self._browse_dir)
+                      self._browse_title, self._browse_dir, self._directive)
         self._rows.append(row)
         self._rows_box.insertWidget(self._rows_box.count() - 1, row)
 

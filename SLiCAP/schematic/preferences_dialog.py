@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import configparser
 
-from .sizing import chars, fit_contents
+from .row_table import RowTable
+from .sizing import chars, fit_contents, scroll_body, fit_to_screen
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
     QLabel, QDoubleSpinBox, QSpinBox,
     QCheckBox, QComboBox, QWidget, QPushButton,
-    QTableWidget, QTableWidgetItem, QMessageBox,
+    QTableWidgetItem, QMessageBox,
     QDialogButtonBox,
 )
 from .color_button import ColorButton
@@ -27,7 +28,7 @@ class BorderPresetTable(QWidget):
         super().__init__(parent)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
-        self._table = QTableWidget(0, 3)
+        self._table = RowTable(0, 3, add_row=lambda: self._add_row("", "", ""))
         self._table.setHorizontalHeaderLabels(["Name", "Width mm", "Height mm"])
         self._table.horizontalHeader().setStretchLastSection(True)
         self._table.verticalHeader().setVisible(False)
@@ -109,7 +110,7 @@ class PreferencesDialog(QDialog):
         self._style = style
         self._widgets: dict[tuple[str, str], object] = {}
 
-        outer = QVBoxLayout(self)
+        frame, outer, self._scroll = scroll_body(self)
         outer.addWidget(QLabel(
             "<small><i>Changes take effect immediately after clicking OK.</i></small>"
         ))
@@ -303,7 +304,8 @@ class PreferencesDialog(QDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
-        outer.addWidget(buttons)
+        frame.addWidget(buttons)
+        fit_to_screen(self, self._scroll)
 
     def _on_accept(self) -> None:
         problems = self._presets.problems()

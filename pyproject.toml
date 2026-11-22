@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,7 +10,7 @@ authors = [
 description = "SLiCAP: more than SYMBOLIC SPICE"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -22,8 +22,13 @@ dependencies = [
     "ply>=3.11",
     "matplotlib>=3.9.0",
     "svgelements>=1.9.6",
-    "svglib>=1.5.1",
-    "reportlab>=3.6",
+    # svglib before 2.1.0 split a font-family list at every space, so
+    # "DejaVu Sans Mono, monospace" became four names. Each unknown name
+    # ran fc-match, a console window on MS-Windows (Anton, 2026-11-22).
+    # 2.3.0 is the version tested on Linux and MS-Windows. It needs
+    # reportlab 4.4.3.
+    "svglib>=2.3.0",
+    "reportlab>=4.4.3",
     "IPython>=8.19",
     "docutils>=0.18",
     "sphinx>=7.0",
@@ -35,6 +40,10 @@ dependencies = [
     "sphinxcontrib-bibtex",
     "PySide6>=6.4",
     "requests>=2.25",
+    # The tick program of the system-level simulator. numba also bounds
+    # numpy: numpy 2.5 broke numba 0.66 on Windows (Anton, 2026-11-20),
+    # and only with numba listed here does pip keep numpy in its range.
+    "numba>=0.66",
     ]
 dynamic = ["version"]
 
@@ -54,5 +63,8 @@ Issues = "https://github.com/SLiCAP/SLiCAP_python"
 [tool.setuptools.dynamic]
 version = {attr = "SLiCAP.__version__"}  # any module attribute compatible with ast.literal_eval
 
-[tool.setuptools]
-packages = ["SLiCAP", "SLiCAP.schematic"]
+[tool.setuptools.packages.find]
+# Every package under SLiCAP/ with an __init__.py. An explicit list was
+# REPLACED on 2026-11-16: a package listed here but absent from a checkout
+# breaks the install, and discovery needs no edit when a subpackage is added.
+include = ["SLiCAP*"]

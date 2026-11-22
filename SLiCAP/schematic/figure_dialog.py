@@ -43,9 +43,9 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-from .instr_file import parse_calls
+from .instr_file import parse_calls, quoted, bound_names, literal as _lit
 from .sizing import name_width, fit_contents, chars
-from .traces_dialog import next_name, _lit, _q
+from .traces_dialog import next_name
 from .axes_dialog import axis_entries
 
 #: what a cell holds when it is empty - makeFigure's own spelling
@@ -144,9 +144,10 @@ class FigureDialog(QDialog):
     """Create or edit ONE named figure."""
 
     def __init__(self, existing_text: str = "", results_dir=None,
-                 parent=None):
+                 parent=None, source_name: str = ""):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit Figures")
+        self._source_name = source_name        # the instruction file being edited
         # a cell holds an axis NAME plus "Create new axis…": too narrow and
         # both are unreadable
         self.setMinimumWidth(chars(self, 74))
@@ -155,7 +156,10 @@ class FigureDialog(QDialog):
         calls = parse_calls(self._existing_text)
         self._axes = [c["name"] for c in axis_entries(calls)]
         self._existing = figure_entries(calls)
-        self._taken = {c["name"] for c in calls}
+        # every name the file binds (instr_file.bound_names), as in the
+        # Traces and Axes dialogs. REPLACED 2026-11-22: the sl.* call names
+        # were the taken set, so FIG1 = None did not count.
+        self._taken = bound_names(self._existing_text)
         #: axis statements made from a cell, emitted BEFORE the figure
         self._new_axis_statements: list[str] = []
         self._cells: list[list[QComboBox]] = []
@@ -349,7 +353,8 @@ class FigureDialog(QDialog):
         from .axes_dialog import AxesDialog
         text = "\n".join([self._existing_text] + self._new_axis_statements)
         dialog = AxesDialog(existing_text=text,
-                            results_dir=self._results_dir, parent=self)
+                            results_dir=self._results_dir, parent=self,
+                            source_name=self._source_name)
         if select:
             index = dialog._edit.findText(select)
             if index >= 0:
@@ -605,9 +610,9 @@ class FigureDialog(QDialog):
         if not self._cursors.isChecked():
             parts += ", cursors=False"
         if self._title.text().strip():
-            parts += ", title={0}".format(_q(self._title.text().strip()))
+            parts += ", title={0}".format(quoted(self._title.text().strip()))
         statement = "{0} = sl.makeFigure({1}, {2}{3})".format(
-            name, body, _q(file_name), parts)
+            name, body, quoted(file_name), parts)
         # the axes made from a cell come FIRST: one statement per object, in
         # dependency order
         return "\n".join(self._new_axis_statements + [statement])

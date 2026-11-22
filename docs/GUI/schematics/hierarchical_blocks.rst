@@ -32,7 +32,8 @@ Any schematic can be turned into a reusable subcircuit:
    external nodes.  A ``ground`` (node 0) stays global and is never a port.
 #. In :menuselection:`File --> Schematic properties…`, tick **Save this
    schematic as a subcircuit** and give the document a
-   *Title*: the subcircuit name, and the name of its files.
+   *Title*: the subcircuit name, and the name of its files. The name is a
+   letter, then letters, digits or underscores, so it has no spaces.
 
    .. TODO screenshot: the Schematic Properties dialog with the subcircuit box ticked and a title
 
@@ -43,7 +44,8 @@ Any schematic can be turned into a reusable subcircuit:
    declare the **overridable parameters** with their defaults; a parent may
    pass a value for each of them. The dialog opens on the first save and
    whenever the schematic holds a port that is not yet in the node order.
-   Otherwise :menuselection:`File --> Save schematic` writes the package
+   It also opens when the *Title* is not a valid name, with the name
+   editable. Otherwise :menuselection:`File --> Save schematic` writes the package
    without a question.
 
    :menuselection:`File --> Save schematic as…` always opens the dialog,
