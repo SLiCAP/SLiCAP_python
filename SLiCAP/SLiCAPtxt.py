@@ -115,6 +115,10 @@ class TXTformatter(_BaseFormatter):
         result = findServoBandwidth(_laplace_of(loopgain))
         unit = "Hz" if ini.hz else "rad/s"
         lines = ["Servo bandwidth analysis:", ""]
+        if result is None:
+            # not a ratio of polynomials in s (2026-11-24)
+            lines.append("not available: the loop gain is not rational")
+            return self.text("\n".join(lines))
         if result.get("mbv") is not None:
             lines.append("mid-band loop gain value  : {:12.2e}".format(
                 float(result["mbv"])))

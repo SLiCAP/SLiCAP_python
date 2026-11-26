@@ -698,9 +698,9 @@ class RSTformatter(_BaseFormatter):
         headerList = ['Coeff', 'Value']
         linesList = []
         for i in range(len(numerCoeffs)):
-            linesList.append([sp.sympify('b_' + str(i)), numerCoeffs[i]])
+            linesList.append([sp.Symbol('b_' + str(i)), numerCoeffs[i]])
         for i in range(len(denomCoeffs)):
-            linesList.append([sp.sympify('a_' + str(i)), denomCoeffs[i]])
+            linesList.append([sp.Symbol('a_' + str(i)), denomCoeffs[i]])
         RST = '**Gain factor:**' + ':math:`' + sp.latex(roundN(gain)) +'`\n\n'
         RST += _RSTcreateCSVtable(caption, headerList, linesList, label=label)
         return Snippet(RST, self.format)

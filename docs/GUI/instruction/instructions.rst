@@ -110,7 +110,9 @@ Composing an instruction
 :menuselection:`Instruction --> Create / edit SLiCAP instruction…` opens a form
 that composes one ``sl.do…()`` call: analysis type, circuit variable, result
 variable, transfer, signal references, parameter substitution and stepping.
-The call is appended to the instruction file when you press **Add instruction**.
+A new call is appended to the instruction file when you press **Add
+instruction**.  An edited call replaces the old one on its own line (see
+`Editing an existing instruction`_).
 
 The form is filled from the circuit itself: the *source*, *detector* and
 *loop-gain reference* drop-downs offer exactly the elements and nodes that
@@ -202,14 +204,32 @@ specification has disappeared or lost its value. See `selectPars()
 <../../API/userguide/analysis.html#the-parameter-definitions>`_ in the API
 manual.
 
+.. _gui-editing-an-existing-instruction:
+
 Editing an existing instruction
 ===============================
 
-Editing is **append-only**: selecting an instruction under *Edit existing*
-loads it back into the form, and pressing **Add instruction** appends the
-regenerated call under the same result name.  The earlier line stays in the
-file; delete it in the editor if you no longer want it.  Nothing is rewritten
-behind your back.
+Selecting an instruction under *Edit existing* loads it back into the form.
+Pressing **Add instruction** then replaces it on its own line.  This holds
+for every dialog: SLiCAP and NGspice instructions, trace sets and
+measurements, axes, figures and system runs.
+
+- The name is fixed while editing.  To make a new instruction, select
+  *(new instruction)*: the form keeps its fields and gets a free name.
+- Earlier definitions of the same name are removed.  Files edited before
+  version 6.5.0 can hold such copies.
+- A line that would use a name before its definition is refused.  The
+  dialog names the line and disables **Add instruction**.  Correct the order
+  in the editor first.
+- When the instruction holds parts the dialog cannot show, such as an
+  argument added by hand, a note says so.  **Add instruction** then writes
+  it as the dialog shows it.
+- A new instruction that the edit needs goes directly above the edited one.
+  Examples are the line that loads a specifications file, and a new axis
+  made in the Figures dialog.
+- Pressing **Add instruction** without a change leaves the instruction
+  exactly as written.
+- One :kbd:`Ctrl+Z` undoes the whole edit.
 
 NGspice schematics
 ==================
@@ -233,8 +253,8 @@ netlists the run makes.
 :menuselection:`Instruction --> Create / edit NGspice instruction…`
 composes the call, and
 :menuselection:`Instruction --> Create / edit NGspice control section…`
-adds a ``.control`` block.  Everything above about the instruction file, the
-append-only editing and running through ``main.py`` applies unchanged.
+adds a ``.control`` block.  Everything above about the instruction file,
+editing in place and running through ``main.py`` applies unchanged.
 
 The dialog's **Compatibility (behavior)** check boxes select NGspice's
 compatibility flags for the run, PSpice, LTspice, HSPICE, Spectre, Spice3,

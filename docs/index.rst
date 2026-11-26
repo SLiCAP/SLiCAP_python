@@ -67,6 +67,13 @@ SLiCAP Reference
 
 `SLiCAP Reference <API/reference/SLiCAPreference.html>`_ documents all SLiCAP user callable functions and objects.
 
+System design
+-------------
+
+`System design <system/index.html>`_ describes the system-level modelling and
+simulation of SLiCAP (new in version 6.5): blocks driven by clocks, connected
+by signals, drawn as a system diagram.
+
 Structured Electronic Design Environment
 ========================================
 
@@ -169,5 +176,6 @@ design reports:
     API/syntax/SLiCAPnetlistSyntax
     API/reference/SLiCAPreference
     GUI/index
+    system/index
     
 .. image:: /API/img/colorCode.svg

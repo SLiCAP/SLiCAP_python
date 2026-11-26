@@ -29,7 +29,7 @@ the same trace reads correctly on a kHz axis and on a Hz axis. UNITS, by
 contrast, are a property of the trace variable (Anton, 2026-08-02): they are
 set on the trace and only DISPLAYED here, so this dialog reads them from the
 traces it places instead of deriving them again. Where a trace states none,
-the field stays empty - ``frequency`` is Hz and ``dB(laplace)`` is dB, but ``V_out*I_V1`` gets an
+the field stays empty - ``frequency`` is Hz and ``dB(mag(H_s))`` is dB, but ``V_out*I_V1`` gets an
 empty field rather than a guess.
 
 The units themselves are NOT derived here: they are read from the traces
@@ -46,10 +46,11 @@ from PySide6.QtWidgets import (
 )
 
 from .instr_file import parse_calls, quoted, bound_names, literal as _lit
+from .edit_note import EditNote
 from .value_fields import watch, all_valid
 from .sizing import name_width, cap_chars, fit_contents, scroll_body, fit_to_screen
-from .traces_dialog import (next_name, trace_entries, recorded_trace_sets,
-                            result_entries, is_symbolic, _abscissa)
+from .traces_dialog import next_name, trace_entries, recorded_trace_sets
+from .trace_sources import result_entries, is_symbolic, _abscissa
 
 from SLiCAP.SLiCAPplots import _SCALEFACTORS
 from SLiCAP.SLiCAPtraces import axis_label
@@ -237,6 +238,11 @@ class AxesDialog(QDialog):
         self._suggested = {}          # field -> what WE last put in it
 
         frame, outer, self._scroll = scroll_body(self)
+        from .doc_link import help_label
+        outer.addWidget(help_label(
+            "Composes an axis: <code>sl.traceAxis()</code>, "
+            "<code>sl.sweepAxis()</code> or <code>sl.pzAxis()</code>",
+            "GUI/plots/plots.html", "axes", "help: axes"))
         head = QGridLayout()
         outer.addLayout(head)
 
@@ -250,6 +256,9 @@ class AxesDialog(QDialog):
         head.addWidget(QLabel("Axis variable name:"), 1, 0)
         self._name = QLineEdit(next_name("AX", self._taken))
         self._name.setMaximumWidth(name_width(self._name))
+        # what "Edit existing" edits, in place (instr_file.place)
+        self._note = EditNote(existing_text)
+        self._note.follow(self._name, lambda: next_name("AX", self._taken))
         self._name.textChanged.connect(self._update)
         head.addWidget(self._name, 1, 1)
 
@@ -385,6 +394,7 @@ class AxesDialog(QDialog):
         self._warning.setWordWrap(True)
         self._warning.setStyleSheet("color: #b34700; font-size: 9pt;")
         outer.addWidget(self._warning)
+        outer.addWidget(self._note)
 
         self._hint = QLabel(
             "Trace data is in base units; the scale factor divides for "
@@ -549,8 +559,7 @@ class AxesDialog(QDialog):
             for j in range(parent.childCount()):
                 parent.child(j).setCheckState(0, state)
         self._pick.blockSignals(False)
-        self._suggest()
-        self._update()
+        self._on_selection_changed()
 
     def _on_kind_changed(self, *_args):
         kind = self._kind_key()
@@ -658,8 +667,7 @@ class AxesDialog(QDialog):
             item.setCheckState(0, Qt.Unchecked)
             self._pick.blockSignals(False)
         self._refresh_func_choices()
-        self._suggest()
-        self._update()
+        self._on_selection_changed()
 
     # ── suggestions ───────────────────────────────────────────────────────
 
@@ -726,23 +734,42 @@ class AxesDialog(QDialog):
         is remembered, so a suggestion is replaced by the next suggestion but
         an edited field is left alone.
         """
+        for widget, text in self._suggestions().items():
+            self._fill(widget, text)
+
+    def _suggestions(self) -> dict:
+        """``{field: text}`` that a naming convention knows for the current
+        kind and selection: what :meth:`_suggest` fills in, and what a
+        loaded axis is compared with (_on_load_existing)."""
         if self._kind_key() == _SWEEP:
-            return                 # sweepAxis names its own labels
+            return {}              # sweepAxis names its own labels
         if self._kind_key() == _PZ:
             import SLiCAP.SLiCAPconfigure as ini
-            self._fill(self._x_name, "real")
-            self._fill(self._y_name, "imag")
             units = "Hz" if ini.hz else "rad/s"
-            self._fill(self._x_units, units)
-            self._fill(self._y_units, units)
-            return
+            return {self._x_name: "real", self._y_name: "imag",
+                    self._x_units: units, self._y_units: units}
+        out = {}
         xs, ys = self._quantities()
         if xs:
-            self._fill(self._x_name, str(xs[0][0]))
-            self._fill(self._x_units, xs[0][1])
+            out[self._x_name] = str(xs[0][0])
+            out[self._x_units] = xs[0][1]
         if ys:
-            self._fill(self._y_name, _quantity_name(ys[0][0]))
-            self._fill(self._y_units, ys[0][1])
+            out[self._y_name] = _quantity_name(ys[0][0])
+            out[self._y_units] = ys[0][1]
+        return {widget: str(text or "") for widget, text in out.items()}
+
+    def _on_selection_changed(self):
+        """The traces on the axis changed: the suggestions follow them, and
+        the scale factors of a trace axis are cleared, because they belonged
+        to the quantity of the traces before (Anton, 2026-11-25: "when the
+        trace selection changes, the scale factors reset to blank"). A
+        pole-zero or sweep axis selects results, not traces: its scale
+        factors stay."""
+        if self._kind_key() in (_XY, _POLAR):
+            for combo in (self._x_scale, self._y_scale):
+                combo.setCurrentText("")
+        self._suggest()
+        self._update()
 
     def _fill(self, widget, text):
         text = str(text or "")
@@ -768,7 +795,11 @@ class AxesDialog(QDialog):
     # ── editing an existing axis ──────────────────────────────────────────
 
     def _on_load_existing(self, index: int):
+        """Read an existing axis back; OK then replaces it where it stands
+        (instr_file.place, Anton 2026-11-25). "(new axis)" makes a new one
+        under a free name."""
         if index <= 0:
+            self._note.stop()
             return
         entry = self._existing[index - 1]
         args = entry.get("args") or []
@@ -777,6 +808,8 @@ class AxesDialog(QDialog):
         is_sweep = entry["func"] == "sweepAxis"
         if is_sweep:
             self._load_sweep(entry, args, kwargs)
+            self._note.start(entry["name"])
+            self._update()
             return
         self._kind.setCurrentIndex(self._kind.findData(
             _PZ if is_pz else _XY))
@@ -816,12 +849,20 @@ class AxesDialog(QDialog):
                 value = _lit(kwargs.get(key))
                 widget.setText("" if value is None else str(value))
         else:
+            # A loaded value that IS the suggestion for the loaded traces
+            # stays a suggestion and follows a new choice of traces; one that
+            # differs was typed and stays (Anton, 2026-11-25). Every loaded
+            # value WAS marked as typed: a new choice of traces kept "time"
+            # and "s" on a frequency axis.
+            suggested = self._suggestions()
             for key, widget in (("xName", self._x_name),
                                 ("xUnits", self._x_units),
                                 ("yName", self._y_name),
                                 ("yUnits", self._y_units)):
-                widget.setText(str(_lit(kwargs.get(key)) or ""))
-                self._suggested[widget] = None
+                text = str(_lit(kwargs.get(key)) or "")
+                widget.setText(text)
+                self._suggested[widget] = (
+                    text if text and text == suggested.get(widget) else None)
             self._x_scale.setCurrentText(str(_lit(kwargs.get("xScale")) or ""))
             self._y_scale.setCurrentText(str(_lit(kwargs.get("yScale")) or ""))
             for key, low, high in (("xLim", self._x_min, self._x_max),
@@ -829,7 +870,15 @@ class AxesDialog(QDialog):
                 limits = _lit(kwargs.get(key)) or []
                 low.setText(str(limits[0]) if len(limits) == 2 else "")
                 high.setText(str(limits[1]) if len(limits) == 2 else "")
+        self._note.start(entry["name"])
         self._update()
+
+    def editing(self) -> tuple:
+        """The axis loaded with "Edit existing", for InstrEditor.put_dialog_result."""
+        return self._note.names()
+
+    def loaded(self) -> dict:
+        return self._note.loaded()
 
     # ── emission ──────────────────────────────────────────────────────────
 
@@ -1006,5 +1055,6 @@ class AxesDialog(QDialog):
                 (self._y_label, self._y_name, self._y_scale, self._y_units)):
             widget.setText(axis_label(name.text(), scale.currentText(),
                                       units.text()))
-        self._add_btn.setEnabled(bool(snippet)
+        allowed = self._note.check(snippet)
+        self._add_btn.setEnabled(bool(snippet) and allowed
                                  and bool(self._name.text().strip()))

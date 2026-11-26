@@ -33,7 +33,7 @@ from SLiCAP.SLiCAPshell import *
 try:
     # The system-level simulator is optional (SystemExtensionSpecs.md 13):
     # the package works without SLiCAPsystem.py, as the editor does.
-    from SLiCAP.SLiCAPsystem import runSystem, createIIR, createFIR
+    from SLiCAP.SLiCAPsystem import runSystem, createIIR, createFIR, makeFilter
 except ImportError:
     pass
 from SLiCAP.SLiCAPhtml import *

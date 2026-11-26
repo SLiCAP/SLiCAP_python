@@ -316,6 +316,268 @@ def assigned_before(text: str, name: str, position: int) -> bool:
     return False
 
 
+# ── editing in place (Anton, 2026-11-22 and 2026-11-25) ─────────────────────
+#
+# "Editing an existing object means editing the existing one and keeping it
+# on the line where it was." ONE function decides where the statements of a
+# dialog go, for every dialog (TODO.md "Edit in place, in every dialog").
+# The append-only editing of 2026-07-08 (SLNG.md) is REPLACED by it.
+
+class Placement:
+    """Where the statements of a dialog go in the instruction file
+    (:func:`place`).
+
+    ``append``: new statements only, appended at the end of the file.
+    ``edits``: ``(start, end, text)`` replacements in the file, ascending
+    and not overlapping. ``problems``: why the statements cannot go in;
+    OK stays disabled and the first one is shown."""
+
+    def __init__(self, append="", edits=(), problems=()):
+        self.append = append
+        self.edits = list(edits)
+        self.problems = list(problems)
+
+
+def _loads(stmt) -> set:
+    """The names a top-level statement reads when it runs. The bodies of
+    functions, classes and lambdas run later and are skipped. A
+    comprehension runs at once: its own loop variables are not names of
+    the file."""
+    names = set()
+    todo = [stmt]
+    while todo:
+        node = todo.pop()
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef,
+                             ast.ClassDef, ast.Lambda)):
+            continue
+        if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp,
+                             ast.GeneratorExp)):
+            local = {n.id for g in node.generators for n in ast.walk(g.target)
+                     if isinstance(n, ast.Name)}
+            names |= {n.id for n in ast.walk(node)
+                      if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)
+                      and n.id not in local}
+            continue
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+            names.add(node.id)
+        todo.extend(ast.iter_child_nodes(node))
+    return names
+
+
+def _early_uses(tree) -> list:
+    """``(statement, name, definition)`` for every top-level statement that
+    reads a name the file binds only in a LATER statement: a NameError when
+    the file runs."""
+    first = {}
+    for stmt in tree.body:
+        for name in _bound_in(stmt):
+            first.setdefault(name, stmt)
+    index = {id(stmt): i for i, stmt in enumerate(tree.body)}
+    out = []
+    for i, stmt in enumerate(tree.body):
+        for name in sorted(_loads(stmt)):
+            definition = first.get(name)
+            if definition is not None and index[id(definition)] > i:
+                out.append((stmt, name, definition))
+    return out
+
+
+def _span(text, stmt):
+    """The character range of a statement."""
+    return (_char_offset(text, stmt.lineno, stmt.col_offset),
+            _char_offset(text, stmt.end_lineno, stmt.end_col_offset))
+
+
+def _removal(text, stmt):
+    """The range that removes a statement: its whole lines when nothing
+    else stands on them (a comment after it goes with it), else the
+    statement and the semicolon after it."""
+    start, end = _span(text, stmt)
+    line_start = text.rfind("\n", 0, start) + 1
+    line_end = text.find("\n", end)
+    line_end = len(text) if line_end < 0 else line_end
+    after = text[end:line_end].strip()
+    if not text[line_start:start].strip() and (not after or after.startswith("#")):
+        if line_end < len(text):
+            return line_start, line_end + 1
+        return max(line_start - 1, 0), line_end
+    semicolon = re.match(r"\s*;[ \t]*", text[end:line_end])
+    return start, end + (semicolon.end() if semicolon else 0)
+
+
+def _line(text, position) -> int:
+    return text.count("\n", 0, position) + 1
+
+
+def statement_dump(text: str, name: str):
+    """``ast.dump`` of the last top-level statement that binds *name*, or
+    None. A dialog keeps it when it loads the statement. A non-modal
+    dialog then sees at OK that the statement was changed meanwhile."""
+    try:
+        stmt = _last_assignment(ast.parse(text), name)
+    except SyntaxError:
+        return None
+    return None if stmt is None else ast.dump(stmt)
+
+
+def rewrites(text: str, name: str, snippet: str) -> bool:
+    """Whether the statement of *name* in the dialog's *snippet* differs
+    from its last definition in *text*. Right after loading, a difference
+    means the statement holds parts the dialog cannot show: OK would
+    rewrite them (decision 4, Anton 2026-11-25: warn, then rewrite)."""
+    try:
+        last = _last_assignment(ast.parse(text), name)
+        mine = [s for s in ast.parse(snippet).body if name in _bound_in(s)]
+    except SyntaxError:
+        return False
+    return last is not None and bool(mine) and ast.dump(last) != ast.dump(mine[-1])
+
+
+def place(text: str, snippet: str, editing=(), loaded=None) -> Placement:
+    """Where the statements of a dialog's *snippet* go in the instruction
+    file *text*. *editing* names the objects the dialog loaded with "Edit
+    existing"; *loaded* maps them to their statement_dump() at loading.
+
+    Without an edited name in the snippet, everything is appended (a new
+    object). Otherwise, the rules Anton decided on 2026-11-25:
+
+    1. The statement of an edited name replaces the LAST definition of that
+       name, where it stands. The name is fixed while editing (the
+       dialogs).
+    2. Earlier definitions of the name, copies from append-only editing,
+       are removed.
+    3. A line that would read a name before its definition is refused,
+       with the line named: OK stays disabled.
+    4. A statement the dialog writes unchanged keeps its text as written,
+       layout and comments included (the dialogs warn when it would
+       change at once: rewrites()).
+    5. A NEW statement written together with an edited one goes directly
+       above it, in the order of the snippet. A new statement after the
+       last edited one is appended at the end of the file, as every new
+       object is: a new figure with an axis edited from one of its cells.
+       It went directly below the last edited one at first (for the run
+       dialog's ``TR1 = R1.traces``), which was REPLACED on 2026-11-26
+       (Anton): the new figure landed below the axis, before the other
+       axes it uses, and was refused by rule 3.
+
+    The system run dialog replaced its run in place from 2026-11-21; this
+    generalises it to every dialog."""
+    snippet = snippet.strip("\n")
+    if not snippet:
+        return Placement()
+    try:
+        parts = ast.parse(snippet).body
+    except SyntaxError as exc:
+        return Placement(problems=["The dialog wrote no valid Python (line %s: %s)."
+                                   % (exc.lineno, exc.msg)])
+    editing = {str(n) for n in (editing or ()) if n}
+    if not editing:
+        return Placement(append=snippet)
+    try:
+        tree = ast.parse(text)
+    except SyntaxError as exc:
+        return Placement(problems=["The instruction file does not parse (line %s: "
+                                   "%s). Correct it first." % (exc.lineno, exc.msg)])
+    definitions = {name: [s for s in tree.body if name in _bound_in(s)]
+                   for name in editing}
+    # the parts of the snippet, grouped around the edited statements
+    groups, pending, seen = [], [], set()
+    for i, part in enumerate(parts):
+        names = _bound_in(part) & editing
+        name = next(iter(names)) if len(names) == 1 else None
+        if name is not None and not definitions[name] and loaded and name in loaded:
+            return Placement(problems=["%s is no longer in the instruction file. "
+                                       "Open the dialog again." % name])
+        if name is None or not definitions[name]:
+            pending.append(i)
+            continue
+        if name in seen:
+            return Placement(problems=["%s is written twice." % name])
+        seen.add(name)
+        groups.append([name, i, pending + [i]])
+        pending = []
+    if not groups:
+        return Placement(append=snippet)
+    trailing = [ast.get_source_segment(snippet, parts[i]) for i in pending]
+    problems, edits = [], []
+    for name, anchor, members in groups:
+        last = definitions[name][-1]
+        if not (isinstance(last, ast.Assign) and len(last.targets) == 1
+                and isinstance(last.targets[0], ast.Name)):
+            # an if block, a loop, a tuple target: replacing it would take
+            # the rest of that statement with it
+            problems.append("%s is last defined on line %d by a statement "
+                            "this dialog cannot edit. Edit it in the editor."
+                            % (name, last.lineno))
+            continue
+        if loaded and name in loaded and loaded[name] != ast.dump(last):
+            problems.append("%s was changed in the instruction file while the "
+                            "dialog was open. Open the dialog again." % name)
+            continue
+        start, end = _span(text, last)
+        pieces = []
+        for i in members:
+            if i == anchor and ast.dump(parts[i]) == ast.dump(last):
+                pieces.append(text[start:end])
+            else:
+                pieces.append(ast.get_source_segment(snippet, parts[i]))
+        edits.append((start, end, "\n".join(pieces)))
+        for copy in definitions[name][:-1]:
+            if (isinstance(copy, ast.Assign) and len(copy.targets) == 1
+                    and isinstance(copy.targets[0], ast.Name)):
+                edits.append(_removal(text, copy) + ("",))
+    if problems:
+        return Placement(problems=problems)
+    if trailing:
+        newline = "" if not text or text.endswith("\n") else "\n"
+        edits.append((len(text), len(text), newline + "\n".join(trailing) + "\n"))
+    edits = sorted(e for e in edits if text[e[0]:e[1]] != e[2])
+    for (_s1, e1, _t1), (s2, _e2, _t2) in zip(edits, edits[1:]):
+        if s2 < e1:
+            return Placement(problems=["The edited statements overlap in the "
+                                       "instruction file. Edit them by hand."])
+    new = text
+    for start, end, piece in reversed(edits):
+        new = new[:start] + piece + new[end:]
+    try:
+        new_tree = ast.parse(new)
+    except SyntaxError as exc:
+        return Placement(problems=["The edit would not parse (line %s: %s)."
+                                   % (exc.lineno, exc.msg)])
+
+    def old_position(position):
+        """The position in *text* of a position in *new*; a position in
+        written text maps to the start of the statement it replaces, with
+        True."""
+        shift = 0
+        for start, end, piece in edits:
+            if position < start + shift:
+                break
+            if position < start + shift + len(piece):
+                return start, True
+            shift += len(piece) - (end - start)
+        return position - shift, False
+
+    before = {(ast.dump(s), n) for s, n, _d in _early_uses(tree)}
+    for stmt, name, definition in _early_uses(new_tree):
+        if (ast.dump(stmt), name) in before:
+            continue
+        user, written = old_position(_span(new, stmt)[0])
+        where = _line(text, old_position(_span(new, definition)[0])[0])
+        if written:
+            who = ", ".join(sorted(_bound_in(stmt))) or "line %d" % _line(text, user)
+            problems.append("%s would use %s before its definition on line %d. "
+                            "Move %s above line %d first."
+                            % (who, name, where, name, _line(text, user)))
+        else:
+            problems.append("Line %d would use %s before its definition on line "
+                            "%d, because the earlier %s is removed. Move line %d "
+                            "below line %d first, or delete it."
+                            % (_line(text, user), name, where, name,
+                               _line(text, user), where))
+    return Placement(problems=problems) if problems else Placement(edits=edits)
+
+
 def trace_set_of(text: str, result: str):
     """The name of the trace set ``NAME = <result>.traces`` written AFTER
     the last definition of *result* (the line the system run dialog writes

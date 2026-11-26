@@ -1176,7 +1176,19 @@ class SchematicScene(QGraphicsScene):
         raw = project.subdir_for(sch_path, "cir") / f"{sch_path.stem}_op.raw"
         if not raw.is_file():
             return False
-        from .raw_file import RawFile
+        # The raw parser of the NGspice run. The schematic package had a
+        # second copy (schematic/raw_file.py). It was REMOVED 2026-11-22:
+        # one parser, one place for its fixes. The copy took the first
+        # variable of an op block as a sweep variable. The core parser puts
+        # all variables of an op block in its signals.
+        # The results equal those of the copy for every raw NGspice writes.
+        # NGspice writes all names in lower case. A repeated name keeps its
+        # first place and its last value, as before.
+        # A hand-made raw with names that differ only in case can give
+        # another value, such as V(OUT), v(out), V(OUT). Keeping the copy's
+        # rule for that case was REJECTED 2026-11-22. It would bring back
+        # its sweep variable in an op block.
+        from SLiCAP.SLiCAPngspice import RawFile, _netlist_path
         try:
             analyses = RawFile.load(raw)
         except Exception:
@@ -1185,8 +1197,6 @@ class SchematicScene(QGraphicsScene):
             if "operating point" not in a.name.lower():
                 continue
             results = {}
-            if getattr(a, "x_data", None) is not None and a.x_data.size == 1:
-                results[a.x_name.lower()] = float(a.x_data[0].real)
             for k, v in a.signals.items():
                 if v.size == 1:
                     results[k.lower()] = float(v[0].real)
@@ -1195,7 +1205,6 @@ class SchematicScene(QGraphicsScene):
             # The netlist the raw was produced from names the nets:
             # cir/<stem>.spice_cir, else the hand-written .cir - the one
             # lookup rule of the NGspice run (Anton, 2026-11-08).
-            from SLiCAP.SLiCAPngspice import _netlist_path
             cir = _netlist_path(sch_path.stem, raw.parent)
             try:
                 netlist_text = cir.read_text(encoding="utf-8", errors="replace")

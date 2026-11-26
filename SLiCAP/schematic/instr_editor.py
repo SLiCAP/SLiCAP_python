@@ -155,23 +155,58 @@ class InstrEditor(QDockWidget):
         Run write it, and every reader of the instructions takes it here."""
         return self._editor.text()
 
-    def replace_range(self, start: int, end: int, text: str) -> bool:
-        """Replace the characters *start* to *end* of ``text()`` (Python
-        positions, end exclusive) with *text*, as one undo step with the
-        header when it is missing (_seed_header). False when the range
-        lies outside the text. The system run dialog edits a run in place
-        (instr_file.statement_range, 2026-11-21).
+    def put(self, placement) -> None:
+        """Write a placement (instr_file.place) as one undo step, with the
+        header when it is missing (_seed_header): new statements appended,
+        edited ones replaced where they stand and their old copies removed.
+        A placement with problems writes nothing.
 
         The positions are those of text(), converted to the UTF-16 units of
-        the document. Block numbers were the first form and were REPLACED
-        the same day. A Shift+Enter put a line separator (U+2028) inside a
-        block, and text() turned it into a newline. The lines of the parsed
-        text and the blocks of the document then disagreed, and the edit
-        hit the wrong line. Since 2026-11-22 text() keeps a U+2028 as
-        written, and Shift+Enter makes a new block (code_editor). A U+2028
-        now comes only from a file, inside a block. Positions in characters
-        are right in every case."""
-        return self._replace(start, end, text.rstrip("\n"))
+        the document, and applied from the end so that each stays valid.
+        Block numbers were the first form and were REPLACED on 2026-11-21:
+        a line separator (U+2028) inside a block made the lines of the
+        parsed text and the blocks of the document disagree.
+        ``replace_range()``, the system run dialog's single replacement of
+        2026-11-21, is REPLACED by this (2026-11-25): every dialog edits in
+        place now."""
+        from PySide6.QtGui import QTextCursor
+        if placement.problems:
+            return
+        if placement.append:
+            self.insert_snippet(placement.append)
+            return
+        if not placement.edits:
+            return
+        full = self.text()
+        cursor = QTextCursor(self._editor.document())
+        cursor.beginEditBlock()
+        for start, end, text in reversed(placement.edits):
+            cursor.setPosition(_utf16(full, start))
+            cursor.setPosition(_utf16(full, end), QTextCursor.MoveMode.KeepAnchor)
+            cursor.insertText(text)
+        self._seed_header()
+        cursor.endEditBlock()
+        self._editor.setTextCursor(cursor)
+
+    def put_dialog_result(self, dialog, parent=None) -> bool:
+        """Write what an instruction dialog composed, its
+        generated_snippet(), where it belongs (instr_file.place): a new
+        object at the end, an object loaded with "Edit existing"
+        (dialog.editing()) in place. The text is taken as it is NOW, so a
+        non-modal dialog that was open while the file changed is refused
+        (dialog.loaded()). A refusal says why and changes nothing. True
+        when something was written."""
+        from .instr_file import place
+        snippet = dialog.generated_snippet()
+        if not snippet:
+            return False
+        placement = place(self.text(), snippet, dialog.editing(), dialog.loaded())
+        if placement.problems:
+            QMessageBox.warning(parent or self, dialog.windowTitle(),
+                                placement.problems[0] + "\n\nNothing was changed.")
+            return False
+        self.put(placement)
+        return True
 
     def insert_at(self, position: int, text: str) -> bool:
         """Insert *text* at character *position* of ``text()``, as one undo

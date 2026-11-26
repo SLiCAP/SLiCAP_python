@@ -27,29 +27,23 @@ from pathlib import Path
 # Nutmeg raw-file parser
 # =============================================================================
 
-_BINARY_MARKER = b"Binary:"
-_VALUES_MARKER  = b"Values:"
-
-
-def _find_raw_marker(raw, marker, start):
-    """Find *marker* on its own line at/after *start*, tolerant of LF and CRLF
-    line endings (NGspice on Windows writes the raw header with CRLF, so a
-    ``b"Binary:\\n"`` search would miss ``Binary:\\r\\n`` — the Windows-only
-    "Missing trace data" bug).  Returns (marker_start, data_start), or (-1, -1)
-    when absent; *data_start* is the first byte past the marker's line ending."""
-    pos = start
-    while True:
-        i = raw.find(marker, pos)
-        if i == -1:
-            return -1, -1
-        end = i + len(marker)
-        if end < len(raw) and raw[end:end + 1] in (b"\r", b"\n"):
-            if raw[end:end + 1] == b"\r":
-                end += 1
-            if raw[end:end + 1] == b"\n":
-                end += 1
-            return i, end
-        pos = i + len(marker)
+# The header of an analysis block ends at its data marker. That is "Binary:"
+# or "Values:", directly followed by a line ending. The first marker of
+# either kind after the start of the block is the one. The data starts past
+# its line ending: an optional CR, then an optional LF. NGspice on Windows
+# writes the header with CRLF. A b"Binary:\n" search missed "Binary:\r\n":
+# the Windows-only "Missing trace data" bug.
+# The function _find_raw_marker() searched each marker separately, from the
+# block to the end of the file. It was REPLACED 2026-11-22. In a binary raw
+# the "Values:" search scanned all the remaining data for every block. In an
+# ASCII raw the "Binary:" search did the same. The parse time grew with the
+# square of the step count: 100 steps took 440 ms.
+# Two searches that remember each marker's next position over the blocks
+# were considered and REJECTED 2026-11-22. They add state between blocks.
+# They scan the file once more for the absent marker: 400 steps in 126 ms
+# instead of 78 ms. They are faster only on a file without any marker, such
+# as an LTspice raw: 0.9 s instead of 3 s for 511 MB, with no blocks found.
+_DATA_MARKER = re.compile(rb"(Binary:|Values:)(?=[\r\n])\r?\n?")
 
 
 @dataclass
@@ -107,15 +101,13 @@ class RawFile:
 
     @staticmethod
     def _parse_block(raw, start):
-        bi, bi_end = _find_raw_marker(raw, _BINARY_MARKER, start)
-        vi, vi_end = _find_raw_marker(raw, _VALUES_MARKER, start)
-
-        if bi == -1 and vi == -1:
+        marker = _DATA_MARKER.search(raw, start)
+        if marker is None:
             return None
 
-        is_binary  = (bi != -1) and (vi == -1 or bi <= vi)
-        marker_pos = bi if is_binary else vi
-        marker_end = bi_end if is_binary else vi_end
+        is_binary  = marker.group(1) == b"Binary:"
+        marker_pos = marker.start()
+        marker_end = marker.end()
 
         header_text = raw[start:marker_pos].decode("ascii", errors="replace")
         hdr = RawFile._parse_header(header_text)

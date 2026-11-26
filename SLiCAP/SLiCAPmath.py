@@ -19,6 +19,7 @@ from scipy.integrate import quad
 from scipy.optimize import fsolve
 from SLiCAP.SLiCAPlex import _replaceScaleFactors, _sympify, _SCALEFACTORS
 from copy import deepcopy
+from math import fsum
 
 def det(M, method="ME"):
     """
@@ -477,7 +478,7 @@ def _zeroValue(numer, denom, var):
         try:
             gain = sp.limit(numer/denom, var, 0)
         except:
-            gain = sp.sympify("undefined")
+            gain = sp.Symbol("undefined")
     elif numerValue == 0:
         gain = sp.N(0)
     elif denomValue == 0:
@@ -503,8 +504,23 @@ def findServoBandwidth(loopgainRational):
              - lpo: order at low-pass intersection
              - mbv: mid-band value of the loopgain (highest value at order = zero)
              - mbf: lowest freqency of mbv
-    :rtype: dict
+
+             or None, with a warning, if the loop gain is not a ratio of
+             polynomials in the Laplace variable, e.g. with a delay
+             exp(-s*T).
+    :rtype: dict, NoneType
     """
+    # A loop gain that is not rational WAS passed on to _numRoots(), which
+    # failed with an UnboundLocalError. FIXED (Anton, 2026-11-24): a warning
+    # and None, so that a script continues. A ValueError was built on
+    # 2026-11-23 and REPLACED (Anton, 2026-11-24: an exception stops the
+    # script). Support of delays by a rational (Pade) approximation was
+    # considered and REJECTED as a bug fix (2026-11-23): it is a new feature.
+    if not loopgainRational.is_rational_function(ini.laplace):
+        print("Warning: findServoBandwidth: the loop gain is not a ratio of "
+              "polynomials in {0}, e.g. it has a delay exp(-{0}*T)."
+              .format(ini.laplace))
+        return None
     numer, denom = loopgainRational.as_numer_denom()
     poles = _numRoots(denom, ini.laplace)
     zeros = _numRoots(numer, ini.laplace)
@@ -874,9 +890,21 @@ def phaseMargin(LaplaceExpr):
     Calculates the phase margin assuming a loop gain definition according to
     the asymptotic gain model.
 
-    This function uses **scipy.newton()** for determination of the the
-    unity-gain frequency. It uses the function **SLiCAPmath.findServoBandwidth()**
-    for the initial guess, and ini.disp for the relative accuracy.
+    This function uses **scipy.optimize.fsolve()** with its default
+    tolerance (xtol = 1.5e-8) for determination of the unity-gain frequency.
+    It solves ``|L| - 1 = 0`` on the numeric coefficients of the loop gain
+    L. It uses the function **SLiCAPmath.findServoBandwidth()** for the
+    initial guess.
+
+    The phase margin and the unity-gain frequency are None when the
+    asymptotes of ``|L|`` do not cross unity (no initial guess), and when
+    the solver does not converge to ``|L| = 1`` from that guess. The latter
+    happens when ``|L|`` does not cross unity, and for some loop gains with a
+    resonance or dip near the crossing. They are also None for a loop gain
+    that is not a ratio of polynomials in the Laplace variable, e.g. with a
+    delay exp(-s*T). Then a warning is printed and the script continues. For
+    a list, the warning gives the list index of the loop gain, and the list
+    holds None at that index.
 
     if ini.hz == True, the units will be degrees and Hz, else radians and
     radians per seconds.
@@ -892,29 +920,65 @@ def phaseMargin(LaplaceExpr):
 
     :rtype: tuple
     """
+    # The solver WAS run on the lambdified sympy expression Abs(L) - 1.
+    # REPLACED (Anton, 2026-11-22) by the numeric coefficients: building and
+    # lambdifying that expression took 55-65 % of the time. The numeric
+    # route is about 3x faster on the book examples. Its rounding differs,
+    # so the solver stops at a slightly different point. On 365 test loop
+    # gains, results moved by up to 1.6e-14 relative. The limit is the
+    # solver tolerance, not float rounding. Where |L| crosses unity with a
+    # very small slope, f_u moved by up to 1.1e-8 relative and the margin by
+    # up to 5.5e-7 deg. Neither result is closer to the true root.
+    # Lambdify of L with abs taken in numpy was considered and REJECTED
+    # (2026-11-22): it keeps the lambdify cost, and Abs.eval moves known
+    # factors out of the abs, so its rounding differs as well.
+    #
+    # The solver result WAS used without a convergence check. FIXED (Anton,
+    # 2026-11-22): a run that did not converge returned meaningless values,
+    # even negative frequencies. Now such a run gives None. This covers a
+    # loop gain whose magnitude does not cross unity. It also covers a
+    # resonance or dip near the crossing that misleads the solver from the
+    # asymptotic guess. The no-crossover case WAS found by catching (except
+    # BaseException) the error of fsolve on a None guess. REPLACED
+    # (2026-11-22) by the explicit checks below.
+    #
+    # |L(j w)| is even in w, so -f_u is a root as well. fsolve can converge
+    # to it when the guess lies far above f_u, e.g. for -1.02**3/(1 + s/w0)**3.
+    # f_u and the margin WERE then returned with the wrong sign. FIXED
+    # (Anton, 2026-11-23): the root found is replaced by its absolute value.
+    #
+    # The residual limit: a crossover found to the solver's xtol of 1.5e-8
+    # leaves | |L| - 1 | below 1e-6 for slopes up to 60 (1200 dB/decade).
+    # Measured (2026-11-22) on about 1900 loop gains: converged residuals
+    # up to 2.3e-12, failed runs down to 0.03.
+    #
+    # The message WAS "Error: ...". REPLACED (Anton, 2026-11-24) by
+    # "Warning: ...": the script continues, as it does for a loop gain that
+    # is not rational.
+    maxResidual = 1e-6
     freqs = []
     mrgns = []
-    if type(LaplaceExpr) != list:
+    isList = type(LaplaceExpr) == list
+    if not isList:
         LaplaceExpr = [LaplaceExpr]
-    for expr in LaplaceExpr:
+    for i, expr in enumerate(LaplaceExpr):
         #expr = normalizeRational(sp.N(expr))
         expr = sp.N(expr)
-        if ini.hz == True:
-            data = expr.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
-        else:
-            data = expr.xreplace({ini.laplace: sp.I*ini.frequency})
-        func = sp.lambdify(ini.frequency, sp.Abs(data)-1, ini.lambdify)
-        guess = findServoBandwidth(expr)['lpf']
-        try:
-            # freq = newton(func, guess, tol = 10**(-ini.disp), maxiter = 50)
-            freq = float(fsolve(func, guess)[0])
-            mrgn = float(_phaseFunc_f(expr, freq))
-        except BaseException:
-            exc_type, value, exc_traceback = sys.exc_info()
-            print('\n', value)
-            print("Error: could not determine unity-gain frequency for phase margin.")
-            freq = None
-            mrgn = None
+        servo = findServoBandwidth(expr)
+        guess = None if servo is None else servo['lpf']
+        coeffs = None if servo is None else _rational_coeffs_numeric(expr, ini.laplace)
+        freq = None
+        mrgn = None
+        if guess is not None and coeffs is not None:
+            func = lambda f: np.abs(_coeffs_response(coeffs, f)) - 1
+            x, info, ier, _ = fsolve(func, guess, full_output=True)
+            if ier == 1 and abs(info['fvec'][0]) < maxResidual:
+                freq = abs(float(x[0]))
+                mrgn = float(_phaseFunc_f(expr, freq))
+        if freq is None:
+            where = " (list index {0})".format(i) if isList else ""
+            print("Warning: could not determine unity-gain frequency for "
+                  "phase margin{0}.".format(where))
         freqs.append(freq)
         mrgns.append(mrgn)
     if len(freqs) == 1:
@@ -1151,6 +1215,28 @@ def _freq_response(LaplaceExpr, f):
     coeffs = _rational_coeffs_numeric(LaplaceExpr, ini.laplace)
     if coeffs is None:
         return None
+    return _coeffs_response(coeffs, f)
+
+def _coeffs_response(coeffs, f):
+    """
+    Numeric complex frequency response of the rational function with the
+    coefficients 'coeffs' = (numCoeffs, denCoeffs) from
+    _rational_coeffs_numeric(). The Laplace variable is replaced with
+    2*pi*1j*f (ini.hz == True) or 1j*f (ini.hz == False).
+
+    This is the evaluation part of _freq_response(). A caller that
+    evaluates one function many times, such as the solver in
+    phaseMargin(), extracts the coefficients once and calls this.
+
+    :param coeffs: (numCoeffs, denCoeffs) in decreasing order of the
+                   exponent of the Laplace variable.
+    :type coeffs: tuple
+
+    :param f: Frequency value, list or array of frequency values.
+
+    :return: Complex response array (shape of f).
+    :rtype: numpy.ndarray
+    """
     ncoeffs, dcoeffs = coeffs
     w = np.asarray(f, dtype=float)
     jw = 2j * np.pi * w if ini.hz else 1j * w
@@ -2516,6 +2602,20 @@ def _zRational(numd, dend):
     return num.as_expr() / den.as_expr()
 
 
+def _bilinearWeights(n):
+    """Integer weights of the bilinear transform s = 2 (z-1)/(z+1) of a
+    polynomial of degree *n* in s, times (z+1)^n: row k holds the
+    coefficients, decreasing powers of z, of 2^(n-k) (z-1)^(n-k) (z+1)^k,
+    the image of s^(n-k)."""
+    rows = []
+    for k in range(n + 1):
+        row = [2 ** (n - k)]
+        for r in [1] * (n - k) + [-1] * k:          # times (z - r)
+            row = [p - r * q for p, q in zip(row + [0], [0] + row)]
+        rows.append(row)
+    return rows
+
+
 def _discretise(num, den, Ts, method):
     """z-domain coefficients ``(b, a)`` in powers of 1/z, a[0] = 1, of a
     proper section with float coefficient lists *num*, *den* in s.
@@ -2530,6 +2630,30 @@ def _discretise(num, den, Ts, method):
     scipy's state-space route then returns a numerator of rounding
     noise (DC gain 4.45 instead of 1; zero at 1 ns). Found 2026-11-16 on
     a second-order loop filter sampled at 200 MHz.
+
+    The bilinear transform, s = 2 (z-1)/(z+1) at Ts = 1, is computed
+    numerically: numerator and denominator times (z+1)^n, n the order of
+    the section. Each z coefficient is then a sum of the s coefficients
+    times integer weights (:func:`_bilinearWeights`). For a section of
+    order one or two every nonzero weight is a power of two. So every
+    product is exact, and ``fsum`` rounds the exact sum once.
+
+    The bilinear branch WAS a sympy substitution with ``cancel`` (up to
+    6.4.8). REPLACED (Anton, 2026-11-22) by the exact sums. A filter
+    update is 55-85x faster. Measured on 1707 sections (2026-11-23), the
+    error against the exact transform is at most 1.2 eps of the largest
+    coefficient of b or a (eps = 2.2e-16). The sympy path reached 1.7
+    eps. New and old differ by at most 1.8 eps. The sympy ``cancel``
+    also removed a pole and a zero that were equal, or nearly equal,
+    after rounding. The section then came back below its order: a
+    biquad with one or two coefficients, a first-order section with
+    one. Examples: poles at 1e-9 of the sample rate over a double zero
+    at the origin, a zero within 1e-9 (relative) of a pole, and a pole
+    and zero that are equal in s. The Bilin and Biquad blocks of the
+    system simulator refuse such a section. The exact sums keep every
+    section at its order. A plain float sum was considered and
+    REJECTED (2026-11-22): it saves 2 us per section, and its error is
+    that of the sympy path.
     """
     # decreasing powers: den[k] multiplies s^(n-k), num[k] s^(m-k);
     # s = s'/Ts and the whole times Ts^n gives den[k] Ts^k, num[k] Ts^(n-m+k)
@@ -2541,20 +2665,169 @@ def _discretise(num, den, Ts, method):
     scale = max(abs(c) for c in num) or 1.0
     num = [c / scale for c in num]
     if method in _BILINEAR:
-        s, z = ini.laplace, ini.z
-        Hs = sp.Poly(num, s).as_expr() / sp.Poly(den, s).as_expr()
-        Hz = sp.cancel(sp.together(Hs.subs(s, 2 * (z - 1) / (z + 1))))
-        nm, d = Hz.as_numer_denom()
-        nb, da = sp.Poly(nm, z).all_coeffs(), sp.Poly(d, z).all_coeffs()
-        order = max(len(nb), len(da))
-        nb = [0.0] * (order - len(nb)) + [float(c) for c in nb]
-        da = [0.0] * (order - len(da)) + [float(c) for c in da]
+        weights = _bilinearWeights(n)
+        num = [0.0] * (n - m) + num          # num[k] multiplies s^(n-k)
+        nb = [fsum(c * w[j] for c, w in zip(num, weights, strict=True))
+              for j in range(n + 1)]
+        da = [fsum(c * w[j] for c, w in zip(den, weights, strict=True))
+              for j in range(n + 1)]
     else:
         from scipy import signal
         nb, da, _ = signal.cont2discrete((num, den), 1.0, method=method)
         nb, da = [float(c) for c in nb[0]], [float(c) for c in da]
     a0 = da[0]
     return [scale * c / a0 for c in nb], [c / a0 for c in da]
+
+
+def _holdZ(num, den, Ts, method="zoh", dps=50):
+    """The z-domain transfer in ``ini.z`` of the hold discretisation of the
+    WHOLE transfer *num*/*den* (float coefficient lists in s, decreasing
+    powers, proper), for the sample period *Ts*: "zoh", the input held over
+    the period, or "foh", the input linear between the samples. These are
+    the steps of the non-stationary filter of the system simulator
+    (``SLiCAPsystem._discretise``): the matrix exponential of the augmented
+    matrix of the controllable canonical form, with the foh weights of
+    scipy's ``cont2discrete``.
+
+    The result is gain * prod(zero factors) / prod(pole factors): factors
+    of first and second order with float coefficients, a conjugate pair in
+    one factor. It is computed with *dps* digits: the step matrices, the
+    transfer at n+1 points of the unit circle, its numerator by
+    interpolation, the zeros, and the poles exp(p Ts) of the poles p in s.
+    Only the coefficients of each factor are rounded to floats, and a factor
+    of order two or less keeps its accuracy.
+
+    One polynomial for the whole transfer, and factors from the eigenvalues
+    of the float step matrix, were considered and REJECTED (Anton,
+    2026-11-24). For an 8th-order Butterworth low-pass at 1e-3 of the
+    sample rate the polynomial was 100 % wrong, and for a band-stop of
+    order 4 with Q = 100 2000 %. The eigenvalue factors were 7e-4 off for
+    the low-pass and useless for the band-stop. The float step itself, as
+    the simulator runs it, was accurate: 3e-13 and 6e-6.
+    """
+    import mpmath as mp
+    with mp.workdps(dps):
+        a = [mp.mpf(float(c)) for c in den]
+        while len(a) > 1 and a[0] == 0:
+            a = a[1:]
+        n = len(a) - 1
+        b = [mp.mpf(float(c)) for c in num]
+        b = [mp.mpf(0)] * (n + 1 - len(b)) + b       # proper: len(b) <= n + 1
+        lead = a[0]
+        a = [c / lead for c in a]
+        b = [c / lead for c in b]
+        if n == 0:
+            return sp.Float(float(b[0]))
+        T = mp.mpf(float(Ts))
+        # controllable canonical form, as scipy's tf2ss
+        A = mp.zeros(n, n)
+        for j in range(n):
+            A[0, j] = -a[j + 1]
+        for i in range(1, n):
+            A[i, i - 1] = 1
+        C = mp.matrix([[b[j + 1] - b[0] * a[j + 1] for j in range(n)]])
+        E = mp.zeros(n + 2, n + 2)
+        for i in range(n):
+            for j in range(n):
+                E[i, j] = A[i, j] * T
+        E[0, n] = T                                   # B = [1, 0, ..., 0]
+        E[n, n + 1] = 1
+        M = mp.expm(E)
+        Ad = M[0:n, 0:n]
+        g0 = M[0:n, n]
+        g1 = M[0:n, n + 1]
+        if method == "foh":
+            Bd = g0 - g1 + Ad * g1
+            Dd = b[0] + (C * g1)[0]
+        else:
+            Bd = g0
+            Dd = b[0]
+        zpoles = [mp.exp(p * T) for p in
+                  mp.polyroots(a, maxsteps=1000, extraprec=4 * dps)]
+        # the numerator N(z) = H(z) prod(z - p_z): a polynomial of degree n,
+        # interpolated from n+1 points of the unit circle, half a step off
+        # z = 1 and z = -1, where a pole may sit
+        pts = [mp.expjpi(mp.mpf(2 * k + 1) / (n + 1)) for k in range(n + 1)]
+        vals = []
+        for w in pts:
+            h = (C * mp.lu_solve(w * mp.eye(n) - Ad, Bd))[0] + Dd
+            for zp in zpoles:
+                h *= (w - zp)
+            vals.append(h)
+        coeffs = [mp.re(mp.fsum(v * w ** (-j) for v, w in zip(vals, pts)))
+                  / (n + 1) for j in range(n + 1)]        # increasing powers
+        big = max(abs(c) for c in coeffs)
+        while len(coeffs) > 1 and abs(coeffs[-1]) <= big * mp.mpf(10) ** (-dps // 2):
+            coeffs.pop()                              # zeros at infinity
+        gain = coeffs[-1]
+        zzeros = (mp.polyroots(coeffs[::-1], maxsteps=1000, extraprec=4 * dps)
+                  if len(coeffs) > 1 else [])
+        return _zFactors(gain, zzeros, zpoles, dps)
+
+
+def _zFactors(gain, zeros, poles, dps=50):
+    """gain * prod(z - zero) / prod(z - pole) in ``ini.z``, from roots
+    computed with *dps* digits (mpmath): a real root gives a factor of
+    order one, a conjugate pair one of order two. Only the coefficients of
+    each factor are rounded to floats."""
+    import mpmath as mp
+    z = ini.z
+
+    def factors(roots):
+        out = sp.Integer(1)
+        tol = mp.mpf(10) ** (-dps // 2)
+        upper = []
+        for r in roots:
+            r = mp.mpc(r)
+            if abs(mp.im(r)) <= tol * max(1, abs(r)):
+                out *= (z - sp.Float(float(mp.re(r))))
+            elif mp.im(r) > 0:
+                upper.append(r)
+        for r in upper:
+            out *= (z ** 2 - sp.Float(float(2 * mp.re(r))) * z
+                    + sp.Float(float(abs(r) ** 2)))
+        return out
+
+    return sp.Float(float(mp.re(gain))) * factors(zeros) / factors(poles)
+
+
+def _bilinearZ(num, den, Ts, dps=50):
+    """The bilinear transform, s = 2/Ts (z-1)/(z+1), of the numeric
+    transfer *num*/*den* (float coefficient lists in s, decreasing powers;
+    improper allowed) as a product of factors (:func:`_zFactors`). The roots
+    r in s are found with *dps* digits and mapped exactly:
+    s - r = (2/Ts - r) (z - (2/Ts + r)/(2/Ts - r)) / (z + 1). The degree
+    difference gives factors (z + 1).
+
+    The substitution in the whole transfer with ``cancel`` gave one
+    polynomial and was REPLACED for numeric transfers (Anton, 2026-11-24):
+    its float coefficients lose all accuracy for many poles close to z = 1.
+    """
+    import mpmath as mp
+    with mp.workdps(dps):
+        b = [mp.mpf(float(c)) for c in num]
+        a = [mp.mpf(float(c)) for c in den]
+        while len(b) > 1 and b[0] == 0:
+            b = b[1:]
+        while len(a) > 1 and a[0] == 0:
+            a = a[1:]
+        m, n = len(b) - 1, len(a) - 1
+        k = 2 / mp.mpf(float(Ts))
+        sz = mp.polyroots(b, maxsteps=1000, extraprec=4 * dps) if m > 0 else []
+        sp_ = mp.polyroots(a, maxsteps=1000, extraprec=4 * dps) if n > 0 else []
+        gain = b[0] / a[0]
+        zeros, poles = [], []
+        for r in sz:
+            gain *= (k - r)
+            zeros.append((k + r) / (k - r))
+        for r in sp_:
+            gain /= (k - r)
+            poles.append((k + r) / (k - r))
+        # (z + 1)^(n - m): zeros at -1 for a proper transfer, poles for an
+        # improper one
+        zeros += [mp.mpf(-1)] * max(n - m, 0)
+        poles += [mp.mpf(-1)] * max(m - n, 0)
+        return _zFactors(gain, zeros, poles, dps)
 
 
 def _sectionsZ(sections):
@@ -2610,6 +2883,70 @@ def _pairPoles(rts):
     if len(real) % 2:
         groups.append([real[-1]])
     return groups
+
+
+def _pairZeros(groups, zeros):
+    """Assign the *zeros* (a list of complex) to the pole *groups* of
+    :func:`_pairPoles`, taken in their order: per group a list of at
+    most as many zeros as the group has poles.
+
+    Slot by slot, a group takes the zero nearest to its first pole among
+    the zeros that fit. A complex zero fits only an empty two-pole group,
+    and brings its conjugate. A real zero fits a one-pole group and the
+    second slot of a two-pole group. It fits an empty two-pole group only
+    while the later two-pole groups can still hold the complex pairs
+    that are left. With no more zeros than poles every zero finds a slot.
+
+    The pairing WAS a loop of as many picks as the group has poles (up
+    to 6.4.8). FIXED (Anton, 2026-11-22). After a complex pair the loop
+    picked once more, so a two-pole group could take three zeros. With
+    the bilinear method that section had 4 coefficients and its own
+    z-pole at -1, on the unit circle. :func:`coeffs2sections` raised
+    nothing, and the Biquad block of the system simulator refused the
+    section. The hold methods refused it at once. Other designs raised:
+    a complex zero picked for the last free slot lost its conjugate.
+    This hit every design with two or more complex zero pairs:
+    elliptic and inverse-Chebyshev designs, notch cascades, and the
+    band-stop and all-pass designs of :func:`filterFunc`. It also hit
+    most designs with one complex zero pair among other zeros. The
+    Bessel band-stop of :func:`filterFunc` was a different defect, of
+    that function: degree n(n+1) instead of 2n. FIXED there (2026-11-23).
+
+    The loop fix "while len(mine) < len(grp)" was considered and
+    REJECTED (2026-11-22): incomplete. A group that takes a real zero
+    first and then meets a complex zero still fails. Wherever the old
+    loop gave proper sections, this function makes the same choices
+    (checked on 7306 realisations, 2026-11-23).
+    """
+    zlist = list(zeros)
+    pairs = sum(1 for zr in zlist if zr.imag > 0.0)     # complex pairs left
+    later = sum(1 for grp in groups if len(grp) == 2)   # two-pole groups ahead
+    picked = []
+    for grp in groups:
+        p0 = grp[0]
+        if len(grp) == 2:
+            later -= 1
+        mine = []
+        while len(mine) < len(grp):
+            empty = len(grp) == 2 and not mine
+            fits = [k for k, zr in enumerate(zlist)
+                    if (abs(zr.imag) > 0.0 and empty)
+                    or (abs(zr.imag) == 0.0 and (not empty or pairs <= later))]
+            if not fits:
+                break
+            j = min(fits, key=lambda k: abs(zlist[k] - p0))
+            zr = zlist.pop(j)
+            mine.append(zr)
+            if abs(zr.imag) > 0.0:
+                # take its conjugate along
+                jj = min(range(len(zlist)),
+                         key=lambda k: abs(zlist[k] - zr.conjugate()))
+                mine.append(zlist.pop(jj))
+                pairs -= 1
+        picked.append(mine)
+    if zlist:
+        raise ValueError("zeros left over after pairing: %s" % zlist)
+    return picked
 
 
 def _realPoly(roots, what="roots"):
@@ -2676,9 +3013,10 @@ def coeffs2sections(b, a, Ts, method="bilinear", previous=None):
     first-order and second-order sections sampled with *Ts*.
 
     Poles and zeros are found numerically, paired into sections with
-    real coefficients, ordered by decreasing Q, each pole pair with the
-    nearest zeros, and every section is discretised on its own with
-    *method*. The overall gain is kept apart.
+    real coefficients, ordered by decreasing Q, each pole group with the
+    nearest zeros it can hold (:func:`_pairZeros`), and every section is
+    discretised on its own with *method*. The overall gain is kept
+    apart.
 
     With *previous*, the ``structure`` of an earlier realisation of the
     same design, the new poles and zeros are assigned to the earlier
@@ -2725,26 +3063,7 @@ def coeffs2sections(b, a, Ts, method="bilinear", previous=None):
     zeros = _numericRoots(b)
     if previous is None:
         groups = sorted(_pairPoles(poles), key=_qOf, reverse=True)
-        zlist = list(zeros)
-        picked = []
-        for grp in groups:
-            # nearest zeros, as many as the section order allows
-            mine = []
-            for _ in range(len(grp)):
-                if not zlist:
-                    break
-                p0 = grp[0]
-                j = min(range(len(zlist)), key=lambda k: abs(zlist[k] - p0))
-                zr = zlist.pop(j)
-                mine.append(zr)
-                if abs(zr.imag) > 0.0 and len(mine) < len(grp):
-                    # take its conjugate along
-                    jj = min(range(len(zlist)),
-                             key=lambda k: abs(zlist[k] - zr.conjugate()))
-                    mine.append(zlist.pop(jj))
-            picked.append(mine)
-        if zlist:
-            raise ValueError("zeros left over after pairing: %s" % zlist)
+        picked = _pairZeros(groups, zeros)
     else:
         groups = _track(poles, [sec["poles"] for sec in previous], "pole")
         picked = _track(zeros, [sec["zeros"] for sec in previous], "zero")
@@ -2829,10 +3148,20 @@ def laplace2z(expr, Ts, method="bilinear"):
     the frequency response and :func:`laplace2sections` for a
     realisation as first-order and second-order sections.
 
+    For a NUMERIC transfer and sample period the bilinear, "zoh" and "foh"
+    methods return a product of first-order and second-order factors,
+    computed with 50 digits (:func:`_bilinearZ`, :func:`_holdZ`). One
+    numerator and one denominator polynomial WAS returned. REPLACED (Anton,
+    2026-11-24): with many poles close to z = 1, a filter at a low
+    frequency compared with the sample rate, their float coefficients lose
+    all accuracy (100 % for an 8th-order Butterworth low-pass at 1e-3 of
+    the sample rate). A transfer with symbols keeps the bilinear
+    substitution; the other scipy methods keep one polynomial.
+
     :param expr: Laplace transfer function, rational in ``ini.laplace``
     :type expr: sympy.Expr or str
-    :param Ts: sample period [s]
-    :type Ts: float or sympy.Expr (bilinear only)
+    :param Ts: sample period [s]; a text may have a scale factor ("1u")
+    :type Ts: float, str or sympy.Expr (bilinear only)
     :param method: conversion method, default "bilinear"
     :type method: str
     :return: transfer function in ``ini.z``
@@ -2840,9 +3169,21 @@ def laplace2z(expr, Ts, method="bilinear"):
     """
     num, den = _laplaceRational(expr)
     s, z = ini.laplace, ini.z
+    if isinstance(Ts, str):
+        # scale factors as everywhere in SLiCAP, numbers stay floats (2026-11-23)
+        Ts = _sympify(_replaceScaleFactors(Ts))
+    try:
+        b = [float(c) for c in num.all_coeffs()]
+        a = [float(c) for c in den.all_coeffs()]
+        T = float(Ts)
+        numeric = True
+    except TypeError:
+        numeric = False
     if method in _BILINEAR:
+        if numeric:
+            return _bilinearZ(b, a, T)
         Hs = num.as_expr() / den.as_expr()
-        Hz = Hs.subs(s, 2 / sp.sympify(Ts) * (z - 1) / (z + 1))
+        Hz = Hs.subs(s, 2 / _sympify(Ts) * (z - 1) / (z + 1))
         return sp.cancel(sp.together(Hz))
     b = _floatCoeffs(num, "numerator")
     a = _floatCoeffs(den, "denominator")
@@ -2852,6 +3193,8 @@ def laplace2z(expr, Ts, method="bilinear"):
             "degree %d): method %r is not defined for it. Use the bilinear "
             "method, or make it proper (a series resistance with a "
             "capacitance, for example)." % (len(b) - 1, len(a) - 1, method))
+    if method in ("zoh", "foh"):
+        return _holdZ(b, a, float(Ts), method)
     bz, az = _discretise(b, a, float(Ts), method)
     return sp.cancel(_zRational(bz, az))
 
@@ -2865,8 +3208,9 @@ def laplace2sections(expr, Ts, method="bilinear"):
     and adds the z-domain transfer of the realisation as an expression.
     The poles and zeros are found with the root finder of :func:`ilt`,
     paired into sections with real coefficients, ordered by decreasing
-    Q, each pole pair with the nearest zeros, and every section is
-    discretised on its own. The overall gain is kept apart. A cascade
+    Q, each pole group with the nearest zeros it can hold, and every
+    section is discretised on its own. The overall gain is kept apart.
+    No section has more zeros than poles. A cascade
     of per-section conversions equals the conversion of the whole for
     the bilinear method and approximates it for the hold methods.
     Repeated poles give identical sections.
@@ -2888,7 +3232,7 @@ def laplace2sections(expr, Ts, method="bilinear"):
     :type method: str
     :return: the dictionary of :func:`coeffs2sections` plus
              ``ztransfer``: the z-domain transfer of the realisation
-             in ``ini.z``
+             in ``ini.z``, the product of its sections (:func:`sectionsZ`)
     :rtype: dict
     """
     num, den = _laplaceRational(expr)
@@ -2901,30 +3245,117 @@ def laplace2sections(expr, Ts, method="bilinear"):
 
 def sectionsZ(gain, sections):
     """The z-domain transfer in ``ini.z`` of a realisation: *gain* times
-    the product of the *sections* of :func:`coeffs2sections`."""
+    the product of the *sections* of :func:`coeffs2sections`, kept as a
+    product of the sections, as the filter computes it.
+
+    The product WAS cancelled and expanded into one numerator and one
+    denominator polynomial. REPLACED (Anton, 2026-11-24): with many poles
+    close to z = 1, a filter at a low frequency relative to the sample rate,
+    the float coefficients of those polynomials lose all accuracy. An 8th
+    order Butterworth low-pass at 1e-3 of the sample rate was 100 % wrong.
+    Expanding exactly with rationals and rounding the coefficients to floats
+    once was considered and REJECTED (2026-11-24): the same 100 %, even
+    when those coefficients are evaluated with 60 digits. The loss is in
+    the rounding of the expanded coefficients.
+    """
     Hz = sp.Float(gain)
     for e in _sectionsZ(sections):
         Hz = Hz * e
-    return sp.cancel(sp.together(Hz))
+    return Hz
 
 
 def z2fourier(expr, Ts):
     """Returns the frequency response of a z-domain transfer function:
-    ``ini.z`` is replaced with exp(2 pi j f Ts), f = ``ini.frequency``.
+    ``ini.z`` is replaced with exp(2 pi j f Ts), f = ``ini.frequency`` in
+    Hz, or with exp(j omega Ts) when ``ini.hz`` is False and
+    ``ini.frequency`` is the angular frequency, as ``sweepData()`` takes
+    it. It always assumed Hz until 2026-11-25.
 
     The result is a function of the frequency, for :func:`mag`,
     :func:`dB`, :func:`phase` and :func:`sampleExpr`.
 
     :param expr: transfer function in ``ini.z``
     :type expr: sympy.Expr or str
-    :param Ts: sample period [s]
-    :type Ts: float or sympy.Expr
+    :param Ts: sample period [s]; a text may have a scale factor ("1u")
+    :type Ts: float, str or sympy.Expr
     :return: expression in ``ini.frequency``
     :rtype: sympy.Expr
     """
     expr = _checkExpression(expr)
-    return expr.subs(ini.z, sp.exp(2 * sp.pi * sp.I * ini.frequency
-                                   * sp.sympify(Ts)))
+    if isinstance(Ts, str):
+        # scale factors as everywhere in SLiCAP, numbers stay floats (2026-11-23)
+        Ts = _replaceScaleFactors(Ts)
+    s = (2 * sp.pi * sp.I if ini.hz else sp.I) * ini.frequency
+    return expr.subs(ini.z, sp.exp(s * _sympify(Ts)))
+
+
+def _zFactorCoeffs(Hz):
+    """``(gain, numerators, denominators, delay)`` of a numeric z-domain
+    transfer kept as a product of factors (``sectionsZ()``, ``_holdZ()``):
+    the float coefficients of every numerator and denominator polynomial
+    in decreasing powers of z, and the delay in samples of the whole,
+    the degree of the denominators minus that of the numerators. The
+    factors are kept apart: expanded into one polynomial they lose their
+    accuracy for poles close to z = 1 (2026-11-24). Raises ValueError for a
+    symbol other than ``ini.z`` or an improper transfer."""
+    z = ini.z
+    gain, nums, dens = 1.0, [], []
+    for factor in sp.Mul.make_args(sp.sympify(Hz)):
+        others = factor.free_symbols - {z}
+        if others:
+            raise ValueError("the z-transfer has the symbols %s; give them "
+                             "values" % ", ".join(sorted(str(v) for v in others)))
+        if z not in factor.free_symbols:
+            gain *= complex(sp.N(factor))
+            continue
+        num, den = sp.fraction(sp.together(factor))
+        for poly, out in ((num, nums), (den, dens)):
+            if z in poly.free_symbols:
+                coeffs = sp.Poly(poly, z).all_coeffs()
+                out.append(np.real_if_close(np.array([complex(c) for c in coeffs])))
+            else:
+                value = complex(sp.N(poly))
+                gain = gain * value if out is nums else gain / value
+    delay = sum(len(a) - 1 for a in dens) - sum(len(b) - 1 for b in nums)
+    if delay < 0:
+        raise ValueError("the z-transfer is improper: its numerator degree is "
+                         "above its denominator degree")
+    return np.real_if_close(gain), nums, dens, delay
+
+
+def _zResponse(Hz, Ts, f):
+    """The complex frequency response of the numeric z-transfer *Hz* with
+    the sample period *Ts*: z = exp(j w Ts) at the frequencies *f* (Hz with
+    ``ini.hz``, else rad/s), evaluated factor by factor."""
+    f = np.asarray(f, dtype=float)
+    zi = np.exp(1j * (2 * np.pi * f if ini.hz else f) * float(Ts))
+    gain, nums, dens, _delay = _zFactorCoeffs(Hz)
+    H = gain * np.ones_like(zi)
+    for b in nums:
+        H = H * np.polyval(b, zi)
+    for a in dens:
+        H = H / np.polyval(a, zi)
+    return H
+
+
+def _zFilter(Hz, x):
+    """The output samples of the numeric z-transfer *Hz* for the input
+    samples *x*, factor by factor, as a cascade of sections computes it: a
+    numerator N(z) of degree m is z^m times a polynomial in 1/z, a
+    denominator likewise, and the whole is delayed by the difference of
+    the degrees."""
+    from itertools import zip_longest
+    from scipy.signal import lfilter
+    gain, nums, dens, delay = _zFactorCoeffs(Hz)
+    y = np.asarray(x, dtype=float)
+    for b, a in zip_longest(nums, dens):
+        if b is not None:
+            y = lfilter(b, [1.0], y)
+        if a is not None:
+            y = lfilter([1.0], a, y)
+    if delay:
+        y = np.concatenate([np.zeros(min(delay, len(y))), y[:len(y) - delay]])
+    return np.real_if_close(gain * y)
 
 
 def nonPolyCoeffs(expr, var):
@@ -3590,10 +4021,10 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1,
         elif B is None:
             print("Error: missing B")
         else:
-            # the inverse of f_c = sqrt(f_low*f_high), B = f_high - f_low
+            # bp and bs use f_c and B as given (2026-11-23). Converting them
+            # to f_low and f_high and back made f_c a nested radical
+            # sqrt(f_low*f_high) that sp.simplify() does not reduce to f_c.
             B = _checkExpression(B) if isinstance(B, str) else B
-            f_low = sp.sqrt(f_c**2 + B**2/4) - B/2
-            f_high = f_low + B
     if f_char == "butterworth":
         proto = butterworthPoly(f_order)
     elif f_char == "bessel":
@@ -3618,20 +4049,36 @@ def filterFunc(f_char, f_type, f_order, f_low=None, f_high=None, ripple=1,
         else:
             print("Error: missing f_high")
     else:
-        if f_low != None and f_high != None:
+        if f_c is None and f_low is not None and f_high is not None:
             B = f_high - f_low
             f_c = sp.sqrt(f_low * f_high)
+        if f_c is not None and B is not None:
             Q = f_c/B
-            if f_type == "bp" and f_c != None:
+            if f_type == "bp":
                 proto = 1/proto.xreplace({ini.laplace: Q *
                                      (ini.laplace + 1/ini.laplace)})
                 proto = normalizeRational(sp.simplify(
                     proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_c)})))
-            elif f_type == "bs" and f_c != None:
-                proto = 1/proto.xreplace({ini.laplace: 1/(Q*(ini.laplace + 1/ini.laplace))})
-                proto = normalizeRational(sp.simplify(
-                    proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_c)})))
-        elif f_low == None:
+            elif f_type == "bs":
+                # s --> s/(Q(s^2 + 1)) in P(s) = sum a_k s^k, written over
+                # the common denominator (Q(s^2 + 1))^n. The direct form
+                # 1/P(1/(Q(s + 1/s))) left common factors (s^2 + 1)^k that
+                # sp.simplify() did not cancel for a float or nested-radical
+                # Q: Bessel had degree n(n+1) instead of 2n, and a 0/0 at
+                # f_c. The root finder split those clusters, and from order 3
+                # coeffs2sections() returned z-poles outside the unit circle
+                # (fixed 2026-11-23). This form has nothing to cancel. The
+                # sp.simplify() of the direct form was REMOVED (2026-11-23):
+                # on this form it gave the same result, 3x slower for a
+                # Butterworth of order 7 and 8.
+                s = ini.laplace
+                a = sp.Poly(sp.expand(proto), s).all_coeffs()[::-1]
+                n = len(a) - 1
+                proto = (Q*(s**2 + 1))**n / sum(
+                    a[k]*Q**(n - k)*s**k*(s**2 + 1)**(n - k) for k in range(n + 1))
+                proto = normalizeRational(
+                    proto.xreplace({ini.laplace: ini.laplace/(2*sp.pi*f_c)}))
+        elif f_low is None:
             print("Error: missing f_low")
         else:
             print("Error: missing f_high")

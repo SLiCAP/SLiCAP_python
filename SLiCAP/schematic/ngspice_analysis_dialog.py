@@ -1,7 +1,8 @@
 """Create/Edit NGspice instruction dialog — generates a Python sl.*() snippet.
 
-Editing is append-only (SLNG.md): "Edit existing" lists THIS circuit's
-instructions; the regenerated call keeps the name and is appended.
+"Edit existing" lists THIS circuit's instructions. OK replaces the loaded
+one where it stands, under the same name (instr_file.place, Anton
+2026-11-25; the append-only editing of SLNG.md is REPLACED).
 
 The active tab determines the analysis type.  Behavior and output-variable
 selections apply to that single instruction.  The snippet is returned via
@@ -30,6 +31,7 @@ from .sizing import cap_chars, fit_contents, scroll_body, fit_to_screen
 from .source_stimuli_table import SourceStimuliTable, _ANALYSIS_DOMAIN
 from .step_widget import StepWidget
 from .instr_file import next_result_name, parse_calls, quoted, literal as _lit
+from .edit_note import EditNote
 from .value_fields import watch, all_valid, is_number
 from .param_field import ParamField
 
@@ -726,6 +728,10 @@ class NGspiceAnalysisDialog(QDialog):
         var_row.addWidget(QLabel("Variable name:"))
         self._varname = QLineEdit(next_result_name("OP", self._existing_text))
         cap_chars(self._varname, 16)
+        # what "Edit existing" edits, in place (instr_file.place); no
+        # preview, so the note shows what OK writes
+        self._note = EditNote(self._existing_text, with_text=True)
+        self._note.follow(self._varname, self._free_name)
         self._varname.textChanged.connect(self._update)
         var_row.addWidget(self._varname)
         var_row.addStretch()
@@ -823,6 +829,7 @@ class NGspiceAnalysisDialog(QDialog):
         buttons.addButton("Close", QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        outer.addWidget(self._note)
         outer.addWidget(buttons)
 
         self._refresh_output_vars()   # the tab the dialog OPENS on
@@ -853,10 +860,16 @@ class NGspiceAnalysisDialog(QDialog):
                  + m.left() + m.right() + spacing)
         fit_to_screen(self, self._scroll, width=width)
 
+    def _free_name(self) -> str:
+        """A free result name for the analysis of the current tab."""
+        idx = self._tab_widget.currentIndex()
+        key = _TAB_CLASSES[idx].key if 0 <= idx < len(_TAB_CLASSES) else "op"
+        return next_result_name(_VARNAME_BASES.get(key, "RES"), self._existing_text)
+
     def _on_tab_changed(self, idx: int):
         key = _TAB_CLASSES[idx].key if idx < len(_TAB_CLASSES) else "op"
-        base = _VARNAME_BASES.get(key, "RES")
-        self._varname.setText(next_result_name(base, self._existing_text))
+        if not self._varname.isReadOnly():      # fixed while editing
+            self._varname.setText(self._free_name())
         self._stimuli_table.set_domain(_ANALYSIS_DOMAIN.get(key, "dc"))
         self._refresh_output_vars()
         self._update()
@@ -880,10 +893,13 @@ class NGspiceAnalysisDialog(QDialog):
             tab is not None and tab.key in ("op", "dc", "tran"))
 
     def _on_load_existing(self, idx: int):
-        """Prefill from an existing instruction (append-only editing): the
-        regenerated call keeps the name and is appended — the later
-        definition wins at runtime; cleanup of the old line is the user's."""
+        """Prefill from an existing instruction. OK replaces it where it
+        stands, under the same name (instr_file.place, Anton 2026-11-25).
+        Append-only editing (2026-07-08: the regenerated call was appended,
+        the later definition won) is REPLACED. "(new instruction)" makes a
+        new one under a free name."""
         if idx <= 0:
+            self._note.stop()
             return
         entry = self._defined[idx - 1]
         key = entry["func"]
@@ -906,12 +922,22 @@ class NGspiceAnalysisDialog(QDialog):
         stimuli = _lit(kw.get("stimuli")) or {}
         self._stimuli_table.set_stimuli(stimuli, active=bool(stimuli))
         self._behavior.set_mode(_lit(kw.get("behavior")))
-        self._varname.setText(entry["name"])
         # prefill may select the tab that was ALREADY current, so no
         # currentChanged signal fires and the drop-down would keep the
         # previous analysis's signals (Anton, 2026-08-01)
         self._refresh_output_vars()
+        self._note.start(entry["name"])
         self._update()
+
+    def editing(self) -> tuple:
+        """The instruction loaded with "Edit existing", for
+        InstrEditor.put_dialog_result."""
+        return self._note.names()
+
+    def loaded(self) -> dict:
+        """Its statement at loading: the dialog is non-modal, so the file
+        may change while it is open."""
+        return self._note.loaded()
 
     # ── simulation settings that name a parameter ────────────────────────
 
@@ -962,6 +988,8 @@ class NGspiceAnalysisDialog(QDialog):
         if not self._options_table.is_valid():
             ok = False
         if not self._stimuli_table.is_valid():
+            ok = False
+        if not self._note.check(self.generated_snippet()):
             ok = False
         self._add_btn.setEnabled(ok)
 

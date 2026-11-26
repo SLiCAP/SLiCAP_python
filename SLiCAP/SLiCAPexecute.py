@@ -1786,7 +1786,10 @@ def _convertMatrices(instr):
         if instr.dataType != 'noise' and instr.dataType != 'dcvar':
             instr.Iv = instr.Iv.xreplace(substDict)
         
-    instr.Dv = sp.Matrix(dmVars + cmVars)
+    # The names are fixed (V_..., I_...): sp.Symbol, no parse.
+    # sp.Matrix(dmVars + cmVars) was REPLACED (2026-11-22): it parsed every
+    # name with sp.sympify, past SLiCAPlex, at 0.2 to 0.3 ms per name.
+    instr.Dv = sp.Matrix([sp.Symbol(name) for name in dmVars + cmVars])
     instr.M  = A.transpose() * instr.M * A
     instr.Iv = A.transpose() * instr.Iv
     instr.A  = A

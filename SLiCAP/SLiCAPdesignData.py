@@ -230,12 +230,17 @@ def _run_script_par_defs(name):
     of a system diagram, ``{Symbol: expression}``, or None when no such
     run script exists: the file starts with the header every run script
     carries and holds ``PARAMS = {...}`` (the sheet's parameter table).
-    The 'circuit' of a system run for :func:`selectPars`."""
+    The 'circuit' of a system run for :func:`selectPars`.
+
+    The project root is the working directory, as loadProject() takes it
+    and as load_designs() and makeFilter() read it. ``ini.project_path``
+    was read FIRST and was REPLACED (Anton, 2026-11-25): it is an absolute
+    path stored in the project's SLiCAP.ini, still the old folder after a
+    project is moved, so a stale copy of the run script was read there
+    ("the circuit has no definition of parameter 'C_p'")."""
     import ast
     import os
-    path = os.path.join(ini.project_path, str(name) + ".py")
-    if not os.path.isfile(path):
-        path = os.path.join(os.getcwd(), str(name) + ".py")     # the root, as loadProject takes it
+    path = os.path.join(os.getcwd(), str(name) + ".py")
     if not os.path.isfile(path):
         return None
     with open(path, encoding="utf-8", errors="replace") as fh:
@@ -269,8 +274,9 @@ def selectPars(cir, specList=None, circuit=(), specs=(), user=None):
                 circuit file in the cir folder, whose '.param' definitions
                 are then used, or the name of the run script of a system
                 diagram in the project root, whose parameter table (the
-                sheet's) is then used.
-    :type cir: SLiCAPprotos.circuit, str
+                sheet's) is then used. None when no parameter is taken from
+                a circuit.
+    :type cir: SLiCAPprotos.circuit, str, NoneType
 
     :param specList: List with specification items from which 'specs' values
                      are taken. Defaults to None.
@@ -316,7 +322,11 @@ def selectPars(cir, specList=None, circuit=(), specs=(), user=None):
     """
     out    = {}
     origin = {}
-    if isinstance(cir, str):
+    if cir is None:
+        # no circuit: specs and user values only, e.g. the parameters of a
+        # filter design that no system diagram uses (Anton, 2026-11-25)
+        parDefs = {}
+    elif isinstance(cir, str):
         parDefs = _run_script_par_defs(cir)
         if parDefs is None:
             from SLiCAP.SLiCAPngspice import _netlist_par_defs

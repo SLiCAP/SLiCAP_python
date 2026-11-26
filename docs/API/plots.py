@@ -177,3 +177,38 @@ trc_dict = {"y1": y1, "y2": y2, "y3": y3, "y4": y4}
 
 pwrs_x   = sl.plot("powers_x", "Powers of $x$", "lin", trc_dict, 
                    xName = "x", yName="y")
+
+# Traces, axes and figures
+# A data set of two results; the keys are the names used in expressions
+D1  = sl.makeDataset({"H": laplaceResult, "N": noiseResult}, x="frequency",
+                     start="10k", stop="100M", num=500)
+# Traces: expressions of the signals, evaluated by numpy
+TR1 = sl.make_traces(D1, [{"y": "dB(mag(H.laplace))", "label": "gain"},
+                          {"y": "phase(H.laplace)", "label": "phase"},
+                          {"y": "N.onoise", "label": "output noise"}])
+# One value with its units: the gain at 1 MHz
+A_1M = sl.measure(D1, "Y_AT_X(dB(mag(H.laplace)), 1e6)", units="dB")
+
+# Axes: the scale factors belong to the axis, not to the trace
+AX1 = sl.traceAxis("Gain", "semilogx", TR1["gain"], xName="frequency",
+                   xScale="M", xUnits="Hz", yName="gain", yUnits="dB")
+AX2 = sl.traceAxis("", "semilogx", TR1["phase"], xName="frequency",
+                   xScale="M", xUnits="Hz", yName="phase", yUnits="deg")
+AX3 = sl.traceAxis("Output noise", "log", TR1["output noise"],
+                   xName="frequency", xScale="M", xUnits="Hz",
+                   yName="noise", yUnits="V^2/Hz")
+AX4 = sl.pzAxis("Poles and zeros", pzResult, xscale="M", yscale="M",
+                xmin=-11, xmax=1, ymin=-6, ymax=6)
+# A figure: a grid of axes; AX1 and AX2 share their x axis
+FIG1 = sl.makeFigure([[AX1, AX3], [AX2, AX4]], "traces_axes_figure",
+                     shareX=[[AX1, AX2]], title="One figure, four axes")
+
+# A goal function reduces each run of a stepped result to one number
+D2  = sl.makeDataset({"HS": laplaceStepped}, x="frequency", start="500k",
+                     stop="10M", num=2000)
+TR2 = sl.make_traces(D2, [{"y": "X_AT_MIN_Y(dB(mag(HS.laplace)))",
+                           "label": "minimum", "marker": "o"}])
+AX5 = sl.traceAxis("", "lin", TR2, xName="$f_s$", xScale="M", xUnits="Hz",
+                   yName="frequency of the minimum", yScale="M",
+                   yUnits="Hz")
+FIG2 = sl.makeFigure([[AX5]], "minimum_versus_fs")

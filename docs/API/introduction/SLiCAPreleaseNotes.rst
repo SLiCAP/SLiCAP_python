@@ -4,6 +4,317 @@ SLiCAP release notes
 
 .. image:: /API/img/colorCode.svg
 
+SLiCAP version 6.5 release notes
+================================
+
+Version 6.5 adds system-level modelling and analysis, and speeds up
+existing processes.
+
+Version 6.5.0
+-------------
+
+Bug fixes
+~~~~~~~~~
+
+#. **The Bessel band-stop of filterFunc().** ``filterFunc("bessel", "bs",
+   n)`` returned a transfer of degree n(n+1) instead of 2n. This happened
+   with a centre frequency and a bandwidth, and with corner frequencies
+   given as floats. The extra poles at the centre frequency were cancelled
+   by zeros, but not exactly. At the centre frequency the result was 0/0,
+   and its value there was wrong. The cause was the substitution of the
+   band-stop transform into the low-pass polynomial. It left common factors
+   that SymPy did not cancel. Now the band-stop is built over its common
+   denominator, so these
+   factors do not arise. Every characteristic has degree 2n and a zero at
+   the centre frequency. A band-pass and a band-stop now use a centre
+   frequency and a bandwidth as given. Before, they were converted to f_low
+   and f_high and back. With f_low and f_high as integers or symbols, the
+   Butterworth and Bessel band-stops are identical to those of 6.4.8. Other
+   band-stops, and band-passes with a centre frequency and a bandwidth,
+   differ in the last digits. Away from the notch they are as close to the
+   exact transfer as before, or closer. At the notch the float coefficients
+   leave a small residue, up to 1e-6 of the pass-band gain at order 8.
+
+#. **Phase margin: a failed search and a negative frequency.**
+   ``phaseMargin()`` now checks that the solver converged to unity loop
+   gain. If it did not, it returns ``(None, None)`` and prints an error
+   message. This includes loop gains whose magnitude does not cross unity.
+   It also includes some loop gains with a resonance or dip near the
+   crossing. Before, these cases returned meaningless numbers without a
+   message. For a list of loop gains, the message gives the list index, and
+   the list holds ``None`` at that index. The solver could also converge to
+   the negative unity-gain frequency, because the magnitude of the loop gain
+   is the same at f and -f. For the loop gain -1.02^3/(1 + s/w_0)^3 it
+   returned -145.9 degrees at -201 Hz instead of 145.9 degrees at 201 Hz.
+   Now the unity-gain frequency is always positive.
+
+#. **A missing value is plotted as a gap.** ``plot()`` raised a TypeError
+   on a ``None`` in its data, such as a phase margin that was not found. Now
+   a ``None`` in the data of a trace is a missing value. It is drawn as a
+   gap.
+
+#. **A loop gain that is not rational.** ``findServoBandwidth()`` stopped
+   with an UnboundLocalError on a loop gain that is not a ratio of
+   polynomials in s, such as one with a delay exp(-s*T). Now it prints a
+   warning and returns None, and the script continues. ``phaseMargin()``
+   returns None for such a loop gain. For a list of loop gains, its
+   warning gives the list index, and the other loop gains are computed.
+   A failed search for the unity-gain frequency now also prints a warning
+   instead of an error message.
+
+#. **Reserved names in the parameter table.** Q, beta, gamma, N, O, S, zeta
+   and Lambda are circuit parameters in every text that SLiCAP parses. The
+   parameter table of the instruction dialogs read a definition with
+   SymPy's own name rules. There, Q meant SymPy's assumptions object. The
+   table showed a definition "Q" as None, and "1/(2*Q)" as written. Now it
+   reads the names as SLiCAP does.
+
+#. **A large trace with a column of data.** A large trace whose data was a
+   2-D column, shape (n, 1), was drawn as a garbage line, or the plot
+   failed. Now it is drawn as it is.
+
+#. **Editing a trace set of a SLiCAP result.** In the Traces dialog an
+   existing trace set lost its sweep when it was edited: the limits, the
+   number of points and lin/log were not read back. Now they are. *Insert
+   Signal* also wrote ``variables=`` with an identity such as
+   ``{"laplace": "laplace"}`` for a SLiCAP result, whose signals are Python
+   names already. Now it assigns nothing there.
+
+#. **Editing an axis with other traces.** In the Axes dialog an existing
+   axis kept its x and y names and units when other traces were chosen.
+   A time axis then stayed "time [s]" over traces against frequency. Now a
+   loaded name or unit that the dialog would suggest for the loaded traces
+   follows the new choice. A name or unit you typed yourself stays. A
+   change of the traces also clears the scale factors of the axis.
+
+#. **A resized figure window.** A figure window kept the layout of the size
+   it opened with. Its margins and axes stayed fractions of that size. A
+   window made taller showed a short axis in the middle, with empty space
+   above and below. Now the figure is laid out again when its size changes.
+   A shared stack of axes stays closed. Pan and zoom keep the size, so they
+   keep the layout.
+
+#. **Rows of axes in the Figures dialog.** A row added to the grid of axes
+   squeezed the axis drop-downs. With four rows they overlapped. A row
+   removed and added again left the drop-downs far apart. Now every
+   drop-down keeps its height, and the window grows with the grid.
+
+Changes
+~~~~~~~
+
+#. **The signals of a swept transfer.** ``sl.sweepData()`` of a
+   ``doLaplace()``, ``doNumer()`` or ``doDenom()`` result, and the Traces
+   dialog, name the signals after what they are: ``H_s`` for the transfer,
+   ``N_s`` for its numerator and ``D_s`` for its denominator, at
+   s = j2πf. They were named ``laplace``, ``numer`` and ``denom``, after the
+   attributes of the result. A trace set written with ``laplace`` must use
+   ``H_s``. The attributes of the result keep their names. The hint of the
+   dialog writes the quantities as ``mag(H_s)``, ``dB(mag(H_s))``,
+   ``phase(H_s)`` and ``delay(H_s)``: dB applies to a magnitude.
+#. **The expression creator opens from the cell.** In the Traces dialog
+   every expression cell has a … button at its right edge. This holds for
+   the Y and X expressions of a trace and for the expression of a
+   measurement. The button opens the expression creator for that cell. The
+   :guilabel:`Create / Edit expression…` buttons below the tables are
+   removed. A double click on the cell still edits the text directly.
+#. **Editing an existing instruction edits it in place.** This holds for
+   the SLiCAP, NGspice, Traces, Axes and Figures dialogs, and for the system
+   run dialog. An instruction loaded with :guilabel:`Edit existing` (or
+   :guilabel:`Select …`) is replaced on its own line. It was appended as a
+   second definition. The rules:
+
+   - The name is fixed while editing. A new name is a new instruction, made
+     with :guilabel:`(new …)`.
+   - Earlier definitions of the same name are removed. Older files hold
+     such copies from the appending.
+   - A line that would use a name before its definition is refused. The
+     dialog names the line and disables OK.
+   - If the instruction holds parts the dialog cannot show, such as a
+     hand-added argument, a note says so. OK then writes it as the dialog
+     shows it.
+   - A new instruction that the edit needs goes directly above the edited
+     one. Examples are a new axis made in the Figures dialog and the line
+     that loads a specifications file.
+   - An axis edited with :guilabel:`Edit…` in a cell of the Figures dialog
+     is edited in place too.
+   - OK without a change leaves the instruction exactly as written.
+   - One Ctrl+Z undoes the whole edit.
+
+   A trace row loaded in the Traces dialog keeps its x, label and units as
+   written. The dialog no longer fills them with its suggestions, so an
+   instruction that leaves them to ``make_traces()`` stays that way.
+#. **Help on traces, axes and figures.** The GUI manual has a new chapter,
+   *Traces, axes and figures*. It explains the three dialogs, the names of
+   results and signals, expressions and goal functions, and editing. The
+   Traces, Axes and Figures dialogs have a help link at the top that opens
+   their section of it. The API user guide, page *Create plots*, has a new
+   section on the same functions in scripts: ``makeDataset()``,
+   ``make_traces()``, ``measure()``, ``traceAxis()``, ``sweepAxis()``,
+   ``pzAxis()`` and ``makeFigure()``, with two example figures. Its section
+   on derived traces used ``ngspice_instr2traces()`` and the ``names``
+   argument, which no longer exist, and now uses ``make_traces()``. The
+   reference has a new page for the module ``SLiCAPtraces``.
+#. **The plot window shows the file name of the figure.** It showed the
+   figure title. A window title cannot render LaTeX, so a title such as
+   ``$A_{f\infty}$`` appeared with its markup. The title is still drawn
+   above the plot, where it is rendered.
+
+Speed
+~~~~~
+
+#. **Faster expression parsing.** SLiCAP's expression parser reads
+   netlists, parameter values and the expressions in reports. It no longer
+   imports all SymPy names again for every expression. It does that once.
+   Each parse is about 0.15 ms faster. A number or a short component value
+   parses 3 to 4 times faster. A long expression gains less: 1.2 times for
+   174 characters. ``makeCircuit()`` of a netlist with 401 elements is 2.4
+   times faster: 0.41 s instead of 0.98 s. ``makeCircuit()`` of the 221
+   netlists of the manual and the book examples is 1.45 times faster. The
+   results are identical.
+
+#. **Stepped NGspice results read much faster.** The raw-file parser
+   searched the rest of the file again for every step. Its time grew with
+   the square of the number of steps. Now it finds each block header with
+   one search. A transient with 100 steps (2000 points, 12 vectors, 19 MB)
+   is read in 13 ms instead of 424 ms. With 400 steps it takes 51 ms
+   instead of 6.7 s. A real 120-step NGspice transient is read in 11 ms
+   instead of 300 ms. The results are identical. The bias back-annotation
+   of the schematic editor now uses the same parser.
+
+#. **Faster plot construction.** A figure is now styled and laid out when
+   it is complete. In 6.4.8 every trace laid out and restyled every open
+   figure, the user's own matplotlib figures included.
+   ``defaultsPlot()`` still sets up every open figure when it is called.
+   The gain grows with the number of traces and points. One axis with 20
+   traces of 2.5 million points is built in 0.40 s instead of 3.8 s. Twelve
+   Bode figures with three traces each, kept open, take 3.5 s instead of
+   29 s. A Bode pair with five traces takes 0.32 s instead of 0.73 s. A
+   figure with one short trace takes about 10 ms longer: 0.034 s instead of
+   0.025 s. A trace of millions of points is reduced again only when its
+   visible part changes. A zoom or pan to the full view of a 10-million-point
+   trace, redraw included, takes 73 ms instead of 128 ms. In the book
+   examples and the manual, the data, limits, ticks, labels, fonts, legends
+   and texts are unchanged. The margins of some figures change. In 6.4.8
+   the last layout ran before the styling of the last trace. So a figure
+   whose last axis holds one trace was laid out for 10 pt labels instead of
+   12 pt. Such a figure now gets margins that fit its labels. This applies
+   to 103 of the 335 figures in the book examples and to 23 of the 48
+   figures in the manual. Their left margin grows by about 0.09 inch and
+   their bottom margin by 0.06 inch. Their plot area becomes about 1.5 %
+   narrower and lower. Smaller axes change more, typically 2 to 5 % of the
+   plot area and up to 10 %. There the ticks and the place of a "best"
+   legend follow the new plot area. In notebook mode (9 pt labels) the
+   margins become smaller instead. A legend or a text larger than its axis
+   now shapes the layout. Such a figure can change a lot.
+
+#. **A/B cursor box placed faster.** The read-out box goes to the corner
+   with the fewest drawn points. In 6.4.8 it counted every point of the
+   data. A click on a trace of 10 million points takes about 0.12 s instead
+   of 0.42 s. With three such traces it takes 0.14 s instead of 1.1 s. The
+   read-out values still come from the full data and are unchanged. The
+   box can land in another corner than in 6.4.8.
+
+#. **Faster import of LTspice and CSV data.** ``LTspiceData2Traces()``,
+   ``LTspiceAC2SLiCAPtraces()``, ``csv2traces()`` and ``Cadence2traces()``
+   no longer evaluate every number as an expression. A plain decimal number
+   is read as a float. Any other field is evaluated as before. Files of
+   200,000 lines are read 9 to 12 times faster. A two-column LTspice export
+   takes 0.14 s instead of 1.8 s. A four-column CSV file takes 0.36 s
+   instead of 3.7 s. The values are identical. A field named like an
+   internal variable of a reader, such as "i" or "f", no longer reads that
+   variable. In ``LTspiceData2Traces()`` such a header is now read as a
+   header. Before, the trace got one x value too many. In ``csv2traces()``
+   such a data field now raises NameError. In ``Cadence2traces()`` it is
+   read as an empty field.
+
+#. **Faster phase margin.** ``phaseMargin()`` finds the unity-gain
+   frequency from the numeric coefficients of the loop gain. It is about 3
+   times faster on the book examples. 148 loop gains take 2.3 to 2.5 s
+   instead of 7.5 to 8.2 s. The solver stops at a slightly different point
+   within its tolerance. On 365 test loop gains, results moved by up to
+   1.6e-14 relative. Where the magnitude of the loop gain crosses unity
+   with a very small slope, the unity-gain frequency can move by up to
+   1.1e-8 relative. The margin then moves by up to 5.5e-7 degrees. Neither
+   result is more accurate than the other. No margin shown with two
+   decimals changed in any case found.
+
+Additions
+~~~~~~~~~
+
+#. **System design.** Version 6.5 is the first version with system-level
+   design and analysis. SLiCAP models and simulates systems at the level of
+   their functions: blocks driven by clocks, connected by signals, drawn as
+   a system diagram in the schematic editor. A new part of the manual,
+   *System design*, describes it.
+
+   - **Files of a system run.** A page of the manual lists them: the run
+     script and its compiled form, the filter designs, the tick program, the
+     machine code and the results. It says where each file is, what writes
+     it and when it is written again.
+   - **Discrete-time mathematics** in ``SLiCAPmath``. These functions turn
+     a Laplace transfer function into a discrete-time one, with the sample
+     period ``Ts``:
+
+     - ``laplace2z()`` returns the z-domain transfer function.
+     - ``laplace2sections()`` realises it as a cascade of first-order and
+       second-order sections.
+     - ``coeffs2sections()`` does the same from numeric coefficients.
+     - ``sectionsZ()`` returns the z-domain transfer function of such a
+       cascade.
+     - ``coeffs2taps()`` returns the samples of the impulse response: the
+       taps of a FIR filter.
+     - ``z2fourier()`` returns the frequency response of a z-domain
+       transfer function.
+
+     For a numeric transfer, ``laplace2z()`` with the bilinear, "zoh" or
+     "foh" method and ``sectionsZ()`` return a product of first-order and
+     second-order factors. The factors keep their accuracy for a filter at
+     a low frequency compared with the sample rate. Expression texts read
+     SLiCAP names and scale factors. The z-domain variable is ``ini.z``.
+     The key ``z`` in the ``[math]`` section of ``SLiCAP.ini`` sets it. It
+     is ``z`` by default.
+   - **Filter designs**, ``createIIR()`` and ``createFIR()``, and their
+     response as the system run computes it, next to the response of their
+     Laplace transfer:
+
+     - ``FLT1 = sl.makeFilter("lib/<design>.py", Ts=..., params=...)``
+       makes the filter of a design script in ``lib/``. It runs the
+       script, so the filter is never out of date. It fixes the sample
+       period and the parameter values of the response. A stationary
+       filter keeps its own sample period. A non-stationary filter needs
+       the clock period. A wrong argument raises an error.
+     - *Instruction > Make filter…* on a system diagram writes this line.
+       Its dialog lists the design scripts of the project. It shows the
+       sample period of a stationary filter, greyed out. The parameter
+       values come from the parameter table of the instruction dialogs:
+       the sheet of a system diagram that runs the design, the specs, or
+       typed. ``sl.selectPars()`` accepts ``None`` as the circuit for
+       values without one. "Add instruction" stays disabled until every
+       value is given.
+     - The Traces dialog offers a filter as a source. It asks for the
+       domain and the range. It fills in the standard traces,
+       ``dB(mag(H_z))`` and ``dB(mag(H_s))``, or ``step`` in the time
+       domain, and its hint names the signals.
+     - ``sl.sweepData(FLT1, ...)`` gives the signals ``H_z``, the response
+       of the filter, and ``H_s``, that of its Laplace transfer, in the
+       frequency domain. ``mag()``, ``dB(mag())``, ``phase()`` and
+       ``delay()`` give the magnitude, the magnitude in dB, the phase and
+       the group delay. With ``sweepVar="t"`` it gives ``impulse``, divided
+       by Ts so that it lies on the analog impulse response, and ``step``.
+       These samples are drawn as points, unless the trace specification
+       gives a style.
+     - ``FLT1.H_s`` and ``FLT1.H_z`` are the Laplace transfer and the
+       z-transfer the run executes, with every parameter value
+       substituted. ``FLT1.Ts`` is the sample period of ``H_z``. The
+       z-transfer is a product of first-order and second-order factors.
+       For a non-stationary filter these factors are computed with 50
+       digits.
+     - The transfers combine like the ``laplace`` attribute of a SLiCAP
+       result. ``sl.sweepData()`` sweeps an expression in s, such as
+       ``FLT1.H_s + FLT2.H_s``, and gives it the signal ``H_s``.
+
+     The page *Response of a designed filter* describes it.
+
 SLiCAP version 6.4 release notes
 ================================
 
@@ -888,24 +1199,6 @@ Additions
    it is a second-order section, which can also be a band-pass or a
    band-stop. ``transferFunc(expr)`` turns a transfer function typed as
    text in SLiCAP notation into an expression in ``ini.laplace``.
-
-#. **Discrete-time transfer functions.** New functions turn a Laplace
-   transfer function into a discrete-time one, with the sample period
-   ``Ts``.
-
-   - ``laplace2z()`` returns the z-domain transfer function.
-   - ``laplace2sections()`` realises it as a cascade of first-order and
-     second-order sections.
-   - ``coeffs2sections()`` does the same from numeric coefficients.
-   - ``sectionsZ()`` returns the z-domain transfer function of such a
-     cascade.
-   - ``coeffs2taps()`` returns the samples of the impulse response: the
-     taps of a FIR filter.
-   - ``z2fourier()`` returns the frequency response of a z-domain transfer
-     function.
-
-   The z-domain variable is ``ini.z``. The key ``z`` in the ``[math]``
-   section of ``SLiCAP.ini`` sets it. It is ``z`` by default.
 
 SLiCAP version 6.3 release notes
 ================================

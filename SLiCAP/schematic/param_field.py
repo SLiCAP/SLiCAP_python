@@ -24,7 +24,8 @@ from __future__ import annotations
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QComboBox, QLineEdit, QLabel, QStackedWidget)
+    QWidget, QHBoxLayout, QComboBox, QLineEdit, QLabel, QStackedWidget,
+    QSizePolicy)
 
 from .sizing import cap_chars, fit_contents
 from .value_fields import watch, set_parameter_names, is_number
@@ -64,6 +65,10 @@ class ParamField(QWidget):
         self._shown.setStyleSheet("color: grey;")
         lay.addWidget(self._shown)
         lay.addStretch(1)
+        # A one-line input keeps its height. The stack took the spare height
+        # of a tall dialog: the sweep fields of the Traces dialog grew to
+        # 380 px (Anton, 2026-11-25).
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         self._source.currentTextChanged.connect(self._source_picked)
         self._param.currentIndexChanged.connect(self._param_picked)
         self._value.textChanged.connect(self.textChanged)

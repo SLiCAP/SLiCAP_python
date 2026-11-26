@@ -22,9 +22,11 @@ SLiCAP plots are hierarchically structured:
 
 - A `figure <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.figure>`_ object is the main object that can be plotted using its ``.plot()`` method.
 - The figure's ``.axis`` attribute is a list of lists with `axis <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.axis>`_ objects for each row, from left to right.
-- The ``.traces`` attribute of each ``axis`` object is a list with `trace <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.trace>`_ objects that will be plotted the axis. Trace xdata, ydata, lables, colors, markers, etc, are all attributes of a ``trace`` object.
+- The ``.traces`` attribute of each ``axis`` object is a list with `trace <../reference/SLiCAPtraces.html#SLiCAP.SLiCAPtraces.trace>`_ objects that will be plotted the axis. Trace xdata, ydata, lables, colors, markers, etc, are all attributes of a ``trace`` object.
 
-SLiCAP built-in figures are single-axis figures. 
+SLiCAP built-in figures are single-axis figures. Figures with several axes,
+and traces made from expressions of several results, are composed as
+described in `Traces, axes and figures`_.
 
 SLiCAP has three built-in plot functions:
 
@@ -405,6 +407,208 @@ Stepped parameter sweep
 .. image:: /API/img/Cb_fs_L.svg
     :width: 500
     
+Traces, axes and figures
+========================
+
+The built-in plot functions make a figure with one axis from one result.
+Everything else is composed in three layers:
+
+#. `makeDataset() <../reference/SLiCAPtraces.html#SLiCAP.SLiCAPtraces.makeDataset>`__
+   collects the signals of one or more results in a data set.
+#. `make_traces() <../reference/SLiCAPtraces.html#SLiCAP.SLiCAPtraces.make_traces>`__
+   makes traces from expressions of those signals.
+   `measure() <../reference/SLiCAPtraces.html#SLiCAP.SLiCAPtraces.measure>`__
+   takes single values from them.
+#. `traceAxis() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.traceAxis>`__,
+   `sweepAxis() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.sweepAxis>`__
+   and `pzAxis() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.pzAxis>`__
+   make axes.
+   `makeFigure() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.makeFigure>`__
+   places axes in a grid and saves the figure.
+
+The Traces, Axes and Figures dialogs of the GUI write these same calls (see
+`Traces, axes and figures <../../GUI/plots/plots.html>`__ in the GUI manual).
+
+Two words have a precise meaning here. A **signal** is a named output of an
+analysis: the vector ``v(out)`` of an NGspice run, the attribute
+``laplace`` of a ``doLaplace()`` result, the stored signal ``Ix`` of a
+system run. A **trace** is a curve built from signals with an expression.
+Users of LTspice or SIMetrix call both a trace.
+
+Data sets
+---------
+
+.. literalinclude:: ../plots.py
+    :linenos:
+    :lines: 181-190
+    :lineno-start: 181
+
+``makeDataset()`` takes a dictionary of results. Its keys are the names the
+expressions use: with the key ``H``, the transfer of ``laplaceResult`` is
+the signal ``H.laplace``. The signals of each kind of result:
+
+- A SLiCAP result: ``laplace`` (``doLaplace()``), ``numer``
+  (``doNumer()``), ``denom`` (``doDenom()``), ``onoise`` and ``inoise``
+  (``doNoise()``), and ``time``, ``impulse`` and ``stepResp`` (``doTime()``,
+  ``doImpulse()``, ``doStep()``). A noise result also gives one signal per
+  noise source, such as ``N.onoise_I_noise_R1``. The circuit parameters are
+  available as ``H.R_s``.
+- A filter made with ``makeFilter()``: ``H_fs`` and ``H_fz``, the frequency
+  responses of its Laplace transfer and of its z-transfer, and ``impulse``
+  and ``stepResp``, its sampled responses (see
+  `Response of a designed filter <../../system/filters.html>`__).
+- An expression in s, f or t: the signal has the name of its key.
+- An NGspice result: its saved vectors, such as ``AC1.v(out)``.
+- A system run: the data set of one clock domain, ``R1.dataset("CK1")``.
+
+SLiCAP results, filters and expressions are **functions**: they are
+evaluated at the points you ask for. NGspice and system runs are **data**:
+they have their own points.
+
+- Without data, you give the range: ``x`` (``"frequency"`` or ``"time"``),
+  ``start``, ``stop``, ``num`` and ``method``. The method is ``"log"`` in
+  frequency and ``"lin"`` in time, unless you give it. A limit may name a
+  parameter whose value is given in ``params``.
+- With data, a function is evaluated at the points of the data. A function
+  of s or f fits frequency data, a function of t fits time data. In this
+  way a simulation is compared with the expression that models it.
+- Data of several results must lie on the same points.
+- A function applies to every run of stepped data.
+
+``makeDataset()`` raises an error for results that do not fit together. It
+checks the x variable only. Whether a combination means something is up to
+you.
+
+`sweepData() <../reference/SLiCAPtraces.html#SLiCAP.SLiCAPtraces.sweepData>`__
+makes the data set of one SLiCAP result. Its signals have fixed names:
+``H_s`` for the transfer, ``N_s`` and ``D_s`` for its numerator and
+denominator. ``makeDataset()`` is the general form, and the GUI writes it.
+
+Traces
+------
+
+``make_traces(data, specs, variables)`` returns a dictionary of traces,
+keyed by their labels. Each entry of ``specs`` describes one trace:
+
+- ``"y"``: the expression to plot, for example ``"dB(mag(H.laplace))"``.
+- ``"x"``: what to plot it against. By default it is the x variable of the
+  data set.
+- ``"label"``: the legend text and the key of the trace. Two traces with
+  the label ``"gain"`` get the keys ``"gain"`` and ``"gain (2)"``.
+- ``"color"``, ``"yUnits"``, ``"xUnits"``: without them, the colour is
+  chosen automatically, and the units follow from the expression and the
+  result: ``dB`` for ``dB()``, ``deg`` for ``phase()``, ``V^2/Hz`` for
+  output noise.
+- Any other key is set as an attribute of the trace, for example
+  ``"marker": "o"``.
+
+**Expressions are evaluated by numpy, on numbers.** This is numeric
+post-processing after the analysis. The whole numpy namespace is
+available: every function, and constants such as ``pi`` and ``inf``.
+``pi`` is therefore the number 3.14159…, not a SymPy symbol, and units are
+not tracked. Symbolic work belongs to the SLiCAP functions that act on the
+result itself. These functions are added:
+
+- ``mag``, ``abs``: magnitude.
+- ``dB``: 20·log10 of a magnitude. ``dB_10`` gives 10·log10, for a power.
+- ``phase``: phase in degrees, unwrapped. ``angle`` gives radians.
+- ``delay``: group delay.
+- ``real``, ``imag``, ``sqrt``, ``exp``, ``log``, ``log10``.
+
+A complex signal without a function is plotted as its magnitude.
+
+A **goal function**, written in capitals, reduces a run to one number:
+``MAX``, ``MIN``, ``MEAN``, ``RMS``, ``RMS_NOISE``, ``INT``, ``SUM``,
+``Y_AT_X(y, x0)``, ``X_AT_MAX_Y(y)``, ``X_AT_MIN_Y(y)``,
+``X_AT_NTH_Y(y, y0, n)``. The function ``goal_names()`` lists them.
+
+A stepped result gives one trace per run, labelled with the step value. A
+goal function gives one value per run, and the trace then runs over the
+step parameter. Here, the frequency of the notch of ``laplaceStepped``,
+stepped over ``f_s``:
+
+.. literalinclude:: ../plots.py
+    :linenos:
+    :lines: 206-214
+    :lineno-start: 206
+
+.. image:: /API/img/minimum_versus_fs.svg
+    :width: 500px
+
+NGspice names its vectors ``v(out)``, ``i(v1)``, ``onoise_r1``. Those are not
+Python names. The argument ``variables`` gives them one, here for a
+simulation compared with its model:
+
+.. code-block:: python
+
+    D3  = sl.makeDataset({"AC1": AC1, "LAPLACE1": LAPLACE1})
+    TR3 = sl.make_traces(D3, [{"y": "dB(mag(AC1.V_out)) - dB(mag(LAPLACE1.laplace))"}],
+                         variables={"AC1.V_out": "AC1.v(out)"})
+
+``LAPLACE1`` is evaluated at the frequencies of ``AC1``, so no range is
+needed. ``make_traces()`` also accepts an NGspice result directly, without
+a data set: ``sl.make_traces(AC1, [{"y": "dB(mag(V_out))"}],
+variables={"V_out": "v(out)"})``.
+
+Measurements
+------------
+
+``measure(data, expression, step=None, run=None, variables=None,
+units="")`` returns one value with its units, a ``measurement``. The
+expression must give one number, so it uses a goal function. In the
+example above:
+
+.. code-block:: python
+
+    >>> print(A_1M)
+    -17.918 dB
+
+A dictionary of expressions gives a dictionary of measurements. For stepped
+data, ``step={"f_s": "2M"}`` or ``run=2`` selects the run to measure.
+
+Axes
+----
+
+``traceAxis(title, axisType, plotData, ...)`` makes an axis with traces.
+``plotData`` is a dictionary of traces, a single trace such as
+``TR1["gain"]``, or a list of dictionaries. ``axisType`` is ``"lin"``,
+``"semilogx"``, ``"semilogy"``, ``"log"`` or ``"polar"``.
+
+The axis label is made of the name, the scale factor and the units:
+``xName="frequency", xScale="M", xUnits="Hz"`` gives
+``frequency [MHz]``. **Scale factors belong to the axis, not to the trace.**
+The trace data stays in base units, so the same trace can be placed on
+several axes with different scales. ``xLim`` and ``yLim`` fix the limits.
+
+``sweepAxis()`` is ``plotSweep()`` without the figure, and ``pzAxis()`` is
+``plotPZ()`` without the figure. They make an axis directly from SLiCAP
+results.
+
+Figures
+-------
+
+.. literalinclude:: ../plots.py
+    :linenos:
+    :lines: 192-204
+    :lineno-start: 192
+
+.. image:: /API/img/traces_axes_figure.svg
+    :width: 800px
+
+``makeFigure(axes, fileName, ...)`` places axes in a grid: a list of rows,
+each a list of axes. An empty string is an empty cell. The same axis in
+adjacent cells spans them. The cells of a span must form a rectangle.
+
+- ``shareX`` and ``shareY`` give axes one x or one y axis: a list of
+  groups, such as ``[[AX1, AX2]]``, or ``"col"``, ``"row"`` or ``"all"``.
+  Shared axes zoom together. A shared column is drawn as one stack: tick
+  labels and axis label on the outer axis only, and only the first title.
+- ``title`` is a heading drawn inside the image. It may hold LaTeX.
+- The figure is saved as ``img/<fileName>.svg`` and ``img/<fileName>.pdf``.
+  The plot window shows the file name in its title bar.
+- ``show=True`` opens a plot window, and ``cursors=True`` gives it A/B
+  cursors.
+
 Work with traces
 ================
 
@@ -416,7 +620,7 @@ Extract traces from a figure
     :lines: 144-145
     :lineno-start: 144
 
-The function `fig2traces() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.SLiCAPplots.fig2traces>`_
+The function `fig2traces() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.fig2traces>`_
 returns the traces of a figure as a dictionary that can directly be passed
 to ``plot()``, optionally filtered by trace label. This works for any
 figure, including figures created with ``plotSweep()``, so traces from
@@ -431,7 +635,7 @@ different analysis types can be combined in one plot:
 Add a dictionary with traces to an existing plot
 ------------------------------------------------
 
-The function `traces2fig() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.SLiCAPplots.traces2fig>`_ adds traces to a figure.
+The function `traces2fig() <../reference/SLiCAPplots.html#SLiCAP.SLiCAPplots.traces2fig>`_ adds traces to a figure.
 
 .. literalinclude:: ../plots.py
     :linenos:
@@ -452,29 +656,18 @@ Create and plot a dictionary with traces
 Derived traces: expressions of simulation results
 -------------------------------------------------
 
-A trace can be computed from other traces of the same simulation — the
-equivalent of typing a waveform expression in simulators such as SIMetrix
-or LTspice. Trace data are numpy arrays (``trace.xData``, ``trace.yData``),
-so any numpy expression of traces that share the same sweep works:
+A trace can be computed from the signals of a simulation, as a waveform
+expression in LTspice or SIMetrix. ``make_traces()`` does this: the
+common-mode output voltage of a transient analysis is
 
 .. code-block:: python
 
-    # Common-mode output voltage from two traces of one transient analysis
-    trcs = sl.ngspice_instr2traces(TRAN1)
-    v_cm = sl.trace([trcs["V_1"].xData,
-                     (trcs["V_1"].yData + trcs["V_2"].yData)/2])
-    v_cm.label = "$V_{cm}$"
-    sl.plot("Vcm", "Common-mode output voltage", "lin", {"V_cm": v_cm},
-            show=True)
+    TR = sl.make_traces(TRAN1, [{"y": "(V_1 + V_2)/2", "label": "$V_{cm}$"}],
+                        variables={"V_1": "v(1)", "V_2": "v(2)"})
 
-Alternatives that avoid trace arithmetic:
-
-- For NGspice, the simulator can evaluate the expression itself: enter it
-  in the ``names`` dictionary of the instruction, e.g.
-  ``names={"V_cm": "(V(1)+V(2))/2"}``.
-- For SLiCAP, balanced circuits can be converted into differential-mode
-  and common-mode equivalents with the ``convtype`` argument (see
-  `Balanced circuits <balanced.html>`_).
+See `Traces, axes and figures`_. For SLiCAP, balanced circuits can also be
+converted into differential-mode and common-mode equivalents with the
+``convtype`` argument (see `Balanced circuits <balanced.html>`_).
 
 .. image:: /API/img/powers_x.svg
     :width: 500

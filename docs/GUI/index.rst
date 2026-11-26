@@ -41,6 +41,7 @@ two that must be kept in sync by hand.
    schematics/netlist_and_export
    schematics/hierarchical_blocks
    instruction/instructions
+   plots/plots
    reports/snippets
    reference/symbol_libraries
    reference/design

@@ -1,7 +1,8 @@
 """Create/Edit SLiCAP instruction dialog — a cascading form that emits a sl.do*() call.
 
-Editing is append-only (SLNG.md): "Edit existing" lists the defined sl.do*()
-instructions; the regenerated call keeps its result name and is appended.
+"Edit existing" lists the defined sl.do*() instructions. OK replaces the
+loaded one where it stands, under the same name (instr_file.place, Anton
+2026-11-25; the append-only editing of SLNG.md is REPLACED).
 
 Rebuilt from scratch per SLNG.md, "SLiCAP instruction dialog — rework spec
 (v2)".  The ``_RULES`` table below is the single source of truth for which
@@ -28,6 +29,7 @@ from PySide6.QtWidgets import (
 from .par_source_table import ParSourceTable
 from .step_widget import StepWidget
 from .instr_file import next_result_name, parse_calls, quoted
+from .edit_note import EditNote
 from .sizing import cap_chars, chars, scroll_body, fit_to_screen
 from .config import GROUND           # a detector side at node 0: None in the pair
 
@@ -176,16 +178,13 @@ class SLiCAPAnalysisDialog(QDialog):
         frame, layout, self._scroll = scroll_body(self)
 
         # ── help link ─────────────────────────────────────────────────────────
-        from .doc_link import reference_url
-        help_lbl = QLabel(
-            'Composes a <code>sl.do…()</code> analysis call — '
-            '<a href="' + reference_url("API/userguide/analysis.html",
-                                        "general-instruction-format")
-            + '">help: general instruction format</a>')
-        help_lbl.setOpenExternalLinks(True)
-        layout.addWidget(help_lbl)
+        from .doc_link import help_label
+        layout.addWidget(help_label(
+            "Composes a <code>sl.do…()</code> analysis call",
+            "API/userguide/analysis.html", "general-instruction-format",
+            "help: general instruction format"))
 
-        # ── load existing (append-only editing, SLNG.md) ──────────────────────
+        # ── load existing (edited in place, instr_file.place) ─────────────────
         # Only instructions of THIS schematic's circuit objects may be
         # edited here: an instruction belonging to another schematic is
         # edited from that schematic's tab (Anton, 2026-08-16).  With no
@@ -248,6 +247,11 @@ class SLiCAPAnalysisDialog(QDialog):
                       Qt.AlignmentFlag.AlignRight)
         self._result_var = QLineEdit()
         cap_chars(self._result_var, 18)
+        # what "Edit existing" edits, in place (instr_file.place); no
+        # preview, so the note shows what OK writes
+        self._note = EditNote(self._existing, with_text=True)
+        self._note.follow(self._result_var, lambda: next_result_name(
+            _RULES[self._func.currentText()]["base"], self._existing))
         self._result_var.textChanged.connect(self._update)
         top.addWidget(self._result_var, 1, 3)
         self._name_warn = QLabel("")
@@ -352,6 +356,7 @@ class SLiCAPAnalysisDialog(QDialog):
         buttons.addButton("Close", QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        frame.addWidget(self._note)
         frame.addWidget(buttons)
 
         # ── wiring ────────────────────────────────────────────────────────────
@@ -420,8 +425,9 @@ class SLiCAPAnalysisDialog(QDialog):
 
         self._method.setCurrentText("default")
 
-        # result-variable default
-        self._result_var.setText(next_result_name(rules["base"], self._existing))
+        # result-variable default; fixed while editing (Anton, 2026-11-25)
+        if not self._result_var.isReadOnly():
+            self._result_var.setText(next_result_name(rules["base"], self._existing))
 
         self._refresh_visibility()
 
@@ -429,10 +435,13 @@ class SLiCAPAnalysisDialog(QDialog):
         self._refresh_visibility()
 
     def _on_load_existing(self, idx: int) -> None:
-        """Prefill from an existing instruction (append-only editing): the
-        regenerated call keeps its result name and is appended — the later
-        definition wins at runtime; cleanup of the old line is the user's."""
+        """Prefill from an existing instruction. OK replaces it where it
+        stands, under the same name (instr_file.place, Anton 2026-11-25).
+        Append-only editing (2026-07-08: the regenerated call was appended,
+        the later definition won) is REPLACED. "(new instruction)" makes a
+        new one under a free name."""
         if idx <= 0:
+            self._note.stop()
             return
         import ast as _ast
 
@@ -476,8 +485,16 @@ class SLiCAPAnalysisDialog(QDialog):
         self._numeric.setChecked(bool(lit(kw.get("numeric"), False)))
         method = lit(kw.get("method"))
         self._method.setCurrentText(method if method in ("det", "state") else "default")
-        self._result_var.setText(entry["name"])
+        self._note.start(entry["name"])
         self._update()
+
+    def editing(self) -> tuple:
+        """The instruction loaded with "Edit existing", for
+        InstrEditor.put_dialog_result."""
+        return self._note.names()
+
+    def loaded(self) -> dict:
+        return self._note.loaded()
 
     def _current_transfer(self) -> str | None:
         rules = _RULES[self._func.currentText()]
@@ -538,7 +555,8 @@ class SLiCAPAnalysisDialog(QDialog):
         if not name:
             ok = False
         warn = ""
-        if name and re.search(r"\b" + re.escape(name) + r"\s*=", self._existing):
+        if (name and not self._result_var.isReadOnly()
+                and re.search(r"\b" + re.escape(name) + r"\s*=", self._existing)):
             warn = "name already used — it will shadow the earlier result"
         self._name_warn.setText(warn)
 
@@ -549,6 +567,9 @@ class SLiCAPAnalysisDialog(QDialog):
         if not self._pd.is_valid():
             ok = False
         if not self._step.is_valid():
+            ok = False
+        if self._func.currentText() in _RULES and not self._note.check(
+                self.generated_snippet()):
             ok = False
         self._add_btn.setEnabled(ok)
 

@@ -43,18 +43,19 @@ class ExpressionDialog(QDialog):
     :param text: the expression as it stands.
     :type text: str
 
-    :param signals: signals of the result, as the simulator names them.
+    :param signals: the signals per result, ``[(result, [(label,
+                    payload), ...]), ...]``: one submenu per result
+                    (TRACES.md phase 9: every result of the file, not one);
+                    a result "" puts its items in the menu itself.
     :type signals: list
 
-    :param assigned: ``{simulated signal: Python variable}`` already assigned.
-    :type assigned: dict
-
-    :param on_signal: called with a signal the user picks; returns the Python
-                      name to insert. The caller owns the assignment table,
-                      so it is the caller that creates a missing row.
+    :param on_signal: called with the payload of a picked signal; returns
+                      the name to insert. The caller owns the assignment
+                      table, so it is the caller that creates a missing row.
     :type on_signal: callable
 
-    :param params: circuit parameters usable in the expression.
+    :param params: circuit parameters per result, ``[(result, [name,
+                   ...]), ...]``; the name is inserted as given.
     :type params: list
 
     :param goal_enabled: False when the result has no runs to reduce.
@@ -65,9 +66,8 @@ class ExpressionDialog(QDialog):
     :type hint: str
     """
 
-    def __init__(self, caption, text="", signals=(), assigned=None,
-                 on_signal=None, params=(), goal_enabled=True, hint="",
-                 parent=None):
+    def __init__(self, caption, text="", signals=(), on_signal=None,
+                 params=(), goal_enabled=True, hint="", parent=None):
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("Create / Edit Expression")
         self.setMinimumWidth(chars(self, 80))
@@ -104,27 +104,38 @@ class ExpressionDialog(QDialog):
         buttons.rejected.connect(self.reject)
         outer.addWidget(buttons)
 
-        self._fill_menus(signals, assigned or {}, params, goal_enabled)
+        self._fill_menus(signals, params, goal_enabled)
         self._expr.setFocus()
         self._expr.end(False)
 
     # ── the menus ─────────────────────────────────────────────────────────
 
-    def _fill_menus(self, signals, assigned, params, goal_enabled):
+    @staticmethod
+    def _group_menu(menu, group):
+        """The submenu of *group*, or *menu* itself for the group ""."""
+        return menu.addMenu(group) if group else menu
+
+    def _fill_menus(self, signals, params, goal_enabled):
         menu = self._insert_signal.menu()
-        # EVERY signal of the result is offerable: picking one that has no
+        # EVERY signal of every result is offerable: picking one that has no
         # Python name yet creates its assignment row, so `v(out)` and
         # `@q1[gm]` are not second-class (TRACES.md phase 6d).
-        for signal in signals:
-            label = ("{0}   [{1}]".format(signal, assigned[signal])
-                     if signal in assigned else signal)
-            menu.addAction(label, lambda s=signal: self._insert_signal_name(s))
-        self._insert_signal.setEnabled(bool(signals))
+        for group, items in signals:
+            if not items:
+                continue
+            sub = self._group_menu(menu, group)
+            for label, payload in items:
+                sub.addAction(label, lambda p=payload: self._insert_signal_name(p))
+        self._insert_signal.setEnabled(any(items for _g, items in signals))
 
         menu = self._insert_param.menu()
-        for name in params:
-            menu.addAction(name, lambda n=name: self._insert(n))
-        self._insert_param.setEnabled(bool(params))
+        for group, names in params:
+            if not names:
+                continue
+            sub = self._group_menu(menu, group)
+            for name in names:
+                sub.addAction(name, lambda n=name: self._insert(n))
+        self._insert_param.setEnabled(any(names for _g, names in params))
 
         menu = self._insert_function.menu()
         for name, description in _FUNCTIONS.items():
@@ -152,10 +163,10 @@ class ExpressionDialog(QDialog):
                 max(0, self._expr.cursorPosition() - caret_back))
         self._expr.setFocus()
 
-    def _insert_signal_name(self, signal: str):
+    def _insert_signal_name(self, payload):
         """Insert a signal by its PYTHON name; the caller assigns one when
         the signal has none yet."""
-        name = self._on_signal(signal) if self._on_signal else signal
+        name = self._on_signal(payload) if self._on_signal else payload
         self._insert(str(name))
 
     def _insert_call(self, name: str, params: list = ()):

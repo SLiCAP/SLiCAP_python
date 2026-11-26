@@ -17,8 +17,7 @@ from SLiCAP.SLiCAPmath import _delayFunc_f, _checkNumber, fullSubs
 # here so that 'from SLiCAP.SLiCAPplots import trace' keeps working.
 # _gain_colors lives in SLiCAPtraces: a colour is a TRACE attribute and
 # make_traces assigns it, so the map must not exist twice.
-from SLiCAP.SLiCAPtraces import (trace, register_units_hint,
-                                 _gain_colors, axis_label)
+from SLiCAP.SLiCAPtraces import trace, _gain_colors, axis_label
 
 plt.ioff() # Turn off the interactive mode for plotting
 
@@ -393,16 +392,19 @@ class figure(object):
         closed_y_axes = set()
         _xGroups = {}     # group key -> list of (mpl axes, r0, r1, c0, c1)
         _yGroups = {}
-        # Window title: the figure's title, else the SLiCAP figure name
-        # instead of "Figure 1" etc. (no-op for non-interactive backends)
-        if self.title or self.fileName:
+        # Window title: the file name of the figure, its name in img/,
+        # instead of "Figure 1" etc. (no-op for non-interactive backends).
+        # The figure's title was shown there first and was REPLACED (Anton,
+        # 2026-11-26): a window title cannot render LaTeX, so a title such
+        # as $A_{f\infty}$ showed its markup.
+        if self.fileName:
             try:
-                fig.canvas.manager.set_window_title(self.title or self.fileName)
+                fig.canvas.manager.set_window_title(self.fileName)
             except Exception:
                 pass
         if self.title:
-            # drawn now, BEFORE the axes: every tight_layout call then keeps
-            # room for the heading
+            # drawn now, BEFORE the axes: the tight_layout then keeps room
+            # for the heading
             fig.suptitle(self.title, fontsize=ini.plot_fontsize + 2)
         # Create the axes with their plots
         for i in range(len(axesList)):
@@ -481,6 +483,7 @@ class figure(object):
                         pass
                 if len(axesList[i].traces) == 0:
                     print('Error: Missing trace data for plotting!')
+                    plt.close(fig)           # no half-built figure left open
                     return False
 
                 for j in range(len(axesList[i].traces)):
@@ -531,9 +534,27 @@ class figure(object):
                     if axesList[i].text:
                         X, Y, txt = axesList[i].text
                         plt.text(X, Y, txt, fontsize = ini.plot_fontsize)
-                    # Set default font sizes and grid
-                    defaultsPlot()
-        _space_rows_and_columns(fig, rows, cols)
+        # Fonts, grid and legends of the complete figure, then the layout.
+        # The layout measures every label at the size it is drawn.
+        # Setting up every open figure at every trace (defaultsPlot()) was
+        # REPLACED on 2026-11-22. It laid out and restyled every other open
+        # figure too: a figure on screen reopened its closed stacks, and a
+        # figure SLiCAP did not build got SLiCAP's fonts, grid and legend.
+        # A layout and styling of THIS figure at every trace was REPLACED
+        # the same day (Anton accepted the margin change). Each trace cost
+        # a layout and a new legend. The last layout ran before the styling
+        # of the last trace. An axis built last with one trace was measured
+        # at matplotlib's 10 pt instead of ini.plot_fontsize, so its margins
+        # did not fit the labels it draws.
+        # The layout runs TWICE, as matplotlib's constrained layout does.
+        # The first pass starts from the default axes size. The tick locator
+        # picks its ticks from the axis length. So the first pass can keep
+        # room for tick labels that are not the ones drawn in the end. The
+        # second pass starts from the first result and measures the final
+        # tick labels. ONE pass was tried and REVERTED on 2026-11-22: a 7 x
+        # 3.5 inch axis with two traces got a left margin 0.11 inch too
+        # wide, and small axes changed by up to 0.16 inch.
+        _style_figure(fig)
         # ── gap closing: reposition each shared CONTIGUOUS stack ─────────
         # A closed group reads as one plot: the members' boxes are moved so
         # the gaps vanish, their heights stretched to reclaim the gap space.
@@ -577,12 +598,29 @@ class figure(object):
                     x += w
             return True
 
-        for members in _xGroups.values():
-            if len(members) >= 2 and _close_stack(members, vertical=True):
-                closed_x_axes.update(m[0] for m in members)
-        for members in _yGroups.values():
-            if len(members) >= 2 and _close_stack(members, vertical=False):
-                closed_y_axes.update(m[0] for m in members)
+        def _layout(fig):
+            """The two layout passes, the minimum gaps and the closed
+            stacks; returns the closed (x, y) axes. Run now and again when
+            the figure size changes (_FigureLayout). tight_layout is run as
+            matplotlib's TightLayoutEngine: fig.tight_layout() would
+            replace the figure's own layout engine."""
+            from matplotlib.layout_engine import TightLayoutEngine
+            TightLayoutEngine().execute(fig)  # THIS figure, not the current one
+            TightLayoutEngine().execute(fig)  # with the final tick labels
+            _space_rows_and_columns(fig, rows, cols)
+            closed_x, closed_y = set(), set()
+            for members in _xGroups.values():
+                if len(members) >= 2 and _close_stack(members, vertical=True):
+                    closed_x.update(m[0] for m in members)
+            for members in _yGroups.values():
+                if len(members) >= 2 and _close_stack(members, vertical=False):
+                    closed_y.update(m[0] for m in members)
+            return closed_x, closed_y
+
+        closed_x, closed_y = _layout(fig)
+        closed_x_axes.update(closed_x)
+        closed_y_axes.update(closed_y)
+        fig.set_layout_engine(_FigureLayout(_layout, fig))
 
         # ── shared axes: draw ONE axis for the group ─────────────────────
         # Tick labels and the axis label go on the outer axis only; with the
@@ -671,9 +709,17 @@ _atexit_show_registered = False
 
 def _reduce(x, y, bins):
     """``(x, y)`` reduced for the full range, or None when the trace is
-    small, not monotonic in x, or the reduction is off (bins <= 0)."""
+    small, not monotonic in x, not one series (x and y 1-D), or the
+    reduction is off (bins <= 0)."""
     n = len(x)
     if bins <= 0 or n <= 2 * bins or len(y) != n:
+        return None
+    # The reduction is defined for one series. A 2-D y, such as a column of
+    # shape (n, 1), went through on 2026-11-20. The index arrays then drew
+    # a garbage line of 2 * bins ** 2 points. A 2-D x skipped the monotonic
+    # check, and the build failed in the zoom callback. Matplotlib now
+    # draws such data as it is (2026-11-22).
+    if np.ndim(x) != 1 or np.ndim(y) != 1:
         return None
     try:
         xa = np.asarray(x, dtype=float)
@@ -697,14 +743,22 @@ def _minmax(x, y, lo, hi, bins):
     if n <= 2 * bins:
         lo2, hi2 = max(lo - 1, 0), min(hi + 1, len(x))
         return x[lo2:hi2], y[lo2:hi2]
+    # The full bins are a reshaped VIEW of y: no index array, no copy.
+    # An index array of every sample of the range, padded to whole bins,
+    # was REPLACED on 2026-11-22. The copy of y through it made a zoom or
+    # pan of the full range 7x slower at 10 M points. The picks are the
+    # same, bit for bit.
     width = -(-n // bins)                          # ceil
-    nbins = -(-n // width)
-    idx = lo + np.arange(nbins * width).reshape(nbins, width)
-    idx = np.minimum(idx, hi - 1)                  # the last bin, padded
-    yb = y[idx]
-    rows = np.arange(nbins)
-    imin = idx[rows, yb.argmin(axis=1)]
-    imax = idx[rows, yb.argmax(axis=1)]
+    full = n // width                              # bins of width samples
+    end = lo + full * width
+    start = lo + width * np.arange(full)
+    yb = y[lo:end].reshape(full, width)
+    imin = start + yb.argmin(axis=1)
+    imax = start + yb.argmax(axis=1)
+    if end < hi:                                   # the last, shorter bin
+        tail = y[end:hi]
+        imin = np.append(imin, end + tail.argmin())
+        imax = np.append(imax, end + tail.argmax())
     pick = np.sort(np.stack([imin, imax], axis=1), axis=1).ravel()
     edge0 = [lo - 1] if lo > 0 else []
     edge1 = [hi] if hi < len(x) else []
@@ -723,14 +777,17 @@ def _line_data(line):
 
 
 def _follow_zoom(line, x, y):
-    """Keep the reduced *line* in step with the view of its axes: on every
-    xlim_changed the visible part of the full *x*, *y* is reduced again
-    (``_minmax``). The full arrays are kept on the line
-    (``_slicap_full``) for the cursor read-out."""
+    """Keep the reduced *line* in step with the view of its axes: when the
+    visible part of the full *x*, *y* changes, it is reduced again
+    (``_minmax``). The *line* draws the full-range reduction
+    (``_reduce``) when this is called. The full arrays are kept on the
+    line (``_slicap_full``) for the cursor read-out."""
     x = np.asarray(x, dtype=float)
     y = np.asarray(y)
     line._slicap_full = (x, y)
     ax = line.axes
+    # the samples and the bins of what the line draws now
+    drawn = [(0, len(x), ini.plot_points)]
 
     def _update(axes):
         lo_x, hi_x = axes.get_xlim()
@@ -738,6 +795,14 @@ def _follow_zoom(line, x, y):
             lo_x, hi_x = hi_x, lo_x
         lo = int(np.searchsorted(x, lo_x, side="left"))
         hi = int(np.searchsorted(x, hi_x, side="right"))
+        view = (lo, hi, ini.plot_points)
+        # xlim_changed fires whenever the limits are SET, also to the same
+        # values: the autoscale after every added line does that. Reducing
+        # again at every event was REPLACED on 2026-11-22: an axis of n
+        # traces reduced n * (n + 1) / 2 times while it was built.
+        if view == drawn[0]:
+            return
+        drawn[0] = view
         xs, ys = _minmax(x, y, lo, hi, ini.plot_points)
         line.set_data(xs, ys)
 
@@ -816,40 +881,94 @@ def _space_rows_and_columns(fig, rows, cols):
     fig.subplots_adjust(**kw)
 
 
+from matplotlib.layout_engine import LayoutEngine as _LayoutEngine
+
+
+class _FigureLayout(_LayoutEngine):
+    """The layout of a figure made by :meth:`figure.make_mpl_figure`, as
+    its matplotlib layout engine: *layout(fig)* runs again when the size of
+    the figure has changed, a resized window (Anton, 2026-11-25). Pan and
+    zoom keep the size and do not lay out again.
+
+    The layout WAS run once, when the figure was made. A resized window then
+    kept the margins and the axes as fractions of the old size: a short axis
+    in the middle of a tall window (Anton's report, 2026-11-25). A new
+    layout at every draw, pan and zoom included, was considered and REJECTED
+    (2026-11-25): two layout passes per redraw slow down large figures."""
+
+    _adjust_compatible = True       # the layout calls subplots_adjust
+    _colorbar_gridspec = True
+
+    def __init__(self, layout, fig, **kwargs):
+        super().__init__(**kwargs)
+        self._layout = layout
+        self._size = tuple(fig.get_size_inches())
+
+    def execute(self, fig):
+        size = tuple(fig.get_size_inches())
+        if size != self._size:
+            self._layout(fig)
+            self._size = size
+
+    def invalidate(self):
+        """Lay out again at the next draw, e.g. after a change of style."""
+        self._size = None
+
+
 def defaultsPlot():
     """
     Applies default settings for plots.
     """
     figures = [manager.canvas.figure for manager in plotHelp.Gcf.get_all_fig_managers()]
     for fig in figures:
-        fig.tight_layout()               # THIS figure, not the current one
-        for i in range(len(fig.axes)):
-            fig.axes[i].title.set_fontsize(ini.plot_fontsize)
-            fig.axes[i].grid(visible=True, which='major', color='0.5',linestyle='-')
-            fig.axes[i].grid(visible=True, which='minor', color='0.5',linestyle=':')
-            fig.axes[i].tick_params(axis="both", labelsize=ini.plot_fontsize)
-            t = fig.axes[i].xaxis.get_offset_text()
-            t.set_fontsize(ini.plot_fontsize)
-            t = fig.axes[i].yaxis.get_offset_text()
-            t.set_fontsize(ini.plot_fontsize)
-            try:
-                fig.axes[i].xaxis.label.set_fontsize(ini.plot_fontsize)
-                fig.axes[i].yaxis.label.set_fontsize(ini.plot_fontsize)
-            except:
-                pass
-            try:
-                leg = fig.axes[i].legend(loc = ini.legend_loc,
-                                borderpad = 0.2,
-                                labelspacing = 0,
-                                handletextpad = 0.2,
-                                handlelength = 1,
-                                scatterpoints = 1,
-                                numpoints = 1)
-                for t in leg.get_texts():
-                    t.set_fontsize(ini.plot_fontsize)
-            except:
-                pass
+        engine = fig.get_layout_engine()
+        if isinstance(engine, _FigureLayout):
+            # a SLiCAP figure keeps its own layout: restyled, it lays out
+            # again at the next draw. fig.tight_layout() would replace it.
+            _style_figure(fig)
+            engine.invalidate()
+            fig.canvas.draw_idle()
+            continue
+        # The layout BEFORE the styling, as before 2026-11-22: defaultsPlot()
+        # keeps its signature and its behaviour (TRACES.md, section 8).
+        # make_mpl_figure lays out after the styling.
+        fig.tight_layout()
+        _style_figure(fig)
     return
+
+def _style_figure(fig):
+    """Fonts, grid and legends of the matplotlib figure *fig*.
+
+    defaultsPlot() does this for every open figure. make_mpl_figure does it
+    once, for the figure it builds. The layout (tight_layout) is the
+    caller's step, because it must measure the styled labels.
+    """
+    for i in range(len(fig.axes)):
+        fig.axes[i].title.set_fontsize(ini.plot_fontsize)
+        fig.axes[i].grid(visible=True, which='major', color='0.5',linestyle='-')
+        fig.axes[i].grid(visible=True, which='minor', color='0.5',linestyle=':')
+        fig.axes[i].tick_params(axis="both", labelsize=ini.plot_fontsize)
+        t = fig.axes[i].xaxis.get_offset_text()
+        t.set_fontsize(ini.plot_fontsize)
+        t = fig.axes[i].yaxis.get_offset_text()
+        t.set_fontsize(ini.plot_fontsize)
+        try:
+            fig.axes[i].xaxis.label.set_fontsize(ini.plot_fontsize)
+            fig.axes[i].yaxis.label.set_fontsize(ini.plot_fontsize)
+        except:
+            pass
+        try:
+            leg = fig.axes[i].legend(loc = ini.legend_loc,
+                            borderpad = 0.2,
+                            labelspacing = 0,
+                            handletextpad = 0.2,
+                            handlelength = 1,
+                            scatterpoints = 1,
+                            numpoints = 1)
+            for t in leg.get_texts():
+                t.set_fontsize(ini.plot_fontsize)
+        except:
+            pass
 
 _INTERACTIVE_BACKENDS = {
     'qtagg', 'qt5agg', 'qt4agg', 'tkagg', 'wxagg',
@@ -1085,17 +1204,20 @@ def enable_ab_cursors(ax, readout_fn=None):
                 lbl = line.get_label() or "trace"
                 if lbl.startswith('_'):
                     continue
+                # One interpolation per cursor. The Δ row interpolated both
+                # cursors again. That was REPLACED on 2026-11-22. The real
+                # part of complex data is a strided view. np.interp() made
+                # it contiguous at every call, so it is copied once here.
+                yr = np.ascontiguousarray(np.real(yd))
                 parts = []
                 if x_a is not None:
-                    ya = float(np.interp(x_a, xd, np.real(yd)))
+                    ya = float(np.interp(x_a, xd, yr))
                     parts.append(f"A={ya:.6g}")
                 if x_b is not None:
-                    yb = float(np.interp(x_b, xd, np.real(yd)))
+                    yb = float(np.interp(x_b, xd, yr))
                     parts.append(f"B={yb:.6g}")
                 if x_a is not None and x_b is not None:
-                    ya2 = float(np.interp(x_a, xd, np.real(yd)))
-                    yb2 = float(np.interp(x_b, xd, np.real(yd)))
-                    parts.append(f"Δ={yb2 - ya2:+.6g}")
+                    parts.append(f"Δ={yb - ya:+.6g}")
                 rows.append(("  " if len(axes_list) > 1 else "") + lbl)
                 rows.append("  " + "  ".join(parts))
         return '\n'.join(rows)
@@ -1181,9 +1303,17 @@ def enable_ab_cursors(ax, readout_fn=None):
         ]
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         pts_ax = []
+        # The box goes to the corner with the fewest DRAWN points, the
+        # points the user sees. The crosshair follows the drawn line too.
+        # The read-out values come from the full data (_build_text).
+        # Counting the points of the full data (_line_data) was REPLACED on
+        # 2026-11-22: the count took 0.3 s per click at 10 M points. A
+        # reduced line draws the minimum and the maximum of every bin, so
+        # its corners weigh differently. The box can land in another corner
+        # than the full count chose (Anton accepted).
         for line in ax.lines:
-            xd, yd = _line_data(line)
-            xd, yd = np.asarray(xd), np.real(yd)
+            xd = np.asarray(line.get_xdata())
+            yd = np.real(np.asarray(line.get_ydata()))
             if len(xd) < 2 or (line.get_label() or '').startswith('_'):
                 continue
             mask = ((xd >= min(xlim)) & (xd <= max(xlim)) &
@@ -1568,265 +1698,11 @@ def _undefined_params(yData, fileName):
         return True
     return False
 
-_PLOT_DATA_TYPES = ['laplace', 'numer', 'denom', 'noise', 'step', 'impulse',
-                    'time', 'params', None]
+# the data types of a SLiCAP result live with sweepData() in SLiCAPtraces
+from SLiCAP.SLiCAPtraces import _PLOT_DATA_TYPES, _FREQ_TYPES, _TIME_TYPES
 _FUNC_TYPES      = ['mag', 'dBmag', 'phase', 'delay', 'time', 'onoise',
                     'inoise', 'param']
 _AXIS_TYPES      = ['lin', 'log', 'semilogx', 'semilogy', 'polar']
-_FREQ_TYPES      = ['laplace', 'numer', 'denom', 'noise']
-_TIME_TYPES      = ['time', 'impulse', 'step']
-
-
-def _sweep_limit(value, parDefs):
-    """A sweep limit as a float: a number in SLiCAP notation, or the name
-    of a parameter with a numeric value in *parDefs*. Raises ValueError
-    naming the parameter otherwise."""
-    from SLiCAP.SLiCAPmath import _checkNumber
-    number = _checkNumber(value, parDefs)
-    if number is None:
-        raise ValueError("'{0}' is not a number and not a numeric parameter "
-                         "of the sweep: give it a value with params="
-                         "sl.selectPars(...) or in the pardefs of the "
-                         "instruction.".format(value))
-    return float(number)
-
-
-def _sweep_par_defs(results, params):
-    """The parameters a sweep limit is resolved from: those of the result
-    (the pardefs of its instruction) with the ``params`` of the sweep on
-    top, as the ``params`` of an NGspice analysis (Anton, 2026-11-09)."""
-    from SLiCAP.SLiCAPmath import _checkExpression
-    par_defs = dict(getattr(results, "parDefs", None) or {})
-    for key, value in (params or {}).items():
-        par_defs[sp.Symbol(str(key))] = _checkExpression(str(value))
-    return par_defs
-
-
-def sweepData(results, sweepStart, sweepStop, sweepNum, sweepMethod='auto',
-              sweepVar='auto', params=None):
-    """
-    Evaluates a SLiCAP result over a sweep and returns the numbers as a
-    :class:`SLiCAPtraces.dataset`, ready for
-    :func:`SLiCAPtraces.make_traces` and :func:`SLiCAPtraces.measure`.
-
-    A SLiCAP result is SYMBOLIC - `laplace` is an expression in *s* - so it
-    has no sweep of its own; NGspice hands over numbers, SLiCAP hands over a
-    formula. This function supplies the missing sweep, which is why the traces
-    dialog asks for start / stop / points 
-
-    It lives here, with the rest of the plot machinery, and it DEPENDS on
-    SLiCAPtraces rather than the other way round: producers -> traces ->
-    plots.
-
-    The signals are the result's own attributes, which are already Python
-    identifiers, so no name mapping is needed:
-
-    - *laplace*, *numer*, *denom*: COMPLEX arrays, s replaced by 2*pi*j*f
-      (``ini.hz``) or j*omega, so ``dB(...)``, ``phase(...)``, ``delay(...)``
-      and magnitude-by-default all work on them;
-    - *noise*: ``onoise`` and ``inoise`` (V^2/Hz), plus one signal per noise
-      source from ``onoiseTerms`` / ``inoiseTerms``, named
-      ``onoise_<source>`` - the symbolic counterpart of NGspice's
-      ``onoise_r1``;
-    - *time*, *impulse*, *step*: real arrays over *t*.
-
-    A stepped result carries one expression per run, so its signals become
-    2-D (n_runs, n_sweep) and ``step_params`` holds the step values - exactly
-    like a stepped NGspice sweep. The circuit's numeric parameter definitions
-    become ``dataset.params``.
-
-    Trace data stays in BASE UNITS (Hz, s, V): scaling belongs to the axis,
-    never to the trace, so this function has no
-    counterpart of ``plotSweep``'s *sweepScale*.
-
-    :param results: result of one SLiCAP instruction.
-    :type results: SLiCAPinstruction.instruction
-
-    :param sweepStart: start of the sweep; SLiCAP notation ('10', '1M'), or
-                       the name of a parameter, ``"f_min"``, resolved from
-                       the parameter definitions of the result (the
-                       ``pardefs`` of the instruction) with *params* on top.
-                       A sweep limit then follows the specs like a component
-                       value does (Anton, 2026-11-09).
-    :type sweepStart: str, float, int
-
-    :param sweepStop: end of the sweep; as *sweepStart*.
-    :type sweepStop: str, float, int
-
-    :param sweepNum: number of points.
-    :type sweepNum: str, int
-
-    :param sweepMethod: 'lin' or 'log'; 'auto' takes 'log' for a frequency
-                        sweep and 'lin' for a time sweep.
-    :type sweepMethod: str
-
-    :param sweepVar: name of the swept parameter for ``dataType='params'``;
-                     'auto' for the frequency or time sweep of the other data
-                     types.
-    :type sweepVar: str
-
-    :param params: parameter definitions for the sweep limits, on top of
-                   those of the result: the dictionary ``selectPars()``
-                   returns, ``params=sl.selectPars(cir, specs,
-                   specs=["t_settle"])``, for a specification the
-                   instruction itself did not select.
-    :type params: dict, NoneType
-
-    :return: the evaluated data, or None when the result cannot be swept.
-    :rtype: SLiCAPtraces.dataset, NoneType
-
-    :Example:
-
-    >>> D   = sl.sweepData(LAPLACE1, 10, "1M", 200)
-    >>> TR  = sl.make_traces(D, [{"y": "dB(laplace)"}])
-    >>> A_0 = sl.measure(D, "Y_AT_X(dB(laplace), 1e3)", units="dB")
-    """
-    from SLiCAP.SLiCAPtraces import dataset
-    from SLiCAP.SLiCAPmath import _makeNumData, _freq_response, fullSubs
-    from SLiCAP.SLiCAPlex import _scale_float
-
-    if isinstance(results, list):
-        print("Error: sweepData() takes ONE result; combining results is what "
-              "an axis does (TRACES.md phase 7).")
-        return None
-    dataType = getattr(results, "dataType", None)
-    if dataType not in _PLOT_DATA_TYPES or dataType is None:
-        print("Error: cannot sweep dataType '{0}'.".format(dataType))
-        return None
-    try:
-        par_defs = _sweep_par_defs(results, params)
-        start = _sweep_limit(sweepStart, par_defs)
-        stop  = _sweep_limit(sweepStop, par_defs)
-        num   = int(_scale_float(sweepNum))
-    except (ValueError, TypeError) as exc:
-        print("Error: the sweep needs numbers in SLiCAP notation ('10', "
-              "'1M') or parameters of the result; got {0}, {1}, {2}. {3}"
-              .format(sweepStart, sweepStop, sweepNum, exc))
-        return None
-    if sweepMethod == 'auto':
-        sweepMethod = 'lin' if dataType in _TIME_TYPES else 'log'
-    if sweepMethod == 'log':
-        if start <= 0 or stop <= 0:
-            print("Error: a logarithmic sweep needs positive limits.")
-            return None
-        x = np.geomspace(start, stop, num)
-    else:
-        x = np.linspace(start, stop, num)
-
-    # the abscissa of a time-domain result is 't', SLiCAP's own symbol - NOT
-    # 'time', which is the name of the RESULT ATTRIBUTE (result.time) and
-    # would collide with it in an expression
-    x_name = 't' if dataType in _TIME_TYPES else 'frequency'
-    x_var  = sp.Symbol('t') if dataType in _TIME_TYPES else ini.frequency
-
-    def _numeric(expression):
-        """One expression -> one array over the sweep."""
-        if dataType in _FREQ_TYPES and dataType != 'noise':
-            response = _freq_response(expression, x)
-            if response is not None:
-                return response                     # complex, fast path
-            data = sp.N(expression)
-            if ini.hz:
-                data = data.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
-            else:
-                data = data.xreplace({ini.laplace: sp.I*ini.frequency})
-            return np.asarray(_makeNumData(data, ini.frequency, x,
-                                           normalize=False), dtype=complex)
-        return np.asarray(_makeNumData(sp.N(expression), x_var, x,
-                                       normalize=False), dtype=float)
-
-    def _attribute(name):
-        """The result attribute as a list of expressions, one per run."""
-        value = getattr(results, name, None)
-        if value is None or (isinstance(value, list) and not value):
-            return []
-        return value if isinstance(value, list) else [value]
-
-    wanted = {'laplace': ['laplace'], 'numer': ['numer'], 'denom': ['denom'],
-              'time': ['time'], 'impulse': ['impulse'], 'step': ['stepResp'],
-              'noise': ['onoise', 'inoise']}.get(dataType, [])
-    signals = {}
-    for name in wanted:
-        runs = _attribute(name)
-        if not runs:
-            continue
-        arrays = [_numeric(expression) for expression in runs]
-        signals[name] = arrays[0] if len(arrays) == 1 else np.array(arrays)
-    if dataType == 'noise':
-        # per-source contributions: the symbolic counterpart of NGspice's
-        # onoise_r1 (Anton, 2026-08-01)
-        for attribute, prefix in (("onoiseTerms", "onoise"),
-                                  ("inoiseTerms", "inoise")):
-            terms = getattr(results, attribute, None) or {}
-            for source, expression in terms.items():
-                name = "{0}_{1}".format(prefix, str(source))
-                name = "".join(c if (c.isalnum() or c == "_") else "_"
-                               for c in name)
-                runs = expression if isinstance(expression, list) else [expression]
-                arrays = [_numeric(one) for one in runs]
-                signals[name] = arrays[0] if len(arrays) == 1 else np.array(arrays)
-    if not signals:
-        print("Error: result '{0}' holds no data to sweep.".format(dataType))
-        return None
-
-    step_params = {}
-    if getattr(results, "step", False):
-        if getattr(results, "stepVar", None) is not None:
-            step_params[str(results.stepVar)] = np.asarray(
-                results.stepList, dtype=float)
-        elif getattr(results, "stepVars", None):
-            rows = np.asarray(results.stepArray, dtype=float)
-            for j, name in enumerate([str(v) for v in results.stepVars]):
-                if j < rows.shape[0]:
-                    step_params[name] = rows[j]
-
-    params = {}
-    for symbol, value in (getattr(getattr(results, "circuit", None),
-                                  "parDefs", None) or {}).items():
-        try:
-            params[str(symbol)] = float(sp.N(fullSubs(value,
-                                                      results.circuit.parDefs)))
-        except (TypeError, ValueError):
-            continue
-    # What only the RESULT knows: a transfer is detector units over source
-    # units, noise is squared detector units per Hz. The naming conventions
-    # cannot answer these (Anton, 2026-08-02).
-    units = {x_name: ("s" if dataType in _TIME_TYPES
-                      else ("Hz" if ini.hz else "rad/s"))}
-    for name in signals:
-        found = _slicap_units_hint(name, results)
-        if found:
-            units[name] = found
-    return dataset(x_name=x_name, x_data=x, signals=signals,
-                   step_params=step_params, params=params, units=units,
-                   gain_type=getattr(results, "gainType", None))
-
-
-def _slicap_units_hint(name, result=None):
-    """Units of the signals :func:`sweepData` writes.
-
-    The name alone cannot say them: ``onoise`` is V^2/Hz for a voltage
-    detector and A^2/Hz for a current one, and a transfer is detector units
-    over source units. They are read from the result, exactly as the axis
-    labels of :func:`plotSweep` read them (Anton, 2026-07-30: units are
-    stated, and suggested only where something KNOWS them).
-    """
-    if result is None:
-        return None
-    det = getattr(result, "detUnits", "") or ""
-    src = getattr(result, "srcUnits", "") or ""
-    if name in ("laplace", "numer", "denom"):
-        return "{0}/{1}".format(det, src) if det and src else det or None
-    if name in ("time", "impulse", "stepResp"):
-        return det or None
-    if name == "onoise" or name.startswith("onoise_"):
-        return "{0}^2/Hz".format(det) if det else None
-    if name == "inoise" or name.startswith("inoise_"):
-        return "{0}^2/Hz".format(src) if src else None
-    return None
-
-
-register_units_hint(_slicap_units_hint)
 
 
 def plot_defaults(result, funcType = 'auto', axisType = 'auto',
@@ -3158,11 +3034,11 @@ def makeFigure(axes, fileName, show = False, save = True, cursors = True,
 
     >>> D       = sl.sweepData(LAPLACE1, 1, "1M", 500)
     >>> axMag   = sl.traceAxis("Magnitude", "semilogx",
-    ...                        sl.make_traces(D, [{"y": "dB(laplace)"}]),
+    ...                        sl.make_traces(D, [{"y": "dB(mag(H_s))"}]),
     ...                        xName="frequency", xUnits="Hz",
     ...                        yName="magnitude", yUnits="dB")
     >>> axPhase = sl.traceAxis("Phase", "semilogx",
-    ...                        sl.make_traces(D, [{"y": "phase(laplace)"}]),
+    ...                        sl.make_traces(D, [{"y": "phase(H_s)"}]),
     ...                        xName="frequency", xUnits="Hz",
     ...                        yName="phase", yUnits="deg")
     >>> fig     = sl.makeFigure([[axMag], [axPhase]], "bode", show=True)
@@ -3221,9 +3097,10 @@ def makeFigure(axes, fileName, show = False, save = True, cursors = True,
     :type shareY: str, list
 
     :param title: Heading drawn across the top of the figure, inside the
-                  image, so that the SVG and PDF files carry it too. The
-                  figure window shows it as its title. Defaults to None: no
-                  heading, the window shows the file name.
+                  image, so that the SVG and PDF files carry it too. It may
+                  hold LaTeX. Defaults to None: no heading. The figure
+                  window shows the file name in its title bar, not the
+                  title: a title bar cannot render LaTeX (2026-11-26).
     :type title: str, NoneType
 
     :Example:
@@ -3317,6 +3194,43 @@ def fig2traces(figObject, names=None):
                 name, figObject.fileName))
     return traceDict
 
+def _field_value(text):
+    """The value of one field of an exported data file, as eval() read it.
+
+    A plain decimal float, such as ``-1.5e-003``, is converted by float().
+    That gives the float eval() gave, bit for bit. Every other text is
+    evaluated as before. Its names are looked up in this module's
+    namespace. An assignment in it, such as ``(ini:=5)``, goes to a dict of
+    its own. An integer stays an int. A complex number such as ``(1+2j)``
+    stays complex. A text that is not a number raises the error eval()
+    raised. LTspiceData2Traces takes that error as a header line.
+    Cadence2traces takes it as an empty field.
+
+    The readers called eval() on every field. That was REPLACED on
+    2026-11-22: eval() compiles each number as Python code, about 5 us per
+    field. A 200,000-line LTspice export took 2.6 s. It also ran inside
+    the reader. A field named like a local variable of the reader read
+    that variable. A header "i" gave an extra x value 0, a header "f" the
+    file object.
+    """
+    try:
+        value = float(text)
+    except ValueError:
+        value = None
+    # float() also reads an integer, which eval() gives as an int. It also
+    # reads inf, nan, Unicode digits and blanks that eval() refuses. Those
+    # texts go to eval(). What is left is a float literal: digits, point,
+    # exponent, signs, separators and spaces.
+    body = text.rstrip("\n")
+    if (value is not None and body.isascii() and body.isprintable()
+            and ("." in body or "e" in body or "E" in body)):
+        return value
+    # The empty locals dict takes the assignments. With the module dict as
+    # locals too, '(ini:=5)' in a data file rebound SLiCAPplots.ini for
+    # the rest of the session (found and REPLACED on 2026-11-22).
+    return eval(text, globals(), {})
+
+
 def LTspiceData2Traces(txtFile):
     """
     Generates a dictionary with traces (key = label, value = trace object) from
@@ -3363,8 +3277,8 @@ def LTspiceData2Traces(txtFile):
             label = lineData[2]
         elif len(lineData) == 2:
             try:
-                xData.append(eval(lineData[0]))
-                yData.append(eval(lineData[1]))
+                xData.append(_field_value(lineData[0]))
+                yData.append(_field_value(lineData[1]))
             except:
                 if label != None:
                     newTrace = trace([xData, yData])
@@ -3418,12 +3332,12 @@ def LTspiceAC2SLiCAPtraces(fileName, dB=False, color='c'):
         if i != 0:
             line = lines[i].split()
             if ini.hz:
-                freqs.append(eval(line[0]))
+                freqs.append(_field_value(line[0]))
             else:
-                freqs.append(eval(line[0])*2*np.pi)
+                freqs.append(_field_value(line[0])*2*np.pi)
             dBmag, deg = line[1].split(',')
-            dBmag = eval(dBmag[1:-2])
-            deg = eval(deg[0:-2])
+            dBmag = _field_value(dBmag[1:-2])
+            deg = _field_value(deg[0:-2])
             if not dB:
                 mag.append(10**(dBmag/20))
             else:
@@ -3486,8 +3400,8 @@ def csv2traces(csvFile):
                 traceDict[data[2*j+1]].yData = []
         else:
             for j in range(len(labels)):
-                xData = eval(data[2*j])
-                yData = eval(data[2*j+1])
+                xData = _field_value(data[2*j])
+                yData = _field_value(data[2*j+1])
                 traceDict[labels[j]].xData.append(xData)
                 traceDict[labels[j]].yData.append(yData)
     for label in labels:
@@ -3541,7 +3455,7 @@ def Cadence2traces(csvFile, absx = False, logx = False, absy = False, logy = Fal
     last_raw_x=lines[-1].split(',')[1::2]
     for element in last_raw_x:
         try:
-            limiter=eval(element)
+            limiter=_field_value(element)
             break
         except:
             pass
@@ -3562,7 +3476,7 @@ def Cadence2traces(csvFile, absx = False, logx = False, absy = False, logy = Fal
         else:
             for j in range(len(labels)):
                 try:
-                    xData = eval(data[2*j])
+                    xData = _field_value(data[2*j])
                 except:
                     xData = limiter
                 if absx:
@@ -3573,7 +3487,7 @@ def Cadence2traces(csvFile, absx = False, logx = False, absy = False, logy = Fal
                     except:
                         print("Could not calculate the log10 of the xData of:", ini.csv_path + csvFile)
                 try:
-                    yData = eval(data[2*j+1])
+                    yData = _field_value(data[2*j+1])
                 except:
                     yData = 0
                 if absy:

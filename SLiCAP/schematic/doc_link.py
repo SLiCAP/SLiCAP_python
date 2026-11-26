@@ -28,6 +28,19 @@ def reference_url(page: str, anchor: str = "") -> str:
     return ONLINE_ROOT + page + frag
 
 
+def help_label(intro: str, page: str, anchor: str, link_text: str):
+    """The help line at the top of a dialog: what it composes (*intro*,
+    rich text), then a link to its section of the manual, opened in the
+    browser. One form for every dialog (2026-11-26): the SLiCAP dialog
+    built its line by hand, and the Traces, Axes and Figures dialogs had
+    none."""
+    from PySide6.QtWidgets import QLabel
+    label = QLabel('%s — <a href="%s">%s</a>'
+                   % (intro, reference_url(page, anchor), link_text))
+    label.setOpenExternalLinks(True)
+    return label
+
+
 def resolve_link(url: str) -> str:
     """A link as written in a symbol's ``data-info``: a link into the
     online manual is resolved through :func:`reference_url` (local copy

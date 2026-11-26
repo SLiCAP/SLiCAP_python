@@ -1,25 +1,33 @@
-"""Create / Edit Traces dialog (TRACES.md phase 6).
+"""Create / Edit Traces dialog (TRACES.md phases 6 and 9).
 
 First of the three post-processing dialogs; Axes and Figures follow in phase
 7. Traces are the DATA layer of Figure -> Axes -> Traces: a named trace set
-built from ONE simulation result, which appears in the variable explorer and
-can be placed on any axis.
+that appears in the variable explorer and can be placed on any axis.
 
-The dialog emits ONE statement per object (TRACES.md 7.3)::
+A trace set may use SEVERAL results of the file (phase 9, Anton,
+2026-11-25). Its expressions name what they use with the dotted names of
+the Design data - ``AC1.V_out``, ``FLT1.H_fs``, ``LAPLACE1.laplace``,
+``R1.Ix``, ``HS`` - and the sources follow from those names; there is no
+"Analysis result" choice any more. The dialog emits ONE statement per
+object (TRACES.md 7.3), the sources combined by ``sl.makeDataset()``::
 
-    TR1 = sl.make_traces(TRAN1, [{"y": "RMS(I_V1**2*R_a)"},
-                                 {"y": "V_out - V_outDC", "color": "r"}])
+    TR1 = sl.make_traces(sl.makeDataset({"AC1": AC1, "LAPLACE1": LAPLACE1}),
+                         [{"y": "dB(mag(AC1.V_out)) - dB(mag(LAPLACE1.laplace))"}],
+                         variables={"AC1.V_out": "AC1.v(out)"})
 
 so append-only editing keeps working: no attribute-mutation lines that a
-later definition could not undo.
+later definition could not undo. A trace set written before phase 9, from
+ONE result, is rewritten in this form when it is edited (Anton,
+2026-11-25); unedited it keeps working.
 
 A trace is ONE EXPRESSION (Anton, 2026-07-29). The goal function is part of
 it - ``RMS(I_V1**2*R_a)`` - rather than a separate field, so the whole
 mathematics of a trace is written and read in one place. The expression
-editor therefore builds from three sources, each with its own insert button:
+editor builds from four sources, each with its own insert button:
 
-    Insert Signal             named output of the selected result
+    Insert Signal             a signal of any result, per result
     Insert Circuit Parameter  parameter as SIMULATED (netlist + params=)
+    Insert Function           dB, mag, phase, ...
     Insert Goal Function      reduction of one run to one number
 
 **Vocabulary** (Anton, 2026-07-29): a SIGNAL is named numeric data coming out
@@ -27,7 +35,7 @@ of a simulation - what NGspice calls a vector - and a TRACE is what this
 dialog builds from it. The two words are never interchanged, even though
 LTspice and SIMetrix call a raw vector a trace.
 
-EVERY vector the run produced is offerable. One whose name is not a Python
+EVERY vector a run produced is offerable. One whose name is not a Python
 identifier (``v(out)``, ``@q1[gm]``, ``x1.mid``) gets a Python name in the
 assignment table when it is picked; the expressions use that name, and it is
 emitted as ``variables={...}`` (TRACES.md phase 6d).
@@ -35,7 +43,8 @@ emitted as ``variables={...}`` (TRACES.md phase 6d).
 The names offered come from the CORE - the signal names from the design-data
 manifest, the parameters from the NGspice netlist reader, the goal functions
 from :func:`SLiCAP.SLiCAPtraces.goal_names` - so the dialog cannot disagree
-with what ``make_traces`` accepts.
+with what ``make_traces`` accepts. Which sources combine is the core's rule
+too (``makeDataset``); :mod:`.trace_sources` says it beforehand.
 """
 from __future__ import annotations
 
@@ -51,10 +60,16 @@ from PySide6.QtWidgets import (
 
 from .instr_file import (parse_calls, pardef_sources, spec_var_name, quoted,
                          bound_names, literal as _lit)
+from .cell_button import CellButtonDelegate
+from .edit_note import EditNote
 from .par_source_table import display_value
 from .param_field import ParamField
 from .value_fields import watch, all_valid, is_number, is_latex_safe, mark_item, LATEX_HINT
 from .sizing import name_width, cap_chars, chars, scroll_body, fit_to_screen
+# The results of a file and how they combine live in trace_sources.
+from .trace_sources import (file_sources, statement, dataset_call, read_data,
+                            names_in, SYSTEM_X, NGSPICE, SYSTEM, SLICAP,
+                            FILTER, DATA_KINDS)
 
 from SLiCAP.SLiCAPtraces import (goal_names, function_names, reduces,
                                  units_of, automatic_color)
@@ -64,22 +79,6 @@ _GOALS = goal_names()
 # {name: what it does} - dB_20, phase, real, … (SLiCAPtraces._TRACE_FUNCTIONS)
 _FUNCTIONS = function_names()
 
-# Results that carry numeric arrays straight away.
-_NG_FUNCS = {"op", "dc", "ac", "tran", "noise"}
-# the system-level run (sl.runSystem): numeric, swept over time
-_SYSTEM_FUNCS = {"runSystem"}
-# SLiCAP results are SYMBOLIC: they hold a formula, so they need a sweep
-# before there are numbers (TRACES.md phase 6f). sl.sweepData() supplies it,
-# which is why these results show a sweep row and the NGspice ones do not.
-_SLICAP_FUNCS = {"doLaplace": "frequency", "doNumer": "frequency",
-                 "doDenom": "frequency", "doNoise": "frequency",
-                 "doTime": "t", "doImpulse": "t", "doStep": "t"}
-# ... and what their signals are called: the result's own attributes, which
-# are already Python identifiers, so no assignment table is needed.
-_SLICAP_COMPLEX = {"doLaplace", "doNumer", "doDenom"}
-# Complex-valued results: without a function in the expression these show
-# their MAGNITUDE (Anton, 2026-07-31), and the hint says so.
-_COMPLEX_KINDS = {"ac", "fft", "noise"}
 # What an old trace_type= means as an expression. A trace set written before
 # the types were dropped is MIGRATED on load - since 2026-08-03 make_traces
 # no longer accepts the argument at all, so loading the statement here and
@@ -88,29 +87,27 @@ _TYPE_AS_FUNCTION = {"dBmag": "dB_20({0})", "phase": "phase({0})",
                      "mag": "abs({0})", "real": "real({0})",
                      "imag": "imag({0})", "delay": "delay({0})"}
 
-# The result FOLLOWS the selected object instead of being overwritten by it
-# (Anton, 2026-08-02).
-_AUTOSELECT = "Autoselect from selected trace or measurement"
-
 # Units sit next to the expression they belong to: units are a property
 # of the trace VARIABLE (Anton, 2026-08-02), the scale factor is not.
 _YEXPR, _YUNITS, _XEXPR, _XUNITS, _LABEL, _COLOR = 0, 1, 2, 3, 4, 5
+# a cell of a loaded trace holds what the statement says, an empty one too:
+# the suggestions (x, units, label) do not fill it. They did, so OK without
+# a change rewrote every loaded trace set that left them to make_traces()
+# (Anton, 2026-11-25: editing in place; OK without a change leaves the
+# statement as written)
+_AS_WRITTEN = Qt.ItemDataRole.UserRole + 1
 _MNAME, _MEXPR, _MCOND, _MUNITS = 0, 1, 2, 3
 _EXPRESSION_COLUMNS = (_YEXPR, _XEXPR)
-
-# Abscissa of an analysis that does NOT reduce: what the simulator swept.
-_SWEEP_NAME = {"ac": "frequency", "noise": "frequency", "tran": "time",
-               "fft": "frequency", "runSystem": "time"}
-
-# the x axes of a system run's dataset (SystemResult.X_AXES): the x name
-# is an identifier, so a row's x cell can carry it into the expression
-_SYSTEM_X = {"time": "time [s]", "tick": "master tick (integer)",
-             "sample": "sample index of the domain (integer)"}
+# the assignment table: the result, the Python name within it, its signal
+_NRESULT, _NNAME, _NSIGNAL = 0, 1, 2
 
 # matplotlib's one-letter colours as Qt knows them, for the swatch only: the
 # emitted value stays whatever matplotlib understands ('#rrggbb' or 'r').
 _COLOUR_NAMES = {"r": "red", "b": "blue", "g": "green", "c": "cyan",
                  "m": "magenta", "y": "yellow", "k": "black", "w": "white"}
+
+_NO_RESULTS = ("No results known yet: run the instruction file once - the "
+               "dialog then offers exactly what the simulations produced.")
 
 
 def _next_meas_name(taken) -> str:
@@ -136,33 +133,6 @@ def _python_name(vector: str) -> str:
     if name and name[0].isdigit():
         name = "_" + name
     return name or "x"
-
-
-def gain_type_of(entry) -> str:
-    """The gain type a result statement asks for, '' for data that has none.
-
-    A SLiCAP analysis carries one - ``transfer='asymptotic'``, defaulting to
-    'gain' - and it decides the automatic COLOUR (ini.gaincolors). An NGspice
-    run has none.
-    """
-    if not entry or not is_symbolic(entry):
-        return ""
-    transfer = _lit((entry.get("kwargs") or {}).get("transfer"))
-    return str(transfer) if transfer else "gain"
-
-
-def result_entries(calls: list[dict]) -> list[dict]:
-    """The result variables a trace can be built from: NGspice runs and
-    SLiCAP (symbolic) analyses."""
-    return [c for c in calls
-            if (c["func"] in _NG_FUNCS or c["func"] in _SLICAP_FUNCS
-                or c["func"] in _SYSTEM_FUNCS)
-            and c["assigned"]]
-
-
-def is_symbolic(entry: dict) -> bool:
-    """True for a SLiCAP result: a formula, so it needs a sweep."""
-    return entry.get("func") in _SLICAP_FUNCS
 
 
 def trace_entries(calls: list[dict]) -> list[dict]:
@@ -195,20 +165,6 @@ def measurement_entries(calls: list[dict]) -> list[dict]:
     return [c for c in calls if c["func"] == "measure" and c["assigned"]]
 
 
-def _result_kind(entry: dict) -> str:
-    """Analysis kind, with 'fft' for a transient carrying fft=."""
-    if entry["func"] == "tran" and entry.get("kwargs", {}).get("fft"):
-        return "fft"
-    return entry["func"]
-
-
-def _abscissa(entry: dict) -> str:
-    """The sweep variable this result provides."""
-    if is_symbolic(entry):
-        return _SLICAP_FUNCS[entry["func"]]
-    return _SWEEP_NAME.get(_result_kind(entry), "")
-
-
 def next_name(base: str, taken) -> str:
     i = 1
     while f"{base}{i}" in taken:
@@ -216,85 +172,9 @@ def next_name(base: str, taken) -> str:
     return f"{base}{i}"
 
 
-def signal_names(entry: dict, section: dict) -> list[str]:
-    """Signals of a result: what the RUN recorded, and nothing else.
-
-    The manifest holds the keys the result actually produced. Two other
-    sources were tried and REVERTED (Anton, 2026-08-01): deriving them from
-    the netlist, and falling back to the analysis's ``save=`` list. A signal
-    "can only exist after a run" - before that the dialog offers nothing, and
-    says so.
-    """
-    if is_system(entry):
-        return [s for signals in system_domains(entry, section).values()
-                for s in signals]
-    names = []
-    for variable in section.get("variables", []):
-        if variable.get("name") == entry["name"]:
-            names += [a.get("name", "") for a in
-                      variable.get("attributes", [])]
-    return [n for n in names if n]
-
-
-def is_system(entry: dict) -> bool:
-    """True for a system run (sl.runSystem): its signals lie in clock
-    domains, and a trace set is built from ONE domain's dataset."""
-    return entry.get("func") in _SYSTEM_FUNCS
-
-
-def system_domains(entry: dict, section: dict) -> dict:
-    """``{clock domain: [signal, ...]}`` of a system run, from the result's
-    ``domains`` record in the file's manifest *section*
-    (SystemExtensionSpecs.md 6.9.3): one child per domain, whose
-    ``signals`` field names its stored signals."""
-    out = {}
-    for variable in section.get("variables", []):
-        if variable.get("name") != entry["name"]:
-            continue
-        for attr in variable.get("attributes", []):
-            if attr.get("name") != "domains":
-                continue
-            for domain in attr.get("attributes", []):
-                fields = {f.get("name"): f.get("value", "")
-                          for f in domain.get("attributes", [])}
-                names = str(fields.get("signals", "")).split(",")
-                out[domain.get("name", "")] = [n.strip() for n in names
-                                           if n.strip()]
-    return out
-
-
-def param_names(entry: dict) -> list[str]:
-    """Circuit parameters an expression of this result may use.
-
-    Read from the CORE netlist reader with the call's own ``params=``
-    overrides applied, so the dialog offers exactly the names
-    ``make_traces`` will resolve (they reach the factory through
-    ``instr.circuit.parDefs``).
-    """
-    from SLiCAP.SLiCAPngspice import _netlist_par_defs
-    args = entry.get("args") or []
-    circuit = _lit(args[0]) if args else None
-    if not isinstance(circuit, str):
-        return []
-    overrides = []
-    for pair in _lit(entry["kwargs"].get("params")) or []:
-        if isinstance(pair, (tuple, list)) and len(pair) == 2:
-            overrides.append((str(pair[0]), str(pair[1])))
-    try:
-        par_defs = _netlist_par_defs(circuit, overrides)
-    except Exception:
-        return []
-    return sorted(str(key) for key in par_defs)
-
-
-def _is_stepped(entry: dict) -> bool:
-    """True when the analysis steps, so its signals are 2-D and a goal
-    function has more than one run to reduce."""
-    return bool(entry.get("kwargs", {}).get("step"))
-
-
 class TracesDialog(QDialog):
-    """Create or edit ONE named trace set from ONE simulation result."""
+    """Create or edit ONE named trace set, and measurements, from the
+    results of the file."""
 
     def __init__(self, existing_text: str = "", results_dir=None, parent=None,
                  csv_dir: str = "", source_name: str = ""):
@@ -309,9 +189,7 @@ class TracesDialog(QDialog):
         self._existing_text = existing_text or ""
         self._csv_dir = csv_dir
         self._spec_file = ""              # the spec file of the sweep limits
-        self._sweep_srcs = pardef_sources(None)
         calls = parse_calls(existing_text or "")
-        self._results = result_entries(calls)
         self._existing = trace_entries(calls)
         self._measurements = measurement_entries(calls)
         # every name the file binds, not only the sl.* calls: a hand-merged
@@ -324,85 +202,77 @@ class TracesDialog(QDialog):
             self._section = manifest_section(read_manifest(results_dir), source_name)
         except Exception:
             self._section = {}
+        # every result of the file a trace may use (phase 9): the "Analysis
+        # result" choice of ONE result was REPLACED (Anton, 2026-11-25)
+        self._sources = file_sources(calls, self._section)
 
         frame, outer, self._scroll = scroll_body(self)
-        head = QGridLayout()
-        outer.addLayout(head)
+        from .doc_link import help_label
+        outer.addWidget(help_label(
+            "Composes <code>sl.make_traces()</code> and "
+            "<code>sl.measure()</code> calls", "GUI/plots/plots.html",
+            "traces-and-measurements", "help: traces and measurements"))
 
-        # The head holds what BOTH objects use (Anton, 2026-08-02): which
-        # analysis, and what its signals are called. The identity of the
-        # object being built - trace dictionary or measurement - lives on
-        # its own tab.
-        head.addWidget(QLabel("Analysis result:"), 0, 0)
-        self._result = QComboBox()
-        # Selecting an existing object USED to overwrite this field silently.
-        # It is a mode now: on 'autoselect' the result FOLLOWS the selected
-        # trace dictionary or measurement, and picking a result explicitly
-        # re-targets those specifications at it - which is a legitimate
-        # thing to want (the same traces on another run).
-        self._result.addItem(_AUTOSELECT, None)
-        for entry in self._results:
-            self._result.addItem(f"{entry['name']}  (sl.{entry['func']})",
-                                 entry["name"])
-        self._result.currentIndexChanged.connect(self._on_result_selected)
-        head.addWidget(self._result, 0, 1)
-
-        # ── the sweep, for a SYMBOLIC result (TRACES.md phase 6f) ─────────
+        # ── the range, when no data fixes the points (TRACES.md phase 9) ──
         #
-        # A SLiCAP result is a formula and has no sweep of its own, so this
-        # row supplies one; sl.sweepData() evaluates it. NGspice results
-        # arrive as numbers and hide the row. Values are SLiCAP notation and
-        # end up as plain numbers - scaling belongs to the axis, so there is
-        # no counterpart of plotSweep's sweepScale (Anton, 2026-08-01).
+        # A function - a SLiCAP result, a filter, an expression - has no
+        # points of its own, so this row supplies them when no data source
+        # (an NGspice or system run) does; sl.makeDataset() evaluates them.
+        # Values are SLiCAP notation and end up as plain numbers - scaling
+        # belongs to the axis, so there is no counterpart of plotSweep's
+        # sweepScale (Anton, 2026-08-01).
         self._sweep_row = QWidget()
         sweep = QHBoxLayout(self._sweep_row)
         sweep.setContentsMargins(0, 0, 0, 0)
         self._sweep_lbl = QLabel("Sweep:")
-        # start and stop take a number or a parameter of the result
-        # (param_field): sl.sweepData() resolves the name from the
-        # result's pardefs (Anton, 2026-11-09)
+        # start and stop take a number or a parameter (param_field):
+        # sl.makeDataset() resolves the name from params= (Anton, 2026-11-09)
         # no preset numbers: the limits are the user's (Anton, 2026-11-09)
         self._sweep_start = ParamField("e.g. 1", 12)
         self._sweep_stop = ParamField("e.g. 1M", 12)
         self._sweep_start.textChanged.connect(self._update)
         self._sweep_stop.textChanged.connect(self._update)
-        self._sweep_num = QLineEdit()
+        # the number of points, 500 by default; "in ... points" read as
+        # ticks of the axis and was REPLACED by "no. pts:" (Anton,
+        # 2026-11-25)
+        self._sweep_num = QLineEdit("500")
         cap_chars(self._sweep_num, 9)
-        self._sweep_num.setPlaceholderText("points")
+        self._sweep_num.setToolTip("The number of points of the sweep")
         self._sweep_num.textChanged.connect(self._update)
         watch(self._sweep_num, "number")
         self._sweep_method = QComboBox()
         self._sweep_method.addItems(["log", "lin"])
         self._sweep_method.currentIndexChanged.connect(self._update)
+        # lin/log follows the axis (log in frequency, lin in time) until
+        # the user chooses, or a loaded statement gives it
+        self._method_chosen = False
+        self._sweep_method.activated.connect(self._on_method_chosen)
+        self._sweep_points = QLabel("no. pts:")
         sweep.addWidget(self._sweep_lbl)
         sweep.addWidget(self._sweep_start)
         sweep.addWidget(QLabel("to"))
         sweep.addWidget(self._sweep_stop)
-        sweep.addWidget(QLabel("in"))
+        sweep.addWidget(self._sweep_points)
         sweep.addWidget(self._sweep_num)
-        sweep.addWidget(QLabel("points"))
         sweep.addWidget(self._sweep_method)
         sweep.addStretch(1)
+        self._sweep_row.setVisible(False)
         outer.addWidget(self._sweep_row)
 
-        # ── the clock domain and the x axis of a SYSTEM run ──────────────
+        # ── the x axis of a SYSTEM run ────────────────────────────────────
         #
         # The signals of a system run lie in clock domains, each with its
-        # own sample instants; an expression needs one grid, so a trace set
-        # is built from the dataset of ONE domain. The x axis is a choice
+        # own sample instants. The domain follows from the signals an
+        # expression uses (R1.Ix lies in one domain); the x axis is a choice
         # at plotting time: time, the integer master tick, or the sample
         # index of the domain (SystemExtensionSpecs.md 6.9.4, 6.9.5).
         self._system_row = QWidget()
         system_row = QHBoxLayout(self._system_row)
         system_row.setContentsMargins(0, 0, 0, 0)
-        self._domain = QComboBox()
-        self._domain.currentIndexChanged.connect(self._on_domain_selected)
         self._x_axis = QComboBox()
-        self._x_axis.addItems(list(_SYSTEM_X))
+        self._x_axis.addItems(list(SYSTEM_X))
         self._x_axis.currentIndexChanged.connect(self._on_x_axis_changed)
-        system_row.addWidget(QLabel("Clock domain:"))
-        system_row.addWidget(self._domain)
-        system_row.addWidget(QLabel("X axis:"))
+        system_row.addWidget(QLabel("X axis of the system run:"))
         system_row.addWidget(self._x_axis)
         system_row.addStretch(1)
         self._system_row.setVisible(False)
@@ -412,23 +282,22 @@ class TracesDialog(QDialog):
         #
         # The simulator writes its own vector names; an expression needs
         # Python identifiers. The mapping is made HERE, after the run, when
-        # the vectors are known - it used to sit in the analysis call, where
-        # it could only guess (Anton, 2026-08-01). Empty by default: rows
-        # appear when a signal is picked.
-        # The direction of this sentence matters: each SIGNAL of the run gets
-        # a Python name, not the other way round (Anton, 2026-08-02). And it
-        # is a SIGNAL, the one word this GUI uses for named numeric data out
-        # of a simulation - not vector, not variable (TRACES.md section 1).
+        # the vectors are known (Anton, 2026-08-01). Empty by default: rows
+        # appear when a signal is picked. Each SIGNAL of a run gets a Python
+        # name, not the other way round (Anton, 2026-08-02); the name lies
+        # in its result, AC1.V_out (phase 9).
         self._names_label = QLabel(
             "Assign Python variables to the simulated signals:")
         outer.addWidget(self._names_label)
-        self._names_table = QTableWidget(0, 2)
+        self._names_table = QTableWidget(0, 3)
         self._names_table.setHorizontalHeaderLabels(
-            ["Python variable", "Simulated signal"])
+            ["Result", "Python variable", "Simulated signal"])
         names_header = self._names_table.horizontalHeader()
-        names_header.setSectionResizeMode(0, QHeaderView.Interactive)
-        names_header.setSectionResizeMode(1, QHeaderView.Stretch)
-        self._names_table.setColumnWidth(0, name_width(self._names_table))
+        names_header.setSectionResizeMode(_NRESULT, QHeaderView.Interactive)
+        names_header.setSectionResizeMode(_NNAME, QHeaderView.Interactive)
+        names_header.setSectionResizeMode(_NSIGNAL, QHeaderView.Stretch)
+        self._names_table.setColumnWidth(_NRESULT, name_width(self._names_table))
+        self._names_table.setColumnWidth(_NNAME, name_width(self._names_table))
         self._names_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._names_table.setMaximumHeight(110)
         self._names_table.itemChanged.connect(lambda *_: self._update())
@@ -445,6 +314,10 @@ class TracesDialog(QDialog):
         names_buttons.addWidget(drop_name)
         names_buttons.addStretch(1)
         outer.addWidget(self._names_buttons)
+        # the table is for simulator vectors: shown when a run has them
+        has_runs = any(s.kind in DATA_KINDS for s in self._sources.values())
+        for widget in (self._names_label, self._names_table, self._names_buttons):
+            widget.setVisible(has_runs)
 
         # ── one tab per object (Anton, 2026-08-02) ────────────────────────
         #
@@ -469,10 +342,14 @@ class TracesDialog(QDialog):
         trace_head.addWidget(QLabel("Trace dictionary name:"), 1, 0)
         self._name = QLineEdit(next_name("TR", self._taken))
         self._name.setMaximumWidth(name_width(self._name))
+        # what "Select trace dictionary" and "Select measurement" edit, in
+        # place (instr_file.place, Anton 2026-11-25)
+        self._note = EditNote(self._existing_text)
+        self._note.follow(self._name, lambda: next_name("TR", self._taken))
         self._name.textChanged.connect(self._update)
         trace_head.addWidget(self._name, 1, 1)
         traces_lay.addWidget(QLabel(
-            "Create a trace from the assigned signals, the circuit "
+            "Create a trace from the signals of the results, the circuit "
             "parameters and the (goal) functions:"))
         self._table = QTableWidget(0, 6)
         self._table.setHorizontalHeaderLabels(
@@ -490,6 +367,17 @@ class TracesDialog(QDialog):
         self._table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._table.setMinimumHeight(140)
         self._table.itemChanged.connect(self._on_cell_changed)
+        # The cell itself stays editable - a quick 'AC1.V_out' needs no
+        # window. The button IN the cell is for COMPOSING, and it is where
+        # the explanations are. It sits in the cell it writes, so there is no
+        # doubt which expression it edits (Anton, 2026-11-25). The button
+        # below the table did that from the current cell and was REMOVED
+        # the same day.
+        self._trace_cells = CellButtonDelegate(
+            tooltip="Create / Edit expression…", parent=self)
+        self._trace_cells.clicked.connect(self._edit_trace_expression)
+        for column in _EXPRESSION_COLUMNS:
+            self._table.setItemDelegateForColumn(column, self._trace_cells)
         traces_lay.addWidget(self._table)
 
         row = QHBoxLayout()
@@ -497,13 +385,6 @@ class TracesDialog(QDialog):
         add.clicked.connect(lambda: self._add_row())
         remove = QPushButton("Remove trace")
         remove.clicked.connect(self._remove_row)
-        # The cell itself stays editable - a quick 'V_out' needs no window.
-        # This button is for COMPOSING, and it is where the explanations are.
-        self._trace_expr_btn = QPushButton("Create / Edit expression…")
-        self._trace_expr_btn.clicked.connect(self._edit_trace_expression)
-        # the expression comes FIRST: it is what a trace is (Anton,
-        # 2026-08-03); adding and removing rows is the housekeeping around it
-        row.addWidget(self._trace_expr_btn)
         row.addWidget(add)
         row.addWidget(remove)
         row.addStretch(1)
@@ -524,8 +405,8 @@ class TracesDialog(QDialog):
         self._meas_edit.currentIndexChanged.connect(self._on_load_measurement)
         meas_head.addWidget(self._meas_edit, 0, 1)
         meas_lay.addWidget(QLabel(
-            "Create a measurement (one value each) from the assigned "
-            "signals, the circuit parameters and the (goal) functions:"))
+            "Create a measurement (one value each) from the signals of the "
+            "results, the circuit parameters and the (goal) functions:"))
         self._meas = QTableWidget(0, 4)
         # NOT "Condition": Y_AT_X(y, 1e3) is a condition too, and this column
         # is only ever the run a measurement is taken from - "C_c=18p"
@@ -543,6 +424,11 @@ class TracesDialog(QDialog):
         self._meas.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._meas.setMinimumHeight(140)
         self._meas.itemChanged.connect(self._on_meas_changed)
+        self._meas_cells = CellButtonDelegate(
+            tooltip="Create / Edit expression…", parent=self)
+        self._meas_cells.clicked.connect(
+            lambda row, _column: self._edit_meas_expression(row))
+        self._meas.setItemDelegateForColumn(_MEXPR, self._meas_cells)
         meas_lay.addWidget(self._meas)
 
         meas_row = QHBoxLayout()
@@ -550,14 +436,20 @@ class TracesDialog(QDialog):
         add_meas.clicked.connect(lambda: self._add_meas_row())
         drop_meas = QPushButton("Remove measurement")
         drop_meas.clicked.connect(self._remove_meas_row)
-        self._meas_expr_btn = QPushButton("Create / Edit expression…")
-        self._meas_expr_btn.clicked.connect(self._edit_meas_expression)
-        meas_row.addWidget(self._meas_expr_btn)
         meas_row.addWidget(add_meas)
         meas_row.addWidget(drop_meas)
         meas_row.addStretch(1)
         meas_lay.addLayout(meas_row)
         self._tabs.addTab(meas_tab, "Measurements")
+
+        # why the statement cannot be built: shown, never hidden behind a
+        # disabled button (TRACES.md phase 9, 9.4 item 4)
+        self._reason = QLabel()
+        self._reason.setWordWrap(True)
+        self._reason.setStyleSheet("color: #b34700; font-size: 9pt;")
+        self._reason.setVisible(False)
+        outer.addWidget(self._reason)
+        outer.addWidget(self._note)
 
         self._hint = QLabel()
         self._hint.setWordWrap(True)
@@ -579,103 +471,89 @@ class TracesDialog(QDialog):
         buttons.rejected.connect(self.reject)
         frame.addWidget(buttons)
 
-        self._complex_result = False
-        self._previous_result = self._result.currentIndex()
-        self._loaded_trace = None
-        self._loaded_measurement = None
-        self._tabs.currentChanged.connect(self._on_result_changed)
+        self._range_axis = ""            # the axis the range row was offered for
         self._add_row()
-        self._on_result_changed()
+        self._hint.setText(
+            "Click … in an expression cell to compose from the signals of the "
+            "results, the circuit parameters and the (goal) functions. A name "
+            "is result.signal, as in the Design data; one trace may combine "
+            "several results." if self._offers_anything() else _NO_RESULTS)
+        self._update()
         fit_to_screen(self, self._scroll)
 
-    # ── table plumbing ────────────────────────────────────────────────────
+    # ── the sources a statement reads ─────────────────────────────────────
 
-    def _selected_entry(self) -> dict | None:
-        """The result the statements read from.
+    def _trace_texts(self) -> list:
+        """The y and x expressions of the trace rows."""
+        return [t for r in self._rows() for t in (r["y"], r["x"]) if t]
 
-        On 'autoselect' it FOLLOWS the object selected on the active tab -
-        a statement names its own result - and on an explicit choice it is
-        that result, which re-targets the specifications at it.
-        """
-        name = self._result.currentData()
-        if name is None:
-            return self._autoselected()
-        return next((e for e in self._results if e["name"] == name), None)
+    def _trace_statement(self):
+        return statement(self._trace_texts(), self._sources,
+                         x_axis=self._x_axis.currentText())
 
-    def _result_of_data(self, text) -> dict | None:
-        """The result a statement's data argument names - directly (``AC1``)
-        or through ``sl.sweepData(LAPLACE1, …)``."""
-        for entry in self._results:
-            if entry["name"] in str(text or ""):
-                return entry
-        return None
+    def _meas_statement(self, row: dict):
+        return statement([row["y"]], self._sources,
+                         x_axis=self._x_axis.currentText())
 
-    def _autoselected(self) -> dict | None:
-        """The result of the selected object, or the first one when nothing
-        is selected yet - a new trace dictionary must have somewhere to
-        start."""
-        loaded = (self._loaded_measurement if self._tabs.currentIndex() == 1
-                  else self._loaded_trace)
-        loaded = loaded or self._loaded_trace or self._loaded_measurement
-        if loaded is not None:
-            args = loaded.get("args") or []
-            entry = self._result_of_data(args[0] if args else "")
-            if entry is not None:
-                return entry
-        return self._results[0] if self._results else None
-
-    def _refresh_autoselect(self):
-        """Show WHICH result autoselect resolved to: the mode is only honest
-        if the answer is visible."""
-        entry = self._autoselected()
-        self._result.setItemText(
-            0, _AUTOSELECT + ("  ({0})".format(entry["name"]) if entry
-                              else ""))
-
-    def _candidates(self) -> list[str]:
-        entry = self._selected_entry()
-        if entry is None:
-            return []
-        if is_system(entry):
-            # the signals of the chosen clock domain only: one grid
-            domains = system_domains(entry, self._section)
-            return list(domains.get(self._domain.currentText(), []))
-        return signal_names(entry, self._section)
-
-    def _on_domain_selected(self, *_args):
-        """Another clock domain has other signals: rows built for the
-        previous one are cleared, as on a change of result."""
-        if self._domain.signalsBlocked():
-            return
-        if self._built_anything():
-            self._clear_built()
-        self._refresh_all_x()
-        self._refresh_signal_menus()
-        self._update()
+    def _statements(self) -> list:
+        """Every statement the dialog would write: the trace set, then each
+        measurement."""
+        out = [self._trace_statement()] if self._rows() else []
+        return out + [self._meas_statement(r) for r in self._meas_rows()]
 
     def _on_x_axis_changed(self, *_args):
         self._refresh_all_x()
         self._update()
 
-    def _offer_domains(self, entry: dict):
-        """Fill the clock-domain choice of a system run from the manifest,
-        keeping the chosen domain when it is still there."""
-        chosen = self._domain.currentText()
-        self._domain.blockSignals(True)
-        self._domain.clear()
-        self._domain.addItems(list(system_domains(entry, self._section)))
-        index = self._domain.findText(chosen)
-        self._domain.setCurrentIndex(max(index, 0))
-        self._domain.blockSignals(False)
+    def _on_method_chosen(self, *_args):
+        self._method_chosen = True
+
+    def _range_statement(self):
+        """The first statement that needs the range row, or None."""
+        return next((st for st in self._statements() if st.range), None)
+
+    def _show_rows(self):
+        """The range row when a statement has no data to fix its points, the
+        x axis of a system run when one is used."""
+        st = self._range_statement()
+        self._sweep_row.setVisible(st is not None)
+        if st is not None:
+            self._sweep_lbl.setText("Frequency:" if st.axis == "frequency"
+                                    else "Time:")
+            full = st.range == "full"
+            for widget in (self._sweep_points, self._sweep_num, self._sweep_method):
+                widget.setVisible(full)
+            if st.axis != self._range_axis and not self._method_chosen:
+                # lin for a time axis, log for a frequency axis, until chosen
+                self._sweep_method.blockSignals(True)
+                self._sweep_method.setCurrentText(
+                    "log" if st.axis == "frequency" else "lin")
+                self._sweep_method.blockSignals(False)
+                self._range_axis = st.axis
+            self._offer_sweep_parameters(st)
+        uses_system = any(self._sources[n].kind == SYSTEM
+                          for s in self._statements() for n in s.used)
+        self._system_row.setVisible(uses_system)
+
+    # ── table plumbing ────────────────────────────────────────────────────
 
     def _add_row(self, expression="", x_expression="", label="", color="",
-                 y_units="", x_units=""):
+                 y_units="", x_units="", as_written=False):
+        """A trace row. *as_written*: a row loaded from a statement, whose
+        x, label and units cells keep what the statement says (_AS_WRITTEN)."""
         r = self._table.rowCount()
         self._table.insertRow(r)
+        # setItem() emits itemChanged, which would take the cell as typed;
+        # the refreshes below do what _on_cell_changed does
+        self._table.blockSignals(True)
         for column, text in ((_YEXPR, expression), (_XEXPR, x_expression),
                              (_LABEL, label), (_YUNITS, y_units),
                              (_XUNITS, x_units)):
-            self._table.setItem(r, column, QTableWidgetItem(str(text)))
+            item = QTableWidgetItem(str(text))
+            if as_written and column != _YEXPR:
+                item.setData(_AS_WRITTEN, True)
+            self._table.setItem(r, column, item)
+        self._table.blockSignals(False)
         self._table.setCellWidget(r, _COLOR, self._colour_button(str(color)))
         self._table.setCurrentCell(r, _YEXPR)
         self._refresh_x(r)
@@ -735,12 +613,16 @@ class TracesDialog(QDialog):
 
         Asked of the CORE, so the swatch cannot disagree with the plot: a
         single trace of a named gain type gets the gain colour, everything
-        else the ini.default_colors cycle (Anton, 2026-08-03).
+        else the ini.default_colors cycle (Anton, 2026-08-03). The gain type
+        is that of a SLiCAP result that is the ONLY source of the set, as
+        makeDataset() gives it.
         """
-        entry = self._selected_entry()
-        single = (len([r for r in self._rows()]) <= 1
-                  and not (entry and _is_stepped(entry)))
-        return automatic_color(row, gain_type_of(entry), single)
+        used = self._trace_statement().used if self._rows() else []
+        only = self._sources[used[0]] if len(used) == 1 else None
+        gain = only.gain if only is not None and only.kind == SLICAP else ""
+        stepped = any(self._sources[n].stepped for n in used)
+        single = len(self._rows()) <= 1 and not stepped
+        return automatic_color(row, gain, single)
 
     def _refresh_colours(self):
         """Show each row's colour, and whether it was CHOSEN or is automatic.
@@ -840,6 +722,9 @@ class TracesDialog(QDialog):
                       reverse=True) or ([self._meas.rowCount() - 1]
                                         if self._meas.rowCount() else [])
         for r in rows:
+            item = self._meas.item(r, _MNAME)
+            if item is not None and item.text().strip() in self._note.names():
+                self._note.drop(item.text().strip())    # no longer edited
             self._meas.removeRow(r)
         self._update()
 
@@ -857,15 +742,12 @@ class TracesDialog(QDialog):
                             "condition": cell(_MCOND), "units": cell(_MUNITS)})
         return out
 
-    def _measurement_statements(self, result_name: str) -> list:
-        """One statement per measurement - one object, one line."""
-        assignments = self._assignments()
-        names = ""
-        if assignments:
-            names = ", variables={" + ", ".join(
-                "{0}: {1}".format(quoted(n), quoted(v)) for n, v in assignments) + "}"
+    def _measurement_statements(self) -> list:
+        """One statement per measurement - one object, one line - each on
+        the dataset of the sources IT uses."""
         out = []
         for row in self._meas_rows():
+            st = self._meas_statement(row)
             condition = ""
             text = row["condition"]
             if text:
@@ -878,32 +760,44 @@ class TracesDialog(QDialog):
                     condition = ", run={0}".format(text)
             units = ", units={0}".format(quoted(row["units"])) if row["units"] else ""
             out.append("{0} = sl.measure({1}, {2}{3}{4}{5})".format(
-                row["name"], result_name, quoted(row["y"]), condition, names,
-                units))
+                row["name"], self._data_expression(st), quoted(row["y"]),
+                condition, self._variables_kwarg(st.used), units))
         return out
 
     # ── simulation result -> Python variable ─────────────────────────────
 
-    def _add_name_row(self, python_name: str = "", vector: str = ""):
-        """One assignment. The Python name is auto-derived from the signal
-        (``v(out)`` -> ``V_out``) but stays editable - a name is the user's.
+    def _runs(self) -> list:
+        """The results whose signals may need a Python name: the runs."""
+        return [n for n, s in self._sources.items() if s.kind in DATA_KINDS]
 
-        The signal is PICKED from a drop-down of what the run produced
-        (Anton, 2026-08-02); a row is a pair, so a widget per row is the
-        right shape here.
-        """
+    def _add_name_row(self, result: str = "", python_name: str = "",
+                      vector: str = ""):
+        """One assignment: a signal of *result* gets a Python name, auto-
+        derived from the signal (``v(out)`` -> ``V_out``) but editable - a
+        name is the user's. The result and the signal are PICKED from
+        drop-downs of what the runs produced (Anton, 2026-08-02)."""
         r = self._names_table.rowCount()
         self._names_table.insertRow(r)
         self._names_table.blockSignals(True)
-        self._names_table.setItem(r, 0, QTableWidgetItem(
+        self._names_table.setItem(r, _NNAME, QTableWidgetItem(
             str(python_name or _python_name(vector))))
         self._names_table.blockSignals(False)
-        self._names_table.setCellWidget(r, 1, self._signal_combo(str(vector)))
-        self._names_table.setCurrentCell(r, 0)
+        result = result or (self._runs()[0] if self._runs() else "")
+        combo = QComboBox()
+        combo.addItems(self._runs())
+        if result and combo.findText(result) < 0:
+            combo.addItem(result)
+        combo.setCurrentText(result)
+        combo.currentTextChanged.connect(
+            lambda _t, c=combo: self._on_result_picked(c))
+        self._names_table.setCellWidget(r, _NRESULT, combo)
+        self._names_table.setCellWidget(r, _NSIGNAL,
+                                        self._signal_combo(result, str(vector)))
+        self._names_table.setCurrentCell(r, _NNAME)
         self._update()
 
-    def _signal_combo(self, signal: str = ""):
-        """Drop-down of the signals this run produced.
+    def _signal_combo(self, result: str, signal: str = ""):
+        """Drop-down of the signals *result* produced.
 
         A stored signal the run no longer has is kept as an item rather than
         dropped, so loading an old trace set cannot silently lose it; the
@@ -911,7 +805,8 @@ class TracesDialog(QDialog):
         """
         combo = QComboBox()
         combo.addItem("")
-        for name in self._candidates():
+        source = self._sources.get(result)
+        for name in (source.signals if source else []):
             combo.addItem(name)
         if signal and combo.findText(signal) < 0:
             combo.addItem(signal)
@@ -920,37 +815,32 @@ class TracesDialog(QDialog):
             lambda text, c=combo: self._on_signal_picked(c, text))
         return combo
 
+    def _row_of(self, widget, column) -> int:
+        for r in range(self._names_table.rowCount()):
+            if self._names_table.cellWidget(r, column) is widget:
+                return r
+        return -1
+
+    def _on_result_picked(self, combo):
+        """Another result has other signals: the signal is chosen anew."""
+        r = self._row_of(combo, _NRESULT)
+        if r >= 0:
+            self._names_table.setCellWidget(
+                r, _NSIGNAL, self._signal_combo(combo.currentText()))
+        self._update()
+
     def _on_signal_picked(self, combo, signal: str):
         """Fill an EMPTY Python name with the derived one; a name the user
         typed is never overwritten."""
-        for r in range(self._names_table.rowCount()):
-            if self._names_table.cellWidget(r, 1) is combo:
-                item = self._names_table.item(r, 0)
-                if item is None or not item.text().strip():
-                    self._names_table.blockSignals(True)
-                    self._names_table.setItem(
-                        r, 0, QTableWidgetItem(_python_name(signal)))
-                    self._names_table.blockSignals(False)
-                break
+        r = self._row_of(combo, _NSIGNAL)
+        if r >= 0:
+            item = self._names_table.item(r, _NNAME)
+            if item is None or not item.text().strip():
+                self._names_table.blockSignals(True)
+                self._names_table.setItem(
+                    r, _NNAME, QTableWidgetItem(_python_name(signal)))
+                self._names_table.blockSignals(False)
         self._update()
-
-    def _refresh_signal_menus(self):
-        """Offer the signals of the SELECTED result in every row."""
-        signals = self._candidates()
-        for r in range(self._names_table.rowCount()):
-            combo = self._names_table.cellWidget(r, 1)
-            if combo is None:
-                continue
-            current = combo.currentText()
-            combo.blockSignals(True)
-            combo.clear()
-            combo.addItem("")
-            for name in signals:
-                combo.addItem(name)
-            if current and combo.findText(current) < 0:
-                combo.addItem(current)
-            combo.setCurrentText(current)
-            combo.blockSignals(False)
 
     def _remove_name_row(self):
         rows = sorted({i.row() for i in self._names_table.selectedIndexes()},
@@ -961,64 +851,69 @@ class TracesDialog(QDialog):
         self._update()
 
     def _assignments(self) -> list:
-        """(python_name, vector) per complete row, in table order."""
+        """``(result, python_name, signal)`` per complete row, in table
+        order."""
         out = []
         for r in range(self._names_table.rowCount()):
-            name = self._names_table.item(r, 0)
-            combo = self._names_table.cellWidget(r, 1)
+            result = self._names_table.cellWidget(r, _NRESULT)
+            name = self._names_table.item(r, _NNAME)
+            combo = self._names_table.cellWidget(r, _NSIGNAL)
+            result = result.currentText().strip() if result else ""
             name = name.text().strip() if name else ""
             signal = combo.currentText().strip() if combo else ""
-            if name and signal:
-                out.append((name, signal))
+            if result and name and signal:
+                out.append((result, name, signal))
         return out
 
-    # ── the abscissa the analysis gives by itself ────────────────────────
+    def _variables_kwarg(self, used) -> str:
+        """``, variables={"AC1.V_out": "AC1.v(out)"}`` for the assignments
+        of the results *used*, "" without."""
+        pairs = ["{0}: {1}".format(quoted(result + "." + name),
+                                   quoted(result + "." + signal))
+                 for result, name, signal in self._assignments()
+                 if result in used]
+        return ", variables={" + ", ".join(pairs) + "}" if pairs else ""
+
+    # ── the abscissa the sources give by themselves ──────────────────────
 
     def _default_x(self, y_expression: str) -> str:
-        """The x the analysis provides for this y (Anton, 2026-07-30).
+        """The x the sources of this y provide (Anton, 2026-07-30).
 
-        The sweep variable for a swept analysis, the step parameter or the run
-        number for a stepped OP - and the step parameter as soon as y REDUCES
-        each run to one number, because then the runs are the abscissa.
-
-        Whether y reduces is judged by the core from the expression's
-        structure (``sl.reduces``), not by looking for the word RMS:
-        ``V_out/MAX(V_out)`` mentions a goal but stays a curve against the
-        sweep variable.
+        The sweep variable of the data (``frequency``, ``time``, the swept
+        source of a DC sweep), the x axis of a system run, ``frequency`` or
+        ``t`` for functions alone, and the step parameter or the run number
+        as soon as y REDUCES each run to one number, because then the runs
+        are the abscissa. Whether y reduces is judged by the core from the
+        expression's structure (``sl.reduces``).
         """
-        entry = self._selected_entry()
-        if entry is None:
+        st = statement([y_expression], self._sources,
+                       x_axis=self._x_axis.currentText())
+        if not st.used or st.reason:
             return ""
-        kind = _result_kind(entry)
-        step = _lit(entry["kwargs"].get("step")) or {}
-        step_name = step.get("param") or step.get("params")
-        if isinstance(step_name, (list, tuple)):
-            step_name = step_name[0] if len(step_name) == 1 else None
-        # the expression speaks PYTHON names (the assignment table), not the
-        # simulator's vectors; with none assigned yet, reduces() falls back to
-        # its conservative reading
-        assigned = [name for name, _vector in self._assignments()]
-        reduced = reduces(y_expression, assigned or None)
-        if kind == "op" or reduced:
-            return str(step_name) if step_name else "run"
-        if is_system(entry):
-            return self._x_axis.currentText()
-        if kind == "dc":
-            # the swept source is the second argument of sl.dc(...)
-            args = entry.get("args") or []
-            source = _lit(args[1]) if len(args) > 1 else None
-            return "v-sweep" if not isinstance(source, str) else source
-        return _abscissa(entry)
+        used = [self._sources[n] for n in st.used]
+        data_names = [n for n in names_in(y_expression)
+                      if n.partition(".")[0] in st.used]
+        steps = [s.step_name for s in used if s.stepped]
+        if reduces(y_expression, data_names or None):
+            return next((n for n in steps if n), "run")
+        data = [s for s in used if s.kind in DATA_KINDS]
+        if data:
+            if data[0].kind == SYSTEM:
+                return self._x_axis.currentText()
+            if data[0].axis:
+                return data[0].axis
+            return next((n for n in steps if n), "run")       # a stepped OP
+        return {"frequency": "frequency", "time": "t"}.get(st.axis, "")
 
     def _refresh_x(self, row: int):
         """Re-derive the X cell of *row* unless the user typed there.
 
         The derived text is remembered on the item (UserRole), so a cell the
         user has edited is left alone while an untouched one keeps following
-        the result and the y expression.
+        the y expression.
         """
         item = self._table.item(row, _XEXPR)
-        if item is None:
+        if item is None or item.data(_AS_WRITTEN):
             return
         derived = self._default_x(self._cell(row, _YEXPR))
         previous = item.data(Qt.ItemDataRole.UserRole)
@@ -1035,38 +930,31 @@ class TracesDialog(QDialog):
             self._refresh_units(row)
         self._refresh_labels()
 
-    def _default_label(self) -> str:
-        """The label ``plotSweep`` gives a trace of this result.
-
-        Its rule (SLiCAPplots, _sweepAxis): the instruction's own label if it
-        has one, the DETECTOR for a plain v/i transfer, and otherwise the
-        GAIN TYPE - which is what makes a plot of the five transfers of the
-        asymptotic-gain model readable ("gain", "asymptotic", "loopgain",
-        "servo", "direct"). Anton, 2026-08-03: the new path left every trace
-        with "dB_20(laplace) vs frequency" instead.
-
-        Given to EVERY row: the magnitude and the phase of one transfer are
-        the same thing seen twice and land on different axes, so both read
-        "gain". Duplicate labels no longer cost a trace - make_traces keys
-        them uniquely while keeping the label (Anton, 2026-08-03).
-        """
-        entry = self._selected_entry()
-        gain = gain_type_of(entry)
-        if not gain:
+    def _default_label(self, row: int) -> str:
+        """The label ``plotSweep`` gives a trace of a SLiCAP result: the
+        DETECTOR for a plain v/i transfer, otherwise the GAIN TYPE - which
+        makes a plot of the five transfers of the asymptotic-gain model
+        readable (Anton, 2026-08-03). Only for a trace of ONE SLiCAP
+        result; others get none."""
+        st = statement([self._cell(row, _YEXPR)], self._sources)
+        if len(st.used) != 1:
             return ""
-        if gain == "vi":
-            detector = _lit((entry.get("kwargs") or {}).get("detector"))
+        source = self._sources[st.used[0]]
+        if source.kind != SLICAP or not source.gain:
+            return ""
+        if source.gain == "vi":
+            detector = _lit((source.entry.get("kwargs") or {}).get("detector"))
             return str(detector) if detector else ""
-        return gain
+        return source.gain
 
     def _refresh_labels(self):
         """Fill the Label cells with the automatic label, leaving a label the
         user typed alone."""
-        derived = self._default_label()
         for row in range(self._table.rowCount()):
             item = self._table.item(row, _LABEL)
-            if item is None:
+            if item is None or item.data(_AS_WRITTEN):
                 continue
+            derived = self._default_label(row)
             previous = item.data(Qt.ItemDataRole.UserRole)
             if item.text().strip() and item.text().strip() != (previous or ""):
                 continue                             # the user owns this cell
@@ -1087,7 +975,7 @@ class TracesDialog(QDialog):
         """
         for column, source in ((_YUNITS, _YEXPR), (_XUNITS, _XEXPR)):
             item = self._table.item(row, column)
-            if item is None:
+            if item is None or item.data(_AS_WRITTEN):
                 continue
             derived = units_of(self._cell(row, source))
             previous = item.data(Qt.ItemDataRole.UserRole)
@@ -1100,27 +988,23 @@ class TracesDialog(QDialog):
 
     # ── expression editor ─────────────────────────────────────────────────
     #
-    # The table cell is the single source of truth; the editor is a view of
-    # the selected row, so nothing can drift between the two.
-
-    def _current_row(self) -> int:
-        row = self._table.currentRow()
-        if row < 0 and self._table.rowCount():
-            row = 0
-        return row
-
-    def _current_column(self) -> int:
-        """The expression column being edited: Y unless an X cell is
-        selected, so the creator acts on what the user clicked (TRACES.md
-        phase 6b)."""
-        column = self._table.currentColumn()
-        return column if column in _EXPRESSION_COLUMNS else _YEXPR
+    # The table cell is the single source of truth. The creator opens from
+    # the button in the cell and writes back into that cell, so nothing can
+    # drift between the two.
 
     def _on_cell_changed(self, item):
+        if item.data(_AS_WRITTEN):
+            # the user edits a loaded cell: it is the user's now, and
+            # cleared it follows the suggestions again
+            self._table.blockSignals(True)
+            item.setData(_AS_WRITTEN, None)
+            self._table.blockSignals(False)
         if item.column() in (_YEXPR, _XEXPR):
             if item.column() == _YEXPR:
                 self._refresh_x(item.row())
+                self._refresh_labels()
             self._refresh_units(item.row())
+            self._refresh_colours()
         if item.column() == _LABEL:
             # a label CLEARED comes back automatic, like a cleared X cell
             self._refresh_labels()
@@ -1131,46 +1015,95 @@ class TracesDialog(QDialog):
     # ONE sub-dialog for both tabs (Anton, 2026-08-02): a trace expression
     # and a measurement expression are the same kind of expression over the
     # same sources, so there is one implementation of the four insert menus.
-    # The caller passes what differs - the caption, the sources, and what a
-    # goal function MEANS here.
 
-    def _assign_signal(self, signal: str) -> str:
-        """The Python name of a signal, assigning one when it has none.
+    def _signal_groups(self) -> list:
+        """The signal list of the creator: one submenu per result, every
+        result of the file (TRACES.md phase 9). A run's signal shows the
+        Python name it was given; a system run lists its signals per clock
+        domain; the expression variables in s, f or t come last."""
+        assigned = {(result, signal): name
+                    for result, name, signal in self._assignments()}
+        groups, expressions = [], []
+        for name, source in self._sources.items():
+            if source.kind == NGSPICE:
+                items = []
+                for signal in source.signals:
+                    given = assigned.get((name, signal))
+                    label = ("{0}   [{1}.{2}]".format(signal, name, given)
+                             if given else signal)
+                    items.append((label, (name, signal)))
+                groups.append((name, items))
+            elif source.kind == SYSTEM:
+                for domain, signals in source.domains.items():
+                    groups.append(("{0} ({1})".format(name, domain),
+                                   [(s, (name, s)) for s in signals]))
+            elif source.kind in (SLICAP, FILTER):
+                groups.append((name, [(s, (name, s)) for s in source.signals]))
+            else:
+                expressions.append((name, (name, None)))
+        if expressions:
+            groups.append(("Expressions", expressions))
+        return groups
 
-        Called by the creator when a signal is picked: the assignment table
-        lives HERE, so its rows are created here (TRACES.md phase 6d).
+    def _offers_anything(self) -> bool:
+        """True when some result offers a signal: a run only after it ran."""
+        return any(items for _group, items in self._signal_groups())
+
+    def _param_groups(self) -> list:
+        """The circuit parameters of the runs, as the dataset names them."""
+        return [(name, ["{0}.{1}".format(name, p) for p in source.params])
+                for name, source in self._sources.items() if source.params]
+
+    def _assign_signal(self, payload) -> str:
+        """The Python name of a picked signal, assigning one when it has
+        none.
+
+        Called by the creator: the assignment table lives HERE, so its rows
+        are created here (TRACES.md phase 6d). A signal of a SLiCAP result,
+        a filter or a system run, and a run's signal that is an identifier,
+        is already a Python name: nothing is assigned. An identity row such
+        as ``{"H_z": "H_z"}`` WAS added (Anton, 2026-11-25).
         """
-        for name, assigned in self._assignments():
-            if assigned == signal:
-                return name
-        name = signal if signal.isidentifier() else _python_name(signal)
-        self._add_name_row(name, signal)
-        return name
+        result, signal = payload
+        if signal is None:
+            return result                            # an expression variable
+        source = self._sources.get(result)
+        if source is None or source.kind != NGSPICE:
+            return "{0}.{1}".format(result, signal)
+        for given_result, name, given in self._assignments():
+            if given_result == result and given == signal:
+                return "{0}.{1}".format(result, name)
+        if str(signal).isidentifier():
+            return "{0}.{1}".format(result, signal)
+        name = _python_name(signal)
+        self._add_name_row(result, name, signal)
+        return "{0}.{1}".format(result, name)
 
-    def _expression_dialog(self, caption: str, text: str, hint: str):
-        """The creator, filled from the SELECTED result. Built apart from
-        running it, so what it is given can be checked without a modal
+    def _expression_dialog(self, caption: str, text: str, hint: str,
+                           for_measurement: bool = False):
+        """The creator, filled from the results of the file. Built apart
+        from running it, so what it is given can be checked without a modal
         window."""
         from .expression_dialog import ExpressionDialog
-        entry = self._selected_entry()
+        # a goal reduces a run: a trace needs runs to reduce, a measurement
+        # reduces even one run to its value
+        goals = for_measurement or any(s.stepped for s in self._sources.values())
         return ExpressionDialog(
             caption, text,
-            signals=self._candidates(),
-            assigned={vector: name for name, vector in self._assignments()},
+            signals=self._signal_groups(),
             on_signal=self._assign_signal,
-            params=param_names(entry) if entry else [],
-            goal_enabled=bool(entry) and _is_stepped(entry),
+            params=self._param_groups(),
+            goal_enabled=goals,
             hint=hint, parent=self)
 
-    def _open_expression(self, caption: str, text: str, hint: str):
+    def _open_expression(self, caption: str, text: str, hint: str,
+                         for_measurement: bool = False):
         """Run the creator; the new expression, or None when cancelled."""
-        dialog = self._expression_dialog(caption, text, hint)
+        dialog = self._expression_dialog(caption, text, hint, for_measurement)
         return dialog.expression() if dialog.exec() else None
 
-    def _edit_trace_expression(self):
-        row, column = self._current_row(), self._current_column()
-        if row < 0:
-            return
+    def _edit_trace_expression(self, row: int, column: int):
+        """The creator for the Y or X expression cell (*row*, *column*)."""
         axis = "Y" if column == _YEXPR else "X"
         text = self._open_expression(
             "{0} expression of trace {1}:".format(axis, row + 1),
@@ -1183,19 +1116,17 @@ class TracesDialog(QDialog):
         if column == _YEXPR:
             # a reducing y moves the natural abscissa to the step parameter
             self._refresh_x(row)
+            self._refresh_labels()
         self._refresh_units(row)
+        self._refresh_colours()
         self._update()
 
-    def _edit_meas_expression(self):
-        row = self._meas.currentRow()
-        if row < 0 and self._meas.rowCount():
-            row = 0
-        if row < 0:
-            return
+    def _edit_meas_expression(self, row: int):
+        """The creator for the expression cell of measurement *row*."""
         item = self._meas.item(row, _MEXPR)
         text = self._open_expression(
             "Expression of measurement {0}:".format(row + 1),
-            item.text() if item else "", self._expression_hint(True))
+            item.text() if item else "", self._expression_hint(True), True)
         if text is None:
             return
         self._meas.blockSignals(True)
@@ -1210,47 +1141,52 @@ class TracesDialog(QDialog):
         with the expression, which is where they are read (Anton,
         2026-08-02).
         """
-        entry = self._selected_entry()
-        if not self._candidates():
-            return ("No signals known for this result yet: run the "
-                    "instruction file once - the dialog then offers exactly "
-                    "what the simulation produced.")
-        named = [name for name, _v in self._assignments()]
-        parameters = param_names(entry) if entry else []
-        text = ("Numpy syntax over the Python variables assigned in the "
-                "dialog"
-                + (": " + ", ".join(named) if named else
-                   " - pick a signal with Insert Signal to assign one")
-                + (" | parameters: " + ", ".join(parameters)
-                   if parameters else "") + ".")
-        if self._complex_result:
-            text += ("\nThis result is complex: without a function the "
-                     "MAGNITUDE is used. Write dB_20(...), phase(...), "
-                     "real(...), imag(...) or delay(...) for the rest.")
+        if not self._offers_anything():
+            return _NO_RESULTS
+        text = ("Numpy syntax over the signals of the results, named "
+                "result.signal as in the Design data (AC1.V_out, FLT1.H_fs). "
+                "One expression may combine several results: functions are "
+                "evaluated where the data lie, and data of two runs must lie "
+                "on the same points.")
+        text += ("\nA complex signal - a transfer, an AC run - shows its "
+                 "MAGNITUDE without a function. mag(...), dB(mag(...)), "
+                 "phase(...) and delay(...) give the magnitude, the magnitude "
+                 "in dB, the phase and the group delay; real(...) and "
+                 "imag(...) its parts.")
+        if any(s.kind == FILTER for s in self._sources.values()):
+            text += ("\nA filter: H_fs is its Laplace transfer and H_fz the "
+                     "filter as the run computes it, in frequency; impulse "
+                     "(divided by Ts) and stepResp are its responses at the "
+                     "sample times k*Ts, drawn as points.")
         if for_measurement:
             text += ("\nA measurement is ONE value: the goal function is "
-                     "what reduces a run to it, e.g. RMS(I_V1**2*R_a).")
-        elif entry is not None and not _is_stepped(entry):
-            text += ("\nThis analysis is not stepped, so a goal function "
-                     "would reduce it to a single number - a measurement, "
-                     "not a trace.")
+                     "what reduces a run to it, e.g. RMS(TRAN1.I_V1**2).")
+        elif not any(s.stepped for s in self._sources.values()):
+            text += ("\nNo result is stepped, so a goal function would reduce "
+                     "a trace to a single number - a measurement, not a trace.")
         return text
 
-    # ── state ─────────────────────────────────────────────────────────────
+    # ── the range ─────────────────────────────────────────────────────────
 
-    def _offer_sweep_parameters(self, entry: dict) -> None:
-        """The sources of the simulation dialogs, circuit and specs. The
-        circuit names come from the result's selectPars call; when they are
-        not in the file (pardefs='circuit', "all") the source is offered
-        with a free name and sweepData checks the run. The specs source
-        offers EVERY numeric item of the spec file, selected by the
-        instruction or not: a limit the instruction did not select is
-        passed to the sweep with params= (_sweep_params_kwarg)."""
+    def _single_slicap(self, st):
+        """The SLiCAP result a statement uses when it is the only one: its
+        circuit gives the 'circuit' source of a sweep limit."""
+        slicap = [n for n in st.used if self._sources[n].kind == SLICAP]
+        return self._sources[slicap[0]].entry if len(slicap) == 1 else None
+
+    def _offer_sweep_parameters(self, st) -> None:
+        """The sources of the simulation dialogs, circuit and specs, for a
+        limit that names a parameter (Anton, 2026-11-09). The circuit is that
+        of the one SLiCAP result the statement uses; its names come from the
+        result's selectPars call, or are free when they are not in the file
+        (pardefs='circuit', "all"). The specs source offers EVERY numeric
+        item of the spec file (_sweep_params_kwarg passes it as params=)."""
         from pathlib import Path
         from .design_data_panel import find_spec_csvs
         from .par_source_table import read_spec_values
-        srcs = pardef_sources(entry["kwargs"].get("pardefs"))
-        self._sweep_srcs = srcs
+        entry = self._single_slicap(st)
+        srcs = (pardef_sources(entry["kwargs"].get("pardefs")) if entry
+                else pardef_sources(None))
         files = [p.name for p in find_spec_csvs(Path(self._csv_dir))] if self._csv_dir else []
         self._spec_file = next((f for f in files if spec_var_name(f) == srcs["spec_var"]),
                                "specs.csv" if "specs.csv" in files else (files[0] if files else ""))
@@ -1258,137 +1194,101 @@ class TracesDialog(QDialog):
         choices = [("circuit", n, "") for n in (srcs["circuit"] or [])]
         choices += [("specs", n, v) for n, v in spec_values.items()
                     if is_number(display_value(v))]
-        offered = ["circuit"] if srcs["circuit"] is None or srcs["circuit"] else []
+        offered = (["circuit"] if entry is not None and
+                   (srcs["circuit"] is None or srcs["circuit"]) else [])
         offered += ["specs"] if spec_values else []
         for field in (self._sweep_start, self._sweep_stop):
             field.set_choices(choices, sources=offered,
-                              any_name=srcs["circuit"] is None)
+                              any_name=entry is not None and srcs["circuit"] is None)
 
-    def _sweep_params_kwarg(self, entry: dict) -> str:
-        """``, params=sl.selectPars(<cir>, SPECS_<stem>, specs=[...])`` for
-        the limits that name a parameter the result does not carry."""
-        srcs = self._sweep_srcs
+    def _sweep_params_kwarg(self, st) -> str:
+        """``sl.selectPars(<cir>, SPECS_<stem>, ...)`` for the limits that
+        name a parameter, "" without. The circuit is that of the one SLiCAP
+        result the statement uses; ``None`` for specs alone."""
+        if not st.range:
+            return ""
+        entry = self._single_slicap(st)
+        # every named limit is passed: makeDataset() resolves a name from
+        # params= only, not from the pardefs of a result
         circuit, specs = [], []
         for field in (self._sweep_start, self._sweep_stop):
             name = field.parameter()
-            if name is None:
+            if name is None or name in circuit + specs:
                 continue
-            src = field._source.currentText()
-            known = srcs.get(src)
-            if known is None or name in known or name in (circuit + specs):
-                continue
-            (circuit if src == "circuit" else specs).append(name)
+            if field._source.currentText() == "circuit":
+                if entry is not None:
+                    circuit.append(name)
+            else:
+                specs.append(name)
         if not circuit and not specs:
             return ""
-        parts = [str(entry["args"][0]) if entry["args"] else "cir"]
+        cir = str(entry["args"][0]) if entry is not None and entry["args"] else "None"
+        parts = [cir]
         if specs:
             parts.append(spec_var_name(self._spec_file))
         if circuit:
             parts.append("circuit=[" + ", ".join(quoted(n) for n in circuit) + "]")
         if specs:
             parts.append("specs=[" + ", ".join(quoted(n) for n in specs) + "]")
-        return ", params=sl.selectPars(" + ", ".join(parts) + ")"
+        return "sl.selectPars(" + ", ".join(parts) + ")"
 
-    def _data_expression(self) -> str:
-        """What the statements read from: the result itself, or the result
-        wrapped in sl.sweepData() when it is a SYMBOLIC one."""
-        entry = self._selected_entry()
-        if entry is None:
-            return ""
-        if is_system(entry):
-            # the dataset of ONE clock domain, against the chosen x axis
-            x = self._x_axis.currentText()
-            return '{0}.dataset({1}{2})'.format(
-                entry["name"], quoted(self._domain.currentText()),
-                ', x={0}'.format(quoted(x)) if x != "time" else "")
-        if not is_symbolic(entry):
-            return entry["name"]
-        method = self._sweep_method.currentText()
-        return 'sl.sweepData({0}, {1}, {2}, {3}{4}{5})'.format(
-            entry["name"], quoted(self._sweep_start.text().strip()),
-            quoted(self._sweep_stop.text().strip()),
-            self._sweep_num.text().strip(),
-            ", {0}".format(quoted(method)) if method != "log" else "",
-            self._sweep_params_kwarg(entry))
+    def _data_expression(self, st) -> str:
+        """The data a statement reads: ``sl.makeDataset({...}, ...)`` of the
+        sources it uses (TRACES.md phase 9)."""
+        return dataset_call(st, self._sources, self._x_axis.currentText(),
+                            self._sweep_start.text().strip(),
+                            self._sweep_stop.text().strip(),
+                            self._sweep_num.text().strip(),
+                            self._sweep_method.currentText(),
+                            self._sweep_params_kwarg(st))
 
-    def _on_result_selected(self, *_args):
-        """Changing the analysis result CLEARS what was built from the
-        previous one.
+    def _restore_range(self, data) -> None:
+        """The range and the system x axis of a loaded statement. They WERE
+        not read back, so editing a trace set lost its range (Anton,
+        2026-11-25)."""
+        if data.start:
+            self._sweep_start.setText(data.start)
+        if data.stop:
+            self._sweep_stop.setText(data.stop)
+        if data.num and data.num != "0":
+            self._sweep_num.setText(data.num)
+        if data.method in ("lin", "log"):
+            self._sweep_method.blockSignals(True)
+            self._sweep_method.setCurrentText(data.method)
+            self._sweep_method.blockSignals(False)
+            self._method_chosen = True          # keep it: it was written
+        if data.x_axis in SYSTEM_X:
+            self._x_axis.blockSignals(True)
+            self._x_axis.setCurrentText(data.x_axis)
+            self._x_axis.blockSignals(False)
 
-        A trace dictionary is built from ONE result: the statement names it
-        once, for every row. Rows made for another result would silently be
-        re-targeted at signals this one may not have, which is what happened
-        before (Anton, 2026-08-03: "changing the analysis result must clear
-        the created traces"). Cleared without asking - the dialog emits
-        nothing until Add instruction, so nothing in the file is lost.
-        """
-        if self._built_anything():
-            self._clear_built()
-        self._previous_result = self._result.currentIndex()
-        self._on_result_changed()
+    # ── loading an existing statement ─────────────────────────────────────
 
-    def _built_anything(self) -> bool:
-        """True when this dialog holds work made for the current result."""
-        return bool(self._rows() or self._meas_rows()
-                    or self._assignments())
-
-    def _clear_built(self):
-        """Empty the tables: one blank trace row, no measurements, no
-        assignments."""
-        self._table.setRowCount(0)
-        self._meas.setRowCount(0)
-        self._names_table.setRowCount(0)
-        self._loaded_trace = None
-        self._loaded_measurement = None
-        for combo in (self._edit, self._meas_edit):
-            combo.blockSignals(True)
-            combo.setCurrentIndex(0)
-            combo.blockSignals(False)
-        self._add_row()
-
-    def _on_result_changed(self, *_args):
-        """Refill the insert menus and the hint for the new result."""
-        entry = self._selected_entry()
-        symbolic = entry is not None and is_symbolic(entry)
-        # a formula needs a sweep; numbers do not. And a symbolic result's
-        # signals are its own attributes, already Python names, so the
-        # assignment table has nothing to do (TRACES.md phase 6f)
-        self._sweep_row.setVisible(symbolic)
-        if symbolic:
-            self._offer_sweep_parameters(entry)
-        system = entry is not None and is_system(entry)
-        self._system_row.setVisible(system)
-        if system:
-            self._offer_domains(entry)
-        self._names_table.setVisible(not symbolic)
-        self._names_buttons.setVisible(not symbolic)
-        self._names_label.setVisible(not symbolic)
-        self._complex_result = (entry is not None
-                                and (_result_kind(entry) in _COMPLEX_KINDS
-                                     or entry["func"] in _SLICAP_COMPLEX))
-        self._refresh_autoselect()
-        self._refresh_all_x()
-        self._refresh_signal_menus()
-        if not self._candidates():
-            text = ("No signals known for this result yet: run the "
-                    "instruction file once - the dialog then offers exactly "
-                    "what the simulation produced.")
-        else:
-            text = ("Use Create / Edit expression… to compose from the "
-                    "assigned signals, the circuit parameters and the "
-                    "(goal) functions.")
-        self._hint.setText(text)
-        self._update()
+    def _load_assignments(self, variables: dict) -> None:
+        """``{"AC1.V_out": "AC1.v(out)"}`` back into the table."""
+        for key, value in variables.items():
+            result, _, name = str(key).partition(".")
+            _same, _, signal = str(value).partition(".")
+            if not name:                           # not in the new form
+                continue
+            if any(r == result and n == name for r, n, _s in self._assignments()):
+                continue
+            self._add_name_row(result, name, signal)
 
     def _on_load_existing(self, index: int):
+        """Read an existing trace set back. One written before phase 9, from
+        ONE result, comes back in the new form: its names dotted, its data
+        made by makeDataset() (Anton, 2026-11-25). OK replaces it where it
+        stands (instr_file.place); "New trace dictionary" makes a new one
+        under a free name."""
         if index <= 0:
+            self._note.stop()
             return
         entry = self._existing[index - 1]
         args = entry["args"]
-        # NOT setCurrentIndex on the result: on autoselect it follows this
-        # object, and an explicit choice is the user's (Anton, 2026-08-02).
-        self._loaded_trace = entry
-        self._on_result_changed()
+        data = read_data(args[0] if args else "", self._sources,
+                         _lit(entry["kwargs"].get("variables")) or {})
+        self._restore_range(data)
         self._table.setRowCount(0)
         # A set written before the trace types were dropped carries
         # trace_type=; it becomes the equivalent FUNCTION in every expression,
@@ -1396,46 +1296,58 @@ class TracesDialog(QDialog):
         # argument the dialog no longer offers (Anton, 2026-07-31).
         wrap = _TYPE_AS_FUNCTION.get(_lit(entry["kwargs"].get("trace_type")))
         self._names_table.setRowCount(0)
-        for python_name, vector in (_lit(entry["kwargs"].get("variables")) or
-                                    {}).items():
-            self._add_name_row(str(python_name), str(vector))
+        self._load_assignments(data.variables)
         for spec in (_lit(args[1]) if len(args) > 1 else []) or []:
             if isinstance(spec, str):
                 spec = {"y": spec}
             if not isinstance(spec, dict):
                 continue
-            expression = spec.get("y", "")
+            expression = data.rename(spec.get("y", ""))
             if wrap and expression:
                 expression = wrap.format(expression)
             self._add_row(expression=expression,
-                          x_expression=spec.get("x") or "",
+                          x_expression=data.rename(spec.get("x") or ""),
                           label=spec.get("label") or "",
                           color=spec.get("color") or "",
                           y_units=spec.get("yUnits") or "",
-                          x_units=spec.get("xUnits") or "")
+                          x_units=spec.get("xUnits") or "",
+                          as_written=True)
         if not self._table.rowCount():
             self._add_row()
-        self._name.setText(entry["name"])
+        self._note.start(entry["name"])
         self._update()
 
-    def _on_load_measurement(self, index: int):
-        """Read an existing ``NAME = sl.measure(…)`` back into a row.
+    def editing(self) -> tuple:
+        """The trace set and the measurements loaded for editing, for
+        InstrEditor.put_dialog_result."""
+        return self._note.names()
 
-        Until now a measurement could be created and never edited again: the
-        dialog read make_traces statements back but not measure ones (Anton,
-        2026-08-02).
+    def loaded(self) -> dict:
+        return self._note.loaded()
+
+    def _on_load_measurement(self, index: int):
+        """Read an existing ``NAME = sl.measure(…)`` back into a row, in the
+        new form like a trace set.
+
+        Until 2026-08-02 a measurement could be created and never edited
+        again: the dialog read make_traces statements back but not measure
+        ones.
         """
         if index <= 0:
             return
         entry = self._measurements[index - 1]
+        for r in range(self._meas.rowCount()):
+            item = self._meas.item(r, _MNAME)
+            if item is not None and item.text().strip() == entry["name"]:
+                self._meas.setCurrentCell(r, _MEXPR)      # loaded already
+                self._tabs.setCurrentIndex(1)
+                return
         args = entry.get("args") or []
         kwargs = entry.get("kwargs") or {}
-        self._loaded_measurement = entry
-        self._on_result_changed()
-        self._names_table.setRowCount(0)
-        for python_name, signal in (_lit(kwargs.get("variables")) or
-                                    {}).items():
-            self._add_name_row(str(python_name), str(signal))
+        data = read_data(args[0] if args else "", self._sources,
+                         _lit(kwargs.get("variables")) or {})
+        self._restore_range(data)
+        self._load_assignments(data.variables)
         step = _lit(kwargs.get("step")) or {}
         run = _lit(kwargs.get("run"))
         if step:
@@ -1444,10 +1356,16 @@ class TracesDialog(QDialog):
         else:
             condition = "" if run is None else str(run)
         self._add_meas_row(entry["name"],
-                           str(_lit(args[1]) or "") if len(args) > 1 else "",
+                           data.rename(str(_lit(args[1]) or "")) if len(args) > 1 else "",
                            condition, str(_lit(kwargs.get("units")) or ""))
+        # the name is fixed while editing (Anton, 2026-11-25)
+        item = self._meas.item(self._meas.rowCount() - 1, _MNAME)
+        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self._tabs.setCurrentIndex(1)
+        self._note.start(entry["name"], in_field=False)
         self._update()
+
+    # ── state ─────────────────────────────────────────────────────────────
 
     def _flag_names(self):
         """Flag a Python name that LaTeX would misrepresent - it is still
@@ -1455,27 +1373,41 @@ class TracesDialog(QDialog):
         table = self._names_table
         table.blockSignals(True)          # marking a cell IS an item change
         for r in range(table.rowCount()):
-            item = table.item(r, 0)
+            item = table.item(r, _NNAME)
             if item is not None:
                 mark_item(item, is_latex_safe(item.text()), LATEX_HINT)
         table.blockSignals(False)
 
+    def _why_not(self) -> str:
+        """Why the statements cannot be written, or ""."""
+        for st in self._statements():
+            if st.reason:
+                return st.reason
+            if not st.used:
+                return ("An expression names no result: write result.signal, "
+                        "e.g. AC1.V_out, or pick one with … and Insert Signal.")
+        st = self._range_statement()
+        if st is not None:
+            fields = [self._sweep_start, self._sweep_stop]
+            if st.range == "full":
+                fields.append(self._sweep_num)
+            if not all(w.text().strip() for w in fields) or not all_valid(self._sweep_row):
+                return ("Give the range: no data source fixes the points of "
+                        "these functions.")
+        return ""
+
     def _update(self, *_args):
         self._flag_names()
+        self._show_rows()
+        reason = self._why_not()
+        self._reason.setText(reason)
+        self._reason.setVisible(bool(reason))
         snippet = self.generated_snippet()
         self._preview.setText(snippet or "")
-        entry = self._selected_entry()
-        ok = (entry is not None
-              and (bool(self._rows()) and bool(self._name.text().strip())
-                   or bool(self._meas_rows())))
-        if entry is not None and is_symbolic(entry) and not self._sweep_complete():
-            ok = False                  # a formula needs its three sweep values
-        self._add_btn.setEnabled(ok)
-
-    def _sweep_complete(self) -> bool:
-        return (all(w.text().strip() for w in (self._sweep_start, self._sweep_stop,
-                                               self._sweep_num))
-                and all_valid(self._sweep_row))
+        ok = (bool(self._rows()) and bool(self._name.text().strip())
+              or bool(self._meas_rows()))
+        allowed = self._note.check(snippet)
+        self._add_btn.setEnabled(ok and not reason and allowed)
 
     # ── emission ──────────────────────────────────────────────────────────
 
@@ -1495,36 +1427,30 @@ class TracesDialog(QDialog):
         return "{" + ", ".join(parts) + "}"
 
     def generated_snippet(self) -> str:
-        entry = self._selected_entry()
         rows = self._rows()
-        if entry is None or (not rows and not self._meas_rows()):
+        if not rows and not self._meas_rows():
             return ""
-        name = self._name.text().strip() or "TR1"
-        specs = [self._spec_literal(r) for r in rows]
-        if len(specs) == 1:
-            spec_text = "[" + specs[0] + "]"
-        else:
-            pad = " " * (len(name) + len(entry["name"]) + 21)
-            spec_text = "[" + (",\n" + pad).join(specs) + "]"
-        # No trace_type=: what a trace is, is written in its expression, and
-        # complex data without a function shows its magnitude. names= carries
-        # the Python variables assigned to this result's vectors.
-        assignments = self._assignments()
-        names = ""
-        if assignments:
-            names = ", variables={" + ", ".join(
-                "{0}: {1}".format(quoted(n), quoted(v)) for n, v in assignments) + "}"
-        data = self._data_expression()
         statements = []
+        data_texts = []
         if rows:
-            statements.append(f'{name} = sl.make_traces({data}, '
-                              f'{spec_text}{names})')
-        statements += self._measurement_statements(data)
+            st = self._trace_statement()
+            data = self._data_expression(st)
+            data_texts.append(data)
+            name = self._name.text().strip() or "TR1"
+            specs = [self._spec_literal(r) for r in rows]
+            pad = " " * (len(name) + len(" = sl.make_traces("))
+            spec_text = "[" + (",\n" + pad + " ").join(specs) + "]"
+            # No trace_type=: what a trace is, is written in its expression,
+            # and complex data without a function shows its magnitude.
+            statements.append("{0} = sl.make_traces({1},\n{2}{3}{4})".format(
+                name, data, pad, spec_text, self._variables_kwarg(st.used)))
+        measurements = self._measurement_statements()
+        statements += measurements
+        data_texts += measurements
         # the spec CSV is loaded once per file into SPECS_<stem>, before
         # its first reader (the instruction dialogs' convention)
         var = spec_var_name(self._spec_file) if self._spec_file else ""
-        if var and "params=" in data and var in data and not re.search(
+        if var and any("params=" in d and var in d for d in data_texts) and not re.search(
                 r"^\s*" + re.escape(var) + r"\s*=", self._existing_text, re.M):
-            statements.insert(
-                0, f"{var} = sl.csv2specs({quoted(self._spec_file)})")
+            statements.insert(0, f"{var} = sl.csv2specs({quoted(self._spec_file)})")
         return "\n".join(statements)

@@ -27,3 +27,4 @@ This reference only describes SLiCAP modules with objects and functions that are
    SLiCAPprotos
    SLiCAPrst
    SLiCAPshell
+   SLiCAPtraces

@@ -101,10 +101,13 @@ def display_value(text: str) -> str:
     if not text:
         return text
     try:
-        import sympy as sp
-        from SLiCAP.SLiCAPlex import _replaceScaleFactors
+        # SLiCAP's parser, as the netlist reads the definition: Q, beta, ...
+        # are parameters. sp.sympify was REPLACED (2026-11-22): it read Q
+        # as sympy's assumptions object, so "Q" showed as None and
+        # "1/(2*Q)" as written, not rounded.
+        from SLiCAP.SLiCAPlex import _replaceScaleFactors, _sympify
         from SLiCAP.SLiCAPmath import roundN
-        return str(roundN(sp.sympify(_replaceScaleFactors(text)), numeric=True))
+        return str(roundN(_sympify(_replaceScaleFactors(text)), numeric=True))
     except Exception:
         return text
 

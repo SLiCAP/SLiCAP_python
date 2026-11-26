@@ -23,8 +23,21 @@ See TRACES.md for the architecture and the phased plan.
 ``from SLiCAP.SLiCAPplots import trace`` and ``sl.trace`` keep working.
 """
 import numpy as np
+import sympy as sp
 
 import SLiCAP.SLiCAPconfigure as ini
+
+def _missing_as_nan(data):
+    """
+    Returns the array of trace data with None as NaN, which matplotlib draws
+    as a gap. A None is a missing value, e.g. phaseMargin() of a step that
+    did not converge (Anton, 2026-11-23). Other data is converted as by
+    numpy.array().
+    """
+    arr = np.array(data)
+    if arr.dtype == object and arr.ndim == 1:
+        arr = np.array([np.nan if v is None else v for v in arr])
+    return arr
 
 class trace(object):
     """
@@ -42,13 +55,13 @@ class trace(object):
     >>> sin_trace = trace([x_data, y_data])
     """
     def __init__(self, traceData):
-        self.xData = np.array(traceData[0])
+        self.xData = _missing_as_nan(traceData[0])
         """
         Array-like data for the x-axis of the trace. On a polar axes this is
         the angle in radians.
         """
 
-        self.yData = np.array(traceData[1])
+        self.yData = _missing_as_nan(traceData[1])
         """
         Array-like data for the y-axis of the trace. On a polar axes this is
         the radius.
@@ -225,9 +238,16 @@ class dataset(object):
                       trace COLOUR, SLiCAP's convention for the five
                       transfers of the asymptotic-gain model.
     :type gain_type: str, NoneType
+
+    :param sampled: True when the signals are samples at discrete instants,
+                    such as the time-domain response of a discrete filter:
+                    :func:`make_traces` then draws them as points, unless a
+                    trace specification gives a style (Anton, 2026-11-24).
+    :type sampled: bool
     """
     def __init__(self, x_name=None, x_data=None, signals=None,
-                 step_params=None, params=None, units=None, gain_type=None):
+                 step_params=None, params=None, units=None, gain_type=None,
+                 sampled=False):
         self.x_name      = x_name
         self.x_data      = None if x_data is None else np.asarray(x_data)
         self.signals     = dict(signals) if signals else {}
@@ -235,6 +255,7 @@ class dataset(object):
         self.params      = dict(params) if params else {}
         self.units       = dict(units) if units else {}
         self.gain_type   = gain_type
+        self.sampled     = bool(sampled)
 
     @property
     def n_runs(self):
@@ -397,6 +418,41 @@ class _sl_alias(object):
                 "'{0}' is not available in a trace expression".format(name))
 
 
+class _Source(object):
+    """One source of a dataset made by ``makeDataset()`` in an expression:
+    ``FLT1.H_fs`` is the attribute ``H_fs`` of the name ``FLT1``, so the
+    expression reads like the Design data (TRACES.md phase 9)."""
+
+    def __repr__(self):
+        return "<source: %s>" % ", ".join(sorted(vars(self)))
+
+
+def _is_name(text):
+    """True for a Python identifier or a dotted chain of them, the names of
+    a dataset made by ``makeDataset()``: ``V_out``, ``AC1.V_out``."""
+    parts = str(text).split(".")
+    return all(part.isidentifier() for part in parts)
+
+
+def _bind(namespace, name, value):
+    """Bind *name* in *namespace*; a dotted name as the attribute of its
+    source (``_Source``)."""
+    parts = str(name).split(".")
+    if len(parts) == 1:
+        namespace[parts[0]] = value
+        return
+    holder = namespace.get(parts[0])
+    if not isinstance(holder, _Source):
+        holder = namespace[parts[0]] = _Source()
+    for part in parts[1:-1]:
+        inner = getattr(holder, part, None)
+        if not isinstance(inner, _Source):
+            inner = _Source()
+            setattr(holder, part, inner)
+        holder = inner
+    setattr(holder, parts[-1], value)
+
+
 def _run_slice(values, run, n_runs):
     """The data of ONE run: a row of a stepped sweep, one value of a stepped
     OP, or the whole array when the analysis has a single run."""
@@ -458,15 +514,14 @@ def _expression_namespace(data, run=0):
     # parameter has a value PER RUN and overrides the circuit definition,
     # which is the order in which the simulator applied them.
     for name, value in data.params.items():
-        if str(name).isidentifier():
-            namespace[str(name)] = value
+        if _is_name(name):
+            _bind(namespace, name, value)
     n_runs = data.n_runs
     for name, values in data.step_params.items():
-        if str(name).isidentifier():
+        if _is_name(name):
             column = np.atleast_1d(values)
-            namespace[str(name)] = (column if run is None
-                                    else column[run if run < len(column)
-                                                else -1])
+            _bind(namespace, name, column if run is None
+                  else column[run if run < len(column) else -1])
     # The abscissa, SLICED FOR THIS RUN like every other quantity (and
     # winning over any numpy name of the same spelling). It is a whole array
     # only when it is swept WITHIN a run - frequency, time. For a stepped OP
@@ -479,9 +534,9 @@ def _expression_namespace(data, run=0):
         namespace[data.x_name] = (data.x_data if run is None
                                   else _run_slice(data.x_data, run, n_runs))
     for name, values in data.signals.items():
-        if name.isidentifier():
-            namespace[name] = (np.asarray(values) if run is None
-                               else _run_slice(values, run, n_runs))
+        if _is_name(name):
+            _bind(namespace, name, np.asarray(values) if run is None
+                  else _run_slice(values, run, n_runs))
     namespace['sl'] = _sl_alias(namespace)
     return namespace
 
@@ -506,8 +561,8 @@ def _report_expression_error(expression, data, err, name_error):
     # there either way, and a signal is referenced by its name, never by
     # its raw simulator spelling (Anton, 2026-07-29 - raw-name arithmetic
     # belongs in names=, which NGspice evaluates itself).
-    named   = sorted(n for n in data.signals if n.isidentifier())
-    unnamed = sorted(n for n in data.signals if not n.isidentifier())
+    named   = sorted(n for n in data.signals if _is_name(n))
+    unnamed = sorted(n for n in data.signals if not _is_name(n))
     print("  usable in expressions   : " + (', '.join(named) or 'none'))
     parameters = sorted(set(list(data.params) + list(data.step_params)),
                         key=str)
@@ -673,6 +728,28 @@ def as_dataset(obj):
     return None
 
 
+def _no_dataset(function, obj):
+    """The refusal of *function* when :func:`as_dataset` gives nothing for
+    *obj*. It names the cause it can see. ``None`` is what a producer
+    returns after its own error, such as ``sweepData()`` on a filter. The
+    one text for every case blamed an un-stepped operating point for that
+    too, and was REPLACED (Anton, 2026-11-25)."""
+    dataType = getattr(obj, "dataType", None)
+    if obj is None:
+        why = ("got no data: the instruction that makes it failed (see the "
+               "error above)")
+    elif dataType == "op":
+        why = ("got an un-stepped operating point: it holds scalars and "
+               "yields no traces (print them instead)")
+    elif dataType in _DATASET_FUNCTIONS or dataType in _FILTER_TYPES:
+        why = ("got a symbolic result ({0}): make its data with "
+               "sl.makeDataset()".format(dataType))
+    else:
+        why = ("needs a data set or an analysis result; got {0}"
+               .format(dataType or type(obj).__name__))
+    return "Error: {0}() {1}.".format(function, why)
+
+
 def axis_label(name, scale="", units=""):
     """
     The text of an axis label: ``name [scale units]``, with the units set as
@@ -755,10 +832,12 @@ def units_of(name, result=None, known=None):
         # detector units, not seconds. NGspice's abscissa IS called time and
         # is answered by the producer, which knows (dataset.units).
         return "s"
-    if text.isidentifier():
-        if text.startswith("V_"):
+    if _is_name(text):
+        # the convention of the name itself, also for AC1.V_out
+        tail = text.rsplit(".", 1)[-1]
+        if tail.startswith("V_"):
             return "V"
-        if text.startswith("I_"):
+        if tail.startswith("I_"):
             return "A"
     for hint in _UNITS_HINTS:
         try:
@@ -959,9 +1038,9 @@ def measure(data, expression, step=None, run=None, variables=None,
                 out[str(name)] = value
         return out
 
-    data = as_dataset(data)
+    source, data = data, as_dataset(data)
     if data is None:
-        print("Error: measure() needs a data set or an analysis result.")
+        print(_no_dataset("measure", source))
         return None
     data = _rename_signals(data, variables)
     index = _select_run(data, step, run)
@@ -1023,7 +1102,8 @@ def _rename_signals(data, variables):
             units[str(python_name)] = units.pop(str(vector))
     return dataset(x_name=data.x_name, x_data=data.x_data, signals=signals,
                    step_params=data.step_params, params=data.params,
-                   units=units, gain_type=data.gain_type)
+                   units=units, gain_type=data.gain_type,
+                   sampled=getattr(data, "sampled", False))
 
 
 def _unique_key(traces, label):
@@ -1241,8 +1321,22 @@ def reduces(expression, signals=None):
         return (function.id if isinstance(function, ast.Name)
                 and function.id in goals else None)
 
+    def _dotted(node):
+        """``AC1.V_out`` for an attribute chain on a name, else None."""
+        parts = []
+        while isinstance(node, ast.Attribute):
+            parts.append(node.attr)
+            node = node.value
+        if not isinstance(node, ast.Name):
+            return None
+        return ".".join([node.id] + parts[::-1])
+
     def _is_data(node):
-        """A name holding run data - what a goal has to swallow."""
+        """A name holding run data - what a goal has to swallow. A dotted
+        name of makeDataset(), AC1.V_out, is ONE name."""
+        if isinstance(node, ast.Attribute):
+            name = _dotted(node)
+            return name is not None and (names is None or name in names)
         if not isinstance(node, ast.Name):
             return False
         return True if names is None else node.id in names
@@ -1485,13 +1579,11 @@ def make_traces(data, specs=None, variables=None):
     >>> D = sl.make_traces(AC1, [{"x": "RMS(I_V1)**2*R_a", "y": "MAX(V_out)",
     ...                           "label": "gain vs dissipation"}])
     """
-    data = as_dataset(data)
-    data = _rename_signals(data, variables)
+    source, data = data, as_dataset(data)
     if data is None:
-        print("Error: make_traces() needs a data set or an analysis result; "
-              "an un-stepped operating point holds scalars and yields no "
-              "traces (print them instead).")
+        print(_no_dataset("make_traces", source))
         return {}
+    data = _rename_signals(data, variables)
     if specs is None:
         specs = list(data.signals.keys())
     # A label can name the step parameter only when there is exactly one;
@@ -1511,6 +1603,11 @@ def make_traces(data, specs=None, variables=None):
         label = spec.get("label")
         attrs = {k: v for k, v in spec.items()
                  if k not in ("x", "y", "label")}
+        if getattr(data, "sampled", False):
+            # samples at discrete instants are drawn as points, unless the
+            # spec gives a style (Anton, 2026-11-24)
+            attrs.setdefault("marker", "o")
+            attrs.setdefault("lineType", "None")
         # An EXPLICIT abscissa expression takes its own route: both sides are
         # evaluated and must agree in shape (phase 6b). The
         # automatic abscissa keeps the proven path below, which the harness
@@ -1555,3 +1652,653 @@ def make_traces(data, specs=None, variables=None):
                              lbl, attrs, x_name=x_text, y_name=name)
             traces[_unique_key(traces, lbl)] = new
     return _assign_units(_assign_colors(traces, data), data)
+
+# ---------------------------------------------------------------------------
+# Building datasets: sweepData() and makeDataset()
+#
+# Building a dataset is the entry of the traces layer (section 2 of
+# TRACES.md: producers -> traces -> plots). Both functions were in
+# SLiCAPplots and MOVED here (Anton, 2026-11-25): SLiCAPplots only draws.
+# ---------------------------------------------------------------------------
+
+_PLOT_DATA_TYPES = ['laplace', 'numer', 'denom', 'noise', 'step', 'impulse',
+                    'time', 'params', None]
+_FREQ_TYPES      = ['laplace', 'numer', 'denom', 'noise']
+_TIME_TYPES      = ['time', 'impulse', 'step']
+
+
+def _sweep_limit(value, parDefs):
+    """A sweep limit as a float: a number in SLiCAP notation, or the name
+    of a parameter with a numeric value in *parDefs*. Raises ValueError
+    naming the parameter otherwise."""
+    from SLiCAP.SLiCAPmath import _checkNumber
+    number = _checkNumber(value, parDefs)
+    if number is None:
+        raise ValueError("'{0}' is not a number and not a numeric parameter "
+                         "of the sweep: give it a value with params="
+                         "sl.selectPars(...) or in the pardefs of the "
+                         "instruction.".format(value))
+    return float(number)
+
+
+def _sweep_par_defs(results, params):
+    """The parameters a sweep limit is resolved from: those of the result
+    (the pardefs of its instruction) with the ``params`` of the sweep on
+    top, as the ``params`` of an NGspice analysis (Anton, 2026-11-09)."""
+    from SLiCAP.SLiCAPmath import _checkExpression
+    par_defs = dict(getattr(results, "parDefs", None) or {})
+    for key, value in (params or {}).items():
+        par_defs[sp.Symbol(str(key))] = _checkExpression(str(value))
+    return par_defs
+
+
+#: the dataType of a filter (createIIR, createFIR); makeFilter() gives it
+#: H_s, H_z and Ts
+_FILTER_TYPES = ("iir", "fir")
+
+
+def _sweep_axis(start, stop, num, sweepMethod):
+    """The sweep values: *num* points from *start* to *stop*, "log" or
+    "lin"; None with an error for a logarithmic sweep over a limit <= 0."""
+    if sweepMethod == 'log':
+        if start <= 0 or stop <= 0:
+            print("Error: a logarithmic sweep needs positive limits.")
+            return None
+        return np.geomspace(start, stop, num)
+    return np.linspace(start, stop, num)
+
+
+def _laplace_data(expression, x):
+    """An expression in s as a complex array over the frequencies *x*: the
+    numeric rational fast path, else s replaced and evaluated."""
+    from SLiCAP.SLiCAPmath import _freq_response, _makeNumData
+    response = _freq_response(expression, x)
+    if response is not None:
+        return response                             # complex, fast path
+    data = sp.N(expression)
+    if ini.hz:
+        data = data.xreplace({ini.laplace: 2*sp.pi*sp.I*ini.frequency})
+    else:
+        data = data.xreplace({ini.laplace: sp.I*ini.frequency})
+    return np.asarray(_makeNumData(data, ini.frequency, x, normalize=False),
+                      dtype=complex)
+
+
+#: the attributes of a SLiCAP result that are swept, per dataType
+_SLICAP_SIGNALS = {'laplace': ['laplace'], 'numer': ['numer'],
+                   'denom': ['denom'], 'time': ['time'],
+                   'impulse': ['impulse'], 'step': ['stepResp'],
+                   'noise': ['onoise', 'inoise']}
+
+
+def _slicap_runs(results, name):
+    """The attribute *name* of a SLiCAP result as a list of expressions,
+    one per run."""
+    value = getattr(results, name, None)
+    if value is None or (isinstance(value, list) and not value):
+        return []
+    return value if isinstance(value, list) else [value]
+
+
+def _slicap_noise_terms(results):
+    """``{onoise_<source>: [expression per run], inoise_<source>: ...}``:
+    the noise contributions per source of a SLiCAP noise result."""
+    out = {}
+    for attribute, prefix in (("onoiseTerms", "onoise"),
+                              ("inoiseTerms", "inoise")):
+        for source, expression in (getattr(results, attribute, None) or {}).items():
+            name = "{0}_{1}".format(prefix, str(source))
+            name = "".join(c if (c.isalnum() or c == "_") else "_" for c in name)
+            out[name] = expression if isinstance(expression, list) else [expression]
+    return out
+
+
+def _slicap_step_params(results):
+    """The step parameters of a stepped SLiCAP result: one value per run."""
+    step_params = {}
+    if getattr(results, "step", False):
+        if getattr(results, "stepVar", None) is not None:
+            step_params[str(results.stepVar)] = np.asarray(
+                results.stepList, dtype=float)
+        elif getattr(results, "stepVars", None):
+            rows = np.asarray(results.stepArray, dtype=float)
+            for j, name in enumerate([str(v) for v in results.stepVars]):
+                if j < rows.shape[0]:
+                    step_params[name] = rows[j]
+    return step_params
+
+
+def _slicap_params(results):
+    """The circuit parameters of a SLiCAP result with a numeric value."""
+    from SLiCAP.SLiCAPmath import fullSubs
+    params = {}
+    par_defs = getattr(getattr(results, "circuit", None), "parDefs", None) or {}
+    for symbol, value in par_defs.items():
+        try:
+            params[str(symbol)] = float(sp.N(fullSubs(value, par_defs)))
+        except (TypeError, ValueError):
+            continue
+    return params
+
+
+def sweepData(results, sweepStart, sweepStop, sweepNum, sweepMethod='auto',
+              sweepVar='auto', params=None):
+    """
+    Evaluates a SLiCAP result over a sweep and returns the numbers as a
+    :class:`SLiCAPtraces.dataset`, ready for
+    :func:`SLiCAPtraces.make_traces` and :func:`SLiCAPtraces.measure`.
+
+    A SLiCAP result is SYMBOLIC - `laplace` is an expression in *s* - so it
+    has no sweep of its own; NGspice hands over numbers, SLiCAP hands over a
+    formula. This function supplies the missing sweep, which is why the traces
+    dialog asks for start / stop / points 
+
+    It lives in SLiCAPtraces: building a dataset is the entry of the traces
+    layer (producers -> traces -> plots). It was in SLiCAPplots and MOVED
+    here (Anton, 2026-11-25).
+
+    The signals are named after what they are (``SWEEP_SIGNAL_NAMES``):
+
+    - *H_s*, *N_s*, *D_s*: the transfer (``laplace``), its numerator
+      (``numer``) and its denominator (``denom``), COMPLEX arrays with s
+      replaced by 2*pi*j*f (``ini.hz``) or j*omega. ``mag(...)``,
+      ``dB(mag(...))``, ``phase(...)`` and ``delay(...)`` give the
+      magnitude, the magnitude in dB, the phase and the group delay;
+    - *noise*: ``onoise`` and ``inoise`` (V^2/Hz), plus one signal per noise
+      source from ``onoiseTerms`` / ``inoiseTerms``, named
+      ``onoise_<source>`` - the symbolic counterpart of NGspice's
+      ``onoise_r1``;
+    - *time*, *impulse*, *step*: real arrays over *t*.
+
+    A stepped result carries one expression per run, so its signals become
+    2-D (n_runs, n_sweep) and ``step_params`` holds the step values - exactly
+    like a stepped NGspice sweep. The circuit's numeric parameter definitions
+    become ``dataset.params``.
+
+    A filter made with ``makeFilter()`` and several results together are
+    combined by :func:`makeDataset`. Two forms of this function built during
+    6.5.0 were REMOVED (Anton, 2026-11-25): a plain expression with the
+    fixed name *H_s*, and a filter with the columns *H_s*, *H_z*,
+    *impulse*, *step*.
+
+    Trace data stays in BASE UNITS (Hz, s, V): scaling belongs to the axis,
+    never to the trace, so this function has no
+    counterpart of ``plotSweep``'s *sweepScale*.
+
+    :param results: result of one SLiCAP instruction.
+    :type results: SLiCAPinstruction.instruction
+
+    :param sweepStart: start of the sweep; SLiCAP notation ('10', '1M'), or
+                       the name of a parameter, ``"f_min"``, resolved from
+                       the parameter definitions of the result (the
+                       ``pardefs`` of the instruction) with *params* on top.
+                       A sweep limit then follows the specs like a component
+                       value does (Anton, 2026-11-09).
+    :type sweepStart: str, float, int
+
+    :param sweepStop: end of the sweep; as *sweepStart*.
+    :type sweepStop: str, float, int
+
+    :param sweepNum: number of points.
+    :type sweepNum: str, int
+
+    :param sweepMethod: 'lin' or 'log'; 'auto' takes 'log' for a frequency
+                        sweep and 'lin' for a time sweep.
+    :type sweepMethod: str
+
+    :param sweepVar: name of the swept parameter for ``dataType='params'``;
+                     'auto' for the frequency or time sweep of the other data
+                     types.
+    :type sweepVar: str
+
+    :param params: parameter definitions for the sweep limits, on top of
+                   those of the result: the dictionary ``selectPars()``
+                   returns, ``params=sl.selectPars(cir, specs,
+                   specs=["t_settle"])``, for a specification the
+                   instruction itself did not select.
+    :type params: dict, NoneType
+
+    :return: the evaluated data, or None when the result cannot be swept.
+    :rtype: SLiCAPtraces.dataset, NoneType
+
+    :Example:
+
+    >>> D   = sl.sweepData(LAPLACE1, 10, "1M", 200)
+    >>> TR  = sl.make_traces(D, [{"y": "dB(mag(H_s))"}])
+    >>> A_0 = sl.measure(D, "Y_AT_X(dB(mag(H_s)), 1e3)", units="dB")
+    """
+    from SLiCAP.SLiCAPmath import _makeNumData
+    from SLiCAP.SLiCAPlex import _scale_float
+
+    if isinstance(results, list):
+        print("Error: sweepData() takes ONE result; combining results is what "
+              "an axis does (TRACES.md phase 7).")
+        return None
+    dataType = getattr(results, "dataType", None)
+    if dataType in _FILTER_TYPES or isinstance(results, sp.Basic):
+        # the two removed forms: the refusal names the call that replaces
+        # them, not only the data type (Anton, 2026-11-25)
+        print("Error: sweepData() sweeps one SLiCAP result. A filter or an "
+              "expression goes through makeDataset(), for example "
+              "sl.makeDataset({\"FLT1\": FLT1}, x=\"frequency\", "
+              "start=\"10\", stop=\"1M\", num=200).")
+        return None
+    if dataType not in _PLOT_DATA_TYPES or dataType is None:
+        print("Error: cannot sweep dataType '{0}'.".format(dataType))
+        return None
+    try:
+        par_defs = _sweep_par_defs(results, params)
+        start = _sweep_limit(sweepStart, par_defs)
+        stop  = _sweep_limit(sweepStop, par_defs)
+        num   = int(_scale_float(sweepNum))
+    except (ValueError, TypeError) as exc:
+        print("Error: the sweep needs numbers in SLiCAP notation ('10', "
+              "'1M') or parameters of the result; got {0}, {1}, {2}. {3}"
+              .format(sweepStart, sweepStop, sweepNum, exc))
+        return None
+    if sweepMethod == 'auto':
+        sweepMethod = 'lin' if dataType in _TIME_TYPES else 'log'
+    x = _sweep_axis(start, stop, num, sweepMethod)
+    if x is None:
+        return None
+
+    # the abscissa of a time-domain result is 't', SLiCAP's own symbol - NOT
+    # 'time', which is the name of the RESULT ATTRIBUTE (result.time) and
+    # would collide with it in an expression
+    x_name = 't' if dataType in _TIME_TYPES else 'frequency'
+    x_var  = sp.Symbol('t') if dataType in _TIME_TYPES else ini.frequency
+
+    def _numeric(expression):
+        """One expression -> one array over the sweep."""
+        if dataType in _FREQ_TYPES and dataType != 'noise':
+            return _laplace_data(expression, x)
+        return np.asarray(_makeNumData(sp.N(expression), x_var, x,
+                                       normalize=False), dtype=float)
+
+    signals = {}
+    for name in _SLICAP_SIGNALS.get(dataType, []):
+        runs = _slicap_runs(results, name)
+        if not runs:
+            continue
+        arrays = [_numeric(expression) for expression in runs]
+        signals[SWEEP_SIGNAL_NAMES.get(name, name)] = (
+            arrays[0] if len(arrays) == 1 else np.array(arrays))
+    if dataType == 'noise':
+        # per-source contributions: the symbolic counterpart of NGspice's
+        # onoise_r1 (Anton, 2026-08-01)
+        for name, runs in _slicap_noise_terms(results).items():
+            arrays = [_numeric(one) for one in runs]
+            signals[name] = arrays[0] if len(arrays) == 1 else np.array(arrays)
+    if not signals:
+        print("Error: result '{0}' holds no data to sweep.".format(dataType))
+        return None
+
+    step_params = _slicap_step_params(results)
+    params = _slicap_params(results)
+    # What only the RESULT knows: a transfer is detector units over source
+    # units, noise is squared detector units per Hz. The naming conventions
+    # cannot answer these (Anton, 2026-08-02).
+    units = {x_name: ("s" if dataType in _TIME_TYPES
+                      else ("Hz" if ini.hz else "rad/s"))}
+    for name in signals:
+        found = _slicap_units_hint(name, results)
+        if found:
+            units[name] = found
+    return dataset(x_name=x_name, x_data=x, signals=signals,
+                   step_params=step_params, params=params, units=units,
+                   gain_type=getattr(results, "gainType", None))
+
+
+
+#: the x names of a frequency axis and of a time axis (TRACES.md phase 9)
+_FREQ_X = ("frequency", "f")
+_TIME_X = ("time", "t")
+#: what makeDataset() takes of a SLiCAP result, per dataType: its functions
+_DATASET_FUNCTIONS = {'laplace': 'frequency', 'numer': 'frequency',
+                      'denom': 'frequency', 'noise': 'frequency',
+                      'time': 'time', 'impulse': 'time', 'step': 'time'}
+
+
+def _dataset_source(name, source):
+    """``(kind, domain, object)`` of one source of :func:`makeDataset`:
+    kind "data" (a dataset), "filter" (made with makeFilter), "slicap" (a
+    SLiCAP result) or "expr" (an expression in s, f or t); domain
+    "frequency", "time", another x name of data, or None when the source
+    adapts (a filter, a constant). Raises ValueError for what it cannot
+    use."""
+    if not str(name).isidentifier():
+        raise ValueError("makeDataset: the name {0!r} is not a Python "
+                         "identifier".format(name))
+    if isinstance(source, sp.Basic):
+        symbols = source.free_symbols
+        t = sp.Symbol('t')
+        if not symbols:
+            return "expr", None, source
+        if symbols == {ini.laplace} or symbols == {ini.frequency}:
+            return "expr", "frequency", source
+        if symbols == {t}:
+            return "expr", "time", source
+        raise ValueError("makeDataset: {0} is an expression in {1}; it must "
+                         "be an expression in {2}, {3} or t without other "
+                         "symbols".format(name, ", ".join(sorted(
+                             str(v) for v in symbols)), ini.laplace,
+                             ini.frequency))
+    dataType = getattr(source, "dataType", None)
+    if dataType in _FILTER_TYPES:
+        if getattr(source, "H_z", None) is None:
+            raise ValueError("makeDataset: {0} is a filter design; make the "
+                             "filter with sl.makeFilter()".format(name))
+        return "filter", None, source
+    if dataType in _DATASET_FUNCTIONS and hasattr(source, "laplace"):
+        return "slicap", _DATASET_FUNCTIONS[dataType], source
+    data = as_dataset(source)
+    if data is None:
+        raise ValueError("makeDataset: {0} is not a result makeDataset can "
+                         "use: a dataset, an NGspice or system run, a SLiCAP "
+                         "result ({1}), a filter or an expression".format(
+                             name, ", ".join(sorted(_DATASET_FUNCTIONS))))
+    if data.x_data is None or not data.x_name:
+        return "data", None, data              # an operating point: alone only
+    x_name = str(data.x_name)
+    domain = ("frequency" if x_name in _FREQ_X else
+              "time" if x_name in _TIME_X else x_name)
+    return "data", domain, data
+
+
+def _prefixed(name, data):
+    """*data* with its signals, units and parameters as ``NAME.key``."""
+    return dataset(x_name=data.x_name, x_data=data.x_data,
+                   signals={"{0}.{1}".format(name, k): v
+                            for k, v in data.signals.items()},
+                   step_params=data.step_params,
+                   params={"{0}.{1}".format(name, k): v
+                           for k, v in data.params.items()},
+                   units={("{0}.{1}".format(name, k) if k in data.signals else k): v
+                          for k, v in data.units.items()},
+                   gain_type=data.gain_type,
+                   sampled=getattr(data, "sampled", False))
+
+
+def _same_points(a, b):
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    return a.shape == b.shape and np.allclose(a, b, rtol=1e-9, atol=0.0)
+
+
+def makeDataset(sources, x=None, start=None, stop=None, num=None,
+                method=None, params=None):
+    """Builds ONE :class:`SLiCAPtraces.dataset` from named results, for
+    :func:`SLiCAPtraces.make_traces` and :func:`SLiCAPtraces.measure`
+    (TRACES.md phase 9, Anton, 2026-11-25). Its columns carry dotted
+    names, the names of the Design data, so one expression can combine
+    several results::
+
+        D1  = sl.makeDataset({"AC1": AC1, "LAPLACE1": LAPLACE1})
+        TR1 = sl.make_traces(D1, [{"y": "dB(mag(AC1.V_out)) - dB(mag(LAPLACE1.laplace))"}],
+                             variables={"AC1.V_out": "AC1.v(out)"})
+        D2  = sl.makeDataset({"FLT1": FLT1, "FLT2": FLT2}, x="frequency",
+                             start="79.99M", stop="80.01M", num=500, method="lin")
+        TR2 = sl.make_traces(D2, [{"y": "dB(mag(FLT1.H_fs + FLT2.H_fs))"}])
+
+    A source is DATA or gives FUNCTIONS:
+
+    - data: an NGspice run, a system run's dataset (``R1.dataset("ref")``)
+      or any dataset: its signals as ``NAME.signal``, on its own points;
+    - a filter made with ``makeFilter()``: in frequency the functions
+      ``NAME.H_fs`` and ``NAME.H_fz``; in time DATA, ``NAME.impulse`` and
+      ``NAME.stepResp`` at the sample times k Ts from *start* to *stop*;
+    - a SLiCAP result: ``NAME.laplace``, ``NAME.numer``, ``NAME.denom``,
+      ``NAME.onoise``, ``NAME.inoise`` and ``NAME.onoise_<source>``
+      (frequency) or ``NAME.time``, ``NAME.impulse``, ``NAME.stepResp``
+      (time), one row per run when it is stepped;
+    - an expression in s, f or t, such as ``FLT1.H_fs + FLT2.H_fs``: the
+      column ``NAME``.
+
+    Functions are evaluated where the data lie: an expression in s or f on
+    a frequency axis (s = j 2 pi f), one in t on a time axis. Data of
+    several sources must lie on the same points; resampling was REJECTED
+    (Anton, 2026-11-25): interpolation is not exact. Without data the range
+    is given: *x* ("frequency" or "time"), *start*, *stop*, *num* and
+    *method* ("log" or "lin", default "log" in frequency and "lin" in
+    time); a limit may name a parameter of *params*, as in sweepData()
+    (Anton, 2026-11-09). The circuit parameters of a source are
+    ``NAME.parameter``. Data without an axis (an operating point) can only
+    stand alone: its signals are measured, not combined.
+
+    Errors, not warnings, like makeFilter(): the dataset is used further
+    on. The tool checks the abscissa only, never the units or the meaning
+    (Anton, 2026-11-25).
+
+    :param sources: ``{name: source}``; a name is a Python identifier
+    :type sources: dict
+    :param x: "frequency" or "time" when no data source fixes the axis
+    :type x: str, NoneType
+    :param start: start of the range, SLiCAP notation; for the sample
+                  times of a filter in time also with data
+    :param stop: end of the range, as *start*
+    :param num: number of points, without data
+    :param method: "log" or "lin", without data
+    :param params: parameter definitions for limits that name a parameter,
+                   the dict ``selectPars()`` returns
+    :type params: dict, NoneType
+    :return: the dataset
+    :rtype: SLiCAPtraces.dataset
+    :raises ValueError: a source it cannot use, or sources that do not
+                        match
+    """
+    from SLiCAP.SLiCAPmath import _zResponse, _makeNumData
+    from SLiCAP.SLiCAPlex import _scale_float
+    if not isinstance(sources, dict) or not sources:
+        raise ValueError("makeDataset: give the sources as a dict "
+                         "{name: result}")
+    found = {name: _dataset_source(name, src) for name, src in sources.items()}
+    axisless = [name for name, (kind, dom, _o) in found.items()
+                if kind == "data" and dom is None]
+    if axisless:
+        if len(found) > 1:
+            raise ValueError("makeDataset: {0} has no axis (an operating point) "
+                             "and cannot be combined".format(axisless[0]))
+        name, (_kind, _dom, data) = next(iter(found.items()))
+        return _prefixed(name, data)
+    limit_defs = _sweep_par_defs(None, params)
+
+    # the axis: every source that fixes one must agree
+    domains = {name: dom for name, (kind, dom, _o) in found.items() if dom}
+    if x is not None:
+        if str(x) in _FREQ_X:
+            domains["x"] = "frequency"
+        elif str(x) in _TIME_X:
+            domains["x"] = "time"
+        else:
+            raise ValueError("makeDataset: x must be 'frequency' or 'time', "
+                             "not {0!r}".format(x))
+    if len(set(domains.values())) > 1:
+        raise ValueError("makeDataset: the sources lie on different axes: "
+                         + ", ".join("{0} {1}".format(n, d)
+                                     for n, d in domains.items()))
+    if not domains:
+        raise ValueError("makeDataset: give x='frequency' or x='time'")
+    domain = next(iter(domains.values()))
+    if domain not in ("frequency", "time") and any(
+            kind != "data" for kind, _d, _o in found.values()):
+        raise ValueError("makeDataset: functions need a frequency or a time "
+                         "axis, not {0!r}".format(domain))
+
+    # the points: the data, the sample times of a filter in time, or the range
+    grids = {name: obj for name, (kind, _d, obj) in found.items()
+             if kind == "data"}
+    filters_in_time = [name for name, (kind, _d, _o) in found.items()
+                       if kind == "filter" and domain == "time"]
+    if grids and not filters_in_time and (start is not None or stop is not None):
+        raise ValueError("makeDataset: the points of {0} fix the axis; leave "
+                         "start and stop out".format(", ".join(grids)))
+    if filters_in_time and (start is None or stop is None):
+        raise ValueError("makeDataset: the sample times of {0} need start and "
+                         "stop".format(", ".join(filters_in_time)))
+    points = {name: np.asarray(data.x_data, dtype=float)
+              for name, data in grids.items()}
+    responses = {}
+    for name in filters_in_time:
+        flt = found[name][2]
+        lo, hi = _sweep_limit(start, limit_defs), _sweep_limit(stop, limit_defs)
+        t, impulse = flt.impulse(lo, hi)
+        responses[name] = {"impulse": impulse,
+                           "stepResp": flt.stepResp(lo, hi)[1]}
+        points[name] = t
+    if points:
+        first = next(iter(points))
+        for name, values in points.items():
+            if not _same_points(values, points[first]):
+                raise ValueError("makeDataset: {0} and {1} do not lie on the "
+                                 "same points; data is not resampled".format(
+                                     first, name))
+        xs = points[first]
+        if first in grids:
+            x_name = grids[first].x_name
+            x_units = grids[first].units.get(x_name)
+        else:
+            x_name, x_units = "t", "s"
+    else:
+        if start is None or stop is None or num is None:
+            raise ValueError("makeDataset: without data give start, stop and "
+                             "num")
+        lo, hi = _sweep_limit(start, limit_defs), _sweep_limit(stop, limit_defs)
+        if method is None:
+            method = "log" if domain == "frequency" else "lin"
+        xs = _sweep_axis(lo, hi, int(_scale_float(num)), method)
+        if xs is None:
+            raise ValueError("makeDataset: a logarithmic axis needs positive "
+                             "limits")
+        x_name = "frequency" if domain == "frequency" else "t"
+        x_units = ("Hz" if ini.hz else "rad/s") if domain == "frequency" else "s"
+    if domain == "frequency" and x_units is None:
+        x_units = "Hz" if ini.hz else "rad/s"
+    # the frequency as SLiCAP takes it (ini.hz): data in Hz with ini.hz
+    # False is evaluated at omega = 2 pi f
+    fx = xs
+    if domain == "frequency":
+        if x_units == "Hz" and not ini.hz:
+            fx = 2 * np.pi * xs
+        elif x_units == "rad/s" and ini.hz:
+            fx = xs / (2 * np.pi)
+    t = sp.Symbol('t')
+
+    def function_values(expression, real=False):
+        """One expression in s, f or t over the points; *real* for a noise
+        spectrum, a real function of f."""
+        if real:
+            return np.asarray(_makeNumData(sp.N(expression), ini.frequency, fx,
+                                           normalize=False), dtype=float)
+        if domain == "frequency":
+            if ini.laplace in expression.free_symbols:
+                return _laplace_data(expression, fx)
+            f = sp.lambdify(ini.frequency, expression, "numpy")
+            return np.broadcast_to(np.asarray(f(fx), dtype=complex),
+                                   fx.shape).copy()
+        return np.asarray(_makeNumData(sp.N(expression), t, xs,
+                                       normalize=False), dtype=float)
+
+    signals, units, params, step_params = {}, {x_name: x_units}, {}, {}
+    sampled, runs_of = bool(filters_in_time), {}
+    for name, (kind, _dom, obj) in found.items():
+        if kind == "data":
+            for key, values in obj.signals.items():
+                signals["{0}.{1}".format(name, key)] = values
+                if key in obj.units:
+                    units["{0}.{1}".format(name, key)] = obj.units[key]
+            for key, value in obj.params.items():
+                params["{0}.{1}".format(name, key)] = value
+            if obj.stepped:
+                runs_of[name] = (obj.n_runs, obj.step_params)
+            sampled = sampled or getattr(obj, "sampled", False)
+        elif kind == "filter" and domain == "time":
+            for key, values in responses[name].items():
+                signals["{0}.{1}".format(name, key)] = values
+        elif kind == "filter":
+            signals[name + ".H_fs"] = _laplace_data(obj.H_s, fx)
+            signals[name + ".H_fz"] = _zResponse(obj.H_z, obj.Ts, fx)
+        elif kind == "slicap":
+            noise = obj.dataType == "noise"
+            columns = {attr: _slicap_runs(obj, attr)
+                       for attr in _SLICAP_SIGNALS[obj.dataType]}
+            if noise:
+                columns.update(_slicap_noise_terms(obj))
+            for attr, expressions in columns.items():
+                if not expressions:
+                    continue
+                arrays = [function_values(sp.sympify(e), real=noise)
+                          for e in expressions]
+                key = "{0}.{1}".format(name, attr)
+                signals[key] = arrays[0] if len(arrays) == 1 else np.array(arrays)
+                hint = _slicap_units_hint(SWEEP_SIGNAL_NAMES.get(attr, attr), obj)
+                if hint:
+                    units[key] = hint
+            for key, value in _slicap_params(obj).items():
+                params["{0}.{1}".format(name, key)] = value
+            stepped = _slicap_step_params(obj)
+            if stepped:
+                runs_of[name] = (len(next(iter(stepped.values()))), stepped)
+        else:
+            signals[name] = function_values(obj)
+
+    # the runs: stepped sources must agree; a function applies to every run
+    n_runs = 1
+    for name, (count, steps) in runs_of.items():
+        if n_runs not in (1, count):
+            raise ValueError("makeDataset: the stepped sources {0} have "
+                             "different numbers of runs".format(", ".join(runs_of)))
+        n_runs = count
+        for key, values in steps.items():
+            if key in step_params and not np.allclose(step_params[key], values):
+                raise ValueError("makeDataset: the step parameter {0} differs "
+                                 "between {1}".format(key, ", ".join(runs_of)))
+            step_params[key] = values
+    if n_runs > 1:
+        # one row per run, so that a run selects a row whatever the number
+        # of points (_run_slice reads a 1-D array of n_runs values as one
+        # value per run)
+        for key, values in signals.items():
+            values = np.asarray(values)
+            if values.ndim == 1:
+                signals[key] = np.tile(values, (n_runs, 1))
+    only = next(iter(found.values())) if len(found) == 1 else None
+    gain_type = (getattr(only[2], "gainType", None)
+                 if only is not None and only[0] == "slicap" else None)
+    return dataset(x_name=x_name, x_data=xs, signals=signals,
+                   step_params=step_params, params=params, units=units,
+                   gain_type=gain_type, sampled=sampled)
+
+# The trace names of the attributes of a swept SLiCAP result: what the
+# quantity IS, the transfer H_s at s = j 2 pi f, its numerator N_s and its
+# denominator D_s, as the filter traces name their transfers H_z and H_s.
+# The attribute names laplace, numer and denom WERE the trace names.
+# REPLACED (Anton, 2026-11-25): they name a transform and two polynomials,
+# not the quantities. The result keeps its attributes: LAPLACE1.laplace is
+# still the transfer expression. The Traces dialog reads this table.
+SWEEP_SIGNAL_NAMES = {"laplace": "H_s", "numer": "N_s", "denom": "D_s"}
+
+
+def _slicap_units_hint(name, result=None):
+    """Units of the signals :func:`sweepData` writes.
+
+    The name alone cannot say them: ``onoise`` is V^2/Hz for a voltage
+    detector and A^2/Hz for a current one, and a transfer is detector units
+    over source units. They are read from the result, exactly as the axis
+    labels of :func:`plotSweep` read them (Anton, 2026-07-30: units are
+    stated, and suggested only where something KNOWS them).
+    """
+    if result is None:
+        return None
+    det = getattr(result, "detUnits", "") or ""
+    src = getattr(result, "srcUnits", "") or ""
+    if name in SWEEP_SIGNAL_NAMES.values():
+        return "{0}/{1}".format(det, src) if det and src else det or None
+    if name in ("time", "impulse", "stepResp"):
+        return det or None
+    if name == "onoise" or name.startswith("onoise_"):
+        return "{0}^2/Hz".format(det) if det else None
+    if name == "inoise" or name.startswith("inoise_"):
+        return "{0}^2/Hz".format(src) if src else None
+    return None
+
+
+register_units_hint(_slicap_units_hint)

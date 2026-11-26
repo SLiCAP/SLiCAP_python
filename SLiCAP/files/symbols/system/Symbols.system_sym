@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Symbol library of the system schematic dialect (SystemExtensionSpecs.md 9).
+       The fixed symbols live here: the hierarchical port, the clock tree
+       symbols and the probe. Function block symbols are generated from the
+       function classes (schematic/system_symbols.py) and are not in this file.
+       A pin of type "clock" (data-types) accepts a clock wire only;
+       data-dirs tells which pin drives a wire and which reads it. -->
+  <defs>
+<g id="port"
+       data-prefix="P"
+       data-nodes="port"
+       data-params="name||0|1"
+       data-description="Hierarchical connection">
+
+       <!-- pentagon: pointed top at pin, rectangular body below -->
+       <polyline points="0 0  5 5  5 20  -5 20  -5 5  0 0" fill="white" stroke="black" stroke-width="1"/>
+
+       <!-- Pins -->
+       <circle cx="0" cy="0" r="0.5" class="node" data-node="port" />
+    </g>
+<g id="SIGNAL"
+       data-prefix="S"
+       data-nodes="y cp"
+       data-model="Signal|0"
+       data-params=""
+       data-types="y:float64 cp:clock"
+       data-dirs="y:out cp:in"
+       data-show-pinnames="true"
+       data-description="Signal source: the waveform and its parameters are set in the Signal dialog (double-click), one sample per tick of its clock">
+       <!-- No data-params: the Signal dialog is the ONE editor of the
+            waveform and its parameters, as the stimuli dialog is for an
+            NGspice source. Rows in the Properties dialog for the same
+            keys wrote the values of its opening back on OK and undid the
+            Signal dialog (Anton, 2026-11-17: "changing from sine to noise
+            yields a mess"). -->
+       <!-- The layout of every clocked block (Specs 9.5, 2026-11-18): the
+            output in the top row, the signal clock cp on the left one grid
+            step above the bottom edge with the dynamic-input mark. The
+            clock pin at the bottom centre was REPLACED (decision A). -->
+
+       <rect x="-20" y="-20" width="40" height="40" fill="none" stroke="black" stroke-width="1"/>
+       <!-- the signal, whatever its waveform (Anton, 2026-11-17: no sine);
+            the pin names y and cp are drawn by the editor as on every block
+            (Anton, 2026-11-18: "the signal generators don't have cp marked") -->
+       <text x="0" y="0" dominant-baseline="middle" text-anchor="middle" font-size="8">s(t)</text>
+       <!-- output pin with its arrowhead -->
+       <line x1="20" y1="-10" x2="30" y2="-10" stroke="black" stroke-width="1"/>
+       <polygon points="20 -10  16 -12  16 -8" fill="black" stroke="none"/>
+       <!-- the signal clock on the left, with the dynamic-input mark -->
+       <line x1="-30" y1="10" x2="-20" y2="10" stroke="black" stroke-width="1"/>
+       <polyline points="-20 7  -16 10  -20 13" fill="none" stroke="black" stroke-width="1"/>
+
+       <!-- Pins -->
+       <circle cx="30" cy="-10" r="0.5" class="node" data-node="y" />
+       <circle cx="-30" cy="10" r="0.5" class="node" data-node="cp" />
+    </g>
+<g id="CONST"
+       data-prefix="K"
+       data-nodes="y"
+       data-model="Constant|0"
+       data-params="value|1|1|1"
+       data-types="y:float64"
+       data-dirs="y:out"
+       data-description="Constant: y = value, held for the whole run (a set point, a coefficient); no clock">
+       <!-- A fixed symbol on the Symbol menu with the clock and the
+            signal (Anton, 2026-11-17); its one parameter is edited in
+            the Properties dialog like the factors of a clock node. No
+            clock pin: a constant is a held value, set before the run
+            (Anton, 2026-11-17: "can we do without?"). -->
+
+       <rect x="-20" y="-10" width="40" height="20" fill="none" stroke="black" stroke-width="1"/>
+       <text x="0" y="0" dominant-baseline="middle" text-anchor="middle" font-size="8">k</text>
+       <!-- output pin with its arrowhead -->
+       <line x1="20" y1="0" x2="30" y2="0" stroke="black" stroke-width="1"/>
+       <polygon points="20 0  16 -2  16 2" fill="black" stroke="none"/>
+
+       <!-- Pins -->
+       <circle cx="30" cy="0" r="0.5" class="node" data-node="y" />
+    </g>
+<g id="CLK"
+       data-prefix="CLK"
+       data-nodes="clk"
+       data-params="f_ref|1e6|1|1"
+       data-types="clk:clock"
+       data-dirs="clk:out"
+       data-description="Reference clock: f_ref in Hz, the root of the clock tree">
+
+       <rect x="-20" y="-10" width="40" height="20" fill="none" stroke="black" stroke-width="1"/>
+       <!-- clock waveform -->
+       <polyline points="-14 5  -14 -5  -8 -5  -8 5  -2 5  -2 -5  4 -5  4 5  10 5  10 -5  14 -5" fill="none" stroke="black" stroke-width="1"/>
+       <!-- output pin with its arrowhead -->
+       <line x1="20" y1="0" x2="30" y2="0" stroke="black" stroke-width="1"/>
+       <polygon points="20 0  16 -2  16 2" fill="black" stroke="none"/>
+
+       <!-- Pins -->
+       <circle cx="30" cy="0" r="0.5" class="node" data-node="clk" />
+    </g>
+<g id="CLKF"
+       data-prefix="CLK"
+       data-nodes="f clk"
+       data-params=""
+       data-types="f:float64 clk:clock"
+       data-dirs="f:in clk:out"
+       data-show-pinnames="true"
+       data-description="Driven reference clock: the frequency in Hz on its input f, read every tick, the root of the clock tree; its value at the start of the run is the nominal one (Specs 15.1; Anton, 2026-11-20: a symbol of its own, the input gives the value)">
+       <!-- a block like the function blocks: the pin names inside, no
+            waveform (Anton, 2026-11-20: "the symbol identifier says what
+            it is") -->
+       <!-- the size of the constant's box (Anton, 2026-11-20) -->
+       <rect x="-20" y="-10" width="40" height="20" fill="none" stroke="black" stroke-width="1"/>
+       <!-- the frequency input, a signal pin: stub and arrowhead into the box -->
+       <line x1="-30" y1="0" x2="-20" y2="0" stroke="black" stroke-width="1"/>
+       <polygon points="-16 0  -20 -2  -20 2" fill="black" stroke="none"/>
+       <!-- the clock output -->
+       <line x1="20" y1="0" x2="30" y2="0" stroke="black" stroke-width="1"/>
+       <polygon points="20 0  16 -2  16 2" fill="black" stroke="none"/>
+
+       <!-- Pins -->
+       <circle cx="-30" cy="0" r="0.5" class="node" data-node="f" />
+       <circle cx="30" cy="0" r="0.5" class="node" data-node="clk" />
+    </g>
+<g id="CLKNODE"
+       data-prefix="CN"
+       data-nodes="in out"
+       data-params="m|1|1|1;d|1|1|1;phase|0|1|1"
+       data-types="in:clock out:clock"
+       data-dirs="in:in out:out"
+       data-description="Clock node: the parent clock times m, divided by d; phase in master ticks">
+
+       <rect x="-20" y="-10" width="40" height="20" fill="none" stroke="black" stroke-width="1"/>
+       <!-- the factor the node applies: m / d (Anton, 2026-11-17: the
+            symbol must say what m and d are) -->
+       <text x="0" y="0" dominant-baseline="middle" text-anchor="middle" font-size="8">m/d</text>
+       <!-- input and output pins with their arrowheads -->
+       <line x1="-30" y1="0" x2="-20" y2="0" stroke="black" stroke-width="1"/>
+       <polygon points="-16 0  -20 -2  -20 2" fill="black" stroke="none"/>
+       <line x1="20" y1="0" x2="30" y2="0" stroke="black" stroke-width="1"/>
+       <polygon points="20 0  16 -2  16 2" fill="black" stroke="none"/>
+
+       <!-- Pins -->
+       <circle cx="-30" cy="0" r="0.5" class="node" data-node="in" />
+       <circle cx="30" cy="0" r="0.5" class="node" data-node="out" />
+    </g>
+<g id="PROBE"
+       data-prefix="PR"
+       data-nodes="in"
+       data-params="name||0|1"
+       data-dirs="in:in"
+       data-description="Probe: live view of the connected signal during a run; it stores nothing">
+
+       <line x1="0" y1="0" x2="0" y2="6" stroke="black" stroke-width="1"/>
+       <circle cx="0" cy="14" r="8" fill="white" stroke="black" stroke-width="1"/>
+       <!-- a small trace -->
+       <polyline points="-5 16  -3 11  -1 17  1 12  3 16  5 13" fill="none" stroke="black" stroke-width="1"/>
+
+       <!-- Pins -->
+       <circle cx="0" cy="0" r="0.5" class="node" data-node="in" />
+    </g>
+  </defs>
+</svg>

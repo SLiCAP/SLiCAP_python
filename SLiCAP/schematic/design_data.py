@@ -186,9 +186,13 @@ def _sympy_preview(expr) -> dict:
     latex = _slicap_latex(expr)
     if len(latex) > 200_000:
         latex = ""
+    # the free symbols say what an expression is a function of: the Traces
+    # dialog offers one in s, f or t as a source (TRACES.md phase 9)
+    symbols = sorted(str(v) for v in getattr(expr, "free_symbols", ()))
     return {"pprint": sp.pretty(sp.N(expr, 4))[:2000],
             "latex":  latex,
-            "srepr":  sp.srepr(expr)[:5000]}
+            "srepr":  sp.srepr(expr)[:5000],
+            "symbols": symbols}
 
 
 def _preview(value, kind: str) -> dict:

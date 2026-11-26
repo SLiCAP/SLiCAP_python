@@ -44,6 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from .instr_file import parse_calls, quoted, bound_names, literal as _lit
+from .edit_note import EditNote
 from .sizing import name_width, fit_contents, chars
 from .traces_dialog import next_name
 from .axes_dialog import axis_entries
@@ -165,6 +166,10 @@ class FigureDialog(QDialog):
         self._cells: list[list[QComboBox]] = []
 
         outer = QVBoxLayout(self)
+        from .doc_link import help_label
+        outer.addWidget(help_label(
+            "Composes a <code>sl.makeFigure()</code> call",
+            "GUI/plots/plots.html", "figures", "help: figures"))
         head = QGridLayout()
         outer.addLayout(head)
 
@@ -178,6 +183,9 @@ class FigureDialog(QDialog):
         head.addWidget(QLabel("Figure variable name:"), 1, 0)
         self._name = QLineEdit(next_name("FIG", self._taken))
         self._name.setMaximumWidth(name_width(self._name))
+        # what "Select figure" edits, in place (instr_file.place)
+        self._note = EditNote(self._existing_text)
+        self._note.follow(self._name, lambda: next_name("FIG", self._taken))
         self._name.textChanged.connect(self._update)
         head.addWidget(self._name, 1, 1)
 
@@ -250,6 +258,7 @@ class FigureDialog(QDialog):
         self._warning.setWordWrap(True)
         self._warning.setStyleSheet("color: #b34700; font-size: 9pt;")
         outer.addWidget(self._warning)
+        outer.addWidget(self._note)
 
         self._hint = QLabel(
             "A span is the SAME axis in adjacent cells - the cells it "
@@ -282,8 +291,11 @@ class FigureDialog(QDialog):
     # ── the grid of cells ─────────────────────────────────────────────────
 
     def _cell_combo(self, current: str = EMPTY) -> QComboBox:
+        # NOT setMinimumHeight(sizeHint): a combo's vertical policy is Fixed,
+        # so a layout never makes it lower than it asks. That minimum was
+        # REMOVED 2026-11-25 with _grow_for_the_grid's box minimum, the
+        # actual cause of the squeezed cells.
         combo = QComboBox()
-        combo.setMinimumHeight(combo.sizeHint().height())   # never squashed
         combo.addItem(_EMPTY_LABEL, EMPTY)
         for name in self._axes:
             combo.addItem(name, name)
@@ -299,9 +311,10 @@ class FigureDialog(QDialog):
 
         An axis could be created from a cell but not changed from one, so
         composing a figure meant closing this dialog to fix an axis and
-        opening it again (Anton, 2026-08-03). The edit re-defines the axis:
-        its new statement is emitted BEFORE the figure, and the later
-        definition wins - append-only editing, as everywhere else.
+        opening it again (Anton, 2026-08-03). The edited axis is replaced
+        where it stands (_keep_axis_statement, 2026-11-26). It was written
+        again before the figure, the later definition winning (append-only
+        editing), until then.
         """
         holder = QWidget()
         lay = QHBoxLayout(holder)
@@ -317,7 +330,6 @@ class FigureDialog(QDialog):
             lambda _i, c=combo: self._refresh_edit_button(c))
         lay.addWidget(combo, 1)
         lay.addWidget(button)
-        holder.setMinimumHeight(combo.minimumHeight())
         self._refresh_edit_button(combo)
         return holder
 
@@ -340,8 +352,7 @@ class FigureDialog(QDialog):
         statement = self._run_axes_dialog(select=name)
         if not statement:
             return
-        self._new_axis_statements.append(statement)
-        new_name = statement.split("=", 1)[0].strip()
+        new_name = self._keep_axis_statement(statement)
         if new_name not in self._axes:
             self._axes.append(new_name)
         self._refresh_cells(new_name=new_name, into=combo)
@@ -388,6 +399,10 @@ class FigureDialog(QDialog):
                 holder = self._cell_widget(current)
                 combo = holder.findChild(QComboBox)
                 self._grid_layout.addWidget(holder, r, c)
+                # A child added to a visible window must be shown by the
+                # caller (Qt). The layout only queues a show for later, and
+                # until then the cell is hidden and has no size.
+                holder.show()
                 row.append(combo)
                 for marks, grid, kept_m, mrow in (
                         (self._xmarks, self._xmark_grid, kept_x, xrow),
@@ -398,6 +413,7 @@ class FigureDialog(QDialog):
                                         and c < len(kept_m[r]) else False))
                     box.toggled.connect(self._update)
                     grid.addWidget(box, r, c)
+                    box.show()
                     mrow.append(box)
             self._cells.append(row)
             self._xmarks.append(xrow)
@@ -450,11 +466,20 @@ class FigureDialog(QDialog):
         Adding a row makes the grid taller, but the dialog kept the height it
         opened with, so the group box absorbed the difference and the cell
         drop-downs were drawn 15 px high with their text cut off (Anton,
-        2026-08-03). The grid keeps at least the height it asks for, and the
-        window grows with it - it never shrinks by itself, so a window the
-        user made larger stays that way.
+        2026-08-03). The window grows to the height the dialog asks for. It
+        never shrinks by itself, so a window the user made larger stays that
+        way.
+
+        The measurement needs the new cells to be VISIBLE: _rebuild_grid
+        shows them. A hidden widget has no size in a layout.
+
+        A minimum height on the group box, set from its size hint, was
+        REMOVED (2026-11-25). It was measured while the new cells were still
+        hidden, so it was the height of an empty box. As an explicit minimum
+        it overrode the layout's own, and the cells were squeezed: four rows
+        overlapped, and after removing and adding a row the cells stood
+        apart (Anton's report).
         """
-        self._grid_box.setMinimumHeight(self._grid_box.sizeHint().height())
         layout = self.layout()
         if layout is not None:
             layout.activate()
@@ -476,10 +501,24 @@ class FigureDialog(QDialog):
         if not statement:
             combo.setCurrentIndex(0)              # back to (empty)
             return
-        self._new_axis_statements.append(statement)
-        name = statement.split("=", 1)[0].strip()
+        name = self._keep_axis_statement(statement)
         self._axes.append(name)
         self._refresh_cells(new_name=name, into=combo)
+
+    def _keep_axis_statement(self, statement: str) -> str:
+        """Keep the statement of an axis made or edited from a cell, one
+        per axis, the latest; returns its name. An axis of the file edited
+        here is an edited object: it is replaced where it stands
+        (instr_file.place), and the Axes dialog has warned about parts it
+        cannot show. It was written again before the figure, a second
+        definition (append-only editing), until 2026-11-26 (Anton)."""
+        name = statement.split("=", 1)[0].strip()
+        self._new_axis_statements = [
+            s for s in self._new_axis_statements
+            if s.split("=", 1)[0].strip() != name] + [statement]
+        if name in self._taken:
+            self._note.start(name, in_field=False, warned=True)
+        return name
 
     def _refresh_cells(self, new_name: str = "", into=None):
         """Offer the new axis in every cell, keeping the current choices."""
@@ -512,7 +551,12 @@ class FigureDialog(QDialog):
     # ── editing an existing figure ────────────────────────────────────────
 
     def _on_load_existing(self, index: int):
+        """Read an existing figure back; OK then replaces it where it
+        stands, and an axis made from a cell goes directly above it
+        (instr_file.place, Anton 2026-11-25). "New figure" makes a new one
+        under a free name."""
         if index <= 0:
+            self._note.stop()
             return
         entry = self._existing[index - 1]
         args = entry.get("args") or []
@@ -548,7 +592,15 @@ class FigureDialog(QDialog):
         # window kept its opening height and squashed the cells (Anton,
         # 2026-08-03, second time) - grow here too
         self._grow_for_the_grid()
+        self._note.start(entry["name"])
         self._update()
+
+    def editing(self) -> tuple:
+        """The figure loaded with "Select figure", for InstrEditor.put_dialog_result."""
+        return self._note.names()
+
+    def loaded(self) -> dict:
+        return self._note.loaded()
 
     def _apply_share(self, source, marks) -> None:
         """Tick the marks a shareX=/shareY= argument describes.
@@ -614,8 +666,12 @@ class FigureDialog(QDialog):
         statement = "{0} = sl.makeFigure({1}, {2}{3})".format(
             name, body, quoted(file_name), parts)
         # the axes made from a cell come FIRST: one statement per object, in
-        # dependency order
-        return "\n".join(self._new_axis_statements + [statement])
+        # dependency order. An axis of the file edited here leads, so the
+        # new ones go directly above the figure (instr_file.place).
+        name_of = lambda s: s.split("=", 1)[0].strip()
+        edited = [s for s in self._new_axis_statements if name_of(s) in self._taken]
+        made = [s for s in self._new_axis_statements if name_of(s) not in self._taken]
+        return "\n".join(edited + made + [statement])
 
     def _update(self, *_args):
         grid = self.grid()
@@ -623,5 +679,6 @@ class FigureDialog(QDialog):
         self._warning.setText(span_error(grid))
         snippet = self.generated_snippet()
         self._preview.setText(snippet or "")
-        self._add_btn.setEnabled(bool(snippet)
+        allowed = self._note.check(snippet)
+        self._add_btn.setEnabled(bool(snippet) and allowed
                                  and bool(self._name.text().strip()))

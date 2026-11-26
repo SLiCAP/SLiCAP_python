@@ -2159,9 +2159,7 @@ class CanvasPanel(QWidget):
                                    circuits=mine,
                                    csv_dir=os.path.join(os.getcwd(), ini.csv_path))
         if dlg.exec() and self._main_win:
-            snippet = dlg.generated_snippet()
-            if snippet:
-                self._main_win._instr_editor.insert_snippet(snippet)
+            self._main_win._instr_editor.put_dialog_result(dlg, self)
 
     def _on_ngspice_create_netlist(self):
         """Instruction -> Create netlist: append
@@ -2273,11 +2271,9 @@ class CanvasPanel(QWidget):
         dlg.setModal(False)
 
         def _accept():
-            if not self._main_win:
-                return
-            snippet = dlg.generated_snippet()
-            if snippet:
-                self._main_win._instr_editor.insert_snippet(snippet)
+            # checked against the file as it is NOW: the dialog is non-modal
+            if self._main_win:
+                self._main_win._instr_editor.put_dialog_result(dlg, self)
 
         dlg.accepted.connect(_accept)
         dlg.finished.connect(lambda *_: setattr(self, "_ngspice_instr_dlg", None))
@@ -3376,9 +3372,9 @@ class MainWindow(QMainWindow):
         """Instruction -> Create / Edit Traces and Measurements… (TRACES.md
         phase 6).
 
-        A named trace set from ONE simulation result: the DATA layer of
-        Figure -> Axes -> Traces. Emits one assignment, so append-only
-        editing keeps working."""
+        A named trace set: the DATA layer of Figure -> Axes -> Traces. An
+        edited set is replaced where it stands (InstrEditor.put_dialog_result,
+        Anton 2026-11-25)."""
         if self._instr_editor is None:
             return
         import SLiCAP.SLiCAPconfigure as ini
@@ -3388,9 +3384,7 @@ class MainWindow(QMainWindow):
                            csv_dir=ini.csv_path,
                            source_name=self._instr_source_name())
         if dlg.exec():
-            snippet = dlg.generated_snippet()
-            if snippet:
-                self._instr_editor.insert_snippet(snippet)
+            self._instr_editor.put_dialog_result(dlg, self)
 
     def _instr_source_name(self) -> str:
         """The manifest section the instruction dialogs read: the file name
@@ -3404,8 +3398,8 @@ class MainWindow(QMainWindow):
 
         The PRESENTATION layer of Figure -> Axes -> Traces: trace sets get an
         axis type, labels, scale factors and units, or a SLiCAP result gets a
-        pole-zero axis. Emits one assignment, so append-only editing keeps
-        working."""
+        pole-zero axis. An edited axis is replaced where it stands
+        (InstrEditor.put_dialog_result, Anton 2026-11-25)."""
         if self._instr_editor is None:
             return
         import SLiCAP.SLiCAPconfigure as ini
@@ -3414,16 +3408,16 @@ class MainWindow(QMainWindow):
                          results_dir=ini.results_path, parent=self,
                          source_name=self._instr_source_name())
         if dlg.exec():
-            snippet = dlg.generated_snippet()
-            if snippet:
-                self._instr_editor.insert_snippet(snippet)
+            self._instr_editor.put_dialog_result(dlg, self)
 
     def _on_create_figure(self):
         """Instruction -> Create / Edit Figures… (TRACES.md phase 7).
 
         Places axes on a canvas: a grid of cells, a span written as the same
         axis repeated in adjacent cells. Emits one assignment per object -
-        an axis made from a cell comes before the figure that uses it."""
+        an axis made from a cell comes before the figure that uses it. An
+        edited figure is replaced where it stands, its new axes directly
+        above it (InstrEditor.put_dialog_result, Anton 2026-11-25)."""
         if self._instr_editor is None:
             return
         import SLiCAP.SLiCAPconfigure as ini
@@ -3432,9 +3426,7 @@ class MainWindow(QMainWindow):
                            results_dir=ini.results_path, parent=self,
                            source_name=self._instr_source_name())
         if dlg.exec():
-            snippet = dlg.generated_snippet()
-            if snippet:
-                self._instr_editor.insert_snippet(snippet)
+            self._instr_editor.put_dialog_result(dlg, self)
 
     def _on_create_snippet(self, target):
         """Instruction → Create <format> snippet… — one generic dialog per

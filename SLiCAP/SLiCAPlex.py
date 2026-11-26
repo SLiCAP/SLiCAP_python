@@ -6,8 +6,13 @@ SLiCAP _tokenizer for netlist files.
 """
 import ply.lex as lex
 import sys
+import builtins
+import types
 import sympy as sp
-from sympy.parsing.sympy_parser import null as _null
+from sympy.core.parameters import global_parameters
+from sympy.parsing.sympy_parser import (null as _null, parse_expr,
+                                        standard_transformations, convert_xor,
+                                        rationalize, TokenError)
 import re
 
 # list of token names
@@ -47,10 +52,74 @@ _SCALEFACTORS    =  {'y':'-24','z':'-21','a':'-18','f':'-15','p':'-12','n':'-9',
 _SYMPY_NAMES = ("N", "O", "Q", "S", "beta", "gamma", "zeta", "Lambda")
 
 
+# The names of 'from sympy import *', as parse_expr imports them
+# (sympy/parsing/sympy_parser.py). This import is the costly part of the
+# namespace of a parse: 0.1 to 0.2 ms. It runs once, at import.
+#
+# Up to 6.4.8 a string went through sp.sympify. That path cannot pass a
+# global_dict, so every parse ran this import again. REPLACED (2026-11-22):
+# it took more than half of makeCircuit for a netlist of 401 elements.
+_SYMPY_EXPORTS = {}
+exec('from sympy import *', _SYMPY_EXPORTS)
+
+
+def _sympy_namespace():
+    """
+    Returns the global namespace in which sympy's parse_expr evaluates an
+    expression when it is given no global_dict.
+
+    The statements are those of parse_expr (sympy/parsing/sympy_parser.py).
+    The names therefore come from sympy itself. tests/test_sympify_namespace.py
+    compares the result with the namespace that sympy builds.
+
+    The sympy names come from _SYMPY_EXPORTS. A sympy name that is rebound
+    after import is not seen. The builtin functions are read on each call
+    (10 to 20 us). Each call returns a new dict.
+
+    :return: name-to-object mapping
+    :rtype: dict
+    """
+    # Building the whole namespace once was tried and REVERTED (2026-11-22).
+    # PySide6 replaces builtins.__import__ after SLiCAP is imported. A
+    # snapshot then differs from the namespace that sympify builds.
+    #
+    # Sharing one namespace between parses was considered and REJECTED
+    # (2026-11-22). A parse can write into its namespace:
+    # '[(pi := 3) for E in [1]]' binds pi there for every later parse.
+    namespace = _SYMPY_EXPORTS.copy()
+    for name, obj in vars(builtins).items():
+        if isinstance(obj, types.BuiltinFunctionType):
+            namespace[name] = obj
+    namespace['max'] = sp.Max
+    namespace['min'] = sp.Min
+    return namespace
+
+
+# The transformations that sp.sympify passes to parse_expr for a string
+# (sympy/core/sympify.py), with its default convert_xor=True.
+_TRANSFORMATIONS = standard_transformations + (convert_xor,)
+_TRANSFORMATIONS_RATIONAL = standard_transformations + (rationalize,
+                                                        convert_xor)
+
+
 def _sympify(expr, rational=False, locals=None):
     """
     Returns the sympy expression of expr, with the names of _SYMPY_NAMES
     read as circuit parameters instead of as sympy objects.
+
+    A str is parsed as sp.sympify parses it, but without its import of all
+    sympy names on every call. Any other input goes through sp.sympify.
+
+    Rule: every str parse of SLiCAP goes through this function. Then Q and
+    the other names of _SYMPY_NAMES are circuit parameters in every text
+    that SLiCAP reads. A fixed symbol name needs no parse: use sp.Symbol.
+
+    Up to 6.4.8 four functions parsed a user text with sp.sympify:
+    createIIR/createFIR, laplace2z, z2fourier and the parameter-table
+    display. There Q meant sympy's assumptions object, and Q*R raised
+    TypeError. That was REPLACED (2026-11-22) by this function. Six more
+    calls parsed a fixed name, such as 'b_1' or 'V_in_d'. They now use
+    sp.Symbol.
 
     :param expr: expression to be converted
     :type expr: str, sympy object, int, float
@@ -63,11 +132,27 @@ def _sympify(expr, rational=False, locals=None):
 
     :return: sympy expression
     :rtype: sympy object
+
+    :raises sympy.SympifyError: if a str cannot be parsed, as sp.sympify
     """
     names = {name: _null for name in _SYMPY_NAMES}
     if locals is not None:
         names.update(locals)
-    return sp.sympify(expr, locals=names, rational=rational)
+    # A str subclass (numpy.str_) may have its own sympify conversion.
+    if type(expr) is not str:
+        return sp.sympify(expr, locals=names, rational=rational)
+    if rational:
+        transformations = _TRANSFORMATIONS_RATIONAL
+    else:
+        transformations = _TRANSFORMATIONS
+    expr = expr.replace('\n', '')
+    try:
+        return parse_expr(expr, local_dict=names,
+                          transformations=transformations,
+                          global_dict=_sympy_namespace(),
+                          evaluate=global_parameters.evaluate)
+    except (TokenError, SyntaxError) as exc:
+        raise sp.SympifyError('could not parse %r' % expr, exc)
 
 def _scale_float(value):
     """Float value of a SLiCAP numeric literal with an optional scale factor

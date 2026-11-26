@@ -854,9 +854,9 @@ class LaTeXformatter(_BaseFormatter):
         headerList = ['Coeff', 'Value']
         linesList = []
         for i in range(len(numerCoeffs)):
-            linesList.append([sp.sympify('b_' + str(i)), numerCoeffs[i]])
+            linesList.append([sp.Symbol('b_' + str(i)), numerCoeffs[i]])
         for i in range(len(denomCoeffs)):
-            linesList.append([sp.sympify('a_' + str(i)), denomCoeffs[i]])
+            linesList.append([sp.Symbol('a_' + str(i)), denomCoeffs[i]])
         TEX = _TEXcreateCSVtable(headerList, linesList, alignstring, 
                                  label=label, caption=caption, color=color)
         return Snippet(TEX, self.format)

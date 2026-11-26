@@ -95,9 +95,10 @@ What you can rely on
 * **Projects are self-contained.**  Everything a schematic references lives
   inside the project and is addressed relatively, so a project survives being
   moved, archived or handed over (see :doc:`/GUI/project/project`).
-* **Nothing is rewritten behind your back.**  Editing is append-only: the
-  dialogs add statements, and existing ones are left as they are for you to
-  keep or delete.
+* **Nothing is rewritten behind your back.**  A dialog adds a new statement
+  at the end of the file.  An instruction you edit is replaced on its own
+  line.  When it holds parts the dialog cannot show, the dialog says so
+  before you press OK.
 * **The GUI is optional.**  Netlisting, export and every analysis are available
   from scripts and from the command line.  The environment makes the work
   easier; it never becomes a dependency of your design.
